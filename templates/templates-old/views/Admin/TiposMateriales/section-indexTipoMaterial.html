@@ -1,0 +1,146 @@
+<!-- Fragment: Dashboard Tipos de Material -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-warning">
+            <i class="fas fa-tags me-2"></i>Dashboard de Tipos de Material
+        </h1>
+        <a
+           class="btn btn-warning">
+            <i class="fas fa-plus-circle me-2"></i>Nuevo Tipo
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-tags text-warning fa-2x mb-2"></i>
+                    <div class="text-warning fw-bold">Total Tipos</div>
+                    <div class="h2 text-warning">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                    <div class="text-success fw-bold">Tipos Activos</div>
+                    <div class="h2 text-success">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-boxes text-info fa-2x mb-2"></i>
+                    <div class="text-info fw-bold">Materiales Totales</div>
+                    <div class="h2 text-info">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tipos recientes -->
+    <div class="card border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="fas fa-history me-2"></i>Tipos de Material Recientes
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-warning">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Nombre</td>
+                        <td>
+                            <span class="small"></span>
+                            <span class="text-muted small">Sin descripción</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">Activo</span>
+                            <span class="badge bg-secondary">Inactivo</span>
+                        </td>
+                        <td class="text-end">
+                            <a
+                               class="btn btn-sm btn-outline-warning me-1">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a
+                               class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            No hay tipos de material registrados
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de uso -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Materiales por Tipo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>Tipo</span>
+                            <span class="fw-bold"></span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info"
+                                
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center text-muted small">
+                        No hay materiales asignados a tipos
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <a
+                       class="btn btn-warning mb-2 w-100">
+                        <i class="fas fa-plus-circle me-2"></i>Crear Nuevo Tipo
+                    </a>
+                    <a
+                       class="btn btn-outline-primary mb-2 w-100">
+                        <i class="fas fa-list me-2"></i>Ver Listado Completo
+                    </a>
+                    <a
+                       class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-boxes me-2"></i>Gestionar Materiales
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

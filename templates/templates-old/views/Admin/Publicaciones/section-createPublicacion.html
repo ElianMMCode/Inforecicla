@@ -1,0 +1,173 @@
+<!-- Fragment: Creación Publicación -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">
+            <i class="fas fa-plus-circle me-2"></i>Crear Nueva Publicación
+        </h2>
+        <a class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Información de la nueva publicación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="row g-3">
+                        <div class="col-12">
+                            <label for="titulo" class="form-label text-success fw-semibold">
+                                <i class="fas fa-heading me-1"></i>Título de la publicación
+                            </label>
+                            <input type="text" class="form-control" id="titulo"
+                                   placeholder="Ingresa un título llamativo y descriptivo..." required>
+                            <div class="form-text">El título debe captar la atención de los lectores y describir el contenido.</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="contenido" class="form-label text-success fw-semibold">
+                                <i class="fas fa-align-left me-1"></i>Contenido
+                            </label>
+                            <textarea class="form-control" id="contenido"
+                                      rows="15" placeholder="Escribe el contenido completo de tu publicación aquí..." required></textarea>
+                            <div class="form-text">
+                                Puedes usar formato básico HTML para dar estilo a tu contenido (etiquetas como &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;p&gt;, &lt;br&gt;).
+                            </div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="estado" class="form-label text-success fw-semibold">Estado</label>
+                            <select id="estado" class="form-select" required>
+                                <option value="borrador" selected>Borrador</option>
+                                <option value="publicado">Publicado</option>
+                                <option value="archivado">Archivado</option>
+                            </select>
+                            <div class="form-text">
+                                <strong>Borrador:</strong> Solo tú puedes ver esta publicación.<br>
+                                <strong>Publicado:</strong> Visible para todos los usuarios.<br>
+                                <strong>Archivado:</strong> Publicación antigua, visible pero en sección de archivo.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="categoria" class="form-label text-success fw-semibold">
+                                <i class="fas fa-tags me-1"></i>Categoría
+                            </label>
+                            <select id="categoria" class="form-select">
+                                <option value="" selected>Sin categoría</option>
+                                <option
+                                       
+                                       >
+                                </option>
+                            </select>
+                            <div class="form-text">Organiza tu publicación seleccionando una categoría apropiada.</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notificar" name="notificar" checked>
+                                <label class="form-check-label" for="notificar">
+                                    Notificar a suscriptores cuando se publique (solo aplica si el estado es "Publicado")
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Crear Publicación
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Guía de formato -->
+            <div class="card border-info mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Guía de Formato
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info">Etiquetas HTML permitidas:</h6>
+                            <ul class="small mb-0">
+                                <li><code>&lt;strong&gt;</code> - <strong>Texto en negrita</strong></li>
+                                <li><code>&lt;em&gt;</code> - <em>Texto en cursiva</em></li>
+                                <li><code>&lt;u&gt;</code> - <u>Texto subrayado</u></li>
+                                <li><code>&lt;p&gt;</code> - Párrafo</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">Listas y estructura:</h6>
+                            <ul class="small mb-0">
+                                <li><code>&lt;ul&gt;</code> - Lista no ordenada</li>
+                                <li><code>&lt;ol&gt;</code> - Lista ordenada</li>
+                                <li><code>&lt;li&gt;</code> - Elemento de lista</li>
+                                <li><code>&lt;br&gt;</code> - Salto de línea</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consejos para buenas publicaciones -->
+            <div class="card border-warning mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Consejos para Publicaciones Exitosas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li>Usa títulos claros y descriptivos</li>
+                        <li>Estructura tu contenido con párrafos cortos</li>
+                        <li>Usa listas para información importante</li>
+                        <li>Revisa la ortografía y gramática antes de publicar</li>
+                        <li>Considera usar borradores para trabajar en contenido extenso</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Contador de caracteres y palabras
+        document.addEventListener('DOMContentLoaded', function() {
+            const contenidoTextarea = document.getElementById('contenido');
+            const contador = document.createElement('div');
+            contador.className = 'form-text text-end';
+            contenidoTextarea.parentNode.appendChild(contador);
+
+            function actualizarContador() {
+                const texto = contenidoTextarea.value;
+                const caracteres = texto.length;
+                const palabras = texto.trim() ? texto.trim().split(/\s+/).length : 0;
+
+                contador.textContent = `${caracteres} caracteres | ${palabras} palabras`;
+
+                if (caracteres < 100) {
+                    contador.className = 'form-text text-end text-warning';
+                } else if (caracteres > 10000) {
+                    contador.className = 'form-text text-end text-danger';
+                } else {
+                    contador.className = 'form-text text-end text-success';
+                }
+            }
+
+            contenidoTextarea.addEventListener('input', actualizarContador);
+            actualizarContador(); // Inicializar contador
+        });
+    </script>
+</section>

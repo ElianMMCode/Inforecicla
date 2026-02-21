@@ -1,0 +1,133 @@
+<!-- Fragment: Crear Categoría -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">
+            <i class="fas fa-plus-circle me-2"></i>Crear Nueva Categoría de Publicación
+        </h2>
+        <a class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Información de la nueva categoría</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="row g-3">
+                        <div class="col-12">
+                            <label for="nombre" class="form-label text-success fw-semibold">
+                                <i class="fas fa-tag me-1"></i>Nombre de la categoría
+                            </label>
+                            <input type="text" class="form-control" id="nombre"
+                                    placeholder="Ingresa un nombre único y descriptivo..." required>
+                            <div class="form-text">El nombre debe ser único en el sistema y claramente identificar el tipo de publicaciones.</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="descripcion" class="form-label text-success fw-semibold">
+                                <i class="fas fa-align-left me-1"></i>Descripción
+                            </label>
+                            <textarea class="form-control" id="descripcion"
+                                        rows="4" placeholder="Describe el propósito y tipo de publicaciones que pertenecerán a esta categoría... (máximo 300 caracteres)"></textarea>
+                            <div class="form-text">Esta descripción ayudará a los usuarios a seleccionar la categoría correcta para sus publicaciones.</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Crear Categoría
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información de ayuda -->
+            <div class="card border-info mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información importante
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li>Las categorías ayudan a organizar las publicaciones de manera lógica</li>
+                        <li>Cada categoría puede tener múltiples publicaciones asociadas</li>
+                        <li>Los nombres de categorías deben ser únicos en el sistema</li>
+                        <li>Es recomendable usar nombres claros y descriptivos</li>
+                        <li>Las descripciones ayudan a entender el propósito de cada categoría</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Ejemplos de categorías comunes -->
+            <div class="card border-warning mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Ejemplos de Categorías Comunes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="small mb-0">
+                                <li>Noticias y Actualizaciones</li>
+                                <li>Guías y Tutoriales</li>
+                                <li>Eventos y Actividades</li>
+                                <li>Consejos y Recomendaciones</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="small mb-0">
+                                <li>Preguntas Frecuentes</li>
+                                <li>Historias de Éxito</li>
+                                <li>Recursos Educativos</li>
+                                <li>Anuncios Importantes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para contador de caracteres -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const descripcionTextarea = document.getElementById('descripcion');
+            if (descripcionTextarea) {
+                const contador = document.createElement('div');
+                contador.className = 'form-text text-end';
+                descripcionTextarea.parentNode.appendChild(contador);
+
+                function actualizarContador() {
+                    const texto = descripcionTextarea.value;
+                    const caracteres = texto.length;
+                    const palabras = texto.trim() ? texto.trim().split(/\s+/).length : 0;
+
+                    contador.textContent = `${caracteres}/300 caracteres | ${palabras} palabras`;
+
+                    if (caracteres > 280) {
+                        contador.className = 'form-text text-end text-danger';
+                    } else if (caracteres > 200) {
+                        contador.className = 'form-text text-end text-warning';
+                    } else {
+                        contador.className = 'form-text text-end text-success';
+                    }
+                }
+
+                descripcionTextarea.addEventListener('input', actualizarContador);
+                actualizarContador();
+            }
+        });
+    </script>
+</section>

@@ -1,0 +1,95 @@
+<!-- Fragment: Detalle Usuario -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-dark">
+            <i class="fas fa-user me-2"></i>Detalle del Usuario
+        </h2>
+        <a class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al Listado
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card border-dark">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Nombre del Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong class="text-dark">Información Personal:</strong>
+                                <div class="mt-2 ps-3">
+                                    <p><strong>Correo:</strong> <span>correo@ejemplo.com</span></p>
+                                    <p><strong>Rol:</strong>
+                                        <span class="badge">
+                                            <span class="badge bg-danger">Administrador</span>
+                                            <span class="badge bg-info">Gestor ECA</span>
+                                            <span class="badge bg-success">Ciudadano</span>
+                                        </span>
+                                    </p>
+                                    <p><strong>Estado:</strong>
+                                        <span class="badge">
+                                            <span class="badge bg-success">Activo</span>
+                                            <span class="badge bg-warning">Inactivo</span>
+                                            <span class="badge bg-danger">Bloqueado</span>
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong class="text-dark">Información Adicional:</strong>
+                                <div class="mt-2 ps-3">
+                                    <p>
+                                        <strong>Usuario:</strong>
+                                        <span>usuario123</span>
+                                    </p>
+                                    <p>
+                                        <strong>Fecha Registro:</strong>
+                                        <span>01/01/2024</span>
+                                    </p>
+                                    <p>
+                                        <strong>Última Actualización:</strong>
+                                        <span>01/01/2024</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Avatar y acciones -->
+            <div class="card border-info mb-3">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img alt="Avatar" class="img-thumbnail rounded-circle" style="width: 120px; height: 120px;">
+                    </div>
+                    <div class="mb-3">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center"
+                             style="width: 120px; height: 120px;">
+                            <i class="fas fa-user text-muted fa-3x"></i>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Editar Usuario
+                        </a>
+                        <form method="POST"
+                              class="d-inline w-100"
+                              onsubmit="return confirm('¿Está seguro de eliminar este usuario?')">
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-trash me-2"></i>Eliminar Usuario
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

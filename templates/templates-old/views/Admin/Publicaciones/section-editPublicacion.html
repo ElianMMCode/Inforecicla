@@ -1,0 +1,173 @@
+<!-- Fragment: Edición Publicación -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">
+            <i class="fas fa-edit me-2"></i>Editar Publicación
+        </h2>
+        <a class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al Detalle
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Modificar información de la publicación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="row g-3">
+                        <input type="hidden"/>
+                        <input type="hidden"/>
+
+                        <div class="col-12">
+                            <label for="titulo" class="form-label text-success fw-semibold">
+                                <i class="fas fa-heading me-1"></i>Título de la publicación
+                            </label>
+                            <input type="text" class="form-control" id="titulo"
+                                   placeholder="Ingresa un título llamativo..." required>
+                            <div class="form-text">El título debe ser descriptivo y atractivo para los lectores.</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="contenido" class="form-label text-success fw-semibold">
+                                <i class="fas fa-align-left me-1"></i>Contenido
+                            </label>
+                            <textarea class="form-control" id="contenido"
+                                      rows="12" placeholder="Escribe el contenido de tu publicación aquí..." required></textarea>
+                            <div class="form-text">Puedes usar formato básico HTML para dar estilo a tu contenido.</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="estado" class="form-label text-success fw-semibold">Estado</label>
+                            <select id="estado" class="form-select" required>
+                                <option value="borrador">Borrador</option>
+                                <option value="publicado">Publicado</option>
+                                <option value="archivado">Archivado</option>
+                            </select>
+                            <div class="form-text">
+                                <span class="text-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Esta publicación no es visible para el público.
+                                </span>
+                                <span class="text-success">
+                                    <i class="fas fa-check-circle"></i> Esta publicación es visible para todos.
+                                </span>
+                                <span class="text-secondary">
+                                    <i class="fas fa-archive"></i> Esta publicación está archivada.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="categoria" class="form-label text-success fw-semibold">
+                                <i class="fas fa-tags me-1"></i>Categoría
+                            </label>
+                            <select id="categoria" class="form-select">
+                                <option value="">Sin categoría</option>
+                                <option
+                                       
+                                       
+                                       >
+                                </option>
+                            </select>
+                            <div class="form-text">Selecciona una categoría para organizar mejor tu contenido.</div>
+                        </div>
+
+                        <!-- Información de previsualización -->
+                        <div class="col-12">
+                            <div class="card border-info mt-3">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-eye me-2"></i>Vista Previa
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Título:</strong>
+                                            <p class="fst-italic"></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Estado actual:</strong>
+                                            <p>
+                                                <span class="badge">
+                                                    <span class="badge bg-success">Publicado</span>
+                                                    <span class="badge bg-warning">Borrador</span>
+                                                    <span class="badge bg-secondary">Archivado</span>
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong>Categoría:</strong>
+                                        <p><span class="badge bg-info"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Actualizar Publicación
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información del autor -->
+            <div class="card border-warning mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Información del Autor
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> <span></span></p>
+                            <p><strong>Email:</strong> <span></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fecha de creación:</strong> <span></span></p>
+                            <p><strong>Última actualización:</strong> <span></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Contador de caracteres para el contenido
+        document.addEventListener('DOMContentLoaded', function() {
+            const contenidoTextarea = document.getElementById('contenido');
+            const contador = document.createElement('div');
+            contador.className = 'form-text text-end';
+            contenidoTextarea.parentNode.appendChild(contador);
+
+            function actualizarContador() {
+                const caracteres = contenidoTextarea.value.length;
+                contador.textContent = `${caracteres} caracteres`;
+
+                if (caracteres < 100) {
+                    contador.className = 'form-text text-end text-warning';
+                } else if (caracteres > 5000) {
+                    contador.className = 'form-text text-end text-danger';
+                } else {
+                    contador.className = 'form-text text-end text-success';
+                }
+            }
+
+            contenidoTextarea.addEventListener('input', actualizarContador);
+            actualizarContador(); // Inicializar contador
+        });
+    </script>
+</section>

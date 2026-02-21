@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Gestor - InfoRecicla</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center fw-semibold">
+                <img alt="Logo InfoRecicla" height="40" class="me-2">
+                InfoRecicla
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active">
+                            <i class="fas fa-tachometer-alt me-1"></i> Panel Gestor
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <span>Gestor</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item">Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h3 text-success">Panel de Gestor ECA</h1>
+                        <p class="mb-0">
+                            <span class="badge bg-warning text-dark me-2">Modo Admin</span>
+                            Accediendo como administrador para pruebas
+                        </p>
+                        <p class="mb-0">
+                            Bienvenido al panel de gestión de tu punto ECA.
+                        </p>
+                    </div>
+                    <div>
+                        <a class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a Admin
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Información del Punto ECA -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-store me-2"></i>Mi Punto ECA</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold">Punto ECA Demo Admin</h6>
+                                        <p class="text-muted mb-1"><i class="fas fa-map-marker-alt me-2"></i>Chapinero, Bogotá</p>
+                                        <p class="text-muted mb-1"><i class="fas fa-phone me-2"></i>3001234567</p>
+                                        <p class="text-muted mb-0"><i class="fas fa-envelope me-2"></i>admin@inforecicla.com</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="text-center">
+                                                    <div class="h4 text-success mb-0">85%</div>
+                                                    <small class="text-muted">Capacidad</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="text-center">
+                                                    <div class="h4 text-info mb-0">12</div>
+                                                    <small class="text-muted">Materiales</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Funcionalidades del Gestor -->
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-boxes fa-3x text-primary mb-3"></i>
+                                <h5 class="card-title">Gestionar Inventario</h5>
+                                <p class="card-text">Administra los materiales disponibles en tu punto ECA.</p>
+                                <button class="btn btn-primary" onclick="alert('Funcionalidad en desarrollo')">
+                                    Abrir Inventario
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
+                                <h5 class="card-title">Reportes y Estadísticas</h5>
+                                <p class="card-text">Ve el rendimiento y estadísticas de tu punto ECA.</p>
+                                <button class="btn btn-success" onclick="alert('Funcionalidad en desarrollo')">
+                                    Ver Reportes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cog fa-3x text-warning mb-3"></i>
+                                <h5 class="card-title">Configuración</h5>
+                                <p class="card-text">Actualiza la información de tu punto ECA.</p>
+                                <button class="btn btn-warning" onclick="alert('Funcionalidad en desarrollo')">
+                                    Configurar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar fa-3x text-info mb-3"></i>
+                                <h5 class="card-title">Horarios</h5>
+                                <p class="card-text">Gestiona los horarios de atención al público.</p>
+                                <button class="btn btn-info" onclick="alert('Funcionalidad en desarrollo')">
+                                    Configurar Horarios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

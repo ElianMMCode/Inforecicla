@@ -1,0 +1,160 @@
+<!-- Fragment: Visualización Publicación -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">
+            <i class="fas fa-newspaper me-2"></i>Detalle de la Publicación
+        </h2>
+        <a class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Título de la Publicación</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la publicación -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong class="text-success">Información General:</strong>
+                                <div class="mt-2 ps-3">
+                                    <p>
+                                        <strong>Estado:</strong>
+                                        <span class="badge">
+                                            <span class="badge bg-success">Publicado</span>
+                                            <span class="badge bg-warning">Borrador</span>
+                                            <span class="badge bg-secondary">Archivado</span>
+                                        </span>
+                                    </p>
+                                    <p>
+                                        <strong>Categoría:</strong>
+                                        <span class="badge bg-info"></span>
+                                    </p>
+                                    <p>
+                                        <strong>Autor:</strong>
+                                        <span>Autor</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong class="text-success">Fechas:</strong>
+                                <div class="mt-2 ps-3">
+                                    <p>
+                                        <strong>Creación:</strong>
+                                        <span>01/01/2024</span>
+                                    </p>
+                                    <p>
+                                        <strong>Actualización:</strong>
+                                        <span>01/01/2024</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contenido de la publicación -->
+                    <div class="mb-4">
+                        <strong class="text-success">Contenido:</strong>
+                        <div class="mt-2 p-3 bg-light rounded">
+                            <div>Contenido de la publicación...</div>
+                        </div>
+                    </div>
+
+                    <!-- Información del sistema -->
+                    <div class="row">
+                        <div class="col-12">
+                            <strong class="text-success">Información del Sistema:</strong>
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <small class="text-muted">ID:</small>
+                                    <p class="fw-bold font-monospace small">ID</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">ID Usuario:</small>
+                                    <p class="fw-bold font-monospace small">Usuario ID</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Acciones -->
+            <div class="card border-info mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">Acciones</h6>
+                </div>
+                <div class="card-body text-center">
+                    <a class="btn btn-warning w-100 mb-2">
+                        <i class="fas fa-edit me-2"></i>Editar Publicación
+                    </a>
+                    <div>
+                        <form method="POST" class="d-inline w-100 mb-2">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-eye me-2"></i>Publicar
+                            </button>
+                        </form>
+                    </div>
+                    <div>
+                        <form method="POST" class="d-inline w-100 mb-2">
+                            <button type="submit" class="btn btn-secondary w-100">
+                                <i class="fas fa-archive me-2"></i>Archivar
+                            </button>
+                        </form>
+                    </div>
+                    <form method="POST"
+                          class="d-inline w-100"
+                          onsubmit="return confirm('¿Está seguro de eliminar esta publicación?')">
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-trash me-2"></i>Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información de la categoría -->
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tag me-2"></i>Información de la Categoría
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Nombre:</strong>
+                        <span>Categoría</span>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Descripción:</strong>
+                        <span>Descripción</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card border-secondary mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">Estadísticas</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Duración del contenido:</strong>
+                        <span>0 caracteres</span>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Tiempo desde creación:</strong>
+                        <span>0 días</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

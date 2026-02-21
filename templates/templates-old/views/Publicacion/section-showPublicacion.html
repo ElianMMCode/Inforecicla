@@ -1,0 +1,85 @@
+<!-- Fragment: Mostrar Publicación -->
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-primary">Detalle de Publicación</h1>
+        <div>
+            <a
+               class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <a
+               class="btn btn-warning me-2">
+                <i class="fas fa-pencil-alt"></i> Editar
+            </a>
+            <button type="button" class="btn btn-outline-danger"
+                   >
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Título de la publicación</h5>
+                <span class="badge bg-light text-dark">Estado</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Metadatos -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <strong>Categoría:</strong>
+                    <span class="text-muted">Categoría</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>Autor:</strong>
+                    <span class="text-muted">Autor</span>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <strong>Fecha de creación:</strong>
+                    <span class="text-muted">Fecha</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>Última actualización:</strong>
+                    <span class="text-muted">Fecha</span>
+                </div>
+            </div>
+
+            <!-- Contenido -->
+            <div class="border-top pt-3">
+                <h6 class="text-primary mb-3">Contenido:</h6>
+                <div class="publicacion-contenido">
+                    Contenido de la publicación...
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-transparent">
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">ID: <code>UUID</code></small>
+                <div>
+                    <a
+                       class="btn btn-outline-primary btn-sm">Volver al Listado</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmarEliminar(publicacionId) {
+            if (confirm('¿Estás seguro de que deseas eliminar esta publicación?')) {
+                window.location.href = '/publicaciones/eliminar/' + publicacionId;
+            }
+        }
+    </script>
+
+    <style>
+        .publicacion-contenido {
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</div>
