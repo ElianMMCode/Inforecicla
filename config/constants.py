@@ -17,39 +17,6 @@ class Estado(models.TextChoices):
     BLOQUEADO = "BLOQUEADO", _("BLOQUEADO")
 
 
-# Todas las localidades de Bogota con un método de búsqueda
-class LocalidadBogota(models.TextChoices):
-    USAQUEN = "USAQUEN", _("Usaquén")
-    CHAPINERO = "CHAPINERO", _("Chapinero")
-    SANTA_FE = "SANTA_FE", _("Santa Fe")
-    SAN_CRISTOBAL = "SAN_CRISTOBAL", _("San Cristóbal")
-    USME = "USME", _("Usme")
-    TUNJUELITO = "TUNJUELITO", _("Tunjuelito")
-    BOSA = "BOSA", _("Bosa")
-    KENNEDY = "KENNEDY", _("Kennedy")
-    FONTIBON = "FONTIBON", _("Fontibón")
-    ENGATIVA = "ENGATIVA", _("Engativá")
-    SUBA = "SUBA", _("Suba")
-    BARRIOS_UNIDOS = "BARRIOS_UNIDOS", _("Barrios Unidos")
-    TEUSAQUILLO = "TEUSAQUILLO", _("Teusaquillo")
-    MARTIRES = "MARTIRES", _("Los Mártires")
-    ANTONIO_NARINO = "ANTONIO_NARINO", _("Antonio Nariño")
-    PUENTE_ARANDA = "PUENTE_ARANDA", _("Puente Aranda")
-    CANDELARIA = "CANDELARIA", _("La Candelaria")
-    RAFAEL_URIBE = "RAFAEL_URIBE", _("Rafael Uribe Uribe")
-    CIUDAD_BOLIVAR = "CIUDAD_BOLIVAR", _("Ciudad Bolívar")
-    SUMAPAZ = "SUMAPAZ", _("Sumapaz")
-
-    # Búsqueda por valor en localidades
-    @classmethod
-    def por_localidad(cls, nombre):
-        nombre_clean = nombre.lower().strip()
-        for localidad in cls:
-            if localidad.label.lower() == nombre_clean:
-                return localidad
-        raise ValueError(f"Localidad no válida: {nombre}")
-
-
 # Tipos de Centros de Acopio
 class TipoCentroAcopio(models.TextChoices):
     PLANTA = "PLANTA", _("Planta")
