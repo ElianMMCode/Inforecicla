@@ -1,0 +1,211 @@
+<!-- Fragment: Calendario -->
+<section class="container-fluid py-4">
+    <div class="px-3">
+        <!-- Encabezado con título y botón -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h5 mb-0">Calendario</h2>
+            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearEvento">
+                <i class="bi bi-plus-circle"></i> Nuevo Evento
+            </button>
+        </div>
+
+        <!-- Calendario -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4">
+                <!-- Contenedor para FullCalendar -->
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL PARA CREAR EVENTO ===== -->
+    <div class="modal fade" id="modalCrearEvento" tabindex="-1" aria-labelledby="modalCrearEventoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalCrearEventoLabel">
+                        <i class="bi bi-calendar-plus"></i> Crear Evento de Venta
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="formCrearEvento">
+                        <!-- Input hidden con datos -->
+                        <input type="hidden" id="inputPuntoEcaId" name="puntoEcaId">
+                        <input type="hidden" id="inputUsuarioId" name="usuarioId">
+
+                        <!-- Fila 1: Material y Centro de Acopio -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="selectMaterial" class="form-label fw-semibold">Material <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm border-2 select2-modal" id="selectMaterial" required style="min-height: 38px; width: 100%;">
+                                    <option value="">-- Seleccionar Material --</option>
+                                </select>
+                                <small class="text-muted d-block mt-1">Selecciona el material a vender</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="selectCentroAcopio" class="form-label fw-semibold">Centro de Acopio</label>
+                                <select class="form-select form-select-sm border-2 select2-modal" id="selectCentroAcopio" style="min-height: 38px; width: 100%;">
+                                    <option value="">-- Sin asignar --</option>
+                                </select>
+                                <small class="text-muted d-block mt-1">Opcional: lugar de entrega (del punto o global)</small>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Título -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="inputTitulo" class="form-label">Título del Evento <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="inputTitulo" placeholder="Ej: Venta Semanal de Plástico" required>
+                            </div>
+                        </div>
+
+                        <!-- Fila 3: Descripción -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="inputDescripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control form-control-sm" id="inputDescripcion" rows="2" placeholder="Detalles adicionales del evento..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Fila 4: Fecha y Hora -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="inputFechaInicio" class="form-label">Fecha <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control form-control-sm" id="inputFechaInicio" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="inputHoraInicio" class="form-label">Hora Inicio <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control form-control-sm" id="inputHoraInicio" value="10:00" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="inputHoraFin" class="form-label">Hora Fin <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control form-control-sm" id="inputHoraFin" value="11:00" required>
+                            </div>
+                        </div>
+
+                        <!-- Fila 5: Repetición -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="selectTipoRepeticion" class="form-label">Tipo de Repetición <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm border-2 select2-custom" id="selectTipoRepeticion" required style="width: 100%; min-height: 38px;">
+                                    <option value="SIN_REPETICION">Sin Repetición</option>
+                                    <option value="SEMANAL">Semanal (cada 7 días)</option>
+                                    <option value="QUINCENAL">Quincenal (cada 14 días)</option>
+                                    <option value="MENSUAL">Mensual (cada 30 días)</option>
+                                </select>
+                                <small class="text-muted d-block mt-1">Configurar la periodicidad del evento</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputFechaFinRepeticion" class="form-label">Fecha Fin Repetición</label>
+                                <input type="date" class="form-control form-control-sm" id="inputFechaFinRepeticion">
+                                <small class="text-muted">Cuándo deja de repetirse</small>
+                            </div>
+                        </div>
+
+                        <!-- Fila 6: Color -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="inputColor" class="form-label">Color del Evento</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="color" class="form-control form-control-color" id="inputColor" value="#28a745" style="max-width: 60px;">
+                                    <span class="input-group-text">Verde Inforecicla</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="inputObservaciones" class="form-label">Observaciones</label>
+                                <textarea class="form-control form-control-sm" id="inputObservaciones" rows="2" placeholder="Notas adicionales..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Alert para errores -->
+                        <div id="alertError" class="alert alert-danger d-none" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> <span id="alertErrorText"></span>
+                        </div>
+
+                        <!-- Alert para éxito -->
+                        <div id="alertSuccess" class="alert alert-success d-none" role="alert">
+                            <i class="bi bi-check-circle"></i> Evento creado correctamente
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnGuardarEvento">
+                        <i class="bi bi-save"></i> Guardar Evento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL PARA VER DETALLES DEL EVENTO ===== -->
+    <div class="modal fade" id="modalDetallesEvento" tabindex="-1" aria-labelledby="modalDetallesEventoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="modalDetallesEventoLabel">
+                        <i class="bi bi-calendar-event"></i> Detalles del Evento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h5 class="text-success">
+                                <i class="bi bi-calendar-check"></i> <span id="detallesTitulo">Título del Evento</span>
+                            </h5>
+                            <hr>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Descripción:</strong>
+                            <p id="detallesDescripcion" class="text-muted">Sin descripción</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Material:</strong>
+                            <p id="detallesMaterial" class="text-muted">Sin material</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Fecha y Hora Inicio:</strong>
+                            <p id="detallesFechaInicio" class="text-muted">--</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha y Hora Fin:</strong>
+                            <p id="detallesFechaFin" class="text-muted">--</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Centro de Acopio:</strong>
+                            <p id="detallesCentro" class="text-muted">Sin asignar</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-warning btn-sm" id="btnEditarEvento">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="btnBorrarEvento">
+                        <i class="bi bi-trash"></i> Borrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

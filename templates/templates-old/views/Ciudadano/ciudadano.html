@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Ciudadano - InfoRecicla</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        nav {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        nav::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+
+        nav::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+
+        nav::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.15) !important;
+            transform: translateX(5px);
+        }
+
+        .nav-link.active {
+            background-color: rgba(255,255,255,0.25) !important;
+        }
+
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+        }
+
+        .hover-shadow {
+            transition: all 0.3s ease;
+        }
+
+        .hover-shadow:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
+        }
+
+        header {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        }
+
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .list-group-item {
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .list-group-item:hover {
+            background-color: #f0f8f5 !important;
+        }
+
+        .form-control:focus {
+            border-color: #198754;
+            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+        }
+
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+        .btn-success:hover {
+            background-color: #157347;
+            border-color: #157347;
+            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+        }
+
+        .form-label {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .bg-success {
+            background-color: #198754 !important;
+        }
+
+        .text-success {
+            color: #198754 !important;
+        }
+
+        .border-success {
+            border-color: #198754 !important;
+        }
+
+        main {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                width: 250px !important;
+            }
+
+            main {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="d-flex">
+    <!-- Sidebar -->
+    <nav class="bg-success text-white vh-100 position-fixed" style="width: 280px; z-index: 1000;">
+        <div class="p-4">
+            <div class="text-center mb-4">
+                <img src="/imagenes/logo.png" alt="Logo" class="rounded-circle mb-3" width="80" height="80">
+                <h4 class="fw-bold">InfoRecicla</h4>
+            </div>
+
+            <hr class="border-white opacity-25">
+
+            <div class="text-center mb-4">
+                <img alt="Avatar" class="rounded-circle border border-white border-3 mb-3" width="100" height="100">
+                <h6 class="fw-bold mb-1">usuario_ejemplo</h6>
+                <small class="opacity-75">Juan Pérez García</small>
+            </div>
+
+            <hr class="border-white opacity-25">
+
+            <ul class="nav flex-column gap-2">
+                <li class="nav-item">
+                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded active bg-white bg-opacity-25" href="#guardados" data-bs-toggle="tab">
+                        <i class="bi bi-bookmark-star-fill fs-5 me-3"></i>
+                        <span class="fw-semibold">Guardados</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="#comentarios" data-bs-toggle="tab">
+                        <i class="bi bi-chat-left-text-fill fs-5 me-3"></i>
+                        <span class="fw-semibold">Comentarios</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="#ajustes" data-bs-toggle="tab">
+                        <i class="bi bi-gear-fill fs-5 me-3"></i>
+                        <span class="fw-semibold">Ajustes</span>
+                    </a>
+                </li>
+            </ul>
+
+            <hr class="border-white opacity-25 mt-4">
+
+            <div class="mt-auto">
+                <form method="post" class="w-100">
+                    <button class="btn btn-outline-light w-100 fw-semibold" type="submit">
+                        <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1" style="margin-left: 280px;">
+        <!-- Header -->
+        <header class="bg-white border-bottom shadow-sm sticky-top">
+            <div class="container-fluid py-3 px-4">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h2 class="mb-0 text-success fw-bold" id="pageTitle">Puntos ECA Guardados</h2>
+                        <small class="text-muted">Gestiona tu perfil y preferencias</small>
+                    </div>
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            <i class="bi bi-geo-alt-fill me-1"></i><span>Bogotá D.C.</span>
+                        </span>
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            <i class="bi bi-envelope-fill me-1"></i><span>juan.perez@email.com</span>
+                        </span>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="container-fluid p-4">
+            <!-- Alertas -->
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i><span></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i><span></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="tab-content">
+                <!-- Guardados Tab -->
+                <div class="tab-pane fade show active" id="guardados">
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h5 class="mb-0 fw-bold text-success">
+                                            <i class="bi bi-bookmark-star-fill me-2"></i>
+                                            Mis Puntos ECA Favoritos
+                                        </h5>
+                                        <span class="badge bg-success rounded-pill fs-6">3 puntos guardados</span>
+                                    </div>
+
+                                    <div class="row g-4">
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card h-100 border border-success border-opacity-25 hover-shadow">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                                                            <i class="bi bi-recycle text-success fs-3"></i>
+                                                        </div>
+                                                        <button class="btn btn-sm btn-outline-danger rounded-circle">
+                                                            <i class="bi bi-heart-fill"></i>
+                                                        </button>
+                                                    </div>
+                                                    <h6 class="fw-bold mb-2">Recicladora y Chatarrería JJ</h6>
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="bi bi-geo-alt-fill text-success me-1"></i>
+                                                        Cra 7 #109-06 Sur
+                                                    </p>
+                                                    <a href="#" class="btn btn-success w-100">
+                                                        <i class="bi bi-map me-2"></i>Ver en Mapa
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card h-100 border border-success border-opacity-25 hover-shadow">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                                                            <i class="bi bi-recycle text-success fs-3"></i>
+                                                        </div>
+                                                        <button class="btn btn-sm btn-outline-danger rounded-circle">
+                                                            <i class="bi bi-heart-fill"></i>
+                                                        </button>
+                                                    </div>
+                                                    <h6 class="fw-bold mb-2">Ecopunto Norte</h6>
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="bi bi-geo-alt-fill text-success me-1"></i>
+                                                        Calle 170 con Autopista
+                                                    </p>
+                                                    <a href="#" class="btn btn-success w-100">
+                                                        <i class="bi bi-map me-2"></i>Ver en Mapa
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card h-100 border border-success border-opacity-25 hover-shadow">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                                                            <i class="bi bi-recycle text-success fs-3"></i>
+                                                        </div>
+                                                        <button class="btn btn-sm btn-outline-danger rounded-circle">
+                                                            <i class="bi bi-heart-fill"></i>
+                                                        </button>
+                                                    </div>
+                                                    <h6 class="fw-bold mb-2">Centro de Reciclaje Sur</h6>
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="bi bi-geo-alt-fill text-success me-1"></i>
+                                                        Av. Boyacá #45-23
+                                                    </p>
+                                                    <a href="#" class="btn btn-success w-100">
+                                                        <i class="bi bi-map me-2"></i>Ver en Mapa
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comentarios Tab -->
+                <div class="tab-pane fade" id="comentarios">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0 fw-bold text-success">
+                                    <i class="bi bi-chat-left-text-fill me-2"></i>
+                                    Mis Comentarios
+                                </h5>
+                                <select class="form-select w-auto shadow-sm border-success">
+                                    <option value="todos">Todos los comentarios</option>
+                                    <option value="puntos">En puntos ECA</option>
+                                </select>
+                            </div>
+
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item border-start border-success border-4 px-4 py-4 mb-3 bg-light">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold mb-0">Excelente iniciativa en el nuevo punto ECA de Suba.</h6>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">
+                                                <i class="bi bi-clock me-1"></i>Hace 3 días
+                                            </span>
+                                    </div>
+                                    <p class="text-muted small mb-2">
+                                        <i class="bi bi-pin-angle-fill text-success me-1"></i>
+                                        En: <strong>Punto ECA Suba reabrió</strong>
+                                    </p>
+                                    <div class="d-flex gap-2">
+                                        <a href="#" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-eye me-1"></i>Ver
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash me-1"></i>Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="list-group-item border-start border-success border-4 px-4 py-4 mb-3 bg-light">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold mb-0">Muy buen servicio y atención al público.</h6>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">
+                                                <i class="bi bi-clock me-1"></i>Hace 5 días
+                                            </span>
+                                    </div>
+                                    <p class="text-muted small mb-2">
+                                        <i class="bi bi-pin-angle-fill text-success me-1"></i>
+                                        En: <strong>Recicladora y Chatarrería JJ</strong>
+                                    </p>
+                                    <div class="d-flex gap-2">
+                                        <a href="#" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-eye me-1"></i>Ver
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash me-1"></i>Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="list-group-item border-start border-success border-4 px-4 py-4 bg-light">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold mb-0">Deberían ampliar los horarios de atención.</h6>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">
+                                                <i class="bi bi-clock me-1"></i>Hace 1 semana
+                                            </span>
+                                    </div>
+                                    <p class="text-muted small mb-2">
+                                        <i class="bi bi-pin-angle-fill text-success me-1"></i>
+                                        En: <strong>Ecopunto Norte</strong>
+                                    </p>
+                                    <div class="d-flex gap-2">
+                                        <a href="#" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-eye me-1"></i>Ver
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash me-1"></i>Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ajustes Tab -->
+                <div class="tab-pane fade" id="ajustes">
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h5 class="fw-bold text-success mb-4">
+                                        <i class="bi bi-person-fill-gear me-2"></i>
+                                        Información Personal
+                                    </h5>
+                                    <form method="post">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-person-badge me-1 text-success"></i>
+                                                    Nombres
+                                                </label>
+                                                <input type="text" name="nombres" class="form-control border-success border-opacity-25" required>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-person me-1 text-success"></i>
+                                                    Apellidos
+                                                </label>
+                                                <input type="text" name="apellidos" class="form-control border-success border-opacity-25" required>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-envelope me-1 text-success"></i>
+                                                    Correo Electrónico
+                                                </label>
+                                                <input type="email" name="email" class="form-control border-success border-opacity-25" required>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-geo-alt me-1 text-success"></i>
+                                                    Ciudad
+                                                </label>
+                                                <input type="text" name="ciudad" class="form-control border-success border-opacity-25">
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-geo-alt me-1 text-success"></i>
+                                                    Localidad
+                                                </label>
+                                                <input type="text" name="localidad" class="form-control border-success border-opacity-25" readonly>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-telephone me-1 text-success"></i>
+                                                    Celular
+                                                </label>
+                                                <input type="text" name="celular" class="form-control border-success border-opacity-25">
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-card-text me-1 text-success"></i>
+                                                    Tipo de Documento
+                                                </label>
+                                                <input type="text" name="tipoDocumento" class="form-control border-success border-opacity-25" readonly>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-hash me-1 text-success"></i>
+                                                    Numero de Documento
+                                                </label>
+                                                <input type="text" name="numeroDocumento" class="form-control border-success border-opacity-25" readonly>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-calendar me-1 text-success"></i>
+                                                    Fecha de Nacimiento
+                                                </label>
+                                                <input type="text" name="fechaNacimiento" class="form-control border-success border-opacity-25">
+                                            </div>
+
+                                            <div class="col-12 mt-4">
+                                                <div class="bg-light p-3 rounded">
+                                                    <h6 class="fw-bold mb-3">
+                                                        <i class="bi bi-shield-lock me-2 text-success"></i>
+                                                        Cambiar Contraseña
+                                                    </h6>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Contraseña Actual</label>
+                                                            <input type="password" name="contrasenaActual" class="form-control" id="contrasenaActual">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Nueva Contraseña</label>
+                                                            <input type="password" name="contrasenaNueva" class="form-control" id="contrasenaNueva" minlength="8">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Confirmar Contraseña</label>
+                                                            <input type="password" name="confirmarContrasena" class="form-control" id="confirmarContrasena">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 mt-4">
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    <button class="btn btn-outline-secondary px-4" type="button">
+                                                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                                                    </button>
+                                                    <button class="btn btn-success px-4" type="submit">
+                                                        <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card border-0 shadow-sm bg-success text-white">
+                                <div class="card-body p-4 text-center">
+                                    <i class="bi bi-info-circle fs-1 mb-3"></i>
+                                    <h6 class="fw-bold mb-3">Información de Seguridad</h6>
+                                    <p class="small mb-0">
+                                        Mantén tu información actualizada para disfrutar de una mejor experiencia en InfoRecicla.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cambiar título y descripción al cambiar de pestaña
+    const tabLinks = document.querySelectorAll('[data-bs-toggle="tab"]');
+    const pageTitle = document.getElementById('pageTitle');
+
+    const titles = {
+        '#guardados': 'Mis Puntos ECA Favoritos',
+        '#comentarios': 'Mis Comentarios',
+        '#ajustes': 'Configuración de Cuenta'
+    };
+
+    tabLinks.forEach(link => {
+        link.addEventListener('shown.bs.tab', function(e) {
+            const target = e.target.getAttribute('href');
+            pageTitle.textContent = titles[target] || 'InfoRecicla';
+        });
+    });
+
+    // Validación de contraseña
+    const contrasenaNueva = document.getElementById('contrasenaNueva');
+    const confirmarContrasena = document.getElementById('confirmarContrasena');
+    const btnGuardar = document.querySelector('button[type="submit"]');
+
+    if (contrasenaNueva && confirmarContrasena) {
+        function validarContrasenas() {
+            if (contrasenaNueva.value && confirmarContrasena.value) {
+                if (contrasenaNueva.value === confirmarContrasena.value) {
+                    confirmarContrasena.classList.remove('is-invalid');
+                    confirmarContrasena.classList.add('is-valid');
+                } else {
+                    confirmarContrasena.classList.remove('is-valid');
+                    confirmarContrasena.classList.add('is-invalid');
+                }
+            } else {
+                confirmarContrasena.classList.remove('is-invalid', 'is-valid');
+            }
+        }
+
+        contrasenaNueva.addEventListener('input', validarContrasenas);
+        confirmarContrasena.addEventListener('input', validarContrasenas);
+    }
+
+    // Botón cancelar
+    const btnCancelar = document.querySelector('.btn-outline-secondary');
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', function() {
+            window.location.reload();
+        });
+    }
+
+    // Botones de eliminar comentarios
+    const botonesEliminar = document.querySelectorAll('.btn-outline-danger');
+    botonesEliminar.forEach(btn => {
+        if (btn.textContent.includes('Eliminar')) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('¿Estás seguro de que deseas eliminar este comentario?')) {
+                    // Aquí va la lógica de eliminación
+                    this.closest('.list-group-item').style.opacity = '0.5';
+                    setTimeout(() => {
+                        this.closest('.list-group-item').remove();
+                    }, 300);
+                }
+            });
+        }
+    });
+
+    // Botones de corazón/favoritos
+    const botonesCorazon = document.querySelectorAll('.btn-sm.btn-outline-danger.rounded-circle');
+    botonesCorazon.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.classList.toggle('btn-danger');
+            this.classList.toggle('btn-outline-danger');
+        });
+    });
+});
+</script>
+
+<script src="/js/ciudadano.js"></script>
+</body>
+</html>

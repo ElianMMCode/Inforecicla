@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registro Ciudadano - InfoRecicla</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="/static">InfoRecicla</a>
+    </div>
+</nav>
+
+<div class="bg-success d-flex flex-column justify-content-center flex-grow-1 py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white text-center">
+                        <h5 class="mb-0">Crear cuenta — Ciudadano</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="/registro/ciudadano" id="citizenForm" novalidate enctype="multipart/form-data" class="vstack gap-4">
+                            <input type="hidden" name="tipo" value="Ciudadano">
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="correo" class="form-label small fw-semibold">Correo electrónico</label>
+                                    <input type="email" class="form-control form-control-sm" id="correo" name="correo" autocomplete="email" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="password" class="form-label small fw-semibold">Contraseña</label>
+                                    <input type="password" class="form-control form-control-sm" id="password" name="password" minlength="8" maxlength="64" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="password_confirmation" class="form-label small fw-semibold">Confirmar</label>
+                                    <input type="password" class="form-control form-control-sm" id="password_confirmation" name="password_confirmation" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="nombre_usuario" class="form-label small fw-semibold">Nombre de usuario</label>
+                                    <input type="text" class="form-control form-control-sm" id="nombre_usuario" name="nombre_usuario" required>
+                                </div>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="nombre" class="form-label small fw-semibold">Nombre</label>
+                                    <input type="text" class="form-control form-control-sm" id="nombre" name="nombre" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="apellido" class="form-label small fw-semibold">Apellido</label>
+                                    <input type="text" class="form-control form-control-sm" id="apellido" name="apellido" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="fechaNacimiento" class="form-label small fw-semibold">Fecha de nacimiento</label>
+                                    <input type="date" class="form-control form-control-sm" id="fechaNacimiento" name="fechaNacimiento" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="avatar" class="form-label small fw-semibold">Foto de perfil (opcional)</label>
+                                    <input type="file" class="form-control form-control-sm" id="avatar" name="avatar" accept="image/*">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="localidad" class="form-label small fw-semibold">Localidad</label>
+                                    <select id="localidad" name="localidad" class="form-select form-select-sm" required>
+                                        <option value="" disabled selected>Selecciona localidad...</option>
+                                        <option value="Usaquen">Usaquén</option>
+                                        <option value="Chapinero">Chapinero</option>
+                                        <option value="Santa Fe">Santa Fe</option>
+                                        <option value="San Cristobal">San Cristóbal</option>
+                                        <option value="Usme">Usme</option>
+                                        <option value="Tunjuelito">Tunjuelito</option>
+                                        <option value="Bosa">Bosa</option>
+                                        <option value="Kennedy">Kennedy</option>
+                                        <option value="Fontibon">Fontibón</option>
+                                        <option value="Engativa">Engativá</option>
+                                        <option value="Suba">Suba</option>
+                                        <option value="Barrios Unidos">Barrios Unidos</option>
+                                        <option value="Teusaquillo">Teusaquillo</option>
+                                        <option value="Los Martires">Los Mártires</option>
+                                        <option value="Antonio Narino">Antonio Nariño</option>
+                                        <option value="Puente Aranda">Puente Aranda</option>
+                                        <option value="La Candelaria">La Candelaria</option>
+                                        <option value="Rafael Uribe">Rafael Uribe</option>
+                                        <option value="Ciudad Bolivar">Ciudad Bolívar</option>
+                                        <option value="Sumapaz">Sumapaz</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold d-block">Género (opcional)</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="genero" id="g_Masculino" value="Masculino">
+                                            <label class="form-check-label" for="g_Masculino">Masculino</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="genero" id="g_Femenino" value="Femenino">
+                                            <label class="form-check-label" for="g_Femenino">Femenino</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="genero" id="g_Otro" value="Otro">
+                                            <label class="form-check-label" for="g_Otro">Otro</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-check mt-2">
+                                        <input type="hidden" name="recibeNotificaciones" value="0">
+                                        <input class="form-check-input" type="checkbox" value="1" id="recibeNotificaciones" name="recibeNotificaciones">
+                                        <label class="form-check-label small" for="recibeNotificaciones">Deseo recibir notificaciones sobre publicaciones, comentarios y novedades.</label>
+                                    </div>
+                                    <div class="form-check mt-3">
+                                        <input class="form-check-input" type="checkbox" value="1" id="terms" required>
+                                        <label class="form-check-label small" for="terms">Acepto los términos y condiciones y el tratamiento de datos.</label>
+                                        <div class="invalid-feedback">Debes aceptar los términos para continuar.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid mt-2">
+                                <button type="submit" class="btn btn-success">Crear cuenta</button>
+                            </div>
+                            <p class="text-center mt-3 mb-0 small">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+                        </form>
+                    </div>
+                    <div class="card-footer text-center small text-muted">InfoRecicla · Registro ciudadano</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const invalid = document.querySelector('.is-invalid');
+        if (invalid) invalid.focus();
+        const form = document.getElementById('citizenForm');
+        if (!form) return;
+        const pwd = document.getElementById('password');
+        const pwd2 = document.getElementById('password_confirmation');
+        const terms = document.getElementById('terms');
+        const correo = document.getElementById('correo');
+
+        function setInvalid(field, msg) {
+            if (!field) return;
+            field.classList.add('is-invalid');
+            let fb = field.parentElement.querySelector('.invalid-feedback');
+            if (!fb) { fb = document.createElement('div'); fb.className = 'invalid-feedback'; field.parentElement.appendChild(fb); }
+            if (msg) fb.textContent = msg;
+        }
+
+        function clearInvalid(field) { if (!field) return; field.classList.remove('is-invalid'); }
+
+        function validarPasswords() { clearInvalid(pwd2); clearInvalid(pwd); if (pwd.value.length < 8) { setInvalid(pwd, 'Mínimo 8 caracteres.'); return false; } if (pwd.value !== pwd2.value) { setInvalid(pwd2, 'Las contraseñas no coinciden.'); return false; } return true; }
+
+        function validarCorreo() { clearInvalid(correo); if (!correo.value.includes('@') || !correo.value.includes('.')) { setInvalid(correo, 'Correo no válido.'); return false; } return true; }
+
+        function validarTerms() { terms.classList.remove('is-invalid'); if (!terms.checked) { terms.classList.add('is-invalid'); return false; } return true; }
+
+        pwd2.addEventListener('input', validarPasswords);
+        pwd.addEventListener('input', validarPasswords);
+        correo.addEventListener('blur', validarCorreo);
+        terms.addEventListener('change', validarTerms);
+
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+            let ok = true;
+            if (!validarCorreo()) ok = false;
+            if (!validarPasswords()) ok = false;
+            if (!validarTerms()) ok = false;
+            if (!ok) { e.preventDefault(); e.stopPropagation(); }
+            form.classList.add('was-validated');
+        });
+    })();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

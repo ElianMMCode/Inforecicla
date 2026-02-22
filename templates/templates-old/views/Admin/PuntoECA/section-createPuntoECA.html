@@ -1,0 +1,191 @@
+<!-- Fragment: Creación Punto ECA -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">Crear Nuevo Punto ECA</h2>
+        <a class="btn btn-outline-secondary">Volver al Dashboard</a>
+    </div>
+
+    <div class="card border-success">
+        <div class="card-body">
+            <form method="POST" class="vstack gap-4" enctype="multipart/form-data">
+                <input type="hidden" name="tipo" value="GestorECA">
+                <input type="hidden" name="account_type" value="eca">
+
+                <p class="small text-success fw-bold mb-1">Datos de cuenta</p>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="correo" class="form-label small fw-semibold">Correo electrónico (acceso)</label>
+                        <input type="email" class="form-control form-control-sm" id="correo" name="correo" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="password" class="form-label small fw-semibold">Contraseña</label>
+                        <input type="password" class="form-control form-control-sm" id="password" name="password" minlength="8" maxlength="64" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="password_confirmation" class="form-label small fw-semibold">Confirmar</label>
+                        <input type="password" class="form-control form-control-sm" id="password_confirmation" name="password_confirmation" required>
+                    </div>
+                </div>
+
+                <p class="small text-success fw-bold mb-1 mt-2">Datos del gestor (propietario del punto)</p>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="nombreGestor" class="form-label small fw-semibold">Nombres</label>
+                        <input type="text" class="form-control form-control-sm" id="nombreGestor" name="nombreGestor" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="apellidoGestor" class="form-label small fw-semibold">Apellidos</label>
+                        <input type="text" class="form-control form-control-sm" id="apellidoGestor" name="apellidoGestor" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tipoDocumento" class="form-label small fw-semibold">Tipo de documento</label>
+                        <select id="tipoDocumento" name="tipoDocumento" class="form-select form-select-sm" required>
+                            <option value="" disabled selected>Selecciona...</option>
+                            <option></option>
+                        </select>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="numeroDocumento" class="form-label small fw-semibold">Número de documento</label>
+                        <input type="text" class="form-control form-control-sm" id="numeroDocumento" name="numeroDocumento" minlength="5" maxlength="20" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+
+                <!-- Resto del formulario (similar al de edición pero completo) -->
+                <p class="small text-success fw-bold mb-1 mt-2">Información de la estación</p>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label small fw-semibold">Nombre del Punto ECA</label>
+                        <input type="text" class="form-control form-control-sm" id="nombre" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="nit" class="form-label small fw-semibold">NIT (opcional)</label>
+                        <input type="text" class="form-control form-control-sm" id="nit" maxlength="20" placeholder="Si aplica">
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label for="horarioAtencion" class="form-label small fw-semibold">Horario de atención (opcional)</label>
+                        <input type="text" class="form-control form-control-sm" id="horarioAtencion" placeholder="Lun-Vie 8:00–17:00, Sáb 9:00–13:00">
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label for="correoPunto" class="form-label small fw-semibold">Correo de contacto del punto</label>
+                        <input type="email" class="form-control form-control-sm" id="correoPunto" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="telefonoPunto" class="form-label small fw-semibold">Teléfono de contacto del punto</label>
+                        <input type="tel" class="form-control form-control-sm" id="telefonoPunto" pattern="^\d{10}$" maxlength="10" placeholder="Ej: 3XXXXXXXXX" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label for="direccion" class="form-label small fw-semibold">Dirección del punto</label>
+                        <input type="text" class="form-control form-control-sm" id="direccion" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="ciudad" class="form-label small fw-semibold">Ciudad</label>
+                        <select id="ciudad" class="form-select form-select-sm" required>
+                            <option value="" disabled selected>Selecciona...</option>
+                            <option value="Bogotá">Bogotá</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="localidadPunto" class="form-label small fw-semibold">Localidad</label>
+                        <select id="localidadPunto" class="form-select form-select-sm" required>
+                            <option value="" disabled selected>Selecciona localidad...</option>
+                            <option></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <label class="form-label small fw-semibold mb-1">Ubicación (opcional)</label>
+                    <div class="row g-2 align-items-start">
+                        <div class="col-12 col-md-4">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Lat</span>
+                                <input type="text" class="form-control" id="latitudVisible" placeholder="Ej: 4.609710">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Lng</span>
+                                <input type="text" class="form-control" id="longitudVisible" placeholder="Ej: -74.081749">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4 d-grid d-md-block">
+                            <button type="button" id="geoBtn" class="btn btn-outline-success btn-sm w-100">GPS</button>
+                        </div>
+                    </div>
+                    <div id="locationDisplay" class="form-text mt-1">Pulsa GPS para solicitar permiso al navegador y capturar tu ubicación precisa.</div>
+                    <input type="hidden" id="latitud">
+                    <input type="hidden" id="longitud">
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label for="logo" class="form-label small fw-semibold">Logo del punto (opcional)</label>
+                        <input type="file" class="form-control form-control-sm" id="logo" name="logo" accept="image/*">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="foto" class="form-label small fw-semibold">Foto del punto (opcional)</label>
+                        <input type="file" class="form-control form-control-sm" id="foto" name="foto" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="mostrarMapa">
+                    <label class="form-check-label small" for="mostrarMapa">Mostrar el punto en el mapa público cuando sea aprobado.</label>
+                </div>
+
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="recibeNotificaciones">
+                    <label class="form-check-label small" for="recibeNotificaciones">Deseo recibir notificaciones (aprobaciones, comentarios, etc.).</label>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a class="btn btn-outline-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-success">Registrar Punto ECA</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Mismo script de geolocalización que en edición
+        document.getElementById('geoBtn').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    document.getElementById('latitudVisible').value = lat.toFixed(6);
+                    document.getElementById('longitudVisible').value = lng.toFixed(6);
+                    document.getElementById('latitud').value = lat;
+                    document.getElementById('longitud').value = lng;
+
+                    document.getElementById('locationDisplay').textContent =
+                        `Ubicación capturada: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                }, function(error) {
+                    alert('Error al obtener la ubicación: ' + error.message);
+                });
+            } else {
+                alert('La geolocalización no es soportada por este navegador.');
+            }
+        });
+    </script>
+</section>

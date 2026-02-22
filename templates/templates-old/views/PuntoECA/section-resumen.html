@@ -1,0 +1,338 @@
+<!-- Fragment: Resumen Punto ECA - Totalmente Bootstrap -->
+<section class="container-fluid py-4 px-3 px-md-4">
+    <!-- Header con título y botón -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-graph-up-arrow text-success me-2"></i>Resumen Operativo
+            </h2>
+            <p class="text-muted small mb-0">Estado actual y métricas del punto ECA</p>
+        </div>
+        <button class="btn btn-outline-success" id="btnActualizarResumen">
+            <i class="bi bi-arrow-clockwise me-2"></i><span class="d-none d-sm-inline">Actualizar</span>
+        </button>
+    </div>
+
+    <!-- Tarjetas de Estadísticas Principales -->
+    <div class="row g-3 mb-4">
+        <!-- Card: Inventario Total -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div>
+                            <span class="badge bg-success bg-opacity-25 text-success fw-semibold mb-2">Inventario</span>
+                            <h3 class="h4 fw-bold text-dark mb-0">0</h3>
+                            <small class="text-muted">kilogramos</small>
+                        </div>
+                        <span class="badge bg-success rounded-circle p-3">
+                            <i class="bi bi-box-seam fs-5 text-white"></i>
+                        </span>
+                    </div>
+                    <div class="progress mb-2" role="progressbar" aria-label="Capacidad">
+                        <div class="progress-bar bg-success" style="width: 65%"></div>
+                    </div>
+                    <small class="text-muted">65% de capacidad</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card: Entradas del Mes -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div>
+                            <span class="badge bg-info bg-opacity-25 text-info fw-semibold mb-2">Entradas</span>
+                            <h3 class="h4 fw-bold text-dark mb-0">0</h3>
+                            <small class="text-muted">este mes</small>
+                        </div>
+                        <span class="badge bg-info rounded-circle p-3">
+                            <i class="bi bi-arrow-down-circle fs-5 text-white"></i>
+                        </span>
+                    </div>
+                    <div class="progress mb-2" role="progressbar" aria-label="Entradas">
+                        <div class="progress-bar bg-info" style="width: 45%"></div>
+                    </div>
+                    <small class="text-muted">Tasa: Normal</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card: Salidas del Mes -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div>
+                            <span class="badge bg-warning bg-opacity-25 text-warning fw-semibold mb-2">Salidas</span>
+                            <h3 class="h4 fw-bold text-dark mb-0">0</h3>
+                            <small class="text-muted">este mes</small>
+                        </div>
+                        <span class="badge bg-warning rounded-circle p-3">
+                            <i class="bi bi-arrow-up-circle fs-5 text-white"></i>
+                        </span>
+                    </div>
+                    <div class="progress mb-2" role="progressbar" aria-label="Salidas">
+                        <div class="progress-bar bg-warning" style="width: 35%"></div>
+                    </div>
+                    <small class="text-muted">Tasa: Normal</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row: Últimos Movimientos -->
+    <div class="row g-3">
+        <!-- Columna: Últimos Movimientos -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-clock-history text-success"></i>
+                            <h6 class="mb-0 fw-bold">Últimos Movimientos</h6>
+                        </div>
+                        <a href="#movimientos" class="btn btn-sm btn-outline-success" onclick="irAMovimientos(event)">
+                            <i class="bi bi-arrow-right me-1"></i>Ver todos
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="ultimosMovimientos">
+                        <div class="text-center py-5">
+                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="text-muted mt-2 small">Cargando movimientos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Resumen Bootstrap cargado');
+
+    // Función para actualizar dinámicamente las tarjetas de métricas
+    function actualizarTarjetas() {
+        console.log('🎨 Actualizando tarjetas de métricas...');
+
+        const elementoResumen = document.querySelector('[data-resumen-datos]');
+        if (!elementoResumen || !elementoResumen.getAttribute('data-resumen-datos')) {
+            console.warn('⚠️ No se encontró atributo data-resumen-datos');
+            return;
+        }
+
+        try {
+            const datosString = elementoResumen.getAttribute('data-resumen-datos');
+            const datos = JSON.parse(datosString);
+
+            console.log('📊 Datos cargados:', {
+                inventarioTotal: datos.inventarioTotal,
+                capacidadPorcentaje: datos.capacidadPorcentaje,
+                entradasMes: datos.entradasMes,
+                salidasMes: datos.salidasMes
+            });
+
+            // Actualizar tarjeta de Inventario
+            const tarjetaInventario = document.querySelector('[class*="col-12"][class*="col-lg-3"]:nth-child(1)');
+            if (tarjetaInventario) {
+                const h3 = tarjetaInventario.querySelector('h3');
+                const capacidad = tarjetaInventario.querySelector('[class*="text-muted"]');
+                const progressBar = tarjetaInventario.querySelector('.progress-bar');
+
+                if (h3) {
+                    h3.textContent = datos.inventarioTotal + ' kg';
+                    console.log('✅ Inventario actualizado:', datos.inventarioTotal);
+                }
+                if (capacidad) {
+                    capacidad.textContent = datos.capacidadPorcentaje + '% de capacidad';
+                    console.log('✅ Capacidad actualizada:', datos.capacidadPorcentaje);
+                }
+                if (progressBar) {
+                    progressBar.style.width = datos.capacidadPorcentaje + '%';
+                    console.log('✅ Barra de progreso actualizada:', datos.capacidadPorcentaje);
+                }
+            }
+
+            // Actualizar tarjeta de Entradas
+            const tarjetas = document.querySelectorAll('.card');
+            tarjetas.forEach(tarjeta => {
+                const texto = tarjeta.textContent.toLowerCase();
+
+                if (texto.includes('entradas')) {
+                    const h3 = tarjeta.querySelector('h3');
+                    if (h3) {
+                        h3.textContent = datos.entradasMes + ' kg';
+                        console.log('✅ Entradas actualizado:', datos.entradasMes);
+                    }
+                }
+
+                if (texto.includes('salidas')) {
+                    const h3 = tarjeta.querySelector('h3');
+                    if (h3) {
+                        h3.textContent = datos.salidasMes + ' kg';
+                        console.log('✅ Salidas actualizado:', datos.salidasMes);
+                    }
+                }
+            });
+
+        } catch (e) {
+            console.error('❌ Error parseando datos de resumen:', e);
+        }
+    }
+
+    // Función para redirigir a la sección de movimientos
+    window.irAMovimientos = function(e) {
+        e.preventDefault();
+        console.log('🔄 Redirigiendo a movimientos...');
+
+        const pathname = window.location.pathname;
+        console.log('📍 Pathname actual:', pathname);
+
+        // Obtener el patrón: /punto-eca/nombrePunto/gestorId/
+        const pathParts = pathname.split('/').filter(p => p.length > 0);
+        console.log('🔹 Path parts:', pathParts);
+
+        // pathParts debería ser: ['punto-eca', 'nombrePunto', 'gestorId', ...]
+        if (pathParts.length >= 3) {
+            const nombrePuntoUrl = pathParts[1];
+            const gestorId = pathParts[2];
+            const newUrl = `/punto-eca/${nombrePuntoUrl}/${gestorId}/movimientos`;
+            console.log('✅ Navegando a:', newUrl);
+            window.location.href = newUrl;
+        } else {
+            console.error('❌ No se pudo determinar la URL. Path parts:', pathParts);
+        }
+    };
+
+    // Botón actualizar
+    const btnActualizar = document.getElementById('btnActualizarResumen');
+    if (btnActualizar) {
+        btnActualizar.addEventListener('click', function() {
+            console.log('🔄 Actualizando resumen...');
+
+            // Desactivar botón temporalmente
+            this.disabled = true;
+            const iconSpan = this.querySelector('i');
+            iconSpan.classList.add('spinner-border', 'spinner-border-sm');
+            iconSpan.classList.remove('bi-arrow-clockwise');
+
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        });
+    }
+
+    // Función para formatear fechas con fecha completa
+    function formatearFecha(fecha) {
+        if (!fecha || fecha === 'N/A') return 'N/A';
+
+        try {
+            const date = new Date(fecha);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const dateOnly = new Date(date);
+            dateOnly.setHours(0, 0, 0, 0);
+
+            // Si es hoy, mostrar solo la hora
+            if (dateOnly.getTime() === today.getTime()) {
+                return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            // Si no, mostrar fecha completa
+            return date.toLocaleDateString('es-ES', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            console.warn('Error formateando fecha:', e);
+            return fecha;
+        }
+    }
+
+    // Cargar últimos movimientos desde el atributo data
+    function cargarUltimosMovimientos() {
+        const container = document.getElementById('ultimosMovimientos');
+
+        if (!container) {
+            console.warn('⚠️ Contenedor de movimientos no encontrado');
+            return;
+        }
+
+        // Obtener datos del atributo data
+        const elementoResumen = document.querySelector('[data-resumen-datos]');
+        let movimientos = [];
+
+        if (elementoResumen && elementoResumen.getAttribute('data-resumen-datos')) {
+            try {
+                const datosString = elementoResumen.getAttribute('data-resumen-datos');
+                const datos = JSON.parse(datosString);
+                movimientos = datos.movimientos || [];
+                console.log('📋 Movimientos cargados desde datos:', movimientos.length, 'items');
+            } catch (e) {
+                console.warn('⚠️ Error parsing movimientos:', e);
+                movimientos = [];
+            }
+        }
+
+        if (movimientos.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">Sin movimientos registrados</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="list-group list-group-flush">';
+
+        movimientos.forEach((mov) => {
+            const fechaFormateada = formatearFecha(mov.fecha);
+            html += `
+                <div class="list-group-item border-start border-success border-2 px-4">
+                    <div class="row align-items-center py-3">
+                        <div class="col-auto">
+                            <i class="bi bi-${mov.icono} ${mov.color}" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <strong class="text-dark">${mov.tipo}</strong>
+                                <span class="badge bg-success bg-opacity-25 text-success">${mov.cantidad} kg</span>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-box me-1"></i>${mov.descripcion}
+                                <span class="mx-2">•</span>
+                                <i class="bi bi-person me-1"></i>${mov.usuario}
+                            </small>
+                        </div>
+                        <div class="col-auto text-end">
+                            <small class="text-muted d-block">${fechaFormateada}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+        console.log('✅ Movimientos cargados en la UI');
+    }
+
+    // Cargar todo al inicializar
+    console.log('🚀 Inicializando componentes...');
+    actualizarTarjetas();
+    cargarUltimosMovimientos();
+});
+</script>
+

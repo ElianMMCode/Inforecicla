@@ -1,0 +1,149 @@
+<!-- Fragment: Configuración -->
+<section class="container py-4">
+    <h2 class="h5 mb-4">Configuración</h2>
+
+    <!-- Alerts -->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i><span></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-circle me-2"></i><span></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4">
+        <!-- Cambiar Contraseña -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lock me-2"></i>Cambiar Contraseña
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="formCambiarContrasena" class="needs-validation">
+                        <div class="mb-3">
+                            <label class="form-label" for="contrasenaActual">Contraseña Actual</label>
+                            <input class="form-control" id="contrasenaActual" name="contrasenaActual" type="password" required>
+                            <small class="text-muted">Ingresa tu contraseña actual para confirmar el cambio</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="contrasenaNueva">Contraseña Nueva</label>
+                            <input class="form-control" id="contrasenaNueva" name="contrasenaNueva" type="password" required
+                                   minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                            <small class="text-muted d-block mt-2">
+                                <div id="reqMinusculas">❌ Mínimo una letra minúscula (a-z)</div>
+                                <div id="reqMayusculas">❌ Mínimo una letra mayúscula (A-Z)</div>
+                                <div id="reqNumeros">❌ Mínimo un número (0-9)</div>
+                                <div id="reqEspeciales">❌ Mínimo un carácter especial (@$!%*?&)</div>
+                                <div id="reqLongitud">❌ Mínimo 8 caracteres</div>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="confirmarContrasena">Confirmar Contraseña</label>
+                            <input class="form-control" id="confirmarContrasena" name="confirmarContrasena" type="password" required>
+                            <small class="text-muted" id="mensajeCoincidencia"></small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" id="btnCambiarContrasena" type="button" onclick="cambiarContrasena()">
+                                <i class="bi bi-check-circle me-2"></i>Cambiar Contraseña
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferencias -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-sliders me-2"></i>Preferencias
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="formPreferencias" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Visibilidad en el mapa</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" id="cfgMapa" name="visibleEnMapa" type="checkbox">
+                                <label class="form-check-label" for="cfgMapa">
+                                    Mostrar punto ECA en el mapa público
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-2">Solo será visible cuando tu punto esté aprobado</small>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notificaciones</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" id="cfgNotiAprobacion" name="notificacionesAprobacion" type="checkbox" checked>
+                                <label class="form-check-label" for="cfgNotiAprobacion">
+                                    Aprobaciones y cambios de estado
+                                </label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" id="cfgNotiMensajes" name="notificacionesMensajes" type="checkbox" checked>
+                                <label class="form-check-label" for="cfgNotiMensajes">
+                                    Mensajes y comentarios
+                                </label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" id="cfgNotiInventario" name="notificacionesInventario" type="checkbox" checked>
+                                <label class="form-check-label" for="cfgNotiInventario">
+                                    Alertas de inventario
+                                </label>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" type="submit">
+                                <i class="bi bi-save me-2"></i>Guardar Preferencias
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Punto -->
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-info-circle me-2"></i>Información del Punto ECA
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <p class="text-muted small mb-1">Nombre del Punto</p>
+                    <p class="h6 mb-3">—</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="text-muted small mb-1">Email de Contacto</p>
+                    <p class="h6 mb-3">—</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="text-muted small mb-1">Teléfono</p>
+                    <p class="h6 mb-3">—</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="text-muted small mb-1">Ciudad</p>
+                    <p class="h6 mb-3">—</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+

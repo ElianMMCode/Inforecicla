@@ -1,0 +1,88 @@
+<!-- Fragment: Crear Categoría -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">Crear Nueva Categoría</h2>
+        <a class="btn btn-outline-secondary">Volver al Dashboard</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Información de la nueva categoría</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="row g-3">
+                        <div class="col-md-12">
+                            <label for="nombre" class="form-label text-success fw-semibold">Nombre de la categoría</label>
+                            <input type="text" class="form-control" id="nombre"
+                                   placeholder="Ej: Plásticos, Papel, Vidrio, etc." required>
+                            <div class="form-text">El nombre debe ser único y descriptivo.</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="descripcion" class="form-label text-success fw-semibold">Descripción</label>
+                            <textarea class="form-control" id="descripcion"
+                                      rows="3" placeholder="Describe las características de los materiales en esta categoría..." required></textarea>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-success fw-semibold">Tipo de material</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="esReciclable" id="reciclableSi" checked>
+                                <label class="form-check-label" for="reciclableSi">
+                                    Reciclable
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="esReciclable" id="reciclableNo">
+                                <label class="form-check-label" for="reciclableNo">
+                                    No reciclable
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="color" class="form-label text-success fw-semibold">Color identificativo (opcional)</label>
+                            <input type="color" class="form-control form-control-color" id="color">
+                            <div class="form-text">Color para identificar la categoría en gráficos y reportes.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="activo" checked>
+                                <label class="form-check-label" for="activo">
+                                    Categoría activa (puede ser usada inmediatamente)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-outline-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-success">Crear Categoría</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card border-info mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">Información sobre categorías</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li>Las categorías ayudan a organizar los materiales de manera lógica</li>
+                        <li>Cada categoría puede tener múltiples materiales asociados</li>
+                        <li>Las categorías inactivas no estarán disponibles para nuevos materiales</li>
+                        <li>Es recomendable usar nombres claros y descriptivos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

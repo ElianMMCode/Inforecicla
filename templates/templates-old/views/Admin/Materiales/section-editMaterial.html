@@ -1,0 +1,108 @@
+<!-- Fragment: Editar Material -->
+<section class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success">
+            <i class="fas fa-edit me-2"></i>Editar Material
+        </h2>
+        <a class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al Detalle
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Modificar información del material</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="row g-3">
+                        <input type="hidden"/>
+
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label text-success fw-semibold">
+                                <i class="fas fa-tag me-1"></i>Nombre del material
+                            </label>
+                            <input type="text" class="form-control" id="nombre" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="activo" class="form-label text-success fw-semibold">Estado</label>
+                            <select class="form-select" id="activo">
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="descripcion" class="form-label text-success fw-semibold">
+                                <i class="fas fa-align-left me-1"></i>Descripción
+                            </label>
+                            <textarea class="form-control" id="descripcion"
+                                      rows="3" placeholder="Describe las características del material..."></textarea>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="categoria" class="form-label text-success fw-semibold">
+                                <i class="fas fa-tags me-1"></i>Categoría
+                            </label>
+                            <select class="form-select" id="categoria" required>
+                                <option value="" disabled>Selecciona una categoría...</option>
+                                <option
+                                       
+                                       
+                                       >
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="tipo" class="form-label text-success fw-semibold">
+                                <i class="fas fa-list-alt me-1"></i>Tipo
+                            </label>
+                            <select class="form-select" id="tipo" required>
+                                <option value="" disabled>Selecciona un tipo...</option>
+                                <option
+                                       
+                                       
+                                       >
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="imagenUrl" class="form-label text-success fw-semibold">
+                                <i class="fas fa-image me-1"></i>URL de la imagen
+                            </label>
+                            <input type="url" class="form-control" id="imagenUrl"
+                                   placeholder="https://ejemplo.com/imagen.jpg">
+                            <div class="form-text">Ingresa la URL de una imagen representativa del material.</div>
+                        </div>
+
+                        <!-- Vista previa de imagen -->
+                        <div class="col-12">
+                            <label class="form-label text-success fw-semibold">Vista previa actual:</label>
+                            <div>
+                                <img alt="Imagen actual"
+                                     class="img-thumbnail" style="max-height: 150px;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Actualizar Material
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
