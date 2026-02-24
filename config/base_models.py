@@ -20,6 +20,12 @@ class CreacionModificacionModel(models.Model):
 
 
 class ContactoModel(CreacionModificacionModel):
+    email = models.EmailField(
+        max_length=255,
+        unique=True,
+        blank=False,
+    )
+
     celular = models.CharField(
         max_length=10,
         unique=True,
@@ -97,3 +103,6 @@ class LocalizacionWebHorarioModel(LocalizacionModel):
         null=True,
         help_text="Horario de atención al público, ej: L-V 8am-6pm",
     )
+
+    class Meta(LocalizacionModel.Meta):
+        abstract = True
