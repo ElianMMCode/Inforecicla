@@ -37,6 +37,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "apps.core.apps.CoreConfig",
+    "apps.ecas.apps.EcasConfig",
+    "apps.inventory.apps.InventoryConfig",
+    "apps.operations.apps.OperationsConfig",
+    "apps.users.apps.UsersConfig",
 ]
 
 MIDDLEWARE = [
@@ -115,3 +120,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+# Definición del modelo de usuario personalizado
+AUTH_USER_MODEL = "users.Usuario"
