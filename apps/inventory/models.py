@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from apps.ecas.models import CentroAcopio
 from config.base_models import CreacionModificacionModel, DescripcionModel
 from config.constants import Alerta, UnidadMedida
 
@@ -118,6 +119,16 @@ class Inventario(CreacionModificacionModel):
         help_text="Punto de Entrega de Cartón y Afines donde se encuentra el inventario",
     )
 
+    centro_acopio = models.ForeignKey(
+        "ecas.CentroAcopio",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_constraint=True,
+        verbose_name="Centro de Acopio",
+        help_text="Centro de Acopio asociado al inventario",
+    )
+
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Inventario"
         verbose_name_plural = "Inventarios"
@@ -157,6 +168,16 @@ class Material(DescripcionModel):
 class CategoriaMaterial(DescripcionModel):
     pass
 
+    class Meta(DescripcionModel.Meta):
+        verbose_name = "Categoría de material"
+        verbose_name_plural = "Categorías de material"
+        db_table = "categoria_material"
+
 
 class TipoMaterial(DescripcionModel):
     pass
+
+    class Meta(DescripcionModel.Meta):
+        verbose_name = "Tipo de material"
+        verbose_name_plural = "Tipos de material"
+        db_table = "tipo_material"
