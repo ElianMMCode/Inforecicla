@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from config.base_models import CreacionModificacionModel
+from config.base_models import CreacionModificacionModel, DescripcionModel
 from config.constants import Alerta, UnidadMedida
 
 
@@ -99,7 +99,7 @@ class Inventario(CreacionModificacionModel):
     )
 
     material = models.ForeignKey(
-        "materials.Material",
+        "inventory.Material",
         on_delete=models.CASCADE,
         null=False,
         blank=False,
@@ -109,7 +109,7 @@ class Inventario(CreacionModificacionModel):
     )
 
     punto_eca = models.ForeignKey(
-        "points.PuntoECA",
+        "ecas.PuntoECA",
         on_delete=models.CASCADE,
         null=False,
         blank=False,
@@ -123,9 +123,40 @@ class Inventario(CreacionModificacionModel):
         verbose_name_plural = "Inventarios"
         db_table = "inventario"
         # Se define combinación única para evitar que un mismo material tenga múltiples inventarios en el mismo Punto ECA
-        unique_together = [["material", "punto_eca"]]
         constraints = [
             models.UniqueConstraint(
                 fields=["material", "punto_eca"], name="unique_material_por_punto_eca"
             )
         ]
+
+
+class Material(DescripcionModel):
+    imagen_url = models.URLField("Foto material", max_length=200, blank=True)
+
+    categoria = models.ForeignKey(
+        "inventory.CategoriaMaterial",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=False,
+        db_constraint=True,
+        verbose_name="Categoría del material",
+        help_text="Categoría a la que pertenece el material",
+    )
+
+    tipo = models.ForeignKey(
+        "inventory.TipoMaterial",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=False,
+        db_constraint=True,
+        verbose_name="Tipo del material",
+        help_text="Tipo al que pertenece el material",
+    )
+
+
+class CategoriaMaterial(DescripcionModel):
+    pass
+
+
+class TipoMaterial(DescripcionModel):
+    pass

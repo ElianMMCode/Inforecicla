@@ -34,7 +34,7 @@ class PuntoECA(LocalizacionWebHorarioModel):
 
     foto_url_punto = models.URLField("Foto URL punto", max_length=200, blank=True)
 
-    # Relación OneToMany con CentroAcopio e Inventario
+    # Relación ManyToMany con CentroAcopio e Inventario
     # Requiere que estén creados los modelos CentroAcopio e Inventario en la app correspondiente
     cnt_acps = models.ManyToManyField(
         "CentroAcopio", blank=True, related_name="puntos_eca"
