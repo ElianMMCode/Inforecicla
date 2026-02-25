@@ -5,15 +5,16 @@ from config.constants import Alerta, UnidadMedida
 
 
 class Inventario(CreacionModificacionModel):
-
     capacidad_maxima = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=False,
         blank=False,
-        validators=[MinValueValidator(0.01, message="La capacidad máxima debe ser mayor a 0")],
+        validators=[
+            MinValueValidator(0.01, message="La capacidad máxima debe ser mayor a 0")
+        ],
         verbose_name="Capacidad máxima",
-        help_text="Capacidad máxima de almacenamiento del material en el inventario"
+        help_text="Capacidad máxima de almacenamiento del material en el inventario",
     )
 
     unidad_medida = models.CharField(
@@ -22,7 +23,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         verbose_name="Unidad de medida",
-        help_text="Unidad de medida utilizada para el material (KG, Unidades, Toneladas, etc.)"
+        help_text="Unidad de medida utilizada para el material (KG, Unidades, Toneladas, etc.)",
     )
 
     stock_actual = models.DecimalField(
@@ -30,31 +31,37 @@ class Inventario(CreacionModificacionModel):
         decimal_places=2,
         null=False,
         blank=False,
-        validators=[MinValueValidator(0, message="El stock actual no puede ser negativo")],
+        validators=[
+            MinValueValidator(0, message="El stock actual no puede ser negativo")
+        ],
         verbose_name="Stock actual",
-        help_text="Cantidad actual disponible del material en inventario"
+        help_text="Cantidad actual disponible del material en inventario",
     )
 
     umbral_alerta = models.SmallIntegerField(
         validators=[
             MinValueValidator(0, message="El umbral de alerta no puede ser menor a 0%"),
-            MaxValueValidator(100, message="El umbral de alerta no puede ser mayor a 100%")
+            MaxValueValidator(
+                100, message="El umbral de alerta no puede ser mayor a 100%"
+            ),
         ],
         null=False,
         blank=False,
         verbose_name="Umbral de alerta (%)",
-        help_text="Porcentaje del stock que activará una alerta (0-100%). Debe ser mayor al umbral crítico"
+        help_text="Porcentaje del stock que activará una alerta (0-100%). Debe ser mayor al umbral crítico",
     )
 
     umbral_critico = models.SmallIntegerField(
         validators=[
             MinValueValidator(0, message="El umbral crítico no puede ser menor a 0%"),
-            MaxValueValidator(100, message="El umbral crítico no puede ser mayor a 100%")
+            MaxValueValidator(
+                100, message="El umbral crítico no puede ser mayor a 100%"
+            ),
         ],
         null=False,
         blank=False,
         verbose_name="Umbral crítico (%)",
-        help_text="Porcentaje del stock que activará una alerta crítica (0-100%). Debe ser menor al umbral de alerta"
+        help_text="Porcentaje del stock que activará una alerta crítica (0-100%). Debe ser menor al umbral de alerta",
     )
 
     alerta = models.CharField(
@@ -64,7 +71,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         verbose_name="Estado de alerta",
-        help_text="Estado actual de alerta del inventario basado en los umbrales configurados"
+        help_text="Estado actual de alerta del inventario basado en los umbrales configurados",
     )
 
     precio_compra = models.DecimalField(
@@ -72,9 +79,11 @@ class Inventario(CreacionModificacionModel):
         decimal_places=2,
         null=True,
         blank=True,
-        validators=[MinValueValidator(0, message="El precio de compra no puede ser negativo")],
+        validators=[
+            MinValueValidator(0, message="El precio de compra no puede ser negativo")
+        ],
         verbose_name="Precio de compra",
-        help_text="Precio unitario de compra del material (opcional)"
+        help_text="Precio unitario de compra del material (opcional)",
     )
 
     precio_venta = models.DecimalField(
@@ -82,9 +91,11 @@ class Inventario(CreacionModificacionModel):
         decimal_places=2,
         null=True,
         blank=True,
-        validators=[MinValueValidator(0, message="El precio de venta no puede ser negativo")],
+        validators=[
+            MinValueValidator(0, message="El precio de venta no puede ser negativo")
+        ],
         verbose_name="Precio de venta",
-        help_text="Precio unitario de venta del material (opcional)"
+        help_text="Precio unitario de venta del material (opcional)",
     )
 
     material = models.ForeignKey(
@@ -94,7 +105,7 @@ class Inventario(CreacionModificacionModel):
         blank=False,
         db_constraint=True,
         verbose_name="Material",
-        help_text="Material asociado a este inventario"
+        help_text="Material asociado a este inventario",
     )
 
     punto_eca = models.ForeignKey(
@@ -104,10 +115,17 @@ class Inventario(CreacionModificacionModel):
         blank=False,
         db_constraint=True,
         verbose_name="Punto ECA",
-        help_text="Punto de Entrega de Cartón y Afines donde se encuentra el inventario"
+        help_text="Punto de Entrega de Cartón y Afines donde se encuentra el inventario",
     )
 
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Inventario"
         verbose_name_plural = "Inventarios"
         db_table = "inventario"
+        # Se define combinación única para evitar que un mismo material tenga múltiples inventarios en el mismo Punto ECA
+        unique_together = [["material", "punto_eca"]]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["material", "punto_eca"], name="unique_material_por_punto_eca"
+            )
+        ]
