@@ -1,13 +1,33 @@
+from django.core.validators import RegexValidator
 from django.db import models
+from django.conf import settings
 from config.base_models import LocalizacionWebHorarioModel
+from config.constants import TipoCentroAcopio, Visibilidad
 
 
 class PuntoECA(LocalizacionWebHorarioModel):
-    gestor_id = models.UUIDField("Gestor ID", null=True, blank=True)
+    # Relación OneToOne con Usuario.
+    gestor_eca = models.OneToOneField(
+        # Definimos la relación con el modelo de usuario personalizado usando settings.AUTH_USER_MODEL
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="punto_eca",
+        null=True,
+        blank=True,
+    )
 
     telefono_punto = models.CharField(
-        "Teléfono punto", max_length=10, unique=True, blank=True, validators=[]
-    )  # Add RegexValidator if needed
+        "Teléfono punto",
+        max_length=10,
+        unique=True,
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex="^60\\d{8}",
+                message="El teléfono fijo debe tener el formato 60 + indicativo + 7 dígitos (ej: 6012345678)",
+            ),
+        ],
+    )
 
     direccion = models.CharField("Dirección", max_length=150, blank=True)
 
@@ -15,23 +35,83 @@ class PuntoECA(LocalizacionWebHorarioModel):
 
     foto_url_punto = models.URLField("Foto URL punto", max_length=200, blank=True)
 
-    # Relación OneToOne con Usuario.
-    gestor = models.OneToOneField(
-        "Usuario",
-        on_delete=models.CASCADE,
-        related_name="punto_eca",
-        null=True,
-        blank=True,
-    )
-
-    # Relación OneToMany con CentroAcopio e Inventario
-    # Requiere que estén creados los modelos CentroAcopio e Inventario en la app correspondiente
-    cnt_acps = models.ManyToManyField(
-        "CentroAcopio", blank=True, related_name="puntos_eca"
-    )
     inventarios = models.ManyToManyField(
         "Inventario", blank=True, related_name="puntos_eca_inventario"
     )
 
     class Meta(LocalizacionWebHorarioModel.Meta):
-        abstract = True
+        verbose_name = "Punto ECA"
+        verbose_name_plural = "Puntos ECA"
+        db_table = "punto_eca"
+
+
+class CentroAcopio(LocalizacionWebHorarioModel):
+    nombre = models.CharField(
+        "Nombre del centro de acopio",
+        max_length=100,
+        unique=True,
+        help_text="Nombre único identificativo del centro de acopio",
+    )
+
+    tipo_centro = models.CharField(
+        max_length=20,
+        choices=TipoCentroAcopio,
+        default=TipoCentroAcopio.PLANTA,
+        blank=False,
+        null=False,
+        verbose_name="Tipo de centro",
+        help_text="Clasificación del centro de acopio",
+    )
+
+    visibilidad = models.CharField(
+        max_length=20,
+        choices=Visibilidad,
+        default=Visibilidad.GLOBAL,
+        blank=False,
+        null=False,
+        verbose_name="Nivel de visibilidad",
+        help_text="Define quién puede ver este centro de acopio",
+    )
+
+    # Cambio de CharField a TextField para textos largos
+    descripcion = models.TextField(
+        max_length=500,
+        blank=True,
+        verbose_name="Descripción",
+        help_text="Descripción detallada del centro de acopio",
+    )
+
+    nota = models.TextField(
+        max_length=500,
+        blank=True,
+        verbose_name="Notas adicionales",
+        help_text="Información adicional o notas internas",
+    )
+
+    # Mejora de validación para nombre de contacto
+    nombre_contacto = models.CharField(
+        "Nombre del contacto",
+        max_length=100,
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$",
+                message="El nombre solo puede contener letras y espacios",
+            )
+        ],
+        help_text="Nombre de la persona de contacto del centro",
+    )
+
+    # Relación ManyToMany con PuntoECA
+    puntos_eca = models.ManyToManyField(
+        "PuntoECA",
+        blank=True,
+        related_name="centros_acopio",
+        verbose_name="Puntos ECA",
+        help_text="Puntos ECA asociados a este centro de acopio"
+    )
+
+    class Meta(LocalizacionWebHorarioModel.Meta):
+        verbose_name = "Centro de Acopio"
+        verbose_name_plural = "Centros de Acopio"
+        db_table = "centro_acopio"

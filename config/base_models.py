@@ -10,6 +10,7 @@ class CreacionModificacionModel(models.Model):
         max_length=15,
         choices=constants.Estado,
         default=constants.Estado.ACTIVO,
+        null=False,
         blank=False,
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)

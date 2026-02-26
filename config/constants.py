@@ -100,7 +100,7 @@ class TipoUsuario(models.TextChoices):
 
 
 class UnidadMedida(models.TextChoices):
-    KG = "KL", _("Kilogramo")
+    KG = "KG", _("Kilogramo")
     UNIDAD = "UN", _("Unidad")
     TONELADA = "TON", _("Tonelada")
     METRO_CUBICO = "MC", _("Metro cúbico")
