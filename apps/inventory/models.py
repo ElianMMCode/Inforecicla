@@ -163,6 +163,11 @@ class Material(DescripcionModel):
         help_text="Tipo al que pertenece el material",
     )
 
+    class Meta(DescripcionModel.Meta):
+        verbose_name = "Material"
+        verbose_name_plural = "Materiales"
+        db_table = "material"
+
 
 class CategoriaMaterial(DescripcionModel):
     pass

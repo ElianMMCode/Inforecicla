@@ -36,7 +36,7 @@ class PuntoECA(LocalizacionWebHorarioModel):
     foto_url_punto = models.URLField("Foto URL punto", max_length=200, blank=True)
 
     inventarios = models.ManyToManyField(
-        "Inventario", blank=True, related_name="puntos_eca_inventario"
+        "inventory.Inventario", blank=True, related_name="puntos_eca_inventario"
     )
 
     class Meta(LocalizacionWebHorarioModel.Meta):
@@ -108,7 +108,7 @@ class CentroAcopio(LocalizacionWebHorarioModel):
         blank=True,
         related_name="centros_acopio",
         verbose_name="Puntos ECA",
-        help_text="Puntos ECA asociados a este centro de acopio"
+        help_text="Puntos ECA asociados a este centro de acopio",
     )
 
     class Meta(LocalizacionWebHorarioModel.Meta):
