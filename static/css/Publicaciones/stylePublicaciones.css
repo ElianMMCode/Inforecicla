@@ -1,0 +1,38 @@
+/* ====== Estilo suave para cards y truncado ====== */
+body {
+    background: #f7faf8;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .75rem 1rem rgba(0, 0, 0, .08);
+}
+
+.card {
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+/* Trunca la descripción a 3 líneas */
+.clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Hero carousel altura adaptable */
+.carousel-item img {
+    object-fit: cover;
+    height: 380px;
+}
+
+@media (min-width: 992px) {
+    .carousel-item img {
+        height: 460px;
+    }
+}
+
+.section-title {
+    font-weight: 700;
+    color: #198754;
+}

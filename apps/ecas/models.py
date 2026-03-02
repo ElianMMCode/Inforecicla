@@ -16,6 +16,15 @@ class PuntoECA(LocalizacionWebHorarioModel):
         blank=True,
     )
 
+    nombre = models.CharField(
+        "Nombre del punto ECA",
+        max_length=100,
+        blank=False,
+        null=False,
+        default="Punto ECA Sin Nombre",
+        help_text="Nombre identificativo del punto ECA"
+    )
+
     telefono_punto = models.CharField(
         "Teléfono punto",
         max_length=10,

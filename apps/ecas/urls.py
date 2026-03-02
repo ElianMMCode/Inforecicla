@@ -1,26 +1,16 @@
 from django.urls import path
-from apps.ecas.views import (
-    dashboard_punto_ECA,
-    section_calendario,
-    section_centros,
-    section_configuracion,
-    section_detalles_material,
-    section_materiales,
-    section_movimientos,
-    section_perfil,
-    section_resumen,
-)
+from apps.ecas.views import render_seccion
 
 app_name = "punto"
 
 urlpatterns = [
-    path("", dashboard_punto_ECA),
-    path("calendario/", section_calendario, name="calendario"),
-    path("centros/", section_centros, name="centros"),
-    path("configuracion/", section_configuracion, name="configuracion"),
-    path("detalles-material/", section_detalles_material, name="detalles_material"),
-    path("materiales/", section_materiales, name="materiales"),
-    path("movimientos/", section_movimientos, name="movimientos"),
-    path("perfil/", section_perfil, name="perfil"),
-    path("resumen/", section_resumen, name="resumen"),
+    path("", render_seccion, {"seccion": "resumen"}, name="resumen"),
+    path("calendario/", render_seccion, {"seccion": "calendario"}, name="calendario"),
+    path("centros/", render_seccion, {"seccion": "centros"}, name="centros"),
+    path("configuracion/", render_seccion, {"seccion": "configuracion"}, name="configuracion"),
+    path("detalles-material/", render_seccion, {"seccion": "detalles_material"}, name="detalles_material"),
+    path("materiales/", render_seccion, {"seccion": "materiales"}, name="materiales"),
+    path("movimientos/", render_seccion, {"seccion": "movimientos"}, name="movimientos"),
+    path("perfil/", render_seccion, {"seccion": "perfil"}, name="perfil"),
+    path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
 ]

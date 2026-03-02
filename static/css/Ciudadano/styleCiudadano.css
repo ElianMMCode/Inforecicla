@@ -1,0 +1,39 @@
+body {
+    background: #f6faf7;
+}
+
+.cover {
+    background: linear-gradient(135deg, #198754 0%, #23a36f 100%);
+    min-height: 160px;
+    border-radius: 0 0 1.25rem 1.25rem;
+}
+
+.profile-card {
+    margin-top: -64px;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .08);
+    padding: 1rem;
+}
+
+.avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .10);
+}
+
+.stat {
+    min-width: 100px;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .75rem 1rem rgba(0, 0, 0, .08);
+}
+
+.card-hover {
+    transition: transform .2s ease, box-shadow .2s ease;
+}

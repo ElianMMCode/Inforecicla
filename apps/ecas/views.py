@@ -1,38 +1,59 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+from apps.ecas.models import PuntoECA, Localidad
+from apps.users.models import Usuario
+from config import constants as cons
 
 
-# Create your views here.
-def dashboard_punto_ECA(request):
-    return render(request, "ecas/puntoECA-layout.html")
+SECTION_TEMPLATES = {
+    "resumen": "ecas/section-resumen.html",
+    "calendario": "ecas/section-calendario.html",
+    "centros": "ecas/section-centros.html",
+    "configuracion": "ecas/section-configuracion.html",
+    "detalles_material": "ecas/section-detalles-material.html",
+    "materiales": "ecas/section-materiales.html",
+    "movimientos": "ecas/section-movimientos.html",
+    "perfil": "ecas/section-perfil.html",
+}
 
 
-def section_calendario(request):
-    return render(request, "ecas/section-calendario.html")
+def render_seccion(request, seccion="resumen"):
+    """
+    Renderiza una sección específica del punto ECA.
+    """
+    if seccion not in SECTION_TEMPLATES:
+        seccion = "resumen"
+
+    usuario_default = Usuario.objects.get(id="33333333-3333-3333-3333-333333333333")
+    punto = get_object_or_404(PuntoECA, gestor_eca=usuario_default)
+
+    if seccion == "perfil":
+        context = _build_perfil_context(punto)
+    else:
+        context = _build_default_context(punto, seccion)
+
+    return render(request, "ecas/puntoECA-layout.html", context)
 
 
-def section_centros(request):
-    return render(request, "ecas/section-centros.html")
+def _build_perfil_context(punto):
+    """
+    Construye el contexto específico para la sección perfil.
+    """
+    return {
+        "seccion": "perfil",
+        "section_template": SECTION_TEMPLATES["perfil"],
+        "usuario": punto.gestor_eca,
+        "punto": punto,
+        "localidades": Localidad.objects.all(),
+        "tipos_documento": cons.TipoDocumento.choices,
+    }
 
 
-def section_configuracion(request):
-    return render(request, "ecas/section-configuracion.html")
-
-
-def section_detalles_material(request):
-    return render(request, "ecas/section-detalles-material.html")
-
-
-def section_materiales(request):
-    return render(request, "ecas/section-materiales.html")
-
-
-def section_movimientos(request):
-    return render(request, "ecas/section-movimientos.html")
-
-
-def section_perfil(request):
-    return render(request, "ecas/section-perfil.html")
-
-
-def section_resumen(request):
-    return render(request, "ecas/section-resumen.html")
+def _build_default_context(punto, seccion):
+    """
+    Construye el contexto por defecto para las demás secciones.
+    """
+    return {
+        "punto": punto,
+        "seccion": seccion,
+        "section_template": SECTION_TEMPLATES[seccion],
+    }

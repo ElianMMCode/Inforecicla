@@ -1,0 +1,105 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  background-color: white;
+}
+
+.header{
+    background-color: green;
+    margin-top: 0px;
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.header>img{
+    width: 70px;
+}
+
+.header_title a{
+    color: white;
+    text-decoration: none;
+    font-size: 1.8em;
+    margin-left: 20px;
+}
+
+.header_title a:hover{
+    color: grey;
+}
+
+.head-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+
+.head-nav > li {
+    display: inline-block;
+    margin-left: 20px;
+}
+
+.head-nav__item button {
+    background-color: white;
+    color: green;
+    border: 1px solid white;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.head-nav__item a {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+            padding: 5px;
+}
+
+.head-nav__item a:hover {
+    color: black;
+}
+
+.head-nav__item a:active{
+    color: grey;
+}
+
+    .card-stats {
+      cursor: pointer;
+      transition: transform .2s;
+      background-color: green;
+      color: #fff;
+    }
+    .card-stats:hover {
+      transform: translateY(-5px);
+      background-color: green;
+    }
+    .card-stats .icon {
+      font-size: 2rem;
+      margin-right: .5rem;
+      color: #fff;
+    }
+    .card-stats .card-text,
+    .card-stats .card-title {
+      color: #fff;
+    }
+
+    .nav-pills .nav-link{
+      color: green;
+      border-radius: 0%;
+      background-color: #c6eac6;
+      margin-right: 0.25rem;
+    }
+
+.nav.nav-pills .nav-link.active,
+.nav.nav-pills .nav-item.show .nav-link {
+  background-color: green;
+  color: white;
+  border-color: green green transparent;
+  border-bottom-color: transparent;
+}
+
+.nav.nav-pills .nav-link:hover {
+  background-color: green;
+  color: #ffffff;
+}

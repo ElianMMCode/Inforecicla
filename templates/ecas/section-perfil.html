@@ -7,258 +7,355 @@
         </h2>
         <p class="text-muted small mb-0">Administra la información del gestor y del centro de acopio</p>
     </div>
-
     <!-- Acordeones -->
     <div class="accordion accordion-flush shadow-sm" id="perfilAccordion">
-                <!-- ACORDEÓN 1: INFORMACIÓN DEL ENCARGADO -->
-                <div class="accordion-item border-start border-5 border-primary">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#encargadoPanel">
-                            <span class="bg-primary p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person-circle text-white"></i>
-                            </span>
-                            <span>
-                                <span class="fw-bold text-dark d-block">Información del Encargado</span>
-                                <small class="text-muted fw-normal">Datos personales y de contacto</small>
-                            </span>
-                        </button>
-                    </h2>
-                    <div id="encargadoPanel" class="accordion-collapse collapse show" data-bs-parent="#perfilAccordion">
-                        <div class="accordion-body p-4 bg-light">
-                            <!-- Foto de Perfil - Al Inicio -->
-                            <div class="text-center mb-4 pb-3 border-bottom">
-                                <div class="position-relative d-inline-block">
-                                    <img id="previewFotoPerfil"
-                                        
-                                         alt="Foto de perfil"
-                                         class="rounded-circle img-thumbnail border-3 border-success shadow"
-                                         style="width:120px;height:120px;object-fit:cover;">
-                                    <div class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2" style="cursor: pointer;" onclick="document.getElementById('inputFotoPerfil').click()">
-                                        <i class="bi bi-camera text-white" style="font-size: 1rem;"></i>
-                                    </div>
-                                </div>
-                                <div class="mt-3">
-                                    <p class="text-muted small mb-2">Haz clic en la cámara para cambiar la foto</p>
-                                    <input type="file" id="inputFotoPerfil" accept="image/*" style="display:none;">
-                                </div>
+        <!-- ACORDEÓN 1: INFORMACIÓN DEL ENCARGADO -->
+        <div class="accordion-item border-start border-5 border-primary">
+            <h2 class="accordion-header">
+                <button class="accordion-button fw-bold"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#encargadoPanel">
+                    <span class="bg-primary p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
+                        <i class="bi bi-person-circle text-white"></i>
+                    </span>
+                    <span>
+                        <span class="fw-bold text-dark d-block">Información del Encargado</span>
+                        <small class="text-muted fw-normal">Datos personales y de contacto</small>
+                    </span>
+                </button>
+            </h2>
+            <div id="encargadoPanel"
+                 class="accordion-collapse collapse show"
+                 data-bs-parent="#perfilAccordion">
+                <div class="accordion-body p-4 bg-light">
+                    <!-- Foto de Perfil - Al Inicio -->
+                    <div class="text-center mb-4 pb-3 border-bottom">
+                        <div class="position-relative d-inline-block">
+                            <img id="previewFotoPerfil"
+                                 alt="Foto de perfil"
+                                 class="rounded-circle img-thumbnail border-3 border-success shadow"
+                                 style="width: 120px;
+                                        height: 120px;
+                                        object-fit: cover" />
+                            <div class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2"
+                                 style="cursor: pointer"
+                                 onclick="document.getElementById('inputFotoPerfil').click()">
+                                <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
                             </div>
-
-                            <!-- Formulario del Encargado -->
-                            <form id="formEncargado" method="POST">
-                                <input type="hidden" name="usuarioId">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Nombres *</label>
-                                        <input type="text" class="form-control" id="nombres" required>
-                                        <small class="text-muted">3-30 caracteres</small>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Apellidos *</label>
-                                        <input type="text" class="form-control" id="apellidos" required>
-                                        <small class="text-muted">2-40 caracteres</small>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Email *</label>
-                                        <input type="email" class="form-control" id="email" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Celular *</label>
-                                        <input type="text" class="form-control" id="celular" maxlength="10" placeholder="10 dígitos" required>
-                                        <small class="text-muted">Exactamente 10 dígitos</small>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label fw-bold">Tipo Documento *</label>
-                                        <select class="form-select" id="tipoDocumento" required>
-                                            <option value="">Selecciona un tipo...</option>
-                                            <option
-                                                   
-                                                   
-                                                   >
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label fw-bold">Número Documento</label>
-                                        <input type="text" class="form-control" id="numeroDocumento" placeholder="6-20 caracteres">
-                                        <small class="text-muted">6-20 caracteres (opcional)</small>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label fw-bold">Fecha Nacimiento</label>
-                                        <input type="date" class="form-control" id="fechaNacimiento">
-                                        <small class="text-muted">Formato YYYY-MM-DD (opcional)</small>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Biografía</label>
-                                    <textarea class="form-control" id="biografia" rows="3" placeholder="Máximo 500 caracteres"></textarea>
-                                    <small class="text-muted">Máximo 500 caracteres (opcional)</small>
-                                </div>
-
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success" id="btnGuardarEncargado">
-                                        <i class="bi bi-check-circle me-1"></i>Guardar Encargado
-                                    </button>
-                                    <button type="reset" class="btn btn-outline-secondary">
-                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
-                                    </button>
-                                </div>
-                            </form>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-muted small mb-2">Haz clic en la cámara para cambiar la foto</p>
+                            <input type="file"
+                                   id="inputFotoPerfil"
+                                   accept="image/*"
+                                   style="display: none" />
                         </div>
                     </div>
-                </div>
-
-                <!-- ACORDEÓN 2: INFORMACIÓN DEL PUNTO ECA -->
-                <div class="accordion-item border-start border-5 border-info">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#puntoPanel">
-                            <span class="bg-info p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-building text-white"></i>
-                            </span>
-                            <span>
-                                <span class="fw-bold text-dark d-block">Información del Punto ECA</span>
-                                <small class="text-muted fw-normal">Datos del centro de acopio</small>
-                            </span>
-                        </button>
-                    </h2>
-                    <div id="puntoPanel" class="accordion-collapse collapse" data-bs-parent="#perfilAccordion">
-                        <div class="accordion-body p-4 bg-light">
-                            <!-- Foto del Punto ECA - Al Inicio -->
-                            <div class="text-center mb-4 pb-3 border-bottom">
-                                <div class="position-relative d-inline-block">
-                                    <img id="previewFotoPunto"
-                                        
-                                         alt="Foto del punto"
-                                         class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow"
-                                         style="max-height:150px;object-fit:cover;">
-                                    <div class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2" style="cursor: pointer;" onclick="document.getElementById('inputFotoPunto').click()">
-                                        <i class="bi bi-camera text-white" style="font-size: 1rem;"></i>
-                                    </div>
-                                </div>
-                                <div class="mt-3">
-                                    <p class="text-muted small mb-2">Haz clic en la cámara para cambiar la foto</p>
-                                    <input type="file" id="inputFotoPunto" accept="image/*" style="display:none;">
-                                </div>
+                    <!-- Formulario del Encargado -->
+                    <form id="formEncargado" method="POST">
+                        <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nombres *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="nombres"
+                                       value="{{ usuario.nombres }}"
+                                       required />
+                                <small class="text-muted">3-30 caracteres</small>
                             </div>
-
-                            <!-- Formulario del Punto ECA -->
-                            <form id="formPunto" method="POST">
-                                <input type="hidden" name="usuarioId">
-                                <input type="hidden" name="puntoEcaId">
-                                <div class="row">
-                                    <div class="col-12 mb-3">
-                                        <label class="form-label fw-bold">Nombre Punto *</label>
-                                        <input type="text" class="form-control" id="nombrePunto" required>
-                                        <small class="text-muted">3-30 caracteres</small>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-12 mb-3">
-                                        <label class="form-label fw-bold">Dirección *</label>
-                                        <input type="text" class="form-control" id="direccionPunto" maxlength="150" required>
-                                        <small class="text-muted">Máximo 150 caracteres</small>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Localidad *</label>
-                                        <select class="form-select" id="localidadPuntoId" required>
-                                            <option value="">-- Seleccionar --</option>
-                                            <option
-                                                   
-                                                   
-                                                   >
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Ciudad</label>
-                                        <input type="text" class="form-control" disabled>
-                                        <small class="text-muted">No editable</small>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Celular *</label>
-                                        <input type="text" class="form-control" id="celularPunto" maxlength="10" placeholder="10 dígitos" required>
-                                        <small class="text-muted">Exactamente 10 dígitos</small>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Email *</label>
-                                        <input type="email" class="form-control" id="emailPunto" required>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Teléfono Fijo</label>
-                                        <input type="text" class="form-control" id="telefonoPunto" maxlength="10" placeholder="60XXXXXXXX">
-                                        <small class="text-muted">Formato: 60 + 8 dígitos (opcional)</small>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Sitio Web</label>
-                                        <input type="url" class="form-control" id="sitioWebPunto" placeholder="https://ejemplo.com">
-                                        <small class="text-muted">URL del sitio web (opcional)</small>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Latitud</label>
-                                        <input type="number" step="0.000001" class="form-control" id="latitud" placeholder="-90 a 90">
-                                        <small class="text-muted">-90 a 90 (opcional)</small>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Longitud</label>
-                                        <input type="number" step="0.000001" class="form-control" id="longitud" placeholder="-180 a 180">
-                                        <small class="text-muted">-180 a 180 (opcional)</small>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Descripción</label>
-                                    <textarea class="form-control" id="descripcionPunto" rows="3" maxlength="500" placeholder="Máximo 500 caracteres"></textarea>
-                                    <small class="text-muted">Máximo 500 caracteres (opcional)</small>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">URL Logo</label>
-                                        <input type="url" class="form-control" id="logoUrlPunto" placeholder="https://ejemplo.com/logo.png">
-                                        <small class="text-muted">URL del logo (opcional)</small>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Horario Atención</label>
-                                        <input type="text" class="form-control" id="horarioAtencionPunto" maxlength="150" placeholder="Ej: Lunes-Viernes 8am-5pm">
-                                        <small class="text-muted">Máximo 150 caracteres (opcional)</small>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-info" id="btnGuardarPunto">
-                                        <i class="bi bi-check-circle me-1"></i>Guardar Punto
-                                    </button>
-                                    <button type="reset" class="btn btn-outline-secondary">
-                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
-                                    </button>
-                                    <button type="button" class="btn btn-outline-info" id="btnGPS">
-                                        <i class="bi bi-crosshair2 me-1"></i>Obtener GPS
-                                    </button>
-                                </div>
-                            </form>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Apellidos *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="apellidos"
+                                       value="{{ usuario.apellidos }}"
+                                       required />
+                                <small class="text-muted">2-40 caracteres</small>
+                            </div>
                         </div>
-                    </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Email *</label>
+                                <input type="email"
+                                       class="form-control"
+                                       id="email"
+                                       name="email"
+                                       value="{{ usuario.email }}"
+                                       required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Celular *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="celular"
+                                       maxlength="10"
+                                       placeholder="10 dígitos"
+                                       value="{{ usuario.celular }}"
+                                       required />
+                                <small class="text-muted">Exactamente 10 dígitos</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Tipo Documento *</label>
+                                <select class="form-select" id="tipoDocumento" required>
+                                    <option value="">Selecciona un tipo...</option>
+                                    {% for tipo, nombre in tipos_documento %}
+                                        <option value="{{ tipo }}"
+                                                {% if usuario.tipo_documento == tipo %}selected{% endif %}>
+                                            {{ nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Número Documento</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="numeroDocumento"
+                                       placeholder="6-20 caracteres"
+                                       value="{{ usuario.numero_documento }}" />
+                                <small class="text-muted">6-20 caracteres (opcional)</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Fecha Nacimiento</label>
+                                <input type="date"
+                                       class="form-control"
+                                       id="fechaNacimiento"
+                                       name="fechaNacimiento"
+                                       value="{{ usuario.fecha_nacimiento }}" />
+                                <small class="text-muted">Formato YYYY-MM-DD (opcional)</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Biografía</label>
+                            <textarea class="form-control"
+                                      id="biografia"
+                                      rows="3"
+                                      placeholder="Máximo 500 caracteres">{{ usuario.biografia }}</textarea>
+                            <small class="text-muted">Máximo 500 caracteres (opcional)</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success" id="btnGuardarEncargado">
+                                <i class="bi bi-check-circle me-1"></i>Guardar Encargado
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
+        </div>
+        <!-- ACORDEÓN 2: INFORMACIÓN DEL PUNTO ECA -->
+        <div class="accordion-item border-start border-5 border-info">
+            <h2 class="accordion-header">
+                <button class="accordion-button fw-bold collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#puntoPanel">
+                    <span class="bg-info p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
+                        <i class="bi bi-building text-white"></i>
+                    </span>
+                    <span>
+                        <span class="fw-bold text-dark d-block">Información del Punto ECA</span>
+                        <small class="text-muted fw-normal">Datos del centro de acopio</small>
+                    </span>
+                </button>
+            </h2>
+            <div id="puntoPanel"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#perfilAccordion">
+                <div class="accordion-body p-4 bg-light">
+                    <!-- Foto del Punto ECA - Al Inicio -->
+                    <div class="text-center mb-4 pb-3 border-bottom">
+                        <div class="position-relative d-inline-block">
+                            <img id="previewFotoPunto"
+                                 alt="Foto del punto"
+                                 class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow"
+                                 style="max-height: 150px;
+                                        object-fit: cover" />
+                            <div class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2"
+                                 style="cursor: pointer"
+                                 onclick="document.getElementById('inputFotoPunto').click()">
+                                <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-muted small mb-2">Haz clic en la cámara para cambiar la foto</p>
+                            <input type="file"
+                                   id="inputFotoPunto"
+                                   accept="image/*"
+                                   style="display: none" />
+                        </div>
+                    </div>
+                    <!-- Formulario del Punto ECA -->
+                    <form id="formPunto" method="POST">
+                        <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
+                        <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Nombre Punto *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="nombrePunto"
+                                       name="nombrePunto"
+                                       value="{{ punto.nombre }}"
+                                       required />
+                                <small class="text-muted">3-30 caracteres</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Dirección *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="direccionPunto"
+                                       maxlength="150"
+                                       value="{{ punto.direccion }}"
+                                       required />
+                                <small class="text-muted">Máximo 150 caracteres</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Localidad *</label>
+                                <select class="form-select" id="localidadPuntoId" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    {% for localidad in localidades %}
+                                        <option value="{{ localidad.localidad_id }}"
+                                                {% if punto.localidad_id == localidad.localidad_id %}selected{% endif %}>
+                                            {{ localidad.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ciudad</label>
+                                <input type="text" class="form-control" value="{{ punto.ciudad }}" disabled />
+                                <small class="text-muted">No editable</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Celular *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="celularPunto"
+                                       maxlength="10"
+                                       placeholder="10 dígitos"
+                                       value="{{ punto.celular }}"
+                                       required />
+                                <small class="text-muted">Exactamente 10 dígitos</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Email *</label>
+                                <input type="email"
+                                       class="form-control"
+                                       id="emailPunto"
+                                       value="{{ punto.email }}"
+                                       required />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Teléfono Fijo</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="telefonoPunto"
+                                       maxlength="10"
+                                       placeholder="60XXXXXXXX"
+                                       value="{{ punto.telefono_punto }}" />
+                                <small class="text-muted">Formato: 60 + 8 dígitos (opcional)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Sitio Web</label>
+                                <input type="url"
+                                       class="form-control"
+                                       id="sitioWebPunto"
+                                       placeholder="https://ejemplo.com"
+                                       value="{{ punto.sitio_web }}" />
+                                <small class="text-muted">URL del sitio web (opcional)</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Latitud</label>
+                                <input type="number"
+                                       step="0.000001"
+                                       class="form-control"
+                                       id="latitud"
+                                       placeholder="-90 a 90"
+                                       value="{{ punto.latitud }}" />
+                                <small class="text-muted">-90 a 90 (opcional)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Longitud</label>
+                                <input type="number"
+                                       step="0.000001"
+                                       class="form-control"
+                                       id="longitud"
+                                       placeholder="-180 a 180"
+                                       value="{{ punto.longitud }}" />
+                                <small class="text-muted">-180 a 180 (opcional)</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción</label>
+                            <textarea class="form-control"
+                                      id="descripcionPunto"
+                                      rows="3"
+                                      maxlength="500"
+                                      placeholder="Máximo 500 caracteres">{{ punto.descripcion }}</textarea>
+                            <small class="text-muted">Máximo 500 caracteres (opcional)</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">URL Logo</label>
+                                <input type="url"
+                                       class="form-control"
+                                       id="logoUrlPunto"
+                                       placeholder="https://ejemplo.com/logo.png"
+                                       value="{{ punto.logo_url_punto }}" />
+                                <small class="text-muted">URL del logo (opcional)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Horario Atención</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="horarioAtencionPunto"
+                                       maxlength="150"
+                                       placeholder="Ej: Lunes-Viernes 8am-5pm"
+                                       value="{{ punto.horario_atencion }}" />
+                                <small class="text-muted">Máximo 150 caracteres (opcional)</small>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-info" id="btnGuardarPunto">
+                                <i class="bi bi-check-circle me-1"></i>Guardar Punto
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="btnGPS">
+                                <i class="bi bi-crosshair2 me-1"></i>Obtener GPS
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
-
-

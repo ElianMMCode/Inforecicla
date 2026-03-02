@@ -1,0 +1,219 @@
+body {
+    font-family: sans-serif;
+    background-color: white;
+    margin: 0px;
+}
+
+main {
+  margin: 0;
+  padding: 0;
+}
+
+.header{
+    background-color: green;
+    margin-top: 0px;
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.header>img{
+    width: 70px;
+}
+
+.header_title a{
+    color: white;
+    text-decoration: none;
+    font-size: 1.8em;
+    margin-left: 20px;
+}
+
+.header_title a:hover{
+    color: grey;
+}
+
+
+.head-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+
+.head-nav > li {
+    display: inline-block;
+    margin-left: 20px;
+}
+
+.head-nav__item button {
+    background-color: white;
+    color: green;
+    border: 1px solid white;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.head-nav__item a {
+    color: white;
+    text-decoration: none;
+    font-size: 1em;
+    padding: 5px;
+}
+
+.head-nav__item a:hover {
+    color: black;
+}
+
+.head-nav__item button:hover {
+    background-color: #e0ffe0;
+    color: black;
+}
+
+.head-nav__item a:active{
+    color: grey;
+}
+
+.container,
+.container-fluid {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.bienvenida{
+    padding: 5%;
+    padding-bottom: 0%;
+}
+
+.bienvenida div article{
+}
+
+.bienvenida>article>h1{
+    font-size: 70px;
+    color: black;
+    margin: 40px;
+    text-align: left;
+}
+
+.bienvenida>article>p{
+    font-size: 40px;
+    color: black;
+}
+
+.bienvenida div figure img{
+    width: 690px;
+}
+
+.modulos{
+    background-color: green;
+}
+
+
+
+
+.Publicaciones{
+    text-align: center;
+}
+
+.Publicaciones.col-6{
+    width: 50%;
+}
+
+.Publicaciones h2 {
+    margin: 20px;
+}
+
+.Publicaciones div h2 {
+    color: white;
+}
+
+.Publicaciones > h2 {
+    align-items: center;
+    color: white;
+}
+
+.Publicaciones  div div p {
+    color: white;
+    margin: 5px;
+    margin: 20px;
+}
+
+.Publicaciones  div div img{
+    width: 40%;
+    object-fit: contain;
+}
+
+.Publicaciones > div > h2{
+    padding: 2px;
+}
+
+.publicacion.col-md-6 {
+    border-radius: 4%;
+    box-shadow: 0 0 10px rgba(238, 234, 234, 0.248);
+    transition: transform 0.2s ease;
+}
+
+.publicacion.col-md-6:hover{
+      transform: scale(1.05);
+}
+
+.mapa div.col-6{
+    border-radius: 4%;
+    box-shadow: 0 0 10px rgba(238, 234, 234, 0.248);
+    transition: transform 0.2s ease;            
+}
+
+.mapa div.col-6:hover{
+    transform: scale(1.05);
+}
+
+
+.mapa h2 {
+    color: white;
+    align-items: center;
+    margin: 20px;
+}
+
+.mapa div div p{
+    color: white;
+    margin: 5px;
+    margin: 20px;
+}
+
+.mapa div div img {
+    width: 40%;
+    object-fit: contain;
+}
+
+footer {
+background-color: #f1f1f1;
+text-align: center;
+padding: 20px;
+}
+
+.footer-nav {
+list-style: none;
+padding: 0;
+justify-content: center;           
+}
+
+.footer-nav > li{
+font-size: 20px;
+display: inline-block;
+margin-left: 20 px;
+padding: 5px;}
+
+.gestionECA{
+    text-align: center;
+    padding: 20px 40px;
+    align-items: center;
+}
+
+.gestionECA img {
+    display: block;
+    width: 30%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
