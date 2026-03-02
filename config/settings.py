@@ -81,8 +81,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "inforecicla",
-        "USER": "admin1",
-        "PASSWORD": "admin123",
+        "USER": "postgres",
+        "PASSWORD": "admin123*",
         "HOST": "127.0.0.1",
         "PORT": "5432",
     }
