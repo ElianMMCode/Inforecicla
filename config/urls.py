@@ -16,11 +16,13 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from apps.core.views import inicio
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("inicio/", inicio),  # Ruta landing page
     path("", inicio),  # Ruta raiz
+    # Urls puntos ECA
+    path("punto/", include("apps.ecas.urls", namespace="punto")),
 ]

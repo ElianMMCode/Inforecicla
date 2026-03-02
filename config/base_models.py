@@ -62,9 +62,14 @@ class DescripcionModel(CreacionModificacionModel):
 class LocalizacionModel(ContactoModel):
     ciudad = models.CharField(max_length=15, null=False, default="Bogotá")
 
-    """
-    Pendiente integrar tabla de localidades
-    """
+    localidad = models.ForeignKey(
+        "ecas.Localidad",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="%(app_label)s_%(class)s_rel",
+        help_text="Referencia a la localidad, si aplica.",
+    )
 
     latitud = models.FloatField(
         null=True,

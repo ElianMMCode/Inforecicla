@@ -115,3 +115,45 @@ class CentroAcopio(LocalizacionWebHorarioModel):
         verbose_name = "Centro de Acopio"
         verbose_name_plural = "Centros de Acopio"
         db_table = "centro_acopio"
+
+
+class Localidad(models.Model):
+    localidad_id = models.UUIDField(
+        primary_key=True,
+        editable=False,
+        unique=True,
+        default=None,
+        null=False,
+    )
+    nombre = models.CharField(
+        max_length=30,
+        unique=True,
+        blank=False,
+        null=False,
+        help_text="El nombre de la localidad es obligatorio, entre 3 y 30 caracteres.",
+        validators=[
+            RegexValidator(
+                regex=r"^.{3,30}$",
+                message="El nombre de la localidad debe tener entre 3 y 30 caracteres.",
+            )
+        ],
+    )
+    descripcion = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+    )
+
+    # Relaciones
+    # Por convención Django, no se declara el reverse relation aquí.
+
+    class Meta:
+        db_table = "localidad"
+        verbose_name = "Localidad"
+        verbose_name_plural = "Localidades"
+        indexes = [
+            models.Index(fields=["nombre"], name="idx_localidad_nombre"),
+        ]
+
+    def __str__(self):
+        return self.nombre
