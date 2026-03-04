@@ -1552,6 +1552,7 @@
     "model": "ecas.puntoeca",
     "pk": "738aa6ff-a192-4268-a60f-67697d161818",
     "fields": {
+      "nombre":"PuntoECA Alqueria",
       "email": "eca.alqueria@inforecicla.org",
       "celular": "3101111111",
       "ciudad": "Bogotá",
@@ -1575,6 +1576,7 @@
     "model": "ecas.puntoeca",
     "pk": "9e6b1215-7f8c-4220-b7b3-06a1ff81841c",
     "fields": {
+      "nombre":"PuntoECA Usaquen",
       "email": "eca.usaquen@inforecicla.org",
       "celular": "3102222222",
       "ciudad": "Bogotá",
