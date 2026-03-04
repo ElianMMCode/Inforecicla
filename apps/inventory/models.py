@@ -139,6 +139,8 @@ class Inventario(CreacionModificacionModel):
             )
         ]
 
+    def __str__(self):
+        return f"{self.punto_eca.nombre} + {self.material.nombre}"
 
 class Material(DescripcionModel):
     imagen_url = models.URLField("Foto material", max_length=200, blank=True)
@@ -168,6 +170,8 @@ class Material(DescripcionModel):
         verbose_name_plural = "Materiales"
         db_table = "material"
 
+    def __str__(self):
+        return self.nombre
 
 class CategoriaMaterial(DescripcionModel):
     pass
@@ -177,6 +181,8 @@ class CategoriaMaterial(DescripcionModel):
         verbose_name_plural = "Categorías de material"
         db_table = "categoria_material"
 
+    def __str__(self):
+        return self.nombre
 
 class TipoMaterial(DescripcionModel):
     pass
@@ -185,3 +191,6 @@ class TipoMaterial(DescripcionModel):
         verbose_name = "Tipo de material"
         verbose_name_plural = "Tipos de material"
         db_table = "tipo_material"
+
+    def __str__(self):
+        return self.nombre
