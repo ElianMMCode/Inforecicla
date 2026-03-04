@@ -140,7 +140,7 @@ class Inventario(CreacionModificacionModel):
         ]
 
     def __str__(self):
-        return self.nombre
+        return f"{self.punto_eca.nombre} + {self.material.nombre}"
 
 class Material(DescripcionModel):
     imagen_url = models.URLField("Foto material", max_length=200, blank=True)
