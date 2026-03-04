@@ -1,0 +1,46 @@
+body {
+    background: #f7faf8;
+}
+
+.post-cover {
+    border-radius: .75rem;
+    overflow: hidden;
+}
+
+.post-meta small {
+    color: #6c757d;
+}
+
+.badge-cat {
+    background: #19875414;
+    color: #198754;
+    border: 1px solid #19875433;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .75rem 1rem rgba(0, 0, 0, .08);
+}
+
+.card-hover {
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.media-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+}
+
+.sidebar-sticky {
+    position: sticky;
+    top: 80px;
+}
+
+.clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

@@ -1,148 +1,218 @@
+{% load static%}
 <!doctype html>
 <html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Inicio - InfoRecicla</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>.hero-img { max-width: 420px }</style>
-</head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-success">
-    <div class="container">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .hero-img {
+        max-width: 420px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+      <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <img src="/imagenes/logo.png" alt="Logo InfoRecicla" width="90" height="90" class="rounded">
-            <span class="fs-1 fw-semibold">InfoRecicla</span>
+          <img
+            src="{% static 'img/logo.png'%}"
+            alt="Logo InfoRecicla"
+            width="90"
+            height="90"
+            class="rounded"
+          />
+          <span class="fs-1 fw-semibold">InfoRecicla</span>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                aria-controls="mainNav" aria-expanded="false" aria-label="Alternar navegación">
-            <span class="navbar-toggler-icon"></span>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNav"
+          aria-controls="mainNav"
+          aria-expanded="false"
+          aria-label="Alternar navegación"
+        >
+          <span class="navbar-toggler-icon"></span>
         </button>
 
         <div id="mainNav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                <li class="nav-item"><a class="nav-link" href="/publicaciones">Publicaciones</a></li>
-                <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+            <li class="nav-item">
+              <a class="nav-link" href="/publicaciones">Publicaciones</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/mapa">Mapa ECA</a>
+            </li>
 
-                <!-- Menú para usuario autenticado -->
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        <span>Usuario</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-                        <li>
-                            <a class="dropdown-item" href="/dashboard/gestor">
-                                <i class="fas fa-store me-2"></i>Modo Gestor ECA
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" style="display: inline;">
-                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                            </form>
-                        </li>
-                    </ul>
+            <!-- Menú para usuario autenticado -->
+            <li class="nav-item dropdown">
+              <a
+                class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
+                href="#"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <span>Usuario</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
+                <li>
+                  <a class="dropdown-item" href="/dashboard">Dashboard</a>
                 </li>
-
-                <!-- Menú para usuario no autenticado -->
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login"
-                       data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/login">Iniciar sesión</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a></li>
-                        <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
-                    </ul>
+                <li>
+                  <a class="dropdown-item" href="/dashboard/gestor">
+                    <i class="fas fa-store me-2"></i>Modo Gestor ECA
+                  </a>
                 </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <form method="POST" style="display: inline">
+                    <button type="submit" class="dropdown-item">
+                      Cerrar sesión
+                    </button>
+                  </form>
+                </li>
+              </ul>
+            </li>
 
-            </ul>
+            <!-- Menú para usuario no autenticado -->
+            <li class="nav-item dropdown">
+              <a
+                class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
+                href="/login"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                >Acceder</a
+              >
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item" href="/login">Iniciar sesión</a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="/registro/ciudadano"
+                    >Registrarse (Ciudadano)</a
+                  >
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/registro/eca"
+                    >Registrar Punto ECA</a
+                  >
+                </li>
+              </ul>
+            </li>
+          </ul>
         </div>
-    </div>
-</nav>
-<main>
-    <section class="py-5">
+      </div>
+    </nav>
+    <main>
+      <section class="py-5">
         <div class="container">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-6">
-                    <h1 class="display-5 fw-bold lh-sm">Bienvenido a InfoRecicla</h1>
-                    <p class="lead mt-3">Una plataforma para compartir información sobre reciclaje y apoyar la gestión
-                        de Puntos ECA.</p>
-                </div>
-                <div class="col-lg-6 text-center">
-                    <img src="/imagenes/ParejaReciclando.png" alt="Personas reciclando"
-                         class="img-fluid hero-img">
-                </div>
+          <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+              <h1 class="display-5 fw-bold lh-sm">Bienvenido a InfoRecicla</h1>
+              <p class="lead mt-3">
+                Una plataforma para compartir información sobre reciclaje y
+                apoyar la gestión de Puntos ECA.
+              </p>
             </div>
+            <div class="col-lg-6 text-center">
+              <img
+                src="{% static 'img/ParejaReciclando.png' %}"
+                alt="Personas reciclando"
+                class="img-fluid hero-img"
+              />
+            </div>
+          </div>
         </div>
-    </section>
-    <section class="bg-success text-white py-5">
+      </section>
+      <section class="bg-success text-white py-5">
         <div class="container">
-            <div class="row g-4">
-                <div class="col-md-12">
-                    <a href="/mapa" class="text-decoration-none text-white">
-                        <div class="card h-100 bg-transparent shadow-lg border-white">
-                            <div class="card-body text-center text-white">
-                                <h2 class="h2 fw-semibold mb-3">Mapa de Puntos ECA</h2>
-                                <img src="/imagenes/mapaECA.png" alt="Mapa" class="img-fluid mb-3" style="max-width:210px;">
-                                <p class="mb-0">Visualiza estaciones en Bogotá, filtra por proximidad y consulta contacto y capacidad.</p>
-                            </div>
-                        </div>
-                    </a>
+          <div class="row g-4">
+            <div class="col-md-12">
+              <a href="/mapa" class="text-decoration-none text-white">
+                <div class="card h-100 bg-transparent shadow-lg border-white">
+                  <div class="card-body text-center text-white">
+                    <h2 class="h2 fw-semibold mb-3">Mapa de Puntos ECA</h2>
+                    <img
+                      src="{% static 'img/mapaECA.png'%}"
+                      alt="Mapa"
+                      class="img-fluid mb-3"
+                      style="max-width: 210px"
+                    />
+                    <p class="mb-0">
+                      Visualiza estaciones en Bogotá, filtra por proximidad y
+                      consulta contacto y capacidad.
+                    </p>
+                  </div>
                 </div>
+              </a>
             </div>
+          </div>
         </div>
-    </section>
-    <section class="py-5 bg-light border-top">
+      </section>
+      <section class="py-5 bg-light border-top">
         <div class="container">
-            <div class="text-center mb-4">
-                <h2 class="fw-bold">Crea tu cuenta</h2>
-                <p class="text-muted mb-0">Elige cómo quieres participar en InfoRecicla.</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="card h-100 shadow-md">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex align-items-center mb-3">
-                                <span class="badge bg-success me-2">Ciudadano</span>
-                                <h3 class="h5 mb-0">Cuenta para Publicar y Comentar</h3>
-                            </div>
-                            <ul class="mb-4 small text-muted ps-3">
-                                <li>Busca y guarda puntos ECA.</li>
-                                <li>Participa con buenas prácticas de reciclaje.</li>
-                            </ul>
-                            <div class="mt-auto">
-                                <a href="/registro/ciudadano" class="btn btn-outline-success w-100">Registrarme como Ciudadano</a>
-                            </div>
-                        </div>
-                    </div>
+          <div class="text-center mb-4">
+            <h2 class="fw-bold">Crea tu cuenta</h2>
+            <p class="text-muted mb-0">
+              Elige cómo quieres participar en InfoRecicla.
+            </p>
+          </div>
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="card h-100 shadow-md">
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-success me-2">Ciudadano</span>
+                    <h3 class="h5 mb-0">Cuenta para Publicar y Comentar</h3>
+                  </div>
+                  <ul class="mb-4 small text-muted ps-3">
+                    <li>Busca y guarda puntos ECA.</li>
+                    <li>Participa con buenas prácticas de reciclaje.</li>
+                  </ul>
+                  <div class="mt-auto">
+                    <a
+                      href="/registro/ciudadano"
+                      class="btn btn-outline-success w-100"
+                      >Registrarme como Ciudadano</a
+                    >
+                  </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card h-100 shadow-md">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex align-items-center mb-3">
-                                <span class="badge bg-success me-2">Punto ECA</span>
-                                <h3 class="h5 mb-0">Registro de Estación y Gestión</h3>
-                            </div>
-                            <ul class="mb-4 small text-muted ps-3">
-                                <li>Publica tu punto en el mapa con datos de contacto.</li>
-                                <li>Controla inventario y capacidad de materiales.</li>
-                                <li>Muestra disponibilidad actual a los ciudadanos.</li>
-                            </ul>
-                            <div class="mt-auto">
-                                <a href="/registro/eca" class="btn btn-outline-success w-100">Registrar Punto ECA</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+              </div>
             </div>
+            <div class="col-md-6">
+              <div class="card h-100 shadow-md">
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-success me-2">Punto ECA</span>
+                    <h3 class="h5 mb-0">Registro de Estación y Gestión</h3>
+                  </div>
+                  <ul class="mb-4 small text-muted ps-3">
+                    <li>Publica tu punto en el mapa con datos de contacto.</li>
+                    <li>Controla inventario y capacidad de materiales.</li>
+                    <li>Muestra disponibilidad actual a los ciudadanos.</li>
+                  </ul>
+                  <div class="mt-auto">
+                    <a
+                      href="/registro/eca"
+                      class="btn btn-outline-success w-100"
+                      >Registrar Punto ECA</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-    </section>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+      </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>

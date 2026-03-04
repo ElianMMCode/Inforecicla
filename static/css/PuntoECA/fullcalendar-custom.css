@@ -1,0 +1,180 @@
+/**
+ * Estilos personalizados para FullCalendar
+ * Integración con Bootstrap 5.3.2 y tema de la aplicación Inforecicla
+ */
+
+/* Contenedor del calendario */
+#calendar {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+        sans-serif;
+}
+
+/* Estilos generales */
+.fc {
+    font-size: 0.95rem;
+}
+
+/* Header del calendario */
+.fc-header-toolbar {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.fc-button-primary {
+    background-color: #28a745 !important;
+    border-color: #1e7e34 !important;
+}
+
+.fc-button-primary:hover {
+    background-color: #1e7e34 !important;
+    border-color: #155724 !important;
+}
+
+.fc-button-primary.fc-button-active {
+    background-color: #1e7e34 !important;
+    border-color: #155724 !important;
+}
+
+/* Días de la semana */
+.fc-col-header {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.fc-col-header-cell {
+    padding: 0.75rem 0;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Celdas del calendario */
+.fc-daygrid-day {
+    border-color: #dee2e6;
+    background-color: #ffffff;
+}
+
+.fc-daygrid-day:hover {
+    background-color: #f8f9fa;
+}
+
+.fc-daygrid-day-number {
+    padding: 0.5rem;
+    color: #495057;
+}
+
+.fc-daygrid-day.fc-day-today {
+    background-color: #e7f3ff;
+}
+
+.fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    color: #0c5ef5;
+    font-weight: bold;
+}
+
+/* Eventos */
+.fc-event {
+    border-radius: 0.375rem;
+    border: none;
+}
+
+.fc-event-main {
+    padding: 0.25rem 0.5rem;
+}
+
+.fc-event-title {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+/* Colores de eventos */
+.fc-event-bg {
+    background-color: #28a745 !important;
+}
+
+.fc-event-border {
+    border-color: #1e7e34 !important;
+}
+
+/* Vista de día/semana */
+.fc-timegrid {
+    border-color: #dee2e6;
+}
+
+.fc-timegrid-slot {
+    height: 2rem;
+}
+
+.fc-col-time,
+.fc-timegrid-slot {
+    vertical-align: middle;
+}
+
+/* Popover de eventos (si se utiliza) */
+.fc-popover {
+    background-color: #ffffff;
+    border-color: #dee2e6;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.375rem;
+}
+
+.fc-popover-header {
+    background-color: #f8f9fa;
+    border-bottom-color: #dee2e6;
+}
+
+/* Responsivo */
+@media (max-width: 576px) {
+    .fc-header-toolbar {
+        flex-direction: column;
+        padding: 0.75rem;
+    }
+
+    .fc-toolbar-chunk {
+        margin-bottom: 0.5rem;
+    }
+
+    .fc-button-group {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .fc-button {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .fc-daygrid-day-number {
+        padding: 0.25rem;
+        font-size: 0.75rem;
+    }
+
+    .fc-event-title {
+        font-size: 0.75rem;
+    }
+}
+
+/* Animaciones suaves */
+.fc-daygrid-day,
+.fc-event,
+.fc-button-primary {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Bordes y sombras sutiles */
+.fc-daygrid-day {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fc-event {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.event-item {
+    cursor: pointer;
+}
+
+.event-item:hover {
+    opacity: 0.85;
+}
+

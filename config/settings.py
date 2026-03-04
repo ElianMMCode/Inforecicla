@@ -125,5 +125,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 # Definición del modelo de usuario personalizado
 AUTH_USER_MODEL = "users.Usuario"

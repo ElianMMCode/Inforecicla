@@ -1,0 +1,86 @@
+/* Select2 Custom Styles */
+
+/* Contenedor Select2 */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--bootstrap-5 {
+    --bs-border-color: var(--bs-border-color);
+    --bs-body-color: var(--bs-body-color);
+    --bs-body-bg: var(--bs-body-bg);
+}
+
+/* Estilos del input Select2 */
+.select2-container--bootstrap-5 .select2-selection--single {
+    min-height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    border: 2px solid;
+    border-color: inherit;
+    border-radius: 0.375rem;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+    right: 0.75rem;
+}
+
+/* Dropdown Select2 */
+.select2-container--bootstrap-5 .select2-dropdown {
+    border-color: var(--bs-border-color);
+    border-radius: 0.375rem;
+}
+
+.select2-container--bootstrap-5 .select2-dropdown .select2-results__option--highlighted {
+    background-color: #198754;
+    color: white;
+}
+
+/* Results */
+.select2-container--bootstrap-5 .select2-results__option {
+    padding: 0.375rem 0.75rem;
+}
+
+/* Placeholder
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+    color: var(--bs-secondary-color);
+}*/
+
+/* Estado focus */
+.select2-container--bootstrap-5.select2-container--focus .select2-selection--single {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Altura del select grande */
+.select2-container.form-select-lg .select2-selection--single {
+    min-height: calc(1.5em + 1rem + 2px);
+    font-size: 1.25rem;
+}
+
+/* Estilos para selects con border-info */
+.border-info.select2-container--bootstrap-5 .select2-selection--single {
+    border-color: #0dcaf0;
+}
+
+.border-info.select2-container--bootstrap-5.select2-container--focus .select2-selection--single {
+    border-color: #0dcaf0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.25);
+}
+
+/* Estilos para selects con border-success */
+.border-success.select2-container--bootstrap-5 .select2-selection--single {
+    border-color: #198754;
+}
+
+.border-success.select2-container--bootstrap-5.select2-container--focus .select2-selection--single {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+/* Botón Clear (X) */
+.select2-container--bootstrap-5 .select2-selection__clear {
+    cursor: pointer;
+    padding: 0 0.5rem;
+}
+

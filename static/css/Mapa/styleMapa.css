@@ -1,0 +1,14 @@
+#map {
+    height: calc(100vh - 140px);
+    min-height: 420px;
+    border-radius: 0.75rem;
+}
+
+.card-hover {
+    cursor: pointer;
+    transition: transform .08s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-1px);
+}

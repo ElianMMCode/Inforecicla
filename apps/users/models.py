@@ -129,7 +129,12 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         ],
     )
 
-    fecha_nacimiento = models.DateField(validators=[validate_fecha_nacimiento])
+    fecha_nacimiento = models.DateField(
+        validators=[validate_fecha_nacimiento],
+        null=True,
+        blank=True,
+        verbose_name="Fecha de nacimiento"
+    )
 
     # Pendiente integrar campo de foto de perfil
     foto_perfil = models.DateField(max_length=255, null=True, blank=True)
