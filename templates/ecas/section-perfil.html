@@ -58,7 +58,10 @@
                         </div>
                     </div>
                     <!-- Formulario del Encargado -->
-                    <form id="formEncargado" method="POST">
+                    <form id="formEncargado"
+                          method="POST"
+                          action="{% url 'punto:editar_perfil' id=usuario.id %}">
+                        {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -66,6 +69,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="nombres"
+                                       name="nombre"
                                        value="{{ usuario.nombres }}"
                                        required />
                                 <small class="text-muted">3-30 caracteres</small>
@@ -75,6 +79,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="apellidos"
+                                       name="apellido"
                                        value="{{ usuario.apellidos }}"
                                        required />
                                 <small class="text-muted">2-40 caracteres</small>
@@ -95,6 +100,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="celular"
+                                       name="telefono"
                                        maxlength="10"
                                        placeholder="10 dígitos"
                                        value="{{ usuario.celular }}"
@@ -105,7 +111,7 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">Tipo Documento *</label>
-                                <select class="form-select" id="tipoDocumento" required>
+                                <select class="form-select" id="tipoDocumento" name="tipo_documento" required>
                                     <option value="">Selecciona un tipo...</option>
                                     {% for tipo, nombre in tipos_documento %}
                                         <option value="{{ tipo }}"
@@ -120,6 +126,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="numeroDocumento"
+                                       name="numero_documento"
                                        placeholder="6-20 caracteres"
                                        value="{{ usuario.numero_documento }}" />
                                 <small class="text-muted">6-20 caracteres (opcional)</small>
@@ -134,17 +141,32 @@
                                 <small class="text-muted">Formato YYYY-MM-DD (opcional)</small>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Localidad</label>
+                                <select class="form-select" id="localidad" name="localidad">
+                                    <option value="">Seleccionar localidad</option>
+                                    {% for localidad in localidades %}
+                                        <option value="{{ localidad.id }}"
+                                                {% if usuario.localidad and usuario.localidad.id == localidad.id %}selected{% endif %}>
+                                            {{ localidad.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Biografía</label>
                             <textarea class="form-control"
                                       id="biografia"
+                                      name="biografia"
                                       rows="3"
                                       placeholder="Máximo 500 caracteres">{{ usuario.biografia }}</textarea>
                             <small class="text-muted">Máximo 500 caracteres (opcional)</small>
                         </div>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-success" id="btnGuardarEncargado">
-                                <i class="bi bi-check-circle me-1"></i>Guardar Encargado
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i>Guardar Perfil
                             </button>
                             <button type="reset" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
