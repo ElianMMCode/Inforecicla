@@ -62,6 +62,9 @@ class PuntoECA(LocalizacionWebHorarioModel):
         verbose_name_plural = "Puntos ECA"
         db_table = "punto_eca"
 
+    def __str__(self):
+        return self.nombre
+
 
 class CentroAcopio(LocalizacionWebHorarioModel):
     nombre = models.CharField(
@@ -133,6 +136,9 @@ class CentroAcopio(LocalizacionWebHorarioModel):
         verbose_name = "Centro de Acopio"
         verbose_name_plural = "Centros de Acopio"
         db_table = "centro_acopio"
+
+    def __str__(self):
+        return self.nombre
 
 
 class Localidad(models.Model):
