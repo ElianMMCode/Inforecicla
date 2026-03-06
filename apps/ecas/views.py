@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from apps.ecas.models import PuntoECA, Localidad
 from apps.users.models import Usuario
 from config import constants as cons
+from apps.core.service import UserService
 
 
 SECTION_TEMPLATES = {
@@ -59,7 +60,7 @@ def _build_default_context(punto, seccion):
     }
 
 
-def editar_perfil(request, id):
+def editar_perfil_gestor(request, id):
     """
     Vista para editar el perfil del gestor ECA.
     """
@@ -72,33 +73,7 @@ def editar_perfil(request, id):
     # Manejar POST - actualizar usuario
     if request.method == "POST":
         # Actualizar campos básicos del usuario
-        usuario.nombres = request.POST.get("nombre", usuario.nombres)
-        usuario.apellidos = request.POST.get("apellido", usuario.apellidos)
-        usuario.email = request.POST.get("email", usuario.email)
-        usuario.celular = request.POST.get("telefono", usuario.celular)
-
-        # Manejo de la localidad como objeto
-        localidad_id = request.POST.get("localidad")
-        if localidad_id and localidad_id != str(
-            usuario.localidad.id if usuario.localidad else ""
-        ):
-            try:
-                usuario.localidad = Localidad.objects.get(id=localidad_id)
-            except Localidad.DoesNotExist:
-                pass  # Mantener la localidad actual si no existe la nueva
-
-        usuario.tipo_documento = request.POST.get(
-            "tipo_documento", usuario.tipo_documento
-        )
-        usuario.numero_documento = request.POST.get(
-            "numero_documento", usuario.numero_documento
-        )
-
-        try:
-            usuario.save()
-        except Exception:
-            pass  # Manejar errores silenciosamente por ahora
-
+        usuario = UserService.editar_perfil(request, id)
         return redirect("punto:perfil")
 
     # Manejar GET - renderizar formulario
