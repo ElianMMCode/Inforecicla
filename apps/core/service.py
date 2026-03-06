@@ -22,7 +22,7 @@ class UserService:
             return redirect("base:inicio")
 
         # Actualizar campos básicos del usuario
-        usuario.nombre = request.POST.get("nombre", usuario.nombre)
+        usuario.nombres = request.POST.get("nombre", usuario.nombres)
         usuario.apellidos = request.POST.get("apellido", usuario.apellidos)
         usuario.email = request.POST.get("email", usuario.email)
         usuario.celular = request.POST.get("telefono", usuario.celular)
