@@ -20,6 +20,22 @@ class CreacionModificacionModel(models.Model):
         abstract = True
 
 
+class DescripcionModel(CreacionModificacionModel):
+    nombre = models.CharField(
+        max_length=30,
+        blank=False,
+        null=False,
+    )
+
+    descripcion = models.CharField(
+        null=True,
+        max_length=500,
+    )
+
+    class Meta(CreacionModificacionModel.Meta):
+        abstract = True
+
+
 class ContactoModel(CreacionModificacionModel):
     email = models.EmailField(
         max_length=255,
@@ -37,22 +53,6 @@ class ContactoModel(CreacionModificacionModel):
                 message="El celular debe inciar con 3",
             ),
         ],
-    )
-
-    class Meta(CreacionModificacionModel.Meta):
-        abstract = True
-
-
-class DescripcionModel(CreacionModificacionModel):
-    nombre = models.CharField(
-        max_length=30,
-        blank=False,
-        null=False,
-    )
-
-    descripcion = models.CharField(
-        null=True,
-        max_length=500,
     )
 
     class Meta(CreacionModificacionModel.Meta):

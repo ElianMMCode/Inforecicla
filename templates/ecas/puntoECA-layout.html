@@ -574,127 +574,61 @@
           }
 
           // ===== GUARDAR PUNTO ECA =====
-          const btnGuardarPunto = document.getElementById("btnGuardarPunto");
-          if (btnGuardarPunto) {
-            btnGuardarPunto.addEventListener("click", async function (e) {
-              e.preventDefault();
+// ===== GUARDAR PUNTO ECA CORREGIDO =====
+const btnGuardarPunto = document.getElementById("btnGuardarPunto");
+if (btnGuardarPunto) {
+    btnGuardarPunto.addEventListener("click", async function (e) {
+        e.preventDefault();
 
-              const nombrePunto = document
-                .getElementById("nombrePunto")
-                ?.value.trim();
-              const direccionPunto = document
-                .getElementById("direccionPunto")
-                ?.value.trim();
-              const localidadPuntoId =
-                document.getElementById("localidadPuntoId")?.value;
-              const celularPunto = document
-                .getElementById("celularPunto")
-                ?.value.trim();
-              const emailPunto = document
-                .getElementById("emailPunto")
-                ?.value.trim();
-              const telefonoPunto = document
-                .getElementById("telefonoPunto")
-                ?.value.trim();
-              const latitud = document.getElementById("latitud")?.value || "0";
-              const longitud =
-                document.getElementById("longitud")?.value || "0";
-              const descripcionPunto = document
-                .getElementById("descripcionPunto")
-                ?.value.trim();
-              const logoUrlPunto = document
-                .getElementById("logoUrlPunto")
-                ?.value.trim();
-              const sitioWebPunto = document
-                .getElementById("sitioWebPunto")
-                ?.value.trim();
-              const horarioAtencionPunto = document
-                .getElementById("horarioAtencionPunto")
-                ?.value.trim();
+        // 1. Obtener valores con IDs correctos (sin el "Id" al final si así está en tu HTML)
+        const nombrePunto = document.getElementById("nombrePunto")?.value.trim();
+        const direccionPunto = document.getElementById("direccionPunto")?.value.trim();
+        const localidadId = document.getElementById("localidadPunto")?.value; // ID corregido
+        const celularPunto = document.getElementById("celularPunto")?.value.trim();
+        const emailPunto = document.getElementById("emailPunto")?.value.trim();
 
-              if (!nombrePunto || nombrePunto.length < 3) {
-                alert("Nombre: mín 3 caracteres");
-                return;
-              }
-              if (!direccionPunto) {
-                alert("Dirección: obligatoria");
-                return;
-              }
-              if (!localidadPuntoId) {
-                alert("Localidad: obligatoria");
-                return;
-              }
-              if (
-                !celularPunto ||
-                celularPunto.length !== 10 ||
-                !/^\d{10}$/.test(celularPunto)
-              ) {
-                alert("Celular: 10 dígitos");
-                return;
-              }
-              if (!emailPunto || !emailPunto.includes("@")) {
-                alert("Email inválido");
-                return;
-              }
-              if (telefonoPunto && !/^60\d{8}$/.test(telefonoPunto)) {
-                alert("Teléfono: formato 60 + 8 dígitos (opcional)");
-                return;
-              }
+        // 2. Validaciones básicas
+        if (!nombrePunto || nombrePunto.length < 3) { alert("Nombre: mín 3 caracteres"); return; }
+        if (!direccionPunto) { alert("Dirección: obligatoria"); return; }
+        if (!localidadId) { alert("Localidad: obligatoria"); return; }
 
-              try {
-                const pathname = window.location.pathname;
-                const match = pathname.match(
-                  /\/punto-eca\/([^\/]+)\/([^\/]+)\/perfil/,
-                );
-                if (!match)
-                  throw new Error("No se encontraron los IDs en la URL");
+        try {
+            // 3. Obtener IDs de los campos ocultos (Evita el error de la URL)
+            const usuarioId = document.querySelector('input[name="usuarioId"]')?.value;
+            const puntoEcaId = document.querySelector('input[name="puntoEcaId"]')?.value;
 
-                const usuarioId = match[2];
-                const puntoEcaId = document.querySelector(
-                  'input[name="puntoEcaId"]',
-                )?.value;
+            if (!usuarioId || !puntoEcaId) throw new Error("Faltan identificadores de usuario o punto");
 
-                if (!puntoEcaId)
-                  throw new Error("No se encontró el ID del Punto ECA");
-
-                const params = new URLSearchParams({
-                  nombrePunto,
-                  direccionPunto,
-                  localidadPuntoId,
-                  latitud,
-                  longitud,
-                  telefonoPunto,
-                  celularPunto,
-                  emailPunto,
-                  descripcionPunto,
-                  logoUrlPunto,
-                  sitioWebPunto,
-                  horarioAtencionPunto,
-                });
-
-                const url = `/punto-eca/${usuarioId}/perfil/punto/${puntoEcaId}`;
-
-                const response = await fetch(url, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                  },
-                  body: params,
-                });
-
-                if (!response.ok) {
-                  const data = await response.json();
-                  throw new Error(data.error || "Error");
-                }
-
-                alert("✅ Punto ECA guardado correctamente");
-                location.reload();
-              } catch (e) {
-                alert("❌ Error: " + e.message);
-              }
+            const params = new URLSearchParams({
+                nombrePunto,
+                direccionPunto,
+                localidadPuntoId: localidadId, // Enviamos el valor al backend
+                celularPunto,
+                emailPunto,
+                // Agrega el resto de campos (latitud, longitud, etc.) de la misma forma
             });
-          }
 
+            // 4. Usar la URL que tienes en el navegador
+            const url = `/punto/editar-punto/${usuarioId}/`; 
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: params,
+            });
+
+            if (!response.ok) throw new Error("Error en el servidor");
+
+            alert("✅ Punto ECA guardado correctamente");
+            location.reload();
+        } catch (e) {
+            alert("❌ Error: " + e.message);
+        }
+    });
+}
           // ===== GPS =====
           const btnGPS = document.getElementById("btnGPS");
           if (btnGPS) {
