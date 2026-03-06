@@ -1,7 +1,6 @@
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import redirect
 from django.db import transaction
-from django.core.exceptions import ValidationError
-from apps.ecas.models import PuntoECA, Localidad
+from apps.ecas.models import Localidad
 from apps.users.models import Usuario
 
 
@@ -20,21 +19,21 @@ class UserService:
             )  # Bloqueo para evitar condiciones de carrera
 
         except Usuario.DoesNotExist:
-            return redirect("punto:render_seccion", seccion="perfil")
+            return redirect("base:inicio")
 
         # Actualizar campos básicos del usuario
-        usuario.nombres = request.POST.get("nombre", usuario.nombres)
+        usuario.nombre = request.POST.get("nombre", usuario.nombre)
         usuario.apellidos = request.POST.get("apellido", usuario.apellidos)
         usuario.email = request.POST.get("email", usuario.email)
         usuario.celular = request.POST.get("telefono", usuario.celular)
 
         # Manejo de la localidad como objeto
         localidad_id = request.POST.get("localidad")
-        if localidad_id and localidad_id != str(
-            usuario.localidad.id if usuario.localidad else ""
+        if localidad_id != str(
+            usuario.localidad.localidad_id if usuario.localidad else ""
         ):
             try:
-                usuario.localidad = Localidad.objects.get(id=localidad_id)
+                usuario.localidad = Localidad.objects.get(localidad_id=localidad_id)
             except Localidad.DoesNotExist:
                 pass  # Mantener la localidad actual si no existe la nueva
 

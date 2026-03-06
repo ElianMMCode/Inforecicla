@@ -3,6 +3,7 @@ from apps.ecas.models import PuntoECA, Localidad
 from apps.users.models import Usuario
 from config import constants as cons
 from apps.core.service import UserService
+from apps.ecas.service import PuntoService
 
 
 SECTION_TEMPLATES = {
@@ -78,6 +79,34 @@ def editar_perfil_gestor(request, id):
 
     # Manejar GET - renderizar formulario
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
+    context = {
+        "seccion": "perfil",
+        "section_template": SECTION_TEMPLATES["perfil"],
+        "usuario": usuario,
+        "punto": punto,
+        "localidades": Localidad.objects.all(),
+        "tipos_documento": cons.TipoDocumento.choices,
+    }
+
+    return render(request, "ecas/editar_perfil.html", context)
+
+
+def editar_punto(request, id):
+    """
+    Vista para editar el perfil del punto ECA.
+    """
+
+    try:
+        punto = PuntoECA.objects.get(gestor_eca_id=id)
+    except PuntoECA.DoesNotExist:
+        return redirect("punto:render_seccion", seccion="perfil")
+
+    if request.method == "POST":
+        punto = PuntoService.editar_punto(request, id)
+        return redirect("punto:perfil")
+    # Manejar GET - renderizar formulario
+
+    usuario = punto.gestor_eca
     context = {
         "seccion": "perfil",
         "section_template": SECTION_TEMPLATES["perfil"],

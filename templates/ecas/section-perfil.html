@@ -70,7 +70,7 @@
                                        class="form-control"
                                        id="nombres"
                                        name="nombre"
-                                       value="{{ usuario.nombres }}"
+                                       value="{{ usuario.nombre }}"
                                        required />
                                 <small class="text-muted">3-30 caracteres</small>
                             </div>
@@ -147,8 +147,8 @@
                                 <select class="form-select" id="localidad" name="localidad">
                                     <option value="">Seleccionar localidad</option>
                                     {% for localidad in localidades %}
-                                        <option value="{{ localidad.id }}"
-                                                {% if usuario.localidad and usuario.localidad.id == localidad.id %}selected{% endif %}>
+                                        <option value="{{ localidad.localidad_id }}"
+                                                {% if usuario.localidad and usuario.localidad.localidad_id == localidad.localidad_id %}selected{% endif %}>
                                             {{ localidad.nombre }}
                                         </option>
                                     {% endfor %}
@@ -224,7 +224,10 @@
                         </div>
                     </div>
                     <!-- Formulario del Punto ECA -->
-                    <form id="formPunto" method="POST">
+                    <form id="formPunto"
+                          method="POST"
+                          action="{% url 'punto:editar_punto' id=usuario.id %}">
+                        {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />
                         <div class="row">
@@ -245,6 +248,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="direccionPunto"
+                                       name="direccionPunto"
                                        maxlength="150"
                                        value="{{ punto.direccion }}"
                                        required />
@@ -254,11 +258,14 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Localidad *</label>
-                                <select class="form-select" id="localidadPuntoId" required>
+                                <select class="form-select"
+                                        id="localidadPunto"
+                                        name="localidadPunto"
+                                        required>
                                     <option value="">-- Seleccionar --</option>
                                     {% for localidad in localidades %}
                                         <option value="{{ localidad.localidad_id }}"
-                                                {% if punto.localidad_id == localidad.localidad_id %}selected{% endif %}>
+                                                {% if punto.localidad and punto.localidad.localidad_id == localidad.localidad_id %}selected{% endif %}>
                                             {{ localidad.nombre }}
                                         </option>
                                     {% endfor %}
@@ -276,6 +283,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="celularPunto"
+                                       name="celularPunto"
                                        maxlength="10"
                                        placeholder="10 dígitos"
                                        value="{{ punto.celular }}"
@@ -287,6 +295,7 @@
                                 <input type="email"
                                        class="form-control"
                                        id="emailPunto"
+                                       name="emailPunto"
                                        value="{{ punto.email }}"
                                        required />
                             </div>
@@ -297,6 +306,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="telefonoPunto"
+                                       name="telefonoPunto"
                                        maxlength="10"
                                        placeholder="60XXXXXXXX"
                                        value="{{ punto.telefono_punto }}" />
@@ -307,6 +317,7 @@
                                 <input type="url"
                                        class="form-control"
                                        id="sitioWebPunto"
+                                       name="sitioWebPunto"
                                        placeholder="https://ejemplo.com"
                                        value="{{ punto.sitio_web }}" />
                                 <small class="text-muted">URL del sitio web (opcional)</small>
@@ -329,6 +340,7 @@
                                        step="0.000001"
                                        class="form-control"
                                        id="longitud"
+                                       name="longitud"
                                        placeholder="-180 a 180"
                                        value="{{ punto.longitud }}" />
                                 <small class="text-muted">-180 a 180 (opcional)</small>
@@ -338,6 +350,7 @@
                             <label class="form-label fw-bold">Descripción</label>
                             <textarea class="form-control"
                                       id="descripcionPunto"
+                                      name="descripcionPunto"
                                       rows="3"
                                       maxlength="500"
                                       placeholder="Máximo 500 caracteres">{{ punto.descripcion }}</textarea>
@@ -349,6 +362,7 @@
                                 <input type="url"
                                        class="form-control"
                                        id="logoUrlPunto"
+                                       name="logoUrlPunto"
                                        placeholder="https://ejemplo.com/logo.png"
                                        value="{{ punto.logo_url_punto }}" />
                                 <small class="text-muted">URL del logo (opcional)</small>
@@ -358,6 +372,7 @@
                                 <input type="text"
                                        class="form-control"
                                        id="horarioAtencionPunto"
+                                       name="horarioAtencionPunto"
                                        maxlength="150"
                                        placeholder="Ej: Lunes-Viernes 8am-5pm"
                                        value="{{ punto.horario_atencion }}" />
@@ -365,7 +380,7 @@
                             </div>
                         </div>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-info" id="btnGuardarPunto">
+                            <button type="submit" class="btn btn-info" id="btnGuardarPunto">
                                 <i class="bi bi-check-circle me-1"></i>Guardar Punto
                             </button>
                             <button type="reset" class="btn btn-outline-secondary">
