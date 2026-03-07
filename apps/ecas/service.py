@@ -12,14 +12,15 @@ class PuntoService:
         """
         Vista para editar el punto ECA.
         """
-        print("--- DEBUG: DATOS RECIBIDOS ---")
-        print(request.POST)
-        print(f"Localidad enviada: {request.POST.get('localidad')}")
-        print("------------------------------")
         try:
             punto = PuntoECA.objects.get(gestor_eca_id=id)
         except PuntoECA.DoesNotExist:
             return redirect("base:inicio")
+
+        print(f"--- DEBUG --- Claves recibidas: {list(request.POST.keys())}")
+        print(
+            f"--- DEBUG --- Valor específico: '{request.POST.get('descripcionPunto')}'"
+        )
 
         punto.nombre = request.POST.get("nombrePunto", punto.nombre)
         punto.direccion = request.POST.get("direccionPunto", punto.direccion)
@@ -30,6 +31,7 @@ class PuntoService:
         punto.latitud = request.POST.get("latitud", punto.latitud)
         punto.longitud = request.POST.get("longitud", punto.longitud)
         punto.descripcion = request.POST.get("descripcionPunto", punto.descripcion)
+        # punto.descripcion = "Prueba de descripción actualizada"
         punto.logo_url_punto = request.POST.get("logoUrlPunto", punto.logo_url_punto)
 
         localidad_id = request.POST.get("localidadPunto")
