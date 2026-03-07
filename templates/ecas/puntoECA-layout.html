@@ -585,6 +585,7 @@ if (btnGuardarPunto) {
         const direccionPunto = document.getElementById("direccionPunto")?.value.trim();
         const localidadId = document.getElementById("localidadPunto")?.value; // ID corregido
         const celularPunto = document.getElementById("celularPunto")?.value.trim();
+        const descripcionPunto = document.getElementById("descripcionPunto")?.value.trim();
         const emailPunto = document.getElementById("emailPunto")?.value.trim();
 
         // 2. Validaciones básicas
@@ -603,6 +604,7 @@ if (btnGuardarPunto) {
                 nombrePunto,
                 direccionPunto,
                 localidadPuntoId: localidadId, // Enviamos el valor al backend
+                descripcionPunto,
                 celularPunto,
                 emailPunto,
                 // Agrega el resto de campos (latitud, longitud, etc.) de la misma forma
