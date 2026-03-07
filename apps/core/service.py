@@ -11,6 +11,7 @@ class UserService:
         """
         Vista para editar el perfil del gestor ECA.
         """
+
         # Obtener usuario o redirigir si no existe
         try:
             # usuario = Usuario.objects.get(id=id)
@@ -27,6 +28,7 @@ class UserService:
         usuario.email = request.POST.get("email", usuario.email)
         usuario.celular = request.POST.get("telefono", usuario.celular)
         usuario.biografia = request.POST.get("biografia", usuario.biografia)
+        usuario.fecha_nacimiento = request.POST.get("fechaNacimiento")
 
         # Manejo de la localidad como objeto
         localidad_id = request.POST.get("localidad")
