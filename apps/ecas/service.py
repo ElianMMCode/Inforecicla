@@ -2,7 +2,6 @@ from django.shortcuts import redirect
 from django.db import transaction
 from apps.ecas.models import Localidad
 from apps.ecas.models import PuntoECA
-from apps.users.models import Usuario
 
 
 class PuntoService:
@@ -31,7 +30,6 @@ class PuntoService:
         punto.latitud = request.POST.get("latitud", punto.latitud)
         punto.longitud = request.POST.get("longitud", punto.longitud)
         punto.descripcion = request.POST.get("descripcionPunto", punto.descripcion)
-        # punto.descripcion = "Prueba de descripción actualizada"
         punto.logo_url_punto = request.POST.get("logoUrlPunto", punto.logo_url_punto)
 
         localidad_id = request.POST.get("localidadPunto")
