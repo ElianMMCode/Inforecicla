@@ -1,6 +1,6 @@
 from django.urls import path
 from apps.ecas.views import render_seccion, editar_perfil_gestor, editar_punto
-from apps.inventory.views import buscar_materiales_catalogo
+from apps.inventory.views import buscar_materiales_catalogo, agregar_al_inventario
 
 app_name = "punto-eca"
 
@@ -33,4 +33,5 @@ urlpatterns = [
         buscar_materiales_catalogo,
         name="buscar_materiales",
     ),
+    path("inventario/agregar/", agregar_al_inventario, name="inventario_agregar"),
 ]

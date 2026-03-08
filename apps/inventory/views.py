@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404, render, redirect
-from apps.ecas.models import PuntoECA, Localidad
+from django.views.decorators.http import require_POST
+from apps.ecas.models import PuntoECA
+from apps.inventory.models import Inventario, Material, CategoriaMaterial, TipoMaterial
 from apps.users.models import Usuario
 from config import constants as cons
 from apps.core.service import UserService
@@ -8,6 +10,7 @@ from apps.ecas.service import PuntoService
 from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial
 from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse
+import json
 from django.db.models import Q
 
 
@@ -25,6 +28,7 @@ def _build_materiales_context(punto):
         "materiales": Material.objects.all(),
         "categorias_material": CategoriaMaterial.objects.all(),
         "tipos_material": TipoMaterial.objects.all(),
+        "materiales_inventario": Inventario.objects.filter(punto_eca=punto),
     }
 
 
@@ -70,3 +74,35 @@ def buscar_materiales_catalogo(request):
         )
 
     return JsonResponse(resultados, safe=False)
+
+
+def agregar_al_inventario(request):
+    try:
+        data = json.loads(request.body)
+
+        material = Material.objects.get(id=data.get("materialId"))
+        punto = PuntoECA.objects.get(id=data.get("puntoEcaId"))
+
+        nuevo_material = Inventario.objects.create(
+            punto_eca=punto,
+            material=material,
+            stock_actual=float(data.get("stockActual", 0)),
+            capacidad_maxima=float(data.get("capacidadMaxima", 0)),
+            unidad_medida=data.get("unidadMedida"),
+            precio_compra=float(data.get("precioCompra", 0)),
+            precio_venta=float(data.get("precioVenta", 0)),
+            umbral_alerta=int(data.get("umbralAlerta", 20)),
+            umbral_critico=int(data.get("umbralCritico", 10)),
+        )
+        return JsonResponse(
+            {
+                "mensaje": f"{material.nombre} agregado al inventario con éxito.",
+                "error": False,
+            }
+        )
+    except (Material.DoesNotExist, PuntoECA.DoesNotExist):
+        return JsonResponse({"error": "Material o Punto ECA no encontrado"}, status=404)
+    except Exception as e:
+        return JsonResponse(
+            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
+        )
