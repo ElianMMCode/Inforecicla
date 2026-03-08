@@ -4,18 +4,9 @@ from apps.users.models import Usuario
 from config import constants as cons
 from apps.core.service import UserService
 from apps.ecas.service import PuntoService
-
-
-SECTION_TEMPLATES = {
-    "resumen": "ecas/section-resumen.html",
-    "calendario": "ecas/section-calendario.html",
-    "centros": "ecas/section-centros.html",
-    "configuracion": "ecas/section-configuracion.html",
-    "detalles_material": "ecas/section-detalles-material.html",
-    "materiales": "ecas/section-materiales.html",
-    "movimientos": "ecas/section-movimientos.html",
-    "perfil": "ecas/section-perfil.html",
-}
+from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial
+from apps.inventory.views import _build_materiales_context
+from apps.ecas.constants import SECTION_TEMPLATES
 
 
 def render_seccion(request, seccion="resumen"):
@@ -30,6 +21,8 @@ def render_seccion(request, seccion="resumen"):
 
     if seccion == "perfil":
         context = _build_perfil_context(punto)
+    elif seccion == "materiales":
+        context = _build_materiales_context(punto)
     else:
         context = _build_default_context(punto, seccion)
 

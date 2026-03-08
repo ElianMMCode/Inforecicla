@@ -1,26 +1,31 @@
 <!-- Fragment: Materiales -->
-<section class="py-4"
-
-
-        >
+<section class="py-4">
     <!-- Título principal -->
     <div class="mb-4">
         <h2 class="h4 fw-bold text-dark mb-1">
             <i class="bi bi-box-seam me-2"></i>Gestión de Materiales
         </h2>
-        <p class="text-muted small mb-0">Registra, visualiza y gestiona los materiales en el inventario del centro de acopio</p>
+        <p class="text-muted small mb-0">
+            Registra, visualiza y gestiona los materiales en el inventario del centro de acopio
+        </p>
     </div>
-
     <!-- ACORDEÓN PRINCIPAL CON TODO -->
     <div class="accordion accordion-flush shadow-sm" id="acordeonMateriales">
-
         <!-- Item 1: AGREGAR MATERIAL AL INVENTARIO -->
         <div class="accordion-item border-start border-5 border-success">
             <h2 class="accordion-header" id="headingAgregar">
-                <button class="accordion-button fw-bold collapsed" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#collapseAgregar" aria-expanded="false"
+                <button class="accordion-button fw-bold collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseAgregar"
+                        aria-expanded="false"
                         aria-controls="collapseAgregar">
-                    <span class="bg-success p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                    <span class="bg-success p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
                         <i class="bi bi-plus-circle text-white"></i>
                     </span>
                     <span>
@@ -29,7 +34,9 @@
                     </span>
                 </button>
             </h2>
-            <div id="collapseAgregar" class="accordion-collapse collapse" aria-labelledby="headingAgregar"
+            <div id="collapseAgregar"
+                 class="accordion-collapse collapse"
+                 aria-labelledby="headingAgregar"
                  data-bs-parent="#acordeonMateriales">
                 <div class="accordion-body p-4 bg-light">
                     <!-- SECCIÓN 1: Búsqueda Independiente de Material por Nombre -->
@@ -39,15 +46,17 @@
                         </h6>
                         <div class="row g-3">
                             <div class="col-12">
-                                <label class="form-label fw-semibold text-muted mb-1" for="buscarMaterialSelect">Buscar Material</label>
-                                <select id="buscarMaterialSelect" class="form-select form-select-lg border-2 border-success js-select2-material" style="width: 100%;">
+                                <label class="form-label fw-semibold text-muted mb-1"
+                                       for="buscarMaterialSelect">Buscar Material</label>
+                                <select id="buscarMaterialSelect"
+                                        class="form-select form-select-lg border-2 border-success js-select2-material"
+                                        style="width: 100%">
                                     <option></option>
                                 </select>
                                 <small class="text-muted">Escribe el nombre del material o selecciona uno de la lista. Al seleccionar se abrirá el formulario de agregar.</small>
                             </div>
                         </div>
                     </div>
-
                     <!-- SECCIÓN 2: Búsqueda por Categoría y Tipo -->
                     <div class="mb-0">
                         <h6 class="fw-semibold text-success mb-3">
@@ -55,56 +64,44 @@
                         </h6>
                         <div class="row g-3 align-items-end mb-3">
                             <div class="col-md-5">
-                                <label class="form-label fw-semibold text-muted mb-1" for="selectCategoriaBusqueda">Categoría</label>
-                                <select id="selectCategoriaBusqueda" class="form-select border-2 border-success js-select2-categoria" style="width: 100%;">
+                                <label class="form-label fw-semibold text-muted mb-1"
+                                       for="selectCategoriaBusqueda">Categoría</label>
+                                <select id="selectCategoriaBusqueda"
+                                        class="form-select border-2 border-success js-select2-categoria"
+                                        style="width: 100%">
                                     <option value="">-- Selecciona una categoría --</option>
                                     <!-- Mostrar categorías del inventario si existen -->
-
-                                        <option
-
-                                               >Categoría del Inventario
-                                        </option>
-
+                                    <option>Categoría del Inventario</option>
                                     <!-- Si no hay categorías en inventario, mostrar del catálogo -->
-
-                                        <option
-
-                                               >Categoría
-                                        </option>
-
+                                    <option>Categoría</option>
                                 </select>
                             </div>
-
                             <div class="col-md-5">
-                                <label class="form-label fw-semibold text-muted mb-1" for="selectTipoBusqueda">Tipo</label>
-                                <select id="selectTipoBusqueda" class="form-select border-2 border-success js-select2-tipo" style="width: 100%;">
+                                <label class="form-label fw-semibold text-muted mb-1"
+                                       for="selectTipoBusqueda">Tipo</label>
+                                <select id="selectTipoBusqueda"
+                                        class="form-select border-2 border-success js-select2-tipo"
+                                        style="width: 100%">
                                     <option value="">-- Selecciona un tipo --</option>
                                     <!-- Mostrar tipos del inventario si existen -->
-
-                                        <option
-
-                                               >Tipo del Inventario
-                                        </option>
-
+                                    <option>Tipo del Inventario</option>
                                     <!-- Si no hay tipos en inventario, mostrar del catálogo -->
-
-                                        <option
-
-                                               >Tipo
-                                        </option>
-
+                                    <option>Tipo</option>
                                 </select>
                             </div>
-
                             <div class="col-md-2">
-                                <button id="btnBuscarPorCategoriaTipo" class="btn btn-success w-100" type="button">
+                                <button id="btnBuscarPorCategoriaTipo"
+                                        class="btn btn-success w-100"
+                                        type="button">
                                     <i class="bi bi-search me-1"></i>Buscar
                                 </button>
                             </div>
                         </div>
                         <div class="row g-3">
                             <div class="col-12">
-                                <button id="btnLimpiarBusquedaAgregar" class="btn btn-outline-secondary w-100" type="button">
+                                <button id="btnLimpiarBusquedaAgregar"
+                                        class="btn btn-outline-secondary w-100"
+                                        type="button">
                                     <i class="bi bi-eraser me-1"></i>Limpiar Filtros
                                 </button>
                             </div>
@@ -113,98 +110,124 @@
                 </div>
             </div>
         </div>
-
         <!-- MODAL: AGREGAR MATERIAL AL INVENTARIO -->
-        <div class="modal fade" id="agregarInventarioModal" tabindex="-1" aria-labelledby="agregarInventarioModalLabel" aria-hidden="true">
+        <div class="modal fade"
+             id="agregarInventarioModal"
+             tabindex="-1"
+             aria-labelledby="agregarInventarioModalLabel"
+             aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header bg-success text-white">
                         <h5 class="modal-title" id="agregarInventarioModalLabel">
                             <i class="bi bi-plus-circle me-2"></i>Agregar Material al Inventario
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
                         <form id="formAgregarInventario">
                             <!-- Input hidden para guardar el ID del material (no visible) -->
                             <input type="hidden" id="agregarMaterialId">
                             <!-- Input hidden para guardar el ID del punto (no visible) -->
-                            <input type="hidden" id="agregarPuntoId">
+                            <input type="hidden" id="agregarPuntoId" value="{{ punto.id }}">
                             <div class="row g-3 mb-4">
                                 <div class="col-12">
                                     <label for="agregarMaterialNombre" class="form-label fw-semibold">Material Seleccionado</label>
-                                    <input type="text" class="form-control" id="agregarMaterialNombre" readonly style="background-color: #f5f5f5;">
+                                    <input type="text"
+                                           class="form-control"
+                                           id="agregarMaterialNombre"
+                                           readonly
+                                           style="background-color: #f5f5f5">
                                 </div>
                             </div>
-
                             <!-- Divisor -->
                             <hr class="my-4">
-
                             <!-- Fila 2: Datos de Inventario -->
                             <h6 class="fw-semibold text-success mb-3">Datos de Inventario</h6>
-
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="stockInicial" class="form-label fw-semibold">Stock Inicial</label>
-                                    <input type="number" class="form-control border-2 border-success" id="stockInicial" placeholder="0" min="0" required>
+                                    <input type="number"
+                                           class="form-control border-2 border-success"
+                                           id="stockInicial"
+                                           placeholder="0"
+                                           min="0"
+                                           required>
                                     <small class="text-muted">Cantidad inicial a agregar</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="capacidadMaxima" class="form-label fw-semibold">Capacidad Máxima</label>
-                                    <input type="number" class="form-control border-2 border-success" id="capacidadMaxima" placeholder="1000" min="0" required>
+                                    <input type="number"
+                                           class="form-control border-2 border-success"
+                                           id="capacidadMaxima"
+                                           placeholder="1000"
+                                           min="0"
+                                           required>
                                     <small class="text-muted">Máximo que puede almacenar</small>
                                 </div>
                             </div>
-
                             <!-- Fila 2.5: Unidad de Medida -->
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="unidadMedida" class="form-label fw-semibold">Unidad de Medida</label>
-                                    <select class="form-select border-2 border-success" id="unidadMedida" required>
+                                    <select class="form-select border-2 border-success"
+                                            id="unidadMedida"
+                                            required>
                                         <option value="" selected disabled>Selecciona una unidad</option>
-
-                                            <option
-
-                                                   >
-                                                Unidad
-                                            </option>
-
-
-                                            <option disabled>No hay unidades disponibles</option>
-
+                                        {% for value, label in unidades_medida %}
+                                            <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
                                     </select>
                                     <small class="text-muted">Selecciona la unidad de medida para el stock</small>
                                 </div>
                             </div>
-
                             <!-- Fila 3: Precios -->
                             <h6 class="fw-semibold text-success mb-3 mt-4">Precios</h6>
-
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="precioCompra" class="form-label fw-semibold">Precio de Compra</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control border-2 border-success" id="precioCompra" placeholder="0.00" min="0" step="0.01" required>
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="precioCompra"
+                                               placeholder="0.00"
+                                               min="0"
+                                               step="0.01"
+                                               required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="precioVenta" class="form-label fw-semibold">Precio de Venta</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control border-2 border-success" id="precioVenta" placeholder="0.00" min="0" step="0.01" required>
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="precioVenta"
+                                               placeholder="0.00"
+                                               min="0"
+                                               step="0.01"
+                                               required>
                                     </div>
                                 </div>
                             </div>
-
                             <!-- Fila 4: Umbrales -->
                             <h6 class="fw-semibold text-success mb-3 mt-4">Umbrales de Alerta</h6>
-
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="umbralAlerta" class="form-label fw-semibold">Umbral de Alerta (%)</label>
                                     <div class="input-group">
-                                        <input type="number" class="form-control border-2 border-success" id="umbralAlerta" placeholder="25" min="0" max="100" step="1" required>
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="umbralAlerta"
+                                               placeholder="25"
+                                               min="0"
+                                               max="100"
+                                               step="1"
+                                               required>
                                         <span class="input-group-text">%</span>
                                     </div>
                                     <small class="text-muted">Porcentaje mínimo antes de alertar</small>
@@ -212,15 +235,24 @@
                                 <div class="col-md-6">
                                     <label for="umbralCritico" class="form-label fw-semibold">Umbral Crítico (%)</label>
                                     <div class="input-group">
-                                        <input type="number" class="form-control border-2 border-success" id="umbralCritico" placeholder="10" min="0" max="100" step="1" required>
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="umbralCritico"
+                                               placeholder="10"
+                                               min="0"
+                                               max="100"
+                                               step="1"
+                                               required>
                                         <span class="input-group-text">%</span>
                                     </div>
                                     <small class="text-muted">Porcentaje crítico de stock</small>
                                 </div>
                             </div>
-
                             <!-- Mensaje de estado -->
-                            <div id="mensajeEstado" class="alert alert-info mt-4" style="display: none;" role="alert">
+                            <div id="mensajeEstado"
+                                 class="alert alert-info mt-4"
+                                 style="display: none"
+                                 role="alert">
                                 <i class="bi bi-info-circle me-2"></i>
                                 <span id="textoMensaje"></span>
                             </div>
@@ -237,16 +269,22 @@
                 </div>
             </div>
         </div>
-
         <!-- MODAL: RESULTADOS DE BÚSQUEDA POR CATEGORÍA Y TIPO -->
-        <div class="modal fade" id="buscarMaterialModal" tabindex="-1" aria-labelledby="buscarMaterialModalLabel" aria-hidden="true">
+        <div class="modal fade"
+             id="buscarMaterialModal"
+             tabindex="-1"
+             aria-labelledby="buscarMaterialModalLabel"
+             aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header bg-info text-white">
                         <h5 class="modal-title" id="buscarMaterialModalLabel">
                             <i class="bi bi-search me-2"></i>Resultados de Búsqueda
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Estado de búsqueda (loading, resultados, sin resultados) -->
@@ -267,7 +305,6 @@
                 </div>
             </div>
         </div>
-
         <!-- SCRIPT INLINE PARA MANEJAR BÚSQUEDA POR CATEGORÍA Y TIPO + LIMPIAR -->
         <script>
         // ============================================================
@@ -296,7 +333,7 @@
             modal.show();
 
             // Ejecutar búsqueda AJAX
-            var endpoint = '/punto-eca/catalogo/materiales/buscar';
+            var endpoint = '/punto-eca/catalogo/materiales/buscar/';
             var puntoId = document.getElementById('agregarPuntoId')?.value || '';
 
             var params = new URLSearchParams();
@@ -509,14 +546,21 @@
             console.log('✓ Script inline completado');
         })();
         </script>
-
         <!-- Item 2: OCUPACIÓN DE INVENTARIO -->
         <div class="accordion-item border-start border-5 border-info">
             <h2 class="accordion-header" id="headingOcupacion">
-                <button class="accordion-button fw-bold collapsed" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#collapseOcupacion" aria-expanded="false"
+                <button class="accordion-button fw-bold collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseOcupacion"
+                        aria-expanded="false"
                         aria-controls="collapseOcupacion">
-                    <span class="bg-info p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                    <span class="bg-info p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
                         <i class="bi bi-graph-up text-white"></i>
                     </span>
                     <span>
@@ -525,12 +569,12 @@
                     </span>
                 </button>
             </h2>
-            <div id="collapseOcupacion" class="accordion-collapse collapse" aria-labelledby="headingOcupacion"
+            <div id="collapseOcupacion"
+                 class="accordion-collapse collapse"
+                 aria-labelledby="headingOcupacion"
                  data-bs-parent="#acordeonMateriales">
                 <div class="accordion-body p-4 bg-light">
-                    <div class="text-muted text-center py-3">
-                        No hay datos de inventario disponibles
-                    </div>
+                    <div class="text-muted text-center py-3">No hay datos de inventario disponibles</div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle mb-0">
                             <thead class="bg-success text-white">
@@ -544,22 +588,14 @@
                             <tbody>
                                 <tr>
                                     <td class="fw-semibold">Material</td>
-                                    <td class="text-end"
-                                       >0.00</td>
-                                    <td class="text-end"
-                                       >0.00</td>
+                                    <td class="text-end">0.00</td>
+                                    <td class="text-end">0.00</td>
                                     <td>
-
-                                            <div class="progress" style="height:18px;">
-                                                <div class="progress-bar"
-
-                                                     role="progressbar"
-
-                                                    >
-                                                    <span class="small">0%</span>
-                                                </div>
+                                        <div class="progress" style="height:18px;">
+                                            <div class="progress-bar"  role="progressbar">
+                                                <span class="small">0%</span>
                                             </div>
-
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -572,14 +608,21 @@
                 </div>
             </div>
         </div>
-
         <!-- Item 3: MATERIALES EN INVENTARIO -->
         <div class="accordion-item border-start border-5 border-primary">
             <h2 class="accordion-header" id="headingTarjetas">
-                <button class="accordion-button fw-bold" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#collapseTarjetas"
-                        aria-expanded="true" aria-controls="collapseTarjetas">
-                    <span class="bg-primary p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <button class="accordion-button fw-bold"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseTarjetas"
+                        aria-expanded="true"
+                        aria-controls="collapseTarjetas">
+                    <span class="bg-primary p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
                         <i class="bi bi-collection text-white"></i>
                     </span>
                     <span>
@@ -588,122 +631,106 @@
                     </span>
                 </button>
             </h2>
-            <div id="collapseTarjetas" class="accordion-collapse collapse show"
-                 aria-labelledby="headingTarjetas" data-bs-parent="#acordeonMateriales">
+            <div id="collapseTarjetas"
+                 class="accordion-collapse collapse show"
+                 aria-labelledby="headingTarjetas"
+                 data-bs-parent="#acordeonMateriales">
                 <div class="accordion-body p-4 bg-light">
                     <div class="accordion mb-4" id="acordeonFiltrosTarjetas">
                         <div class="accordion-item border-bottom border-2 border-secondary-subtle">
                             <h2 class="accordion-header bg-light" id="headingBusquedaTarjetas">
-                                <button class="accordion-button fw-semibold collapsed" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#collapseBusquedaTarjetas"
-                                        aria-expanded="false" aria-controls="collapseBusquedaTarjetas">
+                                <button class="accordion-button fw-semibold collapsed"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBusquedaTarjetas"
+                                        aria-expanded="false"
+                                        aria-controls="collapseBusquedaTarjetas">
                                     <i class="bi bi-funnel text-muted me-2"></i>
                                     <span>Búsqueda y Filtros</span>
                                 </button>
                             </h2>
-                            <div id="collapseBusquedaTarjetas" class="accordion-collapse collapse"
-                                 aria-labelledby="headingBusquedaTarjetas" data-bs-parent="#acordeonFiltrosTarjetas">
+                            <div id="collapseBusquedaTarjetas"
+                                 class="accordion-collapse collapse"
+                                 aria-labelledby="headingBusquedaTarjetas"
+                                 data-bs-parent="#acordeonFiltrosTarjetas">
                                 <div class="accordion-body p-4 bg-white">
                                     <!-- Select2: Buscar Material - Solo para seleccionar -->
                                     <div class="row g-3 mb-4">
                                         <div class="col-12">
-                                            <label class="form-label fw-semibold text-muted mb-1" for="busquedaMaterialInventario">Buscar Material</label>
-                                            <select id="busquedaMaterialInventario" class="form-select border-2 border-success js-select2-busqueda-inventario" style="width: 100%;">
+                                            <label class="form-label fw-semibold text-muted mb-1"
+                                                   for="busquedaMaterialInventario">Buscar Material</label>
+                                            <select id="busquedaMaterialInventario"
+                                                    class="form-select border-2 border-success js-select2-busqueda-inventario"
+                                                    style="width: 100%">
                                                 <option></option>
                                             </select>
                                         </div>
                                     </div>
-
                                     <!-- Categoría, Tipo, Alerta, Unidad, Ocupación -->
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6 col-lg-3">
-                                            <label class="form-label fw-semibold text-muted mb-1" for="filtroCategoriaSelectInventario">Categoría</label>
-                                            <select id="filtroCategoriaSelectInventario" class="form-select border-2 border-success js-select2-filtro-categoria-inventario" style="width: 100%;">
+                                            <label class="form-label fw-semibold text-muted mb-1"
+                                                   for="filtroCategoriaSelectInventario">Categoría</label>
+                                            <select id="filtroCategoriaSelectInventario"
+                                                    class="form-select border-2 border-success js-select2-filtro-categoria-inventario"
+                                                    style="width: 100%">
                                                 <option value="">-- Todas las categorías --</option>
                                                 <!-- Mostrar categorías del inventario si existen -->
-
-                                                    <option
-
-                                                           >
-                                                    </option>
-
+                                                <option></option>
                                                 <!-- Si no hay categorías en inventario, mostrar del catálogo -->
-
-                                                    <option
-
-                                                           >
-                                                    </option>
-
+                                                <option></option>
                                             </select>
                                         </div>
-
                                         <div class="col-md-6 col-lg-3">
-                                            <label class="form-label fw-semibold text-muted mb-1" for="filtroTipoSelectInventario">Tipo</label>
-                                            <select id="filtroTipoSelectInventario" class="form-select border-2 border-success js-select2-filtro-tipo-inventario" style="width: 100%;">
+                                            <label class="form-label fw-semibold text-muted mb-1"
+                                                   for="filtroTipoSelectInventario">Tipo</label>
+                                            <select id="filtroTipoSelectInventario"
+                                                    class="form-select border-2 border-success js-select2-filtro-tipo-inventario"
+                                                    style="width: 100%">
                                                 <option value="">-- Todos los tipos --</option>
                                                 <!-- Mostrar tipos del inventario si existen -->
-
-                                                    <option
-
-                                                           >
-                                                    </option>
-
+                                                <option></option>
                                                 <!-- Si no hay tipos en inventario, mostrar del catálogo -->
-
-                                                    <option
-
-                                                           >
-                                                    </option>
-
+                                                <option></option>
                                             </select>
                                         </div>
-
                                         <div class="col-md-6 col-lg-3">
-                                            <label for="filtroAlerataInventario" class="form-label fw-semibold text-muted mb-1">
+                                            <label for="filtroAlerataInventario"
+                                                   class="form-label fw-semibold text-muted mb-1">
                                                 <i class="bi bi-exclamation-triangle me-1"></i>Alerta
                                             </label>
                                             <select class="form-select border-2 border-success js-select2-filtro-alerta-inventario"
                                                     id="filtroAlerataInventario"
-                                                    style="width: 100%;">
+                                                    style="width: 100%">
                                                 <option value="">Todas las alertas</option>
-
-                                                    <option
-
-                                                           >
-                                                        Alerta
-                                                    </option>
-
+                                                <option>Alerta</option>
                                             </select>
                                         </div>
-
                                         <div class="col-md-6 col-lg-3">
-                                            <label for="filtroUnidadInventario" class="form-label fw-semibold text-muted mb-1">
+                                            <label for="filtroUnidadInventario"
+                                                   class="form-label fw-semibold text-muted mb-1">
                                                 <i class="bi bi-ruler me-1"></i>Unidad de Medida
                                             </label>
                                             <select class="form-select border-2 border-success js-select2-filtro-unidad-inventario"
-                                                    id="filtroUnidadInventario"
-                                                    style="width: 100%;">
+                                                id="filtroUnidadInventario"
+                                                style="width: 100%">
                                                 <option value="">Todas las unidades</option>
-
-                                                    <option
-
-                                                           >
-                                                        Unidad
-                                                    </option>
-
+                                                {% for value, label in unidades_medida %}
+                                                    <option value="{{ value }}">{{ label }}</option>
+                                                {% endfor %}
                                             </select>
                                         </div>
                                     </div>
-
                                     <!-- Ocupación y Botones -->
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6 col-lg-3">
-                                            <label for="filtroOcupacionInventario" class="form-label fw-semibold text-muted mb-1">
+                                            <label for="filtroOcupacionInventario"
+                                                   class="form-label fw-semibold text-muted mb-1">
                                                 <i class="bi bi-percent me-1"></i>Ocupación
                                             </label>
                                             <select class="form-select border-2 border-success js-select2-filtro-ocupacion-inventario"
                                                     id="filtroOcupacionInventario"
-                                                    style="width: 100%;">
+                                                    style="width: 100%">
                                                 <option value="">Cualquier ocupación</option>
                                                 <option value="0-25">0% - 25%</option>
                                                 <option value="25-50">25% - 50%</option>
@@ -711,12 +738,16 @@
                                                 <option value="75-100">75% - 100%</option>
                                             </select>
                                         </div>
-
                                         <div class="col-md-6 col-lg-3 d-flex align-items-end gap-2">
-                                            <button id="btnBuscarInventario" class="btn btn-success flex-grow-1" type="button">
+                                            <button id="btnBuscarInventario"
+                                                    class="btn btn-success flex-grow-1"
+                                                    type="button">
                                                 <i class="bi bi-search me-1"></i>Buscar
                                             </button>
-                                            <button id="btnLimpiarTodosFiltraInventario" class="btn btn-outline-secondary" type="button" title="Limpiar todos los filtros">
+                                            <button id="btnLimpiarTodosFiltraInventario"
+                                                    class="btn btn-outline-secondary"
+                                                    type="button"
+                                                    title="Limpiar todos los filtros">
                                                 <i class="bi bi-eraser me-1"></i>Limpiar
                                             </button>
                                         </div>
@@ -724,118 +755,83 @@
                                 </div>
                             </div>
                         </div>
-
-                    <!-- Espaciador entre acordeón y tarjetas -->
-                    <div class="my-4"></div>
-
-                    <div class="alert alert-warning" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Mensaje de alerta</strong>
-                    </div>
-
-                    <div class="alert alert-info" role="alert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Sin materiales</strong> - No hay materiales registrados en el inventario.
-                    </div>
-
-                    <div class="row g-4" id="contenedorMateriales">
-                        <div class="col-12 col-md-6 col-lg-4 tarjeta-material"
-
-
-
-                            >
-                            <!-- Tarjeta de Material -->
-                            <div class="card h-100 shadow-sm border-0 transition"
-                                 style="transition: all 0.3s ease;"
-                                >
-                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h5 class="card-title mb-1">Material</h5>
-                                        <small class="text-light">Unidad</small>
+                        <!-- Espaciador entre acordeón y tarjetas -->
+                        <div class="my-4"></div>
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Mensaje de alerta</strong>
+                        </div>
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Sin materiales</strong> - No hay materiales registrados en el inventario.
+                        </div>
+                        <div class="row g-4" id="contenedorMateriales">
+                            <div class="col-12 col-md-6 col-lg-4 tarjeta-material">
+                                <!-- Tarjeta de Material -->
+                                <div class="card h-100 shadow-sm border-0 transition"
+                                     style="transition: all 0.3s ease">
+                                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="card-title mb-1">Material</h5>
+                                            <small class="text-light">Unidad</small>
+                                        </div>
+                                        <span class="badge bg-info">Unidad</span>
                                     </div>
-                                    <span class="badge bg-info">Unidad</span>
-                                </div>
-
-                                <div class="card-body">
-                                    <!-- Datos principales -->
-                                    <div class="row mb-3">
-                                        <div class="col-6">
-                                            <small class="text-muted">Stock Actual</small>
-                                            <p class="fw-bold text-success">0.00</p>
+                                    <div class="card-body">
+                                        <!-- Datos principales -->
+                                        <div class="row mb-3">
+                                            <div class="col-6">
+                                                <small class="text-muted">Stock Actual</small>
+                                                <p class="fw-bold text-success">0.00</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Capacidad Máxima</small>
+                                                <p class="fw-bold text-primary">0.00</p>
+                                            </div>
                                         </div>
-                                        <div class="col-6">
-                                            <small class="text-muted">Capacidad Máxima</small>
-                                            <p class="fw-bold text-primary">0.00</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Indicador de ocupación con código de color -->
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <small class="text-muted">% Ocupación</small>
-
-                                                <small class="fw-bold"
-
-                                                      >
-                                                    0%
-                                                </small>
-
-                                        </div>
-
+                                        <!-- Indicador de ocupación con código de color -->
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <small class="text-muted">% Ocupación</small>
+                                                <small class="fw-bold">0%</small>
+                                            </div>
                                             <div class="progress" style="height: 20px;">
-                                                <div class="progress-bar"
-
-                                                     role="progressbar"
-
-                                                    >
+                                                <div class="progress-bar"  role="progressbar">
                                                     <small class="d-flex align-items-center justify-content-center h-100 text-dark fw-bold">0%</small>
                                                 </div>
                                             </div>
-
-                                    </div>
-
-                                    <!-- Información de precios -->
-                                    <hr class="my-2">
-                                    <div class="row small mb-3">
-                                        <div class="col-6">
-                                            <small class="text-muted">Precio Compra</small>
-                                            <p class="text-dark mb-0">$ 0.00</p>
                                         </div>
-                                        <div class="col-6">
-                                            <small class="text-muted">Precio Venta</small>
-                                            <p class="text-dark mb-0">$ 0.00</p>
+                                        <!-- Información de precios -->
+                                        <hr class="my-2">
+                                        <div class="row small mb-3">
+                                            <div class="col-6">
+                                                <small class="text-muted">Precio Compra</small>
+                                                <p class="text-dark mb-0">$ 0.00</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Precio Venta</small>
+                                                <p class="text-dark mb-0">$ 0.00</p>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <!-- Umbral de alerta -->
-                                    <div class="alert alert-light border border-warning p-2 mb-0" role="alert">
-                                        <small class="text-muted">Umbrales:</small>
-                                        <div class="d-flex justify-content-between mt-1">
-                                            <small>
-                                                <span class="badge bg-warning">Alerta: <span>0</span>%</span>
-                                            </small>
-                                            <small>
-                                                <span class="badge bg-danger">Crítico: <span>0</span>%</span>
-                                            </small>
+                                        <!-- Umbral de alerta -->
+                                        <div class="alert alert-light border border-warning p-2 mb-0" role="alert">
+                                            <small class="text-muted">Umbrales:</small>
+                                            <div class="d-flex justify-content-between mt-1">
+                                                <small>
+                                                    <span class="badge bg-warning">Alerta: <span>0</span>%</span>
+                                                </small>
+                                                <small>
+                                                    <span class="badge bg-danger">Crítico: <span>0</span>%</span>
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-
-                                <!-- Botón de detalles -->
-                                <div class="card-footer bg-light border-top d-grid gap-2">
-                                    <button type="button" class="btn btn-success btn-sm detallesBtn"
-
-
-
-
-
-
-
-
-
-                                           >
-                                        <i class="bi bi-eye me-1"></i> Ver Detalles
-                                    </button>
+                                    <!-- Botón de detalles -->
+                                    <div class="card-footer bg-light border-top d-grid gap-2">
+                                        <button type="button" class="btn btn-success btn-sm detallesBtn">
+                                            <i class="bi bi-eye me-1"></i> Ver Detalles
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -844,13 +840,13 @@
             </div>
         </div>
     </div>
-
-    </div>
-
     <!-- MODALS: reemplazo por la versión global solicitada -->
-
     <!-- MODAL GLOBAL - DISPONIBLE EN TODAS LAS PÁGINAS -->
-    <div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="detallesModal"
+         tabindex="-1"
+         aria-labelledby="detallesModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg rounded-3">
                 <!-- Header con fondo verde -->
@@ -861,13 +857,17 @@
                         </h5>
                         <small class="text-white-50"><i class="bi bi-info-circle me-1"></i>Información completa del inventario</small>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body p-0">
                     <!-- Sección 1: Información Básica -->
                     <div class="p-4 border-bottom bg-light">
-                        <h6 class="text-success mb-3 fw-bold"><i class="bi bi-info-circle me-2"></i>Información Básica</h6>
+                        <h6 class="text-success mb-3 fw-bold">
+                            <i class="bi bi-info-circle me-2"></i>Información Básica
+                        </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="p-3 rounded-2 bg-light border-start border-4 border-success">
@@ -878,7 +878,8 @@
                             <div class="col-md-6 d-none">
                                 <div class="p-3 rounded-2 bg-light border-start border-4 border-primary">
                                     <small class="text-muted d-block mb-1"><i class="bi bi-code-square me-1"></i>ID del Material</small>
-                                    <p class="h6 font-monospace text-primary fw-bold mb-0" id="modalMaterialId">-</p>
+                                    <p class="h6 font-monospace text-primary fw-bold mb-0"
+                                       id="modalMaterialId">-</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -895,20 +896,23 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Sección 2: Ocupación -->
                     <div class="p-4 border-bottom">
-                        <h6 class="text-success mb-3 fw-bold"><i class="bi bi-pie-chart me-2"></i>Ocupación del Inventario <span class="badge bg-success" id="modalOcupacionPorcentaje">0%</span></h6>
+                        <h6 class="text-success mb-3 fw-bold">
+                            <i class="bi bi-pie-chart me-2"></i>Ocupación del Inventario <span class="badge bg-success" id="modalOcupacionPorcentaje">0%</span>
+                        </h6>
                         <div class="progress rounded-pill" style="height: 40px;">
-                            <div id="modalOcupacionBar" class="progress-bar d-flex align-items-center justify-content-center fw-bold text-white fs-6">
+                            <div id="modalOcupacionBar"
+                                 class="progress-bar d-flex align-items-center justify-content-center fw-bold text-white fs-6">
                                 <small id="modalOcupacionText">0%</small>
                             </div>
                         </div>
                     </div>
-
                     <!-- Sección 3: Stock e Inventario -->
                     <div class="p-4 border-bottom bg-light">
-                        <h6 class="text-success mb-3 fw-bold"><i class="bi bi-inbox me-2"></i>Inventario</h6>
+                        <h6 class="text-success mb-3 fw-bold">
+                            <i class="bi bi-inbox me-2"></i>Inventario
+                        </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="p-3 rounded-2 bg-white border border-success border-opacity-25 border-start border-4 border-success">
@@ -938,10 +942,11 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Sección 4: Precios y Márgenes -->
                     <div class="p-4 border-bottom">
-                        <h6 class="text-success mb-3 fw-bold"><i class="bi bi-tag-fill me-2"></i>Análisis de Precios</h6>
+                        <h6 class="text-success mb-3 fw-bold">
+                            <i class="bi bi-tag-fill me-2"></i>Análisis de Precios
+                        </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="p-3 rounded-2 bg-primary bg-opacity-10 border-start border-4 border-primary">
@@ -976,10 +981,11 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Sección 5: Umbrales y Alertas -->
                     <div class="p-4 border-bottom bg-light">
-                        <h6 class="text-success mb-3 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Umbrales y Alertas</h6>
+                        <h6 class="text-success mb-3 fw-bold">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Umbrales y Alertas
+                        </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="p-3 rounded-2 bg-warning bg-opacity-10 border-start border-4 border-warning">
@@ -997,14 +1003,11 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Indicador de Estado -->
                     <div class="p-4 border-bottom" id="modalEstadoIndicador"></div>
-
                     <!-- Resumen de Alertas -->
                     <div class="p-4" id="modalResumenAlertas"></div>
                 </div>
-
                 <div class="modal-footer bg-light border-top">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-1"></i>Cerrar
@@ -1019,9 +1022,12 @@
             </div>
         </div>
     </div>
-
     <!-- MODAL EDITAR - PARA EDITAR DATOS DEL INVENTARIO -->
-    <div class="modal fade" id="editarModal" tabindex="-1" aria-labelledby="editarModalLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="editarModal"
+         tabindex="-1"
+         aria-labelledby="editarModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg rounded-3">
                 <!-- Header -->
@@ -1032,14 +1038,15 @@
                         </h5>
                         <small class="text-secondary"><i class="bi bi-info-circle me-1"></i>Actualiza los datos del material</small>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body p-4">
                     <form id="formularioEditarInventario">
                         <!-- Material ID (oculto) -->
                         <input type="hidden" id="editarMaterialId" value="">
-
                         <!-- Row 1: Stock y Capacidad -->
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
@@ -1047,7 +1054,11 @@
                                     <i class="bi bi-inbox text-success me-2"></i>Stock Actual
                                 </label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" id="editarStockActual" step="0.01" required>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="editarStockActual"
+                                           step="0.01"
+                                           required>
                                     <span class="input-group-text" id="editarStockUnidad">un.</span>
                                 </div>
                             </div>
@@ -1056,12 +1067,15 @@
                                     <i class="bi bi-archive text-primary me-2"></i>Capacidad Máxima
                                 </label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" id="editarCapacidadMaxima" step="0.01" required>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="editarCapacidadMaxima"
+                                           step="0.01"
+                                           required>
                                     <span class="input-group-text" id="editarCapacidadUnidad">un.</span>
                                 </div>
                             </div>
                         </div>
-
                         <!-- Row 1.5: Unidad de Medida -->
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
@@ -1070,16 +1084,13 @@
                                 </label>
                                 <select class="form-select" id="editarUnidadMedida" required>
                                     <option value="">-- Seleccionar unidad --</option>
-
-                                        <option
-
-                                               >Unidad</option>
-
+                                    {% for value, label in unidades_medida %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
                                 </select>
                                 <small class="text-muted d-block mt-2">Selecciona la unidad de medida del material</small>
                             </div>
                         </div>
-
                         <!-- Row 2: Precios -->
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
@@ -1088,7 +1099,11 @@
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="editarPrecioCompra" step="0.01" required>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="editarPrecioCompra"
+                                           step="0.01"
+                                           required>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1097,27 +1112,39 @@
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="editarPrecioVenta" step="0.01" required>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="editarPrecioVenta"
+                                           step="0.01"
+                                           required>
                                 </div>
                             </div>
                         </div>
-
                         <!-- Row 3: Umbrales -->
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label for="editarUmbralAlerta" class="form-label fw-bold">
                                     <i class="bi bi-exclamation-triangle text-warning me-2"></i>Umbral de Alerta (%)
                                 </label>
-                                <input type="number" class="form-control" id="editarUmbralAlerta" min="0" max="100" required>
+                                <input type="number"
+                                       class="form-control"
+                                       id="editarUmbralAlerta"
+                                       min="0"
+                                       max="100"
+                                       required>
                             </div>
                             <div class="col-md-6">
                                 <label for="editarUmbralCritico" class="form-label fw-bold">
                                     <i class="bi bi-exclamation-octagon text-danger me-2"></i>Umbral Crítico (%)
                                 </label>
-                                <input type="number" class="form-control" id="editarUmbralCritico" min="0" max="100" required>
+                                <input type="number"
+                                       class="form-control"
+                                       id="editarUmbralCritico"
+                                       min="0"
+                                       max="100"
+                                       required>
                             </div>
                         </div>
-
                         <!-- Resumen de cambios -->
                         <div class="alert alert-info rounded-2" role="alert">
                             <i class="bi bi-info-circle me-2"></i>
@@ -1125,7 +1152,6 @@
                         </div>
                     </form>
                 </div>
-
                 <div class="modal-footer bg-light border-top">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-1"></i>Cancelar
@@ -1137,22 +1163,27 @@
             </div>
         </div>
     </div>
-
     <!-- Modal de Resultado del Guardado (Éxito o Error) -->
-    <div class="modal fade" id="modalResultadoGuardado" tabindex="-1" aria-labelledby="modalResultadoLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalResultadoGuardado"
+         tabindex="-1"
+         aria-labelledby="modalResultadoLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-body p-5 text-center">
                     <!-- Icono dinámico -->
                     <div class="mb-4">
-                        <i id="iconoResultado" class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                        <i id="iconoResultado"
+                           class="bi bi-check-circle text-success"
+                           style="font-size: 4rem"></i>
                     </div>
                     <!-- Título dinámico -->
-                    <h5 id="tituloResultado" class="fw-bold mb-3 text-success" style="font-size: 1.5rem;">
-                        ¡Operación Exitosa!
-                    </h5>
+                    <h5 id="tituloResultado"
+                        class="fw-bold mb-3 text-success"
+                        style="font-size: 1.5rem">¡Operación Exitosa!</h5>
                     <!-- Mensaje dinámico -->
-                    <p id="mensajeResultado" class="text-muted mb-0" style="font-size: 1rem;">
+                    <p id="mensajeResultado" class="text-muted mb-0" style="font-size: 1rem">
                         Los cambios se han guardado correctamente en la base de datos.
                     </p>
                 </div>
@@ -1164,9 +1195,12 @@
             </div>
         </div>
     </div>
-
     <!-- Modal de Éxito en Actualización -->
-    <div class="modal fade" id="modalExitoActualizacion" tabindex="-1" aria-labelledby="modalExitoLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalExitoActualizacion"
+         tabindex="-1"
+         aria-labelledby="modalExitoLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-body p-4 text-center">
@@ -1179,18 +1213,23 @@
             </div>
         </div>
     </div>
-
     <!-- Modal de Resumen de Actualización -->
-    <div class="modal fade" id="modalResumenActualizacion" tabindex="-1" aria-labelledby="modalResumenLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalResumenActualizacion"
+         tabindex="-1"
+         aria-labelledby="modalResumenLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-success text-white border-0">
                     <h5 class="modal-title fw-bold" id="modalResumenLabel">
                         <i class="bi bi-info-circle me-2"></i>Datos Actualizados
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body p-4">
                     <!-- Información del Material -->
                     <div class="mb-4">
@@ -1208,7 +1247,6 @@
                             </p>
                         </div>
                     </div>
-
                     <!-- Stock e Inventario -->
                     <div class="mb-4">
                         <h6 class="text-info fw-bold mb-3">
@@ -1235,7 +1273,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Precios -->
                     <div class="mb-4">
                         <h6 class="text-danger fw-bold mb-3">
@@ -1256,7 +1293,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Umbrales -->
                     <div>
                         <h6 class="text-warning fw-bold mb-3">
@@ -1278,16 +1314,17 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="modal-footer bg-light border-top">
-                    <button type="button" class="btn btn-success" data-bs-dismiss="modal" id="btnCerrarResumen">
+                    <button type="button"
+                            class="btn btn-success"
+                            data-bs-dismiss="modal"
+                            id="btnCerrarResumen">
                         <i class="bi bi-check-circle me-1"></i>Cerrar
                     </button>
                 </div>
             </div>
         </div>
     </div>
-
     <!-- SCRIPT PARA MANEJO DE MODALES -->
     <script>
         // ====================================================================
@@ -1800,22 +1837,22 @@
             console.log('✓ Script de modales cargado');
         })();
     </script>
-
     <!-- ============================================================ -->
     <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS) -->
     <!-- ============================================================ -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+          rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+          rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
     <!-- ============================================================ -->
     <!-- SELECT2 INICIALIZACIÓN CON FORMATSTATE PERSONALIZADO -->
     <!-- ============================================================ -->
     <script>
     (function() {
         console.log('📌 Inicializando Select2 - Acordeón Agregar Material...');
-
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
         // ========================================================
         // FUNCIÓN PARA FORMATEAR EL ESTADO (Selección)
         // ========================================================
@@ -1844,7 +1881,7 @@
         // ========================================================
         var $buscarMaterial = $('#buscarMaterialSelect');
         if ($buscarMaterial.length) {
-            var endpointBuscar = '/punto-eca/catalogo/materiales/buscar';
+            var endpointBuscar = '/punto-eca/catalogo/materiales/buscar/';
             var puntoIdBuscar = document.getElementById('agregarPuntoId')?.value || '';
             $buscarMaterial.select2({
                 theme: 'bootstrap4', width: '100%', placeholder: 'Escribe el nombre del material...', minimumInputLength: 1, allowClear: true,
@@ -2301,5 +2338,4 @@
         }
     })();
     </script>
-
 </section>

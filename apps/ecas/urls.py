@@ -1,7 +1,8 @@
 from django.urls import path
 from apps.ecas.views import render_seccion, editar_perfil_gestor, editar_punto
+from apps.inventory.views import buscar_materiales_catalogo
 
-app_name = "punto"
+app_name = "punto-eca"
 
 urlpatterns = [
     path("", render_seccion, {"seccion": "resumen"}, name="resumen"),
@@ -27,4 +28,9 @@ urlpatterns = [
     path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
     path("editar-perfil/<str:id>/", editar_perfil_gestor, name="editar_perfil"),
     path("editar-punto/<str:id>/", editar_punto, name="editar_punto"),
+    path(
+        "catalogo/materiales/buscar/",
+        buscar_materiales_catalogo,
+        name="buscar_materiales",
+    ),
 ]
