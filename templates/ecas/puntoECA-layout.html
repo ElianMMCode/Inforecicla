@@ -1004,7 +1004,20 @@ if (btnGuardarPunto) {
       });
     </script>
 
-    <script></script>
+    <script>
+      // Función global para obtener CSRF token
+      function getCSRFToken() {
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          const [key, value] = cookie.trim().split('=');
+          if (key === name) {
+            return decodeURIComponent(value);
+          }
+        }
+        return '';
+      }
+    </script>
 
     <!-- Inicializar Select2 globalmente -->
     <script>
@@ -1045,6 +1058,9 @@ if (btnGuardarPunto) {
           "#filtroLocalidadGlobal",
           "#filtroTipoPropio",
           "#filtroLocalidadPropio",
+          "#selectMaterial",
+          "#selectTipoRepeticion",
+          ".select2-modal",
         ];
 
         selects.forEach(function (selector) {
