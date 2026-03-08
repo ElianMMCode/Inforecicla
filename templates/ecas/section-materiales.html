@@ -1,5 +1,8 @@
 <!-- Fragment: Materiales -->
-<section class="py-4">
+<section class="py-4"
+         data-gestor="{{ gestor }}"
+         data-usuario-id="{{ gestor.id }}"
+         data-punto-eca-id="{{ punto.id }}">
     <!-- Título principal -->
     <div class="mb-4">
         <h2 class="h4 fw-bold text-dark mb-1">
@@ -780,62 +783,61 @@
                                                 <i class="bi bi-tag-fill me-1"></i>{{ inventario.material.categoria.nombre|default:"General" }}
                                             </span>
                                         </div>
-                                        {% with ocupacion=inventario.ocupacion_actual|default:0 %}
-                                            <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 {% if ocupacion <= inventario.umbral_critico %} bg-danger-subtle text-danger {% elif ocupacion <= inventario.umbral_alerta %} bg-warning-subtle text-warning-emphasis {% else %} bg-success-subtle text-success-emphasis {% endif %}">
-                                                <div>
-                                                    <h5 class="card-title mb-0 fw-bold">{{ inventario.material.nombre }}</h5>
-                                                    <!-- <small class="opacity-75">ID: #{{ inventario.material.id }}</small> -->
-                                                    <small class="opacity-75">{{ inventario.material.tipo.nombre|default:"Tipo Desconocido" }}</small>
-                                                </div>
-                                                {% if ocupacion <= inventario.umbral_critico %}
-                                                    <i class="bi bi-exclamation-octagon-fill fs-4" title="Stock Crítico"></i>
-                                                {% elif ocupacion <= inventario.umbral_alerta %}
-                                                    <i class="bi bi-exclamation-triangle-fill fs-4" title="Stock Bajo"></i>
-                                                {% else %}
-                                                    <i class="bi bi-check-circle-fill fs-4" title="Stock Óptimo"></i>
-                                                {% endif %}
+                                        <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 {% if inventario.ocupacion_actual >= inventario.umbral_critico %} bg-danger-subtle text-danger {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %} bg-warning-subtle text-warning-emphasis {% else %} bg-success-subtle text-success-emphasis {% endif %}">
+                                            <div>
+                                                <h5 class="card-title mb-0 fw-bold">{{ inventario.material.nombre }}</h5>
+                                                <!-- <small class="opacity-75">ID: #{{ inventario.material.id }}</small> -->
+                                                <small class="opacity-75">{{ inventario.material.tipo.nombre|default:"Tipo Desconocido" }}</small>
                                             </div>
-                                            <div class="card-body">
-                                                <div class="mb-4">
-                                                    <div class="d-flex justify-content-between align-items-end mb-1">
-                                                        <span class="text-muted small fw-semibold">Disponibilidad</span>
-                                                        <span class="h5 mb-0 fw-bold">
-                                                            {{ inventario.stock_actual|floatformat:2 }}
-                                                            <span class="small text-muted fw-normal">{{ inventario.unidad_medida }}</span>
-                                                        </span>
-                                                    </div>
-                                                    <div class="progress" style="height: 10px; border-radius: 5px;">
-                                                        <div class="progress-bar {% if inventario.porcentaje_ocupacion <= inventario.umbral_critico %} bg-danger {% elif inventario.porcentaje_ocupacion <= inventario.umbral_alerta %} bg-warning {% else %} bg-success {% endif %}"
-                                                             role="progressbar"
-                                                             style="width: {{ inventario.ocupacion_actual|floatformat:0 }}%"
-                                                             aria-valuenow="{{ inventario.ocupacion_actual|floatformat:0 }}"
-                                                             aria-valuemin="0"
-                                                             aria-valuemax="100">
-                                                            <span class="small">{{ inventario.ocupacion_actual|floatformat:0 }}%</span>
-                                                        </div>
-                                                    </div>
-                                                    <p class="text-end small text-muted mt-1">Capacidad: {{ inventario.capacidad_maxima }}</p>
+                                            {% if inventario.ocupacion_actual <= inventario.umbral_critico %}
+                                                <i class="bi bi-exclamation-octagon-fill fs-4" title="Stock Crítico"></i>
+                                            {% elif inventario.ocupacion_actual <= inventario.umbral_alerta %}
+                                                <i class="bi bi-exclamation-triangle-fill fs-4" title="Stock Bajo"></i>
+                                            {% else %}
+                                                <i class="bi bi-check-circle-fill fs-4" title="Stock Óptimo"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-4">
+                                                <div class="d-flex justify-content-between align-items-end mb-1">
+                                                    <span class="text-muted small fw-semibold">Disponibilidad</span>
+                                                    <span class="h5 mb-0 fw-bold">
+                                                        {{ inventario.stock_actual|floatformat:2 }}
+                                                        <span class="small text-muted fw-normal">{{ inventario.unidad_medida }}</span>
+                                                    </span>
                                                 </div>
-                                                <div class="row g-2 py-3 border-top border-bottom">
-                                                    <div class="col-6 border-end">
-                                                        <p class="text-muted small mb-0 text-uppercase">Costo Compra</p>
-                                                        <span class="fw-bold text-dark">$ {{ inventario.precio_compra|floatformat:2 }}</span>
+                                                <div class="progress" style="height: 10px; border-radius: 5px;">
+                                                    <div class="progress-bar {% if inventario.porcentaje_ocupacion <= inventario.umbral_critico %} bg-danger {% elif inventario.porcentaje_ocupacion <= inventario.umbral_alerta %} bg-warning {% else %} bg-success {% endif %}"
+                                                         role="progressbar"
+                                                         style="width: {{ inventario.ocupacion_actual|floatformat:0 }}%"
+                                                         aria-valuenow="{{ inventario.ocupacion_actual|floatformat:0 }}"
+                                                         aria-valuemin="0"
+                                                         aria-valuemax="100">
+                                                        <span class="small">{{ inventario.ocupacion_actual|floatformat:0 }}%</span>
                                                     </div>
-                                                    <div class="col-6 ps-3">
-                                                        <p class="text-muted small mb-0 text-uppercase">Valor Venta</p>
-                                                        <span class="fw-bold text-dark">$ {{ inventario.precio_venta|floatformat:2 }}</span>
-                                                    </div>
+                                                </div>
+                                                <p class="text-end small text-muted mt-1">Capacidad: {{ inventario.capacidad_maxima }}</p>
+                                            </div>
+                                            <div class="row g-2 py-3 border-top border-bottom">
+                                                <div class="col-6 border-end">
+                                                    <p class="text-muted small mb-0 text-uppercase">Costo Compra</p>
+                                                    <span class="fw-bold text-dark">$ {{ inventario.precio_compra|floatformat:2 }}</span>
+                                                </div>
+                                                <div class="col-6 ps-3">
+                                                    <p class="text-muted small mb-0 text-uppercase">Valor Venta</p>
+                                                    <span class="fw-bold text-dark">$ {{ inventario.precio_venta|floatformat:2 }}</span>
                                                 </div>
                                             </div>
-                                            <div class="card-footer bg-transparent border-0 pb-3">
-                                                <div class="d-grid">
-                                                    <button type="button"
-                                                            class="btn btn-outline-dark btn-sm detallesBtn rounded-pill">
-                                                        <i class="bi bi-clipboard-data me-2"></i>Ver Hoja Técnica
-                                                    </button>
-                                                </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent border-0 pb-3">
+                                            <div class="d-grid">
+                                                <button type="button"
+                                                        class="btn btn-outline-dark btn-sm detallesBtn rounded-pill"
+                                                        data-inventario-id="{{ inventario.id }}">
+                                                    <i class="bi bi-clipboard-data me-2"></i>Ver Hoja Técnica
+                                                </button>
                                             </div>
-                                        {% endwith %}
+                                        </div>
                                     </div>
                                 </div>
                             {% empty %}
@@ -1450,97 +1452,113 @@
             }
 
             function manejarClickTarjeta(btn) {
-                const nombre = btn.dataset.nombreMaterial || '-';
-                const materialId = btn.dataset.materialId || '';
-                const stock = parseFloat(btn.dataset.stockActual || 0) || 0;
-                const capacidad = parseFloat(btn.dataset.capacidadMaxima || 0) || 0;
-                const precioCompra = btn.dataset.precioCompra || '0';
-                const precioVenta = btn.dataset.precioVenta || '0';
-                const umbralAlerta = parseInt(btn.dataset.umbralAlerta || 0) || 0;
-                const umbralCritico = parseInt(btn.dataset.umbralCritico || 0) || 0;
-                const unidad = btn.dataset.unidadMedida || '';
-                const inventarioId = btn.dataset.inventarioId || '';
+                // NEW: Traemos los datos completos usando AJAX
+                const inventarioId = btn.dataset.inventarioId;
+                const puntoId = document.getElementById('agregarPuntoId')?.value; // existente en el DOM
 
-                console.log('Material:', { nombre, stock, capacidad, inventarioId });
+                // Log para debug antes del fetch
+                console.log('DEBUG - Modal Detalles:', {
+                    inventarioId: inventarioId,
+                    puntoId: puntoId
+                });
 
-                // Rellenar campos del modal detalles
-                const setText = (id, text) => {
+                if (!inventarioId) {
+                    console.error('No inventarioId en dataset');
+                    return;
+                }
+
+                // Bonus UX: Mostrar loading
+                setText('modalNombreMaterial', 'Cargando...');
+
+                fetch(`/punto-eca/detalles-material-inventario/${puntoId}/${inventarioId}`)
+                    .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer los datos'))
+                    .then(data => {
+                        // Ahora sí, rellenamos el modal con data
+                        setText('modalHeaderNombre', 'Detalles del Material');
+                        setText('modalNombreMaterial', data.nmbMaterial || '-');
+                        setText('modalMaterialId', inventarioId);
+                        setText('modalUnidadMedida', data.unidadMedida || '-');
+                        setText('modalStockActual', Number(data.stockActual).toFixed(2));
+                        setText('modalStockUnidad', data.unidadMedida || 'unidades');
+                        setText('modalCapacidadMaxima', Number(data.capacidadMaxima).toFixed(2));
+                        setText('modalCapacidadUnidad', data.unidadMedida || 'unidades');
+                        setText('modalEspacioUsado', Number(data.stockActual).toFixed(2));
+                        setText('modalEspacioDisponible', Math.max(Number(data.capacidadMaxima) - Number(data.stockActual), 0).toFixed(2));
+                        setText('modalPrecioCompra', '$ ' + Number(data.precioCompra).toFixed(2));
+                        setText('modalPrecioVenta', '$ ' + Number(data.precioVenta).toFixed(2));
+            
+                        // Margen y total
+                        const margen = (Number(data.precioVenta) - Number(data.precioCompra)) || 0;
+                        setText('modalMargenGanancia', '$ ' + margen.toFixed(2));
+                        const pctMargen = (Number(data.precioCompra) > 0) ? Math.round((margen / Number(data.precioCompra)) * 100) + '%' : '0%';
+                        setText('modalPorcentajeMargen', pctMargen);
+                        const valorTotal = (Number(data.stockActual) * Number(data.precioCompra)) || 0;
+                        setText('modalValorTotal', '$ ' + Number(valorTotal).toFixed(2));
+                        setText('modalUmbralAlerta', (data.umbralAlerta || 0) + '%');
+                        setText('modalUmbralCritico', (data.umbralCritico || 0) + '%');
+            
+                        // Ocupación
+                        const porcentaje = (Number(data.capacidadMaxima) > 0)
+                            ? Math.round((Number(data.stockActual) / Number(data.capacidadMaxima)) * 100)
+                            : 0;
+                        setText('modalOcupacionPorcentaje', porcentaje + '%');
+                        const barra = document.getElementById('modalOcupacionBar');
+                        const textoBar = document.getElementById('modalOcupacionText');
+                        if (barra && textoBar) {
+                            const estado = aplicarColorBarra(barra, porcentaje, data.umbralAlerta, data.umbralCritico);
+                            textoBar.textContent = porcentaje + '%';
+                            const estadoTextEl = document.getElementById('modalEstadoText');
+                            const estadoIconEl = document.getElementById('modalEstadoIcon');
+                            if (estadoTextEl) estadoTextEl.textContent = estado;
+                            if (estadoIconEl) {
+                                estadoIconEl.className = 'bi bi-circle-fill me-1';
+                                if (estado === 'Crítico') estadoIconEl.classList.add('text-danger');
+                                else if (estado === 'Alerta') estadoIconEl.classList.add('text-warning');
+                                else estadoIconEl.classList.add('text-success');
+                            }
+                        }
+            
+                        // Guardar id en botones del modal
+                        const btnEditar = document.getElementById('btnEditarMaterial');
+                        const btnBorrar = document.getElementById('btnBorrarMaterial');
+                        if (btnEditar) {
+                            btnEditar.dataset.inventarioId = inventarioId;
+                            btnEditar.dataset.materialId = inventarioId;
+                            btnEditar.dataset.stock = data.stockActual;
+                            btnEditar.dataset.capacidad = data.capacidadMaxima;
+                            btnEditar.dataset.unidad = data.unidadMedida;
+                            btnEditar.dataset.precioCompra = data.precioCompra;
+                            btnEditar.dataset.precioVenta = data.precioVenta;
+                            btnEditar.dataset.umbralAlerta = data.umbralAlerta;
+                            btnEditar.dataset.umbralCritico = data.umbralCritico;
+                        }
+                        if (btnBorrar) {
+                            btnBorrar.dataset.inventarioId = inventarioId;
+                            btnBorrar.dataset.nombreMaterial = data.nmbMaterial || '-';
+                            btnBorrar.dataset.puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId || '';
+                        }
+            
+                        // Mostrar modal detalles
+                        if (detallesModalInstance) {
+                            console.log('✓ Abriendo modal de detalles (datos actualizados)');
+                            detallesModalInstance.show();
+                        } else {
+                            console.error('✗ detallesModalInstance no está inicializado');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error trayendo datos reales del inventario:', err);
+                        alert('Error al traer datos del material');
+                    });
+            
+                function setText(id, text) {
                     const el = document.getElementById(id);
                     if (el) {
                         el.textContent = text;
                     }
-                };
-
-                setText('modalHeaderNombre', 'Detalles del Material');
-                setText('modalNombreMaterial', nombre);
-                setText('modalMaterialId', materialId);
-                setText('modalUnidadMedida', unidad || '-');
-                setText('modalStockActual', Number(stock).toFixed(2));
-                setText('modalStockUnidad', unidad || 'unidades');
-                setText('modalCapacidadMaxima', Number(capacidad).toFixed(2));
-                setText('modalCapacidadUnidad', unidad || 'unidades');
-                const espacioUsado = (capacidad > 0) ? (stock).toFixed(2) : '0.00';
-                const espacioDisp = (capacidad > 0) ? (Math.max(capacidad - stock, 0)).toFixed(2) : '0.00';
-                setText('modalEspacioUsado', espacioUsado);
-                setText('modalEspacioDisponible', espacioDisp);
-                setText('modalPrecioCompra', '$ ' + Number(precioCompra).toFixed(2));
-                setText('modalPrecioVenta', '$ ' + Number(precioVenta).toFixed(2));
-                const margen = (Number(precioVenta) - Number(precioCompra)) || 0;
-                setText('modalMargenGanancia', '$ ' + margen.toFixed(2));
-                const pctMargen = (Number(precioCompra) > 0) ? Math.round((margen / Number(precioCompra)) * 100) + '%' : '0%';
-                setText('modalPorcentajeMargen', pctMargen);
-                const valorTotal = (Number(stock) * Number(precioCompra)) || 0;
-                setText('modalValorTotal', '$ ' + Number(valorTotal).toFixed(2));
-                setText('modalUmbralAlerta', umbralAlerta + '%');
-                setText('modalUmbralCritico', umbralCritico + '%');
-
-                // Ocupación
-                const porcentaje = ponerEstadoOcupacion(stock, capacidad);
-                setText('modalOcupacionPorcentaje', porcentaje + '%');
-                const barra = document.getElementById('modalOcupacionBar');
-                const textoBar = document.getElementById('modalOcupacionText');
-                if (barra && textoBar) {
-                    const estado = aplicarColorBarra(barra, porcentaje, umbralAlerta, umbralCritico);
-                    textoBar.textContent = porcentaje + '%';
-                    const estadoTextEl = document.getElementById('modalEstadoText');
-                    const estadoIconEl = document.getElementById('modalEstadoIcon');
-                    if (estadoTextEl) estadoTextEl.textContent = estado;
-                    if (estadoIconEl) {
-                        estadoIconEl.className = 'bi bi-circle-fill me-1';
-                        if (estado === 'Crítico') estadoIconEl.classList.add('text-danger');
-                        else if (estado === 'Alerta') estadoIconEl.classList.add('text-warning');
-                        else estadoIconEl.classList.add('text-success');
-                    }
-                }
-
-                // Guardar id en botones del modal
-                const btnEditar = document.getElementById('btnEditarMaterial');
-                const btnBorrar = document.getElementById('btnBorrarMaterial');
-                if (btnEditar) {
-                    btnEditar.dataset.inventarioId = inventarioId;
-                    btnEditar.dataset.materialId = materialId;
-                    btnEditar.dataset.stock = stock;
-                    btnEditar.dataset.capacidad = capacidad;
-                    btnEditar.dataset.unidad = unidad;
-                    btnEditar.dataset.precioCompra = precioCompra;
-                    btnEditar.dataset.precioVenta = precioVenta;
-                    btnEditar.dataset.umbralAlerta = umbralAlerta;
-                    btnEditar.dataset.umbralCritico = umbralCritico;
-                }
-                if (btnBorrar) {
-                    btnBorrar.dataset.inventarioId = inventarioId;
-                    btnBorrar.dataset.nombreMaterial = nombre;
-                    btnBorrar.dataset.puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId || '';
-                }
-
-                // Mostrar modal detalles
-                if (detallesModalInstance) {
-                    console.log('✓ Abriendo modal de detalles');
-                    detallesModalInstance.show();
-                } else {
-                    console.error('✗ detallesModalInstance no está inicializado');
                 }
             }
+            
 
             function ponerEstadoOcupacion(stock, capacidad) {
                 const pct = (capacidad && capacidad > 0) ? Math.round((stock / capacidad) * 100) : 0;
@@ -1636,7 +1654,7 @@
                 if (!btnGuardar) {
                     btnGuardar = document.getElementById('btnGuardarCambios');
                 }
-
+            
                 const inventarioId = document.getElementById('editarMaterialId').value;
                 const stockActual = parseFloat(document.getElementById('editarStockActual').value) || 0;
                 const capacidadMaxima = parseFloat(document.getElementById('editarCapacidadMaxima').value) || 0;
@@ -1645,31 +1663,31 @@
                 const precioVenta = parseFloat(document.getElementById('editarPrecioVenta').value) || 0;
                 const umbralAlerta = parseInt(document.getElementById('editarUmbralAlerta').value) || 0;
                 const umbralCritico = parseInt(document.getElementById('editarUmbralCritico').value) || 0;
-
+            
                 // ✅ Obtener datos del usuario correctamente
-                const section = document.querySelector('section[data-gestor]');
+                const section = document.querySelector('section[data-gestor]') || document.querySelector('section[data-punto-eca-id]');
                 let gestor = section?.getAttribute('data-gestor') || '';
                 let usuarioId = section?.getAttribute('data-usuario-id') || '';
-
+            
                 console.log('💾 Guardando cambios de inventario:', { inventarioId, stockActual, capacidadMaxima, unidadMedida, precioCompra, precioVenta, umbralAlerta, umbralCritico });
                 console.log('📍 Datos de usuario:', { gestor, usuarioId });
-
+            
                 if (!inventarioId) {
                     mostrarModalResultado(false, 'Error', 'No se encontró el ID del inventario');
                     return;
                 }
-
+            
                 if (!gestor || !usuarioId) {
                     console.error('❌ Datos de usuario no encontrados. Verificar atributos data-*');
                     mostrarModalResultado(false, 'Error', 'No se encontraron los datos de usuario. Por favor recarga la página.');
                     return;
                 }
-
+            
                 if (!stockActual || !capacidadMaxima || !unidadMedida || !precioCompra || !precioVenta) {
                     mostrarModalResultado(false, 'Error', 'Por favor completa todos los campos requeridos');
                     return;
                 }
-
+            
                 const datosActualizacion = {
                     stockActual: stockActual,
                     capacidadMaxima: capacidadMaxima,
@@ -1679,30 +1697,35 @@
                     umbralAlerta: umbralAlerta,
                     umbralCritico: umbralCritico
                 };
-
+            
                 // ✅ Usar la referencia al botón
                 const textoOriginal = btnGuardar?.innerHTML || 'Guardar Cambios';
                 if (btnGuardar) {
                     btnGuardar.disabled = true;
                     btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando...';
                 }
-
+            
                 // ✅ Construir URL correcta: /punto-eca/{nombrePunto}/{usuarioId}/actualizar-inventario/{inventarioId}
-                const url = `/punto-eca/${gestor}/${usuarioId}/actualizar-inventario/${inventarioId}`;
+                const url = `actualizar-inventario/${inventarioId}`;
+                const csrfToken = getCSRFToken();
                 console.log('🔗 URL de actualización:', url);
-
+            
                 fetch(url, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    credentials: 'include',
                     body: JSON.stringify(datosActualizacion)
                 })
                     .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
                     .then(({ status, ok, data }) => {
                         console.log('📦 Respuesta del servidor:', { status, ok, data });
-
+            
                         // Cerrar modales previos
                         if (editarModalInstance) editarModalInstance.hide();
-
+            
                         if (!ok) {
                             // Mostrar error
                             const mensajeError = data?.mensaje || data?.message || 'Hubo un error al guardar los cambios';
