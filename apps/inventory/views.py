@@ -26,48 +26,60 @@ def _build_materiales_context(punto):
         "gestor": punto.gestor_eca,
         "punto": punto,
         "unidades_medida": cons.UnidadMedida.choices,
-        "categorias_material": CategoriaMaterial.objects.all(),
-        "tipos_material": TipoMaterial.objects.all(),
+        # Eliminamos las listas globales para evitar confusión en el template.
+        # "categorias_material": CategoriaMaterial.objects.all(),
+        # "tipos_material": TipoMaterial.objects.all(),
         "materiales_inventario": Inventario.objects.filter(punto_eca=punto).order_by(
             "-fecha_modificacion"
+        ),
+        "categoria_inventario": (
+            Inventario.objects.filter(punto_eca=punto)
+            .select_related("material__categoria")
+            .values_list("material__categoria__nombre", flat=True)
+            .distinct()
+        ),
+        "tipo_inventario": (
+            Inventario.objects.filter(punto_eca=punto)
+            .select_related("material__tipo")
+            .values_list("material__tipo__nombre", flat=True)
+            .distinct()
         ),
     }
 
 
 def buscar_materiales_catalogo(request):
-    # Usamos .strip() para evitar que espacios accidentales rompan el match
+    # Nueva lógica: devolver materiales, categorías y tipos que están en el inventario del punto ECA
+    punto_id = request.GET.get("puntoId", "").strip()
     query = request.GET.get("texto", "").strip()
     categoria = request.GET.get("categoria", "").strip()
     tipo = request.GET.get("tipo", "").strip()
-    punto_id = request.GET.get("puntoId", "").strip()
 
-    materiales_punto = Inventario.objects.filter(punto_eca_id=punto_id).values_list(
-        "material_id", flat=True
+    inventario_qs = Inventario.objects.filter(punto_eca_id=punto_id).select_related(
+        "material", "material__categoria", "material__tipo"
     )
 
-    filtros = Q()
+    # Filtrar materiales por búsqueda de nombre/categoría/tipo
     if query:
-        filtros &= (
-            Q(nombre__unaccent__icontains=query)
-            | Q(categoria__nombre__unaccent__icontains=query)
-            | Q(tipo__nombre__unaccent__icontains=query)
+        inventario_qs = inventario_qs.filter(
+            Q(material__nombre__unaccent__icontains=query)
+            | Q(material__categoria__nombre__unaccent__icontains=query)
+            | Q(material__tipo__nombre__unaccent__icontains=query)
         )
     if categoria:
-        filtros &= Q(categoria__nombre__iexact=categoria)
+        inventario_qs = inventario_qs.filter(
+            material__categoria__nombre__unaccent__iexact=categoria
+        )
     if tipo:
-        filtros &= Q(tipo__nombre__iexact=tipo)
+        inventario_qs = inventario_qs.filter(
+            material__tipo__nombre__unaccent__iexact=tipo
+        )
 
-    materiales = (
-        Material.objects.select_related("categoria", "tipo")
-        .filter(filtros)
-        .exclude(id__in=materiales_punto)
-        .distinct()
-    )
-    if not query and not categoria and not tipo:
-        materiales = materiales[:10]
+    inventario_qs = inventario_qs.distinct()
 
+    # Construir lista de materiales presentes en inventario
     resultados = []
-    for m in materiales:
+    for item in inventario_qs:
+        m = item.material
         resultados.append(
             {
                 "materialId": str(m.id),  # UUID a String
@@ -75,8 +87,7 @@ def buscar_materiales_catalogo(request):
                 "nmbCategoria": m.categoria.nombre if m.categoria else "General",
                 "nmbTipo": m.tipo.nombre if m.tipo else "N/A",
                 "dscMaterial": m.descripcion,
-                "unidad": "kg",
-                # Verifica que la carpeta en static sea 'img' y no 'imagenes'
+                "unidad": item.unidad_medida,
                 "imagenUrl": m.imagen_url
                 if m.imagen_url
                 else "/static/img/materiales.png",
@@ -183,3 +194,85 @@ def actualizar_inventario(request, inventario_id):
             )
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+def buscar_materiales_inventario(request):
+    punto_id = request.GET.get("puntoId", "").strip()
+    query = request.GET.get("texto", "").strip()
+    categoria = request.GET.get("categoria", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+
+    print(
+        f"DEBUG buscar_materiales_inventario: puntoId={punto_id}, query='{query}', categoria='{categoria}', tipo='{tipo}'"
+    )
+
+    if not punto_id:
+        print("FALTA puntoId")
+        return JsonResponse({"error": True, "mensaje": "Falta el puntoId"}, status=400)
+
+    materiales_inventario = Inventario.objects.filter(
+        punto_eca_id=punto_id
+    ).select_related("material")
+
+    print(f"Inicial: {materiales_inventario.count()} items")
+
+    if query:
+        materiales_inventario = materiales_inventario.filter(
+            Q(material__nombre__unaccent__icontains=query)
+        )
+
+    print(f"Tras query: {materiales_inventario.count()} items")
+
+    if categoria:
+        categorias_existentes = set()
+        for item in materiales_inventario:
+            categorias_existentes.add(item.material.categoria.nombre)
+        print("Categorías reales:", categorias_existentes)
+        materiales_inventario = materiales_inventario.filter(
+            material__categoria__nombre__unaccent__icontains=categoria
+        )
+        print(
+            f"Después de filtrar categoría '{categoria}': {materiales_inventario.count()} items"
+        )
+    if tipo:
+        materiales_inventario = materiales_inventario.filter(
+            material__tipo__nombre__iexact=tipo
+        )
+        print(
+            f"Después de filtrar tipo '{tipo}': {materiales_inventario.count()} items"
+        )
+
+        materiales_inventario = materiales_inventario.order_by("-fecha_modificacion")
+
+    resultados = []
+    for item in materiales_inventario:
+        resultados.append(
+            {
+                "inventarioId": str(item.id),
+                "materialId": str(item.material.id),
+                "nmbMaterial": item.material.nombre,
+                "nmbCategoria": item.material.categoria.nombre
+                if item.material.categoria
+                else "General",
+                "nmbTipo": item.material.tipo.nombre if item.material.tipo else "N/A",
+                "dscMaterial": item.material.descripcion,
+                "stockActual": item.stock_actual,
+                "capacidadMaxima": item.capacidad_maxima,
+                "unidadMedida": item.unidad_medida,
+                "precioCompra": item.precio_compra,
+                "precioVenta": item.precio_venta,
+                "porcentaje_ocupacion": float(item.ocupacion_actual),
+                "umbral_alerta": item.umbral_alerta
+                if hasattr(item, "umbral_alerta")
+                else 0,
+                "umbral_critico": item.umbral_critico
+                if hasattr(item, "umbral_critico")
+                else 0,
+                "imagenUrl": item.material.imagen_url
+                if item.material.imagen_url
+                else "/static/img/materiales.png",
+            }
+        )
+
+    print(f"RESULTADOS: {len(resultados)}")
+    return JsonResponse(resultados, safe=False)
