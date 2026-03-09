@@ -201,51 +201,56 @@ def buscar_materiales_inventario(request):
     query = request.GET.get("texto", "").strip()
     categoria = request.GET.get("categoria", "").strip()
     tipo = request.GET.get("tipo", "").strip()
+    unidad = request.GET.get("unidad", "").strip()  # nuevo filtro
+    alerta = request.GET.get("alerta", "").strip()  # nuevo filtro
+    ocupacion = request.GET.get("ocupacion", "").strip()  # nuevo filtro
 
-    print(
-        f"DEBUG buscar_materiales_inventario: puntoId={punto_id}, query='{query}', categoria='{categoria}', tipo='{tipo}'"
-    )
-
+    # Procesamos los filtros recibidos
     if not punto_id:
-        print("FALTA puntoId")
         return JsonResponse({"error": True, "mensaje": "Falta el puntoId"}, status=400)
 
     materiales_inventario = Inventario.objects.filter(
         punto_eca_id=punto_id
     ).select_related("material")
 
-    print(f"Inicial: {materiales_inventario.count()} items")
-
     if query:
         materiales_inventario = materiales_inventario.filter(
             Q(material__nombre__unaccent__icontains=query)
         )
 
-    print(f"Tras query: {materiales_inventario.count()} items")
-
     if categoria:
-        categorias_existentes = set()
-        for item in materiales_inventario:
-            categorias_existentes.add(item.material.categoria.nombre)
-        print("Categorías reales:", categorias_existentes)
         materiales_inventario = materiales_inventario.filter(
             material__categoria__nombre__unaccent__icontains=categoria
-        )
-        print(
-            f"Después de filtrar categoría '{categoria}': {materiales_inventario.count()} items"
         )
     if tipo:
         materiales_inventario = materiales_inventario.filter(
             material__tipo__nombre__iexact=tipo
         )
-        print(
-            f"Después de filtrar tipo '{tipo}': {materiales_inventario.count()} items"
+    if unidad:
+        materiales_inventario = materiales_inventario.filter(
+            unidad_medida=unidad
         )
 
-        materiales_inventario = materiales_inventario.order_by("-fecha_modificacion")
+    materiales_inventario = materiales_inventario.order_by("-fecha_modificacion")
 
     resultados = []
     for item in materiales_inventario:
+        porcentaje_ocupacion = 0
+        if item.capacidad_maxima and item.capacidad_maxima > 0:
+            porcentaje_ocupacion = (item.stock_actual / item.capacidad_maxima) * 100
+        else:
+            porcentaje_ocupacion = 0
+        porcentaje_ocupacion = round(porcentaje_ocupacion, 2)
+
+        estado_alerta = "OK"
+        # Mapping igual al template: Crítico si >= umbral_critico, Alerta si >= umbral_alerta, OK el resto
+        if item.umbral_critico and porcentaje_ocupacion >= item.umbral_critico:
+            estado_alerta = "Crítico"
+        elif item.umbral_alerta and porcentaje_ocupacion >= item.umbral_alerta:
+            estado_alerta = "Alerta"
+        else:
+            estado_alerta = "OK"
+
         resultados.append(
             {
                 "inventarioId": str(item.id),
@@ -261,7 +266,7 @@ def buscar_materiales_inventario(request):
                 "unidadMedida": item.unidad_medida,
                 "precioCompra": item.precio_compra,
                 "precioVenta": item.precio_venta,
-                "porcentaje_ocupacion": float(item.ocupacion_actual),
+                "porcentaje_ocupacion": porcentaje_ocupacion,
                 "umbral_alerta": item.umbral_alerta
                 if hasattr(item, "umbral_alerta")
                 else 0,
@@ -271,8 +276,24 @@ def buscar_materiales_inventario(request):
                 "imagenUrl": item.material.imagen_url
                 if item.material.imagen_url
                 else "/static/img/materiales.png",
+                "estado_alerta": estado_alerta,
             }
         )
+
+    # Filtrado extra por ocupación y alerta
+    if ocupacion:
+        try:
+            rango = ocupacion.split("-")
+            minimo = float(rango[0]) if len(rango) > 0 else 0
+            maximo = float(rango[1]) if len(rango) > 1 else 100
+            resultados = [r for r in resultados if minimo <= r["porcentaje_ocupacion"] <= maximo]
+            print(f"Después de filtrar ocupacion '{ocupacion}': {len(resultados)} items")
+        except Exception as e:
+            print(f"Error filtrando por ocupacion: {e}")
+    if alerta:
+        # Validar alerta (OK, Alerta, Crítico)
+        resultados = [r for r in resultados if r["estado_alerta"] == alerta]
+        print(f"Después de filtrar alerta '{alerta}': {len(resultados)} items")
 
     print(f"RESULTADOS: {len(resultados)}")
     return JsonResponse(resultados, safe=False)
