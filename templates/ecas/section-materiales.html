@@ -3,6 +3,117 @@
          data-gestor="{{ gestor }}"
          data-usuario-id="{{ gestor.id }}"
          data-punto-eca-id="{{ punto.id }}">
+    <div class="card bg-light p-4 mb-4 shadow-sm kpi-row-header">
+        <!-- Nueva grilla bootstrap: filas y columnas fijas, rígidas, para KPIs -->
+        <div class="container-fluid">
+            <div class="row gx-1 gy-1 flex-wrap justify-content-center">
+                <!-- Fila 1: KPIs principales -->
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-success"><i class="bi bi-graph-up me-2"></i> Ocupación Total</span>
+                        <div class="progress mt-1" style="height: 28px;">
+                            <div class="progress-bar bg-success"
+                                 style="width: {{ ocupacion_porcentaje }}%">
+                                <span class="fw-bold text-dark">{{ ocupacion_porcentaje }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-info"><i class="bi bi-archive me-2"></i> Capacidad Máxima</span>
+                        <span class="badge bg-info p-2" style="font-size:1.2em">{{ total_capacidad|default:'-' }}</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-primary"><i class="bi bi-box-seam me-2"></i> Materiales</span>
+                        <span class="badge bg-primary p-2" style="font-size:1.2em">{{ materiales_inventario|length }}</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-muted">Estados</span>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <span class="badge bg-success">OK: {{ total_ok }}</span>
+                            <span class="badge bg-warning">Alerta: {{ total_alerta }}</span>
+                            <span class="badge bg-danger">Crítico: {{ total_critico }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row gx-2 gy-2 flex-wrap justify-content-center mt-1">
+                <!-- Fila 2: KPIs secundarios -->
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-dark"><i class="bi bi-star-fill text-warning me-1"></i> Material más ocupado</span>
+                        {% if material_mayor_ocupacion %}
+                            <span class="badge bg-warning text-dark fw-bold p-2 text-truncate kpi-badge"
+                                  style="max-width:160px"
+                                  title="{{ material_mayor_ocupacion.material.nombre }}">
+                                {{ material_mayor_ocupacion.material.nombre }}
+                                <br />
+                                <small>{{ material_mayor_ocupacion.ocupacion_actual|floatformat:0 }}% ocupado</small>
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-info"><i class="bi bi-cash-stack me-2"></i> Valor Total Inventario</span>
+                        <span class="badge bg-success text-white fw-bold p-2"
+                              style="font-size:1.1em">$ {{ costo_total_inventario|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-primary"><i class="bi bi-gem me-2"></i> Material más caro</span>
+                        {% if material_mas_caro %}
+                            <span class="badge bg-primary text-white fw-bold p-2 mb-2 text-truncate kpi-badge"
+                                  style="max-width:160px"
+                                  title="{{ material_mas_caro.material.nombre }}">
+                                {{ material_mas_caro.material.nombre }}
+                                <br />
+                                <small>$ {{ material_mas_caro.precio_compra|floatformat:2 }}</small>
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-muted"><i class="bi bi-box me-2"></i> Material más barato</span>
+                        {% if material_mas_barato %}
+                            <span class="badge bg-secondary text-dark fw-bold p-2 mb-2 text-truncate kpi-badge"
+                                  style="max-width:160px"
+                                  title="{{ material_mas_barato.material.nombre }}">
+                                {{ material_mas_barato.material.nombre }}
+                                <br />
+                                <small>$ {{ material_mas_barato.precio_compra|floatformat:2 }}</small>
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Minimal custom style for truncation and mobile -->
+        <style>
+        .kpi-card .kpi-badge {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        @media (max-width: 600px) {
+          .kpi-card { min-width: 98vw; margin-bottom: 10px; }
+          .kpi-card .kpi-badge { max-width:90vw; }
+        }
+        </style>
+    </div>
     <!-- Título principal -->
     <div class="mb-4">
         <h2 class="h4 fw-bold text-dark mb-1">
@@ -545,68 +656,6 @@
             console.log('✓ Script inline completado');
         })();
         </script>
-        <!-- Item 2: OCUPACIÓN DE INVENTARIO -->
-        <div class="accordion-item border-start border-5 border-info">
-            <h2 class="accordion-header" id="headingOcupacion">
-                <button class="accordion-button fw-bold collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapseOcupacion"
-                        aria-expanded="false"
-                        aria-controls="collapseOcupacion">
-                    <span class="bg-info p-2 rounded-circle me-3"
-                          style="width: 40px;
-                                 height: 40px;
-                                 display: flex;
-                                 align-items: center;
-                                 justify-content: center">
-                        <i class="bi bi-graph-up text-white"></i>
-                    </span>
-                    <span>
-                        <span class="fw-bold text-dark d-block">Ocupación de Inventario</span>
-                        <small class="text-muted fw-normal"><span>{{ materiales_inventario.count }}</span> materiales registrados</small>
-                    </span>
-                </button>
-            </h2>
-            <div id="collapseOcupacion"
-                 class="accordion-collapse collapse"
-                 aria-labelledby="headingOcupacion"
-                 data-bs-parent="#acordeonMateriales">
-                <div class="accordion-body p-4 bg-light">
-                    <div class="text-muted text-center py-3">No hay datos de inventario disponibles</div>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead class="bg-success text-white">
-                                <tr>
-                                    <th>Material</th>
-                                    <th class="text-end" style="width:140px;">Stock</th>
-                                    <th class="text-end" style="width:140px;">Capacidad</th>
-                                    <th style="min-width:240px;">% Ocupación</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="fw-semibold">Material</td>
-                                    <td class="text-end">0.00</td>
-                                    <td class="text-end">0.00</td>
-                                    <td>
-                                        <div class="progress" style="height:18px;">
-                                            <div class="progress-bar"  role="progressbar">
-                                                <span class="small">0%</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="small text-muted mt-2">
-                        Colores: <span class="badge bg-success">OK</span> <span class="badge bg-warning">Alerta</span>
-                        <span class="badge bg-danger">Crítico</span>
-                    </div>
-                </div>
-            </div>
-        </div>
         <!-- Item 3: MATERIALES EN INVENTARIO -->
         <div class="accordion-item border-start border-5 border-primary">
             <h2 class="accordion-header" id="headingTarjetas">
@@ -722,21 +771,6 @@
                                     </div>
                                     <!-- Ocupación y Botones -->
                                     <div class="row g-3 mb-3">
-                                        <div class="col-md-6 col-lg-3">
-                                            <label for="filtroOcupacionInventario"
-                                                   class="form-label fw-semibold text-muted mb-1">
-                                                <i class="bi bi-percent me-1"></i>Ocupación
-                                            </label>
-                                            <select class="form-select border-2 border-success js-select2-filtro-ocupacion-inventario"
-                                                    id="filtroOcupacionInventario"
-                                                    style="width: 100%">
-                                                <option value="">Cualquier ocupación</option>
-                                                <option value="0-25">0% - 25%</option>
-                                                <option value="25-50">25% - 50%</option>
-                                                <option value="50-75">50% - 75%</option>
-                                                <option value="75-100">75% - 100%</option>
-                                            </select>
-                                        </div>
                                         <div class="col-md-6 col-lg-3 d-flex align-items-end gap-2">
                                             <button id="btnBuscarInventario"
                                                     class="btn btn-success flex-grow-1"
@@ -2182,12 +2216,6 @@
                 $filtroUnidadInventario.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Todas las unidades' });
             }
 
-            // Inicializar Select2 para ocupación
-            var $filtroOcupacionInventario = $('#filtroOcupacionInventario');
-            if ($filtroOcupacionInventario.length) {
-                $filtroOcupacionInventario.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Cualquier ocupación' });
-            }
-
             console.log('✓ Select2 inicializado para todos los filtros de inventario');
         });
 
@@ -2256,43 +2284,7 @@
                         const unidad = inv.unidad_medida || inv.unidadMedida || inv.material?.unidad_medida || inv.material?.unidadMedida || inv.unidad || '';
                         const precioCompra = inv.precio_compra ?? inv.precioCompra ?? inv.material?.precio_compra ?? inv.material?.precioCompra ?? 0;
                         const precioVenta = inv.precio_venta ?? inv.precioVenta ?? inv.material?.precio_venta ?? inv.material?.precioVenta ?? 0;
-                        // Usar SIEMPRE 'porcentaje_ocupacion' universal
-                        const porcentaje_ocupacion = Number(inv.porcentaje_ocupacion ?? inv.porcentajeOcupacion ?? inv.ocupacion_actual ?? 0);
-                        const umbralAlerta = Number(inv.umbral_alerta ?? inv.umbralAlerta ?? inv.material?.umbral_alerta ?? inv.material?.umbralAlerta ?? 0);
-                        const umbralCritico = Number(inv.umbral_critico ?? inv.umbralCritico ?? inv.material?.umbral_critico ?? inv.material?.umbralCritico ?? 0);
-                        
-                        // Mapping de clase y color exacto:
-                        // bg-danger si porcentaje_ocupacion >= umbral_critico
-                        // bg-warning si porcentaje_ocupacion >= umbral_alerta
-                        // bg-success para el resto
-                        let cardHeaderClass = '', progressClass = '', iconHtml = '', cardHeaderTextClass = '';
-                        // Refactor mapping: siempre usar los thresholds exactos
-                        // No depende de si el umbral es > 0
-                        // Si el backend manda 0, la tarjeta será success
-                        // Asegurar que los umbrales son números válidos y > 0, sino ignorar thresholds
-                        const safeUmbralCritico = Number(umbralCritico) > 0 ? Number(umbralCritico) : 10000;
-                        const safeUmbralAlerta = Number(umbralAlerta) > 0 ? Number(umbralAlerta) : 10000;
-                        
-                        if (porcentaje_ocupacion >= safeUmbralCritico) {
-                          cardHeaderClass = 'bg-danger-subtle text-danger';
-                          progressClass = 'bg-danger';
-                          iconHtml = '<i class="bi bi-exclamation-octagon-fill fs-4" title="Stock Crítico"></i>';
-                        } else if (porcentaje_ocupacion >= safeUmbralAlerta) {
-                          cardHeaderClass = 'bg-warning-subtle text-warning-emphasis';
-                          progressClass = 'bg-warning';
-                          iconHtml = '<i class="bi bi-exclamation-triangle-fill fs-4" title="Stock Bajo"></i>';
-                        } else {
-                          cardHeaderClass = 'bg-success-subtle text-success-emphasis';
-                          progressClass = 'bg-success';
-                          iconHtml = '<i class="bi bi-check-circle-fill fs-4" title="Stock Óptimo"></i>';
-                        }
-                        // Comentario: El mapping de thresholds se corresponde exactamente a la lógica del backend Django.
-                        // Si los umbrales vienen en 0, el backend considera que no hay alerta/critico y el estado será success.
-                        // Así garantizamos consistencia entre render dinámico y filtrado por nombre (Select2, DOM).
-                        
-                        // Comentario: Este mapping garantiza que el render dinámico de tarjetas sea idéntico al render por Django,
-                        // y homogeneiza keys y lógica para facilitar futuras migraciones y debugging.
-                        
+                        // Nuevo render sin ocupación universal ni mappings de umbral/porcentaje: sólo stock y datos esenciales
                         var card = document.createElement('div');
                         card.className = 'col-12 col-md-6 col-lg-4 tarjeta-material';
                         card.setAttribute('data-categoria', categoria);
@@ -2306,12 +2298,11 @@
                                         <i class="bi bi-tag-fill me-1"></i>${categoria || 'General'}
                                     </span>
                                 </div>
-                                <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 ${cardHeaderClass}">
+                                <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3">
                                     <div>
                                         <h5 class="card-title mb-0 fw-bold">${nombre}</h5>
                                         <small class="opacity-75">${tipo}</small>
                                     </div>
-                                    ${iconHtml}
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-4">
@@ -2321,12 +2312,6 @@
                                                 ${Number(stock).toFixed(2)}
                                                 <span class="small text-muted fw-normal">${unidad}</span>
                                             </span>
-                                        </div>
-                                        <!-- Progress bar usa porcentaje_ocupacion universal -->
-                                        <div class="progress" style="height: 10px; border-radius: 5px;">
-                                            <div class="progress-bar ${progressClass}" role="progressbar" style="width: ${porcentaje_ocupacion.toFixed(0)}%" aria-valuenow="${porcentaje_ocupacion.toFixed(0)}" aria-valuemin="0" aria-valuemax="100">
-                                                <span class="small">${porcentaje_ocupacion.toFixed(0)}%</span>
-                                            </div>
                                         </div>
                                         <p class="text-end small text-muted mt-1">Capacidad: ${Number(capacidad).toFixed(2)}</p>
                                     </div>
@@ -2351,7 +2336,6 @@
                             </div>
                         `;
                         contenedor.appendChild(card);
-                        // Fin refactor tarjetas dinámicas. Lógica unificada y documentada.
                     });
                 }
 
