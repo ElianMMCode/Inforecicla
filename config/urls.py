@@ -24,5 +24,5 @@ urlpatterns = [
     path("inicio/", inicio),  # Ruta landing page
     path("", inicio),  # Ruta raiz
     # Urls puntos ECA
-    path("punto/", include("apps.ecas.urls", namespace="punto")),
+    path("punto-eca/", include("apps.ecas.urls", namespace="punto")),
 ]
