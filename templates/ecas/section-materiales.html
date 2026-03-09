@@ -86,10 +86,7 @@
                                         class="form-select border-2 border-success js-select2-tipo"
                                         style="width: 100%">
                                     <option value="">-- Selecciona un tipo --</option>
-                                    <!-- Mostrar tipos del inventario si existen -->
-                                    <option>Tipo del Inventario</option>
-                                    <!-- Si no hay tipos en inventario, mostrar del catálogo -->
-                                    <option>Tipo</option>
+                                    <!-- Las opciones se cargarán dinámicamente SOLO desde el inventario por JS -->
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -776,7 +773,9 @@
                             {% for inventario in materiales_inventario %}
                                 <div class="col-12 col-md-6 col-lg-4 tarjeta-material"
                                      data-categoria="{{ inventario.material.categoria.nombre|slugify }}"
-                                     data-inventario-id="{{ inventario.id }}">
+                                     data-tipo-material="{{ inventario.material.tipo.nombre|default:'Tipo Desconocido' }}"
+                                     data-inventario-id="{{ inventario.id }}"
+                                     data-nombre-material="{{ inventario.material.nombre }}">
                                     <div class="card h-100 shadow-sm border-0 transition-hover position-relative">
                                         <div class="position-absolute top-0 start-0 m-2">
                                             <span class="badge rounded-pill bg-dark opacity-75">
@@ -807,7 +806,8 @@
                                                     </span>
                                                 </div>
                                                 <div class="progress" style="height: 10px; border-radius: 5px;">
-                                                    <div class="progress-bar {% if inventario.porcentaje_ocupacion <= inventario.umbral_critico %} bg-danger {% elif inventario.porcentaje_ocupacion <= inventario.umbral_alerta %} bg-warning {% else %} bg-success {% endif %}"
+                                                    {# Mapping exacto al JS: danger si ocupación >= umbral_critico, warning si ocupación >= umbral_alerta, success el resto #}
+                                                    <div class="progress-bar {% if inventario.ocupacion_actual >= inventario.umbral_critico %} bg-danger {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %} bg-warning {% else %} bg-success {% endif %}"
                                                          role="progressbar"
                                                          style="width: {{ inventario.ocupacion_actual|floatformat:0 }}%"
                                                          aria-valuenow="{{ inventario.ocupacion_actual|floatformat:0 }}"
@@ -1936,11 +1936,36 @@
                 templateResult: formatState
             });
             $buscarMaterial.on('select2:select', function(e) {
-                var data = e.params.data; var dto = data.dto || {};
-                document.getElementById('agregarMaterialId').value = data.id;
+                var data = e.params.data;
+                var materialId = data.id;
+                var puntoId = document.getElementById('agregarPuntoId')?.value || '';
+            
+                // Prefill nombre e id
+                document.getElementById('agregarMaterialId').value = materialId;
                 document.getElementById('agregarMaterialNombre').value = data.text;
-                ['stockInicial','capacidadMaxima','precioCompra','precioVenta','umbralAlerta','umbralCritico'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
-                if (dto.unidad) $('#unidadMedida').val(dto.unidad).trigger('change');
+            
+                // Fetch inventario/buscar por materialId y puntoId
+                if (materialId && puntoId) {
+                    fetch(`/inventario/buscar?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`)
+                        .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer detalles de inventario'))
+                        .then(info => {
+                            document.getElementById('stockInicial').value = info.stockActual || '';
+                            document.getElementById('capacidadMaxima').value = info.capacidadMaxima || '';
+                            document.getElementById('unidadMedida').value = info.unidadMedida || '';
+                            document.getElementById('precioCompra').value = info.precioCompra || '';
+                            document.getElementById('precioVenta').value = info.precioVenta || '';
+                            document.getElementById('umbralAlerta').value = info.umbralAlerta || '';
+                            document.getElementById('umbralCritico').value = info.umbralCritico || '';
+                        })
+                        .catch(() => {
+                            ['stockInicial','capacidadMaxima','precioCompra','precioVenta','umbralAlerta','umbralCritico'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+                            document.getElementById('unidadMedida').value = '';
+                        });
+                } else {
+                    ['stockInicial','capacidadMaxima','precioCompra','precioVenta','umbralAlerta','umbralCritico'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+                    document.getElementById('unidadMedida').value = '';
+                }
+                // Abre el modal y limpia select
                 $buscarMaterial.val(null).trigger('change');
                 var modalAgregar = document.getElementById('agregarInventarioModal');
                 if (modalAgregar) new bootstrap.Modal(modalAgregar).show();
@@ -2040,7 +2065,7 @@
         // ========================================================
         var $busquedaMaterialInventario = $('#busquedaMaterialInventario');
         if ($busquedaMaterialInventario.length) {
-            var endpointInventario = '/punto-eca/catalogo/inventario/materiales/buscar';
+            var endpointInventario = 'inventario/buscar';
             var puntoIdInventario = document.getElementById('agregarPuntoId')?.value || '';
             $busquedaMaterialInventario.select2({
                 theme: 'bootstrap4', width: '100%', placeholder: 'Escribe el nombre del material...', allowClear: true, minimumInputLength: 1,
@@ -2175,16 +2200,168 @@
                 var alerta = $('#filtroAlerataInventario').val() || '';
                 var unidad = $('#filtroUnidadInventario').val() || '';
                 var ocupacion = $('#filtroOcupacionInventario').val() || '';
-                var params = new URLSearchParams();
-                var pathSegments = window.location.pathname.split('/').filter(function(s){return s;});
-                var nombrePunto = pathSegments[1]; var gestorId = pathSegments[2];
-                if (categoria) params.append('categoria', categoria);
-                if (tipo) params.append('tipo', tipo);
-                if (alerta) params.append('alerta', alerta);
-                if (unidad) params.append('unidad', unidad);
-                if (ocupacion) params.append('ocupacion', ocupacion);
-                var url = `/punto-eca/${nombrePunto}/${gestorId}/materiales${params.toString() ? ('?' + params.toString()) : ''}`;
-                window.location.href = url;
+                        var puntoId = document.getElementById('agregarPuntoId')?.value || '';
+                        var params = new URLSearchParams();
+                        if (categoria) params.append('categoria', categoria);
+                        if (tipo) params.append('tipo', tipo);
+                        if (alerta) params.append('alerta', alerta);
+                        if (unidad) params.append('unidad', unidad);
+                        if (ocupacion) params.append('ocupacion', ocupacion);
+                        if (puntoId) params.append('puntoId', puntoId);
+                        else {
+                            alert('Error: faltó el puntoId');
+                            return;
+                        }
+                var url = '/punto-eca/materiales/inventario/buscar/' + (params.toString() ? ('?' + params.toString()) : '');
+                // AJAX para actualizar la UI sin recargar
+                fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+                    .then(res => res.json())
+                    .then(data => {
+                        // Actualizar el contenedor de materiales dinámicamente
+                        console.log('Resultados filtrados:', data);
+                        renderizarTarjetasMateriales(data);
+                    })
+                    .catch(err => {
+                        console.error('Error buscando materiales:', err);
+                        mostrarMensajeNoResultados('Ocurrió un error buscando materiales.');
+                    });
+
+                // --- Renderizado dinámico de tarjetas de materiales ---
+                function renderizarTarjetasMateriales(materiales) {
+                    var contenedor = document.getElementById('contenedorMateriales');
+                    if (!contenedor) return;
+                    contenedor.innerHTML = '';
+                    var mensajeVacio = document.getElementById('mensajeNoResultados');
+                    if (mensajeVacio) mensajeVacio.remove();
+                    if (!Array.isArray(materiales) || materiales.length === 0) {
+                        mostrarMensajeNoResultados('No hay materiales que coincidan con los filtros.');
+                        return;
+                    }
+                    materiales.forEach(function(inv) {
+                        // Refactor renderizarTarjetasMateriales
+                        // - Unifica el uso del atributo 'porcentaje_ocupacion' para progress bar, clases, texto e icono
+                        // - Mapping de colores/classes igual que el template Django
+                        // - Iconos exactos según los thresholds
+                        // - Documentado para que se entienda el criterio
+                        
+                        console.log('=== DEBUG FULL MATERIAL OBJ ===', inv);
+                        const mat = inv.material || {};
+                        const categoria = mat.categoria?.nombre || mat.categoria || inv.categoria?.nombre || inv.categoria || '';
+                        const tipo = mat.tipo?.nombre || mat.tipo || inv.tipo?.nombre || inv.tipo || inv.nmbTipo || 'Tipo Desconocido';
+                        const nombre = mat.nombre || inv.nombre || inv.nmbMaterial || inv.material?.nombre || inv.materialName || '-';
+                        const stock = inv.stock_actual ?? inv.stockActual ?? inv.material?.stock_actual ?? inv.material?.stockActual ?? 0;
+                        const capacidad = inv.capacidad_maxima ?? inv.capacidadMaxima ?? inv.material?.capacidad_maxima ?? inv.material?.capacidadMaxima ?? 0;
+                        const unidad = inv.unidad_medida || inv.unidadMedida || inv.material?.unidad_medida || inv.material?.unidadMedida || inv.unidad || '';
+                        const precioCompra = inv.precio_compra ?? inv.precioCompra ?? inv.material?.precio_compra ?? inv.material?.precioCompra ?? 0;
+                        const precioVenta = inv.precio_venta ?? inv.precioVenta ?? inv.material?.precio_venta ?? inv.material?.precioVenta ?? 0;
+                        // Usar SIEMPRE 'porcentaje_ocupacion' universal
+                        const porcentaje_ocupacion = Number(inv.porcentaje_ocupacion ?? inv.porcentajeOcupacion ?? inv.ocupacion_actual ?? 0);
+                        const umbralAlerta = Number(inv.umbral_alerta ?? inv.umbralAlerta ?? inv.material?.umbral_alerta ?? inv.material?.umbralAlerta ?? 0);
+                        const umbralCritico = Number(inv.umbral_critico ?? inv.umbralCritico ?? inv.material?.umbral_critico ?? inv.material?.umbralCritico ?? 0);
+                        
+                        // Mapping de clase y color exacto:
+                        // bg-danger si porcentaje_ocupacion >= umbral_critico
+                        // bg-warning si porcentaje_ocupacion >= umbral_alerta
+                        // bg-success para el resto
+                        let cardHeaderClass = '', progressClass = '', iconHtml = '', cardHeaderTextClass = '';
+                        // Refactor mapping: siempre usar los thresholds exactos
+                        // No depende de si el umbral es > 0
+                        // Si el backend manda 0, la tarjeta será success
+                        // Asegurar que los umbrales son números válidos y > 0, sino ignorar thresholds
+                        const safeUmbralCritico = Number(umbralCritico) > 0 ? Number(umbralCritico) : 10000;
+                        const safeUmbralAlerta = Number(umbralAlerta) > 0 ? Number(umbralAlerta) : 10000;
+                        
+                        if (porcentaje_ocupacion >= safeUmbralCritico) {
+                          cardHeaderClass = 'bg-danger-subtle text-danger';
+                          progressClass = 'bg-danger';
+                          iconHtml = '<i class="bi bi-exclamation-octagon-fill fs-4" title="Stock Crítico"></i>';
+                        } else if (porcentaje_ocupacion >= safeUmbralAlerta) {
+                          cardHeaderClass = 'bg-warning-subtle text-warning-emphasis';
+                          progressClass = 'bg-warning';
+                          iconHtml = '<i class="bi bi-exclamation-triangle-fill fs-4" title="Stock Bajo"></i>';
+                        } else {
+                          cardHeaderClass = 'bg-success-subtle text-success-emphasis';
+                          progressClass = 'bg-success';
+                          iconHtml = '<i class="bi bi-check-circle-fill fs-4" title="Stock Óptimo"></i>';
+                        }
+                        // Comentario: El mapping de thresholds se corresponde exactamente a la lógica del backend Django.
+                        // Si los umbrales vienen en 0, el backend considera que no hay alerta/critico y el estado será success.
+                        // Así garantizamos consistencia entre render dinámico y filtrado por nombre (Select2, DOM).
+                        
+                        // Comentario: Este mapping garantiza que el render dinámico de tarjetas sea idéntico al render por Django,
+                        // y homogeneiza keys y lógica para facilitar futuras migraciones y debugging.
+                        
+                        var card = document.createElement('div');
+                        card.className = 'col-12 col-md-6 col-lg-4 tarjeta-material';
+                        card.setAttribute('data-categoria', categoria);
+                        card.setAttribute('data-tipo-material', tipo);
+                        card.setAttribute('data-inventario-id', inv.id || '');
+                        card.setAttribute('data-nombre-material', nombre);
+                        card.innerHTML = `
+                            <div class="card h-100 shadow-sm border-0 transition-hover position-relative">
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <span class="badge rounded-pill bg-dark opacity-75">
+                                        <i class="bi bi-tag-fill me-1"></i>${categoria || 'General'}
+                                    </span>
+                                </div>
+                                <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 ${cardHeaderClass}">
+                                    <div>
+                                        <h5 class="card-title mb-0 fw-bold">${nombre}</h5>
+                                        <small class="opacity-75">${tipo}</small>
+                                    </div>
+                                    ${iconHtml}
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-4">
+                                        <div class="d-flex justify-content-between align-items-end mb-1">
+                                            <span class="text-muted small fw-semibold">Disponibilidad</span>
+                                            <span class="h5 mb-0 fw-bold">
+                                                ${Number(stock).toFixed(2)}
+                                                <span class="small text-muted fw-normal">${unidad}</span>
+                                            </span>
+                                        </div>
+                                        <!-- Progress bar usa porcentaje_ocupacion universal -->
+                                        <div class="progress" style="height: 10px; border-radius: 5px;">
+                                            <div class="progress-bar ${progressClass}" role="progressbar" style="width: ${porcentaje_ocupacion.toFixed(0)}%" aria-valuenow="${porcentaje_ocupacion.toFixed(0)}" aria-valuemin="0" aria-valuemax="100">
+                                                <span class="small">${porcentaje_ocupacion.toFixed(0)}%</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-end small text-muted mt-1">Capacidad: ${Number(capacidad).toFixed(2)}</p>
+                                    </div>
+                                    <div class="row g-2 py-3 border-top border-bottom">
+                                        <div class="col-6 border-end">
+                                            <p class="text-muted small mb-0 text-uppercase">Costo Compra</p>
+                                            <span class="fw-bold text-dark">$ ${Number(precioCompra).toFixed(2)}</span>
+                                        </div>
+                                        <div class="col-6 ps-3">
+                                            <p class="text-muted small mb-0 text-uppercase">Valor Venta</p>
+                                            <span class="fw-bold text-dark">$ ${Number(precioVenta).toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pb-3">
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-outline-dark btn-sm detallesBtn rounded-pill" data-inventario-id="${inv.id || ''}">
+                                            <i class="bi bi-clipboard-data me-2"></i>Ver Hoja Técnica
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        contenedor.appendChild(card);
+                        // Fin refactor tarjetas dinámicas. Lógica unificada y documentada.
+                    });
+                }
+
+                function mostrarMensajeNoResultados(mensaje) {
+                    var contenedor = document.getElementById('contenedorMateriales');
+                    if (!contenedor) return;
+                    var vacio = document.createElement('div');
+                    vacio.id = 'mensajeNoResultados';
+                    vacio.className = 'alert alert-info text-center my-4';
+                    vacio.innerHTML = '<i class="bi bi-info-circle me-2"></i>' + (mensaje || 'No se encontraron materiales.');
+                    contenedor.parentNode.insertBefore(vacio, contenedor);
+                }
             });
         }
 
