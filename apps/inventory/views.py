@@ -20,18 +20,52 @@ def _build_materiales_context(punto):
     Construye el contexto por defecto para las demás secciones.
     """
 
+    materiales_inventario = list(Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion"))
+
+    total_stock = sum(float(inv.stock_actual) for inv in materiales_inventario)
+    total_capacidad = sum(float(inv.capacidad_maxima) for inv in materiales_inventario)
+
+    total_ok = sum(1 for inv in materiales_inventario if float(inv.ocupacion_actual) < float(inv.umbral_alerta))
+    total_alerta = sum(1 for inv in materiales_inventario if float(inv.ocupacion_actual) >= float(inv.umbral_alerta) and float(inv.ocupacion_actual) < float(inv.umbral_critico))
+    total_critico = sum(1 for inv in materiales_inventario if float(inv.ocupacion_actual) >= float(inv.umbral_critico))
+
+    # Calcular porcentaje de ocupación global para el header
+    if total_capacidad > 0:
+        ocupacion_porcentaje = round((total_stock / total_capacidad) * 100)
+    else:
+        ocupacion_porcentaje = 0
+
+    # KPIs adicionales para el header
+    material_mayor_ocupacion = None
+    material_mas_caro = None
+    material_mas_barato = None
+    costo_total_inventario = 0
+    materiales_criticos = []
+    if materiales_inventario:
+        # Material mayor ocupación
+        material_mayor_ocupacion = max(materiales_inventario, key=lambda i: float(i.ocupacion_actual))
+        # Material más caro
+        material_mas_caro = max(materiales_inventario, key=lambda i: float(i.precio_compra or 0))
+        # Material más barato
+        material_mas_barato = min(materiales_inventario, key=lambda i: float(i.precio_compra or 0))
+        # Costo total inventario
+        costo_total_inventario = sum(float(i.stock_actual) * float(i.precio_compra or 0) for i in materiales_inventario)
+        # Materiales en estado crítico
+        materiales_criticos = [i for i in materiales_inventario if float(i.ocupacion_actual) >= float(i.umbral_critico)]
+
     return {
         "seccion": "materiales",
         "section_template": SECTION_TEMPLATES["materiales"],
         "gestor": punto.gestor_eca,
         "punto": punto,
         "unidades_medida": cons.UnidadMedida.choices,
-        # Eliminamos las listas globales para evitar confusión en el template.
-        # "categorias_material": CategoriaMaterial.objects.all(),
-        # "tipos_material": TipoMaterial.objects.all(),
-        "materiales_inventario": Inventario.objects.filter(punto_eca=punto).order_by(
-            "-fecha_modificacion"
-        ),
+        "materiales_inventario": materiales_inventario,
+        "total_stock": total_stock,
+        "total_capacidad": total_capacidad,
+        "total_ok": total_ok,
+        "total_alerta": total_alerta,
+        "total_critico": total_critico,
+        "ocupacion_porcentaje": ocupacion_porcentaje,
         "categoria_inventario": (
             Inventario.objects.filter(punto_eca=punto)
             .select_related("material__categoria")
@@ -44,6 +78,11 @@ def _build_materiales_context(punto):
             .values_list("material__tipo__nombre", flat=True)
             .distinct()
         ),
+        "material_mayor_ocupacion": material_mayor_ocupacion,
+        "material_mas_caro": material_mas_caro,
+        "material_mas_barato": material_mas_barato,
+        "costo_total_inventario": costo_total_inventario,
+        "materiales_criticos": materiales_criticos,
     }
 
 
