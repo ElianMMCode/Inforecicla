@@ -6,6 +6,7 @@ from apps.inventory.views import (
     detalles_material_inventario,
     actualizar_inventario,
     buscar_materiales_inventario,
+    eliminar_material_inventario,
 )
 
 app_name = "punto-eca"
@@ -41,7 +42,7 @@ urlpatterns = [
     ),
     path("inventario/agregar/", agregar_al_inventario, name="inventario_agregar"),
     path(
-            "inventario/detalle/", detalles_material_inventario, name="inventario_detalle"
+        "inventario/detalle/", detalles_material_inventario, name="inventario_detalle"
     ),
     path(
         "detalles-material-inventario/<str:punto_id>/<str:inventario_id>",
@@ -58,5 +59,10 @@ urlpatterns = [
         "materiales/inventario/buscar/",
         buscar_materiales_inventario,
         name="buscar_materiales_inventario",
+    ),
+    path(
+        "materiales/eliminar-inventario/<str:inventario_id>/",
+        eliminar_material_inventario,
+        name="eliminar_material",
     ),
 ]

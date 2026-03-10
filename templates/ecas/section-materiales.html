@@ -507,7 +507,7 @@
                 item.dataset.unidad = material.unidad || '';
 
                 var img = document.createElement('img');
-                img.src = material.imagenUrl || '/imagenes/materiales.png';
+                img.src = material.imagenUrl || '/static/img/materiales.png';
                 img.alt = material.nmbMaterial || 'Material';
                 img.className = 'rounded';
                 img.style.width = '64px';
@@ -1814,6 +1814,8 @@
                     btnBorrar = document.getElementById('btnBorrarMaterial');
                 }
 
+                const csrfToken = getCSRFToken(); // CSRF token global
+            
                 const inventarioId = btnBorrar?.dataset.inventarioid || btnBorrar?.dataset.inventarioId || '';
                 const nombreMaterial = btnBorrar?.dataset.nombreMaterial || 'el material';
                 const puntoEcaId = btnBorrar?.dataset.puntoEcaId || '';
@@ -1838,7 +1840,7 @@
                 }
 
                 // ✅ Construir URL correcta: /punto-eca/{nombrePunto}/{usuarioId}/eliminar-inventario/{inventarioId}
-                const url = `/punto-eca/${gestor}/${usuarioId}/eliminar-inventario/${inventarioId}`;
+                const url = `eliminar-inventario/${inventarioId}/`;
                 console.log('🗑️ URL de eliminación:', url);
 
                 // ✅ Preparar payload con puntoId
@@ -1849,7 +1851,10 @@
 
                 fetch(url, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
                     body: JSON.stringify(payload)
                 })
                     .then(res => {
