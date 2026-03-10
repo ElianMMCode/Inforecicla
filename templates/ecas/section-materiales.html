@@ -824,9 +824,9 @@
                                                 <!-- <small class="opacity-75">ID: #{{ inventario.material.id }}</small> -->
                                                 <small class="opacity-75">{{ inventario.material.tipo.nombre|default:"Tipo Desconocido" }}</small>
                                             </div>
-                                            {% if inventario.ocupacion_actual <= inventario.umbral_critico %}
+                                            {% if inventario.ocupacion_actual >= inventario.umbral_critico %}
                                                 <i class="bi bi-exclamation-octagon-fill fs-4" title="Stock Crítico"></i>
-                                            {% elif inventario.ocupacion_actual <= inventario.umbral_alerta %}
+                                            {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %}
                                                 <i class="bi bi-exclamation-triangle-fill fs-4" title="Stock Bajo"></i>
                                             {% else %}
                                                 <i class="bi bi-check-circle-fill fs-4" title="Stock Óptimo"></i>
@@ -2268,75 +2268,90 @@
                         return;
                     }
                     materiales.forEach(function(inv) {
-                        // Refactor renderizarTarjetasMateriales
-                        // - Unifica el uso del atributo 'porcentaje_ocupacion' para progress bar, clases, texto e icono
-                        // - Mapping de colores/classes igual que el template Django
-                        // - Iconos exactos según los thresholds
-                        // - Documentado para que se entienda el criterio
-                        
-                        console.log('=== DEBUG FULL MATERIAL OBJ ===', inv);
-                        const mat = inv.material || {};
-                        const categoria = mat.categoria?.nombre || mat.categoria || inv.categoria?.nombre || inv.categoria || '';
-                        const tipo = mat.tipo?.nombre || mat.tipo || inv.tipo?.nombre || inv.tipo || inv.nmbTipo || 'Tipo Desconocido';
-                        const nombre = mat.nombre || inv.nombre || inv.nmbMaterial || inv.material?.nombre || inv.materialName || '-';
-                        const stock = inv.stock_actual ?? inv.stockActual ?? inv.material?.stock_actual ?? inv.material?.stockActual ?? 0;
-                        const capacidad = inv.capacidad_maxima ?? inv.capacidadMaxima ?? inv.material?.capacidad_maxima ?? inv.material?.capacidadMaxima ?? 0;
-                        const unidad = inv.unidad_medida || inv.unidadMedida || inv.material?.unidad_medida || inv.material?.unidadMedida || inv.unidad || '';
-                        const precioCompra = inv.precio_compra ?? inv.precioCompra ?? inv.material?.precio_compra ?? inv.material?.precioCompra ?? 0;
-                        const precioVenta = inv.precio_venta ?? inv.precioVenta ?? inv.material?.precio_venta ?? inv.material?.precioVenta ?? 0;
-                        // Nuevo render sin ocupación universal ni mappings de umbral/porcentaje: sólo stock y datos esenciales
-                        var card = document.createElement('div');
-                        card.className = 'col-12 col-md-6 col-lg-4 tarjeta-material';
-                        card.setAttribute('data-categoria', categoria);
-                        card.setAttribute('data-tipo-material', tipo);
-                        card.setAttribute('data-inventario-id', inv.id || '');
-                        card.setAttribute('data-nombre-material', nombre);
-                        card.innerHTML = `
-                            <div class="card h-100 shadow-sm border-0 transition-hover position-relative">
-                                <div class="position-absolute top-0 start-0 m-2">
-                                    <span class="badge rounded-pill bg-dark opacity-75">
-                                        <i class="bi bi-tag-fill me-1"></i>${categoria || 'General'}
-                                    </span>
-                                </div>
-                                <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3">
-                                    <div>
-                                        <h5 class="card-title mb-0 fw-bold">${nombre}</h5>
-                                        <small class="opacity-75">${tipo}</small>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-4">
-                                        <div class="d-flex justify-content-between align-items-end mb-1">
-                                            <span class="text-muted small fw-semibold">Disponibilidad</span>
-                                            <span class="h5 mb-0 fw-bold">
-                                                ${Number(stock).toFixed(2)}
-                                                <span class="small text-muted fw-normal">${unidad}</span>
-                                            </span>
-                                        </div>
-                                        <p class="text-end small text-muted mt-1">Capacidad: ${Number(capacidad).toFixed(2)}</p>
-                                    </div>
-                                    <div class="row g-2 py-3 border-top border-bottom">
-                                        <div class="col-6 border-end">
-                                            <p class="text-muted small mb-0 text-uppercase">Costo Compra</p>
-                                            <span class="fw-bold text-dark">$ ${Number(precioCompra).toFixed(2)}</span>
-                                        </div>
-                                        <div class="col-6 ps-3">
-                                            <p class="text-muted small mb-0 text-uppercase">Valor Venta</p>
-                                            <span class="fw-bold text-dark">$ ${Number(precioVenta).toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-transparent border-0 pb-3">
-                                    <div class="d-grid">
-                                        <button type="button" class="btn btn-outline-dark btn-sm detallesBtn rounded-pill" data-inventario-id="${inv.id || ''}">
-                                            <i class="bi bi-clipboard-data me-2"></i>Ver Hoja Técnica
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        contenedor.appendChild(card);
-                    });
+                                        // Mapping visual de la card
+                                        const mat = inv.material || {};
+                                        const categoria = inv.nmbCategoria || 'General';
+                                        const tipo = mat.tipo?.nombre || mat.tipo || inv.tipo?.nombre || inv.tipo || inv.nmbTipo || 'Tipo Desconocido';
+                                        const nombre = mat.nombre || inv.nombre || inv.nmbMaterial || inv.material?.nombre || inv.materialName || '-';
+                                        const stock = inv.stock_actual ?? inv.stockActual ?? inv.material?.stock_actual ?? inv.material?.stockActual ?? 0;
+                                        const capacidad = inv.capacidad_maxima ?? inv.capacidadMaxima ?? inv.material?.capacidad_maxima ?? inv.material?.capacidadMaxima ?? 0;
+                                        const unidad = inv.unidad_medida || inv.unidadMedida || inv.material?.unidad_medida || inv.material?.unidadMedida || inv.unidad || '';
+                                        const precioCompra = inv.precio_compra ?? inv.precioCompra ?? inv.material?.precio_compra ?? inv.material?.precioCompra ?? 0;
+                                        const precioVenta = inv.precio_venta ?? inv.precioVenta ?? inv.material?.precio_venta ?? inv.material?.precioVenta ?? 0;
+                                        const ocupacion_actual = inv.ocupacion_actual ?? inv.ocupacionActual ?? (capacidad > 0 ? (stock / capacidad) * 100 : 0);
+                                        const umbral_alerta = inv.umbral_alerta ?? inv.umbralAlerta ?? mat.umbral_alerta ?? mat.umbralAlerta ?? 50;
+                                        const umbral_critico = inv.umbral_critico ?? inv.umbralCritico ?? mat.umbral_critico ?? mat.umbralCritico ?? 100;
+                                        // Mapping de color/barra/icono igual que el template
+                                        let barraClass = 'bg-success', headerClass = 'bg-success-subtle text-success-emphasis', icon = 'bi-check-circle-fill fs-4', iconTitle = 'Stock Óptimo';
+                                        if (ocupacion_actual >= umbral_critico) {
+                                            barraClass = 'bg-danger';
+                                            headerClass = 'bg-danger-subtle text-danger';
+                                            icon = 'bi-exclamation-octagon-fill fs-4';
+                                            iconTitle = 'Stock Crítico';
+                                        } else if (ocupacion_actual >= umbral_alerta) {
+                                            barraClass = 'bg-warning';
+                                            headerClass = 'bg-warning-subtle text-warning-emphasis';
+                                            icon = 'bi-exclamation-triangle-fill fs-4';
+                                            iconTitle = 'Stock Bajo';
+                                        }
+                                        var card = document.createElement('div');
+                                        card.className = 'col-12 col-md-6 col-lg-4 tarjeta-material';
+                                        card.setAttribute('data-categoria', categoria);
+                                        card.setAttribute('data-tipo-material', tipo);
+                                        card.setAttribute('data-inventario-id', inv.id || '');
+                                        card.setAttribute('data-nombre-material', nombre);
+                                        card.innerHTML = `
+                                            <div class="card h-100 shadow-sm border-0 transition-hover position-relative">
+                                                <div class="position-absolute top-0 start-0 m-2">
+                                                    <span class="badge rounded-pill bg-dark opacity-75">
+                                                        <i class="bi bi-tag-fill me-1"></i>${categoria || 'General'}
+                                                    </span>
+                                                </div>
+                                                <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 ${headerClass}">
+                                                    <div>
+                                                        <h5 class="card-title mb-0 fw-bold">${nombre}</h5>
+                                                        <small class="opacity-75">${tipo}</small>
+                                                    </div>
+                                                    <i class="${icon}" title="${iconTitle}"></i>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="mb-4">
+                                                        <div class="d-flex justify-content-between align-items-end mb-1">
+                                                            <span class="text-muted small fw-semibold">Disponibilidad</span>
+                                                            <span class="h5 mb-0 fw-bold">
+                                                                ${Number(stock).toFixed(2)}
+                                                                <span class="small text-muted fw-normal">${unidad}</span>
+                                                            </span>
+                                                        </div>
+                                                        <div class="progress" style="height: 10px; border-radius: 5px;">
+                                                            <div class="progress-bar ${barraClass}" role="progressbar" style="width: ${ocupacion_actual.toFixed(0)}%" aria-valuenow="${ocupacion_actual.toFixed(0)}" aria-valuemin="0" aria-valuemax="100">
+                                                                <span class="small">${ocupacion_actual.toFixed(0)}%</span>
+                                                            </div>
+                                                        </div>
+                                                        <p class="text-end small text-muted mt-1">Capacidad: ${Number(capacidad).toFixed(2)}</p>
+                                                    </div>
+                                                    <div class="row g-2 py-3 border-top border-bottom">
+                                                        <div class="col-6 border-end">
+                                                            <p class="text-muted small mb-0 text-uppercase">Costo Compra</p>
+                                                            <span class="fw-bold text-dark">$ ${Number(precioCompra).toFixed(2)}</span>
+                                                        </div>
+                                                        <div class="col-6 ps-3">
+                                                            <p class="text-muted small mb-0 text-uppercase">Valor Venta</p>
+                                                            <span class="fw-bold text-dark">$ ${Number(precioVenta).toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-transparent border-0 pb-3">
+                                                    <div class="d-grid">
+                                                        <button type="button" class="btn btn-outline-dark btn-sm detallesBtn rounded-pill" data-inventario-id="${inv.inventarioId || inv.id || ''}">
+                                                            <i class="bi bi-clipboard-data me-2"></i>Ver Hoja Técnica
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                        contenedor.appendChild(card);
+                                    });
                 }
 
                 function mostrarMensajeNoResultados(mensaje) {
