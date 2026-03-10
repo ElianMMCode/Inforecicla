@@ -9,7 +9,7 @@ from apps.core.service import UserService
 from apps.ecas.service import PuntoService
 from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 import json
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
@@ -20,14 +20,29 @@ def _build_materiales_context(punto):
     Construye el contexto por defecto para las demás secciones.
     """
 
-    materiales_inventario = list(Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion"))
+    materiales_inventario = list(
+        Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
+    )
 
     total_stock = sum(float(inv.stock_actual) for inv in materiales_inventario)
     total_capacidad = sum(float(inv.capacidad_maxima) for inv in materiales_inventario)
 
-    total_ok = sum(1 for inv in materiales_inventario if float(inv.ocupacion_actual) < float(inv.umbral_alerta))
-    total_alerta = sum(1 for inv in materiales_inventario if float(inv.ocupacion_actual) >= float(inv.umbral_alerta) and float(inv.ocupacion_actual) < float(inv.umbral_critico))
-    total_critico = sum(1 for inv in materiales_inventario if float(inv.ocupacion_actual) >= float(inv.umbral_critico))
+    total_ok = sum(
+        1
+        for inv in materiales_inventario
+        if float(inv.ocupacion_actual) < float(inv.umbral_alerta)
+    )
+    total_alerta = sum(
+        1
+        for inv in materiales_inventario
+        if float(inv.ocupacion_actual) >= float(inv.umbral_alerta)
+        and float(inv.ocupacion_actual) < float(inv.umbral_critico)
+    )
+    total_critico = sum(
+        1
+        for inv in materiales_inventario
+        if float(inv.ocupacion_actual) >= float(inv.umbral_critico)
+    )
 
     # Calcular porcentaje de ocupación global para el header
     if total_capacidad > 0:
@@ -43,15 +58,28 @@ def _build_materiales_context(punto):
     materiales_criticos = []
     if materiales_inventario:
         # Material mayor ocupación
-        material_mayor_ocupacion = max(materiales_inventario, key=lambda i: float(i.ocupacion_actual))
+        material_mayor_ocupacion = max(
+            materiales_inventario, key=lambda i: float(i.ocupacion_actual)
+        )
         # Material más caro
-        material_mas_caro = max(materiales_inventario, key=lambda i: float(i.precio_compra or 0))
+        material_mas_caro = max(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        )
         # Material más barato
-        material_mas_barato = min(materiales_inventario, key=lambda i: float(i.precio_compra or 0))
+        material_mas_barato = min(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        )
         # Costo total inventario
-        costo_total_inventario = sum(float(i.stock_actual) * float(i.precio_compra or 0) for i in materiales_inventario)
+        costo_total_inventario = sum(
+            float(i.stock_actual) * float(i.precio_compra or 0)
+            for i in materiales_inventario
+        )
         # Materiales en estado crítico
-        materiales_criticos = [i for i in materiales_inventario if float(i.ocupacion_actual) >= float(i.umbral_critico)]
+        materiales_criticos = [
+            i
+            for i in materiales_inventario
+            if float(i.ocupacion_actual) >= float(i.umbral_critico)
+        ]
 
     return {
         "seccion": "materiales",
@@ -227,6 +255,8 @@ def actualizar_inventario(request, inventario_id):
             )
         except Inventario.DoesNotExist:
             return JsonResponse({"error": "Inventario no encontrado"}, status=404)
+        except Http404:
+            return JsonResponse({"error": "Inventario no encontrado"}, status=404)
         except Exception as e:
             return JsonResponse(
                 {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
@@ -266,9 +296,7 @@ def buscar_materiales_inventario(request):
             material__tipo__nombre__iexact=tipo
         )
     if unidad:
-        materiales_inventario = materiales_inventario.filter(
-            unidad_medida=unidad
-        )
+        materiales_inventario = materiales_inventario.filter(unidad_medida=unidad)
 
     materiales_inventario = materiales_inventario.order_by("-fecha_modificacion")
 
@@ -325,8 +353,12 @@ def buscar_materiales_inventario(request):
             rango = ocupacion.split("-")
             minimo = float(rango[0]) if len(rango) > 0 else 0
             maximo = float(rango[1]) if len(rango) > 1 else 100
-            resultados = [r for r in resultados if minimo <= r["porcentaje_ocupacion"] <= maximo]
-            print(f"Después de filtrar ocupacion '{ocupacion}': {len(resultados)} items")
+            resultados = [
+                r for r in resultados if minimo <= r["porcentaje_ocupacion"] <= maximo
+            ]
+            print(
+                f"Después de filtrar ocupacion '{ocupacion}': {len(resultados)} items"
+            )
         except Exception as e:
             print(f"Error filtrando por ocupacion: {e}")
     if alerta:
@@ -336,3 +368,30 @@ def buscar_materiales_inventario(request):
 
     print(f"RESULTADOS: {len(resultados)}")
     return JsonResponse(resultados, safe=False)
+
+
+@require_http_methods(["DELETE"])
+def eliminar_material_inventario(request, inventario_id):
+    if request.method == "DELETE":
+        try:
+            inventario_item = get_object_or_404(Inventario, id=inventario_id)
+            # # Validación de ownership/permiso: solo el gestor del punto puede borrar
+            # if not hasattr(request, "user") or not request.user.is_authenticated:
+            #     return JsonResponse({"error": "Usuario no autenticado."}, status=401)
+            # if inventario_item.punto_eca.gestor_eca != request.user:
+            #     return JsonResponse({"error": "No tiene permisos para borrar este inventario."}, status=403)
+            inventario_item.delete()
+            return JsonResponse(
+                {
+                    "mensaje": "Material eliminado del inventario con éxito.",
+                    "error": False,
+                }
+            )
+        except Inventario.DoesNotExist:
+            return JsonResponse({"error": "Inventario no encontrado"}, status=404)
+        except Exception as e:
+            return JsonResponse(
+                {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
+            )
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)
