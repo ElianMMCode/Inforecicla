@@ -3,6 +3,8 @@
          data-punto-eca-id="{{ punto.id }}"
          data-usuario-id="{{ gestor.id }}"
          data-gestor="{{ gestor.nombre }}">
+    <!-- CSRF meta tag for AJAX POST -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <!-- Título principal -->
     <div class="mb-4">
         <h2 class="h4 fw-bold text-dark mb-1">
@@ -3538,9 +3540,16 @@
                         observaciones: observaciones
                     };
 
+                    // Obtener CSRF token
+                    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                     // Enviar al endpoint correcto que espera CompraInventarioRequestDTO
-                    fetch('/punto-eca/movimientos/registrar-entrada', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    fetch('/punto-eca/movimientos/registrar-entrada/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify(payload)
                     })
                     .then(function(res) { return res.json().then(function(data){ return { ok: res.ok, status: res.status, data: data }; }); })
                     .then(function(result) {

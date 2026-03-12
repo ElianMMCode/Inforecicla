@@ -1,4 +1,3 @@
-from os import name
 from django.db import models
 
 from apps.users.models import Usuario
@@ -99,4 +98,3 @@ class Reaccion(CreacionModificacionModel):
         verbose_name = "Reaccion"
         verbose_name_plural = "Reacciones"
         db_table = "reacciones"
-
