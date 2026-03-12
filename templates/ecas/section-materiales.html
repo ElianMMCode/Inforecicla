@@ -443,7 +443,7 @@
             modal.show();
 
             // Ejecutar búsqueda AJAX
-            var endpoint = '/punto-eca/catalogo/materiales/buscar/';
+            var endpoint = '/punto-eca/materiales/catalogo/buscar/';
             var puntoId = document.getElementById('agregarPuntoId')?.value || '';
 
             var params = new URLSearchParams();
@@ -1506,7 +1506,7 @@
                 // Bonus UX: Mostrar loading
                 setText('modalNombreMaterial', 'Cargando...');
 
-                fetch(`/punto-eca/detalles-material-inventario/${puntoId}/${inventarioId}`)
+                fetch(`/punto-eca/materiales/detalles-inventario/${puntoId}/${inventarioId}`)
                     .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer los datos'))
                     .then(data => {
                         // Ahora sí, rellenamos el modal con data
@@ -1949,7 +1949,7 @@
         // ========================================================
         var $buscarMaterial = $('#buscarMaterialSelect');
         if ($buscarMaterial.length) {
-            var endpointBuscar = '/punto-eca/catalogo/materiales/buscar/';
+            var endpointBuscar = '/punto-eca/materiales/catalogo/buscar/';
             var puntoIdBuscar = document.getElementById('agregarPuntoId')?.value || '';
             $buscarMaterial.select2({
                 theme: 'bootstrap4', width: '100%', placeholder: 'Escribe el nombre del material...', minimumInputLength: 1, allowClear: true,
@@ -1987,7 +1987,7 @@
             
                 // Fetch inventario/buscar por materialId y puntoId
                 if (materialId && puntoId) {
-                    fetch(`/inventario/buscar?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`)
+                    fetch(`/punto-eca/materiales/inventario/buscar?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`)
                         .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer detalles de inventario'))
                         .then(info => {
                             document.getElementById('stockInicial').value = info.stockActual || '';
@@ -2510,7 +2510,7 @@
                 btnGuardarInventario.disabled = true;
                 btnGuardarInventario.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando...';
 
-                fetch('/punto-eca/inventario/agregar/', {
+                fetch('/punto-eca/materiales/inventario/agregar/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

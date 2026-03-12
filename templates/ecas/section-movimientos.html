@@ -1,8 +1,5 @@
 <!-- Fragment: Movimientos -->
-<section class="py-4"
-
-
-        >
+<section class="py-4">
     <!-- Título principal -->
     <div class="mb-4">
         <h2 class="h4 fw-bold text-dark mb-1">
@@ -23,9 +20,12 @@
             <!-- Barra de búsqueda con Select2 -->
             <div class="row g-3 mb-4">
                 <div class="col-12">
-                    <label class="form-label fw-semibold text-muted mb-1" for="buscarMaterialMovimientos">Buscar Material</label>
-                    <select id="buscarMaterialMovimientos" class="form-control js-example-tags form-control-lg border-2 border-primary"
-                            style="width: 100%;" aria-label="Buscar material">
+                    <label class="form-label fw-semibold text-muted mb-1"
+                           for="buscarMaterialMovimientos">Buscar Material</label>
+                    <select id="buscarMaterialMovimientos"
+                            class="form-control js-example-tags form-control-lg border-2 border-primary"
+                            style="width: 100%"
+                            aria-label="Buscar material">
                         <option></option>
                     </select>
                 </div>
@@ -33,37 +33,30 @@
             <!-- Filtros: Categoría, Tipo y Botones en una fila -->
             <div class="row g-3 align-items-end mb-3">
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold text-muted mb-1" for="selectCategoriaMov">Categoría</label>
-                    <select id="selectCategoriaMov" class="form-select border-2 border-primary js-select2-categoria-mov" style="width: 100%;">
+                    <label class="form-label fw-semibold text-muted mb-1"
+                           for="selectCategoriaMov">Categoría</label>
+                    <select id="selectCategoriaMov"
+                            class="form-select border-2 border-primary js-select2-categoria-mov"
+                            style="width: 100%">
                         <option value="">-- Ninguno --</option>
-
-                            <option
-
-                                   >
-                                Categoría
-                            </option>
-
+                        <option>Categoría</option>
                     </select>
                 </div>
-
                 <div class="col-md-4">
                     <label class="form-label fw-semibold text-muted mb-1" for="selectTipoMov">Tipo</label>
-                    <select id="selectTipoMov" class="form-select border-2 border-primary js-select2-tipo-mov" style="width: 100%;">
+                    <select id="selectTipoMov"
+                            class="form-select border-2 border-primary js-select2-tipo-mov"
+                            style="width: 100%">
                         <option value="">-- Ninguno --</option>
-
-                            <option
-
-                                   >
-                                Tipo
-                            </option>
-
+                        <option>Tipo</option>
                     </select>
                 </div>
-
                 <div class="col-md-4">
                     <div class="d-flex gap-2">
                         <!-- Botón Buscar eliminado: la búsqueda se hace automáticamente con Select2 y filtros -->
-                        <button id="btnLimpiarBusquedaMov" class="btn btn-outline-secondary flex-grow-1 fw-semibold" type="button">
+                        <button id="btnLimpiarBusquedaMov"
+                                class="btn btn-outline-secondary flex-grow-1 fw-semibold"
+                                type="button">
                             <i class="bi bi-eraser me-1"></i>Limpiar
                         </button>
                     </div>
@@ -72,14 +65,21 @@
         </div>
     </div>
     <!-- MODAL: RESULTADOS DE BÚSQUEDA -->
-    <div class="modal fade" id="buscarMaterialMovimientosModal" tabindex="-1" aria-labelledby="buscarMaterialMovimientosLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="buscarMaterialMovimientosModal"
+         tabindex="-1"
+         aria-labelledby="buscarMaterialMovimientosLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="buscarMaterialMovimientosLabel">
                         <i class="bi bi-search me-2"></i>Selecciona un Material
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info mb-3">
@@ -116,13 +116,20 @@
         window.PAGINA_ACTUAL_SALIDAS = 1;
         window.REGISTROS_POR_PAGINA = 5;
     </script>
-
     <div class="accordion accordion-flush shadow-sm" id="movimientosAccordion">
         <!-- ITEM 1: ENTRADAS DE MATERIAL -->
         <div class="accordion-item border-start border-5 border-danger">
             <h2 class="accordion-header" id="headingEntradas">
-                <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEntradas">
-                    <span class="bg-danger p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <button class="accordion-button fw-bold collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseEntradas">
+                    <span class="bg-danger p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
                         <i class="bi bi-arrow-down text-white"></i>
                     </span>
                     <span>
@@ -131,7 +138,9 @@
                     </span>
                 </button>
             </h2>
-            <div id="collapseEntradas" class="accordion-collapse collapse" data-bs-parent="#movimientosAccordion">
+            <div id="collapseEntradas"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#movimientosAccordion">
                 <div class="accordion-body p-4 bg-light">
                     <!-- Formulario de entrada -->
                     <div class="card shadow-sm mb-4">
@@ -141,57 +150,110 @@
                         <div class="card-body" id="formEntradaContainer" style="display: none;">
                             <form id="formEntrada" class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Material <span class="text-danger">*</span></label>
-                                    <input id="entradaMaterialSeleccionado" type="text" class="form-control form-control-sm" readonly required>
+                                    <label class="form-label fw-semibold small">
+                                        Material <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="entradaMaterialSeleccionado"
+                                           type="text"
+                                           class="form-control form-control-sm"
+                                           readonly
+                                           required>
                                     <input id="entradaMaterialId" type="hidden">
                                     <input id="entradaInventarioId" type="hidden">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Tipo</label>
-                                    <input id="entradaMaterialTipo" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="entradaMaterialTipo"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Categoría</label>
-                                    <input id="entradaMaterialCategoria" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="entradaMaterialCategoria"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Descripción</label>
-                                    <input id="entradaMaterialDescripcion" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="entradaMaterialDescripcion"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Unidad de Medida</label>
-                                    <input id="entradaMaterialUnidad" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="entradaMaterialUnidad"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Stock Actual</label>
-                                    <input id="entradaStockActual" type="number" step="0.01" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="entradaStockActual"
+                                           type="number"
+                                           step="0.01"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Capacidad Máxima</label>
-                                    <input id="entradaCapacidadMaxima" type="number" step="0.01" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="entradaCapacidadMaxima"
+                                           type="number"
+                                           step="0.01"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Cantidad a Agregar <span class="text-danger">*</span></label>
-                                    <input id="entradaCantidad" name="cantidad" type="number" step="0.01" min="0" class="form-control form-control-sm border-primary border-2" placeholder="0.00" required>
+                                    <label class="form-label fw-semibold small">
+                                        Cantidad a Agregar <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="entradaCantidad"
+                                           name="cantidad"
+                                           type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control form-control-sm border-primary border-2"
+                                           placeholder="0.00"
+                                           required>
                                     <small class="text-muted d-block mt-1">Stock después: <strong id="entradaStockResultante">-</strong></small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Fecha <span class="text-danger">*</span></label>
-                                    <input id="entradaFecha" type="datetime-local" class="form-control form-control-sm border-primary border-2" required>
+                                    <label class="form-label fw-semibold small">
+                                        Fecha <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="entradaFecha"
+                                           type="datetime-local"
+                                           class="form-control form-control-sm border-primary border-2"
+                                           required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Precio de Compra Unitario (COP) <span class="text-danger">*</span></label>
-                                    <input id="entradaPrecioCompra" type="number" step="0.01" min="0" class="form-control form-control-sm border-primary border-2" placeholder="0.00" required>
+                                    <label class="form-label fw-semibold small">
+                                        Precio de Compra Unitario (COP) <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="entradaPrecioCompra"
+                                           type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control form-control-sm border-primary border-2"
+                                           placeholder="0.00"
+                                           required>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-semibold small">Observaciones</label>
-                                    <textarea id="entradaObservaciones" class="form-control form-control-sm border-primary border-2" rows="2" placeholder="Notas adicionales..."></textarea>
+                                    <textarea id="entradaObservaciones"
+                                              class="form-control form-control-sm border-primary border-2"
+                                              rows="2"
+                                              placeholder="Notas adicionales..."></textarea>
                                 </div>
                                 <div class="col-12">
                                     <button type="submit" class="btn btn-success btn-sm fw-semibold">
                                         <i class="bi bi-check-circle me-2"></i>Guardar Entrada
                                     </button>
-                                    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" onclick="cambiarMaterial()">
+                                    <button type="button"
+                                            class="btn btn-outline-primary btn-sm fw-semibold"
+                                            onclick="cambiarMaterial()">
                                         <i class="bi bi-arrow-counterclockwise me-2"></i>Cambiar Material
                                     </button>
                                 </div>
@@ -209,40 +271,54 @@
                             <form class="row g-3" id="filtrosFormEntradas">
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Material</label>
-                                    <select id="filtroCompraMaterial" class="form-select form-select-sm" style="width: 100%;">
+                                    <select id="filtroCompraMaterial"
+                                            class="form-select form-select-sm"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Categoría</label>
-                                    <select id="filtroCompraCategoria" class="form-select form-select-sm" style="width: 100%;">
+                                    <select id="filtroCompraCategoria"
+                                            class="form-select form-select-sm"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Tipo</label>
-                                    <select id="filtroCompraTipo" class="form-select form-select-sm" style="width: 100%;">
+                                    <select id="filtroCompraTipo"
+                                            class="form-select form-select-sm"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">&nbsp;</label>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-primary btn-sm fw-semibold flex-grow-1" id="btnFiltrarCompra">
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm fw-semibold flex-grow-1"
+                                                id="btnFiltrarCompra">
                                             <i class="bi bi-search me-1"></i>Filtrar
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" id="btnLimpiarCompra">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm fw-semibold"
+                                                id="btnLimpiarCompra">
                                             <i class="bi bi-arrow-counterclockwise"></i>
                                         </button>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Desde</label>
-                                    <input type="date" class="form-control form-control-sm" id="filtroCompraFechaDesde">
+                                    <input type="date"
+                                           class="form-control form-control-sm"
+                                           id="filtroCompraFechaDesde">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Hasta</label>
-                                    <input type="date" class="form-control form-control-sm" id="filtroCompraFechaHasta">
+                                    <input type="date"
+                                           class="form-control form-control-sm"
+                                           id="filtroCompraFechaHasta">
                                 </div>
                             </form>
                         </div>
@@ -257,29 +333,38 @@
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover align-middle mb-0">
                                     <thead class="table-light">
-                                    <tr>
-                                        <th scope="col" class="fw-bold small">Fecha</th>
-                                        <th scope="col" class="fw-bold small">Material</th>
-                                        <th scope="col" class="fw-bold small text-end">Cantidad</th>
-                                        <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
-                                        <th scope="col" class="fw-bold small">Total</th>
-                                        <th scope="col" class="fw-bold small text-center">Acciones</th>
-                                    </tr>
+                                        <tr>
+                                            <th scope="col" class="fw-bold small">Fecha</th>
+                                            <th scope="col" class="fw-bold small">Material</th>
+                                            <th scope="col" class="fw-bold small text-end">Cantidad</th>
+                                            <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
+                                            <th scope="col" class="fw-bold small">Total</th>
+                                            <th scope="col" class="fw-bold small text-center">Acciones</th>
+                                        </tr>
                                     </thead>
                                     <tbody class="border-top" id="tablasEntradasBody">
-                                    <tr class="text-muted text-center">
-                                        <td colspan="6" class="py-3"><small>Sin registros</small></td>
-                                    </tr>
+                                        <tr class="text-muted text-center">
+                                            <td colspan="6" class="py-3">
+                                                <small>Sin registros</small>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="card-footer bg-light border-top px-4 py-3">
                             <nav aria-label="Paginación entradas">
-                                <ul class="pagination pagination-sm mb-0 justify-content-center" id="paginacionEntradas">
-                                    <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">Siguiente</a></li>
+                                <ul class="pagination pagination-sm mb-0 justify-content-center"
+                                    id="paginacionEntradas">
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#">Anterior</a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">1</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="#">Siguiente</a>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>
@@ -290,8 +375,16 @@
         <!-- ITEM 2: SALIDAS DE MATERIAL -->
         <div class="accordion-item border-start border-5 border-success">
             <h2 class="accordion-header" id="headingSalidas">
-                <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSalidas">
-                    <span class="bg-success p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <button class="accordion-button fw-bold collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseSalidas">
+                    <span class="bg-success p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
                         <i class="bi bi-arrow-up text-white"></i>
                     </span>
                     <span>
@@ -300,7 +393,9 @@
                     </span>
                 </button>
             </h2>
-            <div id="collapseSalidas" class="accordion-collapse collapse" data-bs-parent="#movimientosAccordion">
+            <div id="collapseSalidas"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#movimientosAccordion">
                 <div class="accordion-body p-4 bg-light">
                     <!-- Formulario de salida -->
                     <div class="card shadow-sm mb-4">
@@ -310,73 +405,120 @@
                         <div class="card-body" id="formSalidaContainer" style="display: none;">
                             <form id="formSalida" class="row g-3" novalidate>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Material <span class="text-danger">*</span></label>
-                                    <input id="salidaMaterialSeleccionado" type="text" class="form-control form-control-sm" readonly required>
+                                    <label class="form-label fw-semibold small">
+                                        Material <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="salidaMaterialSeleccionado"
+                                           type="text"
+                                           class="form-control form-control-sm"
+                                           readonly
+                                           required>
                                     <input id="salidaMaterialId" type="hidden">
                                     <input id="salidaInventarioId" type="hidden">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Tipo</label>
-                                    <input id="salidaMaterialTipo" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="salidaMaterialTipo"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Categoría</label>
-                                    <input id="salidaMaterialCategoria" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="salidaMaterialCategoria"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Descripción</label>
-                                    <input id="salidaMaterialDescripcion" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="salidaMaterialDescripcion"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Unidad de Medida</label>
-                                    <input id="salidaMaterialUnidad" type="text" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="salidaMaterialUnidad"
+                                           type="text"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Stock Actual (NO EDITABLE)</label>
-                                    <input id="salidaStockActual" type="number" step="0.01" class="form-control form-control-sm bg-secondary bg-opacity-10" readonly>
+                                    <input id="salidaStockActual"
+                                           type="number"
+                                           step="0.01"
+                                           class="form-control form-control-sm bg-secondary bg-opacity-10"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Capacidad Máxima</label>
-                                    <input id="salidaCapacidadMaxima" type="number" step="0.01" class="form-control form-control-sm bg-light" readonly>
+                                    <input id="salidaCapacidadMaxima"
+                                           type="number"
+                                           step="0.01"
+                                           class="form-control form-control-sm bg-light"
+                                           readonly>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Cantidad a Descontar <span class="text-danger">*</span></label>
-                                    <input id="salidaCantidad" name="cantidad" type="number" step="0.01" min="0" class="form-control form-control-sm border-danger border-2" placeholder="0.00" required>
+                                    <label class="form-label fw-semibold small">
+                                        Cantidad a Descontar <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="salidaCantidad"
+                                           name="cantidad"
+                                           type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control form-control-sm border-danger border-2"
+                                           placeholder="0.00"
+                                           required>
                                     <small class="text-muted d-block mt-1">Stock después: <strong id="salidaStockRestante" class="text-danger">-</strong></small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Fecha <span class="text-danger">*</span></label>
-                                    <input id="salidaFecha" type="datetime-local" class="form-control form-control-sm border-danger border-2" required>
+                                    <label class="form-label fw-semibold small">
+                                        Fecha <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="salidaFecha"
+                                           type="datetime-local"
+                                           class="form-control form-control-sm border-danger border-2"
+                                           required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Precio de Venta Unitario (COP) <span class="text-danger">*</span></label>
-                                    <input id="salidaPrecioVenta" type="number" step="0.01" min="0" class="form-control form-control-sm border-danger border-2" placeholder="0.00" required>
+                                    <label class="form-label fw-semibold small">
+                                        Precio de Venta Unitario (COP) <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="salidaPrecioVenta"
+                                           type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control form-control-sm border-danger border-2"
+                                           placeholder="0.00"
+                                           required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Centro de Acopio</label>
-                                    <select id="salidaCentroAcopio" class="form-select form-select-sm border-success border-2 js-select2-centro-acopio" style="width: 100%;">
+                                    <select id="salidaCentroAcopio"
+                                            class="form-select form-select-sm border-success border-2 js-select2-centro-acopio"
+                                            style="width: 100%">
                                         <option value="">Selecciona un centro...</option>
-
-                                            <option
-
-                                                   >
-                                                Centro de Acopio
-                                            </option>
-
-
-                                            <option disabled>No hay centros disponibles</option>
-
+                                        <option>Centro de Acopio</option>
+                                        <option disabled>No hay centros disponibles</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-semibold small">Observaciones</label>
-                                    <textarea id="salidaObservaciones" class="form-control form-control-sm border-danger border-2" rows="2" placeholder="Notas adicionales..."></textarea>
+                                    <textarea id="salidaObservaciones"
+                                              class="form-control form-control-sm border-danger border-2"
+                                              rows="2"
+                                              placeholder="Notas adicionales..."></textarea>
                                 </div>
                                 <div class="col-12">
                                     <button type="submit" class="btn btn-danger btn-sm fw-semibold">
                                         <i class="bi bi-check-circle me-2"></i>Guardar Salida
                                     </button>
-                                    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" onclick="cambiarMaterial()">
+                                    <button type="button"
+                                            class="btn btn-outline-primary btn-sm fw-semibold"
+                                            onclick="cambiarMaterial()">
                                         <i class="bi bi-arrow-counterclockwise me-2"></i>Cambiar Material
                                     </button>
                                 </div>
@@ -394,40 +536,54 @@
                             <form class="row g-3" id="filtrosFormSalidas">
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Material</label>
-                                    <select id="filtroVentaMaterial" class="form-select form-select-sm" style="width: 100%;">
+                                    <select id="filtroVentaMaterial"
+                                            class="form-select form-select-sm"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Categoría</label>
-                                    <select id="filtroVentaCategoria" class="form-select form-select-sm" style="width: 100%;">
+                                    <select id="filtroVentaCategoria"
+                                            class="form-select form-select-sm"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Tipo</label>
-                                    <select id="filtroVentaTipo" class="form-select form-select-sm" style="width: 100%;">
+                                    <select id="filtroVentaTipo"
+                                            class="form-select form-select-sm"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">&nbsp;</label>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-primary btn-sm fw-semibold flex-grow-1" id="btnFiltrarVenta">
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm fw-semibold flex-grow-1"
+                                                id="btnFiltrarVenta">
                                             <i class="bi bi-search me-1"></i>Filtrar
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" id="btnLimpiarVenta">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm fw-semibold"
+                                                id="btnLimpiarVenta">
                                             <i class="bi bi-arrow-counterclockwise"></i>
                                         </button>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Desde</label>
-                                    <input type="date" class="form-control form-control-sm" id="filtroVentaFechaDesde">
+                                    <input type="date"
+                                           class="form-control form-control-sm"
+                                           id="filtroVentaFechaDesde">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Hasta</label>
-                                    <input type="date" class="form-control form-control-sm" id="filtroVentaFechaHasta">
+                                    <input type="date"
+                                           class="form-control form-control-sm"
+                                           id="filtroVentaFechaHasta">
                                 </div>
                             </form>
                         </div>
@@ -442,30 +598,39 @@
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover align-middle mb-0">
                                     <thead class="table-light">
-                                    <tr>
-                                        <th scope="col" class="fw-bold small">Fecha</th>
-                                        <th scope="col" class="fw-bold small">Material</th>
-                                        <th scope="col" class="fw-bold small text-end">Cantidad</th>
-                                        <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
-                                        <th scope="col" class="fw-bold small">Total</th>
-                                        <th scope="col" class="fw-bold small">Centro Acopio</th>
-                                        <th scope="col" class="fw-bold small text-center">Acciones</th>
-                                    </tr>
+                                        <tr>
+                                            <th scope="col" class="fw-bold small">Fecha</th>
+                                            <th scope="col" class="fw-bold small">Material</th>
+                                            <th scope="col" class="fw-bold small text-end">Cantidad</th>
+                                            <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
+                                            <th scope="col" class="fw-bold small">Total</th>
+                                            <th scope="col" class="fw-bold small">Centro Acopio</th>
+                                            <th scope="col" class="fw-bold small text-center">Acciones</th>
+                                        </tr>
                                     </thead>
                                     <tbody class="border-top" id="tablasSalidasBody">
-                                    <tr class="text-muted text-center">
-                                        <td colspan="7" class="py-3"><small>Sin registros</small></td>
-                                    </tr>
+                                        <tr class="text-muted text-center">
+                                            <td colspan="7" class="py-3">
+                                                <small>Sin registros</small>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="card-footer bg-light border-top px-4 py-3">
                             <nav aria-label="Paginación salidas">
-                                <ul class="pagination pagination-sm mb-0 justify-content-center" id="paginacionSalidas">
-                                    <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">Siguiente</a></li>
+                                <ul class="pagination pagination-sm mb-0 justify-content-center"
+                                    id="paginacionSalidas">
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#">Anterior</a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">1</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="#">Siguiente</a>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>
@@ -476,8 +641,16 @@
         <!-- ITEM 3: HISTORIAL GENERAL -->
         <div class="accordion-item border-start border-5 border-secondary">
             <h2 class="accordion-header" id="headingHistorial">
-                <button class="accordion-button fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHistorial">
-                    <span class="bg-secondary p-2 rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <button class="accordion-button fw-bold collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseHistorial">
+                    <span class="bg-secondary p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
                         <i class="bi bi-search text-white"></i>
                     </span>
                     <span>
@@ -486,7 +659,9 @@
                     </span>
                 </button>
             </h2>
-            <div id="collapseHistorial" class="accordion-collapse collapse" data-bs-parent="#movimientosAccordion">
+            <div id="collapseHistorial"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#movimientosAccordion">
                 <div class="accordion-body p-4 bg-light">
                     <!-- Filtros -->
                     <div class="card shadow-sm mb-4">
@@ -500,7 +675,9 @@
                                 <!-- FILA 1: Material y Categoría -->
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Material</label>
-                                    <select class="form-select form-select-sm" id="filtroHistorialMaterial" style="width: 100%;">
+                                    <select class="form-select form-select-sm"
+                                            id="filtroHistorialMaterial"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
@@ -510,7 +687,6 @@
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
-
                                 <!-- FILA 2: Tipo y Tipo de Movimiento -->
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Tipo</label>
@@ -526,23 +702,30 @@
                                         <option value="venta">Venta</option>
                                     </select>
                                 </div>
-
                                 <!-- FILA 3: Fechas -->
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Desde</label>
-                                    <input type="date" class="form-control form-control-sm" id="filtroHistorialDesde">
+                                    <input type="date"
+                                           class="form-control form-control-sm"
+                                           id="filtroHistorialDesde">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Hasta</label>
-                                    <input type="date" class="form-control form-control-sm" id="filtroHistorialHasta">
+                                    <input type="date"
+                                           class="form-control form-control-sm"
+                                           id="filtroHistorialHasta">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">&nbsp;</label>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-primary btn-sm fw-semibold flex-grow-1" id="btnFiltrarHistorial">
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm fw-semibold flex-grow-1"
+                                                id="btnFiltrarHistorial">
                                             <i class="bi bi-search me-1"></i>Buscar
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" id="btnLimpiarHistorial">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm fw-semibold"
+                                                id="btnLimpiarHistorial">
                                             <i class="bi bi-arrow-counterclockwise"></i>
                                         </button>
                                     </div>
@@ -560,32 +743,39 @@
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover align-middle mb-0">
                                     <thead class="table-light">
-                                    <tr>
-                                        <th scope="col" class="fw-bold small">Fecha</th>
-                                        <th scope="col" class="fw-bold small">Tipo</th>
-                                        <th scope="col" class="fw-bold small">Material</th>
-                                        <th scope="col" class="fw-bold small text-end">Cantidad (kg)</th>
-                                        <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
-                                        <th scope="col" class="fw-bold small">Detalles</th>
-                                    </tr>
+                                        <tr>
+                                            <th scope="col" class="fw-bold small">Fecha</th>
+                                            <th scope="col" class="fw-bold small">Tipo</th>
+                                            <th scope="col" class="fw-bold small">Material</th>
+                                            <th scope="col" class="fw-bold small text-end">Cantidad (kg)</th>
+                                            <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
+                                            <th scope="col" class="fw-bold small">Detalles</th>
+                                        </tr>
                                     </thead>
                                     <tbody class="border-top" id="tablasHistorialBody">
-                                    <tr class="text-muted text-center">
-                                        <td colspan="6" class="py-4">
-                                            <i class="bi bi-inbox"></i>
-                                            <p class="mb-0 mt-2">Sin movimientos registrados</p>
-                                        </td>
-                                    </tr>
+                                        <tr class="text-muted text-center">
+                                            <td colspan="6" class="py-4">
+                                                <i class="bi bi-inbox"></i>
+                                                <p class="mb-0 mt-2">Sin movimientos registrados</p>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="card-footer bg-light border-top px-4 py-3">
                             <nav aria-label="Paginación historial">
-                                <ul class="pagination pagination-sm mb-0 justify-content-center" id="paginacionHistorial">
-                                    <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">Siguiente</a></li>
+                                <ul class="pagination pagination-sm mb-0 justify-content-center"
+                                    id="paginacionHistorial">
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#">Anterior</a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">1</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="#">Siguiente</a>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>
@@ -595,18 +785,24 @@
         </div>
     </div>
     <!-- FIN DEL ACORDEÓN -->
-
     <!-- ═════════════════════════════════════════════════════════════ -->
     <!-- MODAL: DETALLES DEL MOVIMIENTO -->
     <!-- ═════════════════════════════════════════════════════════════ -->
-    <div class="modal fade" id="modalDetallesMovimiento" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalDetallesMovimiento"
+         tabindex="-1"
+         aria-labelledby="modalDetallesLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white border-0">
                     <h5 class="modal-title" id="modalDetallesLabel">
                         <i class="bi bi-receipt me-2"></i>Detalles del Movimiento
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
@@ -672,13 +868,13 @@
             </div>
         </div>
     </div>
-
     <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+          rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+          rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
     <!-- SCRIPT INLINE PARA BÚSQUEDA Y SELECCIÓN DE MATERIALES -->
     <script>
         (function() {
@@ -1945,14 +2141,10 @@
                         <td class="text-end small fw-semibold text-danger">$${total.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="text-center">
                             <div class="d-flex gap-2 justify-content-center">
-                                <button type="button" class="btn btn-sm btn-danger text-white btn-detalles-entrada"
-                                        data-compra-id="${entrada.compraId}"
-                                        title="Ver detalles">
+                                <button type="button" class="btn btn-sm btn-danger text-white btn-detalles-entrada" data-compra-id="${entrada.compraId}" title="Ver detalles">
                                     <i class="bi bi-eye-fill"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-entrada"
-                                        data-compra-id="${entrada.compraId}"
-                                        title="Eliminar">
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-entrada" data-compra-id="${entrada.compraId}" title="Eliminar">
                                     <i class="bi bi-trash3-fill"></i>
                                 </button>
                             </div>
@@ -2046,14 +2238,10 @@
                         <td class="small">${salida.nombreCentroAcopio || '-'}</td>
                         <td class="text-center">
                             <div class="d-flex gap-2 justify-content-center">
-                                <button type="button" class="btn btn-sm btn-success text-white btn-detalles-salida"
-                                        data-venta-id="${salida.ventaId}"
-                                        title="Ver detalles">
+                                <button type="button" class="btn btn-sm btn-success text-white btn-detalles-salida" data-venta-id="${salida.ventaId}" title="Ver detalles">
                                     <i class="bi bi-eye-fill"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-success btn-eliminar-salida"
-                                        data-venta-id="${salida.ventaId}"
-                                        title="Eliminar">
+                                <button type="button" class="btn btn-sm btn-outline-success btn-eliminar-salida" data-venta-id="${salida.ventaId}" title="Eliminar">
                                     <i class="bi bi-trash3-fill"></i>
                                 </button>
                             </div>
@@ -2388,11 +2576,13 @@
         });
 
     </script>
-
     <!-- MODALES PARA VER DETALLES, EDITAR Y ELIMINAR ENTRADAS Y SALIDAS -->
-
     <!-- MODAL: VER DETALLES ENTRADA (COMPRA) -->
-    <div class="modal fade" id="detallesEntradaModal" tabindex="-1" aria-labelledby="detallesEntradaLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="detallesEntradaModal"
+         tabindex="-1"
+         aria-labelledby="detallesEntradaLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-danger text-white">
@@ -2441,15 +2631,21 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-top">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
                             title="Cerrar">
                         <i class="bi bi-x-circle"></i>
                     </button>
-                    <button type="button" class="btn btn-success text-white" id="btnEditarEntrada"
+                    <button type="button"
+                            class="btn btn-success text-white"
+                            id="btnEditarEntrada"
                             title="Editar">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-danger" id="btnEliminarEntrada"
+                    <button type="button"
+                            class="btn btn-outline-danger"
+                            id="btnEliminarEntrada"
                             title="Eliminar">
                         <i class="bi bi-trash3-fill"></i>
                     </button>
@@ -2457,9 +2653,12 @@
             </div>
         </div>
     </div>
-
     <!-- MODAL: VER DETALLES SALIDA (VENTA) -->
-    <div class="modal fade" id="detallesSalidaModal" tabindex="-1" aria-labelledby="detallesSalidaLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="detallesSalidaModal"
+         tabindex="-1"
+         aria-labelledby="detallesSalidaLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-success text-white">
@@ -2514,15 +2713,21 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-top">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
                             title="Cerrar">
                         <i class="bi bi-x-circle"></i>
                     </button>
-                    <button type="button" class="btn btn-success text-white" id="btnEditarSalida"
+                    <button type="button"
+                            class="btn btn-success text-white"
+                            id="btnEditarSalida"
                             title="Editar">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-success" id="btnEliminarSalida"
+                    <button type="button"
+                            class="btn btn-outline-success"
+                            id="btnEliminarSalida"
                             title="Eliminar">
                         <i class="bi bi-trash3-fill"></i>
                     </button>
@@ -2530,43 +2735,70 @@
             </div>
         </div>
     </div>
-
     <!-- MODAL: EDITAR COMPRA DE MATERIAL -->
-    <div class="modal fade" id="editarCompraModal" tabindex="-1" aria-labelledby="editarCompraLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="editarCompraModal"
+         tabindex="-1"
+         aria-labelledby="editarCompraLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="editarCompraLabel">
                         <i class="bi bi-pencil-square me-2"></i>Editar Compra de Material
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-4">
                     <form id="formEditarCompra">
                         <input type="hidden" id="editCompraId">
                         <input type="hidden" id="editInventarioId">
                         <input type="hidden" id="editCompraMaterialId">
-
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Material</label>
-                                <input type="text" class="form-control form-control-sm bg-light" id="editCompraMaterial" readonly>
+                                <input type="text"
+                                       class="form-control form-control-sm bg-light"
+                                       id="editCompraMaterial"
+                                       readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Fecha <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control form-control-sm border-danger border-2" id="editCompraFecha" required>
+                                <label class="form-label fw-semibold">
+                                    Fecha <span class="text-danger">*</span>
+                                </label>
+                                <input type="datetime-local"
+                                       class="form-control form-control-sm border-danger border-2"
+                                       id="editCompraFecha"
+                                       required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Cantidad <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2" id="editCompraCantidad" required>
+                                <label class="form-label fw-semibold">
+                                    Cantidad <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                       step="0.01"
+                                       class="form-control form-control-sm border-danger border-2"
+                                       id="editCompraCantidad"
+                                       required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Precio Unitario (COP) <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2" id="editCompraPrecio" required>
+                                <label class="form-label fw-semibold">
+                                    Precio Unitario (COP) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                       step="0.01"
+                                       class="form-control form-control-sm border-danger border-2"
+                                       id="editCompraPrecio"
+                                       required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Observaciones</label>
-                                <textarea class="form-control form-control-sm border-danger border-2" id="editCompraObservaciones" rows="2"></textarea>
+                                <textarea class="form-control form-control-sm border-danger border-2"
+                                          id="editCompraObservaciones"
+                                          rows="2"></textarea>
                             </div>
                         </div>
                     </form>
@@ -2582,55 +2814,81 @@
             </div>
         </div>
     </div>
-
     <!-- MODAL: EDITAR VENTA DE MATERIAL -->
-    <div class="modal fade" id="editarVentaModal" tabindex="-1" aria-labelledby="editarVentaLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="editarVentaModal"
+         tabindex="-1"
+         aria-labelledby="editarVentaLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="editarVentaLabel">
                         <i class="bi bi-pencil-square me-2"></i>Editar Venta de Material
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-4">
                     <form id="formEditarVenta">
                         <input type="hidden" id="editVentaId">
                         <input type="hidden" id="editInventarioIdVenta">
                         <input type="hidden" id="editVentaMaterialId">
-
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Material</label>
-                                <input type="text" class="form-control form-control-sm bg-light" id="editVentaMaterial" readonly>
+                                <input type="text"
+                                       class="form-control form-control-sm bg-light"
+                                       id="editVentaMaterial"
+                                       readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Fecha <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control form-control-sm border-success border-2" id="editVentaFecha" required>
+                                <label class="form-label fw-semibold">
+                                    Fecha <span class="text-danger">*</span>
+                                </label>
+                                <input type="datetime-local"
+                                       class="form-control form-control-sm border-success border-2"
+                                       id="editVentaFecha"
+                                       required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Cantidad <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control form-control-sm border-success border-2" id="editVentaCantidad" required>
+                                <label class="form-label fw-semibold">
+                                    Cantidad <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                       step="0.01"
+                                       class="form-control form-control-sm border-success border-2"
+                                       id="editVentaCantidad"
+                                       required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Precio Unitario (COP) <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control form-control-sm border-success border-2" id="editVentaPrecio" required>
+                                <label class="form-label fw-semibold">
+                                    Precio Unitario (COP) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                       step="0.01"
+                                       class="form-control form-control-sm border-success border-2"
+                                       id="editVentaPrecio"
+                                       required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Centro de Acopio <span class="text-danger">*</span></label>
-                                <select class="form-select form-select-sm border-success border-2" id="editVentaCentro" required>
+                                <label class="form-label fw-semibold">
+                                    Centro de Acopio <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select form-select-sm border-success border-2"
+                                        id="editVentaCentro"
+                                        required>
                                     <option value="">Selecciona un centro...</option>
-
-                                        <option
-
-                                               >
-                                        </option>
-
+                                    <option></option>
                                 </select>
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Observaciones</label>
-                                <textarea class="form-control form-control-sm border-success border-2" id="editVentaObservaciones" rows="2"></textarea>
+                                <textarea class="form-control form-control-sm border-success border-2"
+                                          id="editVentaObservaciones"
+                                          rows="2"></textarea>
                             </div>
                         </div>
                     </form>
@@ -2646,7 +2904,6 @@
             </div>
         </div>
     </div>
-
     <!-- SCRIPT: EVENT LISTENERS PARA BOTONES DE ACCIONES -->
     <script>
         (function() {
@@ -3209,7 +3466,6 @@
             console.log('✓ Event listeners inicializados');
         })();
     </script>
-
     <script>
         (function() {
             // Manejadores ligeros para crear compra/venta sin recargar la página.
@@ -3309,5 +3565,4 @@
             }
         })();
     </script>
-
 </section>
