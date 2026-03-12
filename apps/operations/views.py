@@ -9,9 +9,12 @@ from apps.ecas.service import PuntoService
 from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial
 from apps.inventory.views import _build_materiales_context
 from . import models
+from decimal import Decimal as decimal
 from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse, Http404
 import json
+from django.utils import timezone
+import datetime
 
 
 # Create your views here.
@@ -79,23 +82,61 @@ def registrar_compra(request):
                     status=404,
                 )
 
-        cantidad = float(data["cantidad"])
-        precio_compra = float(data["precioCompra"])
+        cantidad = decimal(str(data["cantidad"]))
+        precio_compra = decimal(str(data["precioCompra"]))
         if cantidad <= 0 or precio_compra < 0:
             return JsonResponse(
                 {"status": "error", "message": "Valores inválidos."}, status=400
             )
 
+        # Parse fecha_compra a datetime aware si es string naive
+        fecha_compra = data["fechaCompra"]
+        if isinstance(fecha_compra, str):
+            try:
+                # Intentar parsear en formato ISO con o sin Z
+                fecha_dt = datetime.datetime.fromisoformat(
+                    fecha_compra.replace("Z", "+00:00")
+                )
+            except Exception:
+                # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
+                fecha_dt = datetime.datetime.strptime(fecha_compra, "%Y-%m-%d %H:%M:%S")
+            if timezone.is_naive(fecha_dt):
+                fecha_dt = timezone.make_aware(fecha_dt)
+            fecha_compra = fecha_dt
+
         entrada = models.CompraInventario.objects.create(
             inventario=inventario,
-            fecha_compra=data["fechaCompra"],
+            fecha_compra=fecha_compra,
             cantidad=cantidad,
             precio_compra=precio_compra,
             observaciones=data.get("observaciones", ""),
         )
 
+        # Actualizar el stock del inventario con la cantidad comprada
+        if (
+            inventario.capacidad_maxima is not None
+            and (inventario.stock_actual or 0) + cantidad > inventario.capacidad_maxima
+        ):
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "No se puede exceder la capacidad máxima del inventario.",
+                },
+                status=400,
+            )
+        else:
+            from decimal import Decimal
+
+            inventario.stock_actual = Decimal(
+                str(inventario.stock_actual or 0)
+            ) + Decimal(str(cantidad))
+            inventario.save(update_fields=["stock_actual"])
+
         return JsonResponse(
-            {"status": "success", "message": "Compra registrada exitosamente."},
+            {
+                "status": "success",
+                "message": "Compra registrada exitosamente, inventario actualizado.",
+            },
             status=201,
         )
     except KeyError as e:
