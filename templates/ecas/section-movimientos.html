@@ -85,14 +85,7 @@
                             aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-info mb-3">
-                        <strong>Filtros aplicados:</strong>
-                        <div class="mt-2">
-                            <span class="badge bg-info-subtle text-info">Texto: <strong id="resumenMaterialTexto">Sin filtro</strong></span>
-                            <span class="badge bg-info-subtle text-info ms-2">Categoría: <strong id="resumenMaterialCategoria">Sin filtro</strong></span>
-                            <span class="badge bg-info-subtle text-info ms-2">Tipo: <strong id="resumenMaterialTipo">Sin filtro</strong></span>
-                        </div>
-                    </div>
+                    e
                     <div id="estadoBusquedaMov" class="text-center text-muted py-4 mb-3">
                         <i class="bi bi-search display-6 d-block mb-2"></i>
                         <p class="mb-0">Buscando materiales...</p>
@@ -907,6 +900,49 @@
 
             // Esperar a que jQuery y Select2 estén listos
             function inicializarSelect2() {
+                // Listener para el botón "Limpiar" en búsqueda de material
+                var btnLimpiarBusqueda = document.getElementById('btnLimpiarBusquedaMov');
+                if (btnLimpiarBusqueda) {
+                    btnLimpiarBusqueda.addEventListener('click', function() {
+                        // Limpiar Select2 de búsqueda
+                        var inputBusqueda = document.getElementById('buscarMaterialMovimientos');
+                        if (inputBusqueda) {
+                            $(inputBusqueda).val(null).trigger('change');
+                        }
+                        // Limpiar categoría
+                        $('#selectCategoriaMov').val('').trigger('change');
+                        // Limpiar tipo
+                        $('#selectTipoMov').val('').trigger('change');
+                        // Limpiar resultados del modal
+                        var resultadosDiv = document.getElementById('resultadosBusquedaMov');
+                        if (resultadosDiv) resultadosDiv.innerHTML = '';
+                        // Mostrar de nuevo la sección de búsqueda
+                        var seccionBusquedaMaterial = document.getElementById('seccionBusquedaMaterial');
+                        if (seccionBusquedaMaterial) seccionBusquedaMaterial.style.display = 'block';
+                        // Ocultar formularios
+                        var formEntradaContainer = document.getElementById('formEntradaContainer');
+                        var formSalidaContainer = document.getElementById('formSalidaContainer');
+                        if (formEntradaContainer) formEntradaContainer.style.display = 'none';
+                        if (formSalidaContainer) formSalidaContainer.style.display = 'none';
+                        // Contraer acordeón
+                        var collapseEntradas = document.getElementById('collapseEntradas');
+                        var collapseSalidas = document.getElementById('collapseSalidas');
+                        if (collapseEntradas) {
+                            collapseEntradas.classList.remove('show');
+                            collapseEntradas.setAttribute('aria-expanded', 'false');
+                            var buttonEntradas = document.querySelector('[data-bs-target="#collapseEntradas"]');
+                            if (buttonEntradas) buttonEntradas.classList.add('collapsed');
+                        }
+                        if (collapseSalidas) {
+                            collapseSalidas.classList.remove('show');
+                            collapseSalidas.setAttribute('aria-expanded', 'false');
+                            var buttonSalidas = document.querySelector('[data-bs-target="#collapseSalidas"]');
+                            if (buttonSalidas) buttonSalidas.classList.add('collapsed');
+                        }
+                        // Dejar estado busqueda en idle
+                        mostrarEstadoBusquedaMov('idle');
+                    });
+                }
                 if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
                     console.warn('Select2 o jQuery no disponibles, reintentando...');
                     setTimeout(inicializarSelect2, 100);
