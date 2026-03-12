@@ -1,5 +1,8 @@
 <!-- Fragment: Movimientos -->
-<section class="py-4">
+<section class="py-4"
+         data-punto-eca-id="{{ punto.id }}"
+         data-usuario-id="{{ gestor.id }}"
+         data-gestor="{{ gestor.nombre }}">
     <!-- Título principal -->
     <div class="mb-4">
         <h2 class="h4 fw-bold text-dark mb-1">
@@ -39,7 +42,7 @@
                             class="form-select border-2 border-primary js-select2-categoria-mov"
                             style="width: 100%">
                         <option value="">-- Ninguno --</option>
-                        <option>Categoría</option>
+                        {% for categoria in categoria_inventario %}<option value="{{ categoria }}">{{ categoria }}</option>{% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -48,7 +51,7 @@
                             class="form-select border-2 border-primary js-select2-tipo-mov"
                             style="width: 100%">
                         <option value="">-- Ninguno --</option>
-                        <option>Tipo</option>
+                        {% for tipo in tipo_inventario %}<option value="{{ tipo }}">{{ tipo }}</option>{% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -933,7 +936,7 @@
                     console.log('Encontrado #buscarMaterialMovimientos');
 
                     // Obtener endpoint y puntoId
-                    var endpoint = '/punto-eca/catalogo/inventario/materiales/buscar';
+                    var endpoint = '/punto-eca/materiales/inventario/buscar';
                     var puntoId = puntoEcaId; // Ya está disponible en el data attribute
 
                     console.log('Endpoint:', endpoint);
@@ -1233,7 +1236,7 @@
                                 params.append('puntoId', puntoEcaId);
                                 params.append('texto', materialNombre || '');
 
-                                var url = '/punto-eca/catalogo/inventario/materiales/buscar' + (params.toString() ? ('?' + params.toString()) : '');
+                                var url = '/punto-eca/materiales/inventario/buscar' + (params.toString() ? ('?' + params.toString()) : '');
                                 console.log('Intentando obtener datos de inventario en:', url);
 
                                 fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
@@ -1493,7 +1496,7 @@
                     modal.show();
 
                     // Construir URL con parámetros como en section-materiales.html
-                    var endpoint = '/punto-eca/catalogo/inventario/materiales/buscar';
+                    var endpoint = '/punto-eca/materiales/inventario/buscar';
                     var params = new URLSearchParams();
 
                     if (texto) params.append('texto', texto);
