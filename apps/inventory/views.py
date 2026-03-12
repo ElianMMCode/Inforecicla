@@ -121,32 +121,34 @@ def buscar_materiales_catalogo(request):
     categoria = request.GET.get("categoria", "").strip()
     tipo = request.GET.get("tipo", "").strip()
 
-    inventario_qs = Inventario.objects.filter(punto_eca_id=punto_id).select_related(
-        "material", "material__categoria", "material__tipo"
-    )
+    # Obtengo los materiales que ya están en el inventario del punto
+    materiales_en_inventario = Inventario.objects.filter(
+        punto_eca_id=punto_id
+    ).values_list("material_id", flat=True)
 
-    # Filtrar materiales por búsqueda de nombre/categoría/tipo
+    # Busco materiales disponibles en catálogo, excluyendo los del inventario
+    materiales_catalogo = Material.objects.exclude(id__in=materiales_en_inventario)
+
+    # Aplico filtros de búsqueda
     if query:
-        inventario_qs = inventario_qs.filter(
-            Q(material__nombre__unaccent__icontains=query)
-            | Q(material__categoria__nombre__unaccent__icontains=query)
-            | Q(material__tipo__nombre__unaccent__icontains=query)
+        materiales_catalogo = materiales_catalogo.filter(
+            Q(nombre__unaccent__icontains=query)
+            | Q(categoria__nombre__unaccent__icontains=query)
+            | Q(tipo__nombre__unaccent__icontains=query)
         )
     if categoria:
-        inventario_qs = inventario_qs.filter(
-            material__categoria__nombre__unaccent__iexact=categoria
+        materiales_catalogo = materiales_catalogo.filter(
+            categoria__nombre__unaccent__iexact=categoria
         )
     if tipo:
-        inventario_qs = inventario_qs.filter(
-            material__tipo__nombre__unaccent__iexact=tipo
+        materiales_catalogo = materiales_catalogo.filter(
+            tipo__nombre__unaccent__iexact=tipo
         )
 
-    inventario_qs = inventario_qs.distinct()
+    materiales_catalogo = materiales_catalogo.distinct()
 
-    # Construir lista de materiales presentes en inventario
     resultados = []
-    for item in inventario_qs:
-        m = item.material
+    for m in materiales_catalogo:
         resultados.append(
             {
                 "materialId": str(m.id),  # UUID a String
@@ -154,7 +156,7 @@ def buscar_materiales_catalogo(request):
                 "nmbCategoria": m.categoria.nombre if m.categoria else "General",
                 "nmbTipo": m.tipo.nombre if m.tipo else "N/A",
                 "dscMaterial": m.descripcion,
-                "unidad": item.unidad_medida,
+                "unidad": "",
                 "imagenUrl": m.imagen_url
                 if m.imagen_url
                 else "/static/img/materiales.png",

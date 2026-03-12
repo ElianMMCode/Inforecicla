@@ -80,7 +80,7 @@
             <ul class="nav nav-pills flex-column gap-2 w-100" id="sidebarMenu">
               <!-- RESUMEN - Simple -->
               <li class="nav-item">
-                <a class="nav-link d-flex align-items-center {% if seccion == 'resumen' %}active{% endif %}" href="{% url 'punto:resumen' %}">
+                <a class="nav-link d-flex align-items-center {% if seccion == 'resumen' %}active{% endif %}" href="{% url 'punto-eca:resumen' %}">
                   <i class="bi bi-graph-up me-2"></i>Resumen
                 </a>
               </li>
@@ -89,7 +89,7 @@
               <li class="nav-item dropdown-menu-container">
                 <a
                   class="nav-link w-100 text-start d-flex align-items-center justify-content-between gap-2 px-3 py-2 {% if seccion == 'perfil' %}active{% endif %}"
-                  href="{% url 'punto:perfil' %}"
+                  href="{% url 'punto-eca:perfil' %}"
                 >
                   <span class="flex-grow-1"
                     ><i class="bi bi-person-circle me-2"></i>Perfil</span
@@ -113,14 +113,14 @@
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:perfil' %}#encargadoPanel"
+                        href="{% url 'punto-eca:perfil' %}#encargadoPanel"
                         ><i class="bi bi-person me-1"></i>Encargado</a
                       >
                     </li>
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:perfil' %}#puntoPanel"
+                        href="{% url 'punto-eca:perfil' %}#puntoPanel"
                         ><i class="bi bi-geo-alt me-1"></i>Punto ECA</a
                       >
                     </li>
@@ -132,7 +132,7 @@
               <li class="nav-item dropdown-menu-container">
                 <a
                   class="nav-link w-100 text-start d-flex align-items-center justify-content-between gap-2 px-3 py-2 {% if seccion == 'materiales' %}active{% endif %}"
-                  href="{% url 'punto:materiales' %}"
+                  href="{% url 'punto-eca:materiales' %}"
                 >
                   <span class="flex-grow-1"
                     ><i class="bi bi-boxes me-2"></i>Materiales</span
@@ -156,21 +156,21 @@
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:materiales' %}#collapseAgregar"
+                        href="{% url 'punto-eca:materiales' %}#collapseAgregar"
                         ><i class="bi bi-plus-circle me-1"></i>Agregar</a
                       >
                     </li>
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:materiales' %}#collapseOcupacion"
+                        href="{% url 'punto-eca:materiales' %}#collapseOcupacion"
                         ><i class="bi bi-graph-up me-1"></i>Ocupación</a
                       >
                     </li>
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:materiales' %}#collapseTarjetas"
+                        href="{% url 'punto-eca:materiales' %}#collapseTarjetas"
                         ><i class="bi bi-collection me-1"></i>Inventario</a
                       >
                     </li>
@@ -182,7 +182,7 @@
               <li class="nav-item dropdown-menu-container">
                 <a
                   class="nav-link w-100 text-start d-flex align-items-center justify-content-between gap-2 px-3 py-2 {% if seccion == 'movimientos' %}active{% endif %}"
-                  href="{% url 'punto:movimientos' %}"
+                  href="{% url 'punto-eca:movimientos' %}"
                 >
                   <span class="flex-grow-1"
                     ><i class="bi bi-arrow-left-right me-2"></i
@@ -207,21 +207,21 @@
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:movimientos' %}#collapseEntradas"
+                        href="{% url 'punto-eca:movimientos' %}#collapseEntradas"
                         ><i class="bi bi-arrow-down me-1"></i>Compra</a
                       >
                     </li>
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:movimientos' %}#collapseSalidas"
+                        href="{% url 'punto-eca:movimientos' %}#collapseSalidas"
                         ><i class="bi bi-arrow-up me-1"></i>Venta</a
                       >
                     </li>
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:movimientos' %}#collapseHistorial"
+                        href="{% url 'punto-eca:movimientos' %}#collapseHistorial"
                         ><i class="bi bi-search me-1"></i>Historial General</a
                       >
                     </li>
@@ -231,7 +231,7 @@
 
               <!-- CALENDARIO - Simple -->
               <li class="nav-item">
-                <a class="nav-link d-flex align-items-center {% if seccion == 'calendario' %}active{% endif %}" href="{% url 'punto:calendario' %}">
+                <a class="nav-link d-flex align-items-center {% if seccion == 'calendario' %}active{% endif %}" href="{% url 'punto-eca:calendario' %}">
                   <i class="bi bi-calendar-event me-2"></i>Calendario
                 </a>
               </li>
@@ -240,7 +240,7 @@
               <li class="nav-item dropdown-menu-container">
                 <a
                   class="nav-link w-100 text-start d-flex align-items-center justify-content-between gap-2 px-3 py-2 {% if seccion == 'centros' %}active{% endif %}"
-                  href="{% url 'punto:centros' %}"
+                  href="{% url 'punto-eca:centros' %}"
                 >
                   <span class="flex-grow-1"
                     ><i class="bi bi-building me-2"></i>Centros</span
@@ -264,7 +264,7 @@
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:centros' %}#centrosGlobalesPanel"
+                        href="{% url 'punto-eca:centros' %}#centrosGlobalesPanel"
                         ><i class="bi bi-globe-americas me-1"></i>Centros
                         Globales</a
                       >
@@ -272,7 +272,7 @@
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:centros' %}#centrosPropiosPanel"
+                        href="{% url 'punto-eca:centros' %}#centrosPropiosPanel"
                         ><i class="bi bi-house-fill me-1"></i>Centros Propios</a
                       >
                     </li>
@@ -284,7 +284,7 @@
               <li class="nav-item dropdown-menu-container">
                 <a
                   class="nav-link w-100 text-start d-flex align-items-center justify-content-between gap-2 px-3 py-2 {% if seccion == 'configuracion' %}active{% endif %}"
-                  href="{% url 'punto:configuracion' %}"
+                  href="{% url 'punto-eca:configuracion' %}"
                 >
                   <span class="flex-grow-1"
                     ><i class="bi bi-gear me-2"></i>Configuración</span
@@ -308,21 +308,21 @@
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:configuracion' %}#parametrosPanel"
+                        href="{% url 'punto-eca:configuracion' %}#parametrosPanel"
                         ><i class="bi bi-sliders me-1"></i>Parámetros</a
                       >
                     </li>
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:configuracion' %}#notificacionesPanel"
+                        href="{% url 'punto-eca:configuracion' %}#notificacionesPanel"
                         ><i class="bi bi-bell me-1"></i>Notificaciones</a
                       >
                     </li>
                     <li>
                       <a
                         class="nav-link small text-white-50 px-2 py-1 rounded-1"
-                        href="{% url 'punto:configuracion' %}#seguridadPanel"
+                        href="{% url 'punto-eca:configuracion' %}#seguridadPanel"
                         ><i class="bi bi-lock me-1"></i>Seguridad</a
                       >
                     </li>
@@ -371,28 +371,28 @@
           >
             <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3">
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'resumen' %}active{% endif %}" href="{% url 'punto:resumen' %}">Resumen</a>
+                <a class="nav-link {% if seccion == 'resumen' %}active{% endif %}" href="{% url 'punto-eca:resumen' %}">Resumen</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'perfil' %}active{% endif %}" href="{% url 'punto:perfil' %}">Perfil</a>
+                <a class="nav-link {% if seccion == 'perfil' %}active{% endif %}" href="{% url 'punto-eca:perfil' %}">Perfil</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'materiales' %}active{% endif %}" href="{% url 'punto:materiales' %}">Materiales</a>
+                <a class="nav-link {% if seccion == 'materiales' %}active{% endif %}" href="{% url 'punto-eca:materiales' %}">Materiales</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'movimientos' %}active{% endif %}" href="{% url 'punto:movimientos' %}">Movimientos</a>
+                <a class="nav-link {% if seccion == 'movimientos' %}active{% endif %}" href="{% url 'punto-eca:movimientos' %}">Movimientos</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'movimientos' %}active{% endif %}" href="{% url 'punto:movimientos' %}#collapseHistorial">Historial</a>
+                <a class="nav-link {% if seccion == 'movimientos' %}active{% endif %}" href="{% url 'punto-eca:movimientos' %}#collapseHistorial">Historial</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'calendario' %}active{% endif %}" href="{% url 'punto:calendario' %}">Calendario</a>
+                <a class="nav-link {% if seccion == 'calendario' %}active{% endif %}" href="{% url 'punto-eca:calendario' %}">Calendario</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'centros' %}active{% endif %}" href="{% url 'punto:centros' %}">Centros de Acopio</a>
+                <a class="nav-link {% if seccion == 'centros' %}active{% endif %}" href="{% url 'punto-eca:centros' %}">Centros de Acopio</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link {% if seccion == 'configuracion' %}active{% endif %}" href="{% url 'punto:configuracion' %}">Configuración</a>
+                <a class="nav-link {% if seccion == 'configuracion' %}active{% endif %}" href="{% url 'punto-eca:configuracion' %}">Configuración</a>
               </li>
               <li class="nav-item">
                 <form method="post" style="display: inline">
