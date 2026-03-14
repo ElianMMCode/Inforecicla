@@ -175,17 +175,116 @@ def registrar_compra(request):
                 status=400,
             )
         else:
-            from decimal import Decimal
-
-            inventario.stock_actual = Decimal(
+            inventario.stock_actual = decimal(
                 str(inventario.stock_actual or 0)
-            ) + Decimal(str(cantidad))
-            inventario.save(update_fields=["stock_actual"])
+            ) + decimal(str(cantidad))
+            # inventario.save(update_fields=["stock_actual"])
+            inventario.save()
 
         return JsonResponse(
             {
                 "status": "success",
                 "message": "Compra registrada exitosamente, inventario actualizado.",
+            },
+            status=201,
+        )
+    except KeyError as e:
+        return JsonResponse(
+            {"status": "error", "message": f"Campo faltante: {e}"}, status=400
+        )
+    except ValueError as e:
+        return JsonResponse(
+            {"status": "error", "message": f"Valor inválido: {e}"}, status=400
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"status": "error", "message": "Error al registrar la compra: " + str(e)},
+            status=500,
+        )
+
+
+def registrar_venta(request):
+    try:
+        data = json.loads(request.body)
+
+        inventario_id = data.get("inventarioId")
+
+        if not inventario_id:
+            return JsonResponse(
+                {"status": "error", "message": "Falta inventarioId."}, status=400
+            )
+
+        try:
+            inventario = Inventario.objects.get(id=inventario_id)
+        except Inventario.DoesNotExist:
+            # Try to find by puntoEcaId and materialId
+            punto_id = data.get("puntoEcaId")
+            material_id = data.get("materialId")
+            if punto_id and material_id:
+                try:
+                    inventario = Inventario.objects.get(
+                        punto_eca_id=punto_id, material_id=material_id
+                    )
+                except Inventario.DoesNotExist:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": "Inventario no encontrado por punto y material.",
+                        },
+                        status=404,
+                    )
+            else:
+                return JsonResponse(
+                    {"status": "error", "message": "Inventario no encontrado."},
+                    status=404,
+                )
+
+        cantidad = decimal(str(data["cantidad"]))
+        precio_venta = decimal(str(data["precioVenta"]))
+        if cantidad <= 0 or precio_venta < 0:
+            return JsonResponse(
+                {"status": "error", "message": "Valores inválidos."}, status=400
+            )
+
+        fecha_compra = data["fechaVenta"]
+        if isinstance(fecha_compra, str):
+            try:
+                # Intentar parsear en formato ISO con o sin Z
+                fecha_dt = datetime.datetime.fromisoformat(
+                    fecha_compra.replace("Z", "+00:00")
+                )
+            except Exception:
+                # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
+                fecha_dt = datetime.datetime.strptime(fecha_compra, "%Y-%m-%d %H:%M:%S")
+            if timezone.is_naive(fecha_dt):
+                fecha_dt = timezone.make_aware(fecha_dt)
+            fecha_compra = fecha_dt
+
+        salida = models.VentaInventario.objects.create(
+            inventario=inventario,
+            fecha_venta=fecha_compra,
+            cantidad=cantidad,
+            precio_venta=precio_venta,
+            observaciones=data.get("observaciones", ""),
+        )
+
+        if inventario.stock_actual is None or cantidad > inventario.stock_actual:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "No se puede registrar la venta, stock insuficiente.",
+                },
+                status=400,
+            )
+        else:
+            inventario.stock_actual = decimal(
+                str(inventario.stock_actual or 0)
+            ) - decimal(str(cantidad))
+            inventario.save()
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Venta registrada exitosamente, inventario actualizado.",
             },
             status=201,
         )
