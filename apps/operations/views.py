@@ -456,14 +456,14 @@ def actualizar_stock_por_venta(inventario, cantidad, cantidad_original=None):
             status=400,
         )
 
-    if cantidad <= 0:
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": "La cantidad de venta debe ser mayor a cero.",
-            },
-            status=400,
-        )
+    # if cantidad <= 0:
+    #     return JsonResponse(
+    #         {
+    #             "status": "error",
+    #             "message": "La cantidad de venta debe ser mayor a cero.",
+    #         },
+    #         status=400,
+    #     )
 
     stock_actual_decimal = decimal(str(inventario.stock_actual or 0))
     capacidad_maxima_decimal = decimal(
@@ -484,7 +484,9 @@ def actualizar_stock_por_venta(inventario, cantidad, cantidad_original=None):
                 },
                 status=400,
             )
-        delta = cantidad_original - cantidad  # El efecto que tiene sobre el stock actual
+        delta = (
+            cantidad_original - cantidad
+        )  # El efecto que tiene sobre el stock actual
     else:
         # Venta "nueva"
         if cantidad > stock_actual_decimal:
@@ -541,14 +543,15 @@ def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
             status=400,
         )
 
-    if cantidad <= 0:
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": "La cantidad de compra debe ser mayor a cero.",
-            },
-            status=400,
-        )
+    # if cantidad <= 0:
+    #     return JsonResponse(
+    #         {
+    #             "status": "error",
+    #             "message": "La cantidad de compra debe ser mayor a cero.",
+    #         },
+    #         status=400,
+    #     )
+    #
 
     stock_actual_decimal = decimal(str(inventario.stock_actual or 0))
     capacidad_maxima_decimal = decimal(
@@ -581,3 +584,37 @@ def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
     inventario.stock_actual = nuevo_stock
     inventario.save()
     return None
+
+
+def borrar_compra(request, compra_id):
+    try:
+        compra = get_object_or_404(models.CompraInventario, id=compra_id)
+        result = actualizar_stock_por_compra(compra.inventario, 0, compra.cantidad)
+        if result is not None:
+            return result
+        compra.delete()
+        return JsonResponse(
+            {"status": "success", "message": "Compra eliminada correctamente."}
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"status": "error", "message": "Error al eliminar la compra: " + str(e)},
+            status=500,
+        )
+
+
+def borrar_venta(request, venta_id):
+    try:
+        venta = get_object_or_404(models.VentaInventario, id=venta_id)
+        result = actualizar_stock_por_venta(venta.inventario, 0, venta.cantidad)
+        if result is not None:
+            return result
+        venta.delete()
+        return JsonResponse(
+            {"status": "success", "message": "Venta eliminada correctamente."}
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"status": "error", "message": "Error al eliminar la venta: " + str(e)},
+            status=500,
+        )

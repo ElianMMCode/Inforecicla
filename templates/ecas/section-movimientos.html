@@ -3049,7 +3049,7 @@
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}`, {
+                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3346,7 +3346,7 @@
 
                 // DELETE a /punto-eca/inventario/venta/{ventaId}
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}`, {
+                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',

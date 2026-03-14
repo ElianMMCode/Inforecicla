@@ -24,14 +24,14 @@ urlpatterns = [
         views.editar_venta,
         name="editar_venta",
     ),
-    # path(
-    #     "borrar-compra/",
-    #     views.borrar_compra,
-    #     name="borrar_compra",
-    # ),
-    # path(
-    #     "borrar-venta/",
-    #     views.borrar_venta,
-    #     name="borrar_venta",
-    # ),
+    path(
+        "borrar-compra/<uuid:compra_id>/",
+        views.borrar_compra,
+        name="borrar_compra",
+    ),
+    path(
+        "borrar-venta/<uuid:venta_id>/",
+        views.borrar_venta,
+        name="borrar_venta",
+    ),
 ]
