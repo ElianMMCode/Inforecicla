@@ -106,13 +106,15 @@
     <script>
         window.ENTRADAS_INICIALES = {{ entradas|safe }};
         window.SALIDAS_INICIALES = {{ salidas|safe }};
-        window.HISTORIAL_COMPRAS = /**/ [];
-        window.HISTORIAL_VENTAS = /**/ [];
+        window.HISTORIAL_COMPRAS = {{ HISTORIAL_COMPRAS|safe }};
+        window.HISTORIAL_VENTAS = {{ HISTORIAL_VENTAS|safe }};
 
         // Variables para paginación
         window.PAGINA_ACTUAL_ENTRADAS = 1;
         window.PAGINA_ACTUAL_SALIDAS = 1;
         window.REGISTROS_POR_PAGINA = 5;
+        window.PAGINA_ACTUAL_HISTORIAL = 1;
+        window.REGISTROS_POR_PAGINA_HISTORIAL = 10;
     </script>
     <div class="accordion accordion-flush shadow-sm" id="movimientosAccordion">
         <!-- ITEM 1: ENTRADAS DE MATERIAL -->
@@ -747,7 +749,8 @@
                                             <th scope="col" class="fw-bold small">Material</th>
                                             <th scope="col" class="fw-bold small text-end">Cantidad (kg)</th>
                                             <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
-                                            <th scope="col" class="fw-bold small">Detalles</th>
+                                            <th scope="col" class="fw-bold small">Total</th>
+                                            <th scope="col" class="fw-bold small text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody class="border-top" id="tablasHistorialBody">
@@ -783,89 +786,6 @@
         </div>
     </div>
     <!-- FIN DEL ACORDEÓN -->
-    <!-- ═════════════════════════════════════════════════════════════ -->
-    <!-- MODAL: DETALLES DEL MOVIMIENTO -->
-    <!-- ═════════════════════════════════════════════════════════════ -->
-    <div class="modal fade"
-         id="modalDetallesMovimiento"
-         tabindex="-1"
-         aria-labelledby="modalDetallesLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="modalDetallesLabel">
-                        <i class="bi bi-receipt me-2"></i>Detalles del Movimiento
-                    </h5>
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <!-- Tipo de Movimiento -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Tipo de Movimiento</label>
-                            <p class="mb-0">
-                                <span id="detallesTipo" class="badge bg-secondary"></span>
-                            </p>
-                        </div>
-                        <!-- Fecha -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Fecha</label>
-                            <p id="detallesFecha" class="mb-0 fw-semibold">-</p>
-                        </div>
-                        <!-- Material -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold text-muted small">Material</label>
-                            <p id="detallesMaterial" class="mb-0 fw-semibold">-</p>
-                        </div>
-                        <!-- Categoría -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Categoría</label>
-                            <p id="detallesCategoria" class="mb-0">-</p>
-                        </div>
-                        <!-- Tipo Material -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Tipo de Material</label>
-                            <p id="detallesTipoMaterial" class="mb-0">-</p>
-                        </div>
-                        <!-- Cantidad -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Cantidad (kg)</label>
-                            <p id="detallesCantidad" class="mb-0 fw-bold text-success">-</p>
-                        </div>
-                        <!-- Precio Unitario -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Precio Unitario</label>
-                            <p id="detallesPrecio" class="mb-0 fw-bold">$0.00</p>
-                        </div>
-                        <!-- Total -->
-                        <div class="col-12">
-                            <div class="alert alert-info alert-sm mb-0">
-                                <strong>Total:</strong>
-                                <span id="detallesTotal" class="fw-bold">$0.00</span>
-                            </div>
-                        </div>
-                        <!-- Observaciones -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold text-muted small">Observaciones</label>
-                            <p id="detallesObservaciones" class="mb-0 text-muted small">-</p>
-                        </div>
-                        <!-- Centro Acopio (solo para ventas) -->
-                        <div class="col-12" id="detallesContenedorCentro" style="display: none;">
-                            <label class="form-label fw-semibold text-muted small">Centro de Acopio Destino</label>
-                            <p id="detallesCentroAcopio" class="mb-0">-</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light border-top">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
     <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
@@ -2327,10 +2247,15 @@
             const btnLimpiar = document.getElementById('btnLimpiarHistorial');
             const inputMaterial = document.getElementById('filtroHistorialMaterial');
 
-            if (btnFiltrar) {
-                btnFiltrar.addEventListener('click', renderizarHistorial);
+            function resetearPaginaHistorialYRender() {
+                window.PAGINA_ACTUAL_HISTORIAL = 1;
+                renderizarHistorial();
             }
-
+            if (btnFiltrar) {
+                btnFiltrar.addEventListener('click', resetearPaginaHistorialYRender);
+            }
+            // Resetear página si cambia un filtro select2
+            $('#filtroHistorialMaterial, #filtroHistorialCategoria, #filtroHistorialTipo').on('change', resetearPaginaHistorialYRender);
             if (btnLimpiar) {
                 btnLimpiar.addEventListener('click', function() {
                     $('#filtroHistorialMaterial').val('').trigger('change');
@@ -2395,18 +2320,45 @@
                 return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleTipoMovimiento && cumpleFechaDesde && cumpleFechaHasta;
             });
 
+            // Paginación
+            const registrosPorPagina = window.REGISTROS_POR_PAGINA_HISTORIAL || 10;
+            const paginaActual = window.PAGINA_ACTUAL_HISTORIAL || 1;
+            const totalPaginas = Math.ceil(movimientosFiltrados.length / registrosPorPagina);
+
+            // Validar página
+            let paginaUsar = paginaActual;
+            if (paginaUsar > totalPaginas) paginaUsar = totalPaginas;
+            if (paginaUsar < 1) paginaUsar = 1;
+            window.PAGINA_ACTUAL_HISTORIAL = paginaUsar;
+            const inicio = (paginaUsar - 1) * registrosPorPagina;
+            const fin = inicio + registrosPorPagina;
+            const paginaMovimientos = movimientosFiltrados.slice(inicio, fin);
+
             if (movimientosFiltrados.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="6" class="py-4"><i class="bi bi-inbox"></i><p class="mb-0 mt-2">Sin movimientos registrados</p></td></tr>';
                 const badge = document.getElementById('badgeHistorialCount');
                 if (badge) badge.textContent = '0 registros';
+                actualizarPaginacionHistorial(0);
                 return;
             }
 
-            tbody.innerHTML = movimientosFiltrados.map(mov => {
+            tbody.innerHTML = paginaMovimientos.map(mov => {
                 const fecha = new Date(mov.fecha).toLocaleDateString('es-CO');
-                const cantidad = parseFloat(mov.cantidad || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                const precio = parseFloat(mov.precio || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const cantidadNumber = parseFloat(mov.cantidad || 0);
+                const cantidad = cantidadNumber.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const precioNumber = parseFloat(mov.precio || 0);
+                const precio = precioNumber.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 const tipoBadge = mov.tipo === 'Compra' ? '<span class="badge bg-danger">Compra</span>' : '<span class="badge bg-success">Venta</span>';
+                const total = (cantidadNumber * precioNumber).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                // Botón editar utiliza dataset según tipo
+                const editBtn = mov.tipo === 'Compra' ?
+                  `<button type="button" class="btn btn-sm btn-danger text-white btn-editar-historial-compra" data-compra-id="${mov.compraId}" title="Ver detalles"><i class="bi bi-eye"></i></button>` :
+                  `<button type="button" class="btn btn-sm btn-success text-white btn-editar-historial-venta" data-venta-id="${mov.ventaId}" title="Ver detalles"><i class="bi bi-eye"></i></button>`;
+                // Botón eliminar idem
+                const delBtn = mov.tipo === 'Compra' ?
+                  `<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-historial-compra" data-compra-id="${mov.compraId}" title="Eliminar compra"><i class="bi bi-trash3-fill"></i></button>` :
+                  `<button type="button" class="btn btn-sm btn-outline-success btn-eliminar-historial-venta" data-venta-id="${mov.ventaId}" title="Eliminar venta"><i class="bi bi-trash3-fill"></i></button>`;
 
                 return `
                     <tr>
@@ -2415,10 +2367,10 @@
                         <td class="small fw-bold">${mov.nombreMaterial || '-'}</td>
                         <td class="text-end small">${cantidad}</td>
                         <td class="text-end small">$${precio}</td>
+                        <td class="text-end small fw-semibold">$${total}</td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info btnVerDetalles" title="Ver detalles" data-mov-id="${mov.compraId || mov.ventaId}" data-mov-tipo="${mov.tipo}" data-mov-data='${JSON.stringify(mov)}'>
-                                <i class="bi bi-eye"></i>
-                            </button>
+                          ${editBtn}
+                          ${delBtn}
                         </td>
                     </tr>
                 `;
@@ -2426,12 +2378,100 @@
 
             const badge = document.getElementById('badgeHistorialCount');
             if (badge) badge.textContent = movimientosFiltrados.length + ' registros';
+            actualizarPaginacionHistorial(totalPaginas);
+        }
+
+        // Paginación historial
+        function actualizarPaginacionHistorial(totalPaginas) {
+            const paginacion = document.getElementById('paginacionHistorial');
+            if (!paginacion) return;
+
+            if (totalPaginas <= 0) {
+                paginacion.innerHTML = '';
+                return;
+            }
+
+            const paginaActual = window.PAGINA_ACTUAL_HISTORIAL || 1;
+            let html = '<li class="page-item ' + (paginaActual <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="cambiarPaginaHistorial(' + (paginaActual - 1) + '); return false;">Anterior</a></li>';
+
+            for (let i = 1; i <= totalPaginas; i++) {
+                html += '<li class="page-item ' + (i === paginaActual ? 'active' : '') + '"><a class="page-link" href="#" onclick="cambiarPaginaHistorial(' + i + '); return false;">' + i + '</a></li>';
+            }
+
+            html += '<li class="page-item ' + (paginaActual >= totalPaginas ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="cambiarPaginaHistorial(' + (paginaActual + 1) + '); return false;">Siguiente</a></li>';
+
+            paginacion.innerHTML = html;
+        }
+        function cambiarPaginaHistorial(pagina) {
+            window.PAGINA_ACTUAL_HISTORIAL = pagina;
+            renderizarHistorial();
         }
 
         // ========================================================
         // EVENT LISTENER PARA VER DETALLES DE MOVIMIENTO
         // ========================================================
         document.addEventListener('click', function(e) {
+            // Acciones EDITAR/ELIMINAR desde la tabla HISTORIAL GENERAL - ahora abren modal de detalles (compra o venta)
+            if (e.target.closest('.btn-editar-historial-compra') || e.target.closest('.btn-eliminar-historial-compra')) {
+                // Click en cualquier acción de compra: abrir modal de detalles de compra
+                const btn = e.target.closest('.btn-editar-historial-compra') || e.target.closest('.btn-eliminar-historial-compra');
+                const compraId = btn?.dataset.compraId;
+                // Buscar la entrada correspondiente en los datos globales
+                const entrada = window.HISTORIAL_COMPRAS?.find(c => c.compraId == compraId) || window.ENTRADAS_INICIALES?.find(c => c.compraId == compraId);
+                if (!entrada) {
+                    alert('No se encontraron los datos de esta compra.');
+                    return;
+                }
+                // Llenar modal con datos
+                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toLocaleDateString('es-CO') : '-';
+                const cantidad = parseFloat(entrada.cantidad || 0);
+                const precio = parseFloat(entrada.precioCompra || 0);
+                const total = cantidad * precio;
+                document.getElementById('detEntradaMaterial').textContent = entrada.nombreMaterial || '-';
+                document.getElementById('detEntradaFecha').textContent = fecha;
+                document.getElementById('detEntradaCantidad').textContent = cantidad.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detEntradaPrecio').textContent = '$' + precio.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detEntradaTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detEntradaObservaciones').textContent = entrada.observaciones || 'Sin observaciones';
+                // Setear id a los botones del modal
+                document.getElementById('btnEditarEntrada').dataset.compraId = compraId;
+                document.getElementById('btnEliminarEntrada').dataset.compraId = compraId;
+                // Abrir modal
+                const modal = new bootstrap.Modal(document.getElementById('detallesEntradaModal'));
+                modal.show();
+                return;
+            }
+            if (e.target.closest('.btn-editar-historial-venta') || e.target.closest('.btn-eliminar-historial-venta')) {
+                // Click en cualquier acción de venta: abrir modal de detalles de venta
+                const btn = e.target.closest('.btn-editar-historial-venta') || e.target.closest('.btn-eliminar-historial-venta');
+                const ventaId = btn?.dataset.ventaId;
+                const salida = window.HISTORIAL_VENTAS?.find(v => v.ventaId == ventaId) || window.SALIDAS_INICIALES?.find(v => v.ventaId == ventaId);
+                if (!salida) {
+                    alert('No se encontraron los datos de esta venta.');
+                    return;
+                }
+                // Llenar modal con datos
+                const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toLocaleDateString('es-CO') : '-';
+                const cantidad = parseFloat(salida.cantidad || 0);
+                const precio = parseFloat(salida.precioVenta || 0);
+                const total = cantidad * precio;
+                document.getElementById('detSalidaMaterial').textContent = salida.nombreMaterial || '-';
+                document.getElementById('detSalidaFecha').textContent = fecha;
+                document.getElementById('detSalidaCantidad').textContent = cantidad.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detSalidaPrecio').textContent = '$' + precio.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detSalidaCentro').textContent = salida.nombreCentroAcopio || '-';
+                document.getElementById('detSalidaTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detSalidaObservaciones').textContent = salida.observaciones || 'Sin observaciones';
+                // Setear id a los botones del modal
+                document.getElementById('btnEditarSalida').dataset.ventaId = ventaId;
+                document.getElementById('btnEliminarSalida').dataset.ventaId = ventaId;
+                // Abrir modal
+                const modal = new bootstrap.Modal(document.getElementById('detallesSalidaModal'));
+                modal.show();
+                return;
+            }
+            // ============================
+            // VER DETALLES MOVIMIENTO (existente)
             if (e.target.closest('.btnVerDetalles')) {
                 const btn = e.target.closest('.btnVerDetalles');
                 try {

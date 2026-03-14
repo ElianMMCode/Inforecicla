@@ -96,6 +96,8 @@ def _build_movimientos_context(punto):
         "salidas": json.dumps(ventas_list),
         "historial_compras": compras_list,
         "historial_ventas": ventas_list,
+        "HISTORIAL_COMPRAS": json.dumps(compras_list),
+        "HISTORIAL_VENTAS": json.dumps(ventas_list),
     }
 
 
@@ -588,33 +590,60 @@ def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
 
 def borrar_compra(request, compra_id):
     try:
-        compra = get_object_or_404(models.CompraInventario, id=compra_id)
-        result = actualizar_stock_por_compra(compra.inventario, 0, compra.cantidad)
-        if result is not None:
-            return result
-        compra.delete()
-        return JsonResponse(
-            {"status": "success", "message": "Compra eliminada correctamente."}
-        )
+        try:
+            compra = models.CompraInventario.objects.get(id=compra_id)
+        except models.CompraInventario.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": "Compra no encontrada."}, status=404
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"status": "error", "message": f"Error al buscar la compra: {str(e)}"}, status=500
+            )
+        try:
+            result = actualizar_stock_por_compra(compra.inventario, 0, compra.cantidad)
+            if result is not None:
+                return result
+            compra.delete()
+            return JsonResponse(
+                {"status": "success", "message": "Compra eliminada correctamente."}
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"status": "error", "message": f"Error al ajustar stock o eliminar: {str(e)}"}, status=500
+            )
     except Exception as e:
+        # Redundante, pero garantiza que cualquier excepción inesperada siga devolviendo JSON
         return JsonResponse(
-            {"status": "error", "message": "Error al eliminar la compra: " + str(e)},
-            status=500,
+            {"status": "error", "message": f"Fallo crítico en borrar_compra: {str(e)}"}, status=500
         )
 
 
 def borrar_venta(request, venta_id):
     try:
-        venta = get_object_or_404(models.VentaInventario, id=venta_id)
-        result = actualizar_stock_por_venta(venta.inventario, 0, venta.cantidad)
-        if result is not None:
-            return result
-        venta.delete()
-        return JsonResponse(
-            {"status": "success", "message": "Venta eliminada correctamente."}
-        )
+        try:
+            venta = models.VentaInventario.objects.get(id=venta_id)
+        except models.VentaInventario.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": "Venta no encontrada."}, status=404
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"status": "error", "message": f"Error al buscar la venta: {str(e)}"}, status=500
+            )
+        try:
+            result = actualizar_stock_por_venta(venta.inventario, 0, venta.cantidad)
+            if result is not None:
+                return result
+            venta.delete()
+            return JsonResponse(
+                {"status": "success", "message": "Venta eliminada correctamente."}
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"status": "error", "message": f"Error al ajustar stock o eliminar: {str(e)}"}, status=500
+            )
     except Exception as e:
         return JsonResponse(
-            {"status": "error", "message": "Error al eliminar la venta: " + str(e)},
-            status=500,
+            {"status": "error", "message": f"Fallo crítico en borrar_venta: {str(e)}"}, status=500
         )
