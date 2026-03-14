@@ -104,8 +104,8 @@
     <!-- ═════════════════════════════════════════════════════════════ -->
     <!-- Inyectar datos del backend ANTES de los scripts -->
     <script>
-        window.ENTRADAS_INICIALES = /**/ [];
-        window.SALIDAS_INICIALES = /**/ [];
+        window.ENTRADAS_INICIALES = {{ entradas|safe }};
+        window.SALIDAS_INICIALES = {{ salidas|safe }};
         window.HISTORIAL_COMPRAS = /**/ [];
         window.HISTORIAL_VENTAS = /**/ [];
 
@@ -2130,19 +2130,24 @@
         // ========================================================
         // Datos ya están inyectados en window.ENTRADAS_INICIALES y window.SALIDAS_INICIALES
 
-        console.log('📊 Entradas disponibles:', window.ENTRADAS_INICIALES.length);
-        console.log('📊 Salidas disponibles:', window.SALIDAS_INICIALES.length);
-
+        console.log('📊 Entradas disponibles:', Array.isArray(window.ENTRADAS_INICIALES) ? window.ENTRADAS_INICIALES.length : (typeof window.ENTRADAS_INICIALES === 'object' ? Object.keys(window.ENTRADAS_INICIALES).length : 0));
+        console.log('📊 Salidas disponibles:', Array.isArray(window.SALIDAS_INICIALES) ? window.SALIDAS_INICIALES.length : (typeof window.SALIDAS_INICIALES === 'object' ? Object.keys(window.SALIDAS_INICIALES).length : 0));
+        
         // Renderizar entradas con paginación
         function renderizarEntradas() {
             const tbody = document.getElementById('tablasEntradasBody');
             if (!tbody) {
                 return;
             }
-
-            const entradasData = window.ENTRADAS_INICIALES || [];
-
-            if (!entradasData || entradasData.length === 0) {
+        
+            let entradasData = window.ENTRADAS_INICIALES;
+            // Normalizar: puede venir como objeto {0:{...},1:{...}} o como array o null
+            if (typeof entradasData === 'object' && !Array.isArray(entradasData) && entradasData !== null) {
+                entradasData = Object.values(entradasData);
+            }
+            if (!Array.isArray(entradasData) || !entradasData) entradasData = [];
+            
+            if (entradasData.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="6" class="py-3"><small>Sin registros</small></td></tr>';
                 const badge = document.getElementById('badgeEntradasCount');
                 if (badge) badge.textContent = '0 registros';

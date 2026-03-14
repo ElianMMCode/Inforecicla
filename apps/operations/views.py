@@ -25,6 +25,54 @@ def _build_movimientos_context(punto):
     materiales_inventario = list(
         Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
     )
+    compras = (
+        models.CompraInventario.objects.filter(inventario__punto_eca=punto)
+        .select_related("inventario__material")
+        .order_by("-fecha_compra")
+    )
+
+    compras_list = [
+        {
+            "compraId": str(compra.id),
+            "inventarioId": str(compra.inventario.id),
+            "materialId": str(compra.inventario.material.id),
+            "nombreMaterial": compra.inventario.material.nombre,
+            "nombreCategoria": getattr(
+                compra.inventario.material.categoria, "nombre", ""
+            ),
+            "nombreTipo": getattr(compra.inventario.material.tipo, "nombre", ""),
+            "cantidad": float(compra.cantidad),
+            "fechaCompra": compra.fecha_compra.isoformat(),
+            "precioCompra": float(compra.precio_compra or 0),
+            "observaciones": compra.observaciones or "",
+        }
+        for compra in compras
+    ]
+
+    ventas = (
+        models.VentaInventario.objects.filter(inventario__punto_eca=punto)
+        .select_related("inventario__material")
+        .order_by("-fecha_venta")
+    )
+
+    ventas_list = [
+        {
+            "ventaId": str(venta.id),
+            "inventarioId": str(venta.inventario.id),
+            "materialId": str(venta.inventario.material.id),
+            "nombreMaterial": venta.inventario.material.nombre,
+            "nombreCategoria": getattr(
+                venta.inventario.material.categoria, "nombre", ""
+            ),
+            "nombreTipo": getattr(venta.inventario.material.tipo, "nombre", ""),
+            "cantidad": float(venta.cantidad),
+            "fechaVenta": venta.fecha_venta.isoformat(),
+            "precioVenta": float(venta.precio_venta or 0),
+            "observaciones": venta.observaciones or "",
+        }
+        for venta in ventas
+    ]
+
     return {
         "seccion": "movimientos",
         "section_template": SECTION_TEMPLATES["movimientos"],
@@ -44,6 +92,8 @@ def _build_movimientos_context(punto):
             .values_list("material__tipo__nombre", flat=True)
             .distinct()
         ),
+        "entradas": json.dumps(compras_list),
+        "salidas": json.dumps(ventas_list),
     }
 
 
