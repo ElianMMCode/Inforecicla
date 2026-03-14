@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from config import constants
 import uuid
+from django.utils import timezone
 
 
 class CreacionModificacionModel(models.Model):
@@ -18,6 +19,10 @@ class CreacionModificacionModel(models.Model):
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        self.fecha_modificacion = timezone.now()
+        super().save(*args, **kwargs)
 
 
 class DescripcionModel(CreacionModificacionModel):

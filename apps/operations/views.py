@@ -94,6 +94,8 @@ def _build_movimientos_context(punto):
         ),
         "entradas": json.dumps(compras_list),
         "salidas": json.dumps(ventas_list),
+        "historial_compras": compras_list,
+        "historial_ventas": ventas_list,
     }
 
 
@@ -163,23 +165,9 @@ def registrar_compra(request):
         )
 
         # Actualizar el stock del inventario con la cantidad comprada
-        if (
-            inventario.capacidad_maxima is not None
-            and (inventario.stock_actual or 0) + cantidad > inventario.capacidad_maxima
-        ):
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": "No se puede exceder la capacidad máxima del inventario.",
-                },
-                status=400,
-            )
-        else:
-            inventario.stock_actual = decimal(
-                str(inventario.stock_actual or 0)
-            ) + decimal(str(cantidad))
-            # inventario.save(update_fields=["stock_actual"])
-            inventario.save()
+        result = actualizar_stock_por_compra(inventario, cantidad)
+        if result is not None:
+            return result
 
         return JsonResponse(
             {
@@ -268,19 +256,10 @@ def registrar_venta(request):
             observaciones=data.get("observaciones", ""),
         )
 
-        if inventario.stock_actual is None or cantidad > inventario.stock_actual:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": "No se puede registrar la venta, stock insuficiente.",
-                },
-                status=400,
-            )
-        else:
-            inventario.stock_actual = decimal(
-                str(inventario.stock_actual or 0)
-            ) - decimal(str(cantidad))
-            inventario.save()
+        result = actualizar_stock_por_venta(inventario, cantidad)
+        if result is not None:
+            return result
+
         return JsonResponse(
             {
                 "status": "success",
@@ -301,3 +280,304 @@ def registrar_venta(request):
             {"status": "error", "message": "Error al registrar la compra: " + str(e)},
             status=500,
         )
+
+
+def editar_compra(request, compra_id):
+    try:
+        data = json.loads(request.body)
+        compra_id = data.get("compraId")
+        if not compra_id:
+            return JsonResponse(
+                {"status": "error", "message": "Falta compraId."}, status=400
+            )
+
+        compra = get_object_or_404(models.CompraInventario, id=compra_id)
+
+        cantidad = data.get("cantidad")
+        precio_compra = data.get("precioCompra")
+        fecha_compra = data.get("fechaCompra")
+        if cantidad is None or precio_compra is None or fecha_compra is None:
+            return JsonResponse(
+                {"status": "error", "message": "Faltan datos requeridos."}, status=400
+            )
+
+        cantidad = decimal(str(cantidad))
+        precio_compra = decimal(str(precio_compra))
+        if cantidad <= 0 or precio_compra < 0:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Valores de cantidad o precio inválidos.",
+                },
+                status=400,
+            )
+
+        # Parse fecha_compra a datetime aware si es string naive
+        if isinstance(fecha_compra, str):
+            try:
+                fecha_dt = datetime.datetime.fromisoformat(
+                    fecha_compra.replace("Z", "+00:00")
+                )
+            except Exception:
+                try:
+                    fecha_dt = datetime.datetime.strptime(
+                        fecha_compra, "%Y-%m-%d %H:%M:%S"
+                    )
+                except Exception:
+                    return JsonResponse(
+                        {"status": "error", "message": "Formato de fecha inválido."},
+                        status=400,
+                    )
+            if timezone.is_naive(fecha_dt):
+                fecha_dt = timezone.make_aware(fecha_dt)
+            fecha_compra = fecha_dt
+
+        result = actualizar_stock_por_compra(
+            compra.inventario, cantidad, compra.cantidad
+        )
+        if result is not None:
+            return result
+
+        compra.cantidad = cantidad
+        compra.precio_compra = precio_compra
+        compra.observaciones = data.get("observaciones", "")
+        compra.fecha_compra = fecha_compra
+        compra.save()
+        return JsonResponse(
+            {"status": "success", "message": "Compra editada correctamente."}
+        )
+    except KeyError as e:
+        return JsonResponse(
+            {"status": "error", "message": f"Campo faltante: {e}"}, status=400
+        )
+    except ValueError as e:
+        return JsonResponse(
+            {"status": "error", "message": f"Valor inválido: {e}"}, status=400
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"status": "error", "message": "Error al editar la compra: " + str(e)},
+            status=500,
+        )
+
+
+def editar_venta(request, venta_id):
+    try:
+        data = json.loads(request.body)
+        venta_id = data.get("ventaId")
+        if not venta_id:
+            return JsonResponse(
+                {"status": "error", "message": "Falta ventaId."}, status=400
+            )
+
+        venta = get_object_or_404(models.VentaInventario, id=venta_id)
+
+        cantidad = data.get("cantidad")
+        precio_venta = data.get("precioVenta")
+        fecha_venta = data.get("fechaVenta")
+        if cantidad is None or precio_venta is None or fecha_venta is None:
+            return JsonResponse(
+                {"status": "error", "message": "Faltan datos requeridos."}, status=400
+            )
+
+        cantidad = decimal(str(cantidad))
+        precio_venta = decimal(str(precio_venta))
+        if cantidad <= 0 or precio_venta < 0:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Valores de cantidad o precio inválidos.",
+                },
+                status=400,
+            )
+
+        # Parse fecha_venta a datetime aware si es string naive
+        if isinstance(fecha_venta, str):
+            try:
+                fecha_dt = datetime.datetime.fromisoformat(
+                    fecha_venta.replace("Z", "+00:00")
+                )
+            except Exception:
+                try:
+                    fecha_dt = datetime.datetime.strptime(
+                        fecha_venta, "%Y-%m-%d %H:%M:%S"
+                    )
+                except Exception:
+                    return JsonResponse(
+                        {"status": "error", "message": "Formato de fecha inválido."},
+                        status=400,
+                    )
+            if timezone.is_naive(fecha_dt):
+                fecha_dt = timezone.make_aware(fecha_dt)
+            fecha_venta = fecha_dt
+
+        result = actualizar_stock_por_venta(venta.inventario, cantidad, venta.cantidad)
+        if result is not None:
+            return result
+
+        venta.cantidad = cantidad
+        venta.precio_venta = precio_venta
+        venta.observaciones = data.get("observaciones", "")
+        venta.fecha_venta = fecha_venta
+        venta.save()
+        return JsonResponse(
+            {"status": "success", "message": "venta editada correctamente."}
+        )
+    except KeyError as e:
+        return JsonResponse(
+            {"status": "error", "message": f"Campo faltante: {e}"}, status=400
+        )
+    except ValueError as e:
+        return JsonResponse(
+            {"status": "error", "message": f"Valor inválido: {e}"}, status=400
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"status": "error", "message": "Error al editar la venta: " + str(e)},
+            status=500,
+        )
+
+
+def actualizar_stock_por_venta(inventario, cantidad, cantidad_original=None):
+    """
+    Descuenta o ajusta el stock_actual del inventario según venta nueva o edición.
+    - Si es edición (cantidad_original no es None), se ajusta por la diferencia (delta).
+    - Valida que no haya stock negativo ni stock "prestado" (no se puede vender más de lo que hay disponible sumando lo originalmente vendido).
+    Devuelve JsonResponse de error si no hay stock suficiente, si excede capacidad máxima, o si los datos son inválidos. Devuelve None si todo OK.
+    """
+    try:
+        cantidad = decimal(str(cantidad))
+        cantidad_original = (
+            decimal(str(cantidad_original)) if cantidad_original is not None else None
+        )
+    except Exception:
+        return JsonResponse(
+            {"status": "error", "message": "Cantidad inválida para la venta."},
+            status=400,
+        )
+
+    if cantidad <= 0:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "La cantidad de venta debe ser mayor a cero.",
+            },
+            status=400,
+        )
+
+    stock_actual_decimal = decimal(str(inventario.stock_actual or 0))
+    capacidad_maxima_decimal = decimal(
+        str(getattr(inventario, "capacidad_maxima", None) or 0)
+    )
+
+    # --- Nueva lógica de validación ---
+    # Cuando editamos una venta:
+    # El "nuevo stock disponible para vender" es stock_actual_decimal + cantidad_original
+    # La cantidad no debe ser mayor a esto.
+    if cantidad_original is not None:
+        stock_disponible_para_vender = stock_actual_decimal + cantidad_original
+        if cantidad > stock_disponible_para_vender:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"No hay stock suficiente para realizar la venta. Stock disponible: {float(stock_disponible_para_vender)}.",
+                },
+                status=400,
+            )
+        delta = cantidad_original - cantidad  # El efecto que tiene sobre el stock actual
+    else:
+        # Venta "nueva"
+        if cantidad > stock_actual_decimal:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"No hay stock suficiente para realizar la venta. Stock actual: {float(stock_actual_decimal)}.",
+                },
+                status=400,
+            )
+        delta = -cantidad
+
+    nuevo_stock = stock_actual_decimal + delta
+
+    if nuevo_stock < 0:
+        # Esto es protección extra por coherencia, aunque la lógica anterior ya lo evita
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "La operación dejaría el stock negativo.",
+            },
+            status=400,
+        )
+
+    if capacidad_maxima_decimal and nuevo_stock > capacidad_maxima_decimal:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "La operación excede la capacidad máxima de inventario.",
+            },
+            status=400,
+        )
+
+    inventario.stock_actual = nuevo_stock
+    inventario.save()
+    return None
+
+
+def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
+    """
+    Aumenta o ajusta el stock_actual del inventario según compra nueva o edición.
+    - Si es edición (cantidad_original no es None), se ajusta por la diferencia (delta).
+    - Siempre valida que stock no baje de cero ni supere capacidad máxima.
+    Devuelve JsonResponse de error si se exceden límites o datos inválidos, o None si todo OK.
+    """
+    try:
+        cantidad = decimal(str(cantidad))
+        cantidad_original = (
+            decimal(str(cantidad_original)) if cantidad_original is not None else None
+        )
+    except Exception:
+        return JsonResponse(
+            {"status": "error", "message": "Cantidad inválida para la compra."},
+            status=400,
+        )
+
+    if cantidad <= 0:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "La cantidad de compra debe ser mayor a cero.",
+            },
+            status=400,
+        )
+
+    stock_actual_decimal = decimal(str(inventario.stock_actual or 0))
+    capacidad_maxima_decimal = decimal(
+        str(getattr(inventario, "capacidad_maxima", None) or 0)
+    )
+
+    # Calcular delta a ajustar
+    if cantidad_original is not None:
+        delta = cantidad - cantidad_original
+    else:
+        delta = cantidad
+
+    nuevo_stock = stock_actual_decimal + delta
+
+    if nuevo_stock < 0:
+        return JsonResponse(
+            {"status": "error", "message": "La operación dejaría el stock negativo."},
+            status=400,
+        )
+
+    if capacidad_maxima_decimal and nuevo_stock > capacidad_maxima_decimal:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "No se puede realizar la compra porque el stock superaría la capacidad máxima del inventario.",
+            },
+            status=400,
+        )
+
+    inventario.stock_actual = nuevo_stock
+    inventario.save()
+    return None

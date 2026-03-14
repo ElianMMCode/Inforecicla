@@ -14,4 +14,24 @@ urlpatterns = [
         views.registrar_venta,
         name="registrar_venta",
     ),
+    path(
+        "editar-compra/<uuid:compra_id>/",
+        views.editar_compra,
+        name="editar_compra",
+    ),
+    path(
+        "editar-venta/<uuid:venta_id>/",
+        views.editar_venta,
+        name="editar_venta",
+    ),
+    # path(
+    #     "borrar-compra/",
+    #     views.borrar_compra,
+    #     name="borrar_compra",
+    # ),
+    # path(
+    #     "borrar-venta/",
+    #     views.borrar_venta,
+    #     name="borrar_venta",
+    # ),
 ]

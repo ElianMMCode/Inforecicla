@@ -170,7 +170,6 @@ class Inventario(CreacionModificacionModel):
 
     def save(self, *args, **kwargs):
         self.recalcular_ocupacion()
-        self.fecha_modificacion = timezone.now()
         super().save(*args, **kwargs)
 
 

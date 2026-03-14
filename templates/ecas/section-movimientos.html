@@ -1808,28 +1808,16 @@
                     const $filtroCategoriaCompra = $('#filtroCompraCategoria');
                     const $filtroTipoCompra = $('#filtroCompraTipo');
 
-                    // Material: columna 1 en la tabla de entradas
+                    // --- Material: desde los datos globales (window.ENTRADAS_INICIALES) ---
                     if ($filtroMaterialCompra.length) {
-                        const tbody = document.getElementById('tablasEntradasBody');
-                        if (tbody) {
-                            const filas = tbody.querySelectorAll('tr');
-                            const materiales = new Set();
-                            filas.forEach(fila => {
-                                const celda = fila.querySelector('td:nth-child(2)'); // Material está en columna 2
-                                if (celda) {
-                                    const valor = celda.textContent.trim();
-                                    if (valor && valor !== 'Sin registros' && valor !== '-') {
-                                        materiales.add(valor);
-                                    }
-                                }
-                            });
-                            const materialesArray = Array.from(materiales).sort();
-                            console.log('🔧 Materiales para COMPRA:', materialesArray);
-                            materialesArray.forEach(m => {
-                                $filtroMaterialCompra.append($('<option>').val(m).text(m));
-                            });
-                        }
-
+                        $filtroMaterialCompra.find('option:not([value=""])').remove();
+                        const materiales = new Set();
+                        (window.ENTRADAS_INICIALES || []).forEach(entrada => {
+                            if (entrada.nombreMaterial) materiales.add(entrada.nombreMaterial);
+                        });
+                        Array.from(materiales).sort().forEach(m => {
+                            $filtroMaterialCompra.append($('<option>').val(m).text(m));
+                        });
                         $filtroMaterialCompra.select2({
                             theme: 'bootstrap4',
                             width: '100%',
@@ -1837,41 +1825,45 @@
                             placeholder: 'Selecciona material...',
                             minimumInputLength: 0
                         });
-                        console.log('✅ Select2 inicializado en #filtroCompraMaterial');
+                        console.log('✅ Select2 inicializado y repoblado en #filtroCompraMaterial (por datos fuente)');
                     }
 
-                    // Categoría desde atributo data-categoria
+                    // --- Categoría: desde los datos globales (window.ENTRADAS_INICIALES) ---
                     if ($filtroCategoriaCompra.length) {
-                        const categorias = extraerValoresDelDOM('tablasEntradasBody', 'categoria');
-                        console.log('🔧 Categorías para COMPRA:', categorias);
-                        categorias.forEach(c => {
+                        $filtroCategoriaCompra.find('option:not([value=""])').remove();
+                        const categorias = new Set();
+                        (window.ENTRADAS_INICIALES || []).forEach(entrada => {
+                            if (entrada.nombreCategoria) categorias.add(entrada.nombreCategoria);
+                        });
+                        Array.from(categorias).sort().forEach(c => {
                             $filtroCategoriaCompra.append($('<option>').val(c).text(c));
                         });
-
                         $filtroCategoriaCompra.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona categoría...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroCompraCategoria');
+                        console.log('✅ Select2 inicializado en #filtroCompraCategoria (por datos fuente)');
                     }
 
-                    // Tipo desde atributo data-tipo
+                    // --- Tipo: desde los datos globales (window.ENTRADAS_INICIALES) ---
                     if ($filtroTipoCompra.length) {
-                        const tipos = extraerValoresDelDOM('tablasEntradasBody', 'tipo');
-                        console.log('🔧 Tipos para COMPRA:', tipos);
-                        tipos.forEach(t => {
+                        $filtroTipoCompra.find('option:not([value=""])').remove();
+                        const tipos = new Set();
+                        (window.ENTRADAS_INICIALES || []).forEach(entrada => {
+                            if (entrada.nombreTipo) tipos.add(entrada.nombreTipo);
+                        });
+                        Array.from(tipos).sort().forEach(t => {
                             $filtroTipoCompra.append($('<option>').val(t).text(t));
                         });
-
                         $filtroTipoCompra.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona tipo...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroCompraTipo');
+                        console.log('✅ Select2 inicializado en #filtroCompraTipo (por datos fuente)');
                     }
                 }, 300);
 
@@ -1883,69 +1875,61 @@
                     const $filtroCategoriaVenta = $('#filtroVentaCategoria');
                     const $filtroTipoVenta = $('#filtroVentaTipo');
 
-                    // Material: columna 1 en la tabla de salidas
+                    // --- Material: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroMaterialVenta.length) {
-                        const tbody = document.getElementById('tablasSalidasBody');
-                        if (tbody) {
-                            const filas = tbody.querySelectorAll('tr');
-                            const materiales = new Set();
-                            filas.forEach(fila => {
-                                const celda = fila.querySelector('td:nth-child(2)'); // Material está en columna 2
-                                if (celda) {
-                                    const valor = celda.textContent.trim();
-                                    if (valor && valor !== 'Sin registros' && valor !== '-') {
-                                        materiales.add(valor);
-                                    }
-                                }
-                            });
-                            const materialesArray = Array.from(materiales).sort();
-                            console.log('🔧 Materiales para VENTA:', materialesArray);
-                            materialesArray.forEach(m => {
-                                $filtroMaterialVenta.append($('<option>').val(m).text(m));
-                            });
-                        }
-
+                        $filtroMaterialVenta.find('option:not([value=""])').remove();
+                        const materiales = new Set();
+                        (window.SALIDAS_INICIALES || []).forEach(salida => {
+                            if (salida.nombreMaterial) materiales.add(salida.nombreMaterial);
+                        });
+                        Array.from(materiales).sort().forEach(m => {
+                            $filtroMaterialVenta.append($('<option>').val(m).text(m));
+                        });
                         $filtroMaterialVenta.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona material...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroVentaMaterial');
+                        console.log('✅ Select2 inicializado en #filtroVentaMaterial (por datos fuente)');
                     }
 
-                    // Categoría desde atributo data-categoria
+                    // --- Categoría: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroCategoriaVenta.length) {
-                        const categorias = extraerValoresDelDOM('tablasSalidasBody', 'categoria');
-                        console.log('🔧 Categorías para VENTA:', categorias);
-                        categorias.forEach(c => {
+                        $filtroCategoriaVenta.find('option:not([value=""])').remove();
+                        const categorias = new Set();
+                        (window.SALIDAS_INICIALES || []).forEach(salida => {
+                            if (salida.nombreCategoria) categorias.add(salida.nombreCategoria);
+                        });
+                        Array.from(categorias).sort().forEach(c => {
                             $filtroCategoriaVenta.append($('<option>').val(c).text(c));
                         });
-
                         $filtroCategoriaVenta.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona categoría...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroVentaCategoria');
+                        console.log('✅ Select2 inicializado en #filtroVentaCategoria (por datos fuente)');
                     }
 
-                    // Tipo desde atributo data-tipo
+                    // --- Tipo: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroTipoVenta.length) {
-                        const tipos = extraerValoresDelDOM('tablasSalidasBody', 'tipo');
-                        console.log('🔧 Tipos para VENTA:', tipos);
-                        tipos.forEach(t => {
+                        $filtroTipoVenta.find('option:not([value=""])').remove();
+                        const tipos = new Set();
+                        (window.SALIDAS_INICIALES || []).forEach(salida => {
+                            if (salida.nombreTipo) tipos.add(salida.nombreTipo);
+                        });
+                        Array.from(tipos).sort().forEach(t => {
                             $filtroTipoVenta.append($('<option>').val(t).text(t));
                         });
-
                         $filtroTipoVenta.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona tipo...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroVentaTipo');
+                        console.log('✅ Select2 inicializado en #filtroVentaTipo (por datos fuente)');
                     }
                 }, 300);
 
@@ -2803,6 +2787,18 @@
                         <input type="hidden" id="editCompraId">
                         <input type="hidden" id="editInventarioId">
                         <input type="hidden" id="editCompraMaterialId">
+                        <input type="hidden"
+                               id="editCompraStockActual"
+                               name="editCompraStockActual"
+                               value="">
+                        <input type="hidden"
+                               id="editCompraCapacidadMaxima"
+                               name="editCompraCapacidadMaxima"
+                               value="">
+                        <input type="hidden"
+                               id="editCompraCantidadOriginal"
+                               name="editCompraCantidadOriginal"
+                               value="">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Material</label>
@@ -2882,6 +2878,19 @@
                         <input type="hidden" id="editVentaId">
                         <input type="hidden" id="editInventarioIdVenta">
                         <input type="hidden" id="editVentaMaterialId">
+                        <!-- Ocultos obligatorios para validación de stock, se asignan programáticamente -->
+                        <input type="hidden"
+                               id="editVentaStockActual"
+                               name="editVentaStockActual"
+                               value="">
+                        <input type="hidden"
+                               id="editVentaCapacidadMaxima"
+                               name="editVentaCapacidadMaxima"
+                               value="">
+                        <input type="hidden"
+                               id="editVentaCantidadOriginal"
+                               name="editVentaCantidadOriginal"
+                               value="">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Material</label>
@@ -3039,12 +3048,13 @@
 
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
-                // DELETE a /punto-eca/inventario/compra/{compraId}
-                fetch(`/punto-eca/inventario/compra/${compraId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                    },
+                        'X-CSRFToken': csrfToken
+                      },
                     body: JSON.stringify(datosEliminar)
                 })
                 .then(res => res.json())
@@ -3067,34 +3077,122 @@
             document.getElementById('btnEditarEntrada').addEventListener('click', function() {
                 const compraId = this.dataset.compraId;
                 console.log('✏️ Abriendo modal de edición para entrada:', compraId);
+                try {
+                  // Buscar el registro en los datos
+                  const entrada = window.ENTRADAS_INICIALES.find(e => e.compraId === compraId);
+                  if (!entrada) {
+                      alert('No se encontraron los datos de esta entrada');
+                      return;
+                  }
 
-                // Buscar el registro en los datos
-                const entrada = window.ENTRADAS_INICIALES.find(e => e.compraId === compraId);
-                if (!entrada) {
-                    alert('No se encontraron los datos de esta entrada');
+                  // Cerrar modal de detalles si está abierto
+                  const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesEntradaModal'));
+                  if (modalDetalles) modalDetalles.hide();
+
+                  // Llenar form de edición con los datos básicos
+                  document.getElementById('editCompraId').value = entrada.compraId || '';
+                  document.getElementById('editInventarioId').value = entrada.inventarioId || '';
+                  document.getElementById('editCompraMaterialId').value = entrada.materialId || '';
+                  document.getElementById('editCompraMaterial').value = entrada.nombreMaterial || '';
+
+                  // Convertir fecha al formato datetime-local
+                  const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toISOString().slice(0, 16) : '';
+                  document.getElementById('editCompraFecha').value = fecha;
+                  document.getElementById('editCompraCantidad').value = entrada.cantidad || '';
+                  document.getElementById('editCompraPrecio').value = entrada.precioCompra || '';
+                  document.getElementById('editCompraObservaciones').value = entrada.observaciones || '';
+
+                  // Traer stock real del inventario antes de abrir modal
+                  const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+                  const materialId = entrada.materialId;
+                  let stockActualInput = document.getElementById('editCompraStockActual');
+                  if (!stockActualInput) {
+                      console.warn('No se encontró el input editCompraStockActual, igual se abrirá el modal.');
+                  } else {
+                      stockActualInput.value = '';
+                  }
+                  let modalEditEl = document.getElementById('editarCompraModal');
+                  if (!modalEditEl) {
+                    alert('[ERROR] El modal editarCompraModal NO está en el DOM!!');
+                    console.error('[ERROR] No se encontró #editarCompraModal');
                     return;
+                  }
+
+                  // Log y fallback para debug
+                  console.log('[DEBUG-check] materialId:', materialId, 'puntoId:', puntoId);
+                  if (materialId && puntoId) {
+                      let params = new URLSearchParams({ puntoId, materialId });
+                      fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                          method: 'GET', headers: { 'Accept': 'application/json' }
+                      })
+                      .then(resp => resp.json())
+                      .then(data => {
+                          let stockActual = 0;
+                          if (Array.isArray(data) && data.length > 0) {
+                              let found = data.find(x => String(x.materialId) === String(materialId)) || data[0];
+                              if (found && found.stockActual !== undefined && found.stockActual !== null) {
+                                  stockActual = parseFloat(found.stockActual) || 0;
+                                  console.log('🟢 Stock actual inventario (compra):', stockActual);
+                              }
+                          } else if (typeof data === 'object' && data !== null && data.stockActual !== undefined) {
+                              stockActual = parseFloat(data.stockActual) || 0;
+                              console.log('🟢 Stock actual único inventario (compra):', stockActual);
+                          } else {
+                              console.warn('⚠️ No se obtuvo stock de inventario. Respuesta:', data);
+                          }
+                          if (stockActualInput) stockActualInput.value = stockActual;
+                          // Logs defensivos antes de mostrar
+                          console.log('[DEBUG-show] Mostrando modal de edición de compra ahora (después de fetch). DOM?', !!document.getElementById('editarCompraModal'));
+                          setTimeout(function() {
+                            try {
+                              let modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
+                              modalEditar.show();
+                              let testFocus = document.getElementById('editCompraCantidad');
+                              if (testFocus) testFocus.focus();
+                              console.log('[CHECK] modalEditar.show() fue ejecutado');
+                            } catch (error) {
+                              alert('Error al abrir el modal: ' + (error && error.message ? error.message : error));
+                              console.error('[ERROR] Al crear/abrir Modal:', error);
+                            }
+                          }, 80);
+                      })
+                      .catch(err => {
+                          console.error('❌ Error al buscar stock real inventario (compra):', err);
+                          if (stockActualInput) stockActualInput.value = 0;
+                          // Logs defensivos antes de mostrar
+                          setTimeout(function() {
+                            try {
+                              let modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
+                              modalEditar.show();
+                              let testFocus = document.getElementById('editCompraCantidad');
+                              if (testFocus) testFocus.focus();
+                              console.log('[CHECK] modalEditar.show() catch fue ejecutado');
+                            } catch (error) {
+                              alert('Error al abrir el modal: ' + (error && error.message ? error.message : error));
+                              console.error('[ERROR] Al crear/abrir Modal:', error);
+                            }
+                          }, 80);
+                      });
+                  } else {
+                      console.error('❌ Falta materialId o puntoId para buscar stock real de compra');
+                      if (stockActualInput) stockActualInput.value = 0;
+                      setTimeout(function() {
+                        try {
+                          let modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
+                          modalEditar.show();
+                          let testFocus = document.getElementById('editCompraCantidad');
+                          if (testFocus) testFocus.focus();
+                          console.log('[CHECK] modalEditar.show() else fue ejecutado');
+                        } catch (error) {
+                          alert('Error al abrir el modal: ' + (error && error.message ? error.message : error));
+                          console.error('[ERROR] Al crear/abrir Modal:', error);
+                        }
+                      }, 80);
+                  }
+                } catch (fatalErr) {
+                  alert('[FATAL] Error inesperado al intentar abrir modal de edición: ' + fatalErr);
+                  console.error('[FATAL] Error en click btnEditarEntrada:', fatalErr);
                 }
-
-                // Llenar form de edición
-                document.getElementById('editCompraId').value = entrada.compraId || '';
-                document.getElementById('editInventarioId').value = entrada.inventarioId || '';
-                document.getElementById('editCompraMaterialId').value = entrada.materialId || '';
-                document.getElementById('editCompraMaterial').value = entrada.nombreMaterial || '';
-
-                // Convertir fecha al formato datetime-local
-                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toISOString().slice(0, 16) : '';
-                document.getElementById('editCompraFecha').value = fecha;
-
-                document.getElementById('editCompraCantidad').value = entrada.cantidad || '';
-                document.getElementById('editCompraPrecio').value = entrada.precioCompra || '';
-                document.getElementById('editCompraObservaciones').value = entrada.observaciones || '';
-
-                // Cerrar modal actual y abrir modal de edición
-                const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesEntradaModal'));
-                if (modalDetalles) modalDetalles.hide();
-
-                const modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
-                modalEditar.show();
             });
 
             // Eliminar entrada desde modal
@@ -3134,10 +3232,12 @@
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
                 // DELETE a /punto-eca/inventario/compra/{compraId}
-                fetch(`/punto-eca/inventario/compra/${compraId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosEliminar)
                 })
@@ -3245,10 +3345,12 @@
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
                 // DELETE a /punto-eca/inventario/venta/{ventaId}
-                fetch(`/punto-eca/inventario/venta/${ventaId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosEliminar)
                 })
@@ -3269,7 +3371,7 @@
             });
 
             // Editar salida desde modal
-            document.getElementById('btnEditarSalida').addEventListener('click', function() {
+            document.getElementById('btnEditarSalida').addEventListener('click', async function() {
                 const ventaId = this.dataset.ventaId;
                 console.log('✏️ Abriendo modal de edición para salida:', ventaId);
 
@@ -3280,25 +3382,57 @@
                     return;
                 }
 
-                // Llenar form de edición
+                // Cerrar modal actual para asegurar UX correcta
+                const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesSalidaModal'));
+                if (modalDetalles) modalDetalles.hide();
+
+                // Rellenar campos estáticos antes del fetch
                 document.getElementById('editVentaId').value = salida.ventaId || '';
                 document.getElementById('editInventarioIdVenta').value = salida.inventarioId || '';
                 document.getElementById('editVentaMaterialId').value = salida.materialId || '';
                 document.getElementById('editVentaMaterial').value = salida.nombreMaterial || '';
-
+                document.getElementById('editVentaCapacidadMaxima').value = (salida.capacidadMaxima !== undefined && salida.capacidadMaxima !== null && !isNaN(Number(salida.capacidadMaxima))) ? Number(salida.capacidadMaxima) : 0;
+                document.getElementById('editVentaCantidadOriginal').value = (salida.cantidad !== undefined && salida.cantidad !== null && !isNaN(Number(salida.cantidad))) ? Number(salida.cantidad) : 0;
                 // Convertir fecha al formato datetime-local
                 const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toISOString().slice(0, 16) : '';
                 document.getElementById('editVentaFecha').value = fecha;
-
                 document.getElementById('editVentaCantidad').value = salida.cantidad || '';
                 document.getElementById('editVentaPrecio').value = salida.precioVenta || '';
                 document.getElementById('editVentaCentro').value = salida.centroAcopioId || '';
                 document.getElementById('editVentaObservaciones').value = salida.observaciones || '';
 
-                // Cerrar modal actual y abrir modal de edición
-                const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesSalidaModal'));
-                if (modalDetalles) modalDetalles.hide();
-
+                // ====== NUEVO: Traer stock actual real del inventario ======
+                const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+                const materialId = salida.materialId;
+                let stockActual = 0;
+                try {
+                    if (materialId && puntoId) {
+                        let params = new URLSearchParams({ puntoId, materialId });
+                        let resp = await fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                            method: 'GET', headers: { 'Accept': 'application/json' }
+                        });
+                        let data = await resp.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            // Buscar por ID exacto (puede haber más de un item si purga no está bien)
+                            let found = data.find(x => String(x.materialId) === String(materialId)) || data[0];
+                            if (found && found.stockActual !== undefined && found.stockActual !== null) {
+                                stockActual = parseFloat(found.stockActual) || 0;
+                                console.log('🟢 Stock actual obtenido desde inventario:', stockActual);
+                            }
+                        } else if (typeof data === 'object' && data !== null && data.stockActual !== undefined) {
+                            stockActual = parseFloat(data.stockActual) || 0;
+                            console.log('🟢 Stock actual único obtenido:', stockActual);
+                        } else {
+                            console.warn('⚠️ No se obtuvo stock desde inventario. Respuesta:', data);
+                        }
+                    } else {
+                        console.error('❌ Faltan datos para buscar stock actual (materialId o puntoId)');
+                    }
+                } catch (err) {
+                    console.error('❌ Error al buscar stock actual real:', err);
+                }
+                document.getElementById('editVentaStockActual').value = stockActual;
+                // Abrir modal recién después de asignar el dato
                 const modalEditar = new bootstrap.Modal(document.getElementById('editarVentaModal'));
                 modalEditar.show();
             });
@@ -3340,10 +3474,12 @@
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
                 // DELETE a /punto-eca/inventario/venta/{ventaId}
-                fetch(`/punto-eca/inventario/venta/${ventaId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosEliminar)
                 })
@@ -3371,10 +3507,31 @@
                 const compraId = document.getElementById('editCompraId').value;
                 const inventarioId = document.getElementById('editInventarioId').value;
                 const materialId = document.getElementById('editCompraMaterialId').value;
-                const cantidad = document.getElementById('editCompraCantidad').value;
+                const cantidad = parseFloat(document.getElementById('editCompraCantidad').value);
                 const fechaCompra = document.getElementById('editCompraFecha').value;
-                const precioCompra = document.getElementById('editCompraPrecio').value;
+                const precioCompra = parseFloat(document.getElementById('editCompraPrecio').value);
                 const observaciones = document.getElementById('editCompraObservaciones').value;
+
+                // Datos de stock/capacidad/cantidad original
+                // Defensive parse + fallback (como en ventas)
+                let stockActualRaw = document.getElementById('editCompraStockActual')?.value;
+                let capacidadMaximaRaw = document.getElementById('editCompraCapacidadMaxima')?.value;
+                let cantidadOriginalRaw = document.getElementById('editCompraCantidadOriginal')?.value;
+                let stockActual = parseFloat(stockActualRaw);
+                let capacidadMaxima = parseFloat(capacidadMaximaRaw);
+                let cantidadOriginal = parseFloat(cantidadOriginalRaw);
+                if (isNaN(stockActual)) {
+                    console.warn('[COMPRA][DEFENSIVO] stockActual no numérico, usando 0. Valor crudo:', stockActualRaw);
+                    stockActual = 0;
+                }
+                if (isNaN(capacidadMaxima)) {
+                    console.warn('[COMPRA][DEFENSIVO] capacidadMaxima no numérico, usando 0. Valor crudo:', capacidadMaximaRaw);
+                    capacidadMaxima = 0;
+                }
+                if (isNaN(cantidadOriginal)) {
+                    console.warn('[COMPRA][DEFENSIVO] cantidadOriginal no numérico, usando 0. Valor crudo:', cantidadOriginalRaw);
+                    cantidadOriginal = 0;
+                }
 
                 console.log('💾 Guardando cambios de compra:', {
                     puntoId,
@@ -3384,7 +3541,10 @@
                     cantidad,
                     fechaCompra,
                     precioCompra,
-                    observaciones
+                    observaciones,
+                    stockActual,
+                    capacidadMaxima,
+                    cantidadOriginal
                 });
 
                 if (!materialId) {
@@ -3392,39 +3552,56 @@
                     console.error('materialId está vacío en editCompraMaterialId');
                     return;
                 }
-
+                // Ya no alerta por stock/capacidad faltantes, sólo por valores lógicos después de fallback
+                // Validar stock resultante
+                // Nueva compra: stock_final = stockActual + (cantidad - cantidadOriginal)
+                let delta = cantidad - cantidadOriginal;
+                let stockFinal = stockActual + delta;
+                if (cantidad <= 0) {
+                    alert('Ingrese una cantidad mayor a cero.');
+                    return;
+                }
+                if (stockFinal < 0) {
+                    alert('La edición dejaría el stock negativo. Corrija la cantidad. Stock actual: '+stockActual+', diferencia: '+delta);
+                    return;
+                }
+                if (!isNaN(capacidadMaxima) && capacidadMaxima > 0 && stockFinal > capacidadMaxima) {
+                    alert('La edición hace que el stock supere la capacidad máxima ('+capacidadMaxima+'). Stock hipotético: '+stockFinal+'\nCorrija la cantidad.');
+                    return;
+                }
                 // Construir datos para CompraInventarioUpdateDTO
                 const datosActualizacion = {
                     puntoId: puntoId,
                     materialId: materialId,
                     compraId: compraId,
                     inventarioId: inventarioId,
-                    cantidad: parseFloat(cantidad),
+                    cantidad: cantidad,
                     fechaCompra: (fechaCompra && fechaCompra.length===16) ? (fechaCompra + ':00') : fechaCompra,
-                    precioCompra: parseFloat(precioCompra),
+                    precioCompra: precioCompra,
                     observaciones: observaciones
                 };
 
                 console.log('📤 JSON enviado:', JSON.stringify(datosActualizacion, null, 2));
-
                 // PUT a /punto-eca/inventario/compra/{compraId}
-                fetch(`/punto-eca/inventario/compra/${compraId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/editar-compra/${compraId}/`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosActualizacion)
                 })
                 .then(res => res.json())
                 .then(data => {
                     console.log('📥 Respuesta:', data);
-                    if (data.ok || data.status === 200 || !data.error) {
-                        alert('Compra actualizada correctamente');
+                    if (data.status === 'success') {
+                        alert(data.message || 'Compra actualizada correctamente');
                         const modal = bootstrap.Modal.getInstance(document.getElementById('editarCompraModal'));
                         if (modal) modal.hide();
                         location.reload();
                     } else {
-                        alert('Error al actualizar: ' + (data.mensaje || data.message || 'Error desconocido'));
+                        alert(data.message || data.mensaje || 'Error al actualizar la compra.');
                     }
                 })
                 .catch(error => {
@@ -3445,6 +3622,35 @@
                 const centroAcopioId = document.getElementById('editVentaCentro').value;
                 const observaciones = document.getElementById('editVentaObservaciones').value;
 
+                // --- VALIDACIÓN DE STOCK ANTES DE GUARDAR ---
+                const stockActual = parseFloat(document.getElementById('editVentaStockActual').value || 'NaN');
+                const capacidadMaxima = parseFloat(document.getElementById('editVentaCapacidadMaxima').value || 'NaN');
+                const cantidadOriginal = parseFloat(document.getElementById('editVentaCantidadOriginal').value || '0');
+                const cantidadNum = parseFloat(cantidad);
+                if (isNaN(stockActual) || isNaN(cantidadNum)) {
+                    alert('No se pudo validar el stock. Recarga la página e intenta nuevamente.');
+                    return;
+                }
+                // Validar que la cantidad a vender no supere el stock disponible real
+                if (cantidadNum > stockActual + cantidadOriginal) {
+                    alert('No se puede vender más unidades de las que hay en stock. Stock disponible: ' + (stockActual + cantidadOriginal));
+                    return;
+                }
+                // stock final simulado para edición: stockActual + (cantidadOriginal - cantidadNueva)
+                let nuevoStock = stockActual + (cantidadOriginal - cantidadNum);
+                if (cantidadNum <= 0) {
+                    alert('Ingrese una cantidad mayor a cero.');
+                    return;
+                }
+                if (nuevoStock < 0) {
+                    alert('La edición dejaría el stock negativo o usaría más stock del disponible. Corrija la cantidad.');
+                    return;
+                }
+                if (!isNaN(capacidadMaxima) && capacidadMaxima > 0 && nuevoStock > capacidadMaxima) {
+                    alert('La edición hace que el stock supere la capacidad máxima ('+capacidadMaxima+'). Corrija la cantidad.');
+                    return;
+                }
+
                 console.log('💾 Guardando cambios de venta:', {
                     puntoId,
                     ventaId,
@@ -3462,11 +3668,10 @@
                     return;
                 }
 
-                // Validar que centroAcopioId esté presente (@NotNull)
-                if (!centroAcopioId) {
-                    alert('El centro de acopio es obligatorio para actualizar la venta');
-                    return;
-                }
+                // if (!centroAcopioId) {
+                //     alert('El centro de acopio es obligatorio para actualizar la venta');
+                //     return;
+                // }
 
                 // Construir datos a enviar
                 const datosActualizacion = {
@@ -3484,23 +3689,26 @@
                 console.log('📤 JSON enviado:', JSON.stringify(datosActualizacion, null, 2));
 
                 // PUT a /punto-eca/inventario/venta/{ventaId}
-                fetch(`/punto-eca/inventario/venta/${ventaId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/editar-venta/${ventaId}/`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosActualizacion)
                 })
                 .then(res => res.json())
                 .then(data => {
                     console.log('📥 Respuesta:', data);
-                    if (data.ok || data.status === 200 || !data.error) {
-                        alert('Venta actualizada correctamente');
+                    // Chequear la lógica del backend según el campo status (success/error) y mostrar mensaje adecuado
+                    if (data.status === 'success') {
+                        alert(data.message || 'Venta actualizada correctamente');
                         const modal = bootstrap.Modal.getInstance(document.getElementById('editarVentaModal'));
                         if (modal) modal.hide();
                         location.reload();
                     } else {
-                        alert('Error al actualizar: ' + (data.mensaje || data.message || 'Error desconocido'));
+                        alert(data.message || data.mensaje || 'Error al actualizar la venta.');
                     }
                 })
                 .catch(error => {
