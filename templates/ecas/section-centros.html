@@ -408,26 +408,37 @@
     }
     function renderTablaCentros(centros, tableBodyId) {
         const tbody = document.getElementById(tableBodyId);
-        if (!tbody) return;
-        if (!centros.length) {
-            tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="'+tbody.parentElement.querySelectorAll('th').length+'" class="py-3"><small>Sin registros</small></td></tr>';
-            return;
-        }
-        tbody.innerHTML = centros.map(c => `
-            <tr class="${tableBodyId==='tablaCentrosGlobalesBody'?'fila-centro-global':'fila-centro-propio'}">
-                <td class="small">${c.nombre||'-'}</td>
-                <td><span class="badge ${tableBodyId==='tablaCentrosGlobalesBody'?'bg-info-subtle text-info':'bg-success-subtle text-success'}">${c.get_tipo_centro_display||c.tipo||'-'}</span></td>
-                ${tableBodyId==='tablaCentrosGlobalesBody'
-                  ? `<td class="small">${c.nombre_contacto||'—'}</td>
-                     <td class="small">${c.celular?`<a href="tel:${c.celular}" class="text-decoration-none">${c.celular}</a>`:'<span>—</span>'}</td>
-                     <td class="small"><a href="mailto:${c.email||''}" class="text-decoration-none text-truncate d-block">${c.email||'—'}</a></td>`
-                  : `<td class="small">${c.localidad||'—'}</td>
-                     <td class="small">${c.celular?`<a href="tel:${c.celular}" class="text-decoration-none">${c.celular}</a>`:'<span>—</span>'}</td>
-                     <td class="small"><small class="text-muted">${c.notas||'—'}</small></td>
-                     <td><button type="button" class="btn btn-outline-primary btn-sm" title="Ver detalles" onclick="abrirDetallesCentro(event, '${c.id}')"><i class="bi bi-eye"></i> Detalles</button></td>`
-                }
-            </tr>
-        `).join('');
+            console.debug('DEBUG renderTablaCentros called:', { tableBodyId, centros });
+            if (!tbody) {
+                console.error('No se encontró tbody para:', tableBodyId);
+                return;
+            }
+            if (!Array.isArray(centros)) {
+                console.error('Centros NO es array, valor:', centros);
+                tbody.innerHTML = '<tr class="text-danger"><td colspan="'+(tbody.parentElement.querySelectorAll('th').length || 5)+'">[Error] Centros no es un array</td></tr>';
+                return;
+            }
+            if (!centros.length) {
+                tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="'+(tbody.parentElement.querySelectorAll('th').length || 5)+'" class="py-3"><small>Sin registros</small></td></tr>';
+                return;
+            }
+            tbody.innerHTML = centros.map(c => {
+                console.log('Renderizando centro fila:', c);
+                return `
+                <tr class="${tableBodyId==='tablaCentrosGlobalesBody'?'fila-centro-global':'fila-centro-propio'}">
+                    <td class="small">${c.nombre||'-'}</td>
+                    <td><span class="badge ${tableBodyId==='tablaCentrosGlobalesBody'?'bg-info-subtle text-info':'bg-success-subtle text-success'}">${c.get_tipo_centro_display||c.tipo||'-'}</span></td>
+                    ${tableBodyId==='tablaCentrosGlobalesBody'
+                      ? `<td class="small">${c.nombre_contacto||'—'}</td>
+                         <td class="small">${c.celular?`<a href=\"tel:${c.celular}\" class=\"text-decoration-none\">${c.celular}</a>`:'<span>—</span>'}</td>
+                         <td class="small"><a href=\"mailto:${c.email||''}\" class=\"text-decoration-none text-truncate d-block\">${c.email||'—'}</a></td>`
+                      : `<td class="small">${c.localidad||'—'}</td>
+                         <td class="small">${c.celular?`<a href=\"tel:${c.celular}\" class=\"text-decoration-none\">${c.celular}</a>`:'<span>—</span>'}</td>
+                         <td class="small"><small class="text-muted">${c.notas||'—'}</small></td>
+                         <td><button type="button" class="btn btn-outline-primary btn-sm" title="Ver detalles" onclick="abrirDetallesCentro(event, '${c.id}')"><i class="bi bi-eye"></i> Detalles</button></td>`
+                    }
+                </tr>
+            `; }).join('');
     }
     function updateBadge(count, badgeId) {
         const badge = document.getElementById(badgeId);
@@ -542,6 +553,7 @@
         // ---- PROPIOS ---- //
         const formPropio = document.getElementById('filtrosFormCentrosPropios');
         let dataPropio = Array.isArray(window.CENTROS_PROPIOS)? window.CENTROS_PROPIOS : [];
+        console.log('DEBUG window.CENTROS_PROPIOS:', window.CENTROS_PROPIOS);
         let filtrosPropio = {};
         // Pobla dinámicamente el select de tipos de centros propios
         function poblarSelectTipoPropio() {
@@ -598,7 +610,9 @@
             if ([...select.options].some(o => o.value === valorPrevio)) select.value = valorPrevio;
             // Re-inicializar Select2 (remueve previa instancia si corresponde)
             if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-                $(select).select2('destroy');
+                            if ($.fn.select2 && $(select).hasClass('select2-hidden-accessible')) {
+                              $(select).select2('destroy');
+                            }
                 $(select).select2({
                     theme: 'bootstrap4',
                     width: '100%',
@@ -625,16 +639,21 @@
         }
         if(formPropio) {
             poblarSelectLocalidadPropio();
+            poblarSelectTipoPropio();
             document.getElementById('btnFiltrarPropios').addEventListener('click', function() {
+                poblarSelectLocalidadPropio();
+                poblarSelectTipoPropio();
                 filtrarYRenderizarPropios();
             });
             document.getElementById('btnLimpiarPropios').addEventListener('click', function() {
-                            limpiarCampos(formPropio);
-                            poblarSelectLocalidadPropio();
-                            poblarSelectTipoPropio();
-                            filtrarYRenderizarPropios();
+                limpiarCampos(formPropio);
+                poblarSelectLocalidadPropio();
+                poblarSelectTipoPropio();
+                filtrarYRenderizarPropios();
             });
         }
+        poblarSelectLocalidadPropio();
+        poblarSelectTipoPropio();
         filtrarYRenderizarPropios();
     });
 })();
