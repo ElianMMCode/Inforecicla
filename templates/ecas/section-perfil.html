@@ -314,12 +314,12 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Sitio Web</label>
-                                <input type="url"
+                                <input type="text"
                                        class="form-control"
                                        id="sitioWebPunto"
                                        name="sitioWebPunto"
                                        placeholder="https://ejemplo.com"
-                                       value="{{ punto.sitio_web }}" />
+                                       value="{{ punto.sitio_web|default_if_none:'' }}" />
                                 <small class="text-muted">URL del sitio web (opcional)</small>
                             </div>
                         </div>
