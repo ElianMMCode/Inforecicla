@@ -64,13 +64,13 @@ def editar_perfil_gestor(request, id):
     try:
         usuario = Usuario.objects.get(id=id)
     except Usuario.DoesNotExist:
-        return redirect("punto:render_seccion", seccion="perfil")
+        return redirect("punto-eca:render_seccion", seccion="perfil")
 
     # Manejar POST - actualizar usuario
     if request.method == "POST":
         # Actualizar campos básicos del usuario
         usuario = UserService.editar_perfil(request, id)
-        return redirect("punto:perfil")
+        return redirect("punto-eca:perfil")
 
     # Manejar GET - renderizar formulario
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
@@ -94,11 +94,11 @@ def editar_punto(request, id):
     try:
         punto = PuntoECA.objects.get(gestor_eca_id=id)
     except PuntoECA.DoesNotExist:
-        return redirect("punto:render_seccion", seccion="perfil")
+        return redirect("punto-eca:render_seccion", seccion="perfil")
 
     if request.method == "POST":
         punto = PuntoService.editar_punto(request, id)
-        return redirect("punto:perfil")
+        return redirect("punto-eca:perfil")
     # Manejar GET - renderizar formulario
 
     usuario = punto.gestor_eca
