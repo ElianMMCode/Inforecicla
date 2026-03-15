@@ -7,6 +7,7 @@ from apps.ecas.service import PuntoService
 from apps.ecas.constants import SECTION_TEMPLATES
 from apps.operations.views import _build_movimientos_context
 from apps.inventory.views import _build_materiales_context
+from django.http import JsonResponse
 
 
 def render_seccion(request, seccion="resumen"):
@@ -53,48 +54,40 @@ def centro_to_dict(centro):
         "id": centro.id,
         "nombre": centro.nombre,
         "tipo": centro.tipo_centro,  # valor raw para filtros
-        "get_tipo_centro_display": centro.get_tipo_centro_display() if hasattr(centro, 'get_tipo_centro_display') else centro.tipo_centro,
+        "get_tipo_centro_display": centro.get_tipo_centro_display()
+        if hasattr(centro, "get_tipo_centro_display")
+        else centro.tipo_centro,
         # Serialize localidad as a string (name or empty if None)
-        "localidad": getattr(centro.localidad, "nombre", str(centro.localidad)) if getattr(centro, "localidad", None) else None,
+        "localidad": getattr(centro.localidad, "nombre", str(centro.localidad))
+        if getattr(centro, "localidad", None)
+        else None,
         "celular": getattr(centro, "celular", None),
         "email": getattr(centro, "email", None),
         "nombre_contacto": getattr(centro, "nombre_contacto", None),
-        "notas": getattr(centro, "notas", None),
+        "nota": getattr(centro, "nota", None),
     }
 
-def _build_centros_context(punto):
-    # Listar todos los centros y sus atributos clave para debug
-    print("========= TODOS LOS CENTROS DE ACOPIO EXISTENTES =========")
-    for centro in CentroAcopio.objects.all():
-        print(f"- {centro} | tipo_centro={centro.tipo_centro} | visibilidad={centro.visibilidad} | puntos_eca={[p.nombre for p in centro.puntos_eca.all()]}")
-    print("==========================================================")
 
-    centros_globales_qs = CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
+def _build_centros_context(punto):
+    """
+    Construye el contexto para la sección centros, mostrando IDs para debug backend.
+    """
+    centros_globales_qs = CentroAcopio.objects.filter(
+        visibilidad=cons.Visibilidad.GLOBAL
+    )
     centros_locales_qs = CentroAcopio.objects.filter(
         puntos_eca=punto, visibilidad=cons.Visibilidad.ECA
     )
+
+    # Debug: imprime los IDs de cada tipo
+    print("--- DEBUG <_build_centros_context> ---")
+    print("Punto:", punto.id, punto)
+    print("IDs centros_locales:", [str(c.id) for c in centros_locales_qs])
+    print("IDs centros_globales:", [str(c.id) for c in centros_globales_qs])
+    print("--- END DEBUG ---")
+
     centros_globales = [centro_to_dict(c) for c in centros_globales_qs]
     centros_locales = [centro_to_dict(c) for c in centros_locales_qs]
-
-    print("------------- DEBUG _build_centros_context -------------")
-    print(f"Punto: {punto}")
-    print(f"Centros globales (count): {len(centros_globales)}")
-    for cg in centros_globales:
-        print(f"  - Global: {cg}")
-    print(f"Centros locales (count): {len(centros_locales)}")
-    for cl in centros_locales:
-        print(f"  - Local: {cl}")
-    print("Context dict:")
-    print(
-        {
-            "punto": punto,
-            "seccion": "centros",
-            "section_template": SECTION_TEMPLATES["centros"],
-            "centros_globales": centros_globales,
-            "centros_locales": centros_locales,
-        }
-    )
-    print("---------------------------------------------------------")
 
     return {
         "punto": punto,
@@ -172,3 +165,64 @@ def editar_punto(request, id):
     }
 
     return render(request, "ecas/editar_perfil.html", context)
+
+
+def editar_centro(request, id):
+    """
+    View to edit a centro de acopio (ECA visibility) for current user's punto ECA.
+    Si el centro no existe o no pertenece al usuario, retorna JSON 404 si es AJAX, o 404 HTML si es web.
+    """
+    # Buscar el punto del usuario
+    try:
+        # punto = PuntoECA.objects.get(gestor_eca__id=request.user.id)
+        punto = PuntoECA.objects.get(
+            gestor_eca_id="33333333-3333-3333-3333-333333333333"
+        )
+    except PuntoECA.DoesNotExist:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {"status": "error", "message": "Punto ECA no encontrado"}, status=404
+            )
+        return redirect("punto-eca:render_seccion", seccion="perfil")
+
+    # Buscar el centro, debe ser local y del punto
+    try:
+        centro = CentroAcopio.objects.get(
+            id=id, visibilidad=cons.Visibilidad.ECA, puntos_eca=punto
+        )
+    except CentroAcopio.DoesNotExist:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {"status": "error", "message": "Centro no encontrado"}, status=404
+            )
+        # 404 HTML normal
+        from django.http import Http404
+
+        raise Http404("Centro no encontrado")
+
+    if request.method == "POST":
+        centro.nombre = request.POST.get("nombreCentro", centro.nombre)
+        centro.tipo_centro = request.POST.get("tipoCentro", centro.tipo_centro)
+        centro.celular = request.POST.get("celularCentro", centro.celular)
+        centro.email = request.POST.get("emailCentro", centro.email)
+        centro.nombre_contacto = request.POST.get(
+            "nombreContacto", centro.nombre_contacto
+        )
+        centro.nota = request.POST.get("nota", centro.nota)
+        localidad_id = request.POST.get("localidadCentro")
+        if localidad_id and (
+            not centro.localidad or str(centro.localidad.localidad_id) != localidad_id
+        ):
+            try:
+                centro.localidad = Localidad.objects.get(localidad_id=localidad_id)
+            except Localidad.DoesNotExist:
+                pass
+        centro.save()
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"status": "ok", "centro": centro_to_dict(centro), "mensaje": "Centro editado correctamente"})
+        return redirect("punto-eca:render_seccion", seccion="centros")
+
+    # GET: render edit form
+    context = _build_centros_context(punto)
+    return render(request, "ecas/editar_centro.html", context)
