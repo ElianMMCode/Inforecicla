@@ -115,6 +115,79 @@
         window.REGISTROS_POR_PAGINA = 5;
         window.PAGINA_ACTUAL_HISTORIAL = 1;
         window.REGISTROS_POR_PAGINA_HISTORIAL = 10;
+    // =============================
+    // LISTENERS ELIMINAR DESDE TABLA HISTORIAL
+    // =============================
+    // Eliminar compra desde historial
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-eliminar-historial-compra');
+        if (!btn) return;
+        const compraId = btn.dataset.compraId;
+        if (!confirm('¿Estás seguro de que deseas eliminar esta compra?')) return;
+        // Buscar en HISTORIAL_COMPRAS o ENTRADAS_INICIALES
+        const entrada = (window.HISTORIAL_COMPRAS || []).find(e => String(e.compraId) === String(compraId)) || (window.ENTRADAS_INICIALES || []).find(e => String(e.compraId) === String(compraId));
+        if (!entrada) { alert('No se encontraron los datos de esta compra'); return; }
+        const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+        const inventarioId = entrada.inventarioId || '';
+        const materialId = entrada.materialId || '';
+        const datosEliminar = { compraId, inventarioId, puntoId, materialId };
+        var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(datosEliminar)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success || data.ok || !data.error) {
+                alert('Compra eliminada correctamente');
+                location.reload();
+            } else {
+                alert('Error al eliminar: ' + (data.mensaje || data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            alert('Error al procesar la solicitud: ' + (error && error.message ? error.message : error));
+        });
+    });
+    // Eliminar venta desde historial
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-eliminar-historial-venta');
+        if (!btn) return;
+        const ventaId = btn.dataset.ventaId;
+        if (!confirm('¿Estás seguro de que deseas eliminar esta venta?')) return;
+        // Buscar en HISTORIAL_VENTAS o SALIDAS_INICIALES
+        const salida = (window.HISTORIAL_VENTAS || []).find(s => String(s.ventaId) === String(ventaId)) || (window.SALIDAS_INICIALES || []).find(s => String(s.ventaId) === String(ventaId));
+        if (!salida) { alert('No se encontraron los datos de esta venta'); return; }
+        const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+        const inventarioId = salida.inventarioId || '';
+        const materialId = salida.materialId || '';
+        const datosEliminar = { ventaId, inventarioId, puntoId, materialId };
+        var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(datosEliminar)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success || data.ok || !data.error) {
+                alert('Venta eliminada correctamente');
+                location.reload();
+            } else {
+                alert('Error al eliminar: ' + (data.mensaje || data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            alert('Error al procesar la solicitud: ' + (error && error.message ? error.message : error));
+        });
+    });
     </script>
     <div class="accordion accordion-flush shadow-sm" id="movimientosAccordion">
         <!-- ITEM 1: ENTRADAS DE MATERIAL -->
@@ -2411,12 +2484,11 @@
         // EVENT LISTENER PARA VER DETALLES DE MOVIMIENTO
         // ========================================================
         document.addEventListener('click', function(e) {
-            // Acciones EDITAR/ELIMINAR desde la tabla HISTORIAL GENERAL - ahora abren modal de detalles (compra o venta)
-            if (e.target.closest('.btn-editar-historial-compra') || e.target.closest('.btn-eliminar-historial-compra')) {
-                // Click en cualquier acción de compra: abrir modal de detalles de compra
-                const btn = e.target.closest('.btn-editar-historial-compra') || e.target.closest('.btn-eliminar-historial-compra');
+            // Acciones EDITAR/ELIMINAR desde la tabla HISTORIAL GENERAL.
+            // Solo abrir modal si fue botón EDITAR, nunca desde ELIMINAR.
+            if (e.target.closest('.btn-editar-historial-compra')) {
+                const btn = e.target.closest('.btn-editar-historial-compra');
                 const compraId = btn?.dataset.compraId;
-                // Buscar la entrada correspondiente en los datos globales
                 const entrada = window.HISTORIAL_COMPRAS?.find(c => c.compraId == compraId) || window.ENTRADAS_INICIALES?.find(c => c.compraId == compraId);
                 if (!entrada) {
                     alert('No se encontraron los datos de esta compra.');
@@ -2433,24 +2505,20 @@
                 document.getElementById('detEntradaPrecio').textContent = '$' + precio.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 document.getElementById('detEntradaTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 document.getElementById('detEntradaObservaciones').textContent = entrada.observaciones || 'Sin observaciones';
-                // Setear id a los botones del modal
                 document.getElementById('btnEditarEntrada').dataset.compraId = compraId;
                 document.getElementById('btnEliminarEntrada').dataset.compraId = compraId;
-                // Abrir modal
                 const modal = new bootstrap.Modal(document.getElementById('detallesEntradaModal'));
                 modal.show();
                 return;
             }
-            if (e.target.closest('.btn-editar-historial-venta') || e.target.closest('.btn-eliminar-historial-venta')) {
-                // Click en cualquier acción de venta: abrir modal de detalles de venta
-                const btn = e.target.closest('.btn-editar-historial-venta') || e.target.closest('.btn-eliminar-historial-venta');
+            if (e.target.closest('.btn-editar-historial-venta')) {
+                const btn = e.target.closest('.btn-editar-historial-venta');
                 const ventaId = btn?.dataset.ventaId;
                 const salida = window.HISTORIAL_VENTAS?.find(v => v.ventaId == ventaId) || window.SALIDAS_INICIALES?.find(v => v.ventaId == ventaId);
                 if (!salida) {
                     alert('No se encontraron los datos de esta venta.');
                     return;
                 }
-                // Llenar modal con datos
                 const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toLocaleDateString('es-CO') : '-';
                 const cantidad = parseFloat(salida.cantidad || 0);
                 const precio = parseFloat(salida.precioVenta || 0);
@@ -2462,14 +2530,14 @@
                 document.getElementById('detSalidaCentro').textContent = salida.nombreCentroAcopio || '-';
                 document.getElementById('detSalidaTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 document.getElementById('detSalidaObservaciones').textContent = salida.observaciones || 'Sin observaciones';
-                // Setear id a los botones del modal
                 document.getElementById('btnEditarSalida').dataset.ventaId = ventaId;
                 document.getElementById('btnEliminarSalida').dataset.ventaId = ventaId;
-                // Abrir modal
                 const modal = new bootstrap.Modal(document.getElementById('detallesSalidaModal'));
                 modal.show();
                 return;
             }
+            // Si es un click en botón ELIMINAR historial, NO abrir modal, dejar que el handler en app.js actúe solo.
+            
             // ============================
             // VER DETALLES MOVIMIENTO (existente)
             if (e.target.closest('.btnVerDetalles')) {
@@ -3273,7 +3341,7 @@
 
                 // DELETE a /punto-eca/inventario/compra/{compraId}
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}`, {
+                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3515,7 +3583,7 @@
 
                 // DELETE a /punto-eca/inventario/venta/{ventaId}
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}`, {
+                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
