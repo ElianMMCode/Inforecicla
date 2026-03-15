@@ -152,11 +152,12 @@
                                             <th class="fw-bold small">Contacto</th>
                                             <th class="fw-bold small">Teléfono</th>
                                             <th class="fw-bold small">Correo</th>
+                                            <th class="fw-bold small">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody class="border-top" id="tablaCentrosGlobalesBody">
                                         <tr class="text-muted text-center">
-                                            <td colspan="5" class="py-3">
+                                            <td colspan="6" class="py-3">
                                                 <small>Sin registros</small>
                                             </td>
                                         </tr>
@@ -363,15 +364,50 @@
                                 aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" id="inputCentroId">
-                        <!-- ... resto del modal igual que antes ...-->
+                      <input type="hidden" id="inputCentroId">
+                      <dl class="row mb-0">
+                        <dt class="col-sm-4">Nombre</dt><dd class="col-sm-8" id="detCentroPropioNombre"></dd>
+                        <dt class="col-sm-4">Tipo</dt><dd class="col-sm-8" id="detCentroPropioTipo"></dd>
+                        <dt class="col-sm-4">Localidad</dt><dd class="col-sm-8" id="detCentroPropioLocalidad"></dd>
+                        <dt class="col-sm-4">Contacto</dt><dd class="col-sm-8" id="detCentroPropioContacto"></dd>
+                        <dt class="col-sm-4">Teléfono</dt><dd class="col-sm-8" id="detCentroPropioCelular"></dd>
+                        <dt class="col-sm-4">Correo</dt><dd class="col-sm-8" id="detCentroPropioEmail"></dd>
+                        <dt class="col-sm-4">Notas</dt><dd class="col-sm-8" id="detCentroPropioNotas"></dd>
+                      </dl>
                     </div>
-                    <div class="modal-footer">
-                        <!-- ... botones igual que antes ...-->
+                    <div class="modal-footer bg-light border-top">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Cerrar</button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    <!-- Modal reutilizable para ver detalles del centro -->
+    <div class="modal fade" id="modalDetallesCentro" tabindex="-1" aria-labelledby="modalDetallesCentroLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="modalDetallesCentroLabel">
+              <i class="bi bi-building me-2"></i>Detalles del Centro
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-4">Nombre</dt><dd class="col-sm-8" id="detCentroNombre"></dd>
+              <dt class="col-sm-4">Tipo</dt><dd class="col-sm-8" id="detCentroTipo"></dd>
+              <dt class="col-sm-4">Localidad</dt><dd class="col-sm-8" id="detCentroLocalidad"></dd>
+              <dt class="col-sm-4">Contacto</dt><dd class="col-sm-8" id="detCentroContacto"></dd>
+              <dt class="col-sm-4">Teléfono</dt><dd class="col-sm-8" id="detCentroCelular"></dd>
+              <dt class="col-sm-4">Correo</dt><dd class="col-sm-8" id="detCentroEmail"></dd>
+              <dt class="col-sm-4">Notas</dt><dd class="col-sm-8" id="detCentroNotas"></dd>
+            </dl>
+          </div>
+          <div class="modal-footer bg-light border-top">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Cerrar</button>
+          </div>
+        </div>
+      </div>
     </div>
     <script>
 (function() {
@@ -431,11 +467,8 @@
                     ${tableBodyId==='tablaCentrosGlobalesBody'
                       ? `<td class="small">${c.nombre_contacto||'—'}</td>
                          <td class="small">${c.celular?`<a href=\"tel:${c.celular}\" class=\"text-decoration-none\">${c.celular}</a>`:'<span>—</span>'}</td>
-                         <td class="small"><a href=\"mailto:${c.email||''}\" class=\"text-decoration-none text-truncate d-block\">${c.email||'—'}</a></td>`
-                      : `<td class="small">${c.localidad||'—'}</td>
-                         <td class="small">${c.celular?`<a href=\"tel:${c.celular}\" class=\"text-decoration-none\">${c.celular}</a>`:'<span>—</span>'}</td>
-                         <td class="small"><small class="text-muted">${c.notas||'—'}</small></td>
-                         <td><button type="button" class="btn btn-outline-primary btn-sm" title="Ver detalles" onclick="abrirDetallesCentro(event, '${c.id}')"><i class="bi bi-eye"></i> Detalles</button></td>`
+                         <td class=\"small\"><a href=\"mailto:${c.email||''}\" class=\"text-decoration-none text-truncate d-block\">${c.email||'—'}</a></td>\n                         <td><button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-ver-detalles-centro\" title=\"Ver detalles\" data-id=\"${c.id}\" data-type=\"global\"><i class=\"bi bi-eye\"></i> Detalles</button></td>`
+                                               : `<td class=\"small\">${c.localidad||'—'}</td>\n                         <td class=\"small\">${c.celular?`<a href=\\"tel:${c.celular}\\" class=\\"text-decoration-none\\">${c.celular}</a>`:'<span>—</span>'}</td>\n                         <td class=\"small\"><small class=\"text-muted\">${c.notas||'—'}</small></td>\n                                                                           <td><button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-ver-detalles-centro\" title=\"Ver detalles\" data-id=\"${c.id}\" data-type=\"propio\"><i class=\"bi bi-eye\"></i> Detalles</button></td>`
                     }
                 </tr>
             `; }).join('');
@@ -657,5 +690,49 @@
         filtrarYRenderizarPropios();
     });
 })();
+    </script>
+    <script>
+    // Delegated event handler for "Ver detalles" button (global y propio)
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-ver-detalles-centro');
+        if (!btn) return;
+        const tipo = btn.dataset.type;
+        const id = btn.dataset.id;
+        let centro = null;
+        if (tipo === 'global') {
+            centro = (window.CENTROS_GLOBALES || []).find(c => String(c.id) === String(id));
+        } else if (tipo === 'propio') {
+            centro = (window.CENTROS_PROPIOS || []).find(c => String(c.id) === String(id));
+        }
+        if (!centro) {
+            alert('No se encontraron los datos del centro');
+            return;
+        }
+        if (tipo === 'global') {
+            // Mostrar modal sólo lectura
+            const modal = new bootstrap.Modal(document.getElementById('modalDetallesCentro'));
+            document.getElementById('detCentroNombre').textContent = centro.nombre || '-';
+            document.getElementById('detCentroTipo').textContent = centro.get_tipo_centro_display || centro.tipo || '-';
+            document.getElementById('detCentroLocalidad').textContent = centro.localidad || '-';
+            document.getElementById('detCentroContacto').textContent = centro.nombre_contacto || '-';
+            document.getElementById('detCentroCelular').textContent = centro.celular || '-';
+            document.getElementById('detCentroEmail').textContent = centro.email || '-';
+            document.getElementById('detCentroNotas').textContent = centro.notas || '-';
+            modal.show();
+        } else if (tipo === 'propio') {
+            // Mostrar modal de detalles de centro propio, solo lectura
+            const modal = new bootstrap.Modal(document.getElementById('modalDetallesCentroPropio'));
+            // Asignamos cada campo del modal de forma defensiva (evitar campos vacíos, undefined o null)
+            document.getElementById('inputCentroId').value = centro.id ?? '';
+            document.getElementById('detCentroPropioNombre').textContent = centro.nombre ? centro.nombre : '-';
+            document.getElementById('detCentroPropioTipo').textContent = centro.get_tipo_centro_display ? centro.get_tipo_centro_display : (centro.tipo ?? '-');
+            document.getElementById('detCentroPropioLocalidad').textContent = centro.localidad ? centro.localidad : '-';
+            document.getElementById('detCentroPropioContacto').textContent = (centro.nombre_contacto && centro.nombre_contacto.trim()) ? centro.nombre_contacto : '-';
+            document.getElementById('detCentroPropioCelular').textContent = (centro.celular && centro.celular.trim()) ? centro.celular : '-';
+            document.getElementById('detCentroPropioEmail').textContent = (centro.email && centro.email.trim()) ? centro.email : '-';
+            document.getElementById('detCentroPropioNotas').textContent = (centro.notas && String(centro.notas).trim()) ? centro.notas : '-';
+            modal.show();
+        }
+    });
     </script>
 </section>
