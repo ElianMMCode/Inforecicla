@@ -8,8 +8,6 @@ from apps.ecas.constants import SECTION_TEMPLATES
 from apps.operations.views import _build_movimientos_context
 from apps.inventory.views import _build_materiales_context
 
-# Eliminados imports no usados de apps.inventory.models
-
 
 def render_seccion(request, seccion="resumen"):
     """

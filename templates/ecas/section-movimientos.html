@@ -3,6 +3,8 @@
          data-punto-eca-id="{{ punto.id }}"
          data-usuario-id="{{ gestor.id }}"
          data-gestor="{{ gestor.nombre }}">
+    <!-- CSRF meta tag for AJAX POST -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <!-- Título principal -->
     <div class="mb-4">
         <h2 class="h4 fw-bold text-dark mb-1">
@@ -85,14 +87,7 @@
                             aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-info mb-3">
-                        <strong>Filtros aplicados:</strong>
-                        <div class="mt-2">
-                            <span class="badge bg-info-subtle text-info">Texto: <strong id="resumenMaterialTexto">Sin filtro</strong></span>
-                            <span class="badge bg-info-subtle text-info ms-2">Categoría: <strong id="resumenMaterialCategoria">Sin filtro</strong></span>
-                            <span class="badge bg-info-subtle text-info ms-2">Tipo: <strong id="resumenMaterialTipo">Sin filtro</strong></span>
-                        </div>
-                    </div>
+                    e
                     <div id="estadoBusquedaMov" class="text-center text-muted py-4 mb-3">
                         <i class="bi bi-search display-6 d-block mb-2"></i>
                         <p class="mb-0">Buscando materiales...</p>
@@ -109,15 +104,90 @@
     <!-- ═════════════════════════════════════════════════════════════ -->
     <!-- Inyectar datos del backend ANTES de los scripts -->
     <script>
-        window.ENTRADAS_INICIALES = /**/ [];
-        window.SALIDAS_INICIALES = /**/ [];
-        window.HISTORIAL_COMPRAS = /**/ [];
-        window.HISTORIAL_VENTAS = /**/ [];
+        window.ENTRADAS_INICIALES = {{ entradas|safe }};
+        window.SALIDAS_INICIALES = {{ salidas|safe }};
+        window.HISTORIAL_COMPRAS = {{ HISTORIAL_COMPRAS|safe }};
+        window.HISTORIAL_VENTAS = {{ HISTORIAL_VENTAS|safe }};
 
         // Variables para paginación
         window.PAGINA_ACTUAL_ENTRADAS = 1;
         window.PAGINA_ACTUAL_SALIDAS = 1;
         window.REGISTROS_POR_PAGINA = 5;
+        window.PAGINA_ACTUAL_HISTORIAL = 1;
+        window.REGISTROS_POR_PAGINA_HISTORIAL = 10;
+    // =============================
+    // LISTENERS ELIMINAR DESDE TABLA HISTORIAL
+    // =============================
+    // Eliminar compra desde historial
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-eliminar-historial-compra');
+        if (!btn) return;
+        const compraId = btn.dataset.compraId;
+        if (!confirm('¿Estás seguro de que deseas eliminar esta compra?')) return;
+        // Buscar en HISTORIAL_COMPRAS o ENTRADAS_INICIALES
+        const entrada = (window.HISTORIAL_COMPRAS || []).find(e => String(e.compraId) === String(compraId)) || (window.ENTRADAS_INICIALES || []).find(e => String(e.compraId) === String(compraId));
+        if (!entrada) { alert('No se encontraron los datos de esta compra'); return; }
+        const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+        const inventarioId = entrada.inventarioId || '';
+        const materialId = entrada.materialId || '';
+        const datosEliminar = { compraId, inventarioId, puntoId, materialId };
+        var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(datosEliminar)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success || data.ok || !data.error) {
+                alert('Compra eliminada correctamente');
+                location.reload();
+            } else {
+                alert('Error al eliminar: ' + (data.mensaje || data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            alert('Error al procesar la solicitud: ' + (error && error.message ? error.message : error));
+        });
+    });
+    // Eliminar venta desde historial
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-eliminar-historial-venta');
+        if (!btn) return;
+        const ventaId = btn.dataset.ventaId;
+        if (!confirm('¿Estás seguro de que deseas eliminar esta venta?')) return;
+        // Buscar en HISTORIAL_VENTAS o SALIDAS_INICIALES
+        const salida = (window.HISTORIAL_VENTAS || []).find(s => String(s.ventaId) === String(ventaId)) || (window.SALIDAS_INICIALES || []).find(s => String(s.ventaId) === String(ventaId));
+        if (!salida) { alert('No se encontraron los datos de esta venta'); return; }
+        const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+        const inventarioId = salida.inventarioId || '';
+        const materialId = salida.materialId || '';
+        const datosEliminar = { ventaId, inventarioId, puntoId, materialId };
+        var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(datosEliminar)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success || data.ok || !data.error) {
+                alert('Venta eliminada correctamente');
+                location.reload();
+            } else {
+                alert('Error al eliminar: ' + (data.mensaje || data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            alert('Error al procesar la solicitud: ' + (error && error.message ? error.message : error));
+        });
+    });
     </script>
     <div class="accordion accordion-flush shadow-sm" id="movimientosAccordion">
         <!-- ITEM 1: ENTRADAS DE MATERIAL -->
@@ -752,7 +822,8 @@
                                             <th scope="col" class="fw-bold small">Material</th>
                                             <th scope="col" class="fw-bold small text-end">Cantidad (kg)</th>
                                             <th scope="col" class="fw-bold small text-end">Precio Unit.</th>
-                                            <th scope="col" class="fw-bold small">Detalles</th>
+                                            <th scope="col" class="fw-bold small">Total</th>
+                                            <th scope="col" class="fw-bold small text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody class="border-top" id="tablasHistorialBody">
@@ -788,89 +859,6 @@
         </div>
     </div>
     <!-- FIN DEL ACORDEÓN -->
-    <!-- ═════════════════════════════════════════════════════════════ -->
-    <!-- MODAL: DETALLES DEL MOVIMIENTO -->
-    <!-- ═════════════════════════════════════════════════════════════ -->
-    <div class="modal fade"
-         id="modalDetallesMovimiento"
-         tabindex="-1"
-         aria-labelledby="modalDetallesLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white border-0">
-                    <h5 class="modal-title" id="modalDetallesLabel">
-                        <i class="bi bi-receipt me-2"></i>Detalles del Movimiento
-                    </h5>
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <!-- Tipo de Movimiento -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Tipo de Movimiento</label>
-                            <p class="mb-0">
-                                <span id="detallesTipo" class="badge bg-secondary"></span>
-                            </p>
-                        </div>
-                        <!-- Fecha -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Fecha</label>
-                            <p id="detallesFecha" class="mb-0 fw-semibold">-</p>
-                        </div>
-                        <!-- Material -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold text-muted small">Material</label>
-                            <p id="detallesMaterial" class="mb-0 fw-semibold">-</p>
-                        </div>
-                        <!-- Categoría -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Categoría</label>
-                            <p id="detallesCategoria" class="mb-0">-</p>
-                        </div>
-                        <!-- Tipo Material -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Tipo de Material</label>
-                            <p id="detallesTipoMaterial" class="mb-0">-</p>
-                        </div>
-                        <!-- Cantidad -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Cantidad (kg)</label>
-                            <p id="detallesCantidad" class="mb-0 fw-bold text-success">-</p>
-                        </div>
-                        <!-- Precio Unitario -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted small">Precio Unitario</label>
-                            <p id="detallesPrecio" class="mb-0 fw-bold">$0.00</p>
-                        </div>
-                        <!-- Total -->
-                        <div class="col-12">
-                            <div class="alert alert-info alert-sm mb-0">
-                                <strong>Total:</strong>
-                                <span id="detallesTotal" class="fw-bold">$0.00</span>
-                            </div>
-                        </div>
-                        <!-- Observaciones -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold text-muted small">Observaciones</label>
-                            <p id="detallesObservaciones" class="mb-0 text-muted small">-</p>
-                        </div>
-                        <!-- Centro Acopio (solo para ventas) -->
-                        <div class="col-12" id="detallesContenedorCentro" style="display: none;">
-                            <label class="form-label fw-semibold text-muted small">Centro de Acopio Destino</label>
-                            <p id="detallesCentroAcopio" class="mb-0">-</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light border-top">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
     <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
@@ -907,6 +895,49 @@
 
             // Esperar a que jQuery y Select2 estén listos
             function inicializarSelect2() {
+                // Listener para el botón "Limpiar" en búsqueda de material
+                var btnLimpiarBusqueda = document.getElementById('btnLimpiarBusquedaMov');
+                if (btnLimpiarBusqueda) {
+                    btnLimpiarBusqueda.addEventListener('click', function() {
+                        // Limpiar Select2 de búsqueda
+                        var inputBusqueda = document.getElementById('buscarMaterialMovimientos');
+                        if (inputBusqueda) {
+                            $(inputBusqueda).val(null).trigger('change');
+                        }
+                        // Limpiar categoría
+                        $('#selectCategoriaMov').val('').trigger('change');
+                        // Limpiar tipo
+                        $('#selectTipoMov').val('').trigger('change');
+                        // Limpiar resultados del modal
+                        var resultadosDiv = document.getElementById('resultadosBusquedaMov');
+                        if (resultadosDiv) resultadosDiv.innerHTML = '';
+                        // Mostrar de nuevo la sección de búsqueda
+                        var seccionBusquedaMaterial = document.getElementById('seccionBusquedaMaterial');
+                        if (seccionBusquedaMaterial) seccionBusquedaMaterial.style.display = 'block';
+                        // Ocultar formularios
+                        var formEntradaContainer = document.getElementById('formEntradaContainer');
+                        var formSalidaContainer = document.getElementById('formSalidaContainer');
+                        if (formEntradaContainer) formEntradaContainer.style.display = 'none';
+                        if (formSalidaContainer) formSalidaContainer.style.display = 'none';
+                        // Contraer acordeón
+                        var collapseEntradas = document.getElementById('collapseEntradas');
+                        var collapseSalidas = document.getElementById('collapseSalidas');
+                        if (collapseEntradas) {
+                            collapseEntradas.classList.remove('show');
+                            collapseEntradas.setAttribute('aria-expanded', 'false');
+                            var buttonEntradas = document.querySelector('[data-bs-target="#collapseEntradas"]');
+                            if (buttonEntradas) buttonEntradas.classList.add('collapsed');
+                        }
+                        if (collapseSalidas) {
+                            collapseSalidas.classList.remove('show');
+                            collapseSalidas.setAttribute('aria-expanded', 'false');
+                            var buttonSalidas = document.querySelector('[data-bs-target="#collapseSalidas"]');
+                            if (buttonSalidas) buttonSalidas.classList.add('collapsed');
+                        }
+                        // Dejar estado busqueda en idle
+                        mostrarEstadoBusquedaMov('idle');
+                    });
+                }
                 if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
                     console.warn('Select2 o jQuery no disponibles, reintentando...');
                     setTimeout(inicializarSelect2, 100);
@@ -1770,28 +1801,16 @@
                     const $filtroCategoriaCompra = $('#filtroCompraCategoria');
                     const $filtroTipoCompra = $('#filtroCompraTipo');
 
-                    // Material: columna 1 en la tabla de entradas
+                    // --- Material: desde los datos globales (window.ENTRADAS_INICIALES) ---
                     if ($filtroMaterialCompra.length) {
-                        const tbody = document.getElementById('tablasEntradasBody');
-                        if (tbody) {
-                            const filas = tbody.querySelectorAll('tr');
-                            const materiales = new Set();
-                            filas.forEach(fila => {
-                                const celda = fila.querySelector('td:nth-child(2)'); // Material está en columna 2
-                                if (celda) {
-                                    const valor = celda.textContent.trim();
-                                    if (valor && valor !== 'Sin registros' && valor !== '-') {
-                                        materiales.add(valor);
-                                    }
-                                }
-                            });
-                            const materialesArray = Array.from(materiales).sort();
-                            console.log('🔧 Materiales para COMPRA:', materialesArray);
-                            materialesArray.forEach(m => {
-                                $filtroMaterialCompra.append($('<option>').val(m).text(m));
-                            });
-                        }
-
+                        $filtroMaterialCompra.find('option:not([value=""])').remove();
+                        const materiales = new Set();
+                        (window.ENTRADAS_INICIALES || []).forEach(entrada => {
+                            if (entrada.nombreMaterial) materiales.add(entrada.nombreMaterial);
+                        });
+                        Array.from(materiales).sort().forEach(m => {
+                            $filtroMaterialCompra.append($('<option>').val(m).text(m));
+                        });
                         $filtroMaterialCompra.select2({
                             theme: 'bootstrap4',
                             width: '100%',
@@ -1799,41 +1818,45 @@
                             placeholder: 'Selecciona material...',
                             minimumInputLength: 0
                         });
-                        console.log('✅ Select2 inicializado en #filtroCompraMaterial');
+                        console.log('✅ Select2 inicializado y repoblado en #filtroCompraMaterial (por datos fuente)');
                     }
 
-                    // Categoría desde atributo data-categoria
+                    // --- Categoría: desde los datos globales (window.ENTRADAS_INICIALES) ---
                     if ($filtroCategoriaCompra.length) {
-                        const categorias = extraerValoresDelDOM('tablasEntradasBody', 'categoria');
-                        console.log('🔧 Categorías para COMPRA:', categorias);
-                        categorias.forEach(c => {
+                        $filtroCategoriaCompra.find('option:not([value=""])').remove();
+                        const categorias = new Set();
+                        (window.ENTRADAS_INICIALES || []).forEach(entrada => {
+                            if (entrada.nombreCategoria) categorias.add(entrada.nombreCategoria);
+                        });
+                        Array.from(categorias).sort().forEach(c => {
                             $filtroCategoriaCompra.append($('<option>').val(c).text(c));
                         });
-
                         $filtroCategoriaCompra.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona categoría...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroCompraCategoria');
+                        console.log('✅ Select2 inicializado en #filtroCompraCategoria (por datos fuente)');
                     }
 
-                    // Tipo desde atributo data-tipo
+                    // --- Tipo: desde los datos globales (window.ENTRADAS_INICIALES) ---
                     if ($filtroTipoCompra.length) {
-                        const tipos = extraerValoresDelDOM('tablasEntradasBody', 'tipo');
-                        console.log('🔧 Tipos para COMPRA:', tipos);
-                        tipos.forEach(t => {
+                        $filtroTipoCompra.find('option:not([value=""])').remove();
+                        const tipos = new Set();
+                        (window.ENTRADAS_INICIALES || []).forEach(entrada => {
+                            if (entrada.nombreTipo) tipos.add(entrada.nombreTipo);
+                        });
+                        Array.from(tipos).sort().forEach(t => {
                             $filtroTipoCompra.append($('<option>').val(t).text(t));
                         });
-
                         $filtroTipoCompra.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona tipo...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroCompraTipo');
+                        console.log('✅ Select2 inicializado en #filtroCompraTipo (por datos fuente)');
                     }
                 }, 300);
 
@@ -1845,69 +1868,61 @@
                     const $filtroCategoriaVenta = $('#filtroVentaCategoria');
                     const $filtroTipoVenta = $('#filtroVentaTipo');
 
-                    // Material: columna 1 en la tabla de salidas
+                    // --- Material: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroMaterialVenta.length) {
-                        const tbody = document.getElementById('tablasSalidasBody');
-                        if (tbody) {
-                            const filas = tbody.querySelectorAll('tr');
-                            const materiales = new Set();
-                            filas.forEach(fila => {
-                                const celda = fila.querySelector('td:nth-child(2)'); // Material está en columna 2
-                                if (celda) {
-                                    const valor = celda.textContent.trim();
-                                    if (valor && valor !== 'Sin registros' && valor !== '-') {
-                                        materiales.add(valor);
-                                    }
-                                }
-                            });
-                            const materialesArray = Array.from(materiales).sort();
-                            console.log('🔧 Materiales para VENTA:', materialesArray);
-                            materialesArray.forEach(m => {
-                                $filtroMaterialVenta.append($('<option>').val(m).text(m));
-                            });
-                        }
-
+                        $filtroMaterialVenta.find('option:not([value=""])').remove();
+                        const materiales = new Set();
+                        (window.SALIDAS_INICIALES || []).forEach(salida => {
+                            if (salida.nombreMaterial) materiales.add(salida.nombreMaterial);
+                        });
+                        Array.from(materiales).sort().forEach(m => {
+                            $filtroMaterialVenta.append($('<option>').val(m).text(m));
+                        });
                         $filtroMaterialVenta.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona material...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroVentaMaterial');
+                        console.log('✅ Select2 inicializado en #filtroVentaMaterial (por datos fuente)');
                     }
 
-                    // Categoría desde atributo data-categoria
+                    // --- Categoría: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroCategoriaVenta.length) {
-                        const categorias = extraerValoresDelDOM('tablasSalidasBody', 'categoria');
-                        console.log('🔧 Categorías para VENTA:', categorias);
-                        categorias.forEach(c => {
+                        $filtroCategoriaVenta.find('option:not([value=""])').remove();
+                        const categorias = new Set();
+                        (window.SALIDAS_INICIALES || []).forEach(salida => {
+                            if (salida.nombreCategoria) categorias.add(salida.nombreCategoria);
+                        });
+                        Array.from(categorias).sort().forEach(c => {
                             $filtroCategoriaVenta.append($('<option>').val(c).text(c));
                         });
-
                         $filtroCategoriaVenta.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona categoría...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroVentaCategoria');
+                        console.log('✅ Select2 inicializado en #filtroVentaCategoria (por datos fuente)');
                     }
 
-                    // Tipo desde atributo data-tipo
+                    // --- Tipo: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroTipoVenta.length) {
-                        const tipos = extraerValoresDelDOM('tablasSalidasBody', 'tipo');
-                        console.log('🔧 Tipos para VENTA:', tipos);
-                        tipos.forEach(t => {
+                        $filtroTipoVenta.find('option:not([value=""])').remove();
+                        const tipos = new Set();
+                        (window.SALIDAS_INICIALES || []).forEach(salida => {
+                            if (salida.nombreTipo) tipos.add(salida.nombreTipo);
+                        });
+                        Array.from(tipos).sort().forEach(t => {
                             $filtroTipoVenta.append($('<option>').val(t).text(t));
                         });
-
                         $filtroTipoVenta.select2({
                             theme: 'bootstrap4',
                             width: '100%',
                             allowClear: true,
                             placeholder: 'Selecciona tipo...'
                         });
-                        console.log('✅ Select2 inicializado en #filtroVentaTipo');
+                        console.log('✅ Select2 inicializado en #filtroVentaTipo (por datos fuente)');
                     }
                 }, 300);
 
@@ -2092,19 +2107,24 @@
         // ========================================================
         // Datos ya están inyectados en window.ENTRADAS_INICIALES y window.SALIDAS_INICIALES
 
-        console.log('📊 Entradas disponibles:', window.ENTRADAS_INICIALES.length);
-        console.log('📊 Salidas disponibles:', window.SALIDAS_INICIALES.length);
-
+        console.log('📊 Entradas disponibles:', Array.isArray(window.ENTRADAS_INICIALES) ? window.ENTRADAS_INICIALES.length : (typeof window.ENTRADAS_INICIALES === 'object' ? Object.keys(window.ENTRADAS_INICIALES).length : 0));
+        console.log('📊 Salidas disponibles:', Array.isArray(window.SALIDAS_INICIALES) ? window.SALIDAS_INICIALES.length : (typeof window.SALIDAS_INICIALES === 'object' ? Object.keys(window.SALIDAS_INICIALES).length : 0));
+        
         // Renderizar entradas con paginación
         function renderizarEntradas() {
             const tbody = document.getElementById('tablasEntradasBody');
             if (!tbody) {
                 return;
             }
-
-            const entradasData = window.ENTRADAS_INICIALES || [];
-
-            if (!entradasData || entradasData.length === 0) {
+        
+            let entradasData = window.ENTRADAS_INICIALES;
+            // Normalizar: puede venir como objeto {0:{...},1:{...}} o como array o null
+            if (typeof entradasData === 'object' && !Array.isArray(entradasData) && entradasData !== null) {
+                entradasData = Object.values(entradasData);
+            }
+            if (!Array.isArray(entradasData) || !entradasData) entradasData = [];
+            
+            if (entradasData.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="6" class="py-3"><small>Sin registros</small></td></tr>';
                 const badge = document.getElementById('badgeEntradasCount');
                 if (badge) badge.textContent = '0 registros';
@@ -2300,10 +2320,15 @@
             const btnLimpiar = document.getElementById('btnLimpiarHistorial');
             const inputMaterial = document.getElementById('filtroHistorialMaterial');
 
-            if (btnFiltrar) {
-                btnFiltrar.addEventListener('click', renderizarHistorial);
+            function resetearPaginaHistorialYRender() {
+                window.PAGINA_ACTUAL_HISTORIAL = 1;
+                renderizarHistorial();
             }
-
+            if (btnFiltrar) {
+                btnFiltrar.addEventListener('click', resetearPaginaHistorialYRender);
+            }
+            // Resetear página si cambia un filtro select2
+            $('#filtroHistorialMaterial, #filtroHistorialCategoria, #filtroHistorialTipo').on('change', resetearPaginaHistorialYRender);
             if (btnLimpiar) {
                 btnLimpiar.addEventListener('click', function() {
                     $('#filtroHistorialMaterial').val('').trigger('change');
@@ -2368,18 +2393,45 @@
                 return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleTipoMovimiento && cumpleFechaDesde && cumpleFechaHasta;
             });
 
+            // Paginación
+            const registrosPorPagina = window.REGISTROS_POR_PAGINA_HISTORIAL || 10;
+            const paginaActual = window.PAGINA_ACTUAL_HISTORIAL || 1;
+            const totalPaginas = Math.ceil(movimientosFiltrados.length / registrosPorPagina);
+
+            // Validar página
+            let paginaUsar = paginaActual;
+            if (paginaUsar > totalPaginas) paginaUsar = totalPaginas;
+            if (paginaUsar < 1) paginaUsar = 1;
+            window.PAGINA_ACTUAL_HISTORIAL = paginaUsar;
+            const inicio = (paginaUsar - 1) * registrosPorPagina;
+            const fin = inicio + registrosPorPagina;
+            const paginaMovimientos = movimientosFiltrados.slice(inicio, fin);
+
             if (movimientosFiltrados.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="6" class="py-4"><i class="bi bi-inbox"></i><p class="mb-0 mt-2">Sin movimientos registrados</p></td></tr>';
                 const badge = document.getElementById('badgeHistorialCount');
                 if (badge) badge.textContent = '0 registros';
+                actualizarPaginacionHistorial(0);
                 return;
             }
 
-            tbody.innerHTML = movimientosFiltrados.map(mov => {
+            tbody.innerHTML = paginaMovimientos.map(mov => {
                 const fecha = new Date(mov.fecha).toLocaleDateString('es-CO');
-                const cantidad = parseFloat(mov.cantidad || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                const precio = parseFloat(mov.precio || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const cantidadNumber = parseFloat(mov.cantidad || 0);
+                const cantidad = cantidadNumber.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const precioNumber = parseFloat(mov.precio || 0);
+                const precio = precioNumber.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 const tipoBadge = mov.tipo === 'Compra' ? '<span class="badge bg-danger">Compra</span>' : '<span class="badge bg-success">Venta</span>';
+                const total = (cantidadNumber * precioNumber).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                // Botón editar utiliza dataset según tipo
+                const editBtn = mov.tipo === 'Compra' ?
+                  `<button type="button" class="btn btn-sm btn-danger text-white btn-editar-historial-compra" data-compra-id="${mov.compraId}" title="Ver detalles"><i class="bi bi-eye"></i></button>` :
+                  `<button type="button" class="btn btn-sm btn-success text-white btn-editar-historial-venta" data-venta-id="${mov.ventaId}" title="Ver detalles"><i class="bi bi-eye"></i></button>`;
+                // Botón eliminar idem
+                const delBtn = mov.tipo === 'Compra' ?
+                  `<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-historial-compra" data-compra-id="${mov.compraId}" title="Eliminar compra"><i class="bi bi-trash3-fill"></i></button>` :
+                  `<button type="button" class="btn btn-sm btn-outline-success btn-eliminar-historial-venta" data-venta-id="${mov.ventaId}" title="Eliminar venta"><i class="bi bi-trash3-fill"></i></button>`;
 
                 return `
                     <tr>
@@ -2388,10 +2440,10 @@
                         <td class="small fw-bold">${mov.nombreMaterial || '-'}</td>
                         <td class="text-end small">${cantidad}</td>
                         <td class="text-end small">$${precio}</td>
+                        <td class="text-end small fw-semibold">$${total}</td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info btnVerDetalles" title="Ver detalles" data-mov-id="${mov.compraId || mov.ventaId}" data-mov-tipo="${mov.tipo}" data-mov-data='${JSON.stringify(mov)}'>
-                                <i class="bi bi-eye"></i>
-                            </button>
+                          ${editBtn}
+                          ${delBtn}
                         </td>
                     </tr>
                 `;
@@ -2399,12 +2451,95 @@
 
             const badge = document.getElementById('badgeHistorialCount');
             if (badge) badge.textContent = movimientosFiltrados.length + ' registros';
+            actualizarPaginacionHistorial(totalPaginas);
+        }
+
+        // Paginación historial
+        function actualizarPaginacionHistorial(totalPaginas) {
+            const paginacion = document.getElementById('paginacionHistorial');
+            if (!paginacion) return;
+
+            if (totalPaginas <= 0) {
+                paginacion.innerHTML = '';
+                return;
+            }
+
+            const paginaActual = window.PAGINA_ACTUAL_HISTORIAL || 1;
+            let html = '<li class="page-item ' + (paginaActual <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="cambiarPaginaHistorial(' + (paginaActual - 1) + '); return false;">Anterior</a></li>';
+
+            for (let i = 1; i <= totalPaginas; i++) {
+                html += '<li class="page-item ' + (i === paginaActual ? 'active' : '') + '"><a class="page-link" href="#" onclick="cambiarPaginaHistorial(' + i + '); return false;">' + i + '</a></li>';
+            }
+
+            html += '<li class="page-item ' + (paginaActual >= totalPaginas ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="cambiarPaginaHistorial(' + (paginaActual + 1) + '); return false;">Siguiente</a></li>';
+
+            paginacion.innerHTML = html;
+        }
+        function cambiarPaginaHistorial(pagina) {
+            window.PAGINA_ACTUAL_HISTORIAL = pagina;
+            renderizarHistorial();
         }
 
         // ========================================================
         // EVENT LISTENER PARA VER DETALLES DE MOVIMIENTO
         // ========================================================
         document.addEventListener('click', function(e) {
+            // Acciones EDITAR/ELIMINAR desde la tabla HISTORIAL GENERAL.
+            // Solo abrir modal si fue botón EDITAR, nunca desde ELIMINAR.
+            if (e.target.closest('.btn-editar-historial-compra')) {
+                const btn = e.target.closest('.btn-editar-historial-compra');
+                const compraId = btn?.dataset.compraId;
+                const entrada = window.HISTORIAL_COMPRAS?.find(c => c.compraId == compraId) || window.ENTRADAS_INICIALES?.find(c => c.compraId == compraId);
+                if (!entrada) {
+                    alert('No se encontraron los datos de esta compra.');
+                    return;
+                }
+                // Llenar modal con datos
+                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toLocaleDateString('es-CO') : '-';
+                const cantidad = parseFloat(entrada.cantidad || 0);
+                const precio = parseFloat(entrada.precioCompra || 0);
+                const total = cantidad * precio;
+                document.getElementById('detEntradaMaterial').textContent = entrada.nombreMaterial || '-';
+                document.getElementById('detEntradaFecha').textContent = fecha;
+                document.getElementById('detEntradaCantidad').textContent = cantidad.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detEntradaPrecio').textContent = '$' + precio.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detEntradaTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detEntradaObservaciones').textContent = entrada.observaciones || 'Sin observaciones';
+                document.getElementById('btnEditarEntrada').dataset.compraId = compraId;
+                document.getElementById('btnEliminarEntrada').dataset.compraId = compraId;
+                const modal = new bootstrap.Modal(document.getElementById('detallesEntradaModal'));
+                modal.show();
+                return;
+            }
+            if (e.target.closest('.btn-editar-historial-venta')) {
+                const btn = e.target.closest('.btn-editar-historial-venta');
+                const ventaId = btn?.dataset.ventaId;
+                const salida = window.HISTORIAL_VENTAS?.find(v => v.ventaId == ventaId) || window.SALIDAS_INICIALES?.find(v => v.ventaId == ventaId);
+                if (!salida) {
+                    alert('No se encontraron los datos de esta venta.');
+                    return;
+                }
+                const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toLocaleDateString('es-CO') : '-';
+                const cantidad = parseFloat(salida.cantidad || 0);
+                const precio = parseFloat(salida.precioVenta || 0);
+                const total = cantidad * precio;
+                document.getElementById('detSalidaMaterial').textContent = salida.nombreMaterial || '-';
+                document.getElementById('detSalidaFecha').textContent = fecha;
+                document.getElementById('detSalidaCantidad').textContent = cantidad.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detSalidaPrecio').textContent = '$' + precio.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detSalidaCentro').textContent = salida.nombreCentroAcopio || '-';
+                document.getElementById('detSalidaTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('detSalidaObservaciones').textContent = salida.observaciones || 'Sin observaciones';
+                document.getElementById('btnEditarSalida').dataset.ventaId = ventaId;
+                document.getElementById('btnEliminarSalida').dataset.ventaId = ventaId;
+                const modal = new bootstrap.Modal(document.getElementById('detallesSalidaModal'));
+                modal.show();
+                return;
+            }
+            // Si es un click en botón ELIMINAR historial, NO abrir modal, dejar que el handler en app.js actúe solo.
+            
+            // ============================
+            // VER DETALLES MOVIMIENTO (existente)
             if (e.target.closest('.btnVerDetalles')) {
                 const btn = e.target.closest('.btnVerDetalles');
                 try {
@@ -2760,6 +2895,18 @@
                         <input type="hidden" id="editCompraId">
                         <input type="hidden" id="editInventarioId">
                         <input type="hidden" id="editCompraMaterialId">
+                        <input type="hidden"
+                               id="editCompraStockActual"
+                               name="editCompraStockActual"
+                               value="">
+                        <input type="hidden"
+                               id="editCompraCapacidadMaxima"
+                               name="editCompraCapacidadMaxima"
+                               value="">
+                        <input type="hidden"
+                               id="editCompraCantidadOriginal"
+                               name="editCompraCantidadOriginal"
+                               value="">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Material</label>
@@ -2839,6 +2986,19 @@
                         <input type="hidden" id="editVentaId">
                         <input type="hidden" id="editInventarioIdVenta">
                         <input type="hidden" id="editVentaMaterialId">
+                        <!-- Ocultos obligatorios para validación de stock, se asignan programáticamente -->
+                        <input type="hidden"
+                               id="editVentaStockActual"
+                               name="editVentaStockActual"
+                               value="">
+                        <input type="hidden"
+                               id="editVentaCapacidadMaxima"
+                               name="editVentaCapacidadMaxima"
+                               value="">
+                        <input type="hidden"
+                               id="editVentaCantidadOriginal"
+                               name="editVentaCantidadOriginal"
+                               value="">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Material</label>
@@ -2996,12 +3156,13 @@
 
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
-                // DELETE a /punto-eca/inventario/compra/{compraId}
-                fetch(`/punto-eca/inventario/compra/${compraId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                    },
+                        'X-CSRFToken': csrfToken
+                      },
                     body: JSON.stringify(datosEliminar)
                 })
                 .then(res => res.json())
@@ -3024,34 +3185,122 @@
             document.getElementById('btnEditarEntrada').addEventListener('click', function() {
                 const compraId = this.dataset.compraId;
                 console.log('✏️ Abriendo modal de edición para entrada:', compraId);
+                try {
+                  // Buscar el registro en los datos
+                  const entrada = window.ENTRADAS_INICIALES.find(e => e.compraId === compraId);
+                  if (!entrada) {
+                      alert('No se encontraron los datos de esta entrada');
+                      return;
+                  }
 
-                // Buscar el registro en los datos
-                const entrada = window.ENTRADAS_INICIALES.find(e => e.compraId === compraId);
-                if (!entrada) {
-                    alert('No se encontraron los datos de esta entrada');
+                  // Cerrar modal de detalles si está abierto
+                  const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesEntradaModal'));
+                  if (modalDetalles) modalDetalles.hide();
+
+                  // Llenar form de edición con los datos básicos
+                  document.getElementById('editCompraId').value = entrada.compraId || '';
+                  document.getElementById('editInventarioId').value = entrada.inventarioId || '';
+                  document.getElementById('editCompraMaterialId').value = entrada.materialId || '';
+                  document.getElementById('editCompraMaterial').value = entrada.nombreMaterial || '';
+
+                  // Convertir fecha al formato datetime-local
+                  const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toISOString().slice(0, 16) : '';
+                  document.getElementById('editCompraFecha').value = fecha;
+                  document.getElementById('editCompraCantidad').value = entrada.cantidad || '';
+                  document.getElementById('editCompraPrecio').value = entrada.precioCompra || '';
+                  document.getElementById('editCompraObservaciones').value = entrada.observaciones || '';
+
+                  // Traer stock real del inventario antes de abrir modal
+                  const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+                  const materialId = entrada.materialId;
+                  let stockActualInput = document.getElementById('editCompraStockActual');
+                  if (!stockActualInput) {
+                      console.warn('No se encontró el input editCompraStockActual, igual se abrirá el modal.');
+                  } else {
+                      stockActualInput.value = '';
+                  }
+                  let modalEditEl = document.getElementById('editarCompraModal');
+                  if (!modalEditEl) {
+                    alert('[ERROR] El modal editarCompraModal NO está en el DOM!!');
+                    console.error('[ERROR] No se encontró #editarCompraModal');
                     return;
+                  }
+
+                  // Log y fallback para debug
+                  console.log('[DEBUG-check] materialId:', materialId, 'puntoId:', puntoId);
+                  if (materialId && puntoId) {
+                      let params = new URLSearchParams({ puntoId, materialId });
+                      fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                          method: 'GET', headers: { 'Accept': 'application/json' }
+                      })
+                      .then(resp => resp.json())
+                      .then(data => {
+                          let stockActual = 0;
+                          if (Array.isArray(data) && data.length > 0) {
+                              let found = data.find(x => String(x.materialId) === String(materialId)) || data[0];
+                              if (found && found.stockActual !== undefined && found.stockActual !== null) {
+                                  stockActual = parseFloat(found.stockActual) || 0;
+                                  console.log('🟢 Stock actual inventario (compra):', stockActual);
+                              }
+                          } else if (typeof data === 'object' && data !== null && data.stockActual !== undefined) {
+                              stockActual = parseFloat(data.stockActual) || 0;
+                              console.log('🟢 Stock actual único inventario (compra):', stockActual);
+                          } else {
+                              console.warn('⚠️ No se obtuvo stock de inventario. Respuesta:', data);
+                          }
+                          if (stockActualInput) stockActualInput.value = stockActual;
+                          // Logs defensivos antes de mostrar
+                          console.log('[DEBUG-show] Mostrando modal de edición de compra ahora (después de fetch). DOM?', !!document.getElementById('editarCompraModal'));
+                          setTimeout(function() {
+                            try {
+                              let modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
+                              modalEditar.show();
+                              let testFocus = document.getElementById('editCompraCantidad');
+                              if (testFocus) testFocus.focus();
+                              console.log('[CHECK] modalEditar.show() fue ejecutado');
+                            } catch (error) {
+                              alert('Error al abrir el modal: ' + (error && error.message ? error.message : error));
+                              console.error('[ERROR] Al crear/abrir Modal:', error);
+                            }
+                          }, 80);
+                      })
+                      .catch(err => {
+                          console.error('❌ Error al buscar stock real inventario (compra):', err);
+                          if (stockActualInput) stockActualInput.value = 0;
+                          // Logs defensivos antes de mostrar
+                          setTimeout(function() {
+                            try {
+                              let modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
+                              modalEditar.show();
+                              let testFocus = document.getElementById('editCompraCantidad');
+                              if (testFocus) testFocus.focus();
+                              console.log('[CHECK] modalEditar.show() catch fue ejecutado');
+                            } catch (error) {
+                              alert('Error al abrir el modal: ' + (error && error.message ? error.message : error));
+                              console.error('[ERROR] Al crear/abrir Modal:', error);
+                            }
+                          }, 80);
+                      });
+                  } else {
+                      console.error('❌ Falta materialId o puntoId para buscar stock real de compra');
+                      if (stockActualInput) stockActualInput.value = 0;
+                      setTimeout(function() {
+                        try {
+                          let modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
+                          modalEditar.show();
+                          let testFocus = document.getElementById('editCompraCantidad');
+                          if (testFocus) testFocus.focus();
+                          console.log('[CHECK] modalEditar.show() else fue ejecutado');
+                        } catch (error) {
+                          alert('Error al abrir el modal: ' + (error && error.message ? error.message : error));
+                          console.error('[ERROR] Al crear/abrir Modal:', error);
+                        }
+                      }, 80);
+                  }
+                } catch (fatalErr) {
+                  alert('[FATAL] Error inesperado al intentar abrir modal de edición: ' + fatalErr);
+                  console.error('[FATAL] Error en click btnEditarEntrada:', fatalErr);
                 }
-
-                // Llenar form de edición
-                document.getElementById('editCompraId').value = entrada.compraId || '';
-                document.getElementById('editInventarioId').value = entrada.inventarioId || '';
-                document.getElementById('editCompraMaterialId').value = entrada.materialId || '';
-                document.getElementById('editCompraMaterial').value = entrada.nombreMaterial || '';
-
-                // Convertir fecha al formato datetime-local
-                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toISOString().slice(0, 16) : '';
-                document.getElementById('editCompraFecha').value = fecha;
-
-                document.getElementById('editCompraCantidad').value = entrada.cantidad || '';
-                document.getElementById('editCompraPrecio').value = entrada.precioCompra || '';
-                document.getElementById('editCompraObservaciones').value = entrada.observaciones || '';
-
-                // Cerrar modal actual y abrir modal de edición
-                const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesEntradaModal'));
-                if (modalDetalles) modalDetalles.hide();
-
-                const modalEditar = new bootstrap.Modal(document.getElementById('editarCompraModal'));
-                modalEditar.show();
             });
 
             // Eliminar entrada desde modal
@@ -3091,10 +3340,12 @@
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
                 // DELETE a /punto-eca/inventario/compra/{compraId}
-                fetch(`/punto-eca/inventario/compra/${compraId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosEliminar)
                 })
@@ -3202,10 +3453,12 @@
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
                 // DELETE a /punto-eca/inventario/venta/{ventaId}
-                fetch(`/punto-eca/inventario/venta/${ventaId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosEliminar)
                 })
@@ -3226,7 +3479,7 @@
             });
 
             // Editar salida desde modal
-            document.getElementById('btnEditarSalida').addEventListener('click', function() {
+            document.getElementById('btnEditarSalida').addEventListener('click', async function() {
                 const ventaId = this.dataset.ventaId;
                 console.log('✏️ Abriendo modal de edición para salida:', ventaId);
 
@@ -3237,25 +3490,57 @@
                     return;
                 }
 
-                // Llenar form de edición
+                // Cerrar modal actual para asegurar UX correcta
+                const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesSalidaModal'));
+                if (modalDetalles) modalDetalles.hide();
+
+                // Rellenar campos estáticos antes del fetch
                 document.getElementById('editVentaId').value = salida.ventaId || '';
                 document.getElementById('editInventarioIdVenta').value = salida.inventarioId || '';
                 document.getElementById('editVentaMaterialId').value = salida.materialId || '';
                 document.getElementById('editVentaMaterial').value = salida.nombreMaterial || '';
-
+                document.getElementById('editVentaCapacidadMaxima').value = (salida.capacidadMaxima !== undefined && salida.capacidadMaxima !== null && !isNaN(Number(salida.capacidadMaxima))) ? Number(salida.capacidadMaxima) : 0;
+                document.getElementById('editVentaCantidadOriginal').value = (salida.cantidad !== undefined && salida.cantidad !== null && !isNaN(Number(salida.cantidad))) ? Number(salida.cantidad) : 0;
                 // Convertir fecha al formato datetime-local
                 const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toISOString().slice(0, 16) : '';
                 document.getElementById('editVentaFecha').value = fecha;
-
                 document.getElementById('editVentaCantidad').value = salida.cantidad || '';
                 document.getElementById('editVentaPrecio').value = salida.precioVenta || '';
                 document.getElementById('editVentaCentro').value = salida.centroAcopioId || '';
                 document.getElementById('editVentaObservaciones').value = salida.observaciones || '';
 
-                // Cerrar modal actual y abrir modal de edición
-                const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('detallesSalidaModal'));
-                if (modalDetalles) modalDetalles.hide();
-
+                // ====== NUEVO: Traer stock actual real del inventario ======
+                const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+                const materialId = salida.materialId;
+                let stockActual = 0;
+                try {
+                    if (materialId && puntoId) {
+                        let params = new URLSearchParams({ puntoId, materialId });
+                        let resp = await fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                            method: 'GET', headers: { 'Accept': 'application/json' }
+                        });
+                        let data = await resp.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            // Buscar por ID exacto (puede haber más de un item si purga no está bien)
+                            let found = data.find(x => String(x.materialId) === String(materialId)) || data[0];
+                            if (found && found.stockActual !== undefined && found.stockActual !== null) {
+                                stockActual = parseFloat(found.stockActual) || 0;
+                                console.log('🟢 Stock actual obtenido desde inventario:', stockActual);
+                            }
+                        } else if (typeof data === 'object' && data !== null && data.stockActual !== undefined) {
+                            stockActual = parseFloat(data.stockActual) || 0;
+                            console.log('🟢 Stock actual único obtenido:', stockActual);
+                        } else {
+                            console.warn('⚠️ No se obtuvo stock desde inventario. Respuesta:', data);
+                        }
+                    } else {
+                        console.error('❌ Faltan datos para buscar stock actual (materialId o puntoId)');
+                    }
+                } catch (err) {
+                    console.error('❌ Error al buscar stock actual real:', err);
+                }
+                document.getElementById('editVentaStockActual').value = stockActual;
+                // Abrir modal recién después de asignar el dato
                 const modalEditar = new bootstrap.Modal(document.getElementById('editarVentaModal'));
                 modalEditar.show();
             });
@@ -3297,10 +3582,12 @@
                 console.log('📤 JSON para DELETE:', JSON.stringify(datosEliminar, null, 2));
 
                 // DELETE a /punto-eca/inventario/venta/{ventaId}
-                fetch(`/punto-eca/inventario/venta/${ventaId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosEliminar)
                 })
@@ -3328,10 +3615,31 @@
                 const compraId = document.getElementById('editCompraId').value;
                 const inventarioId = document.getElementById('editInventarioId').value;
                 const materialId = document.getElementById('editCompraMaterialId').value;
-                const cantidad = document.getElementById('editCompraCantidad').value;
+                const cantidad = parseFloat(document.getElementById('editCompraCantidad').value);
                 const fechaCompra = document.getElementById('editCompraFecha').value;
-                const precioCompra = document.getElementById('editCompraPrecio').value;
+                const precioCompra = parseFloat(document.getElementById('editCompraPrecio').value);
                 const observaciones = document.getElementById('editCompraObservaciones').value;
+
+                // Datos de stock/capacidad/cantidad original
+                // Defensive parse + fallback (como en ventas)
+                let stockActualRaw = document.getElementById('editCompraStockActual')?.value;
+                let capacidadMaximaRaw = document.getElementById('editCompraCapacidadMaxima')?.value;
+                let cantidadOriginalRaw = document.getElementById('editCompraCantidadOriginal')?.value;
+                let stockActual = parseFloat(stockActualRaw);
+                let capacidadMaxima = parseFloat(capacidadMaximaRaw);
+                let cantidadOriginal = parseFloat(cantidadOriginalRaw);
+                if (isNaN(stockActual)) {
+                    console.warn('[COMPRA][DEFENSIVO] stockActual no numérico, usando 0. Valor crudo:', stockActualRaw);
+                    stockActual = 0;
+                }
+                if (isNaN(capacidadMaxima)) {
+                    console.warn('[COMPRA][DEFENSIVO] capacidadMaxima no numérico, usando 0. Valor crudo:', capacidadMaximaRaw);
+                    capacidadMaxima = 0;
+                }
+                if (isNaN(cantidadOriginal)) {
+                    console.warn('[COMPRA][DEFENSIVO] cantidadOriginal no numérico, usando 0. Valor crudo:', cantidadOriginalRaw);
+                    cantidadOriginal = 0;
+                }
 
                 console.log('💾 Guardando cambios de compra:', {
                     puntoId,
@@ -3341,7 +3649,10 @@
                     cantidad,
                     fechaCompra,
                     precioCompra,
-                    observaciones
+                    observaciones,
+                    stockActual,
+                    capacidadMaxima,
+                    cantidadOriginal
                 });
 
                 if (!materialId) {
@@ -3349,39 +3660,56 @@
                     console.error('materialId está vacío en editCompraMaterialId');
                     return;
                 }
-
+                // Ya no alerta por stock/capacidad faltantes, sólo por valores lógicos después de fallback
+                // Validar stock resultante
+                // Nueva compra: stock_final = stockActual + (cantidad - cantidadOriginal)
+                let delta = cantidad - cantidadOriginal;
+                let stockFinal = stockActual + delta;
+                if (cantidad <= 0) {
+                    alert('Ingrese una cantidad mayor a cero.');
+                    return;
+                }
+                if (stockFinal < 0) {
+                    alert('La edición dejaría el stock negativo. Corrija la cantidad. Stock actual: '+stockActual+', diferencia: '+delta);
+                    return;
+                }
+                if (!isNaN(capacidadMaxima) && capacidadMaxima > 0 && stockFinal > capacidadMaxima) {
+                    alert('La edición hace que el stock supere la capacidad máxima ('+capacidadMaxima+'). Stock hipotético: '+stockFinal+'\nCorrija la cantidad.');
+                    return;
+                }
                 // Construir datos para CompraInventarioUpdateDTO
                 const datosActualizacion = {
                     puntoId: puntoId,
                     materialId: materialId,
                     compraId: compraId,
                     inventarioId: inventarioId,
-                    cantidad: parseFloat(cantidad),
+                    cantidad: cantidad,
                     fechaCompra: (fechaCompra && fechaCompra.length===16) ? (fechaCompra + ':00') : fechaCompra,
-                    precioCompra: parseFloat(precioCompra),
+                    precioCompra: precioCompra,
                     observaciones: observaciones
                 };
 
                 console.log('📤 JSON enviado:', JSON.stringify(datosActualizacion, null, 2));
-
                 // PUT a /punto-eca/inventario/compra/{compraId}
-                fetch(`/punto-eca/inventario/compra/${compraId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/editar-compra/${compraId}/`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosActualizacion)
                 })
                 .then(res => res.json())
                 .then(data => {
                     console.log('📥 Respuesta:', data);
-                    if (data.ok || data.status === 200 || !data.error) {
-                        alert('Compra actualizada correctamente');
+                    if (data.status === 'success') {
+                        alert(data.message || 'Compra actualizada correctamente');
                         const modal = bootstrap.Modal.getInstance(document.getElementById('editarCompraModal'));
                         if (modal) modal.hide();
                         location.reload();
                     } else {
-                        alert('Error al actualizar: ' + (data.mensaje || data.message || 'Error desconocido'));
+                        alert(data.message || data.mensaje || 'Error al actualizar la compra.');
                     }
                 })
                 .catch(error => {
@@ -3402,6 +3730,35 @@
                 const centroAcopioId = document.getElementById('editVentaCentro').value;
                 const observaciones = document.getElementById('editVentaObservaciones').value;
 
+                // --- VALIDACIÓN DE STOCK ANTES DE GUARDAR ---
+                const stockActual = parseFloat(document.getElementById('editVentaStockActual').value || 'NaN');
+                const capacidadMaxima = parseFloat(document.getElementById('editVentaCapacidadMaxima').value || 'NaN');
+                const cantidadOriginal = parseFloat(document.getElementById('editVentaCantidadOriginal').value || '0');
+                const cantidadNum = parseFloat(cantidad);
+                if (isNaN(stockActual) || isNaN(cantidadNum)) {
+                    alert('No se pudo validar el stock. Recarga la página e intenta nuevamente.');
+                    return;
+                }
+                // Validar que la cantidad a vender no supere el stock disponible real
+                if (cantidadNum > stockActual + cantidadOriginal) {
+                    alert('No se puede vender más unidades de las que hay en stock. Stock disponible: ' + (stockActual + cantidadOriginal));
+                    return;
+                }
+                // stock final simulado para edición: stockActual + (cantidadOriginal - cantidadNueva)
+                let nuevoStock = stockActual + (cantidadOriginal - cantidadNum);
+                if (cantidadNum <= 0) {
+                    alert('Ingrese una cantidad mayor a cero.');
+                    return;
+                }
+                if (nuevoStock < 0) {
+                    alert('La edición dejaría el stock negativo o usaría más stock del disponible. Corrija la cantidad.');
+                    return;
+                }
+                if (!isNaN(capacidadMaxima) && capacidadMaxima > 0 && nuevoStock > capacidadMaxima) {
+                    alert('La edición hace que el stock supere la capacidad máxima ('+capacidadMaxima+'). Corrija la cantidad.');
+                    return;
+                }
+
                 console.log('💾 Guardando cambios de venta:', {
                     puntoId,
                     ventaId,
@@ -3419,11 +3776,10 @@
                     return;
                 }
 
-                // Validar que centroAcopioId esté presente (@NotNull)
-                if (!centroAcopioId) {
-                    alert('El centro de acopio es obligatorio para actualizar la venta');
-                    return;
-                }
+                // if (!centroAcopioId) {
+                //     alert('El centro de acopio es obligatorio para actualizar la venta');
+                //     return;
+                // }
 
                 // Construir datos a enviar
                 const datosActualizacion = {
@@ -3441,23 +3797,26 @@
                 console.log('📤 JSON enviado:', JSON.stringify(datosActualizacion, null, 2));
 
                 // PUT a /punto-eca/inventario/venta/{ventaId}
-                fetch(`/punto-eca/inventario/venta/${ventaId}`, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch(`/punto-eca/movimientos/editar-venta/${ventaId}/`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(datosActualizacion)
                 })
                 .then(res => res.json())
                 .then(data => {
                     console.log('📥 Respuesta:', data);
-                    if (data.ok || data.status === 200 || !data.error) {
-                        alert('Venta actualizada correctamente');
+                    // Chequear la lógica del backend según el campo status (success/error) y mostrar mensaje adecuado
+                    if (data.status === 'success') {
+                        alert(data.message || 'Venta actualizada correctamente');
                         const modal = bootstrap.Modal.getInstance(document.getElementById('editarVentaModal'));
                         if (modal) modal.hide();
                         location.reload();
                     } else {
-                        alert('Error al actualizar: ' + (data.mensaje || data.message || 'Error desconocido'));
+                        alert(data.message || data.mensaje || 'Error al actualizar la venta.');
                     }
                 })
                 .catch(error => {
@@ -3502,9 +3861,16 @@
                         observaciones: observaciones
                     };
 
+                    // Obtener CSRF token
+                    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                     // Enviar al endpoint correcto que espera CompraInventarioRequestDTO
-                    fetch('/punto-eca/movimientos/registrar-entrada', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    fetch('/punto-eca/movimientos/registrar-compra/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify(payload)
                     })
                     .then(function(res) { return res.json().then(function(data){ return { ok: res.ok, status: res.status, data: data }; }); })
                     .then(function(result) {
@@ -3551,8 +3917,9 @@
                     };
 
                     // Enviar al endpoint correcto que espera VentaInventarioRequestDTO
-                    fetch('/punto-eca/movimientos/registrar-salida', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch('/punto-eca/movimientos/registrar-venta/', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken}, body: JSON.stringify(payload)
                     })
                     .then(function(res) { return res.json().then(function(data){ return { ok: res.ok, status: res.status, data: data }; }); })
                     .then(function(result) {

@@ -26,4 +26,8 @@ urlpatterns = [
     # Urls puntos ECA
     path("punto-eca/", include("apps.ecas.urls", namespace="punto-eca")),
     path("punto-eca/", include("apps.inventory.urls", namespace="inventario")),
+    path(
+        "punto-eca/movimientos/",
+        include("apps.operations.urls", namespace="operaciones"),
+    ),
 ]

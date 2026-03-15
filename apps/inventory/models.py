@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from config.base_models import CreacionModificacionModel, DescripcionModel
 from config.constants import Alerta, UnidadMedida
+from django.utils import timezone
 
 
 class Inventario(CreacionModificacionModel):
@@ -154,8 +155,8 @@ class Inventario(CreacionModificacionModel):
     def __str__(self):
         return f"{self.punto_eca.nombre} + {self.material.nombre}"
 
-    def save(self, *args, **kwargs):
-        # Calcula y guarda el porcentaje de ocupación actual
+    def recalcular_ocupacion(self):
+        """Recalcula el porcentaje de ocupación actual en base al stock y la capacidad máxima."""
         if (
             self.capacidad_maxima
             and self.stock_actual is not None
@@ -166,6 +167,9 @@ class Inventario(CreacionModificacionModel):
             )
         else:
             self.ocupacion_actual = 0
+
+    def save(self, *args, **kwargs):
+        self.recalcular_ocupacion()
         super().save(*args, **kwargs)
 
 
