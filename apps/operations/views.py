@@ -598,7 +598,8 @@ def borrar_compra(request, compra_id):
             )
         except Exception as e:
             return JsonResponse(
-                {"status": "error", "message": f"Error al buscar la compra: {str(e)}"}, status=500
+                {"status": "error", "message": f"Error al buscar la compra: {str(e)}"},
+                status=500,
             )
         try:
             result = actualizar_stock_por_compra(compra.inventario, 0, compra.cantidad)
@@ -610,12 +611,17 @@ def borrar_compra(request, compra_id):
             )
         except Exception as e:
             return JsonResponse(
-                {"status": "error", "message": f"Error al ajustar stock o eliminar: {str(e)}"}, status=500
+                {
+                    "status": "error",
+                    "message": f"Error al ajustar stock o eliminar: {str(e)}",
+                },
+                status=500,
             )
     except Exception as e:
         # Redundante, pero garantiza que cualquier excepción inesperada siga devolviendo JSON
         return JsonResponse(
-            {"status": "error", "message": f"Fallo crítico en borrar_compra: {str(e)}"}, status=500
+            {"status": "error", "message": f"Fallo crítico en borrar_compra: {str(e)}"},
+            status=500,
         )
 
 
@@ -629,7 +635,8 @@ def borrar_venta(request, venta_id):
             )
         except Exception as e:
             return JsonResponse(
-                {"status": "error", "message": f"Error al buscar la venta: {str(e)}"}, status=500
+                {"status": "error", "message": f"Error al buscar la venta: {str(e)}"},
+                status=500,
             )
         try:
             result = actualizar_stock_por_venta(venta.inventario, 0, venta.cantidad)
@@ -641,9 +648,14 @@ def borrar_venta(request, venta_id):
             )
         except Exception as e:
             return JsonResponse(
-                {"status": "error", "message": f"Error al ajustar stock o eliminar: {str(e)}"}, status=500
+                {
+                    "status": "error",
+                    "message": f"Error al ajustar stock o eliminar: {str(e)}",
+                },
+                status=500,
             )
     except Exception as e:
         return JsonResponse(
-            {"status": "error", "message": f"Fallo crítico en borrar_venta: {str(e)}"}, status=500
+            {"status": "error", "message": f"Fallo crítico en borrar_venta: {str(e)}"},
+            status=500,
         )

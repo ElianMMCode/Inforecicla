@@ -60,7 +60,7 @@
                     <!-- Formulario del Encargado -->
                     <form id="formEncargado"
                           method="POST"
-                          action="{% url 'punto:editar_perfil' id=usuario.id %}">
+                          action="{% url 'punto-eca:editar_perfil' id=usuario.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <div class="row">
@@ -226,7 +226,7 @@
                     <!-- Formulario del Punto ECA -->
                     <form id="formPunto"
                           method="POST"
-                          action="{% url 'punto:editar_punto' id=usuario.id %}">
+                          action="{% url 'punto-eca:editar_punto' id=usuario.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />
@@ -332,7 +332,7 @@
                                        id="latitud"
                                        name="latitud"
                                        placeholder="-90 a 90"
-                                       value="{{ punto.latitud }}" />
+                                       value="{{ punto.latitud|floatformat:6 }}" />
                                 <small class="text-muted">-90 a 90 (opcional)</small>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -343,7 +343,7 @@
                                        id="longitud"
                                        name="longitud"
                                        placeholder="-180 a 180"
-                                       value="{{ punto.longitud }}" />
+                                       value="{{ punto.longitud|floatformat:6 }}" />
                                 <small class="text-muted">-180 a 180 (opcional)</small>
                             </div>
                         </div>
