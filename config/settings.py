@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "apps.inventory.apps.InventoryConfig",
     "apps.operations.apps.OperationsConfig",
     "apps.users.apps.UsersConfig",
+    "apps.panel_admin"
+    'admin.interface'
 ]
 
 MIDDLEWARE = [

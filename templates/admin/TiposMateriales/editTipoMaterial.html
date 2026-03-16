@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editar Tipo - InfoRecicla</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+<body class="bg-light m-0 pt-5 pt-md-0">
+
+<div class="container-fluid px-0">
+    <div class="row g-0">
+
+        <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
+                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+                <div class="d-flex flex-column lh-sm">
+                    <span class="fw-semibold">InfoRecicla</span>
+                    <small class="text-white-50">Administración</small>
+                </div>
+            </a>
+            <nav class="w-100" role="navigation">
+                <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
+                    <li class="nav-item"><a href="indexTipoMaterial.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
+                    <li class="nav-item"><a href="listTipoMaterial.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Listado</a></li>
+                    <li class="nav-item"><a href="createTipoMaterial.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear</a></li>
+                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between px-3">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+                    <i class="bi bi-recycle fs-3"></i>
+                    <span class="fw-semibold">InfoRecicla</span>
+                </a>
+                <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
+            </div>
+            <nav class="mt-2">
+                <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
+                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="indexTipoMaterial.html">Resumen</a></li>
+                    <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="listTipoMaterial.html">Listado</a></li>
+                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="createTipoMaterial.html">Crear</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <main class="col offset-md-2 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+            <h1 class="h2 fw-bold text-warning mb-1"><i class="fas fa-edit me-2"></i>Editar Tipo de Material</h1>
+            <p class="text-muted mb-0">Modifica los detalles de la subclasificación</p>
+        </div>
+        <a href="detalles.html" class="btn btn-outline-secondary d-none d-sm-block">
+            <i class="fas fa-arrow-left me-1"></i> Volver al Detalle
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-warning shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-pen-nib me-2"></i>Modificar información</h5>
+                </div>
+                <div class="card-body bg-light p-4">
+                    <form class="row g-4 needs-validation" novalidate>
+                        
+                        <div class="col-12">
+                            <label class="form-label text-warning fw-bold text-dark">Nombre del tipo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-lg border-warning" value="PET 1" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-warning fw-bold text-dark">Descripción <span class="text-danger">*</span></label>
+                            <textarea class="form-control" rows="4" required>Polietileno Tereftalato, usado comúnmente en botellas de bebidas, agua y empaques transparentes.</textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-warning fw-bold text-dark">Estado del Tipo</label>
+                            <select class="form-select border-warning shadow-sm">
+                                <option value="true" selected>Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                            <div class="form-text small mt-2">
+                                <i class="fas fa-info-circle me-1"></i>Los tipos inactivos no estarán disponibles para nuevos materiales.
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                            <a href="detalles.html" class="btn btn-outline-danger">Cancelar</a>
+                            <button type="submit" class="btn btn-warning fw-bold text-dark shadow-sm"><i class="fas fa-save me-1"></i> Actualizar Tipo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>

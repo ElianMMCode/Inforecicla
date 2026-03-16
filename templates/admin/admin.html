@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - InfoRecicla</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center fw-semibold" href="../Inicio/inicio.html">
+                <img src="../resources/static/imagenes/logo.png" alt="Logo InfoRecicla" height="40" class="me-2 rounded bg-white p-1">
+                InfoRecicla
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="admin.html">
+                            <i class="fas fa-tachometer-alt me-1"></i> Panel
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../Inicio/inicio.html">
+                            <i class="fas fa-home me-1"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger-emphasis" href="../Registro/inicioSesion.html">
+                            <i class="fas fa-sign-out-alt me-1"></i> Cerrar sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-0">
+        <div class="row g-0">
+            <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../Inicio/inicio.html">
+                    <img src="../resources/static/imagenes/logo.png" alt="Logo" height="40" class="me-2 rounded bg-white p-1">
+                    InfoRecicla
+                </a>
+                <nav class="w-100" role="navigation">
+                    <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
+                        <li class="nav-item"><a href="Usuarios/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-users me-2"></i>Usuarios</a></li>
+                        <li class="nav-item"><a href="Publicaciones/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-newspaper me-2"></i>Publicaciones</a></li>
+                        <li class="nav-item"><a href="PuntoECA/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-map-marker-alt me-2"></i>Puntos ECA</a></li>
+                        <li class="nav-item"><a href="Materiales/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-box me-2"></i>Materiales</a></li>
+                    </ul>
+                </nav>
+                <div class="mt-auto small text-white-50">&copy; 2025 InfoRecicla</div>
+            </aside>
+
+            <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
+                <div class="d-flex align-items-center justify-content-between px-3">
+                    <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../Inicio/inicio.html">
+                        <i class="fas fa-recycle fs-3"></i>
+                        <span class="fw-semibold">InfoRecicla</span>
+                    </a>
+                </div>
+            </div>
+
+            <main class="col offset-md-2 p-4">
+                <div class="bg-light bg-opacity-75 rounded-3 p-4 p-md-5 shadow-sm mb-5 border-start border-5 border-success">
+            <div class="row">
+                <div class="col-lg-8">
+                    <h1 class="display-5 fw-bold text-success mb-3">Panel de Administración</h1>
+                    <p class="lead text-muted mb-0">Gestiona todos los aspectos de InfoRecicla desde un solo lugar. Selecciona un módulo para comenzar.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Resumen General del Sistema
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="border-end border-light-subtle">
+                                    <div class="h3 text-success fw-bold mb-1" id="totalUsuarios">0</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Usuarios</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="border-end border-light-subtle">
+                                    <div class="h3 text-info fw-bold mb-1" id="totalPuntosECA">0</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Puntos ECA</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="border-end border-light-subtle">
+                                    <div class="h3 text-warning fw-bold mb-1" id="totalMateriales">0</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Materiales</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="border-end border-light-subtle">
+                                    <div class="h3 text-primary fw-bold mb-1" id="totalPublicaciones">0</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Publicaciones</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div class="border-end border-light-subtle">
+                                    <div class="h3 text-danger fw-bold mb-1" id="totalCategorias">0</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Categorías</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 mb-3">
+                                <div>
+                                    <div class="h3 text-secondary fw-bold mb-1" id="totalTipos">0</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Tipos de Material</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm border-top border-3 border-success">
+                    <div class="card-body">
+                        <h5 class="card-title text-success mb-3"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
+                        <div class="row g-2">
+                            <div class="col-md-3 col-6">
+                                <a href="Usuarios/crear.html" class="btn btn-outline-success w-100 py-2">
+                                    <i class="fas fa-user-plus me-1"></i> Nuevo Usuario
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="PuntoECA/crear.html" class="btn btn-outline-info w-100 py-2">
+                                    <i class="fas fa-plus-circle me-1"></i> Nuevo Punto ECA
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="Publicaciones/crear.html" class="btn btn-outline-primary w-100 py-2">
+                                    <i class="fas fa-edit me-1"></i> Nueva Publicación
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="Materiales/crear.html" class="btn btn-outline-warning w-100 py-2 text-dark">
+                                    <i class="fas fa-box me-1"></i> Nuevo Material
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="text-secondary mb-4 border-bottom pb-2">Módulos del Sistema</h4>
+        <div class="row g-4">
+
+            <div class="col-md-6 col-lg-4">
+                <a href="Usuarios/index.html" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-users text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-success fw-semibold">Gestión de Usuarios</h3>
+                            <p class="text-muted mb-0 small">Administra usuarios, roles y permisos del sistema.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="PuntoECA/index.html" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-info rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-map-marker-alt text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-info fw-semibold">Puntos ECA</h3>
+                            <p class="text-muted mb-0 small">Administra las estaciones de clasificación y aprovechamiento.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="Materiales/index.html" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-box text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-warning fw-semibold">Materiales</h3>
+                            <p class="text-muted mb-0 small">Gestiona los materiales reciclables del sistema.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="TiposMateriales/index.html" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-recycle text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-secondary fw-semibold">Tipos de Material</h3>
+                            <p class="text-muted mb-0 small">Gestiona los tipos de materiales reciclables.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="CategoriasMateriales/index.html" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-tags text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-danger fw-semibold">Categorías de Materiales</h3>
+                            <p class="text-muted mb-0 small">Gestiona las categorías de materiales.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="Publicaciones/index.html" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-newspaper text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-primary fw-semibold">Publicaciones</h3>
+                            <p class="text-muted mb-0 small">Gestiona las publicaciones y artículos del sistema.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="CategoriasPublicaciones/index.html" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary bg-opacity-75 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-folder text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-primary fw-semibold">Categorías de Publicaciones</h3>
+                            <p class="text-muted mb-0 small">Organiza las publicaciones por categorías.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">© 2025 InfoRecicla. Todos los derechos reservados.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
+                    <p class="mb-0 text-white-50"><i class="fas fa-recycle me-1"></i> Sistema de Gestión de Reciclaje</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Efectos hover para las tarjetas de módulos (usar utilidades Bootstrap)
+            const cards = document.querySelectorAll('.card.h-100');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('shadow');
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('shadow');
+                });
+            });
+
+            // Animación de carga para los números de estadísticas
+            const animateValue = (id, start, end, duration) => {
+                const obj = document.getElementById(id);
+                if (!obj) return;
+
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            // Iniciar animaciones de estadísticas después de un pequeño retraso
+            setTimeout(() => {
+                animateValue('totalUsuarios', 0, 1247, 1500);
+                animateValue('totalPuntosECA', 0, 89, 1500);
+                animateValue('totalMateriales', 0, 356, 1500);
+                animateValue('totalPublicaciones', 0, 542, 1500);
+                animateValue('totalCategorias', 0, 24, 1500);
+                animateValue('totalTipos', 0, 15, 1500);
+            }, 300);
+        });
+    </script>
+</body>
+
+</html>

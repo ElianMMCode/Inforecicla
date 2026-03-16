@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear Usuario - InfoRecicla</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light m-0 pt-5 pt-md-0">
+
+<div class="container-fluid px-0">
+  <div class="row g-0">
+
+    <main class="col offset-md-2 p-4">
+
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+          <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h1>
+          <p class="text-muted mb-0">Registro de usuarios en el sistema</p>
+        </div>
+        <a href="lista.html" class="btn btn-outline-success d-none d-sm-block">
+          <i class="bi bi-arrow-left"></i> Volver a la lista
+        </a>
+      </div>
+
+      <div class="card border-success shadow-sm">
+        <div class="card-header bg-success text-white">
+          <i class="bi bi-pencil-square"></i> Formulario de creación
+        </div>
+
+        <div class="card-body bg-light">
+          <form class="needs-validation" action="lista.html" novalidate>
+
+            <div class="mb-4">
+              <h6 class="border-bottom pb-2 text-success"><i class="bi bi-info-circle"></i> Información Básica</h6>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" placeholder="Ej: Juan Carlos" required>
+                  <div class="invalid-feedback">Ingresa nombres válidos (3-30).</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" placeholder="Ej: Pérez García" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Correo Electrónico <span class="text-danger">*</span></label>
+                  <input type="email" class="form-control" placeholder="correo@ejemplo.com" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
+                  <input type="tel" class="form-control" placeholder="3001234567" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <h6 class="border-bottom pb-2 text-success"><i class="bi bi-shield-lock"></i> Rol y Acceso</h6>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span></label>
+                  <select class="form-select" required>
+                    <option value="" selected disabled>-- Selecciona un rol --</option>
+                    <option value="Admin">Administrador</option>
+                    <option value="Ciudadano">Ciudadano</option>
+                    <option value="GestorECA">Gestor ECA</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Contraseña Temporal <span class="text-danger">*</span></label>
+                  <input type="password" class="form-control" placeholder="Mínimo 8 caracteres" required>
+                  <small class="text-muted d-block mt-1">Debe contener mayúscula, minúscula, número y símbolo.</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+              <button type="submit" class="btn btn-success">
+                <i class="bi bi-save me-1"></i> Guardar Usuario
+              </button>
+              <button type="reset" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
