@@ -7,9 +7,11 @@
         </h2>
         <p class="text-muted small mb-0">Gestiona y visualiza los centros de acopio globales y propios de tu punto ECA</p>
     </div>
-    <!-- Serializar los datos de centros globales y propios para uso JS al estilo movimientos -->
+    <!-- Serialización de catálogos para selects dinámicos (localidades y tipos) y datos principales -->
     {{ centros_globales|json_script:"centrosGlobalesData" }}
     {{ centros_locales|json_script:"centrosPropiosData" }}
+    {{ localidades_catalogo|json_script:"localidadesCatalogo" }}
+    {{ tipos_catalogo|json_script:"tiposCentroCatalogo" }}
     <script>
         // Defensive serialization logging and parsing
         try {
@@ -421,7 +423,7 @@
                             <i class="bi bi-pencil-square"></i> Editar
                         </button>
                         <script>
-                        // Handler for Editar button in centro propio modal
+                        // Handler for Editar button in centro propio modal (ahora aseguramos cargar y poblar selects con catálogos antes de mostrar el modal)
                         (function() {
                             const btn = document.getElementById('btnEditarCentroPropio');
                             if (btn) {
@@ -439,11 +441,81 @@
                                         alert('No se encuentra el centro propio para edición.');
                                         return;
                                     }
+                                    // Poblar ambos selects con los catálogos cada vez que se abre el modal
+                                    let localidadesCatalogo, tiposCentroCatalogo;
+                                    try {
+                                        localidadesCatalogo = JSON.parse(document.getElementById('localidadesCatalogo')?.textContent || '[]');
+                                    } catch { localidadesCatalogo = []; }
+                                    try {
+                                        tiposCentroCatalogo = JSON.parse(document.getElementById('tiposCentroCatalogo')?.textContent || '[]');
+                                    } catch { tiposCentroCatalogo = []; }
+                                    if (typeof poblarSelectConCatalogo === 'function') {
+                                        poblarSelectConCatalogo('editCentroLocalidad', localidadesCatalogo, 'localidad_id', 'nombre');
+                                        poblarSelectConCatalogo('editCentroTipo', tiposCentroCatalogo, 'value', 'label');
+                                    }
                                     // Setear los campos del form de edición
                                     document.getElementById('editCentroInputId').value = centro.id || '';
                                     document.getElementById('editCentroNombre').value = centro.nombre || '';
-                                    document.getElementById('editCentroTipo').value = centro.tipo || '';
-                                    document.getElementById('editCentroLocalidad').value = centro.localidad.id || '';
+                                            // --- Corregimos tipo: usamos el "value" segun catalogo ---
+                                            let tipoValue = '';
+                                            if (centro.tipo) {
+                                                tipoValue = centro.tipo;
+                                            } else if (centro.get_tipo_centro_display) {
+                                                // Si vino solo la descripcggion y no el value, buscarlo en el catalogo para encontrar el value por label
+                                                try {
+                                                    const tiposCat = JSON.parse(document.getElementById('tiposCentroCatalogo')?.textContent||'[]');
+                                                    const match = tiposCat.find(t=>t.label===centro.get_tipo_centro_display);
+                                                    tipoValue = match ? match.value : '';
+                                                } catch { tipoValue=''; }
+                                            }
+                                            document.getElementById('editCentroTipo').value = tipoValue;
+                                            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) $('#editCentroTipo').val(tipoValue).trigger('change');
+                                            // Localidad: aceptar tanto objeto como string como UUID, pero poner siempre localidad_id como value
+                                            let locId = '';
+                                            if (centro.localidad && typeof centro.localidad==='object' && centro.localidad.localidad_id) {
+                                                locId = centro.localidad.localidad_id;
+                                            } else if (typeof centro.localidad==='string' || typeof centro.localidad==='number') {
+                                                locId = centro.localidad;
+                                            }
+                                    // Es importante setear el valor SOLO después de poblar el select, y verificar que existe como opción
+                                    // Setear localidad select correctamente después de poblar options y Select2
+                                    setTimeout(function() {
+                                        var localidadSelect = document.getElementById('editCentroLocalidad');
+                                        if (localidadSelect) {
+                                            console.debug('[LOCALIDAD] DEBUG avanzada:', {
+                                                locId: locId,
+                                                typeofLocId: typeof locId,
+                                                strLocId: String(locId),
+                                                catalogo: (typeof localidadesCatalogo !== 'undefined') ? localidadesCatalogo.map(l => ({id: l.localidad_id, type: typeof l.localidad_id, nombre: l.nombre})) : '(no disponible)',
+                                                opciones: Array.from(localidadSelect.options).map(o=>({value: o.value, type: typeof o.value, text: o.textContent}))
+                                            });
+                                            // Probar asignar tanto string como número
+                                            let strLocId = String(locId);
+                                            localidadSelect.value = strLocId;
+                                            // Comprobar si setear el value funcionó
+                                            if (localidadSelect.value !== strLocId) {
+                                                console.warn('[LOCALIDAD] Falló asignar el valor al select: esperado', strLocId, 'obtenido', localidadSelect.value);
+                                            }
+                                            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                                                $('#editCentroLocalidad').val(strLocId).trigger('change');
+                                            }
+                                            // Si no está, agregar como opción especial y seleccionar
+                                            var alreadyHas = Array.from(localidadSelect.options).some(opt => String(opt.value) === strLocId);
+                                            if (!alreadyHas && locId) {
+                                                var optLegacy = document.createElement('option');
+                                                optLegacy.value = strLocId;
+                                                optLegacy.textContent = '⚠️ Valor antiguo: ' + strLocId;
+                                                localidadSelect.appendChild(optLegacy);
+                                                localidadSelect.value = strLocId;
+                                                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                                                    $('#editCentroLocalidad').val(strLocId).trigger('change');
+                                                }
+                                                console.warn('[LOCALIDAD] Opción legacy agregada:', strLocId);
+                                            }
+                                            console.debug('[LOCALIDAD] Seleccionado en select (final):', localidadSelect.value);
+                                        }
+                                    }, 350);
+                                    
                                     document.getElementById('editCentroCelular').value = centro.celular || '';
                                     document.getElementById('editCentroEmail').value = centro.email || '';
                                     document.getElementById('editCentroContacto').value = centro.nombre_contacto || '';
@@ -561,19 +633,16 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="editCentroTipo">Tipo</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editCentroTipo"
-                                   name="tipoCentro"
-                                   required>
-                            <!-- Si hay lista de options, reemplazar por select -->
+                            <select class="form-select" id="editCentroTipo" name="tipoCentro" required></select>
+                            <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="editCentroLocalidad">Localidad</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editCentroLocalidad"
-                                   name="localidadCentro">
+                            <select class="form-select"
+                                    id="editCentroLocalidad"
+                                    name="localidadCentro"
+                                    required></select>
+                            <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
                             <!-- Si hay select de localidades, reemplazar por select -->
                         </div>
                         <div class="col-md-6">
@@ -614,6 +683,15 @@
             </form>
         </div>
     </div>
+    <style>
+    /* Fix stacking issues for Select2 inside Bootstrap Modals */
+    .select2-container--bootstrap4 .select2-dropdown {
+      z-index: 2000 !important;
+    }
+    .select2-container--bootstrap4.select2-container--open {
+      z-index: 2001 !important;
+    }
+    </style>
     <script>
 // =========== FORMULARIO EDICIÓN CENTRO PROPIO - SUBMIT AJAX =============
 document.addEventListener('DOMContentLoaded', function() {
@@ -753,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
                       ? `<td class="small">${c.nombre_contacto||'—'}</td>
                          <td class="small">${c.celular?`<a href=\"tel:${c.celular}\" class=\"text-decoration-none\">${c.celular}</a>`:'<span>—</span>'}</td>
                          <td class=\"small\"><a href=\"mailto:${c.email||''}\" class=\"text-decoration-none text-truncate d-block\">${c.email||'—'}</a></td>\n                         <td><button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-ver-detalles-centro\" title=\"Ver detalles\" data-id=\"${c.id}\" data-type=\"global\"><i class=\"bi bi-eye\"></i> Detalles</button></td>`
-                                               : `<td class=\"small\">${c.localidad||'—'}</td>\n                         <td class=\"small\">${c.celular?`<a href=\\"tel:${c.celular}\\" class=\\"text-decoration-none\\">${c.celular}</a>`:'<span>—</span>'}</td>\n                         <td class=\"small\"><small class=\"text-muted\">${c.nota||'—'}</small></td>\n                                                                           <td><button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-ver-detalles-centro\" title=\"Ver detalles\" data-id=\"${c.id}\" data-type=\"propio\"><i class=\"bi bi-eye\"></i> Detalles</button></td>`
+                                                                      : `<td class=\"small\">${(c.localidad && typeof c.localidad === 'object' && c.localidad.nombre) ? c.localidad.nombre : (c.localidad || '—')}</td>\n                         <td class=\"small\">${c.celular?`<a href=\\"tel:${c.celular}\\" class=\\"text-decoration-none\\">${c.celular}</a>`:'<span>—</span>'}</td>\n                         <td class=\"small\"><small class=\"text-muted\">${c.nota||'—'}</small></td>\n                                                                           <td><button type=\"button\" class=\"btn btn-outline-primary btn-sm btn-ver-detalles-centro\" title=\"Ver detalles\" data-id=\"${c.id}\" data-type=\"propio\"><i class=\"bi bi-eye\"></i> Detalles</button></td>`
                     }
                 </tr>
             `; }).join('');
@@ -807,7 +885,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Pobla dinámicamente el select de localidad de centros globales
         function poblarSelectLocalidadGlobal() {
             const localidades = new Set();
-            dataGlobal.forEach(c => { if (c.localidad && c.localidad.trim()) localidades.add(c.localidad.trim()); });
+            dataGlobal.forEach(c => {
+                let locNombre = (typeof c.localidad === 'object' && c.localidad !== null) ? c.localidad.nombre : c.localidad;
+                if (locNombre && typeof locNombre === 'string' && locNombre.trim()) {
+                    localidades.add(locNombre.trim());
+                }
+            });
             const select = document.getElementById('filtroLocalidadGlobal');
             if (!select) return;
             // Guardar el valor actual para reestablecerlo luego
@@ -909,7 +992,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Poblar dinámicamente el select de localidad de centros propios
         function poblarSelectLocalidadPropio() {
             const localidades = new Set();
-            dataPropio.forEach(c => { if (c.localidad && c.localidad.trim()) localidades.add(c.localidad.trim()); });
+            dataPropio.forEach(c => {
+                let locNombre = (typeof c.localidad === 'object' && c.localidad !== null) ? c.localidad.nombre : c.localidad;
+                if (locNombre && typeof locNombre === 'string' && locNombre.trim()) localidades.add(locNombre.trim());
+            });
             const select = document.getElementById('filtroLocalidadPropio');
             if (!select) return;
             // Guardar el valor actual para reestablecerlo luego
@@ -999,7 +1085,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const modal = new bootstrap.Modal(document.getElementById('modalDetallesCentro'));
             document.getElementById('detCentroNombre').textContent = centro.nombre || '-';
             document.getElementById('detCentroTipo').textContent = centro.get_tipo_centro_display || centro.tipo || '-';
-            document.getElementById('detCentroLocalidad').textContent = centro.localidad || '-';
+            document.getElementById('detCentroLocalidad').textContent = (centro.localidad && typeof centro.localidad === 'object' && centro.localidad.nombre) ? centro.localidad.nombre : (centro.localidad || '-');
             document.getElementById('detCentroContacto').textContent = centro.nombre_contacto || '-';
             document.getElementById('detCentroCelular').textContent = centro.celular || '-';
             document.getElementById('detCentroEmail').textContent = centro.email || '-';
@@ -1011,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('inputCentroId').value = centro.id ?? '';
             document.getElementById('detCentroPropioNombre').textContent = centro.nombre ? centro.nombre : '-';
             document.getElementById('detCentroPropioTipo').textContent = centro.get_tipo_centro_display ? centro.get_tipo_centro_display : (centro.tipo ?? '-');
-            document.getElementById('detCentroPropioLocalidad').textContent = centro.localidad ? centro.localidad : '-';
+            document.getElementById('detCentroPropioLocalidad').textContent = (centro.localidad && typeof centro.localidad === 'object' && centro.localidad.nombre) ? centro.localidad.nombre : (centro.localidad || '-');
             document.getElementById('detCentroPropioContacto').textContent = (centro.nombre_contacto && centro.nombre_contacto.trim()) ? centro.nombre_contacto : '-';
             document.getElementById('detCentroPropioCelular').textContent = (centro.celular && centro.celular.trim()) ? centro.celular : '-';
             document.getElementById('detCentroPropioEmail').textContent = (centro.email && centro.email.trim()) ? centro.email : '-';
@@ -1021,8 +1107,81 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     </script>
     <script>
-    // Abrir modal de edición con los datos del centro seleccionado
+    // ========== Poblar selects dinámicos para edición (localidades y tipos) ============
+    function poblarSelectConCatalogo(selectId, datos, valueKey, labelKey, preselectValue) {
+        const select = document.getElementById(selectId);
+        if (!select) {
+            console.warn('[poblarSelectConCatalogo] No select encontrado para', selectId);
+            return;
+        }
+        const valorPrevio = select.value;
+        // DEBUG log for input data
+        console.debug('[poblarSelectConCatalogo] selectId:', selectId, '| datos:', datos, '| valueKey:', valueKey, '| labelKey:', labelKey, '| valorPrevio:', valorPrevio);
+        // Validar formato de datos
+        if (!Array.isArray(datos)) {
+            console.warn(`[poblarSelectConCatalogo] El catálogo para ${selectId} no es un array:`, datos);
+        } else if(datos.length === 0) {
+            console.warn(`[poblarSelectConCatalogo] El catálogo para ${selectId} está vacío!`);
+        }
+        console.log('💥 DEBUG poblarSelectConCatalogo:', { selectId, datos, valueKey, labelKey });
+        // Limpiar
+        select.innerHTML = '';
+        // Placeholder vacío
+        const optionIni = document.createElement('option');
+        optionIni.value = '';
+        optionIni.textContent = '-- Seleccione --';
+        select.appendChild(optionIni);
+        // Opciones normales del catálogo
+        let existeValorPrevio = false;
+        (Array.isArray(datos) ? datos : []).forEach((opt, idx) => {
+                const val = String(typeof opt === 'object' ? opt[valueKey] : opt[0]);
+            const label = typeof opt === 'object' ? opt[labelKey] : opt[1];
+            if (val == valorPrevio) existeValorPrevio = true;
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = label;
+            select.appendChild(option);
+            // Log cada opción generada
+            console.debug(`[poblarSelectConCatalogo] Opción [${idx}]:`, {val, label});
+        });
+        // Si el valor actual NO existe en el catálogo, agregarlo como opción especial
+        if (valorPrevio && !existeValorPrevio) {
+            const optLegacy = document.createElement('option');
+            optLegacy.value = valorPrevio;
+            optLegacy.textContent = '⚠️ Valor antiguo: ' + valorPrevio;
+            select.appendChild(optLegacy);
+            console.warn(`[poblarSelectConCatalogo] Valor previo no encontrado en catálogo (${valorPrevio}) agregado como opción especial.`);
+        }
+        // Setear el valor seleccionado
+        select.value = valorPrevio;
+        // Refrescar select2
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+            if ($(select).hasClass('select2-hidden-accessible')) {
+                console.debug('[poblarSelectConCatalogo] Select2 detectado, destruyendo instancia previa para', selectId);
+                $(select).select2('destroy');
+            }
+            console.debug('[poblarSelectConCatalogo] Inicializando Select2 en', selectId);
+            $(select).select2({ theme: 'bootstrap4', width: '100%', allowClear: true });
+        } else {
+            console.warn('[poblarSelectConCatalogo] No se encontró jQuery.select2 disponible al inicializar', selectId);
+        }
+    }
+
+    // =================== MODAL EDICIÓN CENTRO PROPIO =====================
     document.getElementById('btnAbrirEditarCentro')?.addEventListener('click', function() {
+        // Tomar catálogos serializados por Django
+        let localidadesCatalogo;
+        try {
+          localidadesCatalogo = JSON.parse(document.getElementById('localidadesCatalogo')?.textContent || '[]');
+        } catch { localidadesCatalogo = []; }
+        let tiposCentroCatalogo;
+        try {
+          tiposCentroCatalogo = JSON.parse(document.getElementById('tiposCentroCatalogo')?.textContent || '[]');
+        } catch { tiposCentroCatalogo = []; }
+
+        poblarSelectConCatalogo('editCentroLocalidad', localidadesCatalogo, 'localidad_id', 'nombre');
+        poblarSelectConCatalogo('editCentroTipo', tiposCentroCatalogo, 'value', 'label');
+
         const detallesModal = bootstrap.Modal.getInstance(document.getElementById('modalDetallesCentro'));
         if (detallesModal) detallesModal.hide();
         // Obtener el id del centro mostrado
@@ -1033,17 +1192,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const celular = document.getElementById('detCentroCelular').textContent;
         const email = document.getElementById('detCentroEmail').textContent;
         // Recorremos la lista para encontrar el centro por nombre y tipo únicos (ajustar si se usa otro id)
-        // Mejor si guardás el id como data-id en el botón y lo usás aquí
         let centroWindow = (window.CENTROS_PROPIOS || []).find(c => c.nombre === nombre && (c.get_tipo_centro_display === tipo || c.tipo === tipo));
         if (!centroWindow) {
             // fallback por si nombre y tipo no son suficientes
             centroWindow = (window.CENTROS_PROPIOS || [])[0];
         }
-        // Setear el form
         document.getElementById('editCentroInputId').value = centroWindow?.id || '';
         document.getElementById('editCentroNombre').value = centroWindow?.nombre || nombre || '';
-        document.getElementById('editCentroTipo').value = centroWindow?.tipo || tipo || '';
-        document.getElementById('editCentroLocalidad').value = centroWindow?.localidad || localidad || '';
+        // Tipo y localidad pueden requerir ID según catálogo
+        const tipoValue = centroWindow?.tipo || '';
+        const localidadValue = centroWindow?.localidad?.localidad_id || centroWindow?.localidad || localidad || '';
+        document.getElementById('editCentroTipo').value = tipoValue;
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) $('#editCentroTipo').val(tipoValue).trigger('change');
+        document.getElementById('editCentroLocalidad').value = localidadValue;
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) $('#editCentroLocalidad').val(localidadValue).trigger('change');
         document.getElementById('editCentroCelular').value = centroWindow?.celular || celular || '';
         document.getElementById('editCentroEmail').value = centroWindow?.email || email || '';
         document.getElementById('editCentroContacto').value = centroWindow?.nombre_contacto || contacto || '';

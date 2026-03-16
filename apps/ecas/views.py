@@ -54,13 +54,9 @@ def centro_to_dict(centro):
         "id": centro.id,
         "nombre": centro.nombre,
         "tipo": centro.tipo_centro,  # valor raw para filtros
-        "get_tipo_centro_display": centro.get_tipo_centro_display()
-        if hasattr(centro, "get_tipo_centro_display")
-        else centro.tipo_centro,
-        # Serialize localidad as a string (name or empty if None)
-        "localidad": getattr(centro.localidad, "nombre", str(centro.localidad))
-        if getattr(centro, "localidad", None)
-        else None,
+        "get_tipo_centro_display": centro.get_tipo_centro_display() if hasattr(centro, "get_tipo_centro_display") else centro.tipo_centro,
+        # Serialize localidad as full object
+        "localidad": {"id": str(centro.localidad.localidad_id), "nombre": centro.localidad.nombre} if getattr(centro, "localidad", None) else None,
         "celular": getattr(centro, "celular", None),
         "email": getattr(centro, "email", None),
         "nombre_contacto": getattr(centro, "nombre_contacto", None),
@@ -89,12 +85,18 @@ def _build_centros_context(punto):
     centros_globales = [centro_to_dict(c) for c in centros_globales_qs]
     centros_locales = [centro_to_dict(c) for c in centros_locales_qs]
 
+    # Serializar catálogo de localidades y de tipos para JS (solo id/nombre para localidad)
+    localidades_catalogo = list(Localidad.objects.all().values('localidad_id', 'nombre'))
+    tipos_catalogo = [{'value': t.value, 'label': t.label} for t in cons.TipoCentroAcopio]
+
     return {
         "punto": punto,
         "seccion": "centros",
         "section_template": SECTION_TEMPLATES["centros"],
         "centros_globales": centros_globales,
         "centros_locales": centros_locales,
+        "localidades_catalogo": localidades_catalogo,
+        "tipos_catalogo": tipos_catalogo,
     }
 
 
