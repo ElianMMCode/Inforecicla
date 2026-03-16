@@ -346,83 +346,159 @@
                             <i class="bi bi-plus-circle me-2"></i>Agregar Nuevo Centro
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-        <!-- Modal de detalles del centro propio, igual que antes (SIN CAMBIOS) -->
-        <div class="modal fade"
-             id="modalDetallesCentroPropio"
-             data-modal-ready="true"
-             tabindex="-1"
-             aria-labelledby="modalDetallesCentroPropioLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content border-0 shadow-lg rounded-4">
-                    <div class="modal-header bg-success text-white rounded-top-4">
-                        <h5 class="modal-title d-flex align-items-center fw-bold"
-                            id="modalDetallesCentroPropioLabel">
-                            <i class="bi bi-building me-2"></i>Detalles del Centro
-                        </h5>
-                        <button type="button"
-                                class="btn-close btn-close-white"
-                                data-bs-dismiss="modal"
-                                aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <input type="hidden" id="inputCentroId">
-                        <div class="row gy-3">
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-2 bg-light border-start border-4 border-info h-100">
-                                    <small class="text-muted mb-1 d-block">Nombre</small>
-                                    <p class="h6 fw-bold mb-0" id="detCentroPropioNombre">-</p>
+                    <!-- Modal de registro de nuevo centro propio -->
+                    <div class="modal fade"
+                         id="modalNuevoCentroPropio"
+                         tabindex="-1"
+                         aria-labelledby="modalNuevoCentroPropioLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <form id="formNuevoCentro"
+                                  method="POST"
+                                  class="modal-content border-0 shadow-lg rounded-4">
+                                {% csrf_token %}
+                                <div class="modal-header bg-success text-white rounded-top-4">
+                                    <h5 class="modal-title fw-bold" id="modalNuevoCentroPropioLabel">
+                                        <i class="bi bi-plus-circle me-2"></i>Registrar Nuevo Centro
+                                    </h5>
+                                    <button type="button"
+                                            class="btn-close btn-close-white"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-2 bg-light border-start border-4 border-success h-100">
-                                    <small class="text-muted mb-1 d-block">Tipo</small>
-                                    <p class="h6 fw-bold mb-0" id="detCentroPropioTipo">-</p>
+                                <div class="modal-body p-4">
+                                    <div class="row gy-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="nuevoCentroNombre">Nombre</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="nuevoCentroNombre"
+                                                   name="nombreCentro"
+                                                   required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="nuevoCentroTipo">Tipo</label>
+                                            <select class="form-select" id="nuevoCentroTipo" name="tipoCentro" required></select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="nuevoCentroLocalidad">Localidad</label>
+                                            <select class="form-select"
+                                                    id="nuevoCentroLocalidad"
+                                                    name="localidadCentro"
+                                                    required></select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="nuevoCentroCelular">Celular</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="nuevoCentroCelular"
+                                                   name="celularCentro">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="nuevoCentroEmail">Email</label>
+                                            <input type="email"
+                                                   class="form-control"
+                                                   id="nuevoCentroEmail"
+                                                   name="emailCentro">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="nuevoCentroContacto">Nombre de Contacto</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="nuevoCentroContacto"
+                                                   name="nombreContacto">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" for="nuevoCentroNotas">Notas</label>
+                                            <textarea class="form-control" id="nuevoCentroNotas" name="nota" rows="2"></textarea>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-2 bg-light border-start border-4 border-primary h-100">
-                                    <small class="text-muted mb-1 d-block">Localidad</small>
-                                    <p class="h6 fw-bold mb-0" id="detCentroPropioLocalidad">-</p>
+                                <div class="modal-footer bg-light border-top rounded-bottom-4">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-save"></i> Registrar Centro
+                                    </button>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-2 bg-light border-start border-4 border-dark h-100">
-                                    <small class="text-muted mb-1 d-block">Contacto</small>
-                                    <p class="h6 fw-bold mb-0" id="detCentroPropioContacto">-</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-2 bg-light border-start border-4 border-secondary h-100">
-                                    <small class="text-muted mb-1 d-block">Teléfono</small>
-                                    <p class="h6 fw-bold mb-0" id="detCentroPropioCelular">-</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-2 bg-light border-start border-4 border-warning h-100">
-                                    <small class="text-muted mb-1 d-block">Correo</small>
-                                    <p class="h6 fw-bold mb-0" id="detCentroPropioEmail">-</p>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="p-3 rounded-2 bg-light border-start border-4 border-success-subtle h-100">
-                                    <small class="text-muted mb-1 d-block">Notas</small>
-                                    <p class="h6 mb-0" id="detCentroPropioNotas">-</p>
-                                </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
-                    <div class="modal-footer bg-light border-top rounded-bottom-4">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-circle"></i> Cerrar
-                        </button>
-                        <button type="button" class="btn btn-success" id="btnEditarCentroPropio">
-                            <i class="bi bi-pencil-square"></i> Editar
-                        </button>
-                        <script>
+                    <!-- Modal de detalles del centro propio, igual que antes (SIN CAMBIOS) -->
+                    <div class="modal fade"
+                         id="modalDetallesCentroPropio"
+                         data-modal-ready="true"
+                         tabindex="-1"
+                         aria-labelledby="modalDetallesCentroPropioLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                <div class="modal-header bg-success text-white rounded-top-4">
+                                    <h5 class="modal-title d-flex align-items-center fw-bold"
+                                        id="modalDetallesCentroPropioLabel">
+                                        <i class="bi bi-building me-2"></i>Detalles del Centro
+                                    </h5>
+                                    <button type="button"
+                                            class="btn-close btn-close-white"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <input type="hidden" id="inputCentroId">
+                                    <div class="row gy-3">
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-2 bg-light border-start border-4 border-info h-100">
+                                                <small class="text-muted mb-1 d-block">Nombre</small>
+                                                <p class="h6 fw-bold mb-0" id="detCentroPropioNombre">-</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-2 bg-light border-start border-4 border-success h-100">
+                                                <small class="text-muted mb-1 d-block">Tipo</small>
+                                                <p class="h6 fw-bold mb-0" id="detCentroPropioTipo">-</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-2 bg-light border-start border-4 border-primary h-100">
+                                                <small class="text-muted mb-1 d-block">Localidad</small>
+                                                <p class="h6 fw-bold mb-0" id="detCentroPropioLocalidad">-</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-2 bg-light border-start border-4 border-dark h-100">
+                                                <small class="text-muted mb-1 d-block">Contacto</small>
+                                                <p class="h6 fw-bold mb-0" id="detCentroPropioContacto">-</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-2 bg-light border-start border-4 border-secondary h-100">
+                                                <small class="text-muted mb-1 d-block">Teléfono</small>
+                                                <p class="h6 fw-bold mb-0" id="detCentroPropioCelular">-</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-2 bg-light border-start border-4 border-warning h-100">
+                                                <small class="text-muted mb-1 d-block">Correo</small>
+                                                <p class="h6 fw-bold mb-0" id="detCentroPropioEmail">-</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="p-3 rounded-2 bg-light border-start border-4 border-success-subtle h-100">
+                                                <small class="text-muted mb-1 d-block">Notas</small>
+                                                <p class="h6 mb-0" id="detCentroPropioNotas">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light border-top rounded-bottom-4">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="bi bi-x-circle"></i> Cerrar
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="btnEditarCentroPropio">
+                                        <i class="bi bi-pencil-square"></i> Editar
+                                    </button>
+                                    <script>
                         // Handler for Editar button in centro propio modal (ahora aseguramos cargar y poblar selects con catálogos antes de mostrar el modal)
                         (function() {
                             const btn = document.getElementById('btnEditarCentroPropio');
@@ -528,162 +604,162 @@
                                 });
                             }
                         })();
-                        </script>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Modal reutilizable para ver detalles del centro -->
-    <div class="modal fade"
-         id="modalDetallesCentro"
-         tabindex="-1"
-         aria-labelledby="modalDetallesCentroLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content border-0 shadow-lg rounded-4">
-                <div class="modal-header bg-primary text-white rounded-top-4">
-                    <h5 class="modal-title d-flex align-items-center fw-bold"
-                        id="modalDetallesCentroLabel">
-                        <i class="bi bi-building me-2"></i>Detalles del Centro
-                    </h5>
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="row gy-3">
-                        <div class="col-md-6">
-                            <div class="p-3 rounded-2 bg-light border-start border-4 border-info h-100">
-                                <small class="text-muted mb-1 d-block">Nombre</small>
-                                <p class="h6 fw-bold mb-0" id="detCentroNombre">-</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 rounded-2 bg-light border-start border-4 border-success h-100">
-                                <small class="text-muted mb-1 d-block">Tipo</small>
-                                <p class="h6 fw-bold mb-0" id="detCentroTipo">-</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 rounded-2 bg-light border-start border-4 border-primary h-100">
-                                <small class="text-muted mb-1 d-block">Localidad</small>
-                                <p class="h6 fw-bold mb-0" id="detCentroLocalidad">-</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 rounded-2 bg-light border-start border-4 border-dark h-100">
-                                <small class="text-muted mb-1 d-block">Contacto</small>
-                                <p class="h6 fw-bold mb-0" id="detCentroContacto">-</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 rounded-2 bg-light border-start border-4 border-secondary h-100">
-                                <small class="text-muted mb-1 d-block">Teléfono</small>
-                                <p class="h6 fw-bold mb-0" id="detCentroCelular">-</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 rounded-2 bg-light border-start border-4 border-warning h-100">
-                                <small class="text-muted mb-1 d-block">Correo</small>
-                                <p class="h6 fw-bold mb-0" id="detCentroEmail">-</p>
+                                    </script>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light border-top rounded-bottom-4">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i> Cerrar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Modal de edición de Centro Propio -->
-    <div class="modal fade"
-         id="modalEditarCentroPropio"
-         tabindex="-1"
-         aria-labelledby="modalEditarCentroPropioLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <form id="formEditarCentro"
-                  method="POST"
-                  class="modal-content border-0 shadow-lg rounded-4">
-                {% csrf_token %}
-                <input type="hidden" name="centroId" id="editCentroInputId">
-                <div class="modal-header bg-success text-white rounded-top-4">
-                    <h5 class="modal-title fw-bold" id="modalEditarCentroPropioLabel">
-                        <i class="bi bi-pencil-square me-2"></i>Editar Centro
-                    </h5>
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="row gy-3">
-                        <div class="col-md-6">
-                            <label class="form-label" for="editCentroNombre">Nombre</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editCentroNombre"
-                                   name="nombreCentro"
-                                   required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="editCentroTipo">Tipo</label>
-                            <select class="form-select" id="editCentroTipo" name="tipoCentro" required></select>
-                            <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="editCentroLocalidad">Localidad</label>
-                            <select class="form-select"
-                                    id="editCentroLocalidad"
-                                    name="localidadCentro"
-                                    required></select>
-                            <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
-                            <!-- Si hay select de localidades, reemplazar por select -->
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="editCentroCelular">Celular</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editCentroCelular"
-                                   name="celularCentro">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="editCentroEmail">Email</label>
-                            <input type="email"
-                                   class="form-control"
-                                   id="editCentroEmail"
-                                   name="emailCentro">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="editCentroContacto">Nombre de Contacto</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editCentroContacto"
-                                   name="nombreContacto">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label" for="editCentroNotas">Notas</label>
-                            <textarea class="form-control" id="editCentroNotas" name="nota" rows="2"></textarea>
+                <!-- Modal reutilizable para ver detalles del centro -->
+                <div class="modal fade"
+                     id="modalDetallesCentro"
+                     tabindex="-1"
+                     aria-labelledby="modalDetallesCentroLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content border-0 shadow-lg rounded-4">
+                            <div class="modal-header bg-primary text-white rounded-top-4">
+                                <h5 class="modal-title d-flex align-items-center fw-bold"
+                                    id="modalDetallesCentroLabel">
+                                    <i class="bi bi-building me-2"></i>Detalles del Centro
+                                </h5>
+                                <button type="button"
+                                        class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="row gy-3">
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-2 bg-light border-start border-4 border-info h-100">
+                                            <small class="text-muted mb-1 d-block">Nombre</small>
+                                            <p class="h6 fw-bold mb-0" id="detCentroNombre">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-2 bg-light border-start border-4 border-success h-100">
+                                            <small class="text-muted mb-1 d-block">Tipo</small>
+                                            <p class="h6 fw-bold mb-0" id="detCentroTipo">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-2 bg-light border-start border-4 border-primary h-100">
+                                            <small class="text-muted mb-1 d-block">Localidad</small>
+                                            <p class="h6 fw-bold mb-0" id="detCentroLocalidad">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-2 bg-light border-start border-4 border-dark h-100">
+                                            <small class="text-muted mb-1 d-block">Contacto</small>
+                                            <p class="h6 fw-bold mb-0" id="detCentroContacto">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-2 bg-light border-start border-4 border-secondary h-100">
+                                            <small class="text-muted mb-1 d-block">Teléfono</small>
+                                            <p class="h6 fw-bold mb-0" id="detCentroCelular">-</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded-2 bg-light border-start border-4 border-warning h-100">
+                                            <small class="text-muted mb-1 d-block">Correo</small>
+                                            <p class="h6 fw-bold mb-0" id="detCentroEmail">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light border-top rounded-bottom-4">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle"></i> Cerrar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light border-top rounded-bottom-4">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i> Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-save"></i> Guardar cambios
-                    </button>
+                <!-- Modal de edición de Centro Propio -->
+                <div class="modal fade"
+                     id="modalEditarCentroPropio"
+                     tabindex="-1"
+                     aria-labelledby="modalEditarCentroPropioLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <form id="formEditarCentro"
+                              method="POST"
+                              class="modal-content border-0 shadow-lg rounded-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="centroId" id="editCentroInputId">
+                            <div class="modal-header bg-success text-white rounded-top-4">
+                                <h5 class="modal-title fw-bold" id="modalEditarCentroPropioLabel">
+                                    <i class="bi bi-pencil-square me-2"></i>Editar Centro
+                                </h5>
+                                <button type="button"
+                                        class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="row gy-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="editCentroNombre">Nombre</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="editCentroNombre"
+                                               name="nombreCentro"
+                                               required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="editCentroTipo">Tipo</label>
+                                        <select class="form-select" id="editCentroTipo" name="tipoCentro" required></select>
+                                        <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="editCentroLocalidad">Localidad</label>
+                                        <select class="form-select"
+                                                id="editCentroLocalidad"
+                                                name="localidadCentro"
+                                                required></select>
+                                        <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
+                                        <!-- Si hay select de localidades, reemplazar por select -->
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="editCentroCelular">Celular</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="editCentroCelular"
+                                               name="celularCentro">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="editCentroEmail">Email</label>
+                                        <input type="email"
+                                               class="form-control"
+                                               id="editCentroEmail"
+                                               name="emailCentro">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="editCentroContacto">Nombre de Contacto</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="editCentroContacto"
+                                               name="nombreContacto">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label" for="editCentroNotas">Notas</label>
+                                        <textarea class="form-control" id="editCentroNotas" name="nota" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light border-top rounded-bottom-4">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-save"></i> Guardar cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </form>
-        </div>
-    </div>
-    <style>
+                <style>
     /* Fix stacking issues for Select2 inside Bootstrap Modals */
     .select2-container--bootstrap4 .select2-dropdown {
       z-index: 2000 !important;
@@ -691,8 +767,83 @@
     .select2-container--bootstrap4.select2-container--open {
       z-index: 2001 !important;
     }
-    </style>
-    <script>
+                </style>
+                <script>
+    // Conecta el botón "Agregar Nuevo Centro" al modal de registro
+    (function() {
+        const btnNuevoCentro = document.getElementById('btnAgregarNuevoCentro');
+        if (btnNuevoCentro) {
+            btnNuevoCentro.addEventListener('click', function() {
+                const formNuevo = document.getElementById('formNuevoCentro');
+                if (formNuevo) formNuevo.reset();
+                // Limpiar feedback anterior
+                const feedback = document.getElementById('nuevoCentroFeedback');
+                if(feedback) feedback.remove();
+                // Poblar selects dinámicos y aplicar Select2
+                let localidadesCatalogo, tiposCentroCatalogo;
+                try {
+                    localidadesCatalogo = JSON.parse(document.getElementById('localidadesCatalogo')?.textContent || '[]');
+                } catch { localidadesCatalogo = []; }
+                try {
+                    tiposCentroCatalogo = JSON.parse(document.getElementById('tiposCentroCatalogo')?.textContent || '[]');
+                } catch { tiposCentroCatalogo = []; }
+                if (typeof poblarSelectConCatalogo === 'function') {
+                    poblarSelectConCatalogo('nuevoCentroLocalidad', localidadesCatalogo, 'localidad_id', 'nombre');
+                    poblarSelectConCatalogo('nuevoCentroTipo', tiposCentroCatalogo, 'value', 'label');
+                }
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('modalNuevoCentroPropio'));
+                modal.show();
+            });
+        }
+        // SUBMIT AJAX NUEVO CENTRO
+        const formNuevoCentro = document.getElementById('formNuevoCentro');
+        if (formNuevoCentro) {
+            formNuevoCentro.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const url = '/punto-eca/centro/registrar-centro/';
+                const formData = new FormData(formNuevoCentro);
+                // Obtener CSRF token
+                const csrfToken = formNuevoCentro.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                // Deshabilitar submit
+                const submitBtn = formNuevoCentro.querySelector('[type=submit]');
+                if(submitBtn) submitBtn.disabled = true;
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData,
+                })
+                .then(resp => resp.json())
+                .then(data => {
+                    let msg = typeof data.mensaje === 'string' ? data.mensaje : (data.status === "ok" ? "Registro exitoso" : "Error al registrar centro");
+                    let feedback = document.getElementById('nuevoCentroFeedback');
+                    if(!feedback) {
+                        feedback = document.createElement('div');
+                        feedback.id = 'nuevoCentroFeedback';
+                        feedback.className = 'alert';
+                        document.querySelector('#formNuevoCentro .modal-body')?.prepend(feedback);
+                    }
+                    if(data.status === "ok" && data.centro) {
+                        feedback.textContent = msg;
+                        feedback.className = 'alert alert-success';
+                                            // Forzar recarga de página tras registro exitoso
+                                            setTimeout(()=>{window.location.reload();}, 1000);
+                    } else {
+                        feedback.textContent = msg;
+                        feedback.className = 'alert alert-danger';
+                    }
+                })
+                .catch(err => {
+                    alert('Error inesperado en la comunicación');
+                    console.error(err);
+                })
+                .finally(()=> { if(submitBtn) submitBtn.disabled = false; });
+            });
+        }
+    })();
 // =========== FORMULARIO EDICIÓN CENTRO PROPIO - SUBMIT AJAX =============
 document.addEventListener('DOMContentLoaded', function() {
     const formEditarCentro = document.getElementById('formEditarCentro');
@@ -1061,8 +1212,8 @@ document.addEventListener('DOMContentLoaded', function() {
         filtrarYRenderizarPropios();
     });
 })();
-    </script>
-    <script>
+                </script>
+                <script>
     // Delegated event handler for "Ver detalles" button (global y propio)
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.btn-ver-detalles-centro');
@@ -1105,8 +1256,8 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
         }
     });
-    </script>
-    <script>
+                </script>
+                <script>
     // ========== Poblar selects dinámicos para edición (localidades y tipos) ============
     function poblarSelectConCatalogo(selectId, datos, valueKey, labelKey, preselectValue) {
         const select = document.getElementById(selectId);
@@ -1218,6 +1369,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const editarModal = new bootstrap.Modal(document.getElementById('modalEditarCentroPropio'));
         editarModal.show();
     });
-    </script>
-    </script>
-</section>
+                </script>
+                </script>
+            </section>

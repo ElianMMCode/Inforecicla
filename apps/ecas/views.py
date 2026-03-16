@@ -54,9 +54,16 @@ def centro_to_dict(centro):
         "id": centro.id,
         "nombre": centro.nombre,
         "tipo": centro.tipo_centro,  # valor raw para filtros
-        "get_tipo_centro_display": centro.get_tipo_centro_display() if hasattr(centro, "get_tipo_centro_display") else centro.tipo_centro,
+        "get_tipo_centro_display": centro.get_tipo_centro_display()
+        if hasattr(centro, "get_tipo_centro_display")
+        else centro.tipo_centro,
         # Serialize localidad as full object
-        "localidad": {"id": str(centro.localidad.localidad_id), "nombre": centro.localidad.nombre} if getattr(centro, "localidad", None) else None,
+        "localidad": {
+            "id": str(centro.localidad.localidad_id),
+            "nombre": centro.localidad.nombre,
+        }
+        if getattr(centro, "localidad", None)
+        else None,
         "celular": getattr(centro, "celular", None),
         "email": getattr(centro, "email", None),
         "nombre_contacto": getattr(centro, "nombre_contacto", None),
@@ -86,8 +93,12 @@ def _build_centros_context(punto):
     centros_locales = [centro_to_dict(c) for c in centros_locales_qs]
 
     # Serializar catálogo de localidades y de tipos para JS (solo id/nombre para localidad)
-    localidades_catalogo = list(Localidad.objects.all().values('localidad_id', 'nombre'))
-    tipos_catalogo = [{'value': t.value, 'label': t.label} for t in cons.TipoCentroAcopio]
+    localidades_catalogo = list(
+        Localidad.objects.all().values("localidad_id", "nombre")
+    )
+    tipos_catalogo = [
+        {"value": t.value, "label": t.label} for t in cons.TipoCentroAcopio
+    ]
 
     return {
         "punto": punto,
@@ -222,9 +233,77 @@ def editar_centro(request, id):
         centro.save()
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"status": "ok", "centro": centro_to_dict(centro), "mensaje": "Centro editado correctamente"})
+            return JsonResponse(
+                {
+                    "status": "ok",
+                    "centro": centro_to_dict(centro),
+                    "mensaje": "Centro editado correctamente",
+                }
+            )
         return redirect("punto-eca:render_seccion", seccion="centros")
 
     # GET: render edit form
     context = _build_centros_context(punto)
     return render(request, "ecas/editar_centro.html", context)
+
+
+def registrar_centro(request):
+    """
+    View to register a new centro de acopio (ECA visibility) for current user's punto ECA.
+    """
+    # Buscar el punto del usuario
+    try:
+        # punto = PuntoECA.objects.get(gestor_eca__id=request.user.id)
+        punto = PuntoECA.objects.get(
+            gestor_eca_id="33333333-3333-3333-3333-333333333333"
+        )
+    except PuntoECA.DoesNotExist:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {"status": "error", "message": "Punto ECA no encontrado"}, status=404
+            )
+        return redirect("punto-eca:render_seccion", seccion="perfil")
+
+    if request.method == "POST":
+        nombre = request.POST.get("nombreCentro")
+        tipo_centro = request.POST.get("tipoCentro")
+        celular = request.POST.get("celularCentro")
+        email = request.POST.get("emailCentro")
+        nombre_contacto = request.POST.get("nombreContacto")
+        nota = request.POST.get("nota")
+        localidad_id = request.POST.get("localidadCentro")
+
+        nuevo_centro = CentroAcopio.objects.create(
+            nombre=nombre,
+            tipo_centro=tipo_centro,
+            celular=celular,
+            email=email,
+            nombre_contacto=nombre_contacto,
+            nota=nota,
+            visibilidad=cons.Visibilidad.ECA,
+        )
+
+        if localidad_id:
+            try:
+                nuevo_centro.localidad = Localidad.objects.get(
+                    localidad_id=localidad_id
+                )
+                nuevo_centro.save()
+            except Localidad.DoesNotExist:
+                pass
+
+        nuevo_centro.puntos_eca.add(punto)
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {
+                    "status": "ok",
+                    "centro": centro_to_dict(nuevo_centro),
+                    "mensaje": "Centro registrado correctamente",
+                }
+            )
+        return redirect("punto-eca:render_seccion", seccion="centros")
+
+    # GET: render registration form
+    context = _build_centros_context(punto)
+    return render(request, "ecas/registrar_centro.html", context)

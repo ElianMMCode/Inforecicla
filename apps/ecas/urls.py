@@ -26,5 +26,9 @@ urlpatterns = [
     path("editar-punto/<str:id>/", editar_punto, name="editar_punto"),
     path("centros/editar-centro/<str:id>/", views.editar_centro, name="editar_centro"),
     # CRUD de materiales bajo punto-eca/materiales/
-    path("materiales/", include("apps.inventory.urls", namespace="inventario")),
+    path(
+        "materiales/",
+        include("apps.inventory.urls", namespace="inventario"),
+    ),
+    path("centro/registrar-centro/", views.registrar_centro, name="registrar_centro"),
 ]
