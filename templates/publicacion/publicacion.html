@@ -81,6 +81,80 @@
                     <div class="card-body px-4 py-4">
                         <h1 class="fw-bold h2 mb-3">5 errores comunes al reciclar en casa</h1>
 
+                        <!-- ============================================================
+                             ZONA DE MEDIOS CONDICIONAL
+                             En Django usarías:
+                             {% if publicacion.video %}     → mostrar video
+                             {% elif publicacion.imagenes %} → mostrar carrusel
+                             {% endif %}
+                             ============================================================ -->
+
+                        <!-- OPCIÓN A: VIDEO (se muestra si la publicación tiene video) -->
+                        {% if publicacion.video %}
+                        <div class="mb-4 rounded overflow-hidden">
+                            <video class="w-100 rounded" controls preload="metadata"
+                                   poster="{{ publicacion.video_thumbnail.url }}">
+                                <source src="{{ publicacion.video.url }}" type="video/mp4">
+                                Tu navegador no soporta la reproducción de video.
+                            </video>
+                        </div>
+                        {% endif %}
+
+                        <!-- OPCIÓN B: CARRUSEL DE IMÁGENES (se muestra si tiene imágenes y no tiene video) -->
+                        {% if publicacion.imagenes.exists and not publicacion.video %}
+                        <div id="carruselPublicacion" class="carousel slide mb-4 rounded overflow-hidden" data-bs-ride="carousel">
+
+                            <!-- Indicadores -->
+                            {% if publicacion.imagenes.count > 1 %}
+                            <div class="carousel-indicators">
+                                {% for img in publicacion.imagenes.all %}
+                                <button type="button" data-bs-target="#carruselPublicacion"
+                                        data-bs-slide-to="{{ forloop.counter0 }}"
+                                        {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                                        aria-label="Imagen {{ forloop.counter }}"></button>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Slides -->
+                            <div class="carousel-inner">
+                                {% for img in publicacion.imagenes.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ img.imagen.url }}" class="d-block w-100 rounded"
+                                         alt="{{ img.descripcion|default:'Imagen de la publicación' }}"
+                                         style="max-height:420px; object-fit:cover;">
+                                    {% if img.descripcion %}
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-1">
+                                        <p class="mb-0 small">{{ img.descripcion }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Controles prev/next (solo si hay más de 1 imagen) -->
+                        {% if publicacion.imagenes.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carruselPublicacion" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carruselPublicacion" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- Contador de imágenes -->
+                        <div class="text-muted small mb-3">
+                            <i class="fas fa-images me-1"></i>{{ publicacion.imagenes.count }} imagen{{ publicacion.imagenes.count|pluralize:"es" }}
+                        </div>
+                        {% endif %}
+
+                        <!-- ============================================================
+                             FIN DE ZONA DE MEDIOS CONDICIONAL
+                             ============================================================ -->
+
                         <p class="text-muted">Muchos hogares en Colombia realizan esfuerzos por reciclar, pero sin saberlo cometen errores que reducen significativamente el impacto positivo de esta práctica. A continuación te contamos los cinco errores más frecuentes y cómo evitarlos.</p>
 
                         <h5 class="fw-bold mt-4">1. Mezclar residuos húmedos con secos</h5>

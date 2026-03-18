@@ -33,4 +33,7 @@ urlpatterns = [
         "punto-eca/movimientos/",
         include("apps.operations.urls", namespace="operaciones"),
     ),
+    path("publicaciones/", include("apps.publicaciones.urls", namespace="publicacion"))
+
+
 ]

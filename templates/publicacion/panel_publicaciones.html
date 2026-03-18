@@ -65,22 +65,21 @@
         <div class="bg-white rounded border p-3">
             <div class="row g-3 align-items-center">
                 <div class="col-md-5">
-                    <input type="text" class="form-control" placeholder="Buscar publicaciones...">
+                    <input type="text" class="form-control" placeholder="Buscar publicaciones..." name="q" value="{{ request.GET.q }}">
                 </div>
                 <div class="col-md-4">
-                    <select class="form-select">
+                    <select class="form-select" name="categoria">
                         <option value="">Todas las categorías</option>
-                        <option>Consejos de reciclaje</option>
-                        <option>Noticias ambientales</option>
-                        <option>Puntos ECA</option>
-                        <option>Comunidad</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if cat.id|stringformat:"d" == request.GET.categoria %}selected{% endif %}>{{ cat.nombre }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select">
-                        <option>Más recientes</option>
-                        <option>Mejor valorados</option>
-                        <option>Más comentados</option>
+                    <select class="form-select" name="orden">
+                        <option value="recientes" {% if request.GET.orden == "recientes" %}selected{% endif %}>Más recientes</option>
+                        <option value="valorados" {% if request.GET.orden == "valorados" %}selected{% endif %}>Mejor valorados</option>
+                        <option value="comentados" {% if request.GET.orden == "comentados" %}selected{% endif %}>Más comentados</option>
                     </select>
                 </div>
             </div>
@@ -90,216 +89,69 @@
 
 <section class="pb-5">
     <div class="container">
+
+        {% if publicaciones %}
         <div class="row g-4">
 
+            {% for pub in publicaciones %}
             <div class="col-md-6 col-xl-4">
                 <div class="card h-100 shadow-sm">
                     <div class="card-header bg-white">
                         <div class="d-flex align-items-center gap-2">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">M</div>
+                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">{{ pub.autor.nombre|make_list|first }}</div>
                             <div>
-                                <div class="fw-semibold small">María López</div>
-                                <div class="text-muted" style="font-size:.78rem;">12 feb 2025 · <span class="badge bg-success-subtle text-success">Consejos</span></div>
+                                <div class="fw-semibold small">{{ pub.autor.nombre }}</div>
+                                <div class="text-muted" style="font-size:.78rem;">{{ pub.fecha|date:"d M Y" }} · <span class="badge bg-success-subtle text-success">{{ pub.categoria.nombre }}</span></div>
                             </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <h5 class="fw-bold">5 errores comunes al reciclar en casa</h5>
-                        <p class="text-muted small">Muchos hogares cometen errores básicos que reducen la efectividad del reciclaje. Aprende cuáles son y cómo evitarlos para hacer tu aporte real al medio ambiente.</p>
-                    </div>
-                    <div class="px-3 pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-warning fs-5">★★★★</span><span class="text-secondary fs-5">★</span>
-                            <span class="text-muted small">4.0 · 18 votos</span>
-                        </div>
-                    </div>
-                    <div class="px-3 pb-3">
-                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-1">
-                            <i class="fas fa-comment-dots me-1"></i>3 comentarios
-                        </a>
-                        <div class="collapse mt-3" id="comments-1">
-                            <div class="mb-2 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Carlos R.</span>
-                                <p class="mb-0 small text-muted">No sabía que las tapas de plástico se reciclan aparte.</p>
-                            </div>
-                            <div class="mb-2 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Ana P.</span>
-                                <p class="mb-0 small text-muted">Excelente contenido, lo compartí con mi familia.</p>
-                            </div>
-                            <div class="mb-3 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Luis G.</span>
-                                <p class="mb-0 small text-muted">Dónde llevar pilas usadas en Bogotá?</p>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <textarea class="form-control form-control-sm" rows="2" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm align-self-end"><i class="fas fa-paper-plane"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="col-md-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">E</div>
-                            <div>
-                                <div class="fw-semibold small">ECA Norte</div>
-                                <div class="text-muted" style="font-size:.78rem;">5 feb 2025 · <span class="badge bg-primary-subtle text-primary">Noticias</span></div>
+                    <!-- Miniatura condicional: imagen o video -->
+                    {% if pub.video %}
+                    <div class="position-relative">
+                        <img src="{{ pub.video_thumbnail.url }}" class="card-img-top" alt="Vista previa del video" style="height:180px; object-fit:cover;">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="bg-dark bg-opacity-50 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                <i class="fas fa-play text-white"></i>
                             </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <h5 class="fw-bold">Bogotá supera meta de reciclaje en enero</h5>
-                        <p class="text-muted small">La ciudad alcanzó un 34% de material reciclado en el primer mes del año, superando por primera vez la meta establecida por la UAESP para el trimestre.</p>
-                    </div>
-                    <div class="px-3 pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-warning fs-5">★★★★★</span>
-                            <span class="text-muted small">5.0 · 9 votos</span>
-                        </div>
-                    </div>
-                    <div class="px-3 pb-3">
-                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-2">
-                            <i class="fas fa-comment-dots me-1"></i>1 comentario
-                        </a>
-                        <div class="collapse mt-3" id="comments-2">
-                            <div class="mb-3 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Pedro M.</span>
-                                <p class="mb-0 small text-muted">Qué buena noticia, ojalá se mantenga la tendencia.</p>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <textarea class="form-control form-control-sm" rows="2" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm align-self-end"><i class="fas fa-paper-plane"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    {% elif pub.imagenes.exists %}
+                    <img src="{{ pub.imagenes.first.imagen.url }}" class="card-img-top" alt="Imagen de la publicación" style="height:180px; object-fit:cover;">
+                    {% endif %}
 
-            <div class="col-md-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">J</div>
-                            <div>
-                                <div class="fw-semibold small">Juan Torres</div>
-                                <div class="text-muted" style="font-size:.78rem;">28 ene 2025 · <span class="badge bg-warning-subtle text-warning-emphasis">Puntos ECA</span></div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="card-body">
-                        <h5 class="fw-bold">Qué materiales acepta tu punto ECA más cercano</h5>
-                        <p class="text-muted small">Guía práctica para saber qué llevar a cada estación de clasificación y aprovechamiento. Evita rechazos y optimiza tus visitas al punto ECA.</p>
+                        <h5 class="fw-bold">{{ pub.titulo }}</h5>
+                        <p class="text-muted small">{{ pub.contenido|truncatewords:30 }}</p>
                     </div>
                     <div class="px-3 pb-2">
                         <div class="d-flex align-items-center gap-2">
-                            <span class="text-warning fs-5">★★★</span><span class="text-secondary fs-5">★★</span>
-                            <span class="text-muted small">3.0 · 6 votos</span>
+                            <span class="text-success small"><i class="fas fa-thumbs-up me-1"></i>{{ pub.likes }}</span>
+                            <span class="text-danger small"><i class="fas fa-thumbs-down me-1"></i>{{ pub.dislikes }}</span>
                         </div>
                     </div>
                     <div class="px-3 pb-3">
-                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-3">
-                            <i class="fas fa-comment-dots me-1"></i>0 comentarios
+                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-{{ pub.id }}">
+                            <i class="fas fa-comment-dots me-1"></i>{{ pub.comentarios.count }} comentario{{ pub.comentarios.count|pluralize:"s" }}
                         </a>
-                        <div class="collapse mt-3" id="comments-3">
+                        <div class="collapse mt-3" id="comments-{{ pub.id }}">
+
+                            {% for comentario in pub.comentarios.all|slice:":3" %}
+                            <div class="mb-2 bg-light rounded p-2">
+                                <span class="fw-semibold small text-success">{{ comentario.autor.nombre }}</span>
+                                <p class="mb-0 small text-muted">{{ comentario.texto }}</p>
+                            </div>
+                            {% empty %}
                             <p class="text-muted small fst-italic">Sé el primero en comentar.</p>
-                            <div class="d-flex gap-2">
-                                <textarea class="form-control form-control-sm" rows="2" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm align-self-end"><i class="fas fa-paper-plane"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            {% endfor %}
 
-            <div class="col-md-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">S</div>
-                            <div>
-                                <div class="fw-semibold small">Sandra Ruiz</div>
-                                <div class="text-muted" style="font-size:.78rem;">20 ene 2025 · <span class="badge bg-danger-subtle text-danger">Comunidad</span></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="fw-bold">Jornada de reciclaje en el barrio Chapinero</h5>
-                        <p class="text-muted small">Más de 200 familias participaron en la jornada comunitaria organizada por la JAC y el punto ECA local. Una iniciativa que vale la pena replicar.</p>
-                    </div>
-                    <div class="px-3 pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-warning fs-5">★★★★</span><span class="text-secondary fs-5">★</span>
-                            <span class="text-muted small">4.0 · 22 votos</span>
-                        </div>
-                    </div>
-                    <div class="px-3 pb-3">
-                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-4">
-                            <i class="fas fa-comment-dots me-1"></i>2 comentarios
-                        </a>
-                        <div class="collapse mt-3" id="comments-4">
-                            <div class="mb-2 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Rosa V.</span>
-                                <p class="mb-0 small text-muted">Me encantó, ojalá hagan más jornadas así.</p>
-                            </div>
-                            <div class="mb-3 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Tomás F.</span>
-                                <p class="mb-0 small text-muted">Cuándo es la próxima jornada?</p>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <textarea class="form-control form-control-sm" rows="2" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm align-self-end"><i class="fas fa-paper-plane"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            {% if pub.comentarios.count > 3 %}
+                            <a href="/publicaciones/{{ pub.id }}" class="text-success small fw-semibold text-decoration-none">
+                                Ver todos los comentarios
+                            </a>
+                            {% endif %}
 
-            <div class="col-md-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">R</div>
-                            <div>
-                                <div class="fw-semibold small">Roberto Díaz</div>
-                                <div class="text-muted" style="font-size:.78rem;">15 ene 2025 · <span class="badge bg-success-subtle text-success">Consejos</span></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="fw-bold">Compostaje en apartamento: sí es posible</h5>
-                        <p class="text-muted small">No necesitas un jardín para compostar. Con un par de recipientes y esta guía paso a paso, podrás convertir tus residuos orgánicos en abono desde casa.</p>
-                    </div>
-                    <div class="px-3 pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-warning fs-5">★★★★★</span>
-                            <span class="text-muted small">5.0 · 31 votos</span>
-                        </div>
-                    </div>
-                    <div class="px-3 pb-3">
-                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-5">
-                            <i class="fas fa-comment-dots me-1"></i>4 comentarios
-                        </a>
-                        <div class="collapse mt-3" id="comments-5">
-                            <div class="mb-2 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Valentina C.</span>
-                                <p class="mb-0 small text-muted">Lo hice y funciona genial. Gracias por la guía.</p>
-                            </div>
-                            <div class="mb-2 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Diego S.</span>
-                                <p class="mb-0 small text-muted">Qué recipientes recomiendas, de plástico o madera?</p>
-                            </div>
-                            <div class="mb-2 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Natalia W.</span>
-                                <p class="mb-0 small text-muted">Perfecto para vivir en apartamento pequeño.</p>
-                            </div>
-                            <div class="mb-3 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Hugo M.</span>
-                                <p class="mb-0 small text-muted">El abono sirve para plantas de interior?</p>
-                            </div>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-2 mt-2">
                                 <textarea class="form-control form-control-sm" rows="2" placeholder="Escribe un comentario..."></textarea>
                                 <button class="btn btn-success btn-sm align-self-end"><i class="fas fa-paper-plane"></i></button>
                             </div>
@@ -307,57 +159,61 @@
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">L</div>
-                            <div>
-                                <div class="fw-semibold small">Laura Medina</div>
-                                <div class="text-muted" style="font-size:.78rem;">10 ene 2025 · <span class="badge bg-primary-subtle text-primary">Noticias</span></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="fw-bold">Nueva normativa de residuos sólidos en Colombia</h5>
-                        <p class="text-muted small">El Ministerio de Ambiente actualizó la resolución sobre manejo de residuos sólidos. Conoce los cambios clave que afectan a ciudadanos, ECAs y empresas.</p>
-                    </div>
-                    <div class="px-3 pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-warning fs-5">★★★</span><span class="text-secondary fs-5">★★</span>
-                            <span class="text-muted small">3.0 · 14 votos</span>
-                        </div>
-                    </div>
-                    <div class="px-3 pb-3">
-                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-6">
-                            <i class="fas fa-comment-dots me-1"></i>1 comentario
-                        </a>
-                        <div class="collapse mt-3" id="comments-6">
-                            <div class="mb-3 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">Claudia N.</span>
-                                <p class="mb-0 small text-muted">Dónde puedo leer la resolución completa?</p>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <textarea class="form-control form-control-sm" rows="2" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm align-self-end"><i class="fas fa-paper-plane"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
 
         </div>
 
+        <!-- Paginación (solo si hay más de una página) -->
+        {% if publicaciones.has_other_pages %}
         <nav class="mt-5 d-flex justify-content-center">
             <ul class="pagination">
-                <li class="page-item disabled"><a class="page-link" href="#">«</a></li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">»</a></li>
+                {% if publicaciones.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ publicaciones.previous_page_number }}">«</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">«</span></li>
+                {% endif %}
+
+                {% for num in publicaciones.paginator.page_range %}
+                <li class="page-item {% if publicaciones.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+
+                {% if publicaciones.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ publicaciones.next_page_number }}">»</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">»</span></li>
+                {% endif %}
             </ul>
         </nav>
+        {% endif %}
+
+        {% else %}
+        <!-- ============================================================
+             ESTADO VACÍO: no hay publicaciones
+             ============================================================ -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center" style="width:100px;height:100px;">
+                    <i class="fas fa-newspaper text-success" style="font-size:2.5rem;"></i>
+                </div>
+            </div>
+            <h4 class="fw-bold text-muted mb-2">No hay publicaciones disponibles</h4>
+            <p class="text-muted mb-4">Aún no se han creado publicaciones en la plataforma.<br>Sé el primero en compartir contenido con la comunidad.</p>
+            {% if user.is_authenticated %}
+            <a href="/publicaciones/crear" class="btn btn-success px-4">
+                <i class="fas fa-plus me-2"></i>Crear publicación
+            </a>
+            {% else %}
+            
+            {% endif %}
+        </div>
+        {% endif %}
+
     </div>
 </section>
 

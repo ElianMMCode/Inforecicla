@@ -35,6 +35,8 @@ class Publicacion(CreacionModificacionModel):
         null=True,
         related_name="publicaciones",
     )
+    
+    contenido = models.TextField()
 
     # Relacion con la tabla de Usuarios (autor de la publicacion)
     usuario = models.ForeignKey(
