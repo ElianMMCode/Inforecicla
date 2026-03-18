@@ -1,6 +1,52 @@
 // Script para modal de centros propios - Versión simplificada y directa
 console.log('🚀 [MODAL-CENTROS] Script cargado');
 
+// ======= Agregado: Select2 para campos 'tipo' y 'localidad' en edición =======
+// INICIALIZACIÓN DESACTIVADA PARA TESTEAR CON BLOQUE INTERNO EN section-centros.html
+// function poblarSelectTipoYLocalidadEdit() {
+//     const selectTipo = document.getElementById('editCentroTipo');
+//     const selectLocalidad = document.getElementById('editCentroLocalidad');
+//     if (selectTipo) {
+//         if ($.fn && $(selectTipo).hasClass('select2-hidden-accessible')) $(selectTipo).select2('destroy');
+//         selectTipo.innerHTML = '';
+//     }
+//     if (selectLocalidad) {
+//         if ($.fn && $(selectLocalidad).hasClass('select2-hidden-accessible')) $(selectLocalidad).select2('destroy');
+//         selectLocalidad.innerHTML = '';
+//     }
+//     if (!window.CENTROS_PROPIOS || !Array.isArray(window.CENTROS_PROPIOS) || window.CENTROS_PROPIOS.length === 0) {
+//         if (selectTipo) selectTipo.innerHTML = '<option>-- Sin opciones --</option>';
+//         if (selectLocalidad) selectLocalidad.innerHTML = '<option>-- Sin opciones --</option>';
+//         return;
+//     }
+//     const tiposValores = new Set();
+//     const localidadesMap = new Map();
+//     window.CENTROS_PROPIOS.forEach(c => {
+//         if (c.get_tipo_centro_display && c.get_tipo_centro_display.trim()) tiposValores.add(c.get_tipo_centro_display.trim());
+//         else if (c.tipo && c.tipo.trim()) tiposValores.add(c.tipo.trim());
+//         if (c.localidad && c.localidad.id) localidadesMap.set(String(c.localidad.id), c.localidad.nombre || c.localidad.id);
+//     });
+//     if (selectTipo) {
+//         selectTipo.innerHTML = '<option value="">Selecciona tipo...</option>' +
+//             Array.from(tiposValores).sort((a, b) => a.localeCompare(b, 'es')).map(t => `<option value="${t}">${t}</option>`).join('');
+//     }
+//     if (selectLocalidad) {
+//         selectLocalidad.innerHTML = '<option value="">Selecciona localidad...</option>' +
+//             Array.from(localidadesMap.entries())
+//                 .sort((a, b) => (a[1] || '').localeCompare(b[1], 'es'))
+//                 .map(([id, nombre]) => `<option value="${id}">${nombre}</option>`).join('');
+//     }
+//     if(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2){
+//         if(selectTipo) $(selectTipo).select2({theme: 'bootstrap4', width: '100%', placeholder: 'Selecciona tipo...'});
+//         if(selectLocalidad) $(selectLocalidad).select2({theme: 'bootstrap4', width: '100%', placeholder: 'Selecciona localidad...'});
+//     }
+// }
+// if(window.jQuery){
+//   $(document).on('show.bs.modal', '#modalEditarCentroPropio', function(){
+//     poblarSelectTipoYLocalidadEdit();
+//   });
+// }
+
 let centroActualEnEdicion = null;
 
 // Función auxiliar para obtener elemento de forma segura
