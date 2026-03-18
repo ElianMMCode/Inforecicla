@@ -1,7 +1,8 @@
-from django.urls import path
+from django.urls import path, include
 from apps.ecas.views import render_seccion, editar_perfil_gestor, editar_punto
 
-app_name = "punto"
+# Este archivo contiene rutas propias de secciones del punto-eca y edición de perfil.
+app_name = "punto-eca"
 
 urlpatterns = [
     path("", render_seccion, {"seccion": "resumen"}, name="resumen"),
@@ -13,12 +14,6 @@ urlpatterns = [
         {"seccion": "configuracion"},
         name="configuracion",
     ),
-    path(
-        "detalles-material/",
-        render_seccion,
-        {"seccion": "detalles_material"},
-        name="detalles_material",
-    ),
     path("materiales/", render_seccion, {"seccion": "materiales"}, name="materiales"),
     path(
         "movimientos/", render_seccion, {"seccion": "movimientos"}, name="movimientos"
@@ -27,4 +22,6 @@ urlpatterns = [
     path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
     path("editar-perfil/<str:id>/", editar_perfil_gestor, name="editar_perfil"),
     path("editar-punto/<str:id>/", editar_punto, name="editar_punto"),
+    # CRUD de materiales bajo punto-eca/materiales/
+    path("materiales/", include("apps.inventory.urls", namespace="inventario")),
 ]

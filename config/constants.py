@@ -114,3 +114,14 @@ class Calificacion(models.TextChoices):
 class Visibilidad(models.TextChoices):
     GLOBAL = "GLOBAL", _("Global")
     ECA = "ECA", _("ECA")
+    
+class TipoPublicacion(models.TextChoices):
+    PUNTO_ECA = "ECA", _("Punto Eca")
+    NOTICIA = "NOTIC", _("Noticia")
+    EVENTO = "Even", _("Evento"),
+    EDUCACION = "Edu", _("Educacion")
+    
+class Votos(models.TextChoices):
+    LIKE = "Like", _("Like")
+    DISLIKE = "Dislike", _("Dislike")
+    

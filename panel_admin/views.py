@@ -27,5 +27,3 @@ def listar_usuarios(request):
         'usuarios': usuarios
     }
     return render(request, 'admin/Usuarios/listUsuario.html', contexto)
-
-def crear_usuarioas 

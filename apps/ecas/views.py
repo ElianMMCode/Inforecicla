@@ -4,18 +4,9 @@ from apps.users.models import Usuario
 from config import constants as cons
 from apps.core.service import UserService
 from apps.ecas.service import PuntoService
-
-
-SECTION_TEMPLATES = {
-    "resumen": "ecas/section-resumen.html",
-    "calendario": "ecas/section-calendario.html",
-    "centros": "ecas/section-centros.html",
-    "configuracion": "ecas/section-configuracion.html",
-    "detalles_material": "ecas/section-detalles-material.html",
-    "materiales": "ecas/section-materiales.html",
-    "movimientos": "ecas/section-movimientos.html",
-    "perfil": "ecas/section-perfil.html",
-}
+from apps.ecas.constants import SECTION_TEMPLATES
+from apps.operations.views import _build_movimientos_context
+from apps.inventory.views import _build_materiales_context
 
 
 def render_seccion(request, seccion="resumen"):
@@ -30,6 +21,10 @@ def render_seccion(request, seccion="resumen"):
 
     if seccion == "perfil":
         context = _build_perfil_context(punto)
+    elif seccion == "materiales":
+        context = _build_materiales_context(punto)
+    elif seccion == "movimientos":
+        context = _build_movimientos_context(punto)
     else:
         context = _build_default_context(punto, seccion)
 
@@ -69,13 +64,13 @@ def editar_perfil_gestor(request, id):
     try:
         usuario = Usuario.objects.get(id=id)
     except Usuario.DoesNotExist:
-        return redirect("punto:render_seccion", seccion="perfil")
+        return redirect("punto-eca:render_seccion", seccion="perfil")
 
     # Manejar POST - actualizar usuario
     if request.method == "POST":
         # Actualizar campos básicos del usuario
         usuario = UserService.editar_perfil(request, id)
-        return redirect("punto:perfil")
+        return redirect("punto-eca:perfil")
 
     # Manejar GET - renderizar formulario
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
@@ -99,11 +94,11 @@ def editar_punto(request, id):
     try:
         punto = PuntoECA.objects.get(gestor_eca_id=id)
     except PuntoECA.DoesNotExist:
-        return redirect("punto:render_seccion", seccion="perfil")
+        return redirect("punto-eca:render_seccion", seccion="perfil")
 
     if request.method == "POST":
         punto = PuntoService.editar_punto(request, id)
-        return redirect("punto:perfil")
+        return redirect("punto-eca:perfil")
     # Manejar GET - renderizar formulario
 
     usuario = punto.gestor_eca

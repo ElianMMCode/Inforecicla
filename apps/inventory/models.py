@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from config.base_models import CreacionModificacionModel, DescripcionModel
 from config.constants import Alerta, UnidadMedida
+from django.utils import timezone
 
 
 class Inventario(CreacionModificacionModel):
@@ -24,6 +25,18 @@ class Inventario(CreacionModificacionModel):
         blank=False,
         verbose_name="Unidad de medida",
         help_text="Unidad de medida utilizada para el material (KG, Unidades, Toneladas, etc.)",
+    )
+
+    ocupacion_actual = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0, message="La ocupación actual no puede ser negativa")
+        ],
+        verbose_name="Ocupación actual",
+        help_text="Cantidad ocupada actualmente del material en el inventario",
     )
 
     stock_actual = models.DecimalField(
@@ -142,6 +155,24 @@ class Inventario(CreacionModificacionModel):
     def __str__(self):
         return f"{self.punto_eca.nombre} + {self.material.nombre}"
 
+    def recalcular_ocupacion(self):
+        """Recalcula el porcentaje de ocupación actual en base al stock y la capacidad máxima."""
+        if (
+            self.capacidad_maxima
+            and self.stock_actual is not None
+            and self.capacidad_maxima > 0
+        ):
+            self.ocupacion_actual = round(
+                self.stock_actual / self.capacidad_maxima * 100, 2
+            )
+        else:
+            self.ocupacion_actual = 0
+
+    def save(self, *args, **kwargs):
+        self.recalcular_ocupacion()
+        super().save(*args, **kwargs)
+
+
 class Material(DescripcionModel):
     imagen_url = models.URLField("Foto material", max_length=200, blank=True)
 
@@ -173,6 +204,7 @@ class Material(DescripcionModel):
     def __str__(self):
         return self.nombre
 
+
 class CategoriaMaterial(DescripcionModel):
     pass
 
@@ -183,6 +215,7 @@ class CategoriaMaterial(DescripcionModel):
 
     def __str__(self):
         return self.nombre
+
 
 class TipoMaterial(DescripcionModel):
     pass

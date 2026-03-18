@@ -2,7 +2,6 @@ from django.shortcuts import redirect
 from django.db import transaction
 from apps.ecas.models import Localidad
 from apps.ecas.models import PuntoECA
-from apps.users.models import Usuario
 
 
 class PuntoService:
@@ -12,14 +11,15 @@ class PuntoService:
         """
         Vista para editar el punto ECA.
         """
-        print("--- DEBUG: DATOS RECIBIDOS ---")
-        print(request.POST)
-        print(f"Localidad enviada: {request.POST.get('localidad')}")
-        print("------------------------------")
         try:
             punto = PuntoECA.objects.get(gestor_eca_id=id)
         except PuntoECA.DoesNotExist:
             return redirect("base:inicio")
+
+        print(f"--- DEBUG --- Claves recibidas: {list(request.POST.keys())}")
+        print(
+            f"--- DEBUG --- Valor específico: '{request.POST.get('descripcionPunto')}'"
+        )
 
         punto.nombre = request.POST.get("nombrePunto", punto.nombre)
         punto.direccion = request.POST.get("direccionPunto", punto.direccion)
@@ -27,8 +27,11 @@ class PuntoService:
         punto.email = request.POST.get("emailPunto", punto.email)
         punto.telefono_punto = request.POST.get("telefonoPunto", punto.telefono_punto)
         punto.sitio_web = request.POST.get("sitioWebPunto", punto.sitio_web)
-        punto.latitud = request.POST.get("latitud", punto.latitud)
-        punto.longitud = request.POST.get("longitud", punto.longitud)
+        # Convert latitud/longitud: accept empty as None
+        lat = request.POST.get("latitud", None)
+        punto.latitud = float(lat) if lat not in (None, "") else None
+        lon = request.POST.get("longitud", None)
+        punto.longitud = float(lon) if lon not in (None, "") else None
         punto.descripcion = request.POST.get("descripcionPunto", punto.descripcion)
         punto.logo_url_punto = request.POST.get("logoUrlPunto", punto.logo_url_punto)
 
@@ -41,7 +44,9 @@ class PuntoService:
 
         try:
             punto.save()
-        except Exception:
-            pass
+        except Exception as e:
+            # Print and raise to make the error visible during debug
+            print(f"--- ERROR AL GUARDAR PUNTO ECA: {e}")
+            raise
 
         return punto

@@ -27,4 +27,10 @@ urlpatterns = [
     path("punto/", include("apps.ecas.urls", namespace="punto")),
     #Urls Panel Administracion
     path('panel_admin/', include("app.panel_admin.urls", namespace="panel_admin")),
+    path("punto-eca/", include("apps.ecas.urls", namespace="punto-eca")),
+    path("punto-eca/", include("apps.inventory.urls", namespace="inventario")),
+    path(
+        "punto-eca/movimientos/",
+        include("apps.operations.urls", namespace="operaciones"),
+    ),
 ]

@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "apps.core.apps.CoreConfig",
     "apps.ecas.apps.EcasConfig",
     "apps.inventory.apps.InventoryConfig",
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     "apps.users.apps.UsersConfig",
     "apps.panel_admin"
     'admin.interface'
+    "apps.publicaciones.apps.PublicacionesConfig",
 ]
 
 MIDDLEWARE = [
