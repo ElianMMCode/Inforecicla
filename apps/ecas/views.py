@@ -307,3 +307,21 @@ def registrar_centro(request):
     # GET: render registration form
     context = _build_centros_context(punto)
     return render(request, "ecas/registrar_centro.html", context)
+
+
+def eliminar_centro(request, id):
+    if request.method == "DELETE":
+        try:
+            centro = CentroAcopio.objects.get(id=id, visibilidad=cons.Visibilidad.ECA)
+            centro.delete()
+            return JsonResponse({"status": "ok", "mensaje": "Centro eliminado"})
+        except CentroAcopio.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": "Centro no encontrado"}, status=404
+            )
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    else:
+        return JsonResponse(
+            {"status": "error", "message": "Método no permitido"}, status=405
+        )

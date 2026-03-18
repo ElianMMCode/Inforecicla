@@ -30,5 +30,10 @@ urlpatterns = [
         "materiales/",
         include("apps.inventory.urls", namespace="inventario"),
     ),
-    path("centro/registrar-centro/", views.registrar_centro, name="registrar_centro"),
+    path("centros/registrar-centro/", views.registrar_centro, name="registrar_centro"),
+    path(
+        "centros/eliminar-centro/<str:id>/",
+        views.eliminar_centro,
+        name="eliminar_centro",
+    ),
 ]
