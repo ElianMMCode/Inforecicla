@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalles del Usuario - InfoRecicla</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light m-0 pt-5 pt-md-0">
+
+<div class="container-fluid px-0">
+  <div class="row g-0">
+
+    <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
+      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
+        <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+        <div class="d-flex flex-column lh-sm">
+          <span class="fw-semibold">InfoRecicla</span>
+          <small class="text-white-50">Administración</small>
+        </div>
+      </a>
+      <div class="mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <span class="fw-semibold"><i class="bi bi-people-fill me-2"></i>Usuarios</span>
+          <span class="badge rounded-pill bg-white bg-opacity-25 text-white fw-normal">Detalles</span>
+        </div>
+        <small class="text-white-50">Gestión completa del CRUD</small>
+      </div>
+      <nav class="w-100" role="navigation">
+        <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
+          <li class="nav-item"><a href="index.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
+          <li class="nav-item"><a href="lista.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Ver usuarios</a></li>
+          <li class="nav-item"><a href="crear.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear usuario</a></li>
+          <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
+      <div class="d-flex align-items-center justify-content-between px-3">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+          <i class="bi bi-recycle fs-3"></i>
+          <span class="fw-semibold">InfoRecicla</span>
+        </a>
+        <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
+      </div>
+      <nav class="mt-2">
+        <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
+          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="index.html">Resumen</a></li>
+          <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="lista.html">Usuarios</a></li>
+          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="crear.html">Crear</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <main class="col offset-md-2 p-4">
+
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+          <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-person-circle"></i> Detalles del Usuario</h1>
+          <p class="text-muted mb-0">Información completa del registro</p>
+        </div>
+        <a href="lista.html" class="btn btn-outline-success d-none d-sm-block">
+          <i class="bi bi-arrow-left"></i> Volver a Lista
+        </a>
+      </div>
+
+      <div class="card border-success shadow-sm">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+          <span class="fw-semibold fs-5">
+            <i class="bi bi-person-badge me-2"></i> Juan Carlos Pérez
+          </span>
+          <span class="badge bg-light text-success fs-6">ID: #1024</span>
+        </div>
+
+        <div class="card-body bg-light p-4">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="fw-bold text-success text-uppercase small mb-1"><i class="bi bi-envelope me-1"></i> Correo Electrónico</div>
+              <div class="fs-5"><a href="mailto:juan.perez@email.com" class="text-dark text-decoration-none">juan.perez@email.com</a></div>
+            </div>
+            <div class="col-md-6">
+              <div class="fw-bold text-success text-uppercase small mb-1"><i class="bi bi-telephone me-1"></i> Celular</div>
+              <div class="fs-5"><a href="tel:3001234567" class="text-dark text-decoration-none">300 123 4567</a></div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="fw-bold text-success text-uppercase small mb-1"><i class="bi bi-shield-lock me-1"></i> Tipo Usuario</div>
+              <div class="fs-5"><span class="badge bg-primary">Ciudadano</span></div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="fw-bold text-success text-uppercase small mb-1"><i class="bi bi-activity me-1"></i> Estado</div>
+              <div class="fs-5"><span class="badge bg-success">Activo</span></div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="fw-bold text-success text-uppercase small mb-1"><i class="bi bi-buildings me-1"></i> Ciudad</div>
+              <div class="fs-5 text-dark">Bogotá</div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="fw-bold text-success text-uppercase small mb-1"><i class="bi bi-geo-alt me-1"></i> Localidad</div>
+              <div class="fs-5 text-dark">Suba</div>
+            </div>
+
+            <div class="col-12 border-top pt-3 mt-4">
+              <div class="fw-bold text-success text-uppercase small mb-2"><i class="bi bi-card-text me-1"></i> Biografía / Notas</div>
+              <div class="text-muted bg-white p-3 rounded border">
+                Usuario muy activo en las campañas de reciclaje de su localidad. Ha participado en 3 jornadas de recolección de plásticos de un solo uso durante este semestre.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer bg-white d-flex flex-wrap gap-2 p-3">
+          <a href="editar.html" class="btn btn-success">
+            <i class="bi bi-pencil me-1"></i> Editar Información
+          </a>
+          <button type="button" class="btn btn-outline-danger">
+            <i class="bi bi-trash me-1"></i> Eliminar Usuario
+          </button>
+          <a href="lista.html" class="btn btn-outline-secondary ms-auto">
+            <i class="bi bi-list me-1"></i> Ir a la Lista
+          </a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

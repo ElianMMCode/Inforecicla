@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Detalle Material - InfoRecicla</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+<body class="bg-light m-0 pt-5 pt-md-0">
+
+<div class="container-fluid px-0">
+    <div class="row g-0">
+
+        <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
+                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+                <div class="d-flex flex-column lh-sm">
+                    <span class="fw-semibold">InfoRecicla</span>
+                    <small class="text-white-50">Administración</small>
+                </div>
+            </a>
+            <nav class="w-100" role="navigation">
+                <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
+                    <li class="nav-item"><a href="indexMaterial.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
+                    <li class="nav-item"><a href="listMaterial.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Ver materiales</a></li>
+                    <li class="nav-item"><a href="createMaterial.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear material</a></li>
+                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between px-3">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+                    <i class="bi bi-recycle fs-3"></i>
+                    <span class="fw-semibold">InfoRecicla</span>
+                </a>
+                <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
+            </div>
+            <nav class="mt-2">
+                <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
+                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="indexMaterial.html">Resumen</a></li>
+                    <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="listMaterial.html">Materiales</a></li>
+                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="createMaterial.html">Crear</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <main class="col-12 col-lg-10 offset-lg-2 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+            <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-box-open me-2"></i>Detalle del Material</h1>
+            <p class="text-muted mb-0">Revisa la información y configuración de este elemento</p>
+        </div>
+        <a href="lista.html" class="btn btn-outline-secondary d-none d-sm-block">
+            <i class="fas fa-arrow-left me-1"></i> Volver al Catálogo
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-success shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Botellas PET Transparentes</h4>
+                </div>
+                <div class="card-body bg-light p-4">
+                    <div class="row mb-4 g-3 border-bottom pb-3">
+                        <div class="col-md-6">
+                            <strong class="text-success text-uppercase small d-block mb-1">Estado:</strong>
+                            <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i> Activo</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong class="text-success text-uppercase small d-block mb-1">ID Interno:</strong>
+                            <span class="font-monospace fw-bold text-secondary">#MAT-104</span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4 g-3 border-bottom pb-3">
+                        <div class="col-12">
+                            <strong class="text-success text-uppercase small d-block mb-2">Descripción:</strong>
+                            <div class="bg-white p-3 rounded border border-light-subtle text-muted">
+                                Envases de bebidas, agua y gaseosas. Deben estar limpios, sin líquidos y preferiblemente aplastados para reducir volumen. Retirar las tapas si son de otro material (PP).
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4 g-3">
+                        <div class="col-md-6">
+                            <strong class="text-success text-uppercase small d-block mb-2">Categoría:</strong>
+                            <span class="badge bg-info text-dark fs-6 shadow-sm"><i class="fas fa-tags me-1"></i> Plásticos</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong class="text-success text-uppercase small d-block mb-2">Tipo / Subclasificación:</strong>
+                            <span class="badge bg-warning text-dark fs-6 shadow-sm"><i class="fas fa-sitemap me-1"></i> PET 1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-info shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-image me-2"></i>Referencia Visual</h6>
+                </div>
+                <div class="card-body text-center bg-light">
+                    <img src="https://images.unsplash.com/photo-1611288875791-766297371d79?auto=format&fit=crop&w=400&q=80" 
+                        alt="Botellas PET" 
+                        class="img-fluid rounded shadow-sm border border-2 border-white">
+                    <p class="small text-muted mt-2 mb-0">Esta imagen es la que verán los usuarios en la app pública.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            
+            <div class="card border-secondary shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-history me-2"></i>Historial del Sistema</h6>
+                </div>
+                <div class="card-body bg-light small">
+                    <ul class="list-unstyled mb-0 text-muted">
+                        <li class="mb-3 border-bottom pb-2">
+                            <strong class="d-block text-dark">Fecha de creación:</strong>
+                            <i class="fas fa-calendar-alt me-1"></i> 10/01/2025 08:30 AM
+                        </li>
+                        <li>
+                            <strong class="d-block text-dark">Última actualización:</strong>
+                            <i class="fas fa-sync-alt me-1"></i> 18/02/2025 14:15 PM
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-warning shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Acciones</h6>
+                </div>
+                <div class="card-body text-center bg-light">
+                    <a href="editar.html" class="btn btn-warning w-100 mb-2 fw-bold text-dark shadow-sm">
+                        <i class="fas fa-edit me-2"></i>Editar Material
+                    </a>
+                    <button type="button" class="btn btn-outline-danger w-100 mb-2">
+                        <i class="fas fa-power-off me-2"></i>Desactivar
+                    </button>
+                    <button type="button" class="btn btn-danger w-100 shadow-sm">
+                        <i class="fas fa-trash-alt me-2"></i>Eliminar por completo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
