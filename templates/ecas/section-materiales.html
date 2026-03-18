@@ -2024,7 +2024,7 @@
                     return resolve();
                 }
 
-                fetch('/punto-eca/catalogo/materiales/buscar?puntoId=' + encodeURIComponent(puntoId), {
+                fetch('/punto-eca/materiales/catalogo/buscar?puntoId=' + encodeURIComponent(puntoId), {
                     headers: { 'Accept': 'application/json' }
                 })
                     .then(res => res.json().then(data => ({ ok: res.ok, data })))
@@ -2141,7 +2141,7 @@
                     return resolve();
                 }
 
-                fetch('/punto-eca/catalogo/materiales/buscar?puntoId=' + encodeURIComponent(puntoId), {
+                fetch('/punto-eca/materiales/inventario/buscar?puntoId=' + encodeURIComponent(puntoId), {
                     headers: { 'Accept': 'application/json' }
                 })
                     .then(res => res.json().then(data => ({ ok: res.ok, data })))
