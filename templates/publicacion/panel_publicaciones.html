@@ -11,166 +11,116 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-success">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <img src="/imagenes/logo.png" alt="Logo InfoRecicla" width="90" height="90" class="rounded">
-            <span class="fs-1 fw-semibold">InfoRecicla</span>
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                aria-controls="mainNav" aria-expanded="false" aria-label="Alternar navegación">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="mainNav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                <li class="nav-item"><a class="nav-link active" href="/publicaciones">Publicaciones</a></li>
-                <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#"
-                       data-bs-toggle="dropdown" aria-expanded="false">Usuario</a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/gestor"><i class="fas fa-store me-2"></i>Modo Gestor ECA</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" style="display:inline;">
-                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                            </form>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login"
-                       data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/login">Iniciar sesión</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a></li>
-                        <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
-                    </ul>
-                </li>
-            </ul>
+        <a class="navbar-brand fw-semibold" href="/">InfoRecicla</a>
+        <div class="ms-auto">
+            <a class="nav-link text-white" href="{% url 'publicacion:panel_publicaciones' %}">Publicaciones</a>
         </div>
     </div>
 </nav>
 
 <section class="bg-success text-white py-4">
     <div class="container">
-        <h1 class="fw-bold mb-1">Publicaciones</h1>
-        <p class="mb-0 opacity-75">Explora consejos, noticias y buenas prácticas de reciclaje compartidas por la comunidad.</p>
+        <h1 class="fw-bold mb-1">Panel de publicaciones</h1>
+        <p class="mb-0 opacity-75">Listado general y vista destacada de la publicación seleccionada.</p>
     </div>
 </section>
 
-<section class="py-4">
+<section class="py-4 border-bottom bg-white">
     <div class="container">
-        <div class="bg-white rounded border p-3">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-5">
-                    <input type="text" class="form-control" placeholder="Buscar publicaciones..." name="q" value="{{ request.GET.q }}">
+        <form class="row g-3 align-items-end" method="get">
+            <div class="col-md-5">
+                <label class="form-label">Buscar</label>
+                <input type="text" class="form-control" placeholder="Título, contenido o autor" name="q" value="{{ filtros.q }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Categoría</label>
+                <select class="form-select" name="categoria">
+                    <option value="">Todas</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat.id }}" {% if filtros.categoria == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.get_tipo_display }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Orden</label>
+                <select class="form-select" name="orden">
+                    <option value="recientes" {% if filtros.orden == 'recientes' %}selected{% endif %}>Más recientes</option>
+                    <option value="valorados" {% if filtros.orden == 'valorados' %}selected{% endif %}>Mejor valorados</option>
+                    <option value="comentados" {% if filtros.orden == 'comentados' %}selected{% endif %}>Más comentados</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-success" type="submit">Aplicar filtros</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        {% if publicacion_destacada %}
+        <div class="card shadow-sm border-0 mb-5">
+            <div class="card-body p-4 p-lg-5">
+                <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+                    <div>
+                        <span class="badge bg-success-subtle text-success mb-2">{{ publicacion_destacada.categoria.get_tipo_display }}</span>
+                        <h2 class="fw-bold mb-2">{{ publicacion_destacada.titulo }}</h2>
+                        <p class="text-muted mb-0">
+                            {{ publicacion_destacada.usuario.nombres }} {{ publicacion_destacada.usuario.apellidos }} · {{ publicacion_destacada.fecha_creacion|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                    <div class="text-end small text-muted">
+                        <div><i class="fas fa-thumbs-up text-success me-1"></i>{{ publicacion_destacada.likes_count }}</div>
+                        <div><i class="fas fa-thumbs-down text-danger me-1"></i>{{ publicacion_destacada.dislikes_count }}</div>
+                        <div><i class="fas fa-comment-dots text-primary me-1"></i>{{ publicacion_destacada.comentarios_total }}</div>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <select class="form-select" name="categoria">
-                        <option value="">Todas las categorías</option>
-                        {% for cat in categorias %}
-                        <option value="{{ cat.id }}" {% if cat.id|stringformat:"d" == request.GET.categoria %}selected{% endif %}>{{ cat.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="orden">
-                        <option value="recientes" {% if request.GET.orden == "recientes" %}selected{% endif %}>Más recientes</option>
-                        <option value="valorados" {% if request.GET.orden == "valorados" %}selected{% endif %}>Mejor valorados</option>
-                        <option value="comentados" {% if request.GET.orden == "comentados" %}selected{% endif %}>Más comentados</option>
-                    </select>
+                <p class="mb-4">{{ publicacion_destacada.contenido|truncatewords:80 }}</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-success" href="{% url 'publicacion:detalle_publicacion' publicacion_destacada.id %}">Ver detalle completo</a>
+                    <a class="btn btn-outline-success" href="?publicacion={{ publicacion_destacada.id }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">Mantener destacada</a>
                 </div>
             </div>
         </div>
-    </div>
-</section>
-
-<section class="pb-5">
-    <div class="container">
+        {% endif %}
 
         {% if publicaciones %}
         <div class="row g-4">
-
             {% for pub in publicaciones %}
             <div class="col-md-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">{{ pub.autor.nombre|make_list|first }}</div>
-                            <div>
-                                <div class="fw-semibold small">{{ pub.autor.nombre }}</div>
-                                <div class="text-muted" style="font-size:.78rem;">{{ pub.fecha|date:"d M Y" }} · <span class="badge bg-success-subtle text-success">{{ pub.categoria.nombre }}</span></div>
-                            </div>
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                            <span class="badge bg-success-subtle text-success">{{ pub.categoria.get_tipo_display }}</span>
+                            <small class="text-muted">{{ pub.fecha_creacion|date:"d/m/Y" }}</small>
                         </div>
-                    </div>
-
-                    <!-- Miniatura condicional: imagen o video -->
-                    {% if pub.video %}
-                    <div class="position-relative">
-                        <img src="{{ pub.video_thumbnail.url }}" class="card-img-top" alt="Vista previa del video" style="height:180px; object-fit:cover;">
-                        <div class="position-absolute top-50 start-50 translate-middle">
-                            <div class="bg-dark bg-opacity-50 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                                <i class="fas fa-play text-white"></i>
-                            </div>
-                        </div>
-                    </div>
-                    {% elif pub.imagenes.exists %}
-                    <img src="{{ pub.imagenes.first.imagen.url }}" class="card-img-top" alt="Imagen de la publicación" style="height:180px; object-fit:cover;">
-                    {% endif %}
-
-                    <div class="card-body">
                         <h5 class="fw-bold">{{ pub.titulo }}</h5>
-                        <p class="text-muted small">{{ pub.contenido|truncatewords:30 }}</p>
-                    </div>
-                    <div class="px-3 pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-success small"><i class="fas fa-thumbs-up me-1"></i>{{ pub.likes }}</span>
-                            <span class="text-danger small"><i class="fas fa-thumbs-down me-1"></i>{{ pub.dislikes }}</span>
+                        <p class="text-muted small mb-3">{{ pub.contenido|truncatewords:28 }}</p>
+                        <p class="small text-muted mt-auto mb-3">
+                            <i class="fas fa-user me-1"></i>{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center small mb-3">
+                            <span><i class="fas fa-thumbs-up text-success me-1"></i>{{ pub.likes_count }}</span>
+                            <span><i class="fas fa-thumbs-down text-danger me-1"></i>{{ pub.dislikes_count }}</span>
+                            <span><i class="fas fa-comment text-primary me-1"></i>{{ pub.comentarios_total }}</span>
                         </div>
-                    </div>
-                    <div class="px-3 pb-3">
-                        <a class="text-success small fw-semibold text-decoration-none" data-bs-toggle="collapse" href="#comments-{{ pub.id }}">
-                            <i class="fas fa-comment-dots me-1"></i>{{ pub.comentarios.count }} comentario{{ pub.comentarios.count|pluralize:"s" }}
-                        </a>
-                        <div class="collapse mt-3" id="comments-{{ pub.id }}">
-
-                            {% for comentario in pub.comentarios.all|slice:":3" %}
-                            <div class="mb-2 bg-light rounded p-2">
-                                <span class="fw-semibold small text-success">{{ comentario.autor.nombre }}</span>
-                                <p class="mb-0 small text-muted">{{ comentario.texto }}</p>
-                            </div>
-                            {% empty %}
-                            <p class="text-muted small fst-italic">Sé el primero en comentar.</p>
-                            {% endfor %}
-
-                            {% if pub.comentarios.count > 3 %}
-                            <a href="/publicaciones/{{ pub.id }}" class="text-success small fw-semibold text-decoration-none">
-                                Ver todos los comentarios
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-outline-success btn-sm w-50" href="?publicacion={{ pub.id }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">
+                                Ver en panel
                             </a>
-                            {% endif %}
-
-                            <div class="d-flex gap-2 mt-2">
-                                <textarea class="form-control form-control-sm" rows="2" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm align-self-end"><i class="fas fa-paper-plane"></i></button>
-                            </div>
+                            <a class="btn btn-success btn-sm w-50" href="{% url 'publicacion:detalle_publicacion' pub.id %}">Abrir publicación</a>
                         </div>
                     </div>
                 </div>
             </div>
             {% endfor %}
-
         </div>
 
-        <!-- Paginación (solo si hay más de una página) -->
         {% if publicaciones.has_other_pages %}
         <nav class="mt-5 d-flex justify-content-center">
             <ul class="pagination">
                 {% if publicaciones.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ publicaciones.previous_page_number }}">«</a>
-                </li>
+                <li class="page-item"><a class="page-link" href="?page={{ publicaciones.previous_page_number }}">«</a></li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">«</span></li>
                 {% endif %}
@@ -182,9 +132,7 @@
                 {% endfor %}
 
                 {% if publicaciones.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ publicaciones.next_page_number }}">»</a>
-                </li>
+                <li class="page-item"><a class="page-link" href="?page={{ publicaciones.next_page_number }}">»</a></li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">»</span></li>
                 {% endif %}
@@ -193,27 +141,14 @@
         {% endif %}
 
         {% else %}
-        <!-- ============================================================
-             ESTADO VACÍO: no hay publicaciones
-             ============================================================ -->
         <div class="text-center py-5">
-            <div class="mb-4">
-                <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center" style="width:100px;height:100px;">
-                    <i class="fas fa-newspaper text-success" style="font-size:2.5rem;"></i>
-                </div>
+            <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 90px; height: 90px;">
+                <i class="fas fa-newspaper text-success fs-1"></i>
             </div>
-            <h4 class="fw-bold text-muted mb-2">No hay publicaciones disponibles</h4>
-            <p class="text-muted mb-4">Aún no se han creado publicaciones en la plataforma.<br>Sé el primero en compartir contenido con la comunidad.</p>
-            {% if user.is_authenticated %}
-            <a href="/publicaciones/crear" class="btn btn-success px-4">
-                <i class="fas fa-plus me-2"></i>Crear publicación
-            </a>
-            {% else %}
-            
-            {% endif %}
+            <h3 class="fw-bold">No hay publicaciones disponibles</h3>
+            <p class="text-muted mb-0">Cuando exista una publicación activa, aparecerá destacada automáticamente en este panel.</p>
         </div>
         {% endif %}
-
     </div>
 </section>
 

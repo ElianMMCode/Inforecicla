@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     "apps.operations.apps.OperationsConfig",
     "apps.users.apps.UsersConfig",
     "apps.panel_admin.apps.PanelAdminConfig",
-    # "admin.interfaceapps.publicaciones.apps.PublicacionesConfig",
+    "apps.publicaciones.apps.PublicacionesConfig",
 ]
 
 MIDDLEWARE = [

@@ -1,291 +1,86 @@
+Publicacion · HTML
+Copiar
+
 <!doctype html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Publicación - InfoRecicla</title>
+    <title>{{ publicacion.titulo }} - InfoRecicla</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-
 <nav class="navbar navbar-expand-lg navbar-dark bg-success">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <img src="/imagenes/logo.png" alt="Logo InfoRecicla" width="90" height="90" class="rounded">
-            <span class="fs-1 fw-semibold">InfoRecicla</span>
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                aria-controls="mainNav" aria-expanded="false" aria-label="Alternar navegación">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="mainNav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                <li class="nav-item"><a class="nav-link active" href="/publicaciones">Publicaciones</a></li>
-                <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#"
-                       data-bs-toggle="dropdown" aria-expanded="false">Usuario</a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/gestor"><i class="fas fa-store me-2"></i>Modo Gestor ECA</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" style="display:inline;">
-                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                            </form>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login"
-                       data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/login">Iniciar sesión</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a></li>
-                        <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
-                    </ul>
-                </li>
-            </ul>
+        <a class="navbar-brand fw-semibold" href="/">InfoRecicla</a>
+        <div class="ms-auto">
+            <a class="nav-link text-white" href="{% url 'publicacion:panel_publicaciones' %}">Volver al panel</a>
         </div>
     </div>
 </nav>
-
-<section class="bg-success text-white py-4">
-    <div class="container">
-        <a href="/publicaciones" class="text-white text-decoration-none small">
-            <i class="fas fa-arrow-left me-1"></i>Volver a publicaciones
-        </a>
-    </div>
-</section>
-
+ 
 <section class="py-5">
     <div class="container">
         <div class="row g-4 justify-content-center">
-
             <div class="col-lg-8">
-
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white py-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5" style="width:52px;height:52px;">M</div>
-                            <div>
-                                <div class="fw-semibold">María López</div>
-                                <div class="text-muted small">12 de febrero de 2025 · <span class="badge bg-success-subtle text-success">Consejos de reciclaje</span></div>
-                            </div>
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <span class="badge bg-success-subtle text-success mb-3">{{ publicacion.categoria.get_tipo_display }}</span>
+                        <h1 class="fw-bold mb-3">{{ publicacion.titulo }}</h1>
+                        <p class="text-muted mb-4">
+                            Publicado por {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }} · {{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}
+                        </p>
+ 
+                        <div class="d-flex gap-3 flex-wrap mb-4 small">
+                            <span class="badge text-bg-light border"><i class="fas fa-thumbs-up text-success me-1"></i>{{ publicacion.likes_count }} me gusta</span>
+                            <span class="badge text-bg-light border"><i class="fas fa-thumbs-down text-danger me-1"></i>{{ publicacion.dislikes_count }} no me gusta</span>
+                            <span class="badge text-bg-light border"><i class="fas fa-comment-dots text-primary me-1"></i>{{ publicacion.comentarios_total }} comentarios</span>
                         </div>
-                    </div>
-
-                    <div class="card-body px-4 py-4">
-                        <h1 class="fw-bold h2 mb-3">5 errores comunes al reciclar en casa</h1>
-
-                        <!-- ============================================================
-                             ZONA DE MEDIOS CONDICIONAL
-                             En Django usarías:
-                             {% if publicacion.video %}     → mostrar video
-                             {% elif publicacion.imagenes %} → mostrar carrusel
-                             {% endif %}
-                             ============================================================ -->
-
-                        <!-- OPCIÓN A: VIDEO (se muestra si la publicación tiene video) -->
-                        {% if publicacion.video %}
-                        <div class="mb-4 rounded overflow-hidden">
-                            <video class="w-100 rounded" controls preload="metadata"
-                                   poster="{{ publicacion.video_thumbnail.url }}">
-                                <source src="{{ publicacion.video.url }}" type="video/mp4">
-                                Tu navegador no soporta la reproducción de video.
-                            </video>
-                        </div>
-                        {% endif %}
-
-                        <!-- OPCIÓN B: CARRUSEL DE IMÁGENES (se muestra si tiene imágenes y no tiene video) -->
-                        {% if publicacion.imagenes.exists and not publicacion.video %}
-                        <div id="carruselPublicacion" class="carousel slide mb-4 rounded overflow-hidden" data-bs-ride="carousel">
-
-                            <!-- Indicadores -->
-                            {% if publicacion.imagenes.count > 1 %}
-                            <div class="carousel-indicators">
-                                {% for img in publicacion.imagenes.all %}
-                                <button type="button" data-bs-target="#carruselPublicacion"
-                                        data-bs-slide-to="{{ forloop.counter0 }}"
-                                        {% if forloop.first %}class="active" aria-current="true"{% endif %}
-                                        aria-label="Imagen {{ forloop.counter }}"></button>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-
-                            <!-- Slides -->
-                            <div class="carousel-inner">
-                                {% for img in publicacion.imagenes.all %}
-                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                    <img src="{{ img.imagen.url }}" class="d-block w-100 rounded"
-                                         alt="{{ img.descripcion|default:'Imagen de la publicación' }}"
-                                         style="max-height:420px; object-fit:cover;">
-                                    {% if img.descripcion %}
-                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-1">
-                                        <p class="mb-0 small">{{ img.descripcion }}</p>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
-
-                            <!-- Controles prev/next (solo si hay más de 1 imagen) -->
-                        {% if publicacion.imagenes.count > 1 %}
-                            <button class="carousel-control-prev" type="button" data-bs-target="#carruselPublicacion" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Anterior</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#carruselPublicacion" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Siguiente</span>
-                            </button>
-                            {% endif %}
-                        </div>
-
-                        <!-- Contador de imágenes -->
-                        <div class="text-muted small mb-3">
-                            <i class="fas fa-images me-1"></i>{{ publicacion.imagenes.count }} imagen{{ publicacion.imagenes.count|pluralize:"es" }}
-                        </div>
-                        {% endif %}
-
-                        <!-- ============================================================
-                             FIN DE ZONA DE MEDIOS CONDICIONAL
-                             ============================================================ -->
-
-                        <p class="text-muted">Muchos hogares en Colombia realizan esfuerzos por reciclar, pero sin saberlo cometen errores que reducen significativamente el impacto positivo de esta práctica. A continuación te contamos los cinco errores más frecuentes y cómo evitarlos.</p>
-
-                        <h5 class="fw-bold mt-4">1. Mezclar residuos húmedos con secos</h5>
-                        <p class="text-muted">Uno de los errores más comunes es depositar materiales reciclables junto con residuos orgánicos. La humedad contamina el papel, el cartón y otros materiales, haciendo imposible su aprovechamiento en el punto ECA.</p>
-
-                        <h5 class="fw-bold mt-4">2. No lavar los envases antes de reciclarlos</h5>
-                        <p class="text-muted">Los envases con restos de alimentos generan olores, bacterias y contaminan los demás materiales en la bolsa de reciclaje. Un enjuague rápido es suficiente para evitarlo.</p>
-
-                        <h5 class="fw-bold mt-4">3. Reciclar bolsas plásticas junto con botellas</h5>
-                        <p class="text-muted">Las bolsas plásticas tienen un proceso de reciclaje diferente al de las botellas PET. Mezclarlas genera problemas en las maquinarias de los centros de aprovechamiento. Entrega las bolsas por separado o búscalas en puntos especializados.</p>
-
-                        <h5 class="fw-bold mt-4">4. Tirar tapas de botellas separadas del envase</h5>
-                        <p class="text-muted">Las tapas pequeñas suelen caerse en las bandas transportadoras de las plantas de reciclaje. Lo correcto es dejar la tapa puesta en la botella o depositarla en contenedores especiales para tapas.</p>
-
-                        <h5 class="fw-bold mt-4">5. Asumir que todo plástico se recicla igual</h5>
-                        <p class="text-muted">Existen siete tipos de plástico identificados por el número dentro del símbolo de reciclaje. No todos los puntos ECA aceptan todos los tipos. Revisa qué acepta tu punto más cercano antes de llevar el material.</p>
-                    </div>
-
-                    <div class="card-footer bg-white px-4 py-3 border-top">
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="fw-semibold small text-muted">Calificar publicación:</span>
-                            <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-2">
-                                <i class="fas fa-thumbs-up"></i>
-                                <span>Me gusta</span>
-                                <span class="badge bg-success">24</span>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
-                                <i class="fas fa-thumbs-down"></i>
-                                <span>No me gusta</span>
-                                <span class="badge bg-danger">3</span>
-                            </button>
-                        </div>
+ 
+                        <div class="fs-5 lh-lg">{{ publicacion.contenido|linebreaks }}</div>
                     </div>
                 </div>
-
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="fw-bold mb-0"><i class="fas fa-comment-dots text-success me-2"></i>Comentarios <span class="badge bg-success-subtle text-success">3</span></h5>
-                    </div>
-                    <div class="card-body px-4 py-3">
-
-                        <div class="d-flex gap-3 mb-4 pb-4 border-bottom">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">C</div>
-                            <div>
-                                <div class="fw-semibold small">Carlos R. <span class="text-muted fw-normal">· 13 feb 2025</span></div>
-                                <p class="mb-0 small text-muted mt-1">No sabía que las tapas de plástico se deben depositar por separado. Muy útil esta información.</p>
+ 
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h3 class="h4 fw-bold mb-4">Comentarios</h3>
+                        {% for comentario in publicacion.comentarios.all %}
+                        <div class="border rounded p-3 mb-3 bg-white">
+                            <div class="d-flex justify-content-between gap-3 mb-2">
+                                <strong>{{ comentario.usuario.nombres }} {{ comentario.usuario.apellidos }}</strong>
+                                <small class="text-muted">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</small>
                             </div>
+                            <p class="mb-0 text-muted">{{ comentario.texto }}</p>
                         </div>
-
-                        <div class="d-flex gap-3 mb-4 pb-4 border-bottom">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">A</div>
-                            <div>
-                                <div class="fw-semibold small">Ana P. <span class="text-muted fw-normal">· 14 feb 2025</span></div>
-                                <p class="mb-0 small text-muted mt-1">Excelente contenido, lo compartí con toda mi familia. Ojalá hubiera más publicaciones así.</p>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-3 mb-4">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">L</div>
-                            <div>
-                                <div class="fw-semibold small">Luis G. <span class="text-muted fw-normal">· 15 feb 2025</span></div>
-                                <p class="mb-0 small text-muted mt-1">Alguien sabe dónde llevar pilas usadas en Bogotá?</p>
-                            </div>
-                        </div>
-
-                        <hr>
-
-                        <div class="d-flex gap-3 mt-3">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">T</div>
-                            <div class="flex-grow-1">
-                                <textarea class="form-control mb-2" rows="3" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm px-4">
-                                    <i class="fas fa-paper-plane me-1"></i>Comentar
-                                </button>
-                            </div>
-                        </div>
-
+                        {% empty %}
+                        <p class="text-muted mb-0">Esta publicación todavía no tiene comentarios.</p>
+                        {% endfor %}
                     </div>
                 </div>
-
             </div>
-
-            <div class="col-lg-3">
-
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white py-2">
-                        <span class="fw-semibold small">Sobre el autor</span>
-                    </div>
-                    <div class="card-body text-center py-4">
-                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3 mx-auto mb-3" style="width:64px;height:64px;">M</div>
-                        <div class="fw-bold">María López</div>
-                        <div class="text-muted small mb-3">Ciudadana · Miembro desde 2024</div>
-                        <div class="d-flex justify-content-around text-center border-top pt-3">
-                            <div>
-                                <div class="fw-bold text-success">12</div>
-                                <div class="text-muted" style="font-size:.75rem;">Publicaciones</div>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-success">48</div>
-                                <div class="text-muted" style="font-size:.75rem;">Comentarios</div>
-                            </div>
+ 
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h3 class="h5 fw-bold mb-3">Publicaciones recientes</h3>
+                        {% for relacionada in publicaciones_relacionadas %}
+                        <div class="border rounded p-3 mb-3">
+                            <span class="badge bg-success-subtle text-success mb-2">{{ relacionada.categoria.get_tipo_display }}</span>
+                            <h4 class="h6 fw-bold">{{ relacionada.titulo }}</h4>
+                            <p class="small text-muted mb-2">{{ relacionada.contenido|truncatewords:18 }}</p>
+                            <a class="text-success text-decoration-none small fw-semibold" href="{% url 'publicacion:detalle_publicacion' relacionada.id %}">Leer publicación</a>
                         </div>
+                        {% empty %}
+                        <p class="text-muted mb-0">No hay publicaciones relacionadas para mostrar.</p>
+                        {% endfor %}
                     </div>
                 </div>
-
-                <div class="card shadow-sm">
-                    <div class="card-header bg-success text-white py-2">
-                        <span class="fw-semibold small">Publicaciones relacionadas</span>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        <a href="#" class="list-group-item list-group-item-action py-3">
-                            <div class="fw-semibold small">Qué materiales acepta tu punto ECA</div>
-                            <div class="text-muted" style="font-size:.75rem;">28 ene 2025</div>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action py-3">
-                            <div class="fw-semibold small">Compostaje en apartamento: sí es posible</div>
-                            <div class="text-muted" style="font-size:.75rem;">15 ene 2025</div>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action py-3">
-                            <div class="fw-semibold small">Nueva normativa de residuos sólidos</div>
-                            <div class="text-muted" style="font-size:.75rem;">10 ene 2025</div>
-                        </a>
-                    </div>
-                </div>
-
             </div>
-
         </div>
     </div>
 </section>
-
+ 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
