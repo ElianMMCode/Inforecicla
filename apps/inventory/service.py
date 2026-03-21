@@ -56,10 +56,11 @@ class InventoryService:
                 )
             return resultados
         except Http404:
-            return {"error": "PuntoECA no encontrado", "status": 404}
+            return {"error": True, "mensaje": "PuntoECA no encontrado", "status": 404}
         except Exception:
             return {
-                "error": "Error técnico en búsqueda de materiales fuera de inventario",
+                "error": True,
+                "mensaje": "Error técnico en búsqueda de materiales fuera de inventario",
                 "status": 500,
             }
 
@@ -76,14 +77,26 @@ class InventoryService:
             # if not request.user.is_authenticated:
             #     return JsonResponse({"error": "Usuario no autenticado"})
             if not punto_id:
-                return [{"error": "ID del punto ECA es requerido"}]
+                return [
+                    {
+                        "error": True,
+                        "mensaje": "ID del punto ECA es requerido",
+                        "status": 400,
+                    }
+                ]
             try:
                 punto_eca = get_object_or_404(PuntoECA, id=punto_id)
                 materiales_inventario = Inventario.objects.filter(
                     punto_eca=punto_eca
                 ).select_related("material")
             except Http404:
-                return [{"error": "PuntoECA o Material no encontrado", "status": 404}]
+                return [
+                    {
+                        "error": True,
+                        "mensaje": "PuntoECA o Material no encontrado",
+                        "status": 404,
+                    }
+                ]
             if query:
                 materiales_inventario = materiales_inventario.filter(
                     Q(material__nombre__unaccent__icontains=query)
@@ -163,10 +176,14 @@ class InventoryService:
                             "estado_alerta": estado_alerta,
                         }
                     )
-                except Exception as e:
-                    # If there's some error with item, skip it and log if needed
+                except Exception:
+                    resultados.append(
+                        {
+                            "error": True,
+                            "mensaje": "Error procesando material en inventario, omitido.",
+                        }
+                    )
                     continue
-
             # Filtrado extra por ocupación y alerta
             if ocupacion:
                 try:

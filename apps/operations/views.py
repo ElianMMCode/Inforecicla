@@ -1,17 +1,10 @@
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404, render, redirect
-from apps.ecas.models import PuntoECA, Localidad
-from apps.users.models import Usuario
+from django.shortcuts import get_object_or_404
 from apps.inventory.models import Inventario
 from config import constants as cons
-from apps.core.service import UserService
-from apps.ecas.service import PuntoService
-from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial
-from apps.inventory.views import _build_materiales_context
 from . import models
 from decimal import Decimal as decimal
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 import json
 from django.utils import timezone
 import datetime
@@ -528,12 +521,6 @@ def actualizar_stock_por_venta(inventario, cantidad, cantidad_original=None):
 
 
 def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
-    """
-    Aumenta o ajusta el stock_actual del inventario según compra nueva o edición.
-    - Si es edición (cantidad_original no es None), se ajusta por la diferencia (delta).
-    - Siempre valida que stock no baje de cero ni supere capacidad máxima.
-    Devuelve JsonResponse de error si se exceden límites o datos inválidos, o None si todo OK.
-    """
     try:
         cantidad = decimal(str(cantidad))
         cantidad_original = (
@@ -544,16 +531,6 @@ def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
             {"status": "error", "message": "Cantidad inválida para la compra."},
             status=400,
         )
-
-    # if cantidad <= 0:
-    #     return JsonResponse(
-    #         {
-    #             "status": "error",
-    #             "message": "La cantidad de compra debe ser mayor a cero.",
-    #         },
-    #         status=400,
-    #     )
-    #
 
     stock_actual_decimal = decimal(str(inventario.stock_actual or 0))
     capacidad_maxima_decimal = decimal(
