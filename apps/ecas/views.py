@@ -6,6 +6,7 @@ from apps.core.service import UserService
 from apps.ecas.service import PuntoService
 from apps.ecas.constants import SECTION_TEMPLATES
 from apps.operations.views import _build_movimientos_context
+from apps.scheduling.views import _build_calendario_context
 from apps.inventory.views import _build_materiales_context
 from django.http import JsonResponse
 
@@ -28,6 +29,8 @@ def render_seccion(request, seccion="resumen"):
         context = _build_movimientos_context(punto)
     elif seccion == "centros":
         context = _build_centros_context(punto)
+    elif seccion == "calendario":
+        context = _build_calendario_context(punto)
     else:
         context = _build_default_context(punto, seccion)
 

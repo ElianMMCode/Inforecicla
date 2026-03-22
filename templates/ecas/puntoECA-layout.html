@@ -104,5 +104,19 @@
       html { scroll-behavior: smooth; }
       body, .min-vh-100 { min-height: 100vh; }
     </style>
+    <script src="{% static 'js/PuntoECA/fullcalendar_init.js' %}"></script>
+    <script>
+      // Forzar inicialización Select2 SOBRE MODAL cada vez que se abre
+      document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('modalCrearEvento');
+        if (modal) {
+          modal.addEventListener('shown.bs.modal', function () {
+            if (window.inicializarSelect2Centros) {
+              setTimeout(window.inicializarSelect2Centros, 50);
+            }
+          });
+        }
+      });
+    </script>
   </body>
 </html>

@@ -18,6 +18,10 @@
       <div class="card-body p-4">
         <!-- Contenedor para FullCalendar -->
         <div id="calendar"></div>
+        <script>
+          // Renderizamos los eventos (ventas y compras)
+          const EVENTOS = {{ EVENTOS|safe }};
+        </script>
       </div>
     </div>
   </div>
@@ -57,12 +61,17 @@
                   >Material <span class="text-danger">*</span></label
                 >
                 <select
-                  class="form-select form-select-sm border-2 select2-modal"
+                  class="form-select form-select-sm border-2 js-select-centros"
                   id="selectMaterial"
-                  required
-                  style="min-height: 38px; width: 100%"
-                >
-                  <option value="">-- Seleccionar Material --</option>
+                                  name="materialId"
+                                  required
+                                  style="min-height: 38px; width: 100%">
+                                  <option value="">-- Seleccionar Material --</option>
+                                  {% for material in materiales_inventario %}
+                                  <option value="{{ material.material.id }}">
+                                    {{ material.material.tipo }} - {{ material.material.nombre }}
+                                  </option>
+                                  {% endfor %}
                 </select>
                 <small class="text-muted d-block mt-1"
                   >Selecciona el material a vender</small
@@ -73,11 +82,14 @@
                   >Centro de Acopio</label
                 >
                 <select
-                  class="form-select form-select-sm border-2 select2-modal"
-                  id="selectCentroAcopio"
-                  style="min-height: 38px; width: 100%"
-                >
-                  <option value="">-- Sin asignar --</option>
+                                  class="form-select form-select-sm border-2 js-select-centros"
+                                  id="selectCentroAcopio"
+                                  name="centroAcopioId"
+                                  style="min-height: 38px; width: 100%">
+                                  <option value="">-- Sin asignar --</option>
+                                  {% for centro in centros %}
+                                  <option value="{{ centro.id }}">{{ centro.nombre }}</option>
+                                  {% endfor %}
                 </select>
                 <small class="text-muted d-block mt-1"
                   >Opcional: lugar de entrega (del punto o global)</small
@@ -162,7 +174,7 @@
                   >Tipo de Repetición <span class="text-danger">*</span></label
                 >
                 <select
-                  class="form-select form-select-sm border-2 select2-custom"
+                  class="form-select form-select-sm border-2 js-select-centros"
                   id="selectTipoRepeticion"
                   required
                   style="width: 100%; min-height: 38px"
@@ -260,69 +272,58 @@
     </div>
   </div>
 
-  <!-- ===== MODAL PARA VER DETALLES DEL EVENTO ===== -->
+  <!-- ===== MODAL PARA DETALLES DE COMPRA/VENTA (AJUSTADO) ===== -->
   <div
     class="modal fade"
-    id="modalDetallesEvento"
+    id="modalDetallesCompraVenta"
     tabindex="-1"
-    aria-labelledby="modalDetallesEventoLabel"
+    aria-labelledby="modalDetallesCompraVentaLabel"
     aria-hidden="true"
   >
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <div class="modal-header bg-info text-white">
-          <h5 class="modal-title" id="modalDetallesEventoLabel">
-            <i class="bi bi-calendar-event"></i> Detalles del Evento
+        <div class="modal-header" id="cvHeaderColor">
+          <h5 class="modal-title" id="modalDetallesCompraVentaLabel">
+            <span id="cvIcono"></span> <span id="cvTitulo">Detalle</span>
           </h5>
           <button
             type="button"
-            class="btn-close btn-close-white"
+            class="btn-close"
             data-bs-dismiss="modal"
             aria-label="Close"
           ></button>
         </div>
-
         <div class="modal-body">
           <div class="row mb-3">
             <div class="col-12">
-              <h5 class="text-success">
-                <i class="bi bi-calendar-check"></i>
-                <span id="detallesTitulo">Título del Evento</span>
+              <h5>
+                <span class="me-2" id="cvTipoEvento"></span>
+                <span id="cvMaterialTitulo">Título / Material</span>
               </h5>
               <hr />
             </div>
           </div>
-
           <div class="row mb-3">
             <div class="col-md-6">
               <strong>Descripción:</strong>
-              <p id="detallesDescripcion" class="text-muted">Sin descripción</p>
+              <p id="cvDescripcion" class="text-muted">Sin descripción</p>
             </div>
             <div class="col-md-6">
-              <strong>Material:</strong>
-              <p id="detallesMaterial" class="text-muted">Sin material</p>
+              <strong>Fecha y Hora:</strong>
+              <p id="cvFechaHora" class="text-muted">--</p>
             </div>
           </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <strong>Fecha y Hora Inicio:</strong>
-              <p id="detallesFechaInicio" class="text-muted">--</p>
-            </div>
-            <div class="col-md-6">
-              <strong>Fecha y Hora Fin:</strong>
-              <p id="detallesFechaFin" class="text-muted">--</p>
-            </div>
-          </div>
-
           <div class="row mb-3">
             <div class="col-md-6">
               <strong>Centro de Acopio:</strong>
-              <p id="detallesCentro" class="text-muted">Sin asignar</p>
+              <p id="cvCentro" class="text-muted">Sin asignar</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Observaciones:</strong>
+              <p id="cvObservaciones" class="text-muted">Sin observaciones</p>
             </div>
           </div>
         </div>
-
         <div class="modal-footer">
           <button
             type="button"
@@ -331,22 +332,152 @@
           >
             Cerrar
           </button>
-          <button
-            type="button"
-            class="btn btn-warning btn-sm"
-            id="btnEditarEvento"
-          >
-            <i class="bi bi-pencil"></i> Editar
-          </button>
-          <button
-            type="button"
-            class="btn btn-danger btn-sm"
-            id="btnBorrarEvento"
-          >
-            <i class="bi bi-trash"></i> Borrar
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
+  <!-- ===== MODAL PARA DETALLES DE VENTA ===== -->
+  <div
+    class="modal fade"
+    id="modalDetallesVenta"
+    tabindex="-1"
+    aria-labelledby="modalDetallesVentaLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title" id="modalDetallesVentaLabel">
+              <i class="bi bi-box-seam me-2"></i>Detalles de Venta de Material
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="p-3 rounded-2 bg-light border-start border-4 border-danger">
+                  <small class="text-muted d-block mb-1">Material / Título</small>
+                  <p class="h6 fw-bold mb-0" id="detallesVentaTitulo">-</p>
+                </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="p-3 rounded-2 bg-light border-start border-4 border-info">
+                    <small class="text-muted d-block mb-1">Fecha y hora</small>
+                    <p class="h6 fw-bold mb-0" id="detallesVentaFecha">-</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="p-3 rounded-2 bg-light border-start border-4 border-warning">
+                    <small class="text-muted d-block mb-1">Cantidad</small>
+                    <p class="h6 fw-bold mb-0" id="detallesVentaCantidad">-</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="p-3 rounded-2 bg-light border-start border-4 border-primary">
+                    <small class="text-muted d-block mb-1">Precio Unitario</small>
+                    <p class="h6 fw-bold mb-0" id="detallesVentaPrecio">-</p>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="p-3 rounded-2 bg-light border-start border-4 border-danger">
+                    <small class="text-muted d-block mb-1">Total</small>
+                    <p class="h5 fw-bold mb-0 text-danger" id="detallesVentaTotal">-</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="p-3 rounded-2 bg-light border-start border-4 border-secondary">
+                    <small class="text-muted d-block mb-1">Centro de Acopio</small>
+                    <p class="h6 fw-bold mb-0" id="detallesVentaCentro">-</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="p-3 rounded-2 bg-light border-start border-4 border-primary">
+                    <small class="text-muted d-block mb-1">Descripción</small>
+                    <p class="h6 mb-0" id="detallesVentaDescripcion">-</p>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="p-3 rounded-2 bg-light border-start border-4 border-danger">
+                    <small class="text-muted d-block mb-1">Observaciones</small>
+                    <p class="h6 mb-0" id="detallesVentaObservaciones">-</p>
+                  </div>
+                </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light border-top">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cerrar">
+              <i class="bi bi-x-circle"></i>
           </button>
         </div>
       </div>
     </div>
   </div>
+  
+
+  <!-- ===== MODAL PARA DETALLES DE COMPRA ===== -->
+  <div class="modal fade"
+       id="modalDetallesCompra"
+       tabindex="-1"
+       aria-labelledby="modalDetallesCompraLabel"
+       aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="modalDetallesCompraLabel">
+            <i class="bi bi-box-seam me-2"></i>Detalles de Compra de Material
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="p-3 rounded-2 bg-light border-start border-4 border-success">
+                <small class="text-muted d-block mb-1">Material</small>
+                <p class="h6 fw-bold mb-0" id="detCompraMaterial">-</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 rounded-2 bg-light border-start border-4 border-info">
+                <small class="text-muted d-block mb-1">Fecha</small>
+                <p class="h6 fw-bold mb-0" id="detCompraFecha">-</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 rounded-2 bg-light border-start border-4 border-warning">
+                <small class="text-muted d-block mb-1">Cantidad</small>
+                <p class="h6 fw-bold mb-0" id="detCompraCantidad">-</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 rounded-2 bg-light border-start border-4 border-primary">
+                <small class="text-muted d-block mb-1">Precio Unitario</small>
+                <p class="h6 fw-bold mb-0" id="detCompraPrecio">-</p>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="p-3 rounded-2 bg-light border-start border-4 border-danger">
+                <small class="text-muted d-block mb-1">Total</small>
+                <p class="h5 fw-bold mb-0 text-danger" id="detCompraTotal">-</p>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="p-3 rounded-2 bg-light">
+                <small class="text-muted d-block mb-1">Observaciones</small>
+                <p class="h6 mb-0" id="detCompraObservaciones">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cerrar">
+            <i class="bi bi-x-circle"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
 </section>

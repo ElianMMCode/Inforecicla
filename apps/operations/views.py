@@ -3,13 +3,13 @@ from apps.inventory.models import Inventario
 from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
-
 from decimal import Decimal as decimal
 from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse, response
 import json
 from django.utils import timezone
 import datetime
+from apps.ecas.models import CentroAcopio
 
 
 # Create your views here.
