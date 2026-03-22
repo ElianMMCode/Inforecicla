@@ -1,22 +1,10 @@
-from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
-
-# require_PUT, require_PATCH, require_DELETE no existen en Django por defecto
-# Para métodos distintos de GET y POST, seguí usando require_http_methods([
-#   "PUT"]), require_http_methods(["PATCH"]), require_http_methods(["DELETE"])
-from apps.ecas.models import PuntoECA
-from apps.inventory.models import Inventario, Material, CategoriaMaterial, TipoMaterial
-from apps.users.models import Usuario
+from apps.inventory.models import Inventario
 from config import constants as cons
-from apps.core.service import UserService
-from apps.ecas.service import PuntoService
-from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial
 from apps.inventory.service import InventoryService
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.http import JsonResponse, Http404, response
+from django.http import JsonResponse
 import json
-from django.db.models import Q
-from django.views.decorators.csrf import csrf_exempt
 
 
 def _build_materiales_context(punto):
@@ -136,7 +124,7 @@ def buscar_materiales_catalogo_view(request):
         )
 
 
-@require_http_methods(["POST"])
+@require_POST
 def agregar_al_inventario_view(request):
     data = {}
     if request.body:
