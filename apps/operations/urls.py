@@ -6,12 +6,12 @@ app_name = "punto-eca/movimientos"
 urlpatterns = [
     path(
         "registrar-compra/",
-        views.registrar_compra,
+        views.registros_compras,
         name="registrar_entrada",
     ),
     path(
         "registrar-venta/",
-        views.registrar_venta,
+        views.registros_ventas,
         name="registrar_venta",
     ),
     path(

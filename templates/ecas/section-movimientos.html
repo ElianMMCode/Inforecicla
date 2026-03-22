@@ -87,7 +87,6 @@
                             aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    e
                     <div id="estadoBusquedaMov" class="text-center text-muted py-4 mb-3">
                         <i class="bi bi-search display-6 d-block mb-2"></i>
                         <p class="mb-0">Buscando materiales...</p>
@@ -967,7 +966,7 @@
                     console.log('Encontrado #buscarMaterialMovimientos');
 
                     // Obtener endpoint y puntoId
-                    var endpoint = '/punto-eca/materiales/inventario/buscar';
+                    var endpoint = '/punto-eca/materiales/inventario';
                     var puntoId = puntoEcaId; // Ya está disponible en el data attribute
 
                     console.log('Endpoint:', endpoint);
@@ -1267,7 +1266,7 @@
                                 params.append('puntoId', puntoEcaId);
                                 params.append('texto', materialNombre || '');
 
-                                var url = '/punto-eca/materiales/inventario/buscar' + (params.toString() ? ('?' + params.toString()) : '');
+                                var url = '/punto-eca/materiales/inventario/' + (params.toString() ? ('?' + params.toString()) : '');
                                 console.log('Intentando obtener datos de inventario en:', url);
 
                                 fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
@@ -1527,7 +1526,7 @@
                     modal.show();
 
                     // Construir URL con parámetros como en section-materiales.html
-                    var endpoint = '/punto-eca/materiales/inventario/buscar';
+                    var endpoint = '/punto-eca/materiales/inventario/';
                     var params = new URLSearchParams();
 
                     if (texto) params.append('texto', texto);
@@ -3230,7 +3229,7 @@
                   console.log('[DEBUG-check] materialId:', materialId, 'puntoId:', puntoId);
                   if (materialId && puntoId) {
                       let params = new URLSearchParams({ puntoId, materialId });
-                      fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                      fetch(`/punto-eca/materiales/inventario?${params.toString()}`, {
                           method: 'GET', headers: { 'Accept': 'application/json' }
                       })
                       .then(resp => resp.json())
@@ -3516,7 +3515,7 @@
                 try {
                     if (materialId && puntoId) {
                         let params = new URLSearchParams({ puntoId, materialId });
-                        let resp = await fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                        let resp = await fetch(`/punto-eca/materiales/inventario?${params.toString()}`, {
                             method: 'GET', headers: { 'Accept': 'application/json' }
                         });
                         let data = await resp.json();
@@ -3739,12 +3738,7 @@
                     alert('No se pudo validar el stock. Recarga la página e intenta nuevamente.');
                     return;
                 }
-                // Validar que la cantidad a vender no supere el stock disponible real
-                if (cantidadNum > stockActual + cantidadOriginal) {
-                    alert('No se puede vender más unidades de las que hay en stock. Stock disponible: ' + (stockActual + cantidadOriginal));
-                    return;
-                }
-                // stock final simulado para edición: stockActual + (cantidadOriginal - cantidadNueva)
+                // Validar que el stock no quede negativo luego de la edición
                 let nuevoStock = stockActual + (cantidadOriginal - cantidadNum);
                 if (cantidadNum <= 0) {
                     alert('Ingrese una cantidad mayor a cero.');
@@ -3860,6 +3854,14 @@
                         precioCompra: safeParseFloat(precioCompra) || 0,
                         observaciones: observaciones
                     };
+                    // Bloquear si el inventarioId falta (prevención UX de error 400)
+                    if (!payload.inventarioId) {
+                        alert('No se puede guardar la compra porque falta el inventarioId. Seleccioná un material y asegurate que los datos están completos.');
+                        console.error('[COMPRA] Se intentó enviar sin inventarioId:', payload);
+                        return;
+                    }
+                    // DEBUG: mostrar payload antes de enviar
+                    console.log('[COMPRA] Payload al enviar:', payload);
 
                     // Obtener CSRF token
                     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -3915,6 +3917,14 @@
                         centroAcopioId: centroAcopioId,
                         observaciones: observaciones
                     };
+                    // Validar inventarioId antes de enviar
+                    if (!payload.inventarioId) {
+                        alert('No se puede guardar la venta porque falta el inventarioId. Seleccioná un material y asegurate que los datos están completos.');
+                        console.error('[VENTA] Se intentó enviar sin inventarioId:', payload);
+                        return;
+                    }
+                    // DEBUG: mostrar payload antes de enviar
+                    console.log('[VENTA] Payload al enviar:', payload);
 
                     // Enviar al endpoint correcto que espera VentaInventarioRequestDTO
                     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
