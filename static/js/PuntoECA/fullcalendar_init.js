@@ -166,6 +166,10 @@ document.addEventListener("DOMContentLoaded", function () {
       center: "title",
       right: "dayGridMonth,timeGridWeek,timeGridDay",
     },
+    eventTimeFormat: {
+      hour: '2-digit', minute: '2-digit',
+      hour12: false
+    },
     events: EVENTOS, // <-- now uses events from backend, not the mock
     eventClick: function (info) {
       // Siempre setea window.eventoActual ANTES de mostrar detalles
