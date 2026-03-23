@@ -35,6 +35,8 @@ document.addEventListener("DOMContentLoaded", function () {
         mostrarDetallesVenta(info.event);
       } else if (tipo === "compra") {
         mostrarDetallesCompra(info.event);
+      } else {
+        mostrarDetalleEvento(info.event);
       }
     },
   });
@@ -132,7 +134,38 @@ function mostrarDetallesVenta(evento) {
   modalVenta.show();
 }
 
-// Modal para DETALLES DE COMPRA (con IDs nuevos de section-calendario.html)
+// Modal para DETALLE GENÉRICO DE EVENTO
+globalThis.mostrarDetalleEvento = function mostrarDetalleEvento(evento) {
+  // Mostrar en consola para debug
+  console.log('Evento para detalle:', evento, evento.extendedProps);
+  document.getElementById("eventoDetalleTitulo").textContent = evento.title || evento.extendedProps.titulo || "-";
+  // Fecha y hora (simple)
+  let fechaStr = "-";
+  if (evento.start) {
+    if (typeof evento.start === "object" && evento.start.toLocaleString) {
+      fechaStr = evento.start.toLocaleString("es-CO");
+    } else {
+      fechaStr = evento.start;
+    }
+    if (evento.end) {
+      let finStr = typeof evento.end === "object" && evento.end.toLocaleString ? evento.end.toLocaleString("es-CO") : evento.end;
+      fechaStr += " a " + finStr;
+    }
+  }
+  document.getElementById("eventoDetalleFecha").textContent = fechaStr;
+  // Buscar distintos posibles nombres para material
+  document.getElementById("eventoDetalleMaterial").textContent =
+    evento.extendedProps.material || evento.extendedProps.nombreMaterial || evento.extendedProps.material_nombre || evento.extendedProps.tipo_material || "-";
+  // Buscar distintos posibles nombres para centro
+  document.getElementById("eventoDetalleCentro").textContent =
+    evento.extendedProps.centro || evento.extendedProps.nombreCentroAcopio || evento.extendedProps.centro_acopio_nombre || evento.extendedProps.centroAcopio || "-";
+  document.getElementById("eventoDetalleDescripcion").textContent = evento.extendedProps.descripcion || evento.extendedProps.description || "Sin descripción";
+  document.getElementById("eventoDetalleObservaciones").textContent = evento.extendedProps.observaciones || "Sin observaciones";
+  // Mostrar el modal
+  var modal = new bootstrap.Modal(document.getElementById("modalDetalleEvento"));
+  modal.show();
+}
+
 function mostrarDetallesCompra(evento) {
   document.getElementById("detCompraMaterial").textContent = evento.extendedProps.nombreMaterial || evento.title || "-";
   document.getElementById("detCompraFecha").textContent = evento.start ? (evento.start.toLocaleString ? (typeof evento.start === 'object' ? evento.start.toLocaleString('es-CO') : evento.start) : evento.start) : "-";

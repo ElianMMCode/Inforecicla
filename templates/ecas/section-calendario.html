@@ -17,7 +17,7 @@
                 <div id="calendar"></div>
                 <script>
           // Renderizamos los eventos (ventas y compras)
-          const EVENTOS = {{ EVENTOS|safe }};
+          window.EVENTOS = {{ EVENTOS|safe }};
 
           // ==== Corrección: Esperar a que el DOM cargue ====
           document.addEventListener('DOMContentLoaded', function () {
@@ -495,4 +495,63 @@
             </div>
         </div>
     </div>
+    <!-- ===== MODAL GENÉRICO DETALLE DE EVENTO (FULLCALENDAR) ===== -->
+    <div class="modal fade" id="modalDetalleEvento" tabindex="-1" aria-labelledby="modalDetalleEventoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalDetalleEventoLabel">
+                        <i class="bi bi-calendar-event me-2"></i>Detalle del Evento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-2 bg-light border-start border-4 border-info">
+                                <small class="text-muted d-block mb-1">Título</small>
+                                <p class="h6 fw-bold mb-0" id="eventoDetalleTitulo">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-2 bg-light border-start border-4 border-success">
+                                <small class="text-muted d-block mb-1">Fecha y hora</small>
+                                <p class="h6 fw-bold mb-0" id="eventoDetalleFecha">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-2 bg-light border-start border-4 border-primary">
+                                <small class="text-muted d-block mb-1">Material</small>
+                                <p class="h6 fw-bold mb-0" id="eventoDetalleMaterial">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-2 bg-light border-start border-4 border-warning">
+                                <small class="text-muted d-block mb-1">Centro de Acopio</small>
+                                <p class="h6 fw-bold mb-0" id="eventoDetalleCentro">-</p>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-3 rounded-2 bg-light border-start border-4 border-secondary">
+                                <small class="text-muted d-block mb-1">Descripción</small>
+                                <p class="h6 mb-0" id="eventoDetalleDescripcion">-</p>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-3 rounded-2 bg-light border-start border-4 border-danger">
+                                <small class="text-muted d-block mb-1">Observaciones</small>
+                                <p class="h6 mb-0" id="eventoDetalleObservaciones">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cerrar">
+                        <i class="bi bi-x-circle"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </section>

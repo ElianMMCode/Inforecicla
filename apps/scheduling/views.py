@@ -101,9 +101,11 @@ def _build_calendario_context(punto):
                 "end": evento.fecha_fin.isoformat() if evento.fecha_fin else None,
                 "backgroundColor": evento.color or "#007bff",
                 "materialId": str(evento.material.id) if evento.material else None,
+                "material_nombre": evento.material.nombre if evento.material else None,
                 "centroAcopioId": str(evento.centro_acopio.id)
                 if evento.centro_acopio
                 else None,
+                "centro_acopio_nombre": evento.centro_acopio.nombre if evento.centro_acopio else None,
                 "descripcion": evento.descripcion or "",
                 # Podés agregar más props extendidos acá si los necesita el frontend
             }
@@ -122,9 +124,11 @@ def _build_calendario_context(punto):
                 "end": inst.fecha_fin.isoformat() if inst.fecha_fin else None,
                 "backgroundColor": base.color or "#007bff",
                 "materialId": str(base.material.id) if base.material else None,
+                "material_nombre": base.material.nombre if base.material else None,
                 "centroAcopioId": str(base.centro_acopio.id)
                 if base.centro_acopio
                 else None,
+                "centro_acopio_nombre": base.centro_acopio.nombre if base.centro_acopio else None,
                 "descripcion": base.descripcion or "",
                 "numeroRepeticion": inst.numero_repeticion,
                 "observaciones": inst.observaciones or "",
