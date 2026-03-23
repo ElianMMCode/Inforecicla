@@ -2061,7 +2061,6 @@ window.getCSRFToken = function() {
                 }
 
                 fetch('/punto-eca/materiales/catalogo/buscar?puntoId=' + encodeURIComponent(puntoId), {
-                    headers: { 'Accept': 'application/json' }
                     headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
                 })
                     .then(res => res.json().then(data => ({ ok: res.ok, data })))
@@ -2085,6 +2084,11 @@ window.getCSRFToken = function() {
                         const selTipo = document.getElementById('selectTipoBusqueda');
 
                         if (selCat) {
+                            // Destroy Select2 instance BEFORE changing options
+                            if ($(selCat).data('select2')) {
+                                $(selCat).select2('destroy');
+                                console.log('[Select2] Instancia de categoría destruida antes de update');
+                            }
                             selCat.innerHTML = '<option value=""></option>';
                             Array.from(categorias).sort().forEach(c => {
                                 const opt = document.createElement('option');
@@ -2092,9 +2096,22 @@ window.getCSRFToken = function() {
                                 opt.text = c;
                                 selCat.appendChild(opt);
                             });
+                            if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+                                selCat.insertAdjacentHTML('afterend', '<div style="color:red;font-weight:bold;">[Select2 NO CARGADO] Revisá los assets de JS y CSS</div>');
+                                console.error('[Select2] jQuery o Select2 NO están presentes!');
+                            } else {
+                                $(selCat).select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Selecciona una categoría...' });
+                                console.log('[Select2] Render/inicializado para categoría. Opciones:', Array.from(categorias));
+                                selCat.insertAdjacentHTML('afterend', '<div style="color:green;font-weight:bold;">[Select2 inicializado OK]</div>');
+                            }
                         }
-
+                        
                         if (selTipo) {
+                            // Destroy Select2 instance BEFORE changing options
+                            if ($(selTipo).data('select2')) {
+                                $(selTipo).select2('destroy');
+                                console.log('[Select2] Instancia de tipo destruida antes de update');
+                            }
                             selTipo.innerHTML = '<option value=""></option>';
                             Array.from(tipos).sort().forEach(t => {
                                 const opt = document.createElement('option');
@@ -2102,8 +2119,10 @@ window.getCSRFToken = function() {
                                 opt.text = t;
                                 selTipo.appendChild(opt);
                             });
+                            $(selTipo).select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Selecciona un tipo...' });
+                            console.log('[Select2] Render/inicializado para tipo. Opciones:', Array.from(tipos));
                         }
-
+                        
                         console.log('✓ Categorías cargadas:', Array.from(categorias));
                         console.log('✓ Tipos cargados:', Array.from(tipos));
                         resolve();
@@ -2180,8 +2199,6 @@ window.getCSRFToken = function() {
                     return resolve();
                 }
 
-                fetch('/punto-eca/materiales/inventario/buscar?puntoId=' + encodeURIComponent(puntoId), {
-                    headers: { 'Accept': 'application/json' }
                 fetch('/punto-eca/materiales/inventario?puntoId=' + encodeURIComponent(puntoId), {
                     method: 'GET',
                     headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
