@@ -90,29 +90,39 @@ def _build_calendario_context(punto):
         {"id": str(centro.id), "nombre": centro.nombre} for centro in centros
     ]
 
+    instancias = EventoInstancia.objects.filter(punto_eca=punto)
+    # Construyo un set con clave (evento_base.id, fecha_inicio.date()) para identificar qué fechas tienen instancias
+    instancias_key = set((inst.evento_base.id, inst.fecha_inicio.date()) for inst in instancias)
+
     eventos_calendario = Evento.objects.filter(punto_eca=punto)
     for evento in eventos_calendario:
-        eventos.append(
-            {
-                "id": f"evento-{evento.id}",
-                "type": "evento",
-                "title": evento.titulo or "Evento",
-                "start": evento.fecha_inicio.isoformat(),
-                "end": evento.fecha_fin.isoformat() if evento.fecha_fin else None,
-                "backgroundColor": evento.color or "#007bff",
-                "materialId": str(evento.material.id) if evento.material else None,
-                "material_nombre": evento.material.nombre if evento.material else None,
-                "centroAcopioId": str(evento.centro_acopio.id)
-                if evento.centro_acopio
-                else None,
-                "centro_acopio_nombre": evento.centro_acopio.nombre if evento.centro_acopio else None,
-                "descripcion": evento.descripcion or "",
-                # Podés agregar más props extendidos acá si los necesita el frontend
-            }
-        )
+        # Tomo solo la fecha calendario del evento base
+        evt_fecha = evento.fecha_inicio.date()
+        # Sólo agrego el evento base si NO existe una instancia con ese evento_base y esa fecha
+        if (evento.id, evt_fecha) not in instancias_key:
+            eventos.append(
+                {
+                    "id": f"evento-{evento.id}",
+                    "type": "evento",
+                    "title": evento.titulo or "Evento",
+                    "start": evento.fecha_inicio.isoformat(),
+                    "end": evento.fecha_fin.isoformat() if evento.fecha_fin else None,
+                    "backgroundColor": evento.color or "#007bff",
+                    "materialId": str(evento.material.id) if evento.material else None,
+                    "material_nombre": evento.material.nombre
+                    if evento.material
+                    else None,
+                    "centroAcopioId": str(evento.centro_acopio.id)
+                    if evento.centro_acopio
+                    else None,
+                    "centro_acopio_nombre": evento.centro_acopio.nombre
+                    if evento.centro_acopio
+                    else None,
+                    "descripcion": evento.descripcion or "",
+                }
+            )
 
     # Instancias repetidas de eventos (REPETICIONES)
-    instancias = EventoInstancia.objects.filter(punto_eca=punto)
     for inst in instancias:
         base = inst.evento_base
         eventos.append(
@@ -128,7 +138,9 @@ def _build_calendario_context(punto):
                 "centroAcopioId": str(base.centro_acopio.id)
                 if base.centro_acopio
                 else None,
-                "centro_acopio_nombre": base.centro_acopio.nombre if base.centro_acopio else None,
+                "centro_acopio_nombre": base.centro_acopio.nombre
+                if base.centro_acopio
+                else None,
                 "descripcion": base.descripcion or "",
                 "numeroRepeticion": inst.numero_repeticion,
                 "observaciones": inst.observaciones or "",
