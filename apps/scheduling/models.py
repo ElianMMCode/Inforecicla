@@ -92,3 +92,6 @@ class EventoInstancia(CreacionModificacionModel):
         if self.fecha_creacion:
             return (timezone.now() - self.fecha_creacion).days
         return None
+
+    class Meta(CreacionModificacionModel.Meta):
+        db_table = "evento_instancia"

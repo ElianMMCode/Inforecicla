@@ -6,7 +6,7 @@ from config import constants as cons
 from apps.ecas.constants import SECTION_TEMPLATES
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from .models import Evento
+from apps.scheduling.models import Evento, EventoInstancia
 import json
 from datetime import datetime
 
@@ -90,9 +90,6 @@ def _build_calendario_context(punto):
         {"id": str(centro.id), "nombre": centro.nombre} for centro in centros
     ]
 
-    # Eventos propios del calendario
-    from apps.scheduling.models import Evento
-
     eventos_calendario = Evento.objects.filter(punto_eca=punto)
     for evento in eventos_calendario:
         eventos.append(
@@ -109,6 +106,28 @@ def _build_calendario_context(punto):
                 else None,
                 "descripcion": evento.descripcion or "",
                 # Podés agregar más props extendidos acá si los necesita el frontend
+            }
+        )
+
+    # Instancias repetidas de eventos (REPETICIONES)
+    instancias = EventoInstancia.objects.filter(punto_eca=punto)
+    for inst in instancias:
+        base = inst.evento_base
+        eventos.append(
+            {
+                "id": f"evinst-{inst.id}",
+                "type": "evento_repetido",
+                "title": base.titulo or "Evento",
+                "start": inst.fecha_inicio.isoformat(),
+                "end": inst.fecha_fin.isoformat() if inst.fecha_fin else None,
+                "backgroundColor": base.color or "#007bff",
+                "materialId": str(base.material.id) if base.material else None,
+                "centroAcopioId": str(base.centro_acopio.id)
+                if base.centro_acopio
+                else None,
+                "descripcion": base.descripcion or "",
+                "numeroRepeticion": inst.numero_repeticion,
+                "observaciones": inst.observaciones or "",
             }
         )
 
@@ -212,6 +231,76 @@ def crear_evento_venta(request):
             tipo_repeticion=tipo_repeticion,
             fecha_fin_repeticion=fecha_fin_repeticion if fecha_fin_repeticion else None,
         )
+
+        # ====== CREAR INSTANCIAS DE REPETICIÓN ======
+        from datetime import timedelta
+        from apps.scheduling.models import EventoInstancia
+
+        # Determinar rango de repeticiones
+        if tipo_repeticion != "NINGUNA":
+            rep_start = fecha_inicio_dt
+            rep_end = None
+            if fecha_fin_repeticion:
+                try:
+                    # Intentar armar datetime a partir del string recibido
+                    rep_end = timezone.make_aware(
+                        datetime.strptime(fecha_fin_repeticion, "%Y-%m-%d")
+                    )
+                except Exception:
+                    # fallback por si viene en otro formato, ignora
+                    rep_end = fecha_inicio_dt + timedelta(days=365)
+            else:
+                rep_end = fecha_inicio_dt + timedelta(days=365)
+
+            delta = None
+            rep_tipo = tipo_repeticion.upper()
+            if rep_tipo == "DIARIA":
+                delta = timedelta(days=1)
+            elif rep_tipo == "SEMANAL":
+                delta = timedelta(weeks=1)
+            elif rep_tipo == "QUINCENAL":
+                delta = timedelta(days=14)
+            elif rep_tipo == "MENSUAL":
+                try:
+                    from dateutil.relativedelta import relativedelta
+
+                    delta = relativedelta(months=1)
+                except ImportError:
+                    delta = timedelta(days=30)  # fallback así no revienta
+            else:
+                delta = timedelta(days=1)  # fallback mínimo
+
+            fecha_actual_inicio = fecha_inicio_dt
+            fecha_actual_fin = fecha_fin_dt
+            rep_numero = 1
+            while fecha_actual_inicio <= rep_end:
+                EventoInstancia.objects.create(
+                    evento_base=evento,
+                    punto_eca_id=punto_eca_id,
+                    usuario_id=usuario_id,
+                    fecha_inicio=fecha_actual_inicio,
+                    fecha_fin=fecha_actual_fin,
+                    numero_repeticion=rep_numero,
+                    observaciones=observaciones,
+                )
+                # Incrementar fechas para siguiente instancia
+                fecha_actual_inicio += delta
+                fecha_actual_fin += delta
+                rep_numero += 1
+
+        else:
+            # Si no hay repetición, registro una sola instancia igual al evento
+            from apps.scheduling.models import EventoInstancia
+
+            EventoInstancia.objects.create(
+                evento_base=evento,
+                punto_eca_id=punto_eca_id,
+                usuario_id=usuario_id,
+                fecha_inicio=fecha_inicio_dt,
+                fecha_fin=fecha_fin_dt,
+                numero_repeticion=1,
+                observaciones=observaciones,
+            )
 
         return JsonResponse({"success": True, "eventoId": evento.id})
     except Exception as e:
