@@ -42,7 +42,6 @@
               alert('No se encontró el botón Guardar Evento');
             } else {
               btnGuardar.addEventListener('click', async function () {
-                alert('Se hizo click en Guardar Evento');
                 const data = {
                   materialId: document.getElementById('selectMaterial').value,
                   centroAcopioId: document.getElementById('selectCentroAcopio').value,
@@ -230,7 +229,7 @@
                                         required
                                         style="width: 100%;
                                                min-height: 38px">
-                                    <option value="SIN_REPETICION">Sin Repetición</option>
+                                    <option value="NINGUNA">Sin Repetición</option>
                                     <option value="SEMANAL">Semanal (cada 7 días)</option>
                                     <option value="QUINCENAL">Quincenal (cada 14 días)</option>
                                     <option value="MENSUAL">Mensual (cada 30 días)</option>
