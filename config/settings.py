@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.ecas.apps.EcasConfig",
     "apps.inventory.apps.InventoryConfig",
     "apps.operations.apps.OperationsConfig",
+    "apps.scheduling.apps.SchedulingConfig",
     "apps.users.apps.UsersConfig",
     "apps.panel_admin.apps.PanelAdminConfig",
     # "admin.interfaceapps.publicaciones.apps.PublicacionesConfig",
