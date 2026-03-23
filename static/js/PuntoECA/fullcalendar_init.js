@@ -1,7 +1,78 @@
 // static/js/PuntoECA/fullcalendar_init.js
 // Inicializa FullCalendar en el div #calendar y maneja eventos mock + creación desde modal.
 
+// ==== Mover lógica de edición/modal acá para evitar contextos disjuntos ====
+function llenarModalEdicion(evento) {
+  console.log('llenarModalEdicion, recibí:', evento);
+  if (!evento) {
+    console.warn('No hay evento!');
+    return;
+  }
+  function setSelectValue(selId, value, labelFallback) {
+    var sel = document.getElementById(selId);
+    if (!sel) return;
+    if (value && !Array.from(sel.options).some(opt => opt.value == value)) {
+      var opt = document.createElement('option');
+      opt.value = value;
+      opt.text = labelFallback || value;
+      sel.appendChild(opt);
+    }
+    sel.value = value || '';
+  }
+  document.getElementById('editarEventoId').value = evento.id || '';
+  document.getElementById('inputEditarTitulo').value = evento.title || '';
+  document.getElementById('inputEditarDescripcion').value = evento.descripcion || '';
+  document.getElementById('inputEditarFechaInicio').value = (evento.start||'').split('T')[0] || '';
+  document.getElementById('inputEditarHoraInicio').value = (evento.start||'').split('T')[1] ? (evento.start||'').split('T')[1].substring(0,5) : '';
+  document.getElementById('inputEditarHoraFin').value = (evento.end||'').split('T')[1] ? (evento.end||'').split('T')[1].substring(0,5) : '';
+  document.getElementById('inputEditarColor').value = evento.backgroundColor || '#28a745';
+  setSelectValue('editarSelectMaterial', evento.materialId, '(Material no disponible)');
+  setSelectValue('editarSelectCentroAcopio', evento.centroAcopioId, '(Centro no disponible)');
+  setSelectValue('editarSelectTipoRepeticion', evento.tipoRepeticion || 'NINGUNA');
+  document.getElementById('inputEditarFechaFinRepeticion').value = evento.fechaFinRepeticion || '';
+  document.getElementById('inputEditarObservaciones').value = evento.observaciones || '';
+  document.getElementById('editarPuntoEcaId').value = evento.puntoEcaId || '';
+  document.getElementById('editarUsuarioId').value = evento.usuarioId || '';
+}
+// Delegado click para botón "Editar Evento" centralizado en el mismo archivo
+// Garantiza mismo contexto y acceso global real
+
 document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener('click', function(event) {
+    if (event.target && event.target.id === 'btnEditarEvento') {
+      console.log('DEBUG boton editar: eventoActual =', window.eventoActual);
+      // Antes de abrir modal, poblar selects de edición desde los de creación (garantiza opciones)
+      function copiarOpcionesSelect(srcId, destId) {
+        var src = document.getElementById(srcId);
+        var dest = document.getElementById(destId);
+        if (!src || !dest) return;
+        dest.innerHTML = '';
+        Array.from(src.options).forEach(function(opt) {
+          var copia = opt.cloneNode(true);
+          dest.appendChild(copia);
+        });
+      }
+      copiarOpcionesSelect('selectMaterial', 'editarSelectMaterial');
+      copiarOpcionesSelect('selectCentroAcopio', 'editarSelectCentroAcopio');
+      // También copiar los tipos de repetición
+      copiarOpcionesSelect('selectTipoRepeticion', 'editarSelectTipoRepeticion');
+      // Llenar los datos del evento a editar
+      if (typeof llenarModalEdicion === 'function' && window.eventoActual) {
+        llenarModalEdicion(window.eventoActual);
+      } else {
+        console.warn('llenarModalEdicion no se ejecutó o eventoActual no seteado');
+      }
+      // Buscamos los modales
+      var detalleModal = document.getElementById('modalDetalleEvento');
+      var editarModal = document.getElementById('modalEditarEvento');
+      if (detalleModal && editarModal) {
+        var bootstrapModalDetalle = bootstrap.Modal.getInstance(detalleModal) || new bootstrap.Modal(detalleModal);
+        var bootstrapModalEditar = bootstrap.Modal.getInstance(editarModal) || new bootstrap.Modal(editarModal);
+        bootstrapModalDetalle.hide();
+        setTimeout(function () { bootstrapModalEditar.show(); }, 400);
+      }
+    }
+  });
   var calendarEl = document.getElementById("calendar");
   if (!calendarEl) return;
 
@@ -30,13 +101,35 @@ document.addEventListener("DOMContentLoaded", function () {
     },
     events: EVENTOS, // <-- now uses events from backend, not the mock
     eventClick: function (info) {
-      const tipo = info.event.extendedProps.type || info.event.type || "";
-      if (tipo === "venta") {
-        mostrarDetallesVenta(info.event);
-      } else if (tipo === "compra") {
-        mostrarDetallesCompra(info.event);
+      // Siempre setea window.eventoActual ANTES de mostrar detalles
+      var e = info.event;
+      window.eventoActual = {
+        id: e.id,
+        title: e.title,
+        descripcion: e.extendedProps.descripcion || e.extendedProps.description || '',
+        start: e.start ? (typeof e.start === 'string' ? e.start : e.start.toISOString()) : '',
+        end: e.end ? (typeof e.end === 'string' ? e.end : e.end.toISOString()) : '',
+        backgroundColor: e.backgroundColor || e.color || '#28a745',
+        materialId: e.extendedProps.materialId || e.extendedProps.material_id || '',
+        centroAcopioId: e.extendedProps.centroAcopioId || e.extendedProps.centro_acopio_id || '',
+        tipoRepeticion: e.extendedProps.tipoRepeticion || e.extendedProps.tipo_repeticion || '',
+        fechaFinRepeticion: e.extendedProps.fechaFinRepeticion || e.extendedProps.fecha_fin_repeticion || '',
+        observaciones: e.extendedProps.observaciones || '',
+        puntoEcaId: e.extendedProps.puntoEcaId || e.extendedProps.punto_eca_id || '',
+        usuarioId: e.extendedProps.usuarioId || e.extendedProps.usuario_id || ''
+      };
+      if (!window.eventoActual || !window.eventoActual.id) {
+        console.warn('DEBUG: eventoActual quedó incompleto', window.eventoActual, e.extendedProps);
       } else {
-        mostrarDetalleEvento(info.event);
+        console.log('eventoActual seteado:', window.eventoActual);
+      }
+      const tipo = e.extendedProps.type || e.type || "";
+      if (tipo === "venta") {
+        mostrarDetallesVenta(e);
+      } else if (tipo === "compra") {
+        mostrarDetallesCompra(e);
+      } else {
+        mostrarDetalleEvento(e);
       }
     },
   });
@@ -136,6 +229,23 @@ function mostrarDetallesVenta(evento) {
 
 // Modal para DETALLE GENÉRICO DE EVENTO
 globalThis.mostrarDetalleEvento = function mostrarDetalleEvento(evento) {
+  // Refuerzo: setea global el evento actual mostrado
+  window.eventoActual = window.eventoActual = {
+    id: evento.id,
+    title: evento.title || evento.extendedProps.titulo || '',
+    descripcion: evento.extendedProps.descripcion || evento.extendedProps.description || '',
+    start: evento.start ? (typeof evento.start === 'string' ? evento.start : evento.start.toISOString()) : '',
+    end: evento.end ? (typeof evento.end === 'string' ? evento.end : evento.end.toISOString()) : '',
+    backgroundColor: evento.backgroundColor || evento.color || '#28a745',
+    materialId: evento.extendedProps.materialId || evento.extendedProps.material_id || '',
+    centroAcopioId: evento.extendedProps.centroAcopioId || evento.extendedProps.centro_acopio_id || '',
+    tipoRepeticion: evento.extendedProps.tipoRepeticion || evento.extendedProps.tipo_repeticion || '',
+    fechaFinRepeticion: evento.extendedProps.fechaFinRepeticion || evento.extendedProps.fecha_fin_repeticion || '',
+    observaciones: evento.extendedProps.observaciones || '',
+    puntoEcaId: evento.extendedProps.puntoEcaId || evento.extendedProps.punto_eca_id || '',
+    usuarioId: evento.extendedProps.usuarioId || evento.extendedProps.usuario_id || ''
+  };
+  console.log('Refuerzo eventoActual modal:', window.eventoActual);
   // Mostrar en consola para debug
   console.log('Evento para detalle:', evento, evento.extendedProps);
   document.getElementById("eventoDetalleTitulo").textContent = evento.title || evento.extendedProps.titulo || "-";
