@@ -39,6 +39,73 @@ function llenarModalEdicion(evento) {
 
 document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener('click', function(event) {
+    // Handler Eliminar Evento - solo si no es tipo venta/compra
+    if (event.target && event.target.id === 'btnEliminarEvento') {
+      if (!window.eventoActual) return;
+      const tipo = window.eventoActual.tipoRepeticion || window.eventoActual.tipo || '';
+      const isVenta = window.eventoActual && (window.eventoActual.tipo === 'venta');
+      const isCompra = window.eventoActual && (window.eventoActual.tipo === 'compra');
+      if (isVenta || isCompra) {
+        alert('No se puede eliminar eventos de tipo Venta o Compra desde aquí.');
+        return;
+      }
+      const eventoId = window.eventoActual.id;
+      const esRepetido = eventoId && eventoId.startsWith('evinst-');
+      const esSerie = window.eventoActual.tipoRepeticion && window.eventoActual.tipoRepeticion !== 'NINGUNA';
+      if (esRepetido || esSerie) {
+        // Abrir modal custom para opciones de eliminación
+        const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminarEvento'));
+        modalEliminar.show();
+        // Desvincular handlers previos para evitar múltiple binding
+        const btnSolo = document.getElementById('btnEliminarSoloRepeticion');
+        const btnSerie = document.getElementById('btnEliminarSerieCompleta');
+        // Importante: remover event listener previos (en apps con single page, relevante)
+        btnSolo.onclick = null;
+        btnSerie.onclick = null;
+        btnSolo.onclick = function () {
+          eliminarEvento('instancia');
+        };
+        btnSerie.onclick = function () {
+          eliminarEvento('serie');
+        };
+        // Ocultar el modal de detalle cuando abrís el de eliminación
+        var modalDetalle = bootstrap.Modal.getInstance(document.getElementById('modalDetalleEvento'));
+        if(modalDetalle) modalDetalle.hide();
+        return;
+      } else {
+        // Evento normal/sin repeticiones - confirm para borrar
+        if (!window.confirm('¿Estás seguro de que querés eliminar este evento?')) return;
+        eliminarEvento('serie');
+        return;
+      }
+    }
+
+    // Nueva función dedicada para eliminar
+    function eliminarEvento(deleteMode) {
+      const eventoId = window.eventoActual.id;
+      fetch('/punto-eca/calendario/evento/eliminar/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [null, ''])[1]
+        },
+        body: JSON.stringify({ eventoId, deleteMode })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          window.location.reload();
+        } else {
+          alert(result.error || 'Error eliminando el evento');
+        }
+      })
+      .catch(() => {
+        alert('Error de red al intentar eliminar.');
+      });
+      // Cerrar modal de eliminar si existe
+      var modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarEvento'));
+      if(modalEliminar) modalEliminar.hide();
+    }
     if (event.target && event.target.id === 'btnEditarEvento') {
       console.log('DEBUG boton editar: eventoActual =', window.eventoActual);
       // Antes de abrir modal, poblar selects de edición desde los de creación (garantiza opciones)

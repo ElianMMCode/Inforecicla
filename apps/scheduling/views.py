@@ -115,14 +115,22 @@ def _build_calendario_context(punto):
                     "end": evento.fecha_fin.isoformat() if evento.fecha_fin else None,
                     "backgroundColor": evento.color or "#007bff",
                     "materialId": str(evento.material.id) if evento.material else None,
-                    "material_nombre": evento.material.nombre if evento.material else None,
-                    "centroAcopioId": str(evento.centro_acopio.id) if evento.centro_acopio else None,
-                    "centro_acopio_nombre": evento.centro_acopio.nombre if evento.centro_acopio else None,
+                    "material_nombre": evento.material.nombre
+                    if evento.material
+                    else None,
+                    "centroAcopioId": str(evento.centro_acopio.id)
+                    if evento.centro_acopio
+                    else None,
+                    "centro_acopio_nombre": evento.centro_acopio.nombre
+                    if evento.centro_acopio
+                    else None,
                     "puntoEcaId": str(punto.id),
                     "usuarioId": str(punto.gestor_eca.id) if punto.gestor_eca else None,
                     "descripcion": evento.descripcion or "",
                     "tipoRepeticion": evento.tipo_repeticion or "",
-                                        "fechaFinRepeticion": evento.fecha_fin_repeticion.isoformat() if evento.fecha_fin_repeticion else ""
+                    "fechaFinRepeticion": evento.fecha_fin_repeticion.isoformat()
+                    if evento.fecha_fin_repeticion
+                    else "",
                 }
             )
 
@@ -139,13 +147,19 @@ def _build_calendario_context(punto):
                 "backgroundColor": base.color or "#007bff",
                 "materialId": str(base.material.id) if base.material else None,
                 "material_nombre": base.material.nombre if base.material else None,
-                "centroAcopioId": str(base.centro_acopio.id) if base.centro_acopio else None,
-                "centro_acopio_nombre": base.centro_acopio.nombre if base.centro_acopio else None,
+                "centroAcopioId": str(base.centro_acopio.id)
+                if base.centro_acopio
+                else None,
+                "centro_acopio_nombre": base.centro_acopio.nombre
+                if base.centro_acopio
+                else None,
                 "puntoEcaId": str(punto.id),
                 "usuarioId": str(punto.gestor_eca.id) if punto.gestor_eca else None,
                 "descripcion": base.descripcion or "",
                 "tipoRepeticion": base.tipo_repeticion or "",
-                                "fechaFinRepeticion": base.fecha_fin_repeticion.isoformat() if base.fecha_fin_repeticion else "",
+                "fechaFinRepeticion": base.fecha_fin_repeticion.isoformat()
+                if base.fecha_fin_repeticion
+                else "",
                 "numeroRepeticion": inst.numero_repeticion,
                 "observaciones": inst.observaciones or "",
             }
@@ -328,14 +342,20 @@ def crear_evento_venta(request):
 
 
 def extraer_uuid_prefijo(mixed_id):
-    """
-    Extrae solo el UUID de un id que puede venir con prefijo, por ejemplo 'evinst-...' o 'evento-...'.
-    """
-    if mixed_id and isinstance(mixed_id, str) and '-' in mixed_id:
-        partes = mixed_id.split('-', 1)
-        # Si la segunda parte parece un UUID, la devuelve
-        return partes[1] if len(partes) == 2 and len(partes[1]) > 12 else mixed_id
+    # Log para depuración
+    print('[DEBUG] extraer_uuid_prefijo input:', mixed_id)
+    if not mixed_id or type(mixed_id) != str:
+        return ''
+    partes = mixed_id.split('-', 1)
+    # Si viene con prefijo (evinst-/evento-) + UUID
+    if len(partes) == 2 and len(partes[1]) >= 8:
+        uuid = partes[1]
+        print('[DEBUG] UUID extraído:', uuid)
+        return uuid
+    # Sino devuelvo tal cual
+    print('[DEBUG] UUID sin extraer prefijo:', mixed_id)
     return mixed_id
+
 
 def editar_evento_venta(request):
     """
@@ -361,13 +381,14 @@ def editar_evento_venta(request):
         # Buscar evento base (extraer UUID limpio)
         evento_uuid = extraer_uuid_prefijo(evento_id)
         # Si proviene de instancia, hay que buscar el evento_base
-        if evento_id.startswith('evinst-'):
+        if evento_id.startswith("evinst-"):
             try:
                 instancia = EventoInstancia.objects.get(id=evento_uuid)
                 evento_uuid = instancia.evento_base.id
             except EventoInstancia.DoesNotExist:
                 return JsonResponse(
-                    {"success": False, "error": "Instancia de evento no encontrada."}, status=404
+                    {"success": False, "error": "Instancia de evento no encontrada."},
+                    status=404,
                 )
         try:
             evento = Evento.objects.get(id=evento_uuid)
@@ -395,7 +416,9 @@ def editar_evento_venta(request):
                 setattr(evento, field_model, value)
             elif field_model == "fecha_fin_repeticion":
                 # Si no hay repetición real, borrar fecha fin
-                tipo_repeticion_nueva = data.get("tipoRepeticion", evento.tipo_repeticion)
+                tipo_repeticion_nueva = data.get(
+                    "tipoRepeticion", evento.tipo_repeticion
+                )
                 if not value or value == "" or tipo_repeticion_nueva == "NINGUNA":
                     setattr(evento, field_model, None)
                 else:
@@ -485,5 +508,77 @@ def editar_evento_venta(request):
                 observaciones=observaciones,
             )
         return JsonResponse({"success": True, "eventoId": evento.id})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def eliminar_evento_venta(request):
+    """
+    Elimina un evento y/o una instancia de repetición dependiendo el modo solicitado.
+    Espera:
+        - eventoId: (puede ser evento-xxx o evinst-xxx)
+        - deleteMode: "serie" (borra evento base + todas las instancias) | "instancia" (sólo esta ocurrencia)
+    """
+    try:
+        # --- Ajuste para aceptar JSON y Form ---
+        try:
+            if request.content_type == "application/json":
+                data = json.loads(request.body.decode())
+            else:
+                data = request.POST
+        except Exception:
+            data = {}
+        evento_id = data.get("eventoId")
+        mode = data.get("deleteMode", "serie")
+        if not evento_id:
+            return JsonResponse(
+                {"success": False, "error": "Falta el ID del evento."}, status=400
+            )
+        evento_uuid = extraer_uuid_prefijo(evento_id)
+        if mode == "instancia":
+            # Eliminar solo la instancia
+            if evento_id.startswith("evinst-"):
+                try:
+                    instancia = EventoInstancia.objects.get(id=evento_uuid)
+                    instancia.delete()
+                    return JsonResponse(
+                        {"success": True, "deleted": "instancia", "eventoId": evento_id}
+                    )
+                except EventoInstancia.DoesNotExist:
+                    return JsonResponse(
+                        {"success": False, "error": "Instancia no encontrada."},
+                        status=404,
+                    )
+            else:
+                # Si piden borrar 'instancia' pero Id es evento, no hacemos nada
+                return JsonResponse(
+                    {"success": False, "error": "No es una instancia."}, status=400
+                )
+        else:
+            # Eliminar toda la serie: evento base + todas sus instancias
+            # Puedo venir desde una instancia o evento base
+            if evento_id.startswith("evinst-"):
+                try:
+                    instancia = EventoInstancia.objects.get(id=evento_uuid)
+                    evento = instancia.evento_base
+                except EventoInstancia.DoesNotExist:
+                    return JsonResponse(
+                        {"success": False, "error": "Instancia no encontrada."},
+                        status=404,
+                    )
+            else:
+                try:
+                    evento = Evento.objects.get(id=evento_uuid)
+                except Evento.DoesNotExist:
+                    return JsonResponse(
+                        {"success": False, "error": "Evento no encontrado."}, status=404
+                    )
+            # Borrar todas las instancias primero
+            EventoInstancia.objects.filter(evento_base=evento).delete()
+            # Luego el evento base
+            evento.delete()
+            return JsonResponse(
+                {"success": True, "deleted": "serie", "eventoId": evento_id}
+            )
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)

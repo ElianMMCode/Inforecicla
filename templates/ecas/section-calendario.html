@@ -555,6 +555,9 @@
                     <button type="button" class="btn btn-warning me-2" id="btnEditarEvento">
                         <i class="bi bi-pencil-square"></i> Editar
                     </button>
+                    <button type="button" class="btn btn-danger me-2" id="btnEliminarEvento">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
                     <button type="button"
                             class="btn btn-secondary"
                             data-bs-dismiss="modal"
@@ -698,5 +701,32 @@
                 </div>
             </div>
         </div>
+    </div>
+    <!-- ===== MODAL PARA ELIMINAR REPETICIÓN O SERIE DE EVENTO ===== -->
+    <div class="modal fade" id="modalEliminarEvento" tabindex="-1" aria-labelledby="modalEliminarEventoLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="modalEliminarEventoLabel">
+              <i class="bi bi-exclamation-triangle me-2"></i> ¿Qué querés eliminar?
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-3">Este evento es una repetición de una serie. ¿Qué acción querés realizar?</p>
+            <div class="d-grid gap-2">
+              <button id="btnEliminarSoloRepeticion" class="btn btn-danger" type="button">
+                <i class="bi bi-x-circle"></i> Solo esta repetición
+              </button>
+              <button id="btnEliminarSerieCompleta" class="btn btn-warning" type="button">
+                <i class="bi bi-x-octagon"></i> Toda la serie
+              </button>
+              <button class="btn btn-secondary mt-2" data-bs-dismiss="modal" type="button">
+                <i class="bi bi-arrow-return-left"></i> Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 </section>
