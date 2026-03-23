@@ -5,9 +5,6 @@ from django.utils import timezone
 
 class Evento(CreacionModificacionModel):
     # Relaciones
-    venta_inventario = models.ForeignKey(
-        "operations.VentaInventario", on_delete=models.PROTECT, related_name="eventos"
-    )
     material = models.ForeignKey(
         "inventory.Material", on_delete=models.PROTECT, related_name="eventos"
     )
@@ -47,7 +44,6 @@ class Evento(CreacionModificacionModel):
     es_evento_generado = models.BooleanField(default=False)
 
     class Meta(CreacionModificacionModel.Meta):
-        unique_together = (("venta_inventario", "punto_eca"),)
         db_table = "evento"
 
     def generar_titulo(self):
@@ -58,10 +54,6 @@ class Evento(CreacionModificacionModel):
         desc = f"Material: {getattr(self.material, 'descripcion', '')}\n"
         if self.centro_acopio and hasattr(self.centro_acopio, "nombre"):
             desc += f"Centro de Acopio: {self.centro_acopio.nombre}\n"
-        if self.venta_inventario and hasattr(self.venta_inventario, "observaciones"):
-            obs = getattr(self.venta_inventario, "observaciones", "")
-            if obs:
-                desc += f"Observaciones: {obs}"
         self.descripcion = desc
 
     def asignar_color_por_material(self):

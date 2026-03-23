@@ -46,13 +46,19 @@ def _build_calendario_context(punto):
                 "end": None,
                 "backgroundColor": "#28a745",
                 "materialId": str(venta.inventario.material.id),
-                "centroAcopioId": str(venta.centro_acopio.id) if venta.centro_acopio else None,
+                "centroAcopioId": str(venta.centro_acopio.id)
+                if venta.centro_acopio
+                else None,
                 # Extended props para JS/modales
                 "nombreMaterial": venta.inventario.material.nombre,
-                "precioUnitario": float(venta.precio_venta) if venta.precio_venta is not None else None,
+                "precioUnitario": float(venta.precio_venta)
+                if venta.precio_venta is not None
+                else None,
                 "cantidad": float(venta.cantidad),
                 "unidadMedida": venta.inventario.unidad_medida,
-                "nombreCentroAcopio": venta.centro_acopio.nombre if venta.centro_acopio else "",
+                "nombreCentroAcopio": venta.centro_acopio.nombre
+                if venta.centro_acopio
+                else "",
                 "observaciones": venta.observaciones or "",
             }
         )
@@ -78,6 +84,28 @@ def _build_calendario_context(punto):
     centros_list = [
         {"id": str(centro.id), "nombre": centro.nombre} for centro in centros
     ]
+
+    # Eventos propios del calendario
+    from apps.scheduling.models import Evento
+
+    eventos_calendario = Evento.objects.filter(punto_eca=punto)
+    for evento in eventos_calendario:
+        eventos.append(
+            {
+                "id": f"evento-{evento.id}",
+                "type": "evento",
+                "title": evento.titulo or "Evento",
+                "start": evento.fecha_inicio.isoformat(),
+                "end": evento.fecha_fin.isoformat() if evento.fecha_fin else None,
+                "backgroundColor": evento.color or "#007bff",
+                "materialId": str(evento.material.id) if evento.material else None,
+                "centroAcopioId": str(evento.centro_acopio.id)
+                if evento.centro_acopio
+                else None,
+                "descripcion": evento.descripcion or "",
+                # Podés agregar más props extendidos acá si los necesita el frontend
+            }
+        )
 
     return {
         "seccion": "calendario",
