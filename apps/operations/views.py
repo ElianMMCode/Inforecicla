@@ -46,7 +46,7 @@ def _build_movimientos_context(punto):
 
     ventas = (
         models.VentaInventario.objects.filter(inventario__punto_eca=punto)
-        .select_related("inventario__material")
+        .select_related("inventario__material", "centro_acopio")
         .order_by("-fecha_venta")
     )
 
@@ -64,9 +64,24 @@ def _build_movimientos_context(punto):
             "fechaVenta": venta.fecha_venta.isoformat(),
             "precioVenta": float(venta.precio_venta or 0),
             "observaciones": venta.observaciones or "",
+            "nombreCentroAcopio": getattr(venta.centro_acopio, "nombre", "") if getattr(venta, "centro_acopio", None) else "",
+            "centroAcopioId": str(venta.centro_acopio.id) if getattr(venta, "centro_acopio", None) else "",
         }
         for venta in ventas
     ]
+
+    # Centros de acopio (globales y asociados a este punto)
+    centros_globales = list(
+        CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
+    )
+    centros_locales = list(
+        CentroAcopio.objects.filter(puntos_eca=punto, visibilidad=cons.Visibilidad.ECA)
+    )
+    # Unificar por ID y convertir a lista de dicts simples para JS/JSON
+    centros_map = {}
+    for c in centros_globales + centros_locales:
+        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
+    centros_list = list(centros_map.values())
 
     return {
         "seccion": "movimientos",
@@ -87,6 +102,7 @@ def _build_movimientos_context(punto):
             .values_list("material__tipo__nombre", flat=True)
             .distinct()
         ),
+        "centros": centros_list,
         "entradas": json.dumps(compras_list),
         "salidas": json.dumps(ventas_list),
         "historial_compras": compras_list,

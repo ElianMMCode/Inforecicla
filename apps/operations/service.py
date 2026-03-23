@@ -332,12 +332,26 @@ class VentaInventarioService:
                 fecha_dt = timezone.make_aware(fecha_dt)
             fecha_compra = fecha_dt
 
+        centro_acopio_id = data.get("centroAcopioId")
+        centro_acopio_inst = None
+        if centro_acopio_id:
+            from apps.ecas.models import CentroAcopio
+            try:
+                centro_acopio_inst = CentroAcopio.objects.get(id=centro_acopio_id)
+            except CentroAcopio.DoesNotExist:
+                return {
+                    "error": True,
+                    "mensaje": "Centro de acopio no encontrado.",
+                    "status": 404,
+                }
+
         salida = models.VentaInventario.objects.create(
             inventario=inventario,
             fecha_venta=fecha_compra,
             cantidad=cantidad,
             precio_venta=precio_venta,
             observaciones=data.get("observaciones", ""),
+            centro_acopio=centro_acopio_inst,
         )
 
         result = VentaInventarioService.actualizar_stock_por_venta(inventario, cantidad)
