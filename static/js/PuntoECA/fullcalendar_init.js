@@ -29,7 +29,7 @@ function llenarModalEdicion(evento) {
   setSelectValue('editarSelectMaterial', evento.materialId, '(Material no disponible)');
   setSelectValue('editarSelectCentroAcopio', evento.centroAcopioId, '(Centro no disponible)');
   setSelectValue('editarSelectTipoRepeticion', evento.tipoRepeticion || 'NINGUNA');
-  document.getElementById('inputEditarFechaFinRepeticion').value = evento.fechaFinRepeticion || '';
+  document.getElementById('inputEditarFechaFinRepeticion').value = (evento.fechaFinRepeticion || '').split('T')[0] || '';
   document.getElementById('inputEditarObservaciones').value = evento.observaciones || '';
   document.getElementById('editarPuntoEcaId').value = evento.puntoEcaId || '';
   document.getElementById('editarUsuarioId').value = evento.usuarioId || '';
@@ -115,8 +115,8 @@ document.addEventListener("DOMContentLoaded", function () {
         tipoRepeticion: e.extendedProps.tipoRepeticion || e.extendedProps.tipo_repeticion || '',
         fechaFinRepeticion: e.extendedProps.fechaFinRepeticion || e.extendedProps.fecha_fin_repeticion || '',
         observaciones: e.extendedProps.observaciones || '',
-        puntoEcaId: e.extendedProps.puntoEcaId || e.extendedProps.punto_eca_id || '',
-        usuarioId: e.extendedProps.usuarioId || e.extendedProps.usuario_id || ''
+        puntoEcaId: e.extendedProps.puntoEcaId || e.extendedProps.punto_eca_id || window._PUNTO_ECA_ID || '',
+        usuarioId: e.extendedProps.usuarioId || e.extendedProps.usuario_id || window._USUARIO_ID || ''
       };
       if (!window.eventoActual || !window.eventoActual.id) {
         console.warn('DEBUG: eventoActual quedó incompleto', window.eventoActual, e.extendedProps);
@@ -203,6 +203,87 @@ document.addEventListener("DOMContentLoaded", function () {
       ocultarAlertas();
     }, 800);
   }
+  // ==============================================
+  // Lógica para editar evento desde el modal edición
+  // ==============================================
+  var btnGuardarEditar = document.getElementById('btnGuardarEditarEvento');
+  if (btnGuardarEditar) {
+    btnGuardarEditar.addEventListener('click', async function () {
+      const data = {
+        eventoId: document.getElementById('editarEventoId').value,
+        materialId: document.getElementById('editarSelectMaterial').value,
+        centroAcopioId: document.getElementById('editarSelectCentroAcopio').value,
+        puntoEcaId: document.getElementById('editarPuntoEcaId').value,
+        usuarioId: document.getElementById('editarUsuarioId').value,
+        titulo: document.getElementById('inputEditarTitulo').value,
+        descripcion: document.getElementById('inputEditarDescripcion').value,
+        fechaInicio: document.getElementById('inputEditarFechaInicio').value,
+        horaInicio: document.getElementById('inputEditarHoraInicio').value,
+        horaFin: document.getElementById('inputEditarHoraFin').value,
+        color: document.getElementById('inputEditarColor').value,
+        tipoRepeticion: document.getElementById('editarSelectTipoRepeticion').value,
+        fechaFinRepeticion: document.getElementById('inputEditarFechaFinRepeticion').value,
+        observaciones: document.getElementById('inputEditarObservaciones').value
+      };
+      // Validación mínima
+      const faltan = [];
+      if(!data.materialId) faltan.push('Material');
+      if(!data.puntoEcaId) faltan.push('Punto ECA');
+      if(!data.usuarioId) faltan.push('Usuario');
+      if(!data.titulo) faltan.push('Título');
+      if(!data.fechaInicio) faltan.push('Fecha Inicio');
+      if(!data.horaInicio) faltan.push('Hora Inicio');
+      if(!data.horaFin) faltan.push('Hora Fin');
+      if (faltan.length > 0) {
+        document.getElementById('alertEditarErrorText').innerText = 'Faltan campos obligatorios: ' + faltan.join(', ');
+        document.getElementById('alertEditarError').classList.remove('d-none');
+        return;
+      }
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+      try {
+        const response = await fetch('/punto-eca/calendario/evento/editar/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.success) {
+          document.getElementById('alertEditarError').classList.add('d-none');
+          document.getElementById('alertEditarSuccess').classList.remove('d-none');
+          setTimeout(function () {
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEditarEvento'));
+            modal.hide();
+            document.getElementById('alertEditarSuccess').classList.add('d-none');
+            // Refrescar el calendario podría implicar reload de eventos, según estructura
+            window.location.reload();
+          }, 1200);
+        } else {
+          document.getElementById('alertEditarErrorText').innerText = result.error || 'Error al actualizar el evento';
+          document.getElementById('alertEditarError').classList.remove('d-none');
+        }
+      } catch (e) {
+        document.getElementById('alertEditarErrorText').innerText = 'Error de red o servidor';
+        document.getElementById('alertEditarError').classList.remove('d-none');
+      }
+    });
+  }
+
 });
 
 // Modal para DETALLES DE VENTA (con IDs nuevos de section-calendario.html)

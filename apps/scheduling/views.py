@@ -54,6 +54,8 @@ def _build_calendario_context(punto):
                 "centroAcopioId": str(venta.centro_acopio.id)
                 if venta.centro_acopio
                 else None,
+                "puntoEcaId": str(punto.id),
+                "usuarioId": str(punto.gestor_eca.id) if punto.gestor_eca else None,
                 # Extended props para JS/modales
                 "nombreMaterial": venta.inventario.material.nombre,
                 "precioUnitario": float(venta.precio_venta)
@@ -79,6 +81,8 @@ def _build_calendario_context(punto):
                 "backgroundColor": "#dc3545",  # Rojo para compras
                 "materialId": str(compra.inventario.material.id),
                 "centroAcopioId": None,  # No hay centro en compra
+                "puntoEcaId": str(punto.id),
+                "usuarioId": str(punto.gestor_eca.id) if punto.gestor_eca else None,
                 "observaciones": compra.observaciones or "",
                 "cantidad": float(compra.cantidad),
                 "precioUnitario": float(compra.precio_compra or 0),
@@ -92,7 +96,9 @@ def _build_calendario_context(punto):
 
     instancias = EventoInstancia.objects.filter(punto_eca=punto)
     # Construyo un set con clave (evento_base.id, fecha_inicio.date()) para identificar qué fechas tienen instancias
-    instancias_key = set((inst.evento_base.id, inst.fecha_inicio.date()) for inst in instancias)
+    instancias_key = set(
+        (inst.evento_base.id, inst.fecha_inicio.date()) for inst in instancias
+    )
 
     eventos_calendario = Evento.objects.filter(punto_eca=punto)
     for evento in eventos_calendario:
@@ -109,16 +115,14 @@ def _build_calendario_context(punto):
                     "end": evento.fecha_fin.isoformat() if evento.fecha_fin else None,
                     "backgroundColor": evento.color or "#007bff",
                     "materialId": str(evento.material.id) if evento.material else None,
-                    "material_nombre": evento.material.nombre
-                    if evento.material
-                    else None,
-                    "centroAcopioId": str(evento.centro_acopio.id)
-                    if evento.centro_acopio
-                    else None,
-                    "centro_acopio_nombre": evento.centro_acopio.nombre
-                    if evento.centro_acopio
-                    else None,
+                    "material_nombre": evento.material.nombre if evento.material else None,
+                    "centroAcopioId": str(evento.centro_acopio.id) if evento.centro_acopio else None,
+                    "centro_acopio_nombre": evento.centro_acopio.nombre if evento.centro_acopio else None,
+                    "puntoEcaId": str(punto.id),
+                    "usuarioId": str(punto.gestor_eca.id) if punto.gestor_eca else None,
                     "descripcion": evento.descripcion or "",
+                    "tipoRepeticion": evento.tipo_repeticion or "",
+                                        "fechaFinRepeticion": evento.fecha_fin_repeticion.isoformat() if evento.fecha_fin_repeticion else ""
                 }
             )
 
@@ -135,13 +139,13 @@ def _build_calendario_context(punto):
                 "backgroundColor": base.color or "#007bff",
                 "materialId": str(base.material.id) if base.material else None,
                 "material_nombre": base.material.nombre if base.material else None,
-                "centroAcopioId": str(base.centro_acopio.id)
-                if base.centro_acopio
-                else None,
-                "centro_acopio_nombre": base.centro_acopio.nombre
-                if base.centro_acopio
-                else None,
+                "centroAcopioId": str(base.centro_acopio.id) if base.centro_acopio else None,
+                "centro_acopio_nombre": base.centro_acopio.nombre if base.centro_acopio else None,
+                "puntoEcaId": str(punto.id),
+                "usuarioId": str(punto.gestor_eca.id) if punto.gestor_eca else None,
                 "descripcion": base.descripcion or "",
+                "tipoRepeticion": base.tipo_repeticion or "",
+                                "fechaFinRepeticion": base.fecha_fin_repeticion.isoformat() if base.fecha_fin_repeticion else "",
                 "numeroRepeticion": inst.numero_repeticion,
                 "observaciones": inst.observaciones or "",
             }
@@ -318,6 +322,168 @@ def crear_evento_venta(request):
                 observaciones=observaciones,
             )
 
+        return JsonResponse({"success": True, "eventoId": evento.id})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def extraer_uuid_prefijo(mixed_id):
+    """
+    Extrae solo el UUID de un id que puede venir con prefijo, por ejemplo 'evinst-...' o 'evento-...'.
+    """
+    if mixed_id and isinstance(mixed_id, str) and '-' in mixed_id:
+        partes = mixed_id.split('-', 1)
+        # Si la segunda parte parece un UUID, la devuelve
+        return partes[1] if len(partes) == 2 and len(partes[1]) > 12 else mixed_id
+    return mixed_id
+
+def editar_evento_venta(request):
+    """
+    Endpoint para editar un evento y sus repeticiones (ajustando instancias).
+    """
+    try:
+        # --- Ajuste para aceptar JSON y Form ---
+        try:
+            if request.content_type == "application/json":
+                data = json.loads(request.body.decode())
+            else:
+                data = request.POST
+        except Exception:
+            data = {}
+        # Debug
+        print("[DEBUG] Data recibida para editar evento:", data)
+        evento_id = data.get("eventoId")
+        if not evento_id:
+            return JsonResponse(
+                {"success": False, "error": "Falta el ID del evento para editar."},
+                status=400,
+            )
+        # Buscar evento base (extraer UUID limpio)
+        evento_uuid = extraer_uuid_prefijo(evento_id)
+        # Si proviene de instancia, hay que buscar el evento_base
+        if evento_id.startswith('evinst-'):
+            try:
+                instancia = EventoInstancia.objects.get(id=evento_uuid)
+                evento_uuid = instancia.evento_base.id
+            except EventoInstancia.DoesNotExist:
+                return JsonResponse(
+                    {"success": False, "error": "Instancia de evento no encontrada."}, status=404
+                )
+        try:
+            evento = Evento.objects.get(id=evento_uuid)
+        except Evento.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": "Evento no encontrado."}, status=404
+            )
+        # Actualizar campos editables
+        campos_editables = [
+            ("material_id", "materialId"),
+            ("centro_acopio_id", "centroAcopioId"),
+            ("punto_eca_id", "puntoEcaId"),
+            ("usuario_id", "usuarioId"),
+            ("titulo", "titulo"),
+            ("descripcion", "descripcion"),
+            ("color", "color"),
+            ("tipo_repeticion", "tipoRepeticion"),
+            ("fecha_fin_repeticion", "fechaFinRepeticion"),
+        ]
+        for field_model, field_req in campos_editables:
+            value = data.get(field_req, None)
+            if field_model == "tipo_repeticion":
+                # Si llega vacío o NINGUNA, limpiar reps bien
+                value = value if value else "NINGUNA"
+                setattr(evento, field_model, value)
+            elif field_model == "fecha_fin_repeticion":
+                # Si no hay repetición real, borrar fecha fin
+                tipo_repeticion_nueva = data.get("tipoRepeticion", evento.tipo_repeticion)
+                if not value or value == "" or tipo_repeticion_nueva == "NINGUNA":
+                    setattr(evento, field_model, None)
+                else:
+                    setattr(evento, field_model, value)
+            else:
+                if value is not None and value != "":
+                    setattr(evento, field_model, value)
+        # Manejo de fechas/hora
+        fecha_inicio = data.get("fechaInicio")
+        hora_inicio = data.get("horaInicio")
+        hora_fin = data.get("horaFin")
+        from django.utils import timezone
+
+        if fecha_inicio and hora_inicio:
+            evento.fecha_inicio = timezone.make_aware(
+                datetime.strptime(f"{fecha_inicio} {hora_inicio}", "%Y-%m-%d %H:%M")
+            )
+        if fecha_inicio and hora_fin:
+            evento.fecha_fin = timezone.make_aware(
+                datetime.strptime(f"{fecha_inicio} {hora_fin}", "%Y-%m-%d %H:%M")
+            )
+        evento.save()
+        # Procesar repetición y OBSERVACIONES
+        tipo_repeticion = data.get("tipoRepeticion", "NINGUNA")
+        fecha_fin_repeticion = data.get("fechaFinRepeticion", None)
+        observaciones = data.get("observaciones", "")
+        # Eliminar TODAS las instancias actuales
+        EventoInstancia.objects.filter(evento_base=evento).delete()
+        # Crear instancias según nueva solicitud
+        from datetime import timedelta
+
+        if tipo_repeticion != "NINGUNA":
+            fecha_inicio_dt = evento.fecha_inicio
+            fecha_fin_dt = evento.fecha_fin
+            rep_start = fecha_inicio_dt
+            rep_end = None
+            if fecha_fin_repeticion:
+                try:
+                    rep_end = timezone.make_aware(
+                        datetime.strptime(fecha_fin_repeticion, "%Y-%m-%d")
+                    )
+                except Exception:
+                    rep_end = fecha_inicio_dt + timedelta(days=365)
+            else:
+                rep_end = fecha_inicio_dt + timedelta(days=365)
+            delta = None
+            rep_tipo = tipo_repeticion.upper()
+            if rep_tipo == "DIARIA":
+                delta = timedelta(days=1)
+            elif rep_tipo == "SEMANAL":
+                delta = timedelta(weeks=1)
+            elif rep_tipo == "QUINCENAL":
+                delta = timedelta(days=14)
+            elif rep_tipo == "MENSUAL":
+                try:
+                    from dateutil.relativedelta import relativedelta
+
+                    delta = relativedelta(months=1)
+                except ImportError:
+                    delta = timedelta(days=30)
+            else:
+                delta = timedelta(days=1)
+            fecha_actual_inicio = fecha_inicio_dt
+            fecha_actual_fin = fecha_fin_dt
+            rep_numero = 1
+            while fecha_actual_inicio <= rep_end:
+                EventoInstancia.objects.create(
+                    evento_base=evento,
+                    punto_eca_id=evento.punto_eca.id,
+                    usuario_id=evento.usuario.id,
+                    fecha_inicio=fecha_actual_inicio,
+                    fecha_fin=fecha_actual_fin,
+                    numero_repeticion=rep_numero,
+                    observaciones=observaciones,
+                )
+                fecha_actual_inicio += delta
+                fecha_actual_fin += delta
+                rep_numero += 1
+        else:
+            EventoInstancia.objects.create(
+                evento_base=evento,
+                punto_eca_id=evento.punto_eca.id,
+                usuario_id=evento.usuario.id,
+                fecha_inicio=evento.fecha_inicio,
+                fecha_fin=evento.fecha_fin,
+                numero_repeticion=1,
+                observaciones=observaciones,
+            )
         return JsonResponse({"success": True, "eventoId": evento.id})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
