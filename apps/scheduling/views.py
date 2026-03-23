@@ -1,9 +1,14 @@
 from apps.inventory.models import Inventario
+from django.http import JsonResponse
 from apps.ecas.models import CentroAcopio
 from apps.operations.models import VentaInventario, CompraInventario
 from config import constants as cons
 from apps.ecas.constants import SECTION_TEMPLATES
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from .models import Evento
 import json
+from datetime import datetime
 
 
 # Create your views here.
@@ -117,3 +122,97 @@ def _build_calendario_context(punto):
         "eventos": eventos,
         "EVENTOS": json.dumps(eventos),
     }
+
+
+@require_http_methods(["POST"])
+def crear_evento_venta(request):
+    try:
+        print("--- [LOG] Registro de Evento POST ---")
+        print("Método:", request.method)
+        print("Headers:", dict(request.headers))
+        print("POST DATA:", request.POST)
+        print("RAW BODY:", request.body)
+        # Desglosar lo que llega de cada campo
+        fields = [
+            "materialId",
+            "centroAcopioId",
+            "puntoEcaId",
+            "usuarioId",
+            "titulo",
+            "descripcion",
+            "fechaInicio",
+            "horaInicio",
+            "horaFin",
+            "color",
+            "tipoRepeticion",
+            "fechaFinRepeticion",
+            "observaciones",
+        ]
+        for field in fields:
+            print(f"Campo '{field}':", request.POST.get(field))
+        # --- Ajuste para aceptar JSON y Form ---
+        try:
+            if request.content_type == "application/json":
+                data = json.loads(request.body.decode())
+            else:
+                data = request.POST
+        except Exception:
+            data = {}
+        print("[DEBUG] Data recibida para crear evento:", data)
+        # Recibimos todos los parámetros esperados
+        material_id = data.get("materialId")
+        centro_acopio_id = data.get("centroAcopioId")
+        punto_eca_id = data.get("puntoEcaId")
+        usuario_id = data.get("usuarioId")
+        titulo = data.get("titulo")
+        descripcion = data.get("descripcion", "")
+        fecha_inicio = data.get("fechaInicio")
+        hora_inicio = data.get("horaInicio")
+        hora_fin = data.get("horaFin")
+        color = data.get("color", "#28a745")
+        tipo_repeticion = data.get("tipoRepeticion", "NINGUNA")
+        fecha_fin_repeticion = data.get("fechaFinRepeticion", None)
+        observaciones = data.get("observaciones", "")
+
+        # Validaciones básicas
+        if not (
+            material_id
+            and punto_eca_id
+            and usuario_id
+            and titulo
+            and fecha_inicio
+            and hora_inicio
+            and hora_fin
+        ):
+            return JsonResponse(
+                {"success": False, "error": "Faltan campos obligatorios."}, status=400
+            )
+
+        # Armado de fecha y hora
+        from django.utils import timezone
+
+        fecha_inicio_dt = timezone.make_aware(
+            datetime.strptime(f"{fecha_inicio} {hora_inicio}", "%Y-%m-%d %H:%M")
+        )
+        fecha_fin_dt = timezone.make_aware(
+            datetime.strptime(f"{fecha_inicio} {hora_fin}", "%Y-%m-%d %H:%M")
+        )
+
+        # Crear el evento (asumiendo que venta_inventario puede ser None al crear desde el calendario directo)
+        evento = Evento.objects.create(
+            material_id=material_id,
+            centro_acopio_id=centro_acopio_id if centro_acopio_id else None,
+            punto_eca_id=punto_eca_id,
+            usuario_id=usuario_id,
+            titulo=titulo,
+            descripcion=descripcion,
+            fecha_inicio=fecha_inicio_dt,
+            fecha_fin=fecha_fin_dt,
+            color=color,
+            tipo_repeticion=tipo_repeticion,
+            fecha_fin_repeticion=fecha_fin_repeticion if fecha_fin_repeticion else None,
+        )
+
+        return JsonResponse({"success": True, "eventoId": evento.id})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
