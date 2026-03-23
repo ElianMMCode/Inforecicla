@@ -34,11 +34,16 @@ urlpatterns = [
         views.borrar_venta,
         name="borrar_venta",
     ),
-    # === Exportar a Excel ===
+    # === Exportar a Excel/PDF ===
     path(
         "exportar-compras-excel/",
         views.exportar_compras_excel,
         name="exportar_compras_excel",
+    ),
+    path(
+        "exportar-compras-pdf/",
+        views.exportar_compras_pdf,
+        name="exportar_compras_pdf",
     ),
     path(
         "exportar-ventas-excel/",
@@ -46,8 +51,18 @@ urlpatterns = [
         name="exportar_ventas_excel",
     ),
     path(
+        "exportar-ventas-pdf/",
+        views.exportar_ventas_pdf,
+        name="exportar_ventas_pdf",
+    ),
+    path(
         "exportar-historial-excel/",
         views.exportar_historial_excel,
         name="exportar_historial_excel",
+    ),
+    path(
+        "exportar-historial-pdf/",
+        views.exportar_historial_pdf,
+        name="exportar_historial_pdf",
     ),
 ]
