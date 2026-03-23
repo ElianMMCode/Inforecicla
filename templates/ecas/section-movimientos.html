@@ -629,8 +629,16 @@
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold small">Tipo</label>
                                     <select id="filtroVentaTipo"
-                                            class="form-select form-select-sm"
-                                            style="width: 100%">
+                                        class="form-select form-select-sm"
+                                        style="width: 100%">
+                                        <option value="">-- Todos --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Centro de Acopio</label>
+                                    <select id="filtroVentaCentro"
+                                        class="form-select form-select-sm"
+                                        style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
@@ -748,8 +756,8 @@
                         </div>
                         <div class="card-body">
                             <form class="row g-3" id="filtrosFormHistorial">
-                                <!-- FILA 1: Material y Categoría -->
-                                <div class="col-md-6">
+                                <!-- FILA 1: Material, Categoría y Centro de Acopio -->
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Material</label>
                                     <select class="form-select form-select-sm"
                                             id="filtroHistorialMaterial"
@@ -757,9 +765,15 @@
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Categoría</label>
                                     <select class="form-select form-select-sm" id="filtroHistorialCategoria">
+                                        <option value="">-- Todos --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Centro de Acopio</label>
+                                    <select class="form-select form-select-sm" id="filtroHistorialCentroAcopio" style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
@@ -1870,6 +1884,7 @@
                     const $filtroMaterialVenta = $('#filtroVentaMaterial');
                     const $filtroCategoriaVenta = $('#filtroVentaCategoria');
                     const $filtroTipoVenta = $('#filtroVentaTipo');
+                    const $filtroCentroVenta = $('#filtroVentaCentro');
 
                     // --- Material: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroMaterialVenta.length) {
@@ -1927,6 +1942,29 @@
                         });
                         console.log('✅ Select2 inicializado en #filtroVentaTipo (por datos fuente)');
                     }
+                    // --- Centro de Acopio: usar window.CENTROS ---
+                    if ($filtroCentroVenta.length) {
+                        $filtroCentroVenta.find('option:not([value=""])').remove();
+                        const centros = window.CENTROS || [];
+                        // Tolerar array plano o diccionario de centros
+                        let centrosArray = Array.isArray(centros) ? centros : Object.values(centros);
+                        // Extraer nombre y/o id (usar nombre para filtro visible, como en tabla)
+                        const nombreCentros = new Set();
+                        centrosArray.forEach(centro => {
+                            const nombre = centro.nombre || centro.nmbCentro || centro.nmbCentroAcopio || '';
+                            if (nombre) nombreCentros.add(nombre);
+                        });
+                        Array.from(nombreCentros).sort().forEach(n => {
+                            $filtroCentroVenta.append($('<option>').val(n).text(n));
+                        });
+                        $filtroCentroVenta.select2({
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            allowClear: true,
+                            placeholder: 'Selecciona centro de acopio...'
+                        });
+                        console.log('✅ Select2 inicializado en #filtroVentaCentro (por window.CENTROS)');
+                    }
                 }, 300);
 
                 // ========================================================
@@ -1936,6 +1974,7 @@
                     const $filtroHistorialMaterial = $('#filtroHistorialMaterial');
                     const $filtroHistorialCategoria = $('#filtroHistorialCategoria');
                     const $filtroHistorialTipo = $('#filtroHistorialTipo');
+                    const $filtroHistorialCentroAcopio = $('#filtroHistorialCentroAcopio');
 
                     // Llenar opciones de Material del Historial
                     if ($filtroHistorialMaterial.length) {
@@ -2009,6 +2048,28 @@
                         });
                         console.log('✅ Select2 inicializado en #filtroHistorialTipo');
                     }
+
+                    // Llenar opciones de Centro de Acopio del Historial (window.CENTROS)
+                    if ($filtroHistorialCentroAcopio.length) {
+                        $filtroHistorialCentroAcopio.find('option:not([value=""])').remove();
+                        let centros = window.CENTROS || [];
+                        if (!Array.isArray(centros)) centros = Object.values(centros || {});
+                        const nombreCentros = new Set();
+                        centros.forEach(c => {
+                            const nombre = c.nombre || c.nmbCentro || c.nmbCentroAcopio || '';
+                            if (nombre) nombreCentros.add(nombre);
+                        });
+                        Array.from(nombreCentros).sort().forEach(n => {
+                            $filtroHistorialCentroAcopio.append($('<option>').val(n).text(n));
+                        });
+                        $filtroHistorialCentroAcopio.select2({
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            allowClear: true,
+                            placeholder: 'Selecciona centro de acopio...'
+                        });
+                        console.log('✅ Select2 inicializado en #filtroHistorialCentroAcopio');
+                    }
                 }, 300);
 
                 // ========================================================
@@ -2065,20 +2126,23 @@
                         const material = $('#filtroVentaMaterial').val() || '';
                         const categoria = $('#filtroVentaCategoria').val() || '';
                         const tipo = $('#filtroVentaTipo').val() || '';
+                        const centroAcopio = $('#filtroVentaCentro').val() || '';
                         const fechaDesde = document.getElementById('filtroVentaFechaDesde')?.value || '';
                         const fechaHasta = document.getElementById('filtroVentaFechaHasta')?.value || '';
-
-                        console.log('🔍 Filtros VENTA aplicados:', { material, categoria, tipo, fechaDesde, fechaHasta });
-
+                
+                        console.log('🔍 Filtros VENTA aplicados:', { material, categoria, tipo, centroAcopio, fechaDesde, fechaHasta });
+                
                         const salidasData = window.SALIDAS_INICIALES || [];
                         const salidasFiltradas = salidasData.filter(salida => {
                             const cumpleMaterial = !material || (salida.nombreMaterial || '').toLowerCase().includes(material.toLowerCase());
                             const cumpleCategoria = !categoria || (salida.nombreCategoria || '') === categoria;
                             const cumpleTipo = !tipo || (salida.nombreTipo || '') === tipo;
+                            // El centro puede estar en salida.nombreCentroAcopio
+                            const cumpleCentro = !centroAcopio || (salida.nombreCentroAcopio || '') === centroAcopio;
                             const cumpleFechaDesde = !fechaDesde || new Date(salida.fechaVenta).toISOString().split('T')[0] >= fechaDesde;
                             const cumpleFechaHasta = !fechaHasta || new Date(salida.fechaVenta).toISOString().split('T')[0] <= fechaHasta;
-
-                            return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleFechaDesde && cumpleFechaHasta;
+                
+                            return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleCentro && cumpleFechaDesde && cumpleFechaHasta;
                         });
 
                         console.log('✅ Ventas filtradas:', salidasFiltradas.length, 'de', salidasData.length);
@@ -2381,6 +2445,7 @@
             const material = document.getElementById('filtroHistorialMaterial')?.value || '';
             const categoria = document.getElementById('filtroHistorialCategoria')?.value || '';
             const tipoMaterial = document.getElementById('filtroHistorialTipo')?.value || '';
+            const centroAcopio = document.getElementById('filtroHistorialCentroAcopio')?.value || '';
             const tipoMovimiento = document.getElementById('filtroHistorialTipoMovimiento')?.value || '';
             const fechaDesde = document.getElementById('filtroHistorialDesde')?.value || '';
             const fechaHasta = document.getElementById('filtroHistorialHasta')?.value || '';
@@ -2389,11 +2454,13 @@
                 const cumpleMaterial = !material || (mov.nombreMaterial || '') === material;
                 const cumpleCategoria = !categoria || (mov.nombreCategoria || '') === categoria;
                 const cumpleTipo = !tipoMaterial || (mov.nombreTipo || '') === tipoMaterial;
+                // Historial: sólo ventas tienen centro de acopio
+                const cumpleCentro = !centroAcopio || ((mov.tipo === 'Venta') ? ((mov.nombreCentroAcopio || '') === centroAcopio) : true);
                 const cumpleTipoMovimiento = !tipoMovimiento || (tipoMovimiento === 'compra' && mov.tipo === 'Compra') || (tipoMovimiento === 'venta' && mov.tipo === 'Venta');
                 const cumpleFechaDesde = !fechaDesde || new Date(mov.fecha).toISOString().split('T')[0] >= fechaDesde;
                 const cumpleFechaHasta = !fechaHasta || new Date(mov.fecha).toISOString().split('T')[0] <= fechaHasta;
 
-                return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleTipoMovimiento && cumpleFechaDesde && cumpleFechaHasta;
+                return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleCentro && cumpleTipoMovimiento && cumpleFechaDesde && cumpleFechaHasta;
             });
 
             // Paginación
