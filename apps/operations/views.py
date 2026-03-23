@@ -5,18 +5,18 @@ from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
 from decimal import Decimal as decimal
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.http import JsonResponse, response
+from django.http import JsonResponse, response, HttpResponse
 import json
 from django.utils import timezone
 import datetime
 from apps.ecas.models import CentroAcopio
-
+# ===== import-export
+from .resources import CompraInventarioResource, VentaInventarioResource
+from import_export.formats.base_formats import XLSX
 
 # Create your views here.
 def _build_movimientos_context(punto):
-    """
-    Construye el contexto específico para la sección movimientos.
-    """
+    # ... (código existente de contexto) ...
     materiales_inventario = list(
         Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
     )
@@ -112,6 +112,8 @@ def _build_movimientos_context(punto):
     }
 
 
+# (Código de views existentes continúa abajo...)
+
 def registros_compras(request):
     data = {}
     if request.body:
@@ -128,7 +130,6 @@ def registros_compras(request):
         return JsonResponse(
             {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
-
 
 def registros_ventas(request):
     data = {}
@@ -147,7 +148,6 @@ def registros_ventas(request):
             {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
 
-
 def editar_compra(request, compra_id):
     data = {}
     if request.body:
@@ -164,7 +164,6 @@ def editar_compra(request, compra_id):
         return JsonResponse(
             {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
-
 
 def editar_venta(request, venta_id):
     data = {}
@@ -183,12 +182,98 @@ def editar_venta(request, venta_id):
             {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
 
-
 def borrar_compra(request, compra_id):
     resp = CompraInventarioService.borrar_compra(request, compra_id)
     return JsonResponse(resp, safe=False)
 
-
 def borrar_venta(request, venta_id):
     resp = VentaInventarioService.borrar_venta(request, venta_id)
     return JsonResponse(resp, safe=False)
+
+
+# ============== EXPORT EXCEL =============
+def exportar_compras_excel(request):
+    punto_eca_id = request.GET.get('punto_eca_id')
+    queryset = models.CompraInventario.objects.all().select_related("inventario__material", "inventario__punto_eca")
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    dataset = CompraInventarioResource().export(queryset)
+    export_data = dataset.xlsx
+    response = HttpResponse(export_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="compras.xlsx"'
+    return response
+
+def exportar_ventas_excel(request):
+    punto_eca_id = request.GET.get('punto_eca_id')
+    queryset = models.VentaInventario.objects.all().select_related("inventario__material", "inventario__punto_eca", "centro_acopio")
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    dataset = VentaInventarioResource().export(queryset)
+    export_data = dataset.xlsx
+    response = HttpResponse(export_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="ventas.xlsx"'
+    return response
+
+# =========== HISTORIAL EXPORT EXCEL ===========
+def exportar_historial_excel(request):
+    """
+    Exporta un Excel combinado de compras y ventas para el historial de movimientos
+    """
+    punto_eca_id = request.GET.get('punto_eca_id')
+    compras = models.CompraInventario.objects.all().select_related("inventario__material", "inventario__punto_eca")
+    ventas = models.VentaInventario.objects.all().select_related("inventario__material", "inventario__punto_eca", "centro_acopio")
+    if punto_eca_id:
+        compras = compras.filter(inventario__punto_eca__id=str(punto_eca_id))
+        ventas = ventas.filter(inventario__punto_eca__id=str(punto_eca_id))
+
+    rows = []
+    # Normalizar compras
+    for c in compras:
+        rows.append({
+            'tipo_movimiento': 'Compra',
+            'material': c.inventario.material.nombre,
+            'fecha': c.fecha_compra,
+            'cantidad': c.cantidad,
+            'precio_unitario': c.precio_compra,
+            'total': (c.cantidad or 0) * (c.precio_compra or 0),
+            'centro_acopio': getattr(c.inventario.punto_eca, 'nombre', ''),
+            'observaciones': c.observaciones or '',
+        })
+    # Normalizar ventas
+    for v in ventas:
+        rows.append({
+            'tipo_movimiento': 'Venta',
+            'material': v.inventario.material.nombre,
+            'fecha': v.fecha_venta,
+            'cantidad': v.cantidad,
+            'precio_unitario': v.precio_venta,
+            'total': (v.cantidad or 0) * (v.precio_venta or 0),
+            'centro_acopio': getattr(v.centro_acopio, 'nombre', '') or getattr(v.inventario.punto_eca, 'nombre', ''),
+            'observaciones': v.observaciones or '',
+        })
+
+    # Ordenar por fecha descendente
+    rows = sorted(rows, key=lambda r: r['fecha'], reverse=True)
+
+    from import_export.formats.base_formats import XLSX
+    from tablib import Dataset
+
+    dataset = Dataset()
+    dataset.headers = ['tipo_movimiento', 'material', 'fecha', 'cantidad', 'precio_unitario', 'total', 'centro_acopio', 'observaciones']
+
+    for row in rows:
+        dataset.append([
+            row['tipo_movimiento'],
+            row['material'],
+            row['fecha'].strftime('%Y-%m-%d %H:%M'),
+            float(row['cantidad']) if row['cantidad'] is not None else '',
+            float(row['precio_unitario']) if row['precio_unitario'] is not None else '',
+            float(row['total']) if row['total'] is not None else '',
+            row['centro_acopio'],
+            row['observaciones'],
+        ])
+
+    export_data = dataset.xlsx
+    response = HttpResponse(export_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="historial_movimientos.xlsx"'
+    return response
