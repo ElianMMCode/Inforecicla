@@ -6,12 +6,12 @@ app_name = "punto-eca/movimientos"
 urlpatterns = [
     path(
         "registrar-compra/",
-        views.registrar_compra,
+        views.registros_compras,
         name="registrar_entrada",
     ),
     path(
         "registrar-venta/",
-        views.registrar_venta,
+        views.registros_ventas,
         name="registrar_venta",
     ),
     path(
@@ -33,5 +33,36 @@ urlpatterns = [
         "borrar-venta/<uuid:venta_id>/",
         views.borrar_venta,
         name="borrar_venta",
+    ),
+    # === Exportar a Excel/PDF ===
+    path(
+        "exportar-compras-excel/",
+        views.exportar_compras_excel,
+        name="exportar_compras_excel",
+    ),
+    path(
+        "exportar-compras-pdf/",
+        views.exportar_compras_pdf,
+        name="exportar_compras_pdf",
+    ),
+    path(
+        "exportar-ventas-excel/",
+        views.exportar_ventas_excel,
+        name="exportar_ventas_excel",
+    ),
+    path(
+        "exportar-ventas-pdf/",
+        views.exportar_ventas_pdf,
+        name="exportar_ventas_pdf",
+    ),
+    path(
+        "exportar-historial-excel/",
+        views.exportar_historial_excel,
+        name="exportar_historial_excel",
+    ),
+    path(
+        "exportar-historial-pdf/",
+        views.exportar_historial_pdf,
+        name="exportar_historial_pdf",
     ),
 ]

@@ -1,27 +1,26 @@
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404, render, redirect
-from apps.ecas.models import PuntoECA, Localidad
-from apps.users.models import Usuario
+from django.shortcuts import get_object_or_404
 from apps.inventory.models import Inventario
 from config import constants as cons
-from apps.core.service import UserService
-from apps.ecas.service import PuntoService
-from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial
-from apps.inventory.views import _build_materiales_context
 from . import models
+from apps.operations.service import CompraInventarioService, VentaInventarioService
 from decimal import Decimal as decimal
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, response, HttpResponse
 import json
 from django.utils import timezone
 import datetime
+from apps.ecas.models import CentroAcopio
+
+# ===== import-export
+from .resources import CompraInventarioResource, VentaInventarioResource
+from import_export.formats.base_formats import XLSX
+from weasyprint import HTML
+from django.template.loader import render_to_string
 
 
 # Create your views here.
 def _build_movimientos_context(punto):
-    """
-    Construye el contexto específico para la sección movimientos.
-    """
+    # ... (código existente de contexto) ...
     materiales_inventario = list(
         Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
     )
@@ -51,7 +50,7 @@ def _build_movimientos_context(punto):
 
     ventas = (
         models.VentaInventario.objects.filter(inventario__punto_eca=punto)
-        .select_related("inventario__material")
+        .select_related("inventario__material", "centro_acopio")
         .order_by("-fecha_venta")
     )
 
@@ -69,9 +68,28 @@ def _build_movimientos_context(punto):
             "fechaVenta": venta.fecha_venta.isoformat(),
             "precioVenta": float(venta.precio_venta or 0),
             "observaciones": venta.observaciones or "",
+            "nombreCentroAcopio": getattr(venta.centro_acopio, "nombre", "")
+            if getattr(venta, "centro_acopio", None)
+            else "",
+            "centroAcopioId": str(venta.centro_acopio.id)
+            if getattr(venta, "centro_acopio", None)
+            else "",
         }
         for venta in ventas
     ]
+
+    # Centros de acopio (globales y asociados a este punto)
+    centros_globales = list(
+        CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
+    )
+    centros_locales = list(
+        CentroAcopio.objects.filter(puntos_eca=punto, visibilidad=cons.Visibilidad.ECA)
+    )
+    # Unificar por ID y convertir a lista de dicts simples para JS/JSON
+    centros_map = {}
+    for c in centros_globales + centros_locales:
+        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
+    centros_list = list(centros_map.values())
 
     return {
         "seccion": "movimientos",
@@ -92,6 +110,7 @@ def _build_movimientos_context(punto):
             .values_list("material__tipo__nombre", flat=True)
             .distinct()
         ),
+        "centros": centros_list,
         "entradas": json.dumps(compras_list),
         "salidas": json.dumps(ventas_list),
         "historial_compras": compras_list,
@@ -101,561 +120,319 @@ def _build_movimientos_context(punto):
     }
 
 
-def registrar_compra(request):
-    try:
-        data = json.loads(request.body)
+# (Código de views existentes continúa abajo...)
 
-        inventario_id = data.get("inventarioId")
-        if not inventario_id:
-            return JsonResponse(
-                {"status": "error", "message": "Falta inventarioId."}, status=400
-            )
 
+def registros_compras(request):
+    data = {}
+    if request.body:
         try:
-            inventario = Inventario.objects.get(id=inventario_id)
-        except Inventario.DoesNotExist:
-            # Try to find by puntoEcaId and materialId
-            punto_id = data.get("puntoEcaId")
-            material_id = data.get("materialId")
-            if punto_id and material_id:
-                try:
-                    inventario = Inventario.objects.get(
-                        punto_eca_id=punto_id, material_id=material_id
-                    )
-                except Inventario.DoesNotExist:
-                    return JsonResponse(
-                        {
-                            "status": "error",
-                            "message": "Inventario no encontrado por punto y material.",
-                        },
-                        status=404,
-                    )
-            else:
-                return JsonResponse(
-                    {"status": "error", "message": "Inventario no encontrado."},
-                    status=404,
-                )
-
-        cantidad = decimal(str(data["cantidad"]))
-        precio_compra = decimal(str(data["precioCompra"]))
-        if cantidad <= 0 or precio_compra < 0:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
             return JsonResponse(
-                {"status": "error", "message": "Valores inválidos."}, status=400
+                {"error", "Cuerpo de pebtición JSON inválido"}, status=400
             )
-
-        # Parse fecha_compra a datetime aware si es string naive
-        fecha_compra = data["fechaCompra"]
-        if isinstance(fecha_compra, str):
-            try:
-                # Intentar parsear en formato ISO con o sin Z
-                fecha_dt = datetime.datetime.fromisoformat(
-                    fecha_compra.replace("Z", "+00:00")
-                )
-            except Exception:
-                # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
-                fecha_dt = datetime.datetime.strptime(fecha_compra, "%Y-%m-%d %H:%M:%S")
-            if timezone.is_naive(fecha_dt):
-                fecha_dt = timezone.make_aware(fecha_dt)
-            fecha_compra = fecha_dt
-
-        entrada = models.CompraInventario.objects.create(
-            inventario=inventario,
-            fecha_compra=fecha_compra,
-            cantidad=cantidad,
-            precio_compra=precio_compra,
-            observaciones=data.get("observaciones", ""),
-        )
-
-        # Actualizar el stock del inventario con la cantidad comprada
-        result = actualizar_stock_por_compra(inventario, cantidad)
-        if result is not None:
-            return result
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "message": "Compra registrada exitosamente, inventario actualizado.",
-            },
-            status=201,
-        )
-    except KeyError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Campo faltante: {e}"}, status=400
-        )
-    except ValueError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Valor inválido: {e}"}, status=400
-        )
+    try:
+        response = CompraInventarioService.registro_compra(request, data)
+        return JsonResponse(response, safe=False)
     except Exception as e:
         return JsonResponse(
-            {"status": "error", "message": "Error al registrar la compra: " + str(e)},
-            status=500,
+            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
 
 
-def registrar_venta(request):
-    try:
-        data = json.loads(request.body)
-
-        inventario_id = data.get("inventarioId")
-
-        if not inventario_id:
-            return JsonResponse(
-                {"status": "error", "message": "Falta inventarioId."}, status=400
-            )
-
+def registros_ventas(request):
+    data = {}
+    if request.body:
         try:
-            inventario = Inventario.objects.get(id=inventario_id)
-        except Inventario.DoesNotExist:
-            # Try to find by puntoEcaId and materialId
-            punto_id = data.get("puntoEcaId")
-            material_id = data.get("materialId")
-            if punto_id and material_id:
-                try:
-                    inventario = Inventario.objects.get(
-                        punto_eca_id=punto_id, material_id=material_id
-                    )
-                except Inventario.DoesNotExist:
-                    return JsonResponse(
-                        {
-                            "status": "error",
-                            "message": "Inventario no encontrado por punto y material.",
-                        },
-                        status=404,
-                    )
-            else:
-                return JsonResponse(
-                    {"status": "error", "message": "Inventario no encontrado."},
-                    status=404,
-                )
-
-        cantidad = decimal(str(data["cantidad"]))
-        precio_venta = decimal(str(data["precioVenta"]))
-        if cantidad <= 0 or precio_venta < 0:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
             return JsonResponse(
-                {"status": "error", "message": "Valores inválidos."}, status=400
+                {"error", "Cuerpo de pebtición JSON inválido"}, status=400
             )
-
-        fecha_compra = data["fechaVenta"]
-        if isinstance(fecha_compra, str):
-            try:
-                # Intentar parsear en formato ISO con o sin Z
-                fecha_dt = datetime.datetime.fromisoformat(
-                    fecha_compra.replace("Z", "+00:00")
-                )
-            except Exception:
-                # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
-                fecha_dt = datetime.datetime.strptime(fecha_compra, "%Y-%m-%d %H:%M:%S")
-            if timezone.is_naive(fecha_dt):
-                fecha_dt = timezone.make_aware(fecha_dt)
-            fecha_compra = fecha_dt
-
-        salida = models.VentaInventario.objects.create(
-            inventario=inventario,
-            fecha_venta=fecha_compra,
-            cantidad=cantidad,
-            precio_venta=precio_venta,
-            observaciones=data.get("observaciones", ""),
-        )
-
-        result = actualizar_stock_por_venta(inventario, cantidad)
-        if result is not None:
-            return result
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "message": "Venta registrada exitosamente, inventario actualizado.",
-            },
-            status=201,
-        )
-    except KeyError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Campo faltante: {e}"}, status=400
-        )
-    except ValueError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Valor inválido: {e}"}, status=400
-        )
+    try:
+        response = VentaInventarioService.registrar_venta(request, data)
+        return JsonResponse(response, safe=False)
     except Exception as e:
         return JsonResponse(
-            {"status": "error", "message": "Error al registrar la compra: " + str(e)},
-            status=500,
+            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
 
 
 def editar_compra(request, compra_id):
+    data = {}
+    if request.body:
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {"error", "Cuerpo de pebtición JSON inválido"}, status=400
+            )
     try:
-        data = json.loads(request.body)
-        compra_id = data.get("compraId")
-        if not compra_id:
-            return JsonResponse(
-                {"status": "error", "message": "Falta compraId."}, status=400
-            )
-
-        compra = get_object_or_404(models.CompraInventario, id=compra_id)
-
-        cantidad = data.get("cantidad")
-        precio_compra = data.get("precioCompra")
-        fecha_compra = data.get("fechaCompra")
-        if cantidad is None or precio_compra is None or fecha_compra is None:
-            return JsonResponse(
-                {"status": "error", "message": "Faltan datos requeridos."}, status=400
-            )
-
-        cantidad = decimal(str(cantidad))
-        precio_compra = decimal(str(precio_compra))
-        if cantidad <= 0 or precio_compra < 0:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": "Valores de cantidad o precio inválidos.",
-                },
-                status=400,
-            )
-
-        # Parse fecha_compra a datetime aware si es string naive
-        if isinstance(fecha_compra, str):
-            try:
-                fecha_dt = datetime.datetime.fromisoformat(
-                    fecha_compra.replace("Z", "+00:00")
-                )
-            except Exception:
-                try:
-                    fecha_dt = datetime.datetime.strptime(
-                        fecha_compra, "%Y-%m-%d %H:%M:%S"
-                    )
-                except Exception:
-                    return JsonResponse(
-                        {"status": "error", "message": "Formato de fecha inválido."},
-                        status=400,
-                    )
-            if timezone.is_naive(fecha_dt):
-                fecha_dt = timezone.make_aware(fecha_dt)
-            fecha_compra = fecha_dt
-
-        result = actualizar_stock_por_compra(
-            compra.inventario, cantidad, compra.cantidad
-        )
-        if result is not None:
-            return result
-
-        compra.cantidad = cantidad
-        compra.precio_compra = precio_compra
-        compra.observaciones = data.get("observaciones", "")
-        compra.fecha_compra = fecha_compra
-        compra.save()
-        return JsonResponse(
-            {"status": "success", "message": "Compra editada correctamente."}
-        )
-    except KeyError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Campo faltante: {e}"}, status=400
-        )
-    except ValueError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Valor inválido: {e}"}, status=400
-        )
+        response = CompraInventarioService.editar_compra(request, data, compra_id)
+        return JsonResponse(response, safe=False)
     except Exception as e:
         return JsonResponse(
-            {"status": "error", "message": "Error al editar la compra: " + str(e)},
-            status=500,
+            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
 
 
 def editar_venta(request, venta_id):
+    data = {}
+    if request.body:
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {"error", "Cuerpo de pebtición JSON inválido"}, status=400
+            )
     try:
-        data = json.loads(request.body)
-        venta_id = data.get("ventaId")
-        if not venta_id:
-            return JsonResponse(
-                {"status": "error", "message": "Falta ventaId."}, status=400
-            )
-
-        venta = get_object_or_404(models.VentaInventario, id=venta_id)
-
-        cantidad = data.get("cantidad")
-        precio_venta = data.get("precioVenta")
-        fecha_venta = data.get("fechaVenta")
-        if cantidad is None or precio_venta is None or fecha_venta is None:
-            return JsonResponse(
-                {"status": "error", "message": "Faltan datos requeridos."}, status=400
-            )
-
-        cantidad = decimal(str(cantidad))
-        precio_venta = decimal(str(precio_venta))
-        if cantidad <= 0 or precio_venta < 0:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": "Valores de cantidad o precio inválidos.",
-                },
-                status=400,
-            )
-
-        # Parse fecha_venta a datetime aware si es string naive
-        if isinstance(fecha_venta, str):
-            try:
-                fecha_dt = datetime.datetime.fromisoformat(
-                    fecha_venta.replace("Z", "+00:00")
-                )
-            except Exception:
-                try:
-                    fecha_dt = datetime.datetime.strptime(
-                        fecha_venta, "%Y-%m-%d %H:%M:%S"
-                    )
-                except Exception:
-                    return JsonResponse(
-                        {"status": "error", "message": "Formato de fecha inválido."},
-                        status=400,
-                    )
-            if timezone.is_naive(fecha_dt):
-                fecha_dt = timezone.make_aware(fecha_dt)
-            fecha_venta = fecha_dt
-
-        result = actualizar_stock_por_venta(venta.inventario, cantidad, venta.cantidad)
-        if result is not None:
-            return result
-
-        venta.cantidad = cantidad
-        venta.precio_venta = precio_venta
-        venta.observaciones = data.get("observaciones", "")
-        venta.fecha_venta = fecha_venta
-        venta.save()
-        return JsonResponse(
-            {"status": "success", "message": "venta editada correctamente."}
-        )
-    except KeyError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Campo faltante: {e}"}, status=400
-        )
-    except ValueError as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Valor inválido: {e}"}, status=400
-        )
+        response = VentaInventarioService.editar_venta(request, data, venta_id)
+        return JsonResponse(response, safe=False)
     except Exception as e:
         return JsonResponse(
-            {"status": "error", "message": "Error al editar la venta: " + str(e)},
-            status=500,
+            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
         )
-
-
-def actualizar_stock_por_venta(inventario, cantidad, cantidad_original=None):
-    """
-    Descuenta o ajusta el stock_actual del inventario según venta nueva o edición.
-    - Si es edición (cantidad_original no es None), se ajusta por la diferencia (delta).
-    - Valida que no haya stock negativo ni stock "prestado" (no se puede vender más de lo que hay disponible sumando lo originalmente vendido).
-    Devuelve JsonResponse de error si no hay stock suficiente, si excede capacidad máxima, o si los datos son inválidos. Devuelve None si todo OK.
-    """
-    try:
-        cantidad = decimal(str(cantidad))
-        cantidad_original = (
-            decimal(str(cantidad_original)) if cantidad_original is not None else None
-        )
-    except Exception:
-        return JsonResponse(
-            {"status": "error", "message": "Cantidad inválida para la venta."},
-            status=400,
-        )
-
-    # if cantidad <= 0:
-    #     return JsonResponse(
-    #         {
-    #             "status": "error",
-    #             "message": "La cantidad de venta debe ser mayor a cero.",
-    #         },
-    #         status=400,
-    #     )
-
-    stock_actual_decimal = decimal(str(inventario.stock_actual or 0))
-    capacidad_maxima_decimal = decimal(
-        str(getattr(inventario, "capacidad_maxima", None) or 0)
-    )
-
-    # --- Nueva lógica de validación ---
-    # Cuando editamos una venta:
-    # El "nuevo stock disponible para vender" es stock_actual_decimal + cantidad_original
-    # La cantidad no debe ser mayor a esto.
-    if cantidad_original is not None:
-        stock_disponible_para_vender = stock_actual_decimal + cantidad_original
-        if cantidad > stock_disponible_para_vender:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": f"No hay stock suficiente para realizar la venta. Stock disponible: {float(stock_disponible_para_vender)}.",
-                },
-                status=400,
-            )
-        delta = (
-            cantidad_original - cantidad
-        )  # El efecto que tiene sobre el stock actual
-    else:
-        # Venta "nueva"
-        if cantidad > stock_actual_decimal:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": f"No hay stock suficiente para realizar la venta. Stock actual: {float(stock_actual_decimal)}.",
-                },
-                status=400,
-            )
-        delta = -cantidad
-
-    nuevo_stock = stock_actual_decimal + delta
-
-    if nuevo_stock < 0:
-        # Esto es protección extra por coherencia, aunque la lógica anterior ya lo evita
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": "La operación dejaría el stock negativo.",
-            },
-            status=400,
-        )
-
-    if capacidad_maxima_decimal and nuevo_stock > capacidad_maxima_decimal:
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": "La operación excede la capacidad máxima de inventario.",
-            },
-            status=400,
-        )
-
-    inventario.stock_actual = nuevo_stock
-    inventario.save()
-    return None
-
-
-def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
-    """
-    Aumenta o ajusta el stock_actual del inventario según compra nueva o edición.
-    - Si es edición (cantidad_original no es None), se ajusta por la diferencia (delta).
-    - Siempre valida que stock no baje de cero ni supere capacidad máxima.
-    Devuelve JsonResponse de error si se exceden límites o datos inválidos, o None si todo OK.
-    """
-    try:
-        cantidad = decimal(str(cantidad))
-        cantidad_original = (
-            decimal(str(cantidad_original)) if cantidad_original is not None else None
-        )
-    except Exception:
-        return JsonResponse(
-            {"status": "error", "message": "Cantidad inválida para la compra."},
-            status=400,
-        )
-
-    # if cantidad <= 0:
-    #     return JsonResponse(
-    #         {
-    #             "status": "error",
-    #             "message": "La cantidad de compra debe ser mayor a cero.",
-    #         },
-    #         status=400,
-    #     )
-    #
-
-    stock_actual_decimal = decimal(str(inventario.stock_actual or 0))
-    capacidad_maxima_decimal = decimal(
-        str(getattr(inventario, "capacidad_maxima", None) or 0)
-    )
-
-    # Calcular delta a ajustar
-    if cantidad_original is not None:
-        delta = cantidad - cantidad_original
-    else:
-        delta = cantidad
-
-    nuevo_stock = stock_actual_decimal + delta
-
-    if nuevo_stock < 0:
-        return JsonResponse(
-            {"status": "error", "message": "La operación dejaría el stock negativo."},
-            status=400,
-        )
-
-    if capacidad_maxima_decimal and nuevo_stock > capacidad_maxima_decimal:
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": "No se puede realizar la compra porque el stock superaría la capacidad máxima del inventario.",
-            },
-            status=400,
-        )
-
-    inventario.stock_actual = nuevo_stock
-    inventario.save()
-    return None
 
 
 def borrar_compra(request, compra_id):
-    try:
-        try:
-            compra = models.CompraInventario.objects.get(id=compra_id)
-        except models.CompraInventario.DoesNotExist:
-            return JsonResponse(
-                {"status": "error", "message": "Compra no encontrada."}, status=404
-            )
-        except Exception as e:
-            return JsonResponse(
-                {"status": "error", "message": f"Error al buscar la compra: {str(e)}"},
-                status=500,
-            )
-        try:
-            result = actualizar_stock_por_compra(compra.inventario, 0, compra.cantidad)
-            if result is not None:
-                return result
-            compra.delete()
-            return JsonResponse(
-                {"status": "success", "message": "Compra eliminada correctamente."}
-            )
-        except Exception as e:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": f"Error al ajustar stock o eliminar: {str(e)}",
-                },
-                status=500,
-            )
-    except Exception as e:
-        # Redundante, pero garantiza que cualquier excepción inesperada siga devolviendo JSON
-        return JsonResponse(
-            {"status": "error", "message": f"Fallo crítico en borrar_compra: {str(e)}"},
-            status=500,
-        )
+    resp = CompraInventarioService.borrar_compra(request, compra_id)
+    return JsonResponse(resp, safe=False)
 
 
 def borrar_venta(request, venta_id):
-    try:
-        try:
-            venta = models.VentaInventario.objects.get(id=venta_id)
-        except models.VentaInventario.DoesNotExist:
-            return JsonResponse(
-                {"status": "error", "message": "Venta no encontrada."}, status=404
-            )
-        except Exception as e:
-            return JsonResponse(
-                {"status": "error", "message": f"Error al buscar la venta: {str(e)}"},
-                status=500,
-            )
-        try:
-            result = actualizar_stock_por_venta(venta.inventario, 0, venta.cantidad)
-            if result is not None:
-                return result
-            venta.delete()
-            return JsonResponse(
-                {"status": "success", "message": "Venta eliminada correctamente."}
-            )
-        except Exception as e:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": f"Error al ajustar stock o eliminar: {str(e)}",
-                },
-                status=500,
-            )
-    except Exception as e:
-        return JsonResponse(
-            {"status": "error", "message": f"Fallo crítico en borrar_venta: {str(e)}"},
-            status=500,
+    resp = VentaInventarioService.borrar_venta(request, venta_id)
+    return JsonResponse(resp, safe=False)
+
+
+# ============== EXPORT EXCEL =============
+def exportar_compras_excel(request):
+    punto_eca_id = request.GET.get("punto_eca_id")
+    queryset = models.CompraInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca"
+    )
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    dataset = CompraInventarioResource().export(queryset)
+    export_data = dataset.xlsx
+    response = HttpResponse(
+        export_data,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="compras.xlsx"'
+    return response
+
+
+# ============== EXPORT PDF =============
+
+
+def exportar_compras_pdf(request):
+    punto_eca_id = request.GET.get("punto_eca_id")
+    queryset = models.CompraInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca"
+    )
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    compras = list(queryset)
+    # Renderizar el HTML como string
+    html_string = render_to_string("operations/compras_pdf.html", {"compras": compras})
+    # Generar PDF desde el HTML
+    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
+    response = HttpResponse(pdf_file, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="compras.pdf"'
+    return response
+
+
+def exportar_ventas_pdf(request):
+    punto_eca_id = request.GET.get("punto_eca_id")
+    queryset = models.VentaInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca", "centro_acopio"
+    )
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    ventas = list(queryset)
+    # Calcular total_venta por cada venta, si no viene en el modelo
+    ventas_out = []
+    total_ventas = 0
+    for v in ventas:
+        total = (v.cantidad or 0) * (v.precio_venta or 0)
+        total_ventas += total
+        # Enriquecer objeto para el template, sin tocar el modelo
+        v.total_venta = total
+        ventas_out.append(v)
+    html_string = render_to_string("operations/ventas_pdf.html", {"ventas": ventas_out, "total_ventas": total_ventas})
+    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
+    response = HttpResponse(pdf_file, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="ventas.pdf"'
+    return response
+
+
+def exportar_ventas_excel(request):
+    punto_eca_id = request.GET.get("punto_eca_id")
+    queryset = models.VentaInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca", "centro_acopio"
+    )
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    dataset = VentaInventarioResource().export(queryset)
+    export_data = dataset.xlsx
+    response = HttpResponse(
+        export_data,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="ventas.xlsx"'
+    return response
+
+
+# =========== HISTORIAL EXPORT EXCEL ===========
+def exportar_historial_excel(request):
+    """
+    Exporta un Excel combinado de compras y ventas para el historial de movimientos
+    """
+    punto_eca_id = request.GET.get("punto_eca_id")
+    compras = models.CompraInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca"
+    )
+    ventas = models.VentaInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca", "centro_acopio"
+    )
+    if punto_eca_id:
+        compras = compras.filter(inventario__punto_eca__id=str(punto_eca_id))
+        ventas = ventas.filter(inventario__punto_eca__id=str(punto_eca_id))
+
+    rows = []
+    # Normalizar compras
+    for c in compras:
+        rows.append(
+            {
+                "tipo_movimiento": "Compra",
+                "material": c.inventario.material.nombre,
+                "fecha": c.fecha_compra,
+                "cantidad": c.cantidad,
+                "precio_unitario": c.precio_compra,
+                "total": (c.cantidad or 0) * (c.precio_compra or 0),
+                "centro_acopio": getattr(c.inventario.punto_eca, "nombre", ""),
+                "observaciones": c.observaciones or "",
+            }
         )
+    # Normalizar ventas
+    for v in ventas:
+        rows.append(
+            {
+                "tipo_movimiento": "Venta",
+                "material": v.inventario.material.nombre,
+                "fecha": v.fecha_venta,
+                "cantidad": v.cantidad,
+                "precio_unitario": v.precio_venta,
+                "total": (v.cantidad or 0) * (v.precio_venta or 0),
+                "centro_acopio": getattr(v.centro_acopio, "nombre", "")
+                or getattr(v.inventario.punto_eca, "nombre", ""),
+                "observaciones": v.observaciones or "",
+            }
+        )
+
+    # Ordenar por fecha descendente
+    rows = sorted(rows, key=lambda r: r["fecha"], reverse=True)
+
+    from import_export.formats.base_formats import XLSX
+    from tablib import Dataset
+
+    dataset = Dataset()
+    dataset.headers = [
+        "tipo_movimiento",
+        "material",
+        "fecha",
+        "cantidad",
+        "precio_unitario",
+        "total",
+        "centro_acopio",
+        "observaciones",
+    ]
+
+    for row in rows:
+        dataset.append(
+            [
+                row["tipo_movimiento"],
+                row["material"],
+                row["fecha"].strftime("%Y-%m-%d %H:%M"),
+                float(row["cantidad"]) if row["cantidad"] is not None else "",
+                float(row["precio_unitario"])
+                if row["precio_unitario"] is not None
+                else "",
+                float(row["total"]) if row["total"] is not None else "",
+                row["centro_acopio"],
+                row["observaciones"],
+            ]
+        )
+
+    export_data = dataset.xlsx
+    response = HttpResponse(
+        export_data,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = (
+        'attachment; filename="historial_movimientos.xlsx"'
+    )
+    return response
+
+
+def exportar_historial_pdf(request):
+    punto_eca_id = request.GET.get("punto_eca_id")
+    compras_queryset = models.CompraInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca"
+    )
+    ventas_queryset = models.VentaInventario.objects.all().select_related(
+        "inventario__material", "inventario__punto_eca", "centro_acopio"
+    )
+    if punto_eca_id:
+        compras_queryset = compras_queryset.filter(
+            inventario__punto_eca__id=str(punto_eca_id)
+        )
+        ventas_queryset = ventas_queryset.filter(
+            inventario__punto_eca__id=str(punto_eca_id)
+        )
+
+    compras = list(compras_queryset)
+    ventas = list(ventas_queryset)
+    historial = []
+    for c in compras:
+        historial.append(
+            {
+                "tipo": "Compra",
+                "material": c.inventario.material.nombre
+                if hasattr(c.inventario.material, "nombre")
+                else "",
+                "cantidad": c.cantidad,
+                "precio_unitario": c.precio_compra,
+                "total": (c.cantidad or 0) * (c.precio_compra or 0),
+                "fecha": c.fecha_compra,
+                "categoria": getattr(c.inventario.material, "categoria", ""),
+                "observaciones": getattr(c, "observaciones", ""),
+            }
+        )
+    for v in ventas:
+        historial.append(
+            {
+                "tipo": "Venta",
+                "material": v.inventario.material.nombre
+                if hasattr(v.inventario.material, "nombre")
+                else "",
+                "cantidad": v.cantidad,
+                "precio_unitario": v.precio_venta,
+                "total": (v.cantidad or 0) * (v.precio_venta or 0),
+                "fecha": v.fecha_venta,
+                "categoria": getattr(v.inventario.material, "categoria", ""),
+                "observaciones": getattr(v, "observaciones", ""),
+                "centro_acopio": v.centro_acopio.nombre
+                if hasattr(v, "centro_acopio") and v.centro_acopio
+                else "",
+            }
+        )
+    historial.sort(key=lambda m: m["fecha"] or "", reverse=True)
+    html_string = render_to_string(
+        "operations/historial_pdf.html", {"historial": historial}
+    )
+    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
+    response = HttpResponse(pdf_file, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="historial.pdf"'
+    return response

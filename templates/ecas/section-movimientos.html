@@ -87,7 +87,6 @@
                             aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    e
                     <div id="estadoBusquedaMov" class="text-center text-muted py-4 mb-3">
                         <i class="bi bi-search display-6 d-block mb-2"></i>
                         <p class="mb-0">Buscando materiales...</p>
@@ -103,6 +102,7 @@
     <!-- ACORDEÓN PRINCIPAL -->
     <!-- ═════════════════════════════════════════════════════════════ -->
     <!-- Inyectar datos del backend ANTES de los scripts -->
+    <script>window.CENTROS = {{ centros|safe }};</script>
     <script>
         window.ENTRADAS_INICIALES = {{ entradas|safe }};
         window.SALIDAS_INICIALES = {{ salidas|safe }};
@@ -399,7 +399,21 @@
                     <!-- Tabla de entradas -->
                     <div class="card shadow-sm">
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-bold text-dark">Historial de Compra de Material</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <h6 class="mb-0 fw-bold text-dark">Historial de Compra de Material</h6>
+                                <a href="/punto-eca/movimientos/exportar-compras-excel/"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-success fw-semibold ms-2"
+                                   title="Exportar a Excel">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
+                                </a>
+                                <a href="/punto-eca/movimientos/exportar-compras-pdf/"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-danger fw-semibold ms-2"
+                                   title="Exportar a PDF">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>Exportar a PDF
+                                </a>
+                            </div>
                             <span class="badge bg-danger rounded-pill" id="badgeEntradasCount">0 registros</span>
                         </div>
                         <div class="card-body p-0">
@@ -574,8 +588,11 @@
                                             class="form-select form-select-sm border-success border-2 js-select2-centro-acopio"
                                             style="width: 100%">
                                         <option value="">Selecciona un centro...</option>
-                                        <option>Centro de Acopio</option>
-                                        <option disabled>No hay centros disponibles</option>
+                                        {% for centro in centros %}
+                                            <option value="{{ centro.id }}">{{ centro.nombre }}</option>
+                                        {% empty %}
+                                            <option disabled>No hay centros disponibles</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 <div class="col-12">
@@ -632,6 +649,14 @@
                                     </select>
                                 </div>
                                 <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Centro de Acopio</label>
+                                    <select id="filtroVentaCentro"
+                                            class="form-select form-select-sm"
+                                            style="width: 100%">
+                                        <option value="">-- Todos --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
                                     <label class="form-label fw-semibold small">&nbsp;</label>
                                     <div class="d-flex gap-2">
                                         <button type="button"
@@ -664,7 +689,21 @@
                     <!-- Tabla de salidas -->
                     <div class="card shadow-sm">
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-bold text-dark">Historial de Venta de Material</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <h6 class="mb-0 fw-bold text-dark">Historial de Venta de Material</h6>
+                                <a href="/punto-eca/movimientos/exportar-ventas-excel/"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-success fw-semibold ms-2"
+                                   title="Exportar a Excel">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
+                                                                </a>
+                                                                <a href="/punto-eca/movimientos/exportar-ventas-pdf/"
+                                                                   target="_blank"
+                                                                   class="btn btn-sm btn-outline-danger fw-semibold ms-2"
+                                                                   title="Exportar a PDF">
+                                                                    <i class="bi bi-file-earmark-pdf me-1"></i>Exportar a PDF
+                                </a>
+                            </div>
                             <span class="badge bg-success rounded-pill" id="badgeSalidasCount">0 registros</span>
                         </div>
                         <div class="card-body p-0">
@@ -745,8 +784,8 @@
                         </div>
                         <div class="card-body">
                             <form class="row g-3" id="filtrosFormHistorial">
-                                <!-- FILA 1: Material y Categoría -->
-                                <div class="col-md-6">
+                                <!-- FILA 1: Material, Categoría y Centro de Acopio -->
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Material</label>
                                     <select class="form-select form-select-sm"
                                             id="filtroHistorialMaterial"
@@ -754,9 +793,17 @@
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Categoría</label>
                                     <select class="form-select form-select-sm" id="filtroHistorialCategoria">
+                                        <option value="">-- Todos --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Centro de Acopio</label>
+                                    <select class="form-select form-select-sm"
+                                            id="filtroHistorialCentroAcopio"
+                                            style="width: 100%">
                                         <option value="">-- Todos --</option>
                                     </select>
                                 </div>
@@ -809,7 +856,21 @@
                     <!-- Tabla general -->
                     <div class="card shadow-sm">
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-bold text-dark">Todos los Movimientos</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <h6 class="mb-0 fw-bold text-dark">Todos los Movimientos</h6>
+                                <a href="/punto-eca/movimientos/exportar-historial-excel/"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-success fw-semibold ms-2"
+                                   title="Exportar a Excel">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
+                                                                </a>
+                                                                <a href="/punto-eca/movimientos/exportar-historial-pdf/"
+                                                                   target="_blank"
+                                                                   class="btn btn-sm btn-outline-danger fw-semibold ms-2"
+                                                                   title="Exportar a PDF">
+                                                                    <i class="bi bi-file-earmark-pdf me-1"></i>Exportar a PDF
+                                </a>
+                            </div>
                             <span class="badge bg-secondary rounded-pill" id="badgeHistorialCount">0 registros</span>
                         </div>
                         <div class="card-body p-0">
@@ -967,7 +1028,7 @@
                     console.log('Encontrado #buscarMaterialMovimientos');
 
                     // Obtener endpoint y puntoId
-                    var endpoint = '/punto-eca/materiales/inventario/buscar';
+                    var endpoint = '/punto-eca/materiales/inventario';
                     var puntoId = puntoEcaId; // Ya está disponible en el data attribute
 
                     console.log('Endpoint:', endpoint);
@@ -1267,7 +1328,7 @@
                                 params.append('puntoId', puntoEcaId);
                                 params.append('texto', materialNombre || '');
 
-                                var url = '/punto-eca/materiales/inventario/buscar' + (params.toString() ? ('?' + params.toString()) : '');
+                                var url = '/punto-eca/materiales/inventario/' + (params.toString() ? ('?' + params.toString()) : '');
                                 console.log('Intentando obtener datos de inventario en:', url);
 
                                 fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
@@ -1527,7 +1588,7 @@
                     modal.show();
 
                     // Construir URL con parámetros como en section-materiales.html
-                    var endpoint = '/punto-eca/materiales/inventario/buscar';
+                    var endpoint = '/punto-eca/materiales/inventario/';
                     var params = new URLSearchParams();
 
                     if (texto) params.append('texto', texto);
@@ -1867,6 +1928,7 @@
                     const $filtroMaterialVenta = $('#filtroVentaMaterial');
                     const $filtroCategoriaVenta = $('#filtroVentaCategoria');
                     const $filtroTipoVenta = $('#filtroVentaTipo');
+                    const $filtroCentroVenta = $('#filtroVentaCentro');
 
                     // --- Material: desde los datos globales (window.SALIDAS_INICIALES) ---
                     if ($filtroMaterialVenta.length) {
@@ -1924,6 +1986,29 @@
                         });
                         console.log('✅ Select2 inicializado en #filtroVentaTipo (por datos fuente)');
                     }
+                    // --- Centro de Acopio: usar window.CENTROS ---
+                    if ($filtroCentroVenta.length) {
+                        $filtroCentroVenta.find('option:not([value=""])').remove();
+                        const centros = window.CENTROS || [];
+                        // Tolerar array plano o diccionario de centros
+                        let centrosArray = Array.isArray(centros) ? centros : Object.values(centros);
+                        // Extraer nombre y/o id (usar nombre para filtro visible, como en tabla)
+                        const nombreCentros = new Set();
+                        centrosArray.forEach(centro => {
+                            const nombre = centro.nombre || centro.nmbCentro || centro.nmbCentroAcopio || '';
+                            if (nombre) nombreCentros.add(nombre);
+                        });
+                        Array.from(nombreCentros).sort().forEach(n => {
+                            $filtroCentroVenta.append($('<option>').val(n).text(n));
+                        });
+                        $filtroCentroVenta.select2({
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            allowClear: true,
+                            placeholder: 'Selecciona centro de acopio...'
+                        });
+                        console.log('✅ Select2 inicializado en #filtroVentaCentro (por window.CENTROS)');
+                    }
                 }, 300);
 
                 // ========================================================
@@ -1933,6 +2018,7 @@
                     const $filtroHistorialMaterial = $('#filtroHistorialMaterial');
                     const $filtroHistorialCategoria = $('#filtroHistorialCategoria');
                     const $filtroHistorialTipo = $('#filtroHistorialTipo');
+                    const $filtroHistorialCentroAcopio = $('#filtroHistorialCentroAcopio');
 
                     // Llenar opciones de Material del Historial
                     if ($filtroHistorialMaterial.length) {
@@ -2006,6 +2092,28 @@
                         });
                         console.log('✅ Select2 inicializado en #filtroHistorialTipo');
                     }
+
+                    // Llenar opciones de Centro de Acopio del Historial (window.CENTROS)
+                    if ($filtroHistorialCentroAcopio.length) {
+                        $filtroHistorialCentroAcopio.find('option:not([value=""])').remove();
+                        let centros = window.CENTROS || [];
+                        if (!Array.isArray(centros)) centros = Object.values(centros || {});
+                        const nombreCentros = new Set();
+                        centros.forEach(c => {
+                            const nombre = c.nombre || c.nmbCentro || c.nmbCentroAcopio || '';
+                            if (nombre) nombreCentros.add(nombre);
+                        });
+                        Array.from(nombreCentros).sort().forEach(n => {
+                            $filtroHistorialCentroAcopio.append($('<option>').val(n).text(n));
+                        });
+                        $filtroHistorialCentroAcopio.select2({
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            allowClear: true,
+                            placeholder: 'Selecciona centro de acopio...'
+                        });
+                        console.log('✅ Select2 inicializado en #filtroHistorialCentroAcopio');
+                    }
                 }, 300);
 
                 // ========================================================
@@ -2062,20 +2170,23 @@
                         const material = $('#filtroVentaMaterial').val() || '';
                         const categoria = $('#filtroVentaCategoria').val() || '';
                         const tipo = $('#filtroVentaTipo').val() || '';
+                        const centroAcopio = $('#filtroVentaCentro').val() || '';
                         const fechaDesde = document.getElementById('filtroVentaFechaDesde')?.value || '';
                         const fechaHasta = document.getElementById('filtroVentaFechaHasta')?.value || '';
-
-                        console.log('🔍 Filtros VENTA aplicados:', { material, categoria, tipo, fechaDesde, fechaHasta });
-
+                
+                        console.log('🔍 Filtros VENTA aplicados:', { material, categoria, tipo, centroAcopio, fechaDesde, fechaHasta });
+                
                         const salidasData = window.SALIDAS_INICIALES || [];
                         const salidasFiltradas = salidasData.filter(salida => {
                             const cumpleMaterial = !material || (salida.nombreMaterial || '').toLowerCase().includes(material.toLowerCase());
                             const cumpleCategoria = !categoria || (salida.nombreCategoria || '') === categoria;
                             const cumpleTipo = !tipo || (salida.nombreTipo || '') === tipo;
+                            // El centro puede estar en salida.nombreCentroAcopio
+                            const cumpleCentro = !centroAcopio || (salida.nombreCentroAcopio || '') === centroAcopio;
                             const cumpleFechaDesde = !fechaDesde || new Date(salida.fechaVenta).toISOString().split('T')[0] >= fechaDesde;
                             const cumpleFechaHasta = !fechaHasta || new Date(salida.fechaVenta).toISOString().split('T')[0] <= fechaHasta;
-
-                            return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleFechaDesde && cumpleFechaHasta;
+                
+                            return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleCentro && cumpleFechaDesde && cumpleFechaHasta;
                         });
 
                         console.log('✅ Ventas filtradas:', salidasFiltradas.length, 'de', salidasData.length);
@@ -2378,6 +2489,7 @@
             const material = document.getElementById('filtroHistorialMaterial')?.value || '';
             const categoria = document.getElementById('filtroHistorialCategoria')?.value || '';
             const tipoMaterial = document.getElementById('filtroHistorialTipo')?.value || '';
+            const centroAcopio = document.getElementById('filtroHistorialCentroAcopio')?.value || '';
             const tipoMovimiento = document.getElementById('filtroHistorialTipoMovimiento')?.value || '';
             const fechaDesde = document.getElementById('filtroHistorialDesde')?.value || '';
             const fechaHasta = document.getElementById('filtroHistorialHasta')?.value || '';
@@ -2386,11 +2498,13 @@
                 const cumpleMaterial = !material || (mov.nombreMaterial || '') === material;
                 const cumpleCategoria = !categoria || (mov.nombreCategoria || '') === categoria;
                 const cumpleTipo = !tipoMaterial || (mov.nombreTipo || '') === tipoMaterial;
+                // Historial: sólo ventas tienen centro de acopio
+                const cumpleCentro = !centroAcopio || ((mov.tipo === 'Venta') ? ((mov.nombreCentroAcopio || '') === centroAcopio) : true);
                 const cumpleTipoMovimiento = !tipoMovimiento || (tipoMovimiento === 'compra' && mov.tipo === 'Compra') || (tipoMovimiento === 'venta' && mov.tipo === 'Venta');
                 const cumpleFechaDesde = !fechaDesde || new Date(mov.fecha).toISOString().split('T')[0] >= fechaDesde;
                 const cumpleFechaHasta = !fechaHasta || new Date(mov.fecha).toISOString().split('T')[0] <= fechaHasta;
 
-                return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleTipoMovimiento && cumpleFechaDesde && cumpleFechaHasta;
+                return cumpleMaterial && cumpleCategoria && cumpleTipo && cumpleCentro && cumpleTipoMovimiento && cumpleFechaDesde && cumpleFechaHasta;
             });
 
             // Paginación
@@ -3230,7 +3344,7 @@
                   console.log('[DEBUG-check] materialId:', materialId, 'puntoId:', puntoId);
                   if (materialId && puntoId) {
                       let params = new URLSearchParams({ puntoId, materialId });
-                      fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                      fetch(`/punto-eca/materiales/inventario?${params.toString()}`, {
                           method: 'GET', headers: { 'Accept': 'application/json' }
                       })
                       .then(resp => resp.json())
@@ -3506,8 +3620,40 @@
                 document.getElementById('editVentaFecha').value = fecha;
                 document.getElementById('editVentaCantidad').value = salida.cantidad || '';
                 document.getElementById('editVentaPrecio').value = salida.precioVenta || '';
-                document.getElementById('editVentaCentro').value = salida.centroAcopioId || '';
-                document.getElementById('editVentaObservaciones').value = salida.observaciones || '';
+                
+                                // ----- Repoblar centros de acopio (corregido) -----
+                                const editCentroSelect = document.getElementById('editVentaCentro');
+                                if (editCentroSelect) {
+                                    console.log('[DEBUG] window.CENTROS justo antes de poblar:', window.CENTROS);
+                                    console.log('[DEBUG] typeof window.CENTROS:', typeof window.CENTROS, Array.isArray(window.CENTROS));
+                                    // Limpia todas las opciones excepto el placeholder inicial
+                                    editCentroSelect.innerHTML = '<option value="">Selecciona un centro...</option>';
+                                    // Accede a los centros desde la variable global (backend debe inyectar window.CENTROS)
+                                    let centros = window.CENTROS;
+                                    if (!centros) {
+                                        // Fallback defensivo
+                                        centros = [];
+                                    }
+                                    // Asegura array plano, aunque venga como objeto
+                                    if (!Array.isArray(centros)) centros = Object.values(centros || {});
+                                    // Por cada centro: agrega una opción, marcando como seleccionada si corresponde
+                                    centros.forEach(c => {
+                                        // Permite variados posibles campos desde backend
+                                        const id = String(c.id ?? c.pk ?? c.centroAcopioId ?? "");
+                                        const nombre = c.nombre || c.nmbCentro || c.nmbCentroAcopio || 'Centro';
+                                        const option = document.createElement('option');
+                                        option.value = id;
+                                        option.textContent = nombre;
+                                        // Seleccionar si coincide con la venta actual
+                                        if (salida.centroAcopioId && String(salida.centroAcopioId) === id) {
+                                            option.selected = true;
+                                        }
+                                        editCentroSelect.appendChild(option);
+                                    });
+                                    // Garantiza que el valor correcto quede seleccionado, incluso con autoformato de Select2
+                                    setTimeout(() => { editCentroSelect.value = salida.centroAcopioId || ''; try { $(editCentroSelect).trigger('change'); } catch(e){} }, 0);
+                                }
+                                document.getElementById('editVentaObservaciones').value = salida.observaciones || '';
 
                 // ====== NUEVO: Traer stock actual real del inventario ======
                 const puntoId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
@@ -3516,7 +3662,7 @@
                 try {
                     if (materialId && puntoId) {
                         let params = new URLSearchParams({ puntoId, materialId });
-                        let resp = await fetch(`/punto-eca/materiales/inventario/buscar?${params.toString()}`, {
+                        let resp = await fetch(`/punto-eca/materiales/inventario?${params.toString()}`, {
                             method: 'GET', headers: { 'Accept': 'application/json' }
                         });
                         let data = await resp.json();
@@ -3739,12 +3885,7 @@
                     alert('No se pudo validar el stock. Recarga la página e intenta nuevamente.');
                     return;
                 }
-                // Validar que la cantidad a vender no supere el stock disponible real
-                if (cantidadNum > stockActual + cantidadOriginal) {
-                    alert('No se puede vender más unidades de las que hay en stock. Stock disponible: ' + (stockActual + cantidadOriginal));
-                    return;
-                }
-                // stock final simulado para edición: stockActual + (cantidadOriginal - cantidadNueva)
+                // Validar que el stock no quede negativo luego de la edición
                 let nuevoStock = stockActual + (cantidadOriginal - cantidadNum);
                 if (cantidadNum <= 0) {
                     alert('Ingrese una cantidad mayor a cero.');
@@ -3810,11 +3951,11 @@
                 .then(data => {
                     console.log('📥 Respuesta:', data);
                     // Chequear la lógica del backend según el campo status (success/error) y mostrar mensaje adecuado
-                    if (data.status === 'success') {
-                        alert(data.message || 'Venta actualizada correctamente');
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('editarVentaModal'));
-                        if (modal) modal.hide();
-                        location.reload();
+                    if (data.status === 'success' || data.ok === true || (!data.error && (!data.status || data.status === 'ok'))) {
+                                            alert(data.message || data.mensaje || 'Venta actualizada correctamente');
+                                            const modal = bootstrap.Modal.getInstance(document.getElementById('editarVentaModal'));
+                                            if (modal) modal.hide();
+                                            setTimeout(() => location.reload(), 200); // Con leve delay para UX
                     } else {
                         alert(data.message || data.mensaje || 'Error al actualizar la venta.');
                     }
@@ -3860,6 +4001,14 @@
                         precioCompra: safeParseFloat(precioCompra) || 0,
                         observaciones: observaciones
                     };
+                    // Bloquear si el inventarioId falta (prevención UX de error 400)
+                    if (!payload.inventarioId) {
+                        alert('No se puede guardar la compra porque falta el inventarioId. Seleccioná un material y asegurate que los datos están completos.');
+                        console.error('[COMPRA] Se intentó enviar sin inventarioId:', payload);
+                        return;
+                    }
+                    // DEBUG: mostrar payload antes de enviar
+                    console.log('[COMPRA] Payload al enviar:', payload);
 
                     // Obtener CSRF token
                     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -3900,6 +4049,14 @@
                     var centroAcopioId = document.getElementById('salidaCentroAcopio')?.value || '';
                     var observaciones = document.getElementById('salidaObservaciones')?.value || '';
 
+                                // Validar explícitamente centro de acopio seleccionado
+                                if (!centroAcopioId || centroAcopioId === '') {
+                                    alert('Seleccioná un centro de acopio antes de guardar la venta.');
+                                    return;
+                                }
+                                // Log defensivo para verificar el valor
+                                console.log('[CHECK] Valor de centroAcopioId antes de submit:', centroAcopioId);
+            
                     if (!materialId) { alert('Seleccione un material antes de guardar la venta.'); return; }
                     if (!cantidad || safeParseFloat(cantidad) === null || safeParseFloat(cantidad) <= 0) { alert('Ingrese una cantidad mayor a cero.'); return; }
                     if (!fechaVenta) { alert('Seleccione la fecha de venta.'); return; }
@@ -3915,6 +4072,14 @@
                         centroAcopioId: centroAcopioId,
                         observaciones: observaciones
                     };
+                    // Validar inventarioId antes de enviar
+                    if (!payload.inventarioId) {
+                        alert('No se puede guardar la venta porque falta el inventarioId. Seleccioná un material y asegurate que los datos están completos.');
+                        console.error('[VENTA] Se intentó enviar sin inventarioId:', payload);
+                        return;
+                    }
+                    // DEBUG: mostrar payload antes de enviar
+                    console.log('[VENTA] Payload al enviar:', payload);
 
                     // Enviar al endpoint correcto que espera VentaInventarioRequestDTO
                     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';

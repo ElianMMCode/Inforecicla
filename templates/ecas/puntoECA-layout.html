@@ -65,7 +65,7 @@
       </div>
     </div>
     <!-- JS MODALS Y FUNCIONALIDAD EXTRA (igual que antes) -->
-    <script src="{% static 'js/modal-centros-propios.js' %}"></script>
+    <!-- <script src="{% static 'js/modal-centros-propios.js' %}"></script>  Removido porque causaba 404 -->
     <script src="{% static 'js/cambiar-contrasena.js' %}"></script>
     <script src="{% static 'js/resumen.js' %}"></script>
     <!-- Sidebar subsections smooth scroll/enfoque logic -->
@@ -104,5 +104,24 @@
       html { scroll-behavior: smooth; }
       body, .min-vh-100 { min-height: 100vh; }
     </style>
+    <script src="{% static 'js/PuntoECA/fullcalendar_init.js' %}"></script>
+    <!-- Mover todos los scripts que dependen de window.eventoActual después de cargar fullcalendar_init.js -->
+    <script defer>
+      // Logging robusto para debug scope global
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DEBUG: window:', window);
+        console.log('DEBUG: typeof window.eventoActual:', typeof window.eventoActual, 'valor:', window.eventoActual);
+        console.log('DEBUG: window === globalThis?', window === globalThis);
+      });
+      // Forzar inicialización Select2 SOBRE MODAL cada vez que se abre
+      var modal = document.getElementById('modalCrearEvento');
+      if (modal) {
+        modal.addEventListener('shown.bs.modal', function () {
+          if (window.inicializarSelect2Centros) {
+            setTimeout(window.inicializarSelect2Centros, 50);
+          }
+        });
+      }
+    </script>
   </body>
 </html>

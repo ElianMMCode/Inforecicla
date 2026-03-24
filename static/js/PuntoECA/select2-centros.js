@@ -126,4 +126,10 @@ if (window.MutationObserver) {
 
 // Exportar función global para fácil acceso
 window.inicializarSelect2Centros = inicializarSelect2Centros;
+// Forzar inicialización de Select2 cuando se abre el modal de crear evento
+if (window.jQuery) {
+    window.jQuery('#modalCrearEvento').on('shown.bs.modal', function () {
+        window.inicializarSelect2Centros();
+    });
+}
 
