@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial General de Movimientos</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #999; padding: 0.35em 0.5em; text-align: left; }
+        th { background: #eee; }
+        .total { text-align: right; font-weight: bold; }
+        .tipo-compra { color: #b71c1c; }
+        .tipo-venta { color: #1b5e20; }
+    </style>
+</head>
+<body>
+<h2>Historial General de Movimientos</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Material</th>
+            <th>Categoría</th>
+            <th>Cantidad</th>
+            <th>Precio Unit.</th>
+            <th>Total</th>
+            <th>Centro Acopio</th>
+            <th>Observaciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for mov in historial %}
+    <tr>
+        <td>{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+        <td class="{% if mov.tipo == 'Compra' %}tipo-compra{% else %}tipo-venta{% endif %}">{{ mov.tipo }}</td>
+        <td>{{ mov.material }}</td>
+        <td>{{ mov.categoria }}</td>
+        <td>{{ mov.cantidad|floatformat:2 }}</td>
+        <td>${{ mov.precio_unitario|floatformat:2 }}</td>
+        <td class="total">${{ mov.total|floatformat:2 }}</td>
+        <td>{% if mov.tipo == 'Venta' %}{{ mov.centro_acopio }}{% else %}-{% endif %}</td>
+        <td>{{ mov.observaciones }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="9">Sin movimientos registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>
+
