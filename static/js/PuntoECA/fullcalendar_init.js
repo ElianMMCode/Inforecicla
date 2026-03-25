@@ -389,6 +389,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Forzar recarga al cerrar el modal de crear evento (vía cualquier método)
+  var modalCrear = document.getElementById("modalCrearEvento");
+  if (modalCrear) {
+    modalCrear.addEventListener('hidden.bs.modal', function () {
+      window.location.reload();
+    });
+  }
+
   function agregarEventoDesdeFormulario() {
     // Obtener valores de los campos
     var titulo = document.getElementById("inputTitulo").value;
@@ -428,7 +436,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     calendar.addEvent(nuevoEvento);
     mostrarExito();
-    // Cerrar el modal y limpiar el form
+    // Cerrar el modal, limpiar el form y recargar la página
     setTimeout(function () {
       var modal = bootstrap.Modal.getOrCreateInstance(
         document.getElementById("modalCrearEvento"),
@@ -436,6 +444,7 @@ document.addEventListener("DOMContentLoaded", function () {
       modal.hide();
       form.reset();
       ocultarAlertas();
+      window.location.reload(); // Recarga la página al guardar un evento nuevo
     }, 800);
   }
   // ==============================================
