@@ -35,12 +35,17 @@ def render_registro_eca(request):
         tipo_documento = data.get("tipoDocumento") or cons.TipoDocumento.CC
         numero_documento = data.get("numeroDocumento", "").strip()
         celular = data.get("celular", "").strip()
+        telefono_punto = data.get("telefono_punto", "").strip()
         direccion = data.get("direccion", "").strip()
         ciudad = data.get("ciudad", "Bogotá")
         localidad_id = data.get("localidad")
         latitud = data.get("latitud")
         longitud = data.get("longitud")
         descripcion = data.get("descripcion", "")
+        sitio_web = data.get("sitio_web", "").strip()
+        logo_url_punto = data.get("logo_url_punto", "").strip()
+        foto_url_punto = data.get("foto_url_punto", "").strip()
+        horario_atencion = data.get("horario_atencion", "").strip()
         password = data.get("password", "")
         password_confirm = data.get("passwordConfirm", "")
         terminos = data.get("terminos")
@@ -58,6 +63,8 @@ def render_registro_eca(request):
             )
         if not direccion:
             errores.append("Debe ingresar la dirección.")
+        if not telefono_punto or not telefono_punto.startswith("60") or len(telefono_punto) != 10:
+            errores.append("El teléfono del punto debe ser válido, iniciar con 60 y tener 10 dígitos.")
         if not latitud or not longitud:
             errores.append("Debe seleccionar una ubicación en el mapa.")
         if not ciudad:
@@ -87,34 +94,42 @@ def render_registro_eca(request):
             except Localidad.DoesNotExist:
                 errores.append("La localidad seleccionada no existe.")
         # Si hay errores, renderiza de nuevo con los mensajes
+        localidades = Localidad.objects.all()
         if errores:
+            # Nos aseguramos que "localidades" en el contexto siempre sea el queryset, no un dato del formulario:
             return render(
-                request, "users/registro_eca.html", {"errores": errores, **data.dict()}
+                request,
+                "users/registro_eca.html",
+                {**data.dict(), "localidades": localidades, "errores": errores},
             )
         try:
             with transaction.atomic():
                 # Crear usuario gestor ECA
-                usuario = (
-                    Usuario.objects.create(
-                        email=email,
-                        numero_documento=numero_documento or f"GESTORECA_{email}",
-                        password=password,
-                        nombres=nombres,
-                        apellidos=apellidos,
-                        celular=celular,
-                        tipo_documento=tipo_documento,
-                        tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
-                    ),
+                usuario = Usuario(
+                    email=email,
+                    numero_documento=numero_documento or f"GESTORECA_{email}",
+                    celular=celular,
+                    nombres=nombres,
+                    apellidos=apellidos,
+                    tipo_documento=tipo_documento,
+                    tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
                 )
+                usuario.set_password(password)
+                usuario.save()
                 # Crear PuntoECA asociado
                 punto = PuntoECA.objects.create(
                     gestor_eca=usuario,
                     nombre=nombres,
                     descripcion=descripcion,
-                    email=email,
-                    celular=celular,
+                    telefono_punto=telefono_punto,
                     direccion=direccion,
                     ciudad=ciudad,
+                    email=email,
+                    celular=celular,
+                    logo_url_punto=logo_url_punto,
+                    foto_url_punto=foto_url_punto,
+                    sitio_web=sitio_web,
+                    horario_atencion=horario_atencion,
                     localidad=localidad_inst,
                     latitud=float(latitud),
                     longitud=float(longitud),
