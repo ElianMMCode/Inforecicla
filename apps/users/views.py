@@ -16,11 +16,12 @@ def render_login(request):
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect("/") # Puedes cambiar el destino según tu home
+            return redirect("/")  # Puedes cambiar el destino según tu home
         else:
             errores.append("Credenciales inválidas. Verifica tu email y contraseña.")
     # Si GET o error, mostrar template
     return render(request, "users/login.html", {"errores": errores})
+
 
 def render_registro_eca(request):
     if request.method == "POST":
@@ -52,7 +53,9 @@ def render_registro_eca(request):
         if not email:
             errores.append("Debe ingresar un email válido.")
         if not celular or not celular.startswith("3") or len(celular) != 10:
-            errores.append("El celular debe ser válido, iniciar con 3 y tener 10 dígitos.")
+            errores.append(
+                "El celular debe ser válido, iniciar con 3 y tener 10 dígitos."
+            )
         if not direccion:
             errores.append("Debe ingresar la dirección.")
         if not latitud or not longitud:
@@ -71,7 +74,10 @@ def render_registro_eca(request):
         # Validar unicidad de email y documento
         if Usuario.objects.filter(email=email).exists():
             errores.append("Ya existe un usuario con ese correo electrónico.")
-        if numero_documento and Usuario.objects.filter(numero_documento=numero_documento).exists():
+        if (
+            numero_documento
+            and Usuario.objects.filter(numero_documento=numero_documento).exists()
+        ):
             errores.append("Ya existe un usuario con ese número de documento.")
         # Validar localidad
         localidad_inst = None
@@ -82,19 +88,23 @@ def render_registro_eca(request):
                 errores.append("La localidad seleccionada no existe.")
         # Si hay errores, renderiza de nuevo con los mensajes
         if errores:
-            return render(request, "users/registro_eca.html", {"errores": errores, **data.dict()})
+            return render(
+                request, "users/registro_eca.html", {"errores": errores, **data.dict()}
+            )
         try:
             with transaction.atomic():
                 # Crear usuario gestor ECA
-                usuario = Usuario.objects.create_user(
-                    email=email,
-                    numero_documento=numero_documento or f"GESTORECA_{email}",
-                    password=password,
-                    nombres=nombres,
-                    apellidos=apellidos,
-                    celular=celular,
-                    tipo_documento=tipo_documento,
-                    tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+                usuario = (
+                    Usuario.objects.create(
+                        email=email,
+                        numero_documento=numero_documento or f"GESTORECA_{email}",
+                        password=password,
+                        nombres=nombres,
+                        apellidos=apellidos,
+                        celular=celular,
+                        tipo_documento=tipo_documento,
+                        tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+                    ),
                 )
                 # Crear PuntoECA asociado
                 punto = PuntoECA.objects.create(
@@ -110,13 +120,18 @@ def render_registro_eca(request):
                     longitud=float(longitud),
                 )
             # Registro exitoso, redirigir o mostrar mensaje
-            messages.success(request, "¡Punto ECA registrado exitosamente! Ahora puedes iniciar sesión.")
+            messages.success(
+                request,
+                "¡Punto ECA registrado exitosamente! Ahora puedes iniciar sesión.",
+            )
             return redirect("login")
         except (IntegrityError, ValidationError) as e:
             errores.append("Error al registrar el usuario: %s" % str(e))
 
         # Si falló, renderiza el form con errores
-        return render(request, "users/registro_eca.html", {"errores": errores, **data.dict()})
+        return render(
+            request, "users/registro_eca.html", {"errores": errores, **data.dict()}
+        )
     # GET normal
     localidades = Localidad.objects.all()
     return render(request, "users/registro_eca.html", {"localidades": localidades})

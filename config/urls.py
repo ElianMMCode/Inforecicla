@@ -18,6 +18,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from apps.core.views import inicio
+from apps.users import views
+
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
     path("", inicio),  # Ruta raiz
@@ -26,5 +29,7 @@ urlpatterns = [
     # Urls Panel Administracion
     path("panel_admin/", include("apps.panel_admin.urls", namespace="panel_admin")),
     path("punto-eca/", include("apps.ecas.urls")),
+    path("login/", views.render_login, name="login"),
+    path("logout/", LogoutView.as_view(next_page='/login/'), name="logout"),
     path("registro/", include("apps.users.urls")),
 ]
