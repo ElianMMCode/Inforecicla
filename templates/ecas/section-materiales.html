@@ -2007,7 +2007,7 @@ window.getCSRFToken = function() {
             
                 // Fetch inventario/buscar por materialId y puntoId
                 if (materialId && puntoId) {
-                    fetch(`/punto-eca/materiales/inventario?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`)
+                    fetch(`/punto-eca/materiales/inventario?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`, { method: 'GET' })
                         .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer detalles de inventario'))
                         .then(info => {
                             document.getElementById('stockInicial').value = info.stockActual || '';
@@ -2308,7 +2308,7 @@ window.getCSRFToken = function() {
                         }
                 var url = '/punto-eca/materiales/inventario/' + (params.toString() ? ('?' + params.toString()) : '');
                 // AJAX para actualizar la UI sin recargar
-                fetch(url, { method: 'PATCH', headers: { 'Accept': 'application/json' } })
+                fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
                     .then(res => res.json())
                     .then(data => {
                         // Actualizar el contenedor de materiales dinámicamente
@@ -2444,6 +2444,36 @@ window.getCSRFToken = function() {
                 $('#filtroOcupacionInventario').val('').trigger('change');
                 document.querySelectorAll('.tarjeta-material').forEach(function(t){ t.style.display=''; });
                 var mensaje = document.getElementById('mensajeNoResultados'); if (mensaje) mensaje.remove();
+
+                // Nuevo: Disparar búsqueda AJAX sin filtros para refrescar el inventario completo
+                var puntoId = document.getElementById('agregarPuntoId')?.value || '';
+                if (!puntoId) return;
+                var url = '/punto-eca/materiales/inventario/?puntoId=' + encodeURIComponent(puntoId);
+                fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+                    .then(res => res.json())
+                    .then(data => {
+                        // Utiliza la misma función de renderizado que el botón Buscar
+                        if (typeof renderizarTarjetasMateriales === 'function') {
+                            renderizarTarjetasMateriales(data);
+                        } else {
+                            // Si no está en global, trae la lógica inline de renderizado de tarjetas
+                            var contenedor = document.getElementById('contenedorMateriales');
+                            if (!contenedor) return;
+                            contenedor.innerHTML = '';
+                            if (!Array.isArray(data) || data.length === 0) {
+                                var vacio = document.createElement('div');
+                                vacio.id = 'mensajeNoResultados';
+                                vacio.className = 'alert alert-info text-center my-4';
+                                vacio.innerHTML = '<i class="bi bi-info-circle me-2"></i>No hay materiales disponibles.';
+                                contenedor.parentNode.insertBefore(vacio, contenedor);
+                                return;
+                            }
+                            // ... Aquí podrías reusar el renderizado si lo extraés como función global
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error('Error al refrescar materiales tras limpiar filtros:', err);
+                    });
             });
         }
 
