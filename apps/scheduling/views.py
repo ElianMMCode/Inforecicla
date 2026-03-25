@@ -1,6 +1,6 @@
 from apps.inventory.models import Inventario
 from django.http import JsonResponse
-from apps.ecas.models import CentroAcopio
+from apps.ecas.models import CentroAcopio, PuntoECA
 from apps.operations.models import VentaInventario, CompraInventario
 from config import constants as cons
 from apps.ecas.constants import SECTION_TEMPLATES
@@ -215,8 +215,6 @@ def crear_evento_venta(request):
         # Recibimos todos los parámetros esperados
         material_id = data.get("materialId")
         centro_acopio_id = data.get("centroAcopioId")
-        punto_eca_id = data.get("puntoEcaId")
-        usuario_id = data.get("usuarioId")
         titulo = data.get("titulo")
         descripcion = data.get("descripcion", "")
         fecha_inicio = data.get("fechaInicio")
@@ -227,11 +225,17 @@ def crear_evento_venta(request):
         fecha_fin_repeticion = data.get("fechaFinRepeticion", None)
         observaciones = data.get("observaciones", "")
 
+        # Obtener puntoECA y usuario desde la sesión
+        try:
+            punto_eca = PuntoECA.objects.get(gestor_eca=request.user)
+        except PuntoECA.DoesNotExist:
+            return JsonResponse({"success": False, "error": "No tenés un Punto ECA asociado."}, status=403)
+        usuario_id = request.user.id
+        punto_eca_id = punto_eca.id
+
         # Validaciones básicas
         if not (
             material_id
-            and punto_eca_id
-            and usuario_id
             and titulo
             and fecha_inicio
             and hora_inicio
@@ -343,20 +347,24 @@ def crear_evento_venta(request):
 
 def extraer_uuid_prefijo(mixed_id):
     # Log para depuración
-    print('[DEBUG] extraer_uuid_prefijo input:', mixed_id)
+    print("[DEBUG] extraer_uuid_prefijo input:", mixed_id)
     if not mixed_id or type(mixed_id) != str:
-        return ''
-    partes = mixed_id.split('-', 1)
+        return ""
+    partes = mixed_id.split("-", 1)
     # Si viene con prefijo (evinst-/evento-) + UUID
     if len(partes) == 2 and len(partes[1]) >= 8:
         uuid = partes[1]
-        print('[DEBUG] UUID extraído:', uuid)
+        print("[DEBUG] UUID extraído:", uuid)
         return uuid
     # Sino devuelvo tal cual
-    print('[DEBUG] UUID sin extraer prefijo:', mixed_id)
+    print("[DEBUG] UUID sin extraer prefijo:", mixed_id)
     return mixed_id
 
 
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
 def editar_evento_venta(request):
     """
     Endpoint para editar un evento y sus repeticiones (ajustando instancias).
@@ -512,6 +520,7 @@ def editar_evento_venta(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@login_required
 def eliminar_evento_venta(request):
     """
     Elimina un evento y/o una instancia de repetición dependiendo el modo solicitado.

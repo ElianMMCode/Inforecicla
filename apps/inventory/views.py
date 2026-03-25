@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from apps.inventory.models import Inventario
 from config import constants as cons
@@ -124,6 +125,7 @@ def buscar_materiales_catalogo_view(request):
         )
 
 
+@login_required
 @require_POST
 def agregar_al_inventario_view(request):
     data = {}
@@ -143,6 +145,7 @@ def agregar_al_inventario_view(request):
         )
 
 
+@login_required
 @require_GET
 def detalle_iventario_view(request, punto_id, inventario_id):
     try:
@@ -154,6 +157,7 @@ def detalle_iventario_view(request, punto_id, inventario_id):
         )
 
 
+# @login_required
 @require_http_methods(["POST"])
 def actualizar_inventario_view(request, inventario_id):
     data = {}
