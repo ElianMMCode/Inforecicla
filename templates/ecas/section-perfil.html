@@ -224,9 +224,7 @@
                         </div>
                     </div>
                     <!-- Formulario del Punto ECA -->
-                    <form id="formPunto"
-                          method="POST"
-                          action="{% url 'punto-eca:editar_punto' id=usuario.id %}">
+                    <form id="formPunto" method="POST" action="{% url 'punto-eca:editar_punto' id=usuario.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />

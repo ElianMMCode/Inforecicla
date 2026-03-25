@@ -2308,7 +2308,7 @@ window.getCSRFToken = function() {
                         }
                 var url = '/punto-eca/materiales/inventario/' + (params.toString() ? ('?' + params.toString()) : '');
                 // AJAX para actualizar la UI sin recargar
-                fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+                fetch(url, { method: 'PATCH', headers: { 'Accept': 'application/json' } })
                     .then(res => res.json())
                     .then(data => {
                         // Actualizar el contenedor de materiales dinámicamente

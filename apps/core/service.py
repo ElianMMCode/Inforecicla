@@ -28,7 +28,12 @@ class UserService:
         usuario.email = request.POST.get("email", usuario.email)
         usuario.celular = request.POST.get("telefono", usuario.celular)
         usuario.biografia = request.POST.get("biografia", usuario.biografia)
-        usuario.fecha_nacimiento = request.POST.get("fechaNacimiento")
+        # Manejo robusto para fecha: si viene vacía (""), setea None
+        fecha_nacimiento = request.POST.get("fechaNacimiento")
+        if fecha_nacimiento:
+            usuario.fecha_nacimiento = fecha_nacimiento
+        else:
+            usuario.fecha_nacimiento = None
 
         # Manejo de la localidad como objeto
         localidad_id = request.POST.get("localidad")
@@ -49,7 +54,7 @@ class UserService:
 
         try:
             usuario.save()
-        except Exception:
-            pass  # Manejar errores silenciosamente por ahora
+        except Exception as ex:
+            print(f"[ERROR] al guardar usuario: {ex}")
 
         return usuario

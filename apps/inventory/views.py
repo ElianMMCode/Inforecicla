@@ -157,8 +157,8 @@ def detalle_iventario_view(request, punto_id, inventario_id):
         )
 
 
-# @login_required
-@require_http_methods(["POST"])
+@login_required
+@require_http_methods(["PATCH"])
 def actualizar_inventario_view(request, inventario_id):
     data = {}
     if request.body:
