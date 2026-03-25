@@ -1,14 +1,10 @@
-from django.shortcuts import get_object_or_404
 from apps.inventory.models import Inventario
 from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
-from decimal import Decimal as decimal
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.http import JsonResponse, response, HttpResponse
+from django.http import JsonResponse, HttpResponse
 import json
-from django.utils import timezone
-import datetime
 from apps.ecas.models import CentroAcopio
 
 # ===== import-export
@@ -258,9 +254,11 @@ def exportar_ventas_pdf(request):
         total = (v.cantidad or 0) * (v.precio_venta or 0)
         total_ventas += total
         # Enriquecer objeto para el template, sin tocar el modelo
-        v.total_venta = total
         ventas_out.append(v)
-    html_string = render_to_string("operations/ventas_pdf.html", {"ventas": ventas_out, "total_ventas": total_ventas})
+    html_string = render_to_string(
+        "operations/ventas_pdf.html",
+        {"ventas": ventas_out, "total_ventas": total_ventas},
+    )
     pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
     response = HttpResponse(pdf_file, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="ventas.pdf"'
@@ -334,7 +332,6 @@ def exportar_historial_excel(request):
     # Ordenar por fecha descendente
     rows = sorted(rows, key=lambda r: r["fecha"], reverse=True)
 
-    from import_export.formats.base_formats import XLSX
     from tablib import Dataset
 
     dataset = Dataset()
@@ -365,7 +362,7 @@ def exportar_historial_excel(request):
             ]
         )
 
-    export_data = dataset.xlsx
+    export_data = dataset.export("xlsx")
     response = HttpResponse(
         export_data,
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
