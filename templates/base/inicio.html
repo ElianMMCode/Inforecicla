@@ -50,63 +50,50 @@
               <a class="nav-link" href="/mapa">Mapa ECA</a>
             </li>
 
-            <!-- Menú para usuario autenticado -->
-            <li class="nav-item dropdown">
-              <a
-                class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
-                href="#"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <span>Usuario</span>
-              </a>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
-                <li>
-                  <a class="dropdown-item" href="/dashboard">Dashboard</a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/dashboard/gestor">
-                    <i class="fas fa-store me-2"></i>Modo Gestor ECA
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <form method="POST" style="display: inline">
-                    <button type="submit" class="dropdown-item">
-                      Cerrar sesión
-                    </button>
-                  </form>
-                </li>
-              </ul>
-            </li>
-
-            <!-- Menú para usuario no autenticado -->
-            <li class="nav-item dropdown">
-              <a
-                class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
-                href="/login"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-                >Acceder</a
-              >
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  <a class="dropdown-item" href="/login">Iniciar sesión</a>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <a class="dropdown-item" href="/registro/ciudadano"
-                    >Registrarse (Ciudadano)</a
-                  >
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/registro/eca"
-                    >Registrar Punto ECA</a
-                  >
-                </li>
-              </ul>
-            </li>
+            {# Mostrar menú según autenticación y tipo de usuario #}
+            {% if user.is_authenticated %}
+              <li class="nav-item dropdown">
+                <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span>{{ user.get_short_name|default:"Usuario" }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  {% if user.tipo_usuario == "GECA" %}
+                    <li><a class="dropdown-item" href="/punto-eca/">Dashboard</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li>
+                      <form method="POST" action="/logout/" style="display: inline">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">
+                          Cerrar sesión
+                        </button>
+                      </form>
+                    </li>
+                  {% else %}
+                    <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
+                    <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li>
+                      <form method="POST" action="/logout/" style="display: inline">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">
+                          Cerrar sesión
+                        </button>
+                      </form>
+                    </li>
+                  {% endif %}
+                </ul>
+              </li>
+            {% else %}
+              <li class="nav-item dropdown">
+                <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login" data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="/login">Iniciar sesión</a></li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li><a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a></li>
+                  <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
+                </ul>
+              </li>
+            {% endif %}
           </ul>
         </div>
       </div>
@@ -157,6 +144,7 @@
           </div>
         </div>
       </section>
+      {% if not user.is_authenticated %}
       <section class="py-5 bg-light border-top">
         <div class="container">
           <div class="text-center mb-4">
@@ -212,6 +200,7 @@
           </div>
         </div>
       </section>
+      {% endif %}
     </main>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   </body>

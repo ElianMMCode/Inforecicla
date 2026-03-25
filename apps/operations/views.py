@@ -3,6 +3,7 @@ from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
 from apps.ecas.constants import SECTION_TEMPLATES
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 import json
 from apps.ecas.models import CentroAcopio
@@ -119,6 +120,7 @@ def _build_movimientos_context(punto):
 # (Código de views existentes continúa abajo...)
 
 
+@login_required
 def registros_compras(request):
     data = {}
     if request.body:
@@ -137,6 +139,7 @@ def registros_compras(request):
         )
 
 
+@login_required
 def registros_ventas(request):
     data = {}
     if request.body:
@@ -155,6 +158,7 @@ def registros_ventas(request):
         )
 
 
+@login_required
 def editar_compra(request, compra_id):
     data = {}
     if request.body:
@@ -173,6 +177,7 @@ def editar_compra(request, compra_id):
         )
 
 
+@login_required
 def editar_venta(request, venta_id):
     data = {}
     if request.body:
@@ -191,17 +196,20 @@ def editar_venta(request, venta_id):
         )
 
 
+@login_required
 def borrar_compra(request, compra_id):
     resp = CompraInventarioService.borrar_compra(request, compra_id)
     return JsonResponse(resp, safe=False)
 
 
+@login_required
 def borrar_venta(request, venta_id):
     resp = VentaInventarioService.borrar_venta(request, venta_id)
     return JsonResponse(resp, safe=False)
 
 
 # ============== EXPORT EXCEL =============
+@login_required
 def exportar_compras_excel(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
@@ -222,6 +230,7 @@ def exportar_compras_excel(request):
 # ============== EXPORT PDF =============
 
 
+@login_required
 def exportar_compras_pdf(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
@@ -239,6 +248,7 @@ def exportar_compras_pdf(request):
     return response
 
 
+@login_required
 def exportar_ventas_pdf(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
@@ -265,6 +275,7 @@ def exportar_ventas_pdf(request):
     return response
 
 
+@login_required
 def exportar_ventas_excel(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
@@ -283,6 +294,7 @@ def exportar_ventas_excel(request):
 
 
 # =========== HISTORIAL EXPORT EXCEL ===========
+@login_required
 def exportar_historial_excel(request):
     """
     Exporta un Excel combinado de compras y ventas para el historial de movimientos
@@ -373,6 +385,7 @@ def exportar_historial_excel(request):
     return response
 
 
+@login_required
 def exportar_historial_pdf(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     compras_queryset = models.CompraInventario.objects.all().select_related(
