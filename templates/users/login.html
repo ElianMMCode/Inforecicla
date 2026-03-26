@@ -128,28 +128,18 @@
         }
 
         .divider {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin: 1.5rem 0;
             font-size: 0.85rem;
             color: #999;
+            gap: 0.75em;
         }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            display: inline-block;
-            width: 45%;
+        .divider-line {
+            flex: 1;
             height: 1px;
             background-color: #ddd;
-            vertical-align: middle;
-        }
-
-        .divider::before {
-            margin-right: 0.5rem;
-        }
-
-        .divider::after {
-            margin-left: 0.5rem;
         }
 
         .register-links {
@@ -263,15 +253,12 @@
                     </div>
                     <button type="submit" class="btn-login">Iniciar Sesión</button>
                 </form>
-                <div class="divider">O regístrate</div>
+                <div class="divider">O registrarse</div>
                 <div class="register-links">
                     <a href="/registro/ciudadano">Registrarse como Ciudadano</a>
                     <a href="/registro/eca">Registrar Punto ECA</a>
                 </div>
                 <div class="login-footer">
-                    <p>
-                        ¿No tienes cuenta? <a href="/registro/ciudadano">Crea una aquí</a>
-                    </p>
                     <p>
                         <a href="/" style="margin-top:1rem;display:inline-block;font-size:0.95rem;">&larr; Volver al inicio</a>
                     </p>
