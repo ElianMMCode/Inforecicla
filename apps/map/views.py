@@ -3,7 +3,8 @@ from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_GET
 from apps.ecas.models import PuntoECA, Localidad
 from apps.inventory.models import Inventario, Material
-
+import requests
+import math
 # Vista original para renderizar el mapa
 
 
@@ -12,6 +13,110 @@ def render_mapa(request):
 
 
 # --- API para el frontend del mapa interactivo ---
+
+
+# Helper para convertir XY Web Mercator a Lat/Lon
+
+
+def mercator_to_latlon(x, y):
+    lon = (x / 20037508.34) * 180
+    lat = (y / 20037508.34) * 180
+    lat = 180 / math.pi * (2 * math.atan(math.exp(lat * math.pi / 180)) - math.pi / 2)
+    return lat, lon
+
+
+@require_GET
+def api_arcgis_puntos(request):
+    url = "https://www.arcgis.com/sharing/rest/content/items/72888fe1c38b4f039b961c18ca68eaff/data?f=json"
+
+    try:
+        # 1. Petición con Headers para evitar bloqueos por User-Agent
+        # headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+
+        # --- DEPURACIÓN CRÍTICA ---
+        # Si esto imprime dict_keys(['error']), la API requiere token.
+        # Si imprime dict_keys(['spatialReference', 'features']), el acceso es directo.
+        print(f"DEBUG - Claves raíz: {data.keys()}")
+
+        # 2. Extracción Robusta (El "Scanner")
+        # Extracción robusta, soporta varios formatos de ArcGIS
+        features = []
+        if "features" in data:
+            features = data["features"]
+        elif "featureSet" in data and "features" in data["featureSet"]:
+            features = data["featureSet"]["features"]
+        elif "operationalLayers" in data and data["operationalLayers"]:
+            # Nuevo: reviso si cada operationalLayer tiene featureSet
+            for operational_layer in data["operationalLayers"]:
+                feature_set = operational_layer.get("featureSet", {})
+                # Sumo todos los "features" de cada layer (algunos ArcGIS devuelven features así)
+                features += feature_set.get("features", [])
+                # Backward compatible: todavía busco en "featureCollection" para otros casos
+                if not features and "featureCollection" in operational_layer:
+                    features += (
+                        operational_layer.get("featureCollection", {})
+                        .get("layers", [{}])[0]
+                        .get("featureSet", {})
+                        .get("features", [])
+                    )
+        elif "layers" in data:
+            # A veces viene envuelto en capas (Layers)
+            features = data["layers"][0].get("featureSet", {}).get("features", [])
+
+        if not features:
+            # Si llegamos aquí, la estructura es radicalmente distinta o está vacía
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "No se encontraron features en el JSON",
+                    "keys_found": list(data.keys()),
+                },
+                status=404,
+            )
+
+        puntos = []
+        for feature in features:
+            attrs = feature.get("attributes", {})
+            geom = feature.get("geometry", {})
+
+            # ArcGIS usa x/y para Web Mercator (EPSG:3857)
+            x = geom.get("x")
+            y = geom.get("y")
+
+            if x is None or y is None:
+                continue
+
+            # Conversión (Asumiendo que tienes definida mercator_to_latlon)
+            try:
+                lat, lon = mercator_to_latlon(x, y)
+            except Exception:
+                lat, lon = 0, 0  # Fallback para no romper el loop
+
+            puntos.append(
+                {
+                    "id": attrs.get("ID") or attrs.get("ObjectId"),
+                    "nombre": attrs.get("NOMBRE_ORGANIZACIÓN"),
+                    "sigla": attrs.get("SIGLA_DE_LA_ASOCIACION"),
+                    "estado": attrs.get("ESTADO_DE_LA_ORGANIZACIÓN"),
+                    "localidad": attrs.get("LOCALIDAD__DIRECCIÓN_PRINCIPAL"),
+                    "direccion": attrs.get("DIRECCIÓN_PRINCIPAL"),
+                    "barrio": attrs.get("BARRIO"),
+                    "email": attrs.get("CORREO_ELECTRÓNICO"),
+                    "ciudad": attrs.get("Ciudad", "Bogotá D.C."),
+                    "latitud": lat,
+                    "longitud": lon,
+                }
+            )
+
+        return JsonResponse(
+            puntos, safe=False, json_dumps_params={"ensure_ascii": False}
+        )
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_GET
@@ -49,7 +154,6 @@ def api_materiales(request):
     """
     materiales = Material.objects.all()
     # Contar en cuántos puntos ECA está ese material disponible
-    ids = []
     data = []
     for m in materiales:
         cantidad = Inventario.objects.filter(material=m).count()
