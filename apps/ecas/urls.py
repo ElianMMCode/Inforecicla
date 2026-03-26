@@ -34,6 +34,10 @@ urlpatterns = [
         "calendario/",
         include("apps.scheduling.urls", namespace="calendario"),
     ),
+    path(
+        "movimientos/",
+        include("apps.operations.urls", namespace="movimientos"),
+    ),
     path("centros/registrar-centro/", views.registrar_centro, name="registrar_centro"),
     path(
         "centros/eliminar-centro/<str:id>/",

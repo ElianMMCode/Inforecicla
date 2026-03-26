@@ -332,7 +332,8 @@
                                        id="latitud"
                                        name="latitud"
                                        placeholder="-90 a 90"
-                                       value="{{ punto.latitud|floatformat:6 }}" />
+                                       value="{% if punto.latitud != None %}{{ punto.latitud|floatformat:'6u' }}{% else %}{% endif %}" />
+                                <script>console.log('Latitud original:', '{{ punto.latitud }}');</script>
                                 <small class="text-muted">-90 a 90 (opcional)</small>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -343,9 +344,19 @@
                                        id="longitud"
                                        name="longitud"
                                        placeholder="-180 a 180"
-                                       value="{{ punto.longitud|floatformat:6 }}" />
+                                       value="{% if punto.longitud != None %}{{ punto.longitud|floatformat:'6u' }}{% else %}{% endif %}" />
+                                <script>console.log('Longitud original:', '{{ punto.longitud }}');</script>
                                 <small class="text-muted">-180 a 180 (opcional)</small>
                             </div>
+                        </div>
+                        <!-- Mapa para ubicar el Punto ECA -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ubicación en el mapa</label>
+                            <div id="mapaPuntoPerfil"
+                                 style="height:270px;
+                                        border:2px solid #49bedc;
+                                        border-radius:10px"></div>
+                            <small class="text-muted">Haz clic en el mapa para seleccionar la ubicación exacta del punto. Los campos de latitud/longitud se llenan automáticamente.</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Descripción</label>
@@ -396,4 +407,88 @@
             </div>
         </div>
     </div>
+    <!-- Leaflet Scripts (incluye solo si no están ya incluidos globalmente en el layout) -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inputs de latitud/longitud
+        var inputLat = document.getElementById('latitud');
+        var inputLng = document.getElementById('longitud');
+        console.log('Valor inputLat:', inputLat ? inputLat.value : null);
+        console.log('Valor inputLng:', inputLng ? inputLng.value : null);
+
+        // Función para validar y obtener valor float o null
+        function parseCoord(input, min, max, fallback) {
+            var val = input && input.value ? parseFloat(input.value) : null;
+            if (val !== null && !isNaN(val) && val >= min && val <= max) return val;
+            return fallback;
+        }
+
+        // Inicialización robusta: usa lo que venga de los inputs o Bogotá si está mal
+        var latVal = parseCoord(inputLat, -90, 90, 4.7110);
+        var lngVal = parseCoord(inputLng, -180, 180, -74.0721);
+
+        if (inputLat) inputLat.value = latVal.toFixed(6);
+        if (inputLng) inputLng.value = lngVal.toFixed(6);
+
+        // Inicializa mapa
+        var mapa = L.map('mapaPuntoPerfil').setView([latVal, lngVal], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(mapa);
+        var marcador = L.marker([latVal, lngVal], { draggable: true }).addTo(mapa);
+
+        // Sincroniza marcador y campos (inputs <-> marcador)
+        function syncMarkerWithInputs() {
+            var lat = parseCoord(inputLat, -90, 90, marcador.getLatLng().lat);
+            var lng = parseCoord(inputLng, -180, 180, marcador.getLatLng().lng);
+            marcador.setLatLng([lat, lng]);
+            mapa.setView([lat, lng]);
+            if (inputLat) inputLat.value = lat.toFixed(6);
+            if (inputLng) inputLng.value = lng.toFixed(6);
+        }
+
+        // Cuando el usuario hace click en el mapa
+        mapa.on('click', function (e) {
+            marcador.setLatLng(e.latlng);
+            if (inputLat) inputLat.value = e.latlng.lat.toFixed(6);
+            if (inputLng) inputLng.value = e.latlng.lng.toFixed(6);
+        });
+
+        // Al mover el marcador
+        marcador.on('move', function (e) {
+            if (inputLat) inputLat.value = e.latlng.lat.toFixed(6);
+            if (inputLng) inputLng.value = e.latlng.lng.toFixed(6);
+        });
+
+        // Cuando cambian los campos manualmente
+        if (inputLat) inputLat.addEventListener('change', function () {
+            syncMarkerWithInputs();
+        });
+        if (inputLng) inputLng.addEventListener('change', function () {
+            syncMarkerWithInputs();
+        });
+
+        // Por si los inputs cambian por autofill/navegador/scripts ajenos
+        if (inputLat) inputLat.addEventListener('input', function () {
+            syncMarkerWithInputs();
+        });
+        if (inputLng) inputLng.addEventListener('input', function () {
+            syncMarkerWithInputs();
+        });
+
+        // Al mostrar el accordion, refrescar el mapa
+        var puntoPanel = document.getElementById('puntoPanel');
+        if (puntoPanel) {
+            puntoPanel.addEventListener('shown.bs.collapse', function () {
+                setTimeout(function () {
+                    mapa.invalidateSize();
+                    syncMarkerWithInputs();
+                }, 250);
+            });
+        }
+    });
+    </script>
 </section>

@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.decorators import login_required
 from apps.ecas.models import PuntoECA, Localidad, CentroAcopio
 from apps.users.models import Usuario
 from config import constants as cons
@@ -11,6 +12,7 @@ from apps.inventory.views import _build_materiales_context
 from django.http import JsonResponse
 
 
+@login_required
 def render_seccion(request, seccion="resumen"):
     """
     Renderiza una sección específica del punto ECA.
@@ -18,8 +20,9 @@ def render_seccion(request, seccion="resumen"):
     if seccion not in SECTION_TEMPLATES:
         seccion = "resumen"
 
-    usuario_default = Usuario.objects.get(id="33333333-3333-3333-3333-333333333333")
-    punto = get_object_or_404(PuntoECA, gestor_eca=usuario_default)
+    if not request.user.is_authenticated:
+        return redirect("login")  # Redirige al login si el usuario no está autenticado
+    punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
 
     if seccion == "perfil":
         context = _build_perfil_context(punto)
@@ -125,6 +128,7 @@ def _build_default_context(punto, seccion):
     }
 
 
+@login_required
 def editar_perfil_gestor(request, id):
     """
     Vista para editar el perfil del gestor ECA.
@@ -155,6 +159,7 @@ def editar_perfil_gestor(request, id):
     return render(request, "ecas/editar_perfil.html", context)
 
 
+@login_required
 def editar_punto(request, id):
     """
     Vista para editar el perfil del punto ECA.
@@ -183,6 +188,7 @@ def editar_punto(request, id):
     return render(request, "ecas/editar_perfil.html", context)
 
 
+@login_required
 def editar_centro(request, id):
     """
     View to edit a centro de acopio (ECA visibility) for current user's punto ECA.
@@ -190,10 +196,7 @@ def editar_centro(request, id):
     """
     # Buscar el punto del usuario
     try:
-        # punto = PuntoECA.objects.get(gestor_eca__id=request.user.id)
-        punto = PuntoECA.objects.get(
-            gestor_eca_id="33333333-3333-3333-3333-333333333333"
-        )
+        punto = PuntoECA.objects.get(gestor_eca_id=request.user.id)
     except PuntoECA.DoesNotExist:
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
@@ -250,6 +253,7 @@ def editar_centro(request, id):
     return render(request, "ecas/editar_centro.html", context)
 
 
+@login_required
 def registrar_centro(request):
     """
     View to register a new centro de acopio (ECA visibility) for current user's punto ECA.
@@ -257,9 +261,7 @@ def registrar_centro(request):
     # Buscar el punto del usuario
     try:
         # punto = PuntoECA.objects.get(gestor_eca__id=request.user.id)
-        punto = PuntoECA.objects.get(
-            gestor_eca_id="33333333-3333-3333-3333-333333333333"
-        )
+        punto = PuntoECA.objects.get(gestor_eca_id=request.user.id)
     except PuntoECA.DoesNotExist:
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
@@ -312,6 +314,7 @@ def registrar_centro(request):
     return render(request, "ecas/registrar_centro.html", context)
 
 
+@login_required
 def eliminar_centro(request, id):
     if request.method == "DELETE":
         try:

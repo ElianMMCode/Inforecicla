@@ -1,14 +1,11 @@
-from django.shortcuts import get_object_or_404
 from apps.inventory.models import Inventario
 from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
-from decimal import Decimal as decimal
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.http import JsonResponse, response, HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponse
 import json
-from django.utils import timezone
-import datetime
 from apps.ecas.models import CentroAcopio
 
 # ===== import-export
@@ -123,6 +120,7 @@ def _build_movimientos_context(punto):
 # (Código de views existentes continúa abajo...)
 
 
+@login_required
 def registros_compras(request):
     data = {}
     if request.body:
@@ -141,6 +139,7 @@ def registros_compras(request):
         )
 
 
+@login_required
 def registros_ventas(request):
     data = {}
     if request.body:
@@ -159,6 +158,7 @@ def registros_ventas(request):
         )
 
 
+@login_required
 def editar_compra(request, compra_id):
     data = {}
     if request.body:
@@ -177,6 +177,7 @@ def editar_compra(request, compra_id):
         )
 
 
+@login_required
 def editar_venta(request, venta_id):
     data = {}
     if request.body:
@@ -195,17 +196,20 @@ def editar_venta(request, venta_id):
         )
 
 
+@login_required
 def borrar_compra(request, compra_id):
     resp = CompraInventarioService.borrar_compra(request, compra_id)
     return JsonResponse(resp, safe=False)
 
 
+@login_required
 def borrar_venta(request, venta_id):
     resp = VentaInventarioService.borrar_venta(request, venta_id)
     return JsonResponse(resp, safe=False)
 
 
 # ============== EXPORT EXCEL =============
+@login_required
 def exportar_compras_excel(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
@@ -226,6 +230,7 @@ def exportar_compras_excel(request):
 # ============== EXPORT PDF =============
 
 
+@login_required
 def exportar_compras_pdf(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
@@ -243,6 +248,7 @@ def exportar_compras_pdf(request):
     return response
 
 
+@login_required
 def exportar_ventas_pdf(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
@@ -258,15 +264,18 @@ def exportar_ventas_pdf(request):
         total = (v.cantidad or 0) * (v.precio_venta or 0)
         total_ventas += total
         # Enriquecer objeto para el template, sin tocar el modelo
-        v.total_venta = total
         ventas_out.append(v)
-    html_string = render_to_string("operations/ventas_pdf.html", {"ventas": ventas_out, "total_ventas": total_ventas})
+    html_string = render_to_string(
+        "operations/ventas_pdf.html",
+        {"ventas": ventas_out, "total_ventas": total_ventas},
+    )
     pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
     response = HttpResponse(pdf_file, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="ventas.pdf"'
     return response
 
 
+@login_required
 def exportar_ventas_excel(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
@@ -285,6 +294,7 @@ def exportar_ventas_excel(request):
 
 
 # =========== HISTORIAL EXPORT EXCEL ===========
+@login_required
 def exportar_historial_excel(request):
     """
     Exporta un Excel combinado de compras y ventas para el historial de movimientos
@@ -334,7 +344,6 @@ def exportar_historial_excel(request):
     # Ordenar por fecha descendente
     rows = sorted(rows, key=lambda r: r["fecha"], reverse=True)
 
-    from import_export.formats.base_formats import XLSX
     from tablib import Dataset
 
     dataset = Dataset()
@@ -365,7 +374,7 @@ def exportar_historial_excel(request):
             ]
         )
 
-    export_data = dataset.xlsx
+    export_data = dataset.export("xlsx")
     response = HttpResponse(
         export_data,
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -376,6 +385,7 @@ def exportar_historial_excel(request):
     return response
 
 
+@login_required
 def exportar_historial_pdf(request):
     punto_eca_id = request.GET.get("punto_eca_id")
     compras_queryset = models.CompraInventario.objects.all().select_related(
