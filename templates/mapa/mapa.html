@@ -1,27 +1,28 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Interactivo de Puntos ECA - InfoRecicla</title>
-
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-
-    <!-- Leaflet MarkerCluster CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.min.css" />
-
-    <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mapa Interactivo de Puntos ECA - InfoRecicla</title>
+        <!-- Bootstrap 5 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+              rel="stylesheet">
+        <!-- Leaflet CSS -->
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+        <!-- Leaflet MarkerCluster CSS -->
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.min.css" />
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.min.css" />
+        <!-- Font Awesome para iconos -->
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <!-- Select2 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+              rel="stylesheet" />
+        <style>
         body, html {
             height: 100%;
             margin: 0;
@@ -291,271 +292,309 @@
                 height: 50vh;
             }
         }
-    </style>
-</head>
-<body>
-    <!-- NAVBAR IGUAL AL DE INICIO -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <img src="/imagenes/logo.png" alt="Logo InfoRecicla" width="70" height="70" class="rounded">
-                <span class="fs-5 fw-semibold">InfoRecicla</span>
-            </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                    aria-controls="mainNav" aria-expanded="false" aria-label="Alternar navegación">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div id="mainNav" class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                    <li class="nav-item"><a class="nav-link" href="/publicaciones">Publicaciones</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
-
-                    <!-- Menú para usuario autenticado -->
-                    <li class="nav-item dropdown">
-                        <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#"
-                           data-bs-toggle="dropdown" aria-expanded="false">
-                            <span>Usuario</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
-                            <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-                            <li>
-                                <a class="dropdown-item" href="/dashboard/gestor">
-                                    <i class="fas fa-store me-2"></i>Modo Gestor ECA
+        </style>
+    </head>
+    <body>
+        <!-- NAVBAR IGUAL AL DE INICIO -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+          <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                    <img src="{% static 'img/logo.png' %}"
+                         alt="Logo InfoRecicla"
+                         width="70"
+                         height="70"
+                         class="rounded">
+                    <span class="fs-5 fw-semibold">InfoRecicla</span>
+                </a>
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#mainNav"
+                        aria-controls="mainNav"
+                        aria-expanded="false"
+                        aria-label="Alternar navegación">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div id="mainNav" class="collapse navbar-collapse">
+                    <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/publicaciones">Publicaciones</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/mapa">Mapa ECA</a>
+                        </li>
+                        {% if user.is_authenticated %}
+                            <li class="nav-item dropdown">
+                                <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
+                                   href="#"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">
+                                    <span>{{ user.get_short_name|default:"Usuario" }}</span>
                                 </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% if user.tipo_usuario == "GECA" %}
+                                        <li>
+                                            <a class="dropdown-item" href="/punto-eca/">Dashboard</a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider" />
+                                        </li>
+                                        <li>
+                                            <form method="POST" action="/logout/" style="display: inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                                            </form>
+                                        </li>
+                                    {% else %}
+                                        <li>
+                                            <a class="dropdown-item" href="/perfil">Mi Perfil</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/dashboard">Dashboard</a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider" />
+                                        </li>
+                                        <li>
+                                            <form method="POST" action="/logout/" style="display: inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                                            </form>
+                                        </li>
+                                    {% endif %}
+                                </ul>
                             </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form method="POST" style="display: inline;">
-                                    <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                                </form>
+                        {% else %}
+                            <li class="nav-item dropdown">
+                                <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
+                                   href="/login"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">Acceder</a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="/login">Iniciar sesión</a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider" />
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a>
+                                    </li>
+                                </ul>
                             </li>
-                        </ul>
-                    </li>
-
-                    <!-- Menú para usuario no autenticado -->
-                    <li class="nav-item dropdown">
-                        <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login"
-                           data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/login">Iniciar sesión</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a></li>
-                            <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <main>
-        <div class="mapa-wrapper">
-            <!-- MAPA (LADO IZQUIERDO) -->
-            <div class="mapa-container">
-                <div id="mapa"></div>
-
-                <!-- Botones de control flotantes -->
-                <div class="mapa-controles">
-                    <button class="btn btn-outline-success btn-sm" id="btnCentrar" title="Centrar mapa">
-                        <i class="fas fa-crosshairs"></i>
-                    </button>
-                    <button class="btn btn-outline-success btn-sm" id="btnRecargar" title="Recargar puntos">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="btn btn-outline-success btn-sm d-lg-none" id="btnToggleLista" title="Mostrar/Ocultar lista">
-                        <i class="fas fa-list"></i>
-                    </button>
-                </div>
-
-                <!-- Indicador de carga -->
-                <div id="indicadorCarga" class="indicador-carga d-none">
-                    <div class="spinner-border spinner-border-sm text-success" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="mb-0 mt-2">Cargando puntos ECA...</p>
+                        {% endif %}
+                    </ul>
                 </div>
             </div>
-
-            <!-- SIDEBAR CON LISTA (LADO DERECHO) -->
-            <div class="sidebar-lista" id="sidebarLista">
-                <!-- Encabezado del sidebar -->
-                <div class="sidebar-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="fas fa-map-location-dot"></i> Puntos ECA
-                        </h5>
-                        <button class="btn-close d-lg-none" id="btnCerrarLista" aria-label="Cerrar"></button>
-                    </div>
-                </div>
-
-                <!-- Buscador -->
-                <div class="sidebar-busqueda">
-                    <!-- Filtro por Nombre -->
-                    <div class="mb-2">
-                        <label class="form-label small mb-1">
-                            <i class="fas fa-search text-success"></i> Buscar por Nombre
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            id="inputBusquedaNombre"
-                            placeholder="Ej: Centro, Chapinero..."
-                            aria-label="Buscar por nombre"
-                        >
-                    </div>
-
-                    <!-- Filtro por Material con Select2 -->
-                    <div class="mb-2">
-                        <label class="form-label small mb-1">
-                            <i class="fas fa-box text-success"></i> Filtrar por Material
-                        </label>
-                        <select
-                            id="selectMaterial"
-                            class="form-select form-select-sm"
-                            style="width: 100%"
-                            aria-label="Filtrar por material"
-                        >
-                            <option value="">Seleccionar material...</option>
-                        </select>
-                    </div>
-
-                    <!-- Botones de acción -->
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-sm" id="btnLimpiarFiltros">
-                            <i class="fas fa-redo"></i> Limpiar Filtros
+        </nav>
+        <main>
+            <div class="mapa-wrapper">
+                <!-- MAPA (LADO IZQUIERDO) -->
+                <div class="mapa-container">
+                    <div id="mapa"></div>
+                    <!-- Botones de control flotantes -->
+                    <div class="mapa-controles">
+                        <button class="btn btn-outline-success btn-sm"
+                                id="btnCentrar"
+                                title="Centrar mapa">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                        <button class="btn btn-outline-success btn-sm"
+                                id="btnRecargar"
+                                title="Recargar puntos">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="btn btn-outline-success btn-sm d-lg-none"
+                                id="btnToggleLista"
+                                title="Mostrar/Ocultar lista">
+                            <i class="fas fa-list"></i>
                         </button>
                     </div>
-                </div>
-
-                <!-- Contador de puntos -->
-                <div class="sidebar-contador">
-                    <small class="text-muted">
-                        Mostrando <strong id="contadorActual">0</strong> de <strong id="contadorTotal">0</strong> puntos
-                    </small>
-                </div>
-
-                <!-- Lista de puntos -->
-                <div class="sidebar-contenido" id="listaPuntos">
-                    <div class="text-center py-5">
+                    <!-- Indicador de carga -->
+                    <div id="indicadorCarga" class="indicador-carga d-none">
                         <div class="spinner-border spinner-border-sm text-success" role="status">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
-                        <p class="mt-2 text-muted small">Cargando puntos ECA...</p>
+                        <p class="mb-0 mt-2">Cargando puntos ECA...</p>
                     </div>
                 </div>
-
-                <!-- Pie de página del sidebar -->
-                <div class="sidebar-footer">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle"></i>
-                        Haz clic en un punto para ver detalles
-                    </small>
+                <!-- SIDEBAR CON LISTA (LADO DERECHO) -->
+                <div class="sidebar-lista" id="sidebarLista">
+                    <!-- Encabezado del sidebar -->
+                    <div class="sidebar-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-map-location-dot"></i> Puntos ECA
+                            </h5>
+                            <button class="btn-close d-lg-none" id="btnCerrarLista" aria-label="Cerrar"></button>
+                        </div>
+                    </div>
+                    <!-- Buscador -->
+                    <div class="sidebar-busqueda">
+                        <!-- Filtro por Nombre -->
+                        <div class="mb-2">
+                            <label class="form-label small mb-1">
+                                <i class="fas fa-search text-success"></i> Buscar por Nombre
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-sm"
+                                   id="inputBusquedaNombre"
+                                   placeholder="Ej: Centro, Chapinero..."
+                                   aria-label="Buscar por nombre">
+                        </div>
+                        <!-- Filtro por Material con Select2 -->
+                        <div class="mb-2">
+                            <label class="form-label small mb-1">
+                                <i class="fas fa-box text-success"></i> Filtrar por Material
+                            </label>
+                            <select id="selectMaterial"
+                                    class="form-select form-select-sm"
+                                    style="width: 100%"
+                                    aria-label="Filtrar por material">
+                                <option value="">Seleccionar material...</option>
+                            </select>
+                        </div>
+                        <!-- Botones de acción -->
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success btn-sm" id="btnLimpiarFiltros">
+                                <i class="fas fa-redo"></i> Limpiar Filtros
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Contador de puntos -->
+                    <div class="sidebar-contador">
+                        <small class="text-muted">
+                            Mostrando <strong id="contadorActual">0</strong> de <strong id="contadorTotal">0</strong> puntos
+                        </small>
+                    </div>
+                    <!-- Lista de puntos -->
+                    <div class="sidebar-contenido" id="listaPuntos">
+                        <div class="text-center py-5">
+                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2 text-muted small">Cargando puntos ECA...</p>
+                        </div>
+                    </div>
+                    <!-- Pie de página del sidebar -->
+                    <div class="sidebar-footer">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Haz clic en un punto para ver detalles
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <!-- MODAL DE DETALLES DEL PUNTO ECA -->
+        <div class="modal fade"
+             id="modalDetallesPunto"
+             tabindex="-1"
+             aria-labelledby="modalDetallesLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <!-- Encabezado Modal -->
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="modalDetallesLabel">
+                            <i class="fas fa-map-location-dot"></i> Detalles del Punto ECA
+                        </h5>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <!-- Cuerpo Modal -->
+                    <div class="modal-body">
+                        <!-- Información General -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-building text-success"></i> Información General
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <p class="mb-2">
+                                            <strong>Nombre:</strong>
+                                            <span id="detalleNombre"></span>
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Localidad:</strong>
+                                            <span id="detalleLocalidad"></span>
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Dirección:</strong>
+                                            <span id="detalleDireccion"></span>
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Descripción:</strong>
+                                            <span id="detalleDescripcion" class="text-muted small"></span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-2">
+                                            <strong><i class="fas fa-phone text-success"></i> Teléfono:</strong>
+                                            <br>
+                                            <a id="detalleTelefono" href="#" class="text-decoration-none"></a>
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong><i class="fas fa-envelope text-success"></i> Email:</strong>
+                                            <br>
+                                            <a id="detalleEmail" href="#" class="text-decoration-none text-break"></a>
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong><i class="fas fa-clock text-success"></i> Horario:</strong>
+                                            <br>
+                                            <small id="detalleHorario"></small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Materiales e Inventario -->
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-box text-success"></i> Materiales y Capacidad de Almacenamiento
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="materialesContainer" class="table-responsive">
+                                    <!-- Se llenará dinámicamente con JavaScript -->
+                                </div>
+                                <div id="sinMaterialesMsg"
+                                     class="text-center text-muted py-4"
+                                     style="display: none">
+                                    <p>
+                                        <i class="fas fa-inbox"></i> No hay detalles de inventario registrados
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Pie Modal -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </main>
-
-    <!-- MODAL DE DETALLES DEL PUNTO ECA -->
-    <div class="modal fade" id="modalDetallesPunto" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <!-- Encabezado Modal -->
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="modalDetallesLabel">
-                        <i class="fas fa-map-location-dot"></i> Detalles del Punto ECA
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-
-                <!-- Cuerpo Modal -->
-                <div class="modal-body">
-                    <!-- Información General -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-building text-success"></i> Información General</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <p class="mb-2">
-                                        <strong>Nombre:</strong>
-                                        <span id="detalleNombre"></span>
-                                    </p>
-                                    <p class="mb-2">
-                                        <strong>Localidad:</strong>
-                                        <span id="detalleLocalidad"></span>
-                                    </p>
-                                    <p class="mb-2">
-                                        <strong>Dirección:</strong>
-                                        <span id="detalleDireccion"></span>
-                                    </p>
-                                    <p class="mb-2">
-                                        <strong>Descripción:</strong>
-                                        <span id="detalleDescripcion" class="text-muted small"></span>
-                                    </p>
-                                </div>
-                                <div class="col-md-4">
-                                    <p class="mb-2">
-                                        <strong><i class="fas fa-phone text-success"></i> Teléfono:</strong>
-                                        <br><a id="detalleTelefono" href="#" class="text-decoration-none"></a>
-                                    </p>
-                                    <p class="mb-2">
-                                        <strong><i class="fas fa-envelope text-success"></i> Email:</strong>
-                                        <br><a id="detalleEmail" href="#" class="text-decoration-none text-break"></a>
-                                    </p>
-                                    <p class="mb-0">
-                                        <strong><i class="fas fa-clock text-success"></i> Horario:</strong>
-                                        <br><small id="detalleHorario"></small>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Materiales e Inventario -->
-                    <div class="card">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-box text-success"></i> Materiales y Capacidad de Almacenamiento</h6>
-                        </div>
-                        <div class="card-body">
-                            <div id="materialesContainer" class="table-responsive">
-                                <!-- Se llenará dinámicamente con JavaScript -->
-                            </div>
-                            <div id="sinMaterialesMsg" class="text-center text-muted py-4" style="display: none;">
-                                <p><i class="fas fa-inbox"></i> No hay materiales registrados</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pie Modal -->
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Leaflet JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-
-    <!-- Leaflet MarkerCluster JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.min.js"></script>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- jQuery (necesario para Select2) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-    <!-- JavaScript personalizado del mapa -->
-    <script src="/static/js/Mapa/mapa-interactivo.js"></script>
-</body>
+        <!-- Leaflet JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+        <!-- Leaflet MarkerCluster JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.min.js"></script>
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- jQuery (necesario para Select2) -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Select2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <!-- JavaScript personalizado del mapa -->
+        <script src="/static/js/Mapa/mapa-interactivo.js"></script>
+    </body>
 </html>
-

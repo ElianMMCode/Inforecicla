@@ -447,7 +447,6 @@ class MapaInteractivo {
    */
   cargarDetallesPunto(puntoId) {
     console.log(`📊 Cargando detalles del punto: ${puntoId}`);
-
     fetch(`/mapa/api/puntos-eca/detalle/${puntoId}`)
       .then((response) => {
         if (!response.ok) {
@@ -461,7 +460,24 @@ class MapaInteractivo {
       })
       .catch((error) => {
         console.error("❌ Error al cargar detalles:", error);
-        alert("Error al cargar los detalles del punto ECA");
+        // En caso de error, intentar recuperar los datos básicos del punto seleccionado
+        const puntoBasico = this.puntosECA.find((p) => p.puntoEcaID === puntoId);
+        if (puntoBasico) {
+          // Pasar sólo los campos generales y materiales vacío
+          this.mostrarModalDetalles({
+            nombrePunto: puntoBasico.nombrePunto || '',
+            localidadNombre: puntoBasico.localidadNombre || '',
+            direccion: puntoBasico.direccion || '',
+            descripcion: puntoBasico.descripcion || '',
+            telefonoPunto: puntoBasico.telefonoPunto || '',
+            celular: puntoBasico.celular || '',
+            email: puntoBasico.email || '',
+            horarioAtencion: puntoBasico.horarioAtencion || '',
+            materiales: [],
+          });
+        } else {
+          alert("Error al cargar los detalles del punto ECA");
+        }
       });
   }
 
