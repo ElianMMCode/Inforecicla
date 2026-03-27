@@ -7,6 +7,7 @@ from apps.ecas.constants import SECTION_TEMPLATES
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from apps.scheduling.models import Evento, EventoInstancia
+from apps.core.decorators import gestor_eca_or_admin_required
 import json
 from datetime import datetime
 
@@ -229,18 +230,15 @@ def crear_evento_venta(request):
         try:
             punto_eca = PuntoECA.objects.get(gestor_eca=request.user)
         except PuntoECA.DoesNotExist:
-            return JsonResponse({"success": False, "error": "No tenés un Punto ECA asociado."}, status=403)
+            return JsonResponse(
+                {"success": False, "error": "No tenés un Punto ECA asociado."},
+                status=403,
+            )
         usuario_id = request.user.id
         punto_eca_id = punto_eca.id
 
         # Validaciones básicas
-        if not (
-            material_id
-            and titulo
-            and fecha_inicio
-            and hora_inicio
-            and hora_fin
-        ):
+        if not (material_id and titulo and fecha_inicio and hora_inicio and hora_fin):
             return JsonResponse(
                 {"success": False, "error": "Faltan campos obligatorios."}, status=400
             )
@@ -361,10 +359,7 @@ def extraer_uuid_prefijo(mixed_id):
     return mixed_id
 
 
-from django.contrib.auth.decorators import login_required
-
-
-@login_required
+@gestor_eca_or_admin_required
 def editar_evento_venta(request):
     """
     Endpoint para editar un evento y sus repeticiones (ajustando instancias).
@@ -520,7 +515,7 @@ def editar_evento_venta(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
-@login_required
+@gestor_eca_or_admin_required
 def eliminar_evento_venta(request):
     """
     Elimina un evento y/o una instancia de repetición dependiendo el modo solicitado.
