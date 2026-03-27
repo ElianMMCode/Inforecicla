@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.inventory.apps.InventoryConfig",
     "apps.operations.apps.OperationsConfig",
     "apps.scheduling.apps.SchedulingConfig",
+    "apps.map.apps.MapConfig",
     "apps.users.apps.UsersConfig",
     "apps.panel_admin.apps.PanelAdminConfig",
     "apps.publicaciones.apps.PublicacionesConfig",
