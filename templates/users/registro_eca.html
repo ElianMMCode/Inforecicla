@@ -10,9 +10,9 @@
               href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
         <style>
         body {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: #198754;
             min-height: 100vh;
-            padding: 2rem 0;
+            padding-bottom: 2rem;
         }
 
         .register-container {
@@ -38,6 +38,10 @@
             font-size: 1.8rem;
             margin: 0;
         }
+                <div style="text-align:left; margin-bottom:12px;">
+                    <span style="color:#dc3545; font-weight:bold;">*</span>
+                    <span style="color:#666; font-size:.97em;">Campos obligatorios</span>
+                </div>
 
         .register-header p {
             color: #666;
@@ -184,6 +188,19 @@
         </style>
     </head>
     <body>
+        <!-- Navbar idéntico al de inicio, solo logo y título, sin menús -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                    <img src="/static/img/logo.png"
+                         alt="Logo InfoRecicla"
+                         width="70"
+                         height="70"
+                         class="rounded" />
+                    <span class="fs-5 fw-semibold">InfoRecicla</span>
+                </a>
+            </div>
+        </nav>
         <div class="register-container">
             <div class="register-card">
                 <div class="register-header">
@@ -210,7 +227,9 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="nombres" class="form-label">Nombre de la Institución/ECA</label>
+                                        <label for="nombres" class="form-label">
+                                            Nombre de la Institución/ECA <span style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="text"
                                                class="form-control"
                                                id="nombres"
@@ -218,12 +237,15 @@
                                                placeholder="Ej: Centro Ambiental San Felipe"
                                                required
                                                value="{{ nombres|default:'' }}">
+                                        <small class="form-text text-muted">Obligatorio. Ingresa el nombre completo de la institución o punto ECA.</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="direccion" class="form-label">Dirección</label>
+                                        <label for="direccion" class="form-label">
+                                            Dirección <span class="required-asterisk" style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="text"
                                                class="form-control"
                                                id="direccion"
@@ -231,6 +253,7 @@
                                                placeholder="Calle 10 # 20 - 30"
                                                required
                                                value="{{ direccion|default:'' }}">
+                                        <small class="form-text text-muted">Obligatorio. Ingresá la dirección completa del punto ECA.</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
@@ -238,7 +261,9 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="telefono_punto" class="form-label">Teléfono fijo del Punto ECA</label>
+                                        <label for="telefono_punto" class="form-label">
+                                            Teléfono fijo del Punto ECA <span class="required-asterisk" style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="text"
                                                class="form-control"
                                                id="telefono_punto"
@@ -253,7 +278,9 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="email" class="form-label">Email Punto ECA</label>
+                                        <label for="email" class="form-label">
+                                            Email Punto ECA <span class="required-asterisk" style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="email"
                                                class="form-control"
                                                id="email"
@@ -261,6 +288,7 @@
                                                placeholder="punto@eca.com"
                                                required
                                                value="{{ email|default:'' }}">
+                                        <small class="form-text text-muted">Obligatorio. Debe ser un correo válido. Se usará para comunicaciones con el punto ECA.</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
@@ -277,6 +305,7 @@
                                                required
                                                pattern="3[0-9]{9}"
                                                value="{{ celular|default:'' }}">
+                                        <small class="form-text text-muted">Obligatorio. Debe comenzar con 3 y tener 10 dígitos.</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
@@ -379,7 +408,9 @@
                             </div>
                             <div class="row-cols single">
                                 <div class="form-group">
-                                    <label for="ciudad" class="form-label">Ciudad</label>
+                                    <label for="ciudad" class="form-label">
+                                        Ciudad <span style="color:#dc3545;">*</span>
+                                    </label>
                                     <input type="text"
                                            class="form-control"
                                            id="ciudad"
@@ -391,7 +422,9 @@
                             </div>
                             <div class="row-cols single">
                                 <div class="form-group">
-                                    <label for="localidad" class="form-label">Localidad</label>
+                                    <label for="localidad" class="form-label">
+                                        Localidad <span style="color:#dc3545;">*</span>
+                                    </label>
                                     <select class="form-select" id="localidad" name="localidad" required>
                                         <option value="">Seleccionar localidad...</option>
                                         {% for loc in localidades %}
@@ -415,7 +448,9 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="apellidos" class="form-label">Nombre del Gestor</label>
+                                        <label for="apellidos" class="form-label">
+                                            Nombre del Gestor <span style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="text"
                                                class="form-control"
                                                id="apellidos"
@@ -423,12 +458,15 @@
                                                placeholder="Ej: Juan Pérez"
                                                required
                                                value="{{ apellidos|default:'' }}">
+                                        <small class="form-text text-muted">Obligatorio. Ingresá nombre y apellido del gestor.</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="celular_gestor" class="form-label">Celular de Contacto</label>
+                                        <label for="celular_gestor" class="form-label">
+                                            Celular de Contacto <span style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="text"
                                                class="form-control"
                                                id="celular_gestor"
@@ -437,6 +475,7 @@
                                                required
                                                pattern="3[0-9]{9}"
                                                value="{{ celular_gestor|default:'' }}">
+                                        <small class="form-text text-muted">Obligatorio. Debe comenzar con 3 y tener 10 dígitos.</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
@@ -444,7 +483,9 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="email_gestor" class="form-label">Email del Gestor</label>
+                                        <label for="email_gestor" class="form-label">
+                                            Email del Gestor <span style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="email"
                                                class="form-control"
                                                id="email_gestor"
@@ -500,7 +541,9 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="password" class="form-label">Contraseña</label>
+                                        <label for="password" class="form-label">
+                                            Contraseña <span style="color:#dc3545;">*</span>
+                                        </label>
                                         <input type="password"
                                                class="form-control"
                                                id="password"
