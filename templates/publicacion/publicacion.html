@@ -143,16 +143,37 @@
                     <div class="card-footer bg-white px-4 py-3 border-top">
                         <div class="d-flex align-items-center gap-3">
                             <span class="fw-semibold small text-muted">Calificar publicación:</span>
-                            <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-2">
+                            {% if user.is_authenticated %}
+                            <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="valor" value="Like">
+                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_reaccion == 'Like' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <span>Me gusta</span>
+                                    <span class="badge {% if mi_reaccion == 'Like' %}bg-white text-success{% else %}bg-success{% endif %}">{{ publicacion.likes_count }}</span>
+                                </button>
+                            </form>
+                            <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="valor" value="Dislike">
+                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_reaccion == 'Dislike' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                    <i class="fas fa-thumbs-down"></i>
+                                    <span>No me gusta</span>
+                                    <span class="badge {% if mi_reaccion == 'Dislike' %}bg-white text-danger{% else %}bg-danger{% endif %}">{{ publicacion.dislikes_count }}</span>
+                                </button>
+                            </form>
+                            {% else %}
+                            <a href="/login" class="btn btn-outline-success btn-sm d-flex align-items-center gap-2">
                                 <i class="fas fa-thumbs-up"></i>
                                 <span>Me gusta</span>
                                 <span class="badge bg-success">{{ publicacion.likes_count }}</span>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
+                            </a>
+                            <a href="/login" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
                                 <i class="fas fa-thumbs-down"></i>
                                 <span>No me gusta</span>
                                 <span class="badge bg-danger">{{ publicacion.dislikes_count }}</span>
-                            </button>
+                            </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -190,6 +211,67 @@
 
             </div>
 
+        </div>
+    </div>
+</section>
+
+<section class="pb-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white py-3 d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold">
+                            <i class="fas fa-comments me-2"></i>Comentarios
+                        </span>
+                        <span class="badge bg-white text-success">{{ publicacion.comentarios.count }}</span>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                    <div class="card-body border-bottom px-4 py-3">
+                        <form method="POST" action="{% url 'publicacion:agregar_comentario' publicacion.id %}">
+                            {% csrf_token %}
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;">{{ user.nombres|first }}</div>
+                                <div class="flex-grow-1">
+                                    <textarea name="texto" class="form-control mb-2" rows="2" placeholder="Escribe un comentario..." maxlength="1000" required></textarea>
+                                    <button type="submit" class="btn btn-success btn-sm px-3">
+                                        <i class="fas fa-paper-plane me-1"></i>Comentar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="card-body border-bottom px-4 py-3 text-center text-muted small">
+                        <a href="/login" class="text-success fw-semibold">Inicia sesión</a> para dejar un comentario.
+                    </div>
+                    {% endif %}
+
+                    <div class="list-group list-group-flush">
+                        {% for comentario in publicacion.comentarios.all %}
+                        <div class="list-group-item px-4 py-3">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;">{{ comentario.usuario.nombres|first }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-semibold small">{{ comentario.usuario.nombres }} {{ comentario.usuario.apellidos }}</span>
+                                        <span class="text-muted" style="font-size:.75rem;">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                    <p class="mb-0 small">{{ comentario.texto }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item px-4 py-4 text-center text-muted small">
+                            <i class="fas fa-comment-slash me-1"></i>Sé el primero en comentar.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 </section>
