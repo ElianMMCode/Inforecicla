@@ -33,4 +33,5 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="/login/"), name="logout"),
     path("registro/", include("apps.users.urls")),
     path("mapa/", include("apps.map.urls")),
+    path("publicaciones/", include("apps.publicaciones.urls", namespace="publicacion")),
 ]
