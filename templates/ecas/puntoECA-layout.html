@@ -64,6 +64,8 @@
         </main>
       </div>
     </div>
+
+    {% include 'ecas/partials/chat_asistente.html' %}
     <!-- JS MODALS Y FUNCIONALIDAD EXTRA (igual que antes) -->
     <!-- <script src="{% static 'js/modal-centros-propios.js' %}"></script>  Removido porque causaba 404 -->
     <script src="{% static 'js/cambiar-contrasena.js' %}"></script>
@@ -123,5 +125,7 @@
         });
       }
     </script>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+
   </body>
 </html>

@@ -1,0 +1,130 @@
+<style>
+    .chatbot-float-fixed {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+    }
+    .chatbot-float-hide {
+        display: none;
+    }
+    .chatbot-widget-transition {
+        transition: box-shadow 0.3s, opacity 0.2s;
+    }
+    .chatbot-fab {
+        background: #2ed573;
+        box-shadow: 0 2px 12px rgba(80,170,114,0.18);
+        color: #fff;
+        border-radius: 999px;
+        height: 60px;
+        width: 60px;
+        border: 0;
+        outline: 0;
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        font-size: 2rem;
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+    .chatbot-fab:active {
+        background: #25ad5a;
+    }
+    .chatbot-min-btn {
+        position: absolute;
+        top: .35rem;
+        right: .75rem;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.2em;
+        cursor: pointer;
+        opacity: .7;
+    }
+    .chatbot-min-btn:hover {
+        opacity: 1;
+    }
+    /* CHAT VISUAL STYLES */
+    #chat-box {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+    .chat-msg-user {
+        align-self: flex-end;
+        background: #218cfa;
+        color: #fff;
+        border-radius: 16px 16px 4px 16px;
+        padding: .5rem .9rem;
+        max-width: 75%;
+        margin: 0 0 .1rem 0;
+        box-shadow: 0 1px 4px rgba(33,140,250,0.13);
+        font-size: .98em;
+    }
+    .chat-msg-ai {
+        align-self: flex-start;
+        background: #f2f3f7;
+        color: #353b48;
+        border-radius: 16px 16px 16px 4px;
+        padding: .5rem .9rem;
+        max-width: 75%;
+        margin: 0;
+        box-shadow: 0 1px 3px rgba(44,62,80,.05);
+        font-size: .98em;
+    }
+    .chat-msg-system {
+        align-self: center;
+        font-style: italic;
+        font-size: .92em;
+        color: #283e3e99;
+        background: none;
+        margin-bottom: .3rem;
+    }
+</style>
+<button id="asistente-fab"
+        class="chatbot-fab"
+        onclick="document.getElementById('asistente-float').classList.remove('chatbot-float-hide'); this.style.display='none';"
+        aria-label="Abrir chat">&#128172;</button>
+<div id="asistente-float"
+     class="chatbot-float-fixed chatbot-widget-transition chatbot-float-hide">
+    <div class="p-3 bg-success text-white rounded-t-lg fw-bold"
+         style="position:relative">
+        Asistente Inforecicla
+        <button aria-label="Minimizar chat"
+                class="chatbot-min-btn"
+                onclick="document.getElementById('asistente-float').classList.add('chatbot-float-hide'); document.getElementById('asistente-fab').style.display='flex';">
+            &#10006;
+        </button>
+    </div>
+    <div id="chat-box" class="h-64 overflow-y-auto p-4 text-dark bg-light">
+        <p class="text-xs fst-italic">Hola, ¿en qué puedo ayudarte con el inventario de hoy?</p>
+    </div>
+    <form hx-post="{% url 'punto-eca:reciclabot:asistente_api' %}"
+          hx-target="#chat-box"
+          hx-swap="beforeend"
+          class="d-flex border-top"
+          htmx-on="htmx:afterSwap: document.getElementById('chat-user-input').value = ''; setTimeout(() => { var el = document.getElementById('chat-box'); if (el) el.scrollTop = el.scrollHeight; }, 20);">
+        {% csrf_token %}
+        <input type="text"
+               name="pregunta"
+               id="chat-user-input"
+               placeholder="Ej: ¿Cuánto cartón tengo?"
+               class="flex-grow-1 p-2 border-0 outline-none">
+        <button type="submit" class="bg-success px-4 py-2 text-white border-0">Enviar</button>
+    </form>
+<script>
+// Borra el input después de cada swap de htmx relacionado al chat
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+  if (evt.target && evt.target.id === 'chat-box') {
+    var input = document.getElementById('chat-user-input');
+    if(input) input.value = '';
+    var el = document.getElementById('chat-box');
+    if(el) el.scrollTop = el.scrollHeight;
+  }
+});
+</script>
+
+</div>
