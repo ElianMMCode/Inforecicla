@@ -4,6 +4,13 @@
         bottom: 1.5rem;
         right: 1.5rem;
         z-index: 9999;
+            width: 350px;
+            max-width: 94vw;
+            height: 420px;
+            max-height: 92vh;
+            box-shadow: 0 2px 24px 2px rgba(44,62,80,0.14);
+            display: flex;
+            flex-direction: column;
     }
     .chatbot-float-hide {
         display: none;
@@ -91,7 +98,8 @@
 <div id="asistente-float"
      class="chatbot-float-fixed chatbot-widget-transition chatbot-float-hide">
     <div class="p-3 bg-success text-white rounded-t-lg fw-bold"
-         style="position:relative">
+         style="position:relative;
+                flex: 0 0 auto">
         Asistente Inforecicla
         <button aria-label="Minimizar chat"
                 class="chatbot-min-btn"
@@ -99,23 +107,37 @@
             &#10006;
         </button>
     </div>
-    <div id="chat-box" class="h-64 overflow-y-auto p-4 text-dark bg-light">
+    <div id="chat-box"
+         style="flex:1 1 auto;
+                min-height:0;
+                overflow-y:auto;
+                padding:1rem;
+                background:#f8f9fa;
+                color:#222"
+         class="text-dark bg-light">
         <p class="text-xs fst-italic">Hola, ¿en qué puedo ayudarte con el inventario de hoy?</p>
     </div>
     <form hx-post="{% url 'punto-eca:reciclabot:asistente_api' %}"
           hx-target="#chat-box"
           hx-swap="beforeend"
           class="d-flex border-top"
-          htmx-on="htmx:afterSwap: document.getElementById('chat-user-input').value = ''; setTimeout(() => { var el = document.getElementById('chat-box'); if (el) el.scrollTop = el.scrollHeight; }, 20);">
+          htmx-on="htmx:afterSwap: document.getElementById('chat-user-input').value = ''; setTimeout(() => { var el = document.getElementById('chat-box'); if (el) el.scrollTop = el.scrollHeight; }, 20);"
+          style="flex:0 0 auto;
+                 background:#fff">
         {% csrf_token %}
         <input type="text"
                name="pregunta"
                id="chat-user-input"
                placeholder="Ej: ¿Cuánto cartón tengo?"
-               class="flex-grow-1 p-2 border-0 outline-none">
+               style="flex:1 1 auto;
+                      min-width:0;
+                      border:0;
+                      outline:none;
+                      padding:0.5rem"
+               class="p-2">
         <button type="submit" class="bg-success px-4 py-2 text-white border-0">Enviar</button>
     </form>
-<script>
+    <script>
 // Borra el input después de cada swap de htmx relacionado al chat
 document.body.addEventListener('htmx:afterSwap', function(evt) {
   if (evt.target && evt.target.id === 'chat-box') {
@@ -125,6 +147,5 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
     if(el) el.scrollTop = el.scrollHeight;
   }
 });
-</script>
-
+    </script>
 </div>
