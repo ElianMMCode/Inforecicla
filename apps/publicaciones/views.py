@@ -1,5 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+_COMENTARIO_MIN = 1
+_COMENTARIO_MAX = 1000
 
 # Create your views here.
 def publicacion(request):
@@ -31,13 +35,48 @@ def agregar_comentario(request, publicacion_id):
         from .models import Comentario, Publicacion
         pub = get_object_or_404(Publicacion, pk=publicacion_id)
         texto = request.POST.get("texto", "").strip()
-        if texto:
+        if not texto or len(texto) < _COMENTARIO_MIN:
+            messages.error(request, "El comentario no puede estar vacío.")
+        elif len(texto) > _COMENTARIO_MAX:
+            messages.error(request, f"El comentario no puede superar los {_COMENTARIO_MAX} caracteres.")
+        else:
             Comentario.objects.create(
                 usuario=request.user,
                 publicacion=pub,
                 texto=texto,
             )
     return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+
+
+@login_required
+def editar_comentario(request, comentario_id):
+    from .models import Comentario
+    comentario = get_object_or_404(Comentario, pk=comentario_id)
+    if comentario.usuario != request.user:
+        return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+    if request.method == "POST":
+        texto = request.POST.get("texto", "").strip()
+        if not texto or len(texto) < _COMENTARIO_MIN:
+            messages.error(request, "El comentario no puede estar vacío.")
+        elif len(texto) > _COMENTARIO_MAX:
+            messages.error(request, f"El comentario no puede superar los {_COMENTARIO_MAX} caracteres.")
+        else:
+            comentario.texto = texto
+            comentario.save()
+    return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+
+
+@login_required
+def eliminar_comentario(request, comentario_id):
+    from .models import Comentario
+    comentario = get_object_or_404(Comentario, pk=comentario_id)
+    if comentario.usuario != request.user:
+        return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+    if request.method == "POST":
+        publicacion_id = comentario.publicacion_id
+        comentario.delete()
+        return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+    return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
 
 
 @login_required

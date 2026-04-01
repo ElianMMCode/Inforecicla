@@ -5,6 +5,6 @@ from . import views
 app_name = "registro"
 
 urlpatterns = [
-    # Cambiamos el name a 'eca' para evitar 'registro:registro'
     path("eca/", views.render_registro_eca, name="eca"),
+    path("ciudadano/", views.render_registro_ciudadano, name="ciudadano"),
 ]

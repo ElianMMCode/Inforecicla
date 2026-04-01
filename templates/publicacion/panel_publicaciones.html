@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -12,7 +13,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-success">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <img src="/imagenes/logo.png" alt="Logo InfoRecicla" width="90" height="90" class="rounded">
+            <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla" width="70" height="70" class="rounded">
             <span class="fs-1 fw-semibold">InfoRecicla</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
@@ -23,21 +24,36 @@
             <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
                 <li class="nav-item"><a class="nav-link active" href="/publicaciones">Publicaciones</a></li>
                 <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
+
+                {% if user.is_authenticated %}
                 <li class="nav-item dropdown">
                     <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#"
-                       data-bs-toggle="dropdown" aria-expanded="false">Usuario</a>
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <span>{{ user.get_short_name|default:"Usuario" }}</span>
+                    </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/gestor"><i class="fas fa-store me-2"></i>Modo Gestor ECA</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" style="display:inline;">
-                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                            </form>
-                        </li>
+                        {% if user.tipo_usuario == "GECA" %}
+                            <li><a class="dropdown-item" href="/punto-eca/">Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="/logout/" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                                </form>
+                            </li>
+                        {% else %}
+                            <li><a class="dropdown-item" href="/perfil/">Mi Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="/logout/" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                                </form>
+                            </li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% else %}
                 <li class="nav-item dropdown">
                     <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login"
                        data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
@@ -48,6 +64,7 @@
                         <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
                     </ul>
                 </li>
+                {% endif %}
             </ul>
         </div>
     </div>

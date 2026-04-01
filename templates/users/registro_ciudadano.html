@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -192,27 +193,33 @@
             <p>Únete a InfoRecicla y participa en proyectos de reciclaje</p>
         </div>
 
-        <!-- Mensaje de error general -->
+        {% if errores %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error:</strong> <span></span>
+            <strong>Por favor corrige los siguientes errores:</strong>
+            <ul class="error-list mt-2 mb-0">
+                {% for error in errores %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+        {% endif %}
 
-        <form method="POST">
+        <form method="POST" action="/registro/ciudadano/">
+            {% csrf_token %}
+
             <!-- Nombres y Apellidos -->
             <div class="row-cols">
                 <div class="form-group">
                     <label for="nombres" class="form-label">Nombres</label>
-                    <input type="text" class="form-control" id="nombres"
-                           placeholder="Tu nombre" required>
-                    <div class="invalid-feedback"></div>
+                    <input type="text" class="form-control" id="nombres" name="nombres"
+                           placeholder="Tu nombre" value="{{ nombres|default:'' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label for="apellidos" class="form-label">Apellidos</label>
-                    <input type="text" class="form-control" id="apellidos"
-                           placeholder="Tu apellido" required>
-                    <div class="invalid-feedback"></div>
+                    <input type="text" class="form-control" id="apellidos" name="apellidos"
+                           placeholder="Tu apellido" value="{{ apellidos|default:'' }}" required>
                 </div>
             </div>
 
@@ -220,16 +227,15 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email"
-                           placeholder="tu@email.com" required>
-                    <div class="invalid-feedback"></div>
+                    <input type="email" class="form-control" id="email" name="email"
+                           placeholder="tu@email.com" value="{{ email|default:'' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label for="celular" class="form-label">Celular</label>
-                    <input type="text" class="form-control" id="celular"
-                           placeholder="3001234567" required pattern="3[0-9]{9}">
-                    <div class="invalid-feedback"></div>
+                    <input type="text" class="form-control" id="celular" name="celular"
+                           placeholder="3001234567" value="{{ celular|default:'' }}"
+                           required pattern="3[0-9]{9}">
                 </div>
             </div>
 
@@ -237,20 +243,20 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
-                    <select class="form-select" id="tipoDocumento">
+                    <select class="form-select" id="tipoDocumento" name="tipoDocumento">
                         <option value="">Seleccionar...</option>
-                        <option value="CC">Cédula de Ciudadanía</option>
-                        <option value="CE">Cédula de Extranjería</option>
-                        <option value="PA">Pasaporte</option>
-                        <option value="NIT">NIT</option>
+                        <option value="CC" {% if tipoDocumento == "CC" %}selected{% endif %}>Cédula de Ciudadanía</option>
+                        <option value="CE" {% if tipoDocumento == "CE" %}selected{% endif %}>Cédula de Extranjería</option>
+                        <option value="PA" {% if tipoDocumento == "PA" %}selected{% endif %}>Pasaporte</option>
+                        <option value="NIT" {% if tipoDocumento == "NIT" %}selected{% endif %}>NIT</option>
+                        <option value="TI" {% if tipoDocumento == "TI" %}selected{% endif %}>Tarjeta de Identidad</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="numeroDocumento" class="form-label">Número de Documento (Opcional)</label>
-                    <input type="text" class="form-control" id="numeroDocumento"
-                           placeholder="1234567890">
-                    <div class="invalid-feedback"></div>
+                    <input type="text" class="form-control" id="numeroDocumento" name="numeroDocumento"
+                           placeholder="1234567890" value="{{ numeroDocumento|default:'' }}">
                 </div>
             </div>
 
@@ -258,25 +264,29 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="ciudad" class="form-label">Ciudad</label>
-                    <input type="text" class="form-control" id="ciudad"
-                           placeholder="Bogotá" required value="Bogotá">
+                    <input type="text" class="form-control" id="ciudad" name="ciudad"
+                           placeholder="Bogotá" value="{{ ciudad|default:'Bogotá' }}" required>
                 </div>
 
                 <div class="form-group">
                     <label for="localidad" class="form-label">Localidad</label>
-                    <select class="form-select" id="localidad" required>
+                    <select class="form-select" id="localidad" name="localidad" required>
                         <option value="">Seleccionar localidad...</option>
-                        <option></option>
+                        {% for loc in localidades %}
+                            <option value="{{ loc.localidad_id }}"
+                                {% if localidad == loc.localidad_id|stringformat:'s' %}selected{% endif %}>
+                                {{ loc.nombre }}
+                            </option>
+                        {% endfor %}
                     </select>
-                    <div class="invalid-feedback"></div>
                 </div>
             </div>
 
             <!-- Fecha Nacimiento -->
             <div class="form-group">
                 <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento (Opcional)</label>
-                <input type="date" class="form-control" id="fechaNacimiento">
-                <div class="invalid-feedback"></div>
+                <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento"
+                       value="{{ fechaNacimiento|default:'' }}">
             </div>
 
             <!-- Información de Contraseña -->
@@ -295,22 +305,20 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="password"
+                    <input type="password" class="form-control" id="password" name="password"
                            placeholder="Contraseña segura" required>
-                    <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
-                    <input type="password" class="form-control" id="passwordConfirm"
+                    <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm"
                            placeholder="Repite tu contraseña" required>
-                    <div class="invalid-feedback"></div>
                 </div>
             </div>
 
-            <!-- Términos y condiciones (opcional) -->
+            <!-- Términos y condiciones -->
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="terminos" required>
+                <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
                 <label class="form-check-label" for="terminos">
                     Acepto los <a href="#" target="_blank">términos y condiciones</a> de InfoRecicla
                 </label>
@@ -322,15 +330,14 @@
 
         <!-- Footer -->
         <div class="register-footer">
-            <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a></p>
-            <p class="mt-3">¿Eres un Punto ECA? <a href="/registro/eca">Regístrate como Punto ECA</a></p>
+            <p>¿Ya tienes cuenta? <a href="/login/">Inicia sesión aquí</a></p>
+            <p class="mt-3">¿Eres un Punto ECA? <a href="/registro/eca/">Regístrate como Punto ECA</a></p>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Validación del formulario
     (function() {
         'use strict';
         window.addEventListener('load', function() {
@@ -344,6 +351,7 @@
                         event.preventDefault();
                         event.stopPropagation();
                         alert('Las contraseñas no coinciden');
+                        return;
                     }
 
                     if (!form.checkValidity()) {
@@ -359,4 +367,3 @@
 </script>
 </body>
 </html>
-
