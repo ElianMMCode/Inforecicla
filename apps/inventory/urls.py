@@ -1,9 +1,19 @@
 from django.urls import path
 from . import views
 
-app_name = "punto-eca/materiales"
+app_name = "inventory"
 # Este archivo contiene rutas correspondientes a operaciones CRUD de inventario.
 urlpatterns = [
+    # ===== ADMIN PANEL - Gestión de Inventarios =====
+    path('admin/', views.dashboard_inventario, name='listar_inventarios'),
+    path('admin/crear/', views.crear_inventario_admin, name='crear_inventario'),
+    path('admin/<uuid:inventario_id>/editar/', views.editar_inventario_admin, name='editar_inventario'),
+    path('admin/<uuid:inventario_id>/detalle/', views.detalle_inventario_admin, name='detalle_inventario'),
+    path('admin/<uuid:inventario_id>/eliminar/', views.eliminar_inventario_admin, name='eliminar_inventario'),
+    path('admin/estadisticas/', views.estadisticas_inventario, name='estadisticas_inventario'),
+    path('admin/criticos/', views.materiales_criticos, name='materiales_criticos'),
+    
+    # ===== API REST - Búsqueda y Operaciones por Punto ECA =====
     # Catálogo (consultas generales primero)
     path(
         "catalogo/buscar/",

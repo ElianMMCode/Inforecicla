@@ -1,0 +1,180 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Operaciones Críticas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 col-md-8">
+            <h1 class="h3 mb-1"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Operaciones Críticas</h1>
+            <p class="text-muted">Compras y ventas con alertas o problemas de stock</p>
+        </div>
+        <div class="col-12 col-md-4 text-end">
+            <a href="{% url 'operations:dashboard_operaciones' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Alertas Generales -->
+    <div class="row g-3 mb-5">
+        <div class="col-12 col-md-6">
+            <div class="card h-100 border-danger border-2">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">
+                        <i class="fas fa-shopping-cart me-2"></i>Compras Críticas
+                    </p>
+                    <h3 class="mb-0 text-danger">{{ total_compras_criticas }}</h3>
+                    <small class="text-muted">Compras con problemas de stock</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <div class="card h-100 border-warning border-2">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">
+                        <i class="fas fa-cash-register me-2"></i>Ventas Críticas
+                    </p>
+                    <h3 class="mb-0 text-warning">{{ total_ventas_criticas }}</h3>
+                    <small class="text-muted">Ventas con stock insuficiente</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compras Críticas -->
+    <div class="row g-3 mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-warning me-2"></i>Compras Críticas - Stock Resultante Negativo</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if compras_criticas %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Punto ECA</th>
+                                    <th>Cantidad Comprada</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for compra in compras_criticas %}
+                                <tr class="table-danger">
+                                    <td><strong>{{ compra.inventario.material.nombre }}</strong></td>
+                                    <td>{{ compra.inventario.punto_eca.nombre }}</td>
+                                    <td>{{ compra.cantidad }}</td>
+                                    <td>${{ compra.precio_compra|floatformat:2 }}</td>
+                                    <td>{{ compra.fecha_compra|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'operations:editar_compra_admin' compra.id %}" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info m-0">
+                        <i class="fas fa-check-circle me-2"></i>No hay compras críticas. ¡Excelente!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ventas Críticas -->
+    <div class="row g-3 mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Ventas Críticas - Stock Insuficiente</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if ventas_criticas %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Punto ECA</th>
+                                    <th>Stock Disponible</th>
+                                    <th>Cantidad Vendida</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas_criticas %}
+                                <tr class="table-warning">
+                                    <td><strong>{{ venta.inventario.material.nombre }}</strong></td>
+                                    <td>{{ venta.inventario.punto_eca.nombre }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">
+                                            Stock: {{ venta.inventario.stock_actual|floatformat:1 }}
+                                        </span>
+                                    </td>
+                                    <td>{{ venta.cantidad }}</td>
+                                    <td>${{ venta.precio_venta|floatformat:2 }}</td>
+                                    <td>{{ venta.fecha_venta|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'operations:editar_venta_admin' venta.id %}" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info m-0">
+                        <i class="fas fa-check-circle me-2"></i>No hay ventas críticas. Todos los inventarios tienen stock suficiente.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de Ayuda -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>¿Qué significan estas alertas?</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            <h6><i class="fas fa-shopping-cart text-danger me-2"></i>Compras Críticas</h6>
+                            <p class="small text-muted mb-0">
+                                Indica compras cuya cantidad resultaría en un stock negativo. 
+                                Esto significa que hay más compra registrada que stock disponible en el inventario.
+                            </p>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Ventas Críticas</h6>
+                            <p class="small text-muted mb-0">
+                                Indica ventas cuya cantidad excede el stock disponible. 
+                                Esto requiere atención inmediata para evitar incumplimientos.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

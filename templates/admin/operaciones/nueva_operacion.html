@@ -1,0 +1,100 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Nueva Operación{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-3"><i class="fas fa-plus-circle text-primary me-2"></i>Nueva Operación</h1>
+            <p class="text-muted">Selecciona el tipo de operación que deseas registrar</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Opción Compra -->
+        <div class="col-12 col-md-6">
+            <div class="card h-100 border-0 shadow-lg hover-effect" style="cursor: pointer; transition: transform 0.3s;">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-shopping-cart fa-4x text-info"></i>
+                    </div>
+                    <h4 class="card-title mb-3">Registrar Compra</h4>
+                    <p class="card-text text-muted mb-4">
+                        Registra una compra de materiales para agregar stock al inventario.
+                    </p>
+                    <ul class="list-unstyled small text-muted mb-4">
+                        <li><i class="fas fa-check text-success me-2"></i>Agregar cantidad al inventario</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Registrar costo de compra</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Guardar observaciones</li>
+                    </ul>
+                    <a href="{% url 'operations:crear_compra_admin' %}" class="btn btn-info btn-lg w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Nueva Compra
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opción Venta -->
+        <div class="col-12 col-md-6">
+            <div class="card h-100 border-0 shadow-lg hover-effect" style="cursor: pointer; transition: transform 0.3s;">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-cash-register fa-4x text-success"></i>
+                    </div>
+                    <h4 class="card-title mb-3">Registrar Venta</h4>
+                    <p class="card-text text-muted mb-4">
+                        Registra una venta de materiales para disminuir stock del inventario.
+                    </p>
+                    <ul class="list-unstyled small text-muted mb-4">
+                        <li><i class="fas fa-check text-success me-2"></i>Restar cantidad del inventario</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Registrar precio de venta</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Asignar centro de acopio</li>
+                    </ul>
+                    <a href="{% url 'operations:crear_venta_admin' %}" class="btn btn-success btn-lg w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Nueva Venta
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Adicionales -->
+    <div class="row g-3 mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Otras Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-md-4 mb-3">
+                            <a href="{% url 'operations:listar_compras_admin' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-list me-2"></i>Ver Compras
+                            </a>
+                        </div>
+                        <div class="col-12 col-md-4 mb-3">
+                            <a href="{% url 'operations:listar_ventas_admin' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-list me-2"></i>Ver Ventas
+                            </a>
+                        </div>
+                        <div class="col-12 col-md-4 mb-3">
+                            <a href="{% url 'operations:dashboard_operaciones' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-chart-line me-2"></i>Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-effect:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2) !important;
+    }
+</style>
+{% endblock %}

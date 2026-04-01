@@ -1,0 +1,38 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registrar Venta - Panel Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <h1 class="mb-4">Registrar Venta</h1>
+      <form method="post" action="" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Inventario ID</label>
+          <input class="form-control" name="inventarioId">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Cantidad</label>
+          <input class="form-control" name="cantidad" type="number" step="any" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Precio Venta</label>
+          <input class="form-control" name="precioVenta" type="number" step="any" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Fecha Venta (ISO)</label>
+          <input class="form-control" name="fechaVenta" placeholder="YYYY-MM-DD HH:MM:SS">
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-secondary" href="/panel_admin/operaciones/ventas/">Cancelar</a>
+          <button class="btn btn-success" type="submit">Registrar Venta</button>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

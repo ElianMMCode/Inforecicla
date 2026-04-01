@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Historial de Compras - InfoRecicla</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+</head>
+
+<body class="bg-light m-0 pt-5 pt-md-0">
+
+<div class="container-fluid px-0">
+  <div class="row g-0">
+
+    <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
+      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+      {% load static %}
+        <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla" width="48" height="48" class="rounded bg-white p-1">
+        <div class="d-flex flex-column lh-sm">
+          <span class="fw-semibold">InfoRecicla</span>
+          <small class="text-white-50">Administración</small>
+        </div>
+      </a>
+
+      <div class="mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <span class="fw-semibold">
+            <i class="bi bi-cart-check me-2"></i>Compras
+          </span>
+          <span class="badge rounded-pill bg-white bg-opacity-25 text-white fw-normal">Historial</span>
+        </div>
+        <small class="text-white-50">Registros de compras</small>
+      </div>
+
+      <nav class="w-100" role="navigation">
+        <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
+          <li class="nav-item">
+            <a href="{% url 'panel_admin:operaciones_compras' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 bg-white text-success fw-semibold border-start border-4 border-success rounded-start">
+              <i class="bi bi-cart-check"></i> Compras
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{% url 'panel_admin:operaciones_ventas' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
+              <i class="bi bi-shop"></i> Ventas
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{% url 'panel_admin:operaciones_estadisticas' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
+              <i class="bi bi-graph-up"></i> Estadísticas
+            </a>
+          </li>
+          <li class="nav-item mt-2 border-top border-white-50 pt-3">
+            <a href="{% url 'panel_admin:panel_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
+              <i class="bi bi-house"></i> Volver al Panel
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
+      <div class="d-flex align-items-center justify-content-between px-3">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+          <i class="bi bi-recycle fs-3"></i>
+          <span class="fw-semibold">InfoRecicla</span>
+        </a>
+        <a class="text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}" aria-label="Volver al Panel">
+          <i class="bi bi-house fs-5"></i>
+        </a>
+      </div>
+    </div>
+
+    <main class="col offset-md-2 p-4">
+
+      <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h2 fw-bold text-success mb-1">
+            <i class="bi bi-cart-check me-2"></i>Historial de Compras
+          </h1>
+          <p class="text-muted mb-0">Registro de todas las compras realizadas.</p>
+        </div>
+      </div>
+
+      <div class="card border-success mb-4 shadow-sm">
+        <div class="card-body bg-light">
+          <form method="GET" class="row g-2">
+            <div class="col-md-12">
+              <label for="selectPuntoCompras" class="form-label fw-semibold small">Filtrar por Punto ECA</label>
+              <select id="selectPuntoCompras" class="form-select" name="punto_id" onchange="this.form.submit()">
+                <option value="">-- Todos los puntos --</option>
+                {% for punto in puntos %}
+                  <option value="{{ punto.id }}" {% if punto_seleccionado == punto.id|stringformat:"s" %}selected{% endif %}>
+                    {{ punto.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-success shadow-sm">
+        <div class="card-header bg-success text-white">
+          <i class="bi bi-list"></i> Compras (Total: {{ compras|length }})
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Punto ECA</th>
+                <th>Proveedor</th>
+                <th>Total</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for compra in compras %}
+              <tr>
+                <td><strong>#{{ compra.id }}</strong></td>
+                <td>{{ compra.punto }}</td>
+                <td>{{ compra.proveedor_nombre }}</td>
+                <td>${{ compra.total_compra }}</td>
+                <td>{{ compra.fecha_compra|date:"d/m/Y" }}</td>
+                <td><span class="badge bg-info">{{ compra.estado }}</span></td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center text-muted py-3">No hay compras registradas</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

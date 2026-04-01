@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -14,8 +15,8 @@
     <div class="row g-0">
 
         <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
                 <div class="d-flex flex-column lh-sm">
                     <span class="fw-semibold">InfoRecicla</span>
                     <small class="text-white-50">Administración</small>
@@ -26,18 +27,18 @@
                     <li class="nav-item"><a href="indexTipoMaterial.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
                     <li class="nav-item"><a href="listTipoMaterial.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Listado</a></li>
                     <li class="nav-item"><a href="createTipoMaterial.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear</a></li>
-                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
+                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="{% url 'panel_admin:panel_admin' %}" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Panel</a></li>
                 </ul>
             </nav>
         </aside>
 
         <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
             <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
                     <i class="bi bi-recycle fs-3"></i>
                     <span class="fw-semibold">InfoRecicla</span>
                 </a>
-                <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
+                <a class="text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}"><i class="bi bi-house fs-5"></i></a>
             </div>
             <nav class="mt-2">
                 <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
@@ -51,31 +52,31 @@
         <main class="col offset-md-2 p-4">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
         <div>
-            <h1 class="h2 fw-bold text-warning mb-1"><i class="fas fa-tags me-2"></i>Tipos de Material</h1>
+            <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-tags me-2"></i>Tipos de Material</h1>
             <p class="text-muted mb-0">Gestión de subclasificaciones de reciclaje</p>
         </div>
-        <a href="crear.html" class="btn btn-warning fw-bold text-dark d-none d-sm-block shadow-sm">
+        <a href="createTipoMaterial.html" class="btn btn-success fw-bold text-white d-none d-sm-block shadow-sm">
             <i class="fas fa-plus-circle me-1"></i> Nuevo Tipo
         </a>
     </div>
 
-    <div class="card border-warning shadow-sm mb-4 bg-light">
+    <div class="card border-success shadow-sm mb-4 bg-light">
         <div class="card-body">
-            <form class="row g-2">
+            <form method="get" class="row g-2">
                 <div class="col-md-8">
-                    <label class="form-label text-warning fw-bold small mb-1">Buscar Tipo</label>
-                    <input type="text" class="form-control" placeholder="Ej: PET 1, HDPE 2, Aluminio...">
+                    <label class="form-label text-success fw-bold small mb-1">Buscar Tipo</label>
+                    <input type="text" class="form-control" name="q" placeholder="Ej: PET 1, HDPE 2, Aluminio..." value="{{ search_query }}">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label text-warning fw-bold small mb-1">Estado</label>
-                    <select class="form-select">
+                    <label class="form-label text-success fw-bold small mb-1">Estado</label>
+                    <select class="form-select" name="estado">
                         <option value="">Todos los estados</option>
                         <option value="activo">Activos</option>
                         <option value="inactivo">Inactivos</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-dark w-100 bg-white">
+                    <button type="submit" class="btn btn-outline-dark w-100 bg-white">
                         <i class="fas fa-filter me-1"></i>Filtrar
                     </button>
                 </div>
@@ -83,14 +84,14 @@
         </div>
     </div>
 
-    <div class="card border-warning shadow-sm mb-4">
-        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+    <div class="card border-success shadow-sm mb-4">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
             <h6 class="mb-0 fw-bold"><i class="fas fa-list-ul me-2"></i>Directorio de Tipos</h6>
-            <span class="badge bg-white text-dark border">Total: 15</span>
+            <span class="badge bg-white text-dark border">Total: {{ tipos|length }}</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0">
-                <thead class="table-light border-bottom border-warning border-2">
+                <thead class="table-light border-bottom border-success border-2">
                 <tr>
                     <th class="ps-4">Nombre del Tipo</th>
                     <th>Descripción</th>
@@ -99,42 +100,30 @@
                 </tr>
                 </thead>
                 <tbody>
+                {% for tipo in tipos %}
                 <tr>
-                    <td class="ps-4"><strong>PET 1</strong></td>
-                    <td><span class="text-muted small">Polietileno Tereftalato, usado en botellas de bebidas.</span></td>
-                    <td><span class="badge bg-success">Activo</span></td>
+                    <td class="ps-4"><strong>{{ tipo.nombre }}</strong></td>
+                    <td><span class="text-muted small">{{ tipo.descripcion|default:"-" }}</span></td>
+                    <td>
+                        {% if tipo.estado == 'ACTIVO' %}
+                        <span class="badge bg-success">Activo</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ tipo.get_estado_display }}</span>
+                        {% endif %}
+                    </td>
                     <td class="text-end pe-4">
                         <div class="btn-group btn-group-sm shadow-sm">
-                            <a href="detalles.html" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning text-dark"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar"><i class="fas fa-trash"></i></button>
+                            <a href="{% url 'panel_admin:editar_tipo_material_admin' tipo.id %}" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'panel_admin:editar_tipo_material_admin' tipo.id %}" class="btn btn-outline-warning text-dark"><i class="fas fa-edit"></i></a>
+                            <button type="button" class="btn btn-outline-danger" onclick="eliminarTipoMaterial(this)" data-tipo-id="{{ tipo.id }}"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
                 </tr>
+                {% empty %}
                 <tr>
-                    <td class="ps-4"><strong>HDPE 2</strong></td>
-                    <td><span class="text-muted small">Polietileno de Alta Densidad, envases de limpieza.</span></td>
-                    <td><span class="badge bg-success">Activo</span></td>
-                    <td class="text-end pe-4">
-                        <div class="btn-group btn-group-sm shadow-sm">
-                            <a href="detalles.html" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning text-dark"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
+                    <td colspan="4" class="text-center text-muted py-3">No hay tipos de material registrados.</td>
                 </tr>
-                <tr>
-                    <td class="ps-4"><strong>PVC 3</strong></td>
-                    <td><span class="text-muted small">Policloruro de Vinilo, tubos y empaques.</span></td>
-                    <td><span class="badge bg-secondary">Inactivo</span></td>
-                    <td class="text-end pe-4">
-                        <div class="btn-group btn-group-sm shadow-sm">
-                            <a href="detalles.html" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning text-dark"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -144,9 +133,9 @@
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                    <li class="page-item active"><a class="page-link bg-warning border-warning text-dark fw-bold" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link text-warning" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link text-warning" href="#">Siguiente</a></li>
+                    <li class="page-item active"><a class="page-link bg-success border-success text-white fw-bold" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link text-success" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link text-success" href="#">Siguiente</a></li>
                 </ul>
             </nav>
         </div>
@@ -170,3 +159,18 @@
         </div>
     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function eliminarTipoMaterial(button) {
+  const tipoId = button.getAttribute('data-tipo-id');
+  if (confirm('¿Está seguro de que desea eliminar este tipo de material?')) {
+    const row = button.closest('tr');
+    row.style.opacity = '0.5';
+    // Implementar lógica de eliminación con backend
+    // fetch(`/panel_admin/tipos-materiales/${tipoId}/`, { method: 'DELETE' })
+  }
+}
+</script>
+</body>
+</html>

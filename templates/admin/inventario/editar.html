@@ -1,0 +1,143 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Editar Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-1"><i class="fas fa-edit text-warning me-2"></i>Editar Inventario</h1>
+            <p class="text-muted">Actualizar detalles del inventario #{{ inventario.id }}</p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Detalles del Inventario</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="punto_eca" class="form-label">Punto ECA</label>
+                                    <input type="text" class="form-control" id="punto_eca" disabled value="{{ inventario.punto_eca.nombre }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="material" class="form-label">Material</label>
+                                    <input type="text" class="form-control" id="material" disabled value="{{ inventario.material.nombre }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="stock_actual" class="form-label">Stock Actual <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="stock_actual" name="stock_actual" 
+                                           step="0.01" min="0" value="{{ inventario.stock_actual }}" required>
+                                    <div class="invalid-feedback">
+                                        El stock actual es obligatorio.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="capacidad_maxima" class="form-label">Capacidad Máxima <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="capacidad_maxima" name="capacidad_maxima" 
+                                           step="0.01" min="0" value="{{ inventario.capacidad_maxima }}" required>
+                                    <div class="invalid-feedback">
+                                        La capacidad máxima es obligatoria.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="umbral_alerta" class="form-label">Umbral de Alerta (%) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="umbral_alerta" name="umbral_alerta" 
+                                           step="0.01" min="0" max="100" value="{{ inventario.umbral_alerta }}" required>
+                                    <small class="text-muted">Nivel en % donde se activa la alerta</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="umbral_critico" class="form-label">Umbral Crítico (%) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="umbral_critico" name="umbral_critico" 
+                                           step="0.01" min="0" max="100" value="{{ inventario.umbral_critico }}" required>
+                                    <small class="text-muted">Nivel en % donde se marca como crítico</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ inventario.descripcion }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>Actualizar Inventario
+                            </button>
+                            <a href="{% url 'inventory:listar_inventarios' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Listado
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Estado Actual</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small"><strong>Ocupación:</strong></p>
+                    {% widthratio inventario.ocupacion_actual 100 100 as ocupacion %}
+                    <progress class="w-100 mb-2" value="{{ ocupacion }}" max="100" aria-label="Ocupación actual del inventario"></progress>
+                    <small class="d-block text-muted mb-3">{{ inventario.ocupacion_actual|floatformat:0 }}%</small>
+                    <ul class="small list-unstyled">
+                        <li><strong>Última actualización:</strong> {{ inventario.fecha_modificacion|date:"d/m/Y H:i" }}</li>
+                        <li><strong>Categoría:</strong> {{ inventario.material.categoria.nombre|default:"N/A" }}</li>
+                        <li><strong>Tipo:</strong> {{ inventario.material.tipo.nombre|default:"N/A" }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

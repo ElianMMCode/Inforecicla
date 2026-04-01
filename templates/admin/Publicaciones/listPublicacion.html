@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -14,8 +15,8 @@
     <div class="row g-0">
 
         <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
                 <div class="d-flex flex-column lh-sm">
                     <span class="fw-semibold">InfoRecicla</span>
                     <small class="text-white-50">Administración</small>
@@ -31,18 +32,18 @@
             <nav class="w-100" role="navigation">
                 <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
                     <li class="nav-item">
-                        <a href="index.html" class="nav-link text-white"><i class="fas fa-home me-2"></i>Inicio</a>
+                        <a href="indexPublicacion.html" class="nav-link text-white"><i class="fas fa-home me-2"></i>Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a href="lista.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start">
+                        <a href="listPublicacion.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start">
                             <i class="fas fa-list me-2"></i>Listado
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="crear.html" class="nav-link text-white"><i class="fas fa-plus-circle me-2"></i>Crear</a>
+                        <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="nav-link text-white"><i class="fas fa-plus-circle me-2"></i>Crear Publicación</a>
                     </li>
                     <li class="nav-item mt-2 border-top border-white-50 pt-3">
-                        <a href="../admin.html" class="nav-link text-white"><i class="fas fa-arrow-left me-2"></i>Volver al Panel</a>
+                        <a href="{% url 'panel_admin:panel_admin' %}" class="nav-link text-white"><i class="fas fa-arrow-left me-2"></i>Volver al Panel</a>
                     </li>
                 </ul>
             </nav>
@@ -53,16 +54,16 @@
 
         <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
             <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
                     <i class="fas fa-recycle fs-3"></i>
                     <span class="fw-semibold">InfoRecicla</span>
                 </a>
             </div>
             <nav class="mt-2">
                 <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="index.html">Inicio</a></li>
-                    <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="lista.html">Listado</a></li>
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="crear.html">Crear</a></li>
+                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="indexPublicacion.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="listPublicacion.html">Listado</a></li>
+                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="{% url 'panel_admin:crear_publicacion_admin' %}">Crear Publicación</a></li>
                 </ul>
             </nav>
         </div>
@@ -74,123 +75,12 @@
                     <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-newspaper me-2"></i>Listado de Publicaciones</h1>
                     <p class="text-muted mb-0">Gestiona los artículos, noticias y guías del sistema</p>
                 </div>
-                <a href="crear.html" class="btn btn-success d-none d-sm-block">
+                <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-success d-none d-sm-block">
                     <i class="fas fa-plus-circle me-1"></i> Nueva Publicación
                 </a>
             </div>
 
-            <div class="card border-success shadow-sm mb-4 bg-light">
-                <div class="card-body">
-                    <form class="row g-2">
-                        <div class="col-12 col-md">
-                            <label class="form-label text-success fw-semibold small">Buscar</label>
-                            <input class="form-control" placeholder="Título, contenido…">
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label text-success fw-semibold small">Estado</label>
-                            <select class="form-select">
-                                <option value="">Todos</option>
-                                <option value="publicado">Publicado</option>
-                                <option value="borrador">Borrador</option>
-                                <option value="archivado">Archivado</option>
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label text-success fw-semibold small">Categoría</label>
-                            <select class="form-select">
-                                <option value="">Todas</option>
-                                <option value="1">Noticias</option>
-                                <option value="2">Guías y Tutoriales</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-auto d-flex align-items-end">
-                            <button class="btn btn-outline-success w-100" type="button">
-                                <i class="fas fa-filter me-1"></i>Filtrar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card border-success shadow-sm mb-4">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="fas fa-list me-2"></i>Publicaciones del Sistema</h6>
-                    <span class="badge bg-light text-success">Total: 42</span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle m-0">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Título</th>
-                            <th>Autor</th>
-                            <th>Categoría</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td>
-                                <div>
-                                    <strong>Nueva campaña de reciclaje 2025</strong>
-                                    <div class="small text-muted text-truncate d-block mw-100">
-                                        Únete a nuestra nueva iniciativa para reducir el uso de plásticos...
-                                    </div>
-                                </div>
-                            </td>
-                            <td><small>Admin Principal</small></td>
-                            <td><span class="badge bg-info text-dark">Noticias</span></td>
-                            <td><span class="badge bg-success">Publicado</span></td>
-                            <td><small>15/02/2025</small></td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="detalles.html" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
-                                    <a href="editar.html" class="btn btn-outline-warning"><i class="fas fa-edit"></i></a>
-                                    <button type="button" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div>
-                                    <strong>¿Cómo clasificar el vidrio?</strong>
-                                    <div class="small text-muted text-truncate d-block mw-100">
-                                        Aprende los conceptos básicos para separar el vidrio por colores...
-                                    </div>
-                                </div>
-                            </td>
-                            <td><small>Gestor Zona Norte</small></td>
-                            <td><span class="badge bg-primary">Guías</span></td>
-                            <td><span class="badge bg-warning text-dark">Borrador</span></td>
-                            <td><small>20/02/2025</small></td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="detalles.html" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
-                                    <a href="editar.html" class="btn btn-outline-warning"><i class="fas fa-edit"></i></a>
-                                    <button type="button" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card-footer bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
-                    <span class="small text-muted d-none d-md-block">Mostrando 2 de 42 publicaciones</span>
-                    <nav class="mt-2 mt-md-0">
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="fas fa-angle-left"></i></a></li>
-                            <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item d-none d-sm-inline"><a class="page-link" href="#">3</a></li>
-                            <li class="page-item"><a class="page-link" href="#"><i class="fas fa-angle-right"></i></a></li>
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-
-            <div class="row g-3">
+            <div class="row g-3 mb-4">
                 <div class="col-md-3 col-6">
                     <div class="card border-0 shadow-sm border-bottom border-3 border-success">
                         <div class="card-body text-center py-3">
@@ -225,10 +115,127 @@
                 </div>
             </div>
 
+            <div class="card border-success shadow-sm mb-4 bg-light">
+                <div class="card-body">
+                    <form method="get" class="row g-2">
+                        <div class="col-12 col-md">
+                            <label class="form-label text-success fw-semibold small">Buscar</label>
+                            <input class="form-control" name="q" placeholder="Título, contenido…" value="{{ search_query }}">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label text-success fw-semibold small">Estado</label>
+                            <select class="form-select" name="estado">
+                                <option value="">Todos</option>
+                                <option value="publicado">Publicado</option>
+                                <option value="borrador">Borrador</option>
+                                <option value="archivado">Archivado</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label text-success fw-semibold small">Categoría</label>
+                            <select class="form-select" name="categoria">
+                                <option value="">Todas</option>
+                                <option value="1">Noticias</option>
+                                <option value="2">Guías y Tutoriales</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-auto d-flex align-items-end">
+                            <button class="btn btn-outline-success w-100" type="submit">
+                                <i class="fas fa-filter me-1"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-success shadow-sm mb-4">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-list me-2"></i>Publicaciones del Sistema</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle m-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Título</th>
+                            <th>Autor</th>
+                            <th>Categoría</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% if not publicaciones_habilitadas %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">El módulo de publicaciones no está habilitado.</td>
+                        </tr>
+                        {% else %}
+                        {% for publicacion in publicaciones %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <strong>{{ publicacion.titulo }}</strong>
+                                </div>
+                            </td>
+                            <td><small>{{ publicacion.usuario.get_full_name|default:publicacion.usuario.email }}</small></td>
+                            <td><span class="badge bg-info text-dark">{% if publicacion.categoria %}{{ publicacion.categoria.get_tipo_display }}{% else %}Sin categoría{% endif %}</span></td>
+                            <td>
+                                {% if publicacion.estado == 'ACTIVO' %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ publicacion.get_estado_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ publicacion.fecha_creacion|date:'d/m/Y' }}</small></td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'panel_admin:editar_publicacion_admin' publicacion.id %}" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
+                                    <a href="{% url 'panel_admin:editar_publicacion_admin' publicacion.id %}" class="btn btn-outline-warning"><i class="fas fa-edit"></i></a>
+                                    <button type="button" class="btn btn-outline-danger" onclick="eliminarPublicacion(this)" data-pub-id="{{ publicacion.id }}"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No hay publicaciones registradas.</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                    <span class="small text-muted d-none d-md-block">Mostrando 2 de 42 publicaciones</span>
+                    <nav class="mt-2 mt-md-0">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="fas fa-angle-left"></i></a></li>
+                            <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item d-none d-sm-inline"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item"><a class="page-link" href="#"><i class="fas fa-angle-right"></i></a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+
+
         </main>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function eliminarPublicacion(button) {
+  const pubId = button.getAttribute('data-pub-id');
+  if (confirm('¿Está seguro de que desea eliminar esta publicación?')) {
+    const row = button.closest('tr');
+    row.style.opacity = '0.5';
+    // Implementar lógica de eliminación con backend
+    // fetch(`/panel_admin/publicaciones/${pubId}/`, { method: 'DELETE' })
+  }
+}
+</script>
 </body>
 </html>

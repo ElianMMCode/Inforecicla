@@ -1,33 +1,32 @@
-<div class="container-fluid px-0">
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Listado de Categorías - InfoRecicla</title>
+  <title>Listado de Categorías de Publicación - InfoRecicla</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
 </head>
 <body class="bg-light m-0 pt-5 pt-md-0">
-
 <div class="container-fluid px-0">
   <div class="row g-0">
 
     <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-        <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+        <img src="{% static 'img/logo.png' %}" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
         <div class="d-flex flex-column lh-sm">
           <span class="fw-semibold">InfoRecicla</span>
           <small class="text-white-50">Administración</small>
         </div>
       </a>
-      <nav class="w-100" role="navigation">
+      <nav class="w-100" role="navigation" aria-label="Menu categorias de publicacion">
         <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
-          <li class="nav-item"><a href="index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-home me-2"></i>Inicio</a></li>
-          <li class="nav-item"><a href="lista.html" class="nav-link bg-white text-success fw-semibold d-flex align-items-center gap-2 rounded px-3 py-2 border-start border-4 border-success rounded-start"><i class="fas fa-list me-2"></i>Listado</a></li>
-          <li class="nav-item"><a href="crear.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-plus-circle me-2"></i>Crear</a></li>
-          <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-arrow-left me-2"></i>Volver al Panel</a></li>
+          <li class="nav-item"><a href="indexCategoriaPublicacion.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
+          <li class="nav-item"><a href="listCategoriaPublicacion.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Listado</a></li>
+          <li class="nav-item"><a href="{% url 'panel_admin:crear_categoria_publicacion' %}" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear Categoría</a></li>
+          <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="{% url 'panel_admin:panel_admin' %}" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Panel</a></li>
         </ul>
       </nav>
       <div class="mt-auto small text-white-50">&copy; 2025 InfoRecicla</div>
@@ -35,152 +34,141 @@
 
     <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
       <div class="d-flex align-items-center justify-content-between px-3">
-        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
-          <i class="fas fa-recycle fs-3"></i>
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+          <i class="bi bi-recycle fs-3"></i>
           <span class="fw-semibold">InfoRecicla</span>
         </a>
+        <a class="text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}"><i class="bi bi-house fs-5"></i></a>
       </div>
+      <nav class="mt-2" aria-label="Menu movil categorias de publicacion">
+        <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
+          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="indexCategoriaPublicacion.html">Resumen</a></li>
+          <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="listCategoriaPublicacion.html">Listado</a></li>
+          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="{% url 'panel_admin:crear_categoria_publicacion' %}">Crear Categoría</a></li>
+        </ul>
+      </nav>
     </div>
 
     <main class="col offset-md-2 p-4">
-
-        <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
-                <div class="d-flex flex-column lh-sm">
-                    <span class="fw-semibold">InfoRecicla</span>
-                    <small class="text-white-50">Administración</small>
-                </div>
-            </a>
-            <nav class="w-100" role="navigation">
-                <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
-                    <li class="nav-item"><a href="index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-home me-2"></i>Inicio</a></li>
-                    <li class="nav-item"><a href="lista.html" class="nav-link bg-white text-success fw-semibold d-flex align-items-center gap-2 rounded px-3 py-2 border-start border-4 border-success rounded-start"><i class="fas fa-list me-2"></i>Listado</a></li>
-                    <li class="nav-item"><a href="crear.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-plus-circle me-2"></i>Crear</a></li>
-                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-arrow-left me-2"></i>Volver al Panel</a></li>
-                </ul>
-            </nav>
-            <div class="mt-auto small text-white-50">&copy; 2025 InfoRecicla</div>
-        </aside>
-
-        <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
-            <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
-                    <i class="fas fa-recycle fs-3"></i>
-                    <span class="fw-semibold">InfoRecicla</span>
-                </a>
-            </div>
-        </div>
-
-        <main class="col offset-md-2 p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
         <div>
-            <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-tags me-2"></i>Listado de Categorías</h1>
-            <p class="text-muted mb-0">Directorio de clasificaciones para el contenido</p>
+          <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-folder me-2"></i>Categorías de Publicación</h1>
+          <p class="text-muted mb-0">Gestiona las categorías asociadas a publicaciones</p>
         </div>
-        <a href="crear.html" class="btn btn-success d-none d-sm-block">
-            <i class="fas fa-plus-circle me-1"></i> Nueva Categoría
+        <a href="{% url 'panel_admin:crear_categoria_publicacion' %}" class="btn btn-success fw-bold text-white d-none d-sm-block shadow-sm">
+          <i class="fas fa-plus-circle me-1"></i> Nueva Categoría
         </a>
-    </div>
+      </div>
 
-    <div class="card border-success shadow-sm mb-4 bg-light">
+      <div class="card border-success shadow-sm mb-4 bg-light">
         <div class="card-body">
-            <form class="row g-2">
-                <div class="col-md-10">
-                    <label class="form-label text-success fw-semibold small">Buscar categoría</label>
-                    <input type="text" class="form-control" placeholder="Ej: Noticias, Eventos...">
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-success w-100">
-                        <i class="fas fa-search me-1"></i>Buscar
-                    </button>
-                </div>
-            </form>
+          <form method="get" class="row g-3">
+            <div class="col-md-10">
+              <label class="form-label text-success fw-bold small mb-1">Buscar Categoría</label>
+              <input type="text" class="form-control" name="q" placeholder="Buscar por tipo o descripción..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-outline-success w-100">
+                <i class="fas fa-search me-1"></i>Filtrar
+              </button>
+            </div>
+          </form>
         </div>
-    </div>
+      </div>
 
-    <div class="card border-success shadow-sm mb-4">
+      <div class="card border-success shadow-sm mb-4">
         <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Categorías Existentes</h6>
-            <span class="badge bg-light text-success">Total: 12</span>
+          <h6 class="mb-0"><i class="fas fa-list me-2"></i>Listado</h6>
+          <span class="badge bg-light text-success">Total: {{ categorias|length }}</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-light">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Descripción</th>
-                    <th>Publicaciones</th>
-                    <th class="text-end">Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td><strong>Noticias Generales</strong></td>
-                    <td><span class="text-muted small">Actualizaciones y comunicados oficiales.</span></td>
-                    <td><span class="badge bg-info text-dark">45</span></td>
-                    <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <a href="detalles.html" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Guías y Tutoriales</strong></td>
-                    <td><span class="text-muted small">Artículos educativos para aprender a reciclar.</span></td>
-                    <td><span class="badge bg-info text-dark">24</span></td>
-                    <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <a href="detalles.html" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+          <table class="table table-hover align-middle m-0">
+            <thead class="table-light">
+              <tr>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Fecha creación</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if not publicaciones_habilitadas %}
+              <tr>
+                <td colspan="4" class="text-center text-muted py-3">El módulo de publicaciones no está habilitado.</td>
+              </tr>
+              {% else %}
+              {% for categoria in categorias %}
+              <tr>
+                <td><strong>{{ categoria.get_tipo_display }}</strong></td>
+                <td>
+                  {% if categoria.estado == 'ACTIVO' %}
+                  <span class="badge bg-success">Activo</span>
+                  {% else %}
+                  <span class="badge bg-secondary">{{ categoria.get_estado_display }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ categoria.fecha_creacion|date:'d/m/Y' }}</td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm" role="group">
+                    <a href="{% url 'panel_admin:mostrar_categoria_publicacion_admin' categoria.id %}" class="btn btn-outline-info" title="Visualizar"><i class="fas fa-eye"></i></a>
+                    <a href="{% url 'panel_admin:editar_categoria_publicacion_admin' categoria.id %}" class="btn btn-outline-success" title="Editar"><i class="fas fa-pen"></i></a>
+                    <button type="button" class="btn btn-outline-danger" onclick="eliminarCategoria(this)" data-categoria-id="{{ categoria.id }}" title="Eliminar"><i class="fas fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center text-muted py-3">No hay categorías de publicación registradas.</td>
+              </tr>
+              {% endfor %}
+              {% endif %}
+            </tbody>
+          </table>
         </div>
-        
-        <div class="card-footer bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <span class="small text-muted d-none d-md-block">Mostrando 12 categorías</span>
-            <nav class="mt-2 mt-md-0">
+      </div>
     </main>
   </div>
 </div>
 
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <i class="fas fa-trash-alt fa-3x text-danger opacity-50 mb-3"></i>
+        <p class="fs-5 mb-1">¿Desea eliminar esta categoría de publicación?</p>
+        <p class="text-muted small">Esta acción es irreversible.</p>
+      </div>
+      <div class="modal-footer bg-light justify-content-center">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger px-4 shadow-sm" id="btnConfirmarEliminar">Sí, Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let categoriaAEliminar = null;
+  
+  function eliminarCategoria(boton) {
+    categoriaAEliminar = boton.getAttribute('data-categoria-id');
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    modal.show();
+  }
+  
+  document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+    if (categoriaAEliminar) {
+      // Ajusta la URL según tu configuración de URLs
+      window.location.href = '/panel-admin/categorias-publicacion/eliminar/' + categoriaAEliminar + '/';
+    }
+  });
+</script>
+</body>
+</html>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="fas fa-angle-left"></i></a></li>
-                    <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item d-none d-sm-inline"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#"><i class="fas fa-angle-right"></i></a></li>
-                </ul>
-            </nav>
-        </div>
-    </div>
-
-    <div class="row mt-3 g-3">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-success text-center py-3">
-                <small class="text-muted text-uppercase fw-bold">Total Encontradas</small>
-                <div class="h4 mb-0 text-success fw-bold">12</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-info text-center py-3">
-                <small class="text-muted text-uppercase fw-bold">Total Publicaciones</small>
-                <div class="h4 mb-0 text-info fw-bold">85</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-warning text-center py-3">
-                <small class="text-muted text-uppercase fw-bold">Promedio por Categoría</small>
-                <div class="h4 mb-0 text-warning fw-bold">7</div>
-            </div>
-        </div>
-    </div>
-</main>

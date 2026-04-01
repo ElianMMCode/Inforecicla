@@ -18,15 +18,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from apps.core.views import inicio
+from apps.users import views as users_views
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("inicio/", inicio),  # Ruta landing page
     path("", inicio),  # Ruta raiz
+    path("inicio/", inicio),  # Ruta landing page
+    path("admin/", admin.site.urls),
     # Urls puntos ECA
     path("punto/", include("apps.ecas.urls", namespace="punto")),
-    #Urls Panel Administracion
-    path('panel_admin/', include("apps.panel_admin.urls", namespace="panel_admin")), # Fix: corrected 'app' to 'apps'
+    # Urls Panel Administracion
+    path("panel_admin/", include("apps.panel_admin.urls", namespace="panel_admin")),
+    # Auth y registro
+    path("login/", users_views.render_login, name="login"),
+    path("logout/", LogoutView.as_view(next_page="/login/"), name="logout"),
+    path("registro/", include("apps.users.urls", namespace="registro")),
     path("punto-eca/", include("apps.ecas.urls", namespace="punto-eca")),
     path("punto-eca/", include("apps.inventory.urls", namespace="inventario")),
     path(

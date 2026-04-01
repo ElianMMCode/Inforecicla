@@ -21,7 +21,6 @@ urlpatterns = [
     ),
     path("perfil/", render_seccion, {"seccion": "perfil"}, name="perfil"),
     path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
-    path("<str:seccion>/", render_seccion, name="render_seccion"),
     path("editar-perfil/<str:id>/", editar_perfil_gestor, name="editar_perfil"),
     path("editar-punto/<str:id>/", editar_punto, name="editar_punto"),
     path("centros/editar-centro/<str:id>/", views.editar_centro, name="editar_centro"),

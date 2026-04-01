@@ -1,0 +1,60 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Eliminar Compra{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-3 text-danger"><i class="fas fa-trash-alt me-2"></i>Eliminar Compra</h1>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-lg-6">
+            <div class="card border-danger shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-warning me-2"></i>Confirmar Eliminación</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">¿Deseas eliminar esta compra?</p>
+                    
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <p class="mb-2"><strong>Material:</strong> {{ compra.inventario.material.nombre }}</p>
+                            <p class="mb-2"><strong>Punto ECA:</strong> {{ compra.inventario.punto_eca.nombre }}</p>
+                            <p class="mb-2"><strong>Cantidad:</strong> {{ compra.cantidad }}</p>
+                            <p class="mb-2"><strong>Precio Unitario:</strong> ${{ compra.precio_compra|floatformat:2 }}</p>
+                            <p class="mb-0"><strong>Fecha:</strong> {{ compra.fecha_compra|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer. Se eliminará permanentemente el registro de la compra.
+                    </div>
+
+                    <form method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-lg w-100 mb-2">
+                            <i class="fas fa-trash-alt me-2"></i>Sí, Eliminar Compra
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'operations:listar_compras_admin' %}" class="btn btn-outline-secondary btn-lg w-100">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
+{% load static %}
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - InfoRecicla</title>
+    <title>Administración</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 
 <body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow" aria-label="Navegacion principal del panel admin">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center fw-semibold" href="../Inicio/inicio.html">
-                <img src="../resources/static/imagenes/logo.png" alt="Logo InfoRecicla" height="40" class="me-2 rounded bg-white p-1">
-                InfoRecicla
+            <a class="navbar-brand d-flex align-items-center fw-semibold" href="/inicio/" aria-label="Ir a inicio">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" height="40" class="me-2 rounded bg-white p-1">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -22,19 +22,19 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="admin.html">
-                            <i class="fas fa-tachometer-alt me-1"></i> Panel
+                        <a class="nav-link active" href="/panel_admin/" aria-label="Panel de administracion">
+                            <i class="fas fa-tachometer-alt me-1"></i>
                         </a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="../Inicio/inicio.html">
+                        <a class="nav-link" href="/inicio/">
                             <i class="fas fa-home me-1"></i> Inicio
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-danger-emphasis" href="../Registro/inicioSesion.html">
+                        <a class="nav-link text-danger-emphasis" href="/logout/">
                             <i class="fas fa-sign-out-alt me-1"></i> Cerrar sesión
                         </a>
                     </li>
@@ -46,31 +46,60 @@
     <div class="container-fluid px-0">
         <div class="row g-0">
             <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../Inicio/inicio.html">
-                    <img src="../resources/static/imagenes/logo.png" alt="Logo" height="40" class="me-2 rounded bg-white p-1">
-                    InfoRecicla
-                </a>
-                <nav class="w-100" role="navigation">
+                <div class="d-flex flex-column align-items-center text-center mb-4">
+                    <a href="/inicio/" aria-label="Ir a inicio" class="text-decoration-none text-white">
+                        <img src="{% static 'img/logo.png' %}" alt="Logo" height="60" class="rounded bg-white p-1 mb-2">
+                    </a>
+                    <h2 class="fw-bold mb-1" style="font-size: 1.1rem;">InfoRecicla</h2>
+                    <p class="text-white-50 mb-0" style="font-size: 0.85rem;">Panel de Administración</p>
+                </div>
+                <nav class="w-100" role="navigation" aria-label="Navegacion lateral del panel admin">
                     <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
-                        <li class="nav-item"><a href="Usuarios/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-users me-2"></i>Usuarios</a></li>
-                        <li class="nav-item"><a href="Publicaciones/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-newspaper me-2"></i>Publicaciones</a></li>
-                        <li class="nav-item"><a href="PuntoECA/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-map-marker-alt me-2"></i>Puntos ECA</a></li>
-                        <li class="nav-item"><a href="Materiales/index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-box me-2"></i>Materiales</a></li>
+                        <li class="nav-item"><a href="{% url 'panel_admin:listar_usuarios' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-users me-2"></i>Usuarios</a></li>
+                        <li class="nav-item"><a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-newspaper me-2"></i>Publicaciones</a></li>
+                        <li class="nav-item"><a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-map-marker-alt me-2"></i>Puntos ECA</a></li>
+                        <li class="nav-item"><a href="{% url 'panel_admin:listar_materiales_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-box me-2"></i>Materiales</a></li>
+                        <li class="nav-item"><a href="{% url 'panel_admin:listar_categorias_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-tags me-2"></i>Categoria Materiales</a></li>
+                        <li class="nav-item"><a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-folder me-2"></i>Categoria Publicaciones</a></li>
+                        <li class="nav-item"><a href="{% url 'panel_admin:listar_tipos_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-recycle me-2"></i>Tipos Materiales</a></li>
+                        <li class="nav-item" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 0.5rem; padding-top: 0.5rem;"><a href="{% url 'inventory:listar_inventarios' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-warehouse me-2"></i>Inventarios</a></li>
+                        <li class="nav-item"><a href="{% url 'operations:listar_operaciones' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white"><i class="fas fa-exchange-alt me-2"></i>Operaciones</a></li>
                     </ul>
                 </nav>
                 <div class="mt-auto small text-white-50">&copy; 2025 InfoRecicla</div>
             </aside>
 
-            <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
-                <div class="d-flex align-items-center justify-content-between px-3">
-                    <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../Inicio/inicio.html">
-                        <i class="fas fa-recycle fs-3"></i>
-                        <span class="fw-semibold">InfoRecicla</span>
-                    </a>
-                </div>
+            <div class="d-md-none w-100 bg-success fixed-top z-3 shadow-sm">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-success" aria-label="Menu movil panel admin">
+                    <div class="container-fluid px-3">
+                        <a class="navbar-brand d-flex align-items-center text-white text-decoration-none" href="/inicio/" aria-label="Ir a inicio">
+                            <img src="{% static 'img/logo.png' %}" alt="Logo" height="50" class="rounded bg-white p-1">
+                        </a>
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuMovilAdmin" aria-controls="menuMovilAdmin" aria-expanded="false" aria-label="Abrir menu admin">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="menuMovilAdmin">
+                            <ul class="navbar-nav ms-auto gap-1 py-2">
+                                <li class="nav-item"><a href="{% url 'panel_admin:listar_usuarios' %}" class="nav-link text-white"><i class="fas fa-users me-2"></i>Usuarios</a></li>
+                                <li class="nav-item"><a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="nav-link text-white"><i class="fas fa-newspaper me-2"></i>Publicaciones</a></li>
+                                <li class="nav-item"><a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="nav-link text-white"><i class="fas fa-map-marker-alt me-2"></i>Puntos ECA</a></li>
+                                <li class="nav-item"><a href="{% url 'panel_admin:listar_materiales_admin' %}" class="nav-link text-white"><i class="fas fa-box me-2"></i>Materiales</a></li>
+                                <li class="nav-item"><a href="{% url 'panel_admin:listar_categorias_material_admin' %}" class="nav-link text-white"><i class="fas fa-tags me-2"></i>Categoria Materiales</a></li>
+                                <li class="nav-item"><a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="nav-link text-white"><i class="fas fa-folder me-2"></i>Categoria Publicaciones</a></li>
+                                <li class="nav-item"><a href="{% url 'panel_admin:listar_tipos_material_admin' %}" class="nav-link text-white"><i class="fas fa-recycle me-2"></i>Tipos Materiales</a></li>
+                                <li><hr class="dropdown-divider border-light"></li>
+                                <li class="nav-item"><a href="{% url 'inventory:listar_inventarios' %}" class="nav-link text-white"><i class="fas fa-warehouse me-2"></i>Inventarios</a></li>
+                                <li class="nav-item"><a href="{% url 'operations:listar_operaciones' %}" class="nav-link text-white"><i class="fas fa-exchange-alt me-2"></i>Operaciones</a></li>
+                                <li><hr class="dropdown-divider border-light"></li>
+                                <li class="nav-item"><a href="/inicio/" class="nav-link text-white"><i class="fas fa-home me-2"></i>Inicio</a></li>
+                                <li class="nav-item"><a href="/logout/" class="nav-link text-white"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesion</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
             </div>
 
-            <main class="col offset-md-2 p-4">
+            <main class="col offset-md-2 p-4" style="margin-top: 72px;">
                 <div class="bg-light bg-opacity-75 rounded-3 p-4 p-md-5 shadow-sm mb-5 border-start border-5 border-success">
             <div class="row">
                 <div class="col-lg-8">
@@ -90,40 +119,46 @@
                     </div>
                     <div class="card-body">
                         <div class="row text-center">
-                            <div class="col-md-2 col-6 mb-3">
+                            <div class="col-lg col-md-3 col-6 mb-3">
                                 <div class="border-end border-light-subtle">
-                                    <div class="h3 text-success fw-bold mb-1" id="totalUsuarios">0</div>
+                                    <div class="h3 text-success fw-bold mb-1" id="totalUsuarios">{{ resumen_general.total_usuarios }}</div>
                                     <small class="text-muted text-uppercase fw-semibold">Usuarios</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-6 mb-3">
+                            <div class="col-lg col-md-3 col-6 mb-3">
                                 <div class="border-end border-light-subtle">
-                                    <div class="h3 text-info fw-bold mb-1" id="totalPuntosECA">0</div>
+                                    <div class="h3 text-info fw-bold mb-1" id="totalPuntosECA">{{ resumen_general.total_puntos_eca }}</div>
                                     <small class="text-muted text-uppercase fw-semibold">Puntos ECA</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-6 mb-3">
+                            <div class="col-lg col-md-3 col-6 mb-3">
                                 <div class="border-end border-light-subtle">
-                                    <div class="h3 text-warning fw-bold mb-1" id="totalMateriales">0</div>
+                                    <div class="h3 text-warning fw-bold mb-1" id="totalMateriales">{{ resumen_general.total_materiales }}</div>
                                     <small class="text-muted text-uppercase fw-semibold">Materiales</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-6 mb-3">
+                            <div class="col-lg col-md-3 col-6 mb-3">
                                 <div class="border-end border-light-subtle">
-                                    <div class="h3 text-primary fw-bold mb-1" id="totalPublicaciones">0</div>
+                                    <div class="h3 text-primary fw-bold mb-1" id="totalPublicaciones">{{ resumen_general.total_publicaciones }}</div>
                                     <small class="text-muted text-uppercase fw-semibold">Publicaciones</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-6 mb-3">
+                            <div class="col-lg col-md-3 col-6 mb-3">
                                 <div class="border-end border-light-subtle">
-                                    <div class="h3 text-danger fw-bold mb-1" id="totalCategorias">0</div>
-                                    <small class="text-muted text-uppercase fw-semibold">Categorías</small>
+                                    <div class="h3 text-danger fw-bold mb-1" id="totalCategoriaMateriales">{{ resumen_general.total_categorias_materiales }}</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Categorias Materiales</small>
                                 </div>
                             </div>
-                            <div class="col-md-2 col-6 mb-3">
+                            <div class="col-lg col-md-3 col-6 mb-3">
+                                <div class="border-end border-light-subtle">
+                                    <div class="h3 text-secondary fw-bold mb-1" id="totalCategoriaPublicaciones">{{ resumen_general.total_categorias_publicaciones }}</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Categorias Publicaciones</small>
+                                </div>
+                            </div>
+                            <div class="col-lg col-md-3 col-6 mb-3">
                                 <div>
-                                    <div class="h3 text-secondary fw-bold mb-1" id="totalTipos">0</div>
-                                    <small class="text-muted text-uppercase fw-semibold">Tipos de Material</small>
+                                    <div class="h3 text-dark fw-bold mb-1" id="totalTiposMaterial">{{ resumen_general.total_tipos_material }}</div>
+                                    <small class="text-muted text-uppercase fw-semibold">Tipos Material</small>
                                 </div>
                             </div>
                         </div>
@@ -139,23 +174,33 @@
                         <h5 class="card-title text-success mb-3"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
                         <div class="row g-2">
                             <div class="col-md-3 col-6">
-                                <a href="Usuarios/crear.html" class="btn btn-outline-success w-100 py-2">
+                                <a href="/registro/ciudadano/" class="btn btn-outline-success w-100 py-2">
                                     <i class="fas fa-user-plus me-1"></i> Nuevo Usuario
                                 </a>
                             </div>
                             <div class="col-md-3 col-6">
-                                <a href="PuntoECA/crear.html" class="btn btn-outline-info w-100 py-2">
+                                <a href="/registro/eca/" class="btn btn-outline-info w-100 py-2">
                                     <i class="fas fa-plus-circle me-1"></i> Nuevo Punto ECA
                                 </a>
                             </div>
                             <div class="col-md-3 col-6">
-                                <a href="Publicaciones/crear.html" class="btn btn-outline-primary w-100 py-2">
+                                <a href="Publicaciones/createPublicacion.html" class="btn btn-outline-primary w-100 py-2">
                                     <i class="fas fa-edit me-1"></i> Nueva Publicación
                                 </a>
                             </div>
                             <div class="col-md-3 col-6">
-                                <a href="Materiales/crear.html" class="btn btn-outline-warning w-100 py-2 text-dark">
+                                <a href="Materiales/createMaterial.html" class="btn btn-outline-warning w-100 py-2 text-dark">
                                     <i class="fas fa-box me-1"></i> Nuevo Material
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="{% url 'inventory:crear_inventario' %}" class="btn btn-outline-success w-100 py-2">
+                                    <i class="fas fa-warehouse me-1"></i> Nuevo Inventario
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="{% url 'operations:nueva_operacion' %}" class="btn btn-outline-info w-100 py-2">
+                                    <i class="fas fa-exchange-alt me-1"></i> Nueva Operación
                                 </a>
                             </div>
                         </div>
@@ -168,7 +213,7 @@
         <div class="row g-4">
 
             <div class="col-md-6 col-lg-4">
-                <a href="Usuarios/index.html" class="text-decoration-none text-dark">
+                <a href="Usuarios/listUsuario.html" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm border-0">
                         <div class="card-body text-center p-4">
                             <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
@@ -182,7 +227,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <a href="PuntoECA/index.html" class="text-decoration-none text-dark">
+                <a href="PuntoECA/listPuntoECA.html" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm border-0">
                         <div class="card-body text-center p-4">
                             <div class="bg-info rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
@@ -196,7 +241,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <a href="Materiales/index.html" class="text-decoration-none text-dark">
+                <a href="Materiales/listMaterial.html" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm border-0">
                         <div class="card-body text-center p-4">
                             <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
@@ -210,7 +255,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <a href="TiposMateriales/index.html" class="text-decoration-none text-dark">
+                <a href="TiposMateriales/listTipoMaterial.html" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm border-0">
                         <div class="card-body text-center p-4">
                             <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
@@ -224,7 +269,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <a href="CategoriasMateriales/index.html" class="text-decoration-none text-dark">
+                <a href="CategoriasMateriales/listCategoriaMaterial.html" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm border-0">
                         <div class="card-body text-center p-4">
                             <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
@@ -238,7 +283,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <a href="Publicaciones/index.html" class="text-decoration-none text-dark">
+                <a href="Publicaciones/listPublicacion.html" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm border-0">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
@@ -252,7 +297,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <a href="CategoriasPublicaciones/index.html" class="text-decoration-none text-dark">
+                <a href="CategoriasPublicaciones/listCategoriaPublicacion.html" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm border-0">
                         <div class="card-body text-center p-4">
                             <div class="bg-primary bg-opacity-75 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
@@ -260,6 +305,34 @@
                             </div>
                             <h3 class="h5 mb-2 text-primary fw-semibold">Categorías de Publicaciones</h3>
                             <p class="text-muted mb-0 small">Organiza las publicaciones por categorías.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'inventory:listar_inventarios' %}" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-success bg-opacity-75 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-warehouse text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-success fw-semibold">Gestión de Inventarios</h3>
+                            <p class="text-muted mb-0 small">Administra el inventario de materiales en los puntos ECA.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'operations:listar_operaciones' %}" class="text-decoration-none text-dark">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-info bg-opacity-75 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3">
+                                <i class="fas fa-exchange-alt text-white fs-3"></i>
+                            </div>
+                            <h3 class="h5 mb-2 text-info fw-semibold">Operaciones</h3>
+                            <p class="text-muted mb-0 small">Registra y gestiona compras, ventas y movimientos de inventario.</p>
                         </div>
                     </div>
                 </a>
@@ -295,33 +368,6 @@
                     this.classList.remove('shadow');
                 });
             });
-
-            // Animación de carga para los números de estadísticas
-            const animateValue = (id, start, end, duration) => {
-                const obj = document.getElementById(id);
-                if (!obj) return;
-
-                let startTimestamp = null;
-                const step = (timestamp) => {
-                    if (!startTimestamp) startTimestamp = timestamp;
-                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                    obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
-                    if (progress < 1) {
-                        window.requestAnimationFrame(step);
-                    }
-                };
-                window.requestAnimationFrame(step);
-            }
-
-            // Iniciar animaciones de estadísticas después de un pequeño retraso
-            setTimeout(() => {
-                animateValue('totalUsuarios', 0, 1247, 1500);
-                animateValue('totalPuntosECA', 0, 89, 1500);
-                animateValue('totalMateriales', 0, 356, 1500);
-                animateValue('totalPublicaciones', 0, 542, 1500);
-                animateValue('totalCategorias', 0, 24, 1500);
-                animateValue('totalTipos', 0, 15, 1500);
-            }, 300);
         });
     </script>
 </body>

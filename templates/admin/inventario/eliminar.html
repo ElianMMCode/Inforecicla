@@ -1,0 +1,81 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Eliminar Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-3 text-danger"><i class="fas fa-trash-alt me-2"></i>Eliminar Inventario</h1>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-lg-6">
+            <div class="card border-danger border-2 shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-warning me-2"></i>Confirmar Eliminación</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-3">¿Deseas eliminar este inventario?</p>
+                    
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <p class="mb-2"><strong>Material:</strong> {{ inventario.material.nombre }}</p>
+                            <p class="mb-2"><strong>Punto ECA:</strong> {{ inventario.punto_eca.nombre }}</p>
+                            <p class="mb-2"><strong>Stock Actual:</strong> {{ inventario.stock_actual|floatformat:2 }}</p>
+                            <p class="mb-2"><strong>Capacidad:</strong> {{ inventario.capacidad_maxima|floatformat:2 }}</p>
+                            <p class="mb-0"><strong>Ocupación:</strong> {{ inventario.ocupacion_actual|floatformat:0 }}%</p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer. Se eliminará permanentemente el registro del inventario así como su historial de movimientos asociado.
+                    </div>
+
+                    <form method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-lg w-100 mb-2">
+                            <i class="fas fa-trash-alt me-2"></i>Sí, Eliminar Inventario
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'inventory:listar_inventarios' %}" class="btn btn-outline-secondary btn-lg w-100">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Antes de Eliminar</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Verifica:</h6>
+                    <ul class="small">
+                        <li><i class="fas fa-check me-2"></i>¿Es realmente este inventario?</li>
+                        <li><i class="fas fa-check me-2"></i>¿Ya no necesitas este registro?</li>
+                        <li><i class="fas fa-check me-2"></i>¿Tienes copias de seguridad?</li>
+                    </ul>
+                    <hr>
+                    <p class="small text-muted mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Si archivar el inventario es una opción mejor, considera editarlo en su lugar.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Crear Venta{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-1"><i class="fas fa-plus-circle text-success me-2"></i>Crear Nueva Venta</h1>
+            <p class="text-muted">Registrar una venta de inventario</p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Detalles de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="inventario_id" class="form-label">Inventario <span class="text-danger">*</span></label>
+                            <select class="form-select" id="inventario_id" name="inventario_id" required>
+                                <option value="">-- Seleccionar Inventario --</option>
+                                {% for inventario in inventarios %}
+                                <option value="{{ inventario.id }}">
+                                    {{ inventario.material.nombre }} ({{ inventario.punto_eca.nombre }}) - Stock: {{ inventario.stock_actual }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona un inventario.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cantidad" class="form-label">Cantidad <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="cantidad" name="cantidad" 
+                                           step="0.01" min="0" required>
+                                    <div class="invalid-feedback">
+                                        La cantidad es obligatoria.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="precio_venta" class="form-label">Precio Unitario <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="precio_venta" 
+                                               name="precio_venta" step="0.01" min="0" required>
+                                    </div>
+                                    <div class="invalid-feedback">
+                                        El precio es obligatorio.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="centro_acopio_id" class="form-label">Centro de Acopio</label>
+                            <select class="form-select" id="centro_acopio_id" name="centro_acopio_id">
+                                <option value="">-- Seleccionar Centro --</option>
+                                {% for centro in centros_acopio %}
+                                <option value="{{ centro.id }}">{{ centro.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" 
+                                      rows="3" placeholder="Notas adicionales sobre la venta..."></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Guardar Venta
+                            </button>
+                            <a href="{% url 'operations:listar_ventas_admin' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small"><strong>Pasos para crear una venta:</strong></p>
+                    <ol class="small">
+                        <li>Selecciona el material del inventario</li>
+                        <li>Especifica la cantidad vendida</li>
+                        <li>Ingresa el precio unitario de venta</li>
+                        <li>Selecciona el centro de acopio (opcional)</li>
+                        <li>Agrega observaciones si es necesario</li>
+                        <li>Haz clic en "Guardar Venta"</li>
+                    </ol>
+                    <hr>
+                    <p class="small text-warning mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Verifica que haya suficiente stock antes de registrar la venta.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

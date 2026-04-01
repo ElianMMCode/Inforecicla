@@ -1,4 +1,6 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
 from apps.inventory.models import Inventario
 from config import constants as cons
 from . import models
@@ -436,3 +438,419 @@ def exportar_historial_pdf(request):
     response = HttpResponse(pdf_file, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="historial.pdf"'
     return response
+
+
+# =========== ADMIN PANEL VIEWS ===========
+
+def es_administrador(user):
+    """Verifica si el usuario es administrador."""
+    from config.constants import TipoUsuario
+    if not user.is_authenticated:
+        return False
+    return bool(user.is_staff or user.is_superuser or user.tipo_usuario == TipoUsuario.ADMIN)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def dashboard_operaciones(request):
+    """Dashboard de operaciones con estadísticas generales."""
+    compras = models.CompraInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca'
+    ).all()
+    
+    ventas = models.VentaInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca',
+        'centro_acopio'
+    ).all()
+    
+    # Calcular estadísticas
+    total_compras = compras.count()
+    total_ventas = ventas.count()
+    
+    total_cantidad_comprada = sum(c.cantidad or 0 for c in compras)
+    total_cantidad_vendida = sum(v.cantidad or 0 for v in ventas)
+    
+    total_costo_compras = sum((c.cantidad or 0) * (c.precio_compra or 0) for c in compras)
+    total_ingresos_ventas = sum((v.cantidad or 0) * (v.precio_venta or 0) for v in ventas)
+    
+    context = {
+        'total_compras': total_compras,
+        'total_ventas': total_ventas,
+        'total_cantidad_comprada': total_cantidad_comprada,
+        'total_cantidad_vendida': total_cantidad_vendida,
+        'total_costo_compras': total_costo_compras,
+        'total_ingresos_ventas': total_ingresos_ventas,
+        'compras_recientes': compras[:5],
+        'ventas_recientes': ventas[:5],
+    }
+    
+    return render(request, 'admin/operaciones/dashboard.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def listar_compras_admin(request):
+    """Lista todas las compras de inventario."""
+    compras = models.CompraInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca'
+    ).order_by('-fecha_compra')
+    
+    context = {
+        'compras': compras,
+        'total_compras': compras.count(),
+    }
+    
+    return render(request, 'admin/operaciones/compras_listar.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def crear_compra_admin(request):
+    """Crea una nueva compra de inventario."""
+    if request.method == 'GET':
+        inventarios = Inventario.objects.select_related('material', 'punto_eca').all()
+        context = {
+            'inventarios': inventarios,
+        }
+        return render(request, 'admin/operaciones/compra_crear.html', context)
+    
+    elif request.method == 'POST':
+        inventario_id = request.POST.get('inventario_id')
+        cantidad = request.POST.get('cantidad')
+        precio_compra = request.POST.get('precio_compra')
+        observaciones = request.POST.get('observaciones')
+        
+        try:
+            data = {
+                'inventarioId': inventario_id,
+                'cantidad': float(cantidad),
+                'precioCompra': float(precio_compra),
+                'fechaCompra': timezone.now().isoformat(),
+                'observaciones': observaciones or '',
+            }
+            respuesta = CompraInventarioService.registro_compra(request, data)
+            if respuesta.get('error'):
+                raise ValueError(respuesta.get('mensaje', 'No se pudo registrar la compra.'))
+            messages.success(request, 'Compra registrada correctamente.')
+            return redirect('operations:listar_compras_admin')
+        except Exception as e:
+            context = {
+                'error': str(e),
+                'inventarios': Inventario.objects.select_related('material', 'punto_eca').all(),
+            }
+            return render(request, 'admin/operaciones/compra_crear.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def editar_compra_admin(request, compra_id):
+    """Edita una compra de inventario existente."""
+    compra = get_object_or_404(models.CompraInventario, id=compra_id)
+    
+    if request.method == 'GET':
+        inventarios = Inventario.objects.select_related('material', 'punto_eca').all()
+        context = {
+            'compra': compra,
+            'inventarios': inventarios,
+        }
+        return render(request, 'admin/operaciones/compra_editar.html', context)
+    
+    elif request.method == 'POST':
+        cantidad = request.POST.get('cantidad')
+        precio_compra = request.POST.get('precio_compra')
+        observaciones = request.POST.get('observaciones')
+        
+        try:
+            data = {
+                'compraId': str(compra_id),
+                'cantidad': float(cantidad),
+                'precioCompra': float(precio_compra),
+                'fechaCompra': compra.fecha_compra.isoformat(),
+                'observaciones': observaciones or '',
+            }
+            respuesta = CompraInventarioService.editar_compra(request, data, compra_id)
+            if respuesta.get('error'):
+                raise ValueError(respuesta.get('mensaje', 'No se pudo actualizar la compra.'))
+            messages.success(request, 'Compra actualizada correctamente.')
+            return redirect('operations:listar_compras_admin')
+        except Exception as e:
+            inventarios = Inventario.objects.select_related('material', 'punto_eca').all()
+            context = {
+                'compra': compra,
+                'error': str(e),
+                'inventarios': inventarios,
+            }
+            return render(request, 'admin/operaciones/compra_editar.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def eliminar_compra_admin(request, compra_id):
+    """Elimina una compra de inventario."""
+    compra = get_object_or_404(models.CompraInventario, id=compra_id)
+    
+    if request.method == 'GET':
+        context = {
+            'compra': compra,
+        }
+        return render(request, 'admin/operaciones/compra_eliminar.html', context)
+    
+    elif request.method == 'POST':
+        try:
+            respuesta = CompraInventarioService.borrar_compra(request, compra_id)
+            if respuesta.get('error'):
+                raise ValueError(respuesta.get('mensaje', 'No se pudo eliminar la compra.'))
+            messages.success(request, 'Compra eliminada correctamente.')
+            return redirect('operations:listar_compras_admin')
+        except Exception as e:
+            context = {
+                'compra': compra,
+                'error': str(e),
+            }
+            return render(request, 'admin/operaciones/compra_eliminar.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def listar_ventas_admin(request):
+    """Lista todas las ventas de inventario."""
+    ventas = models.VentaInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca',
+        'centro_acopio'
+    ).order_by('-fecha_venta')
+    
+    context = {
+        'ventas': ventas,
+        'total_ventas': ventas.count(),
+    }
+    
+    return render(request, 'admin/operaciones/ventas_listar.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def crear_venta_admin(request):
+    """Crea una nueva venta de inventario."""
+    if request.method == 'GET':
+        inventarios = Inventario.objects.select_related('material', 'punto_eca').all()
+        centros_acopio = CentroAcopio.objects.all()
+        context = {
+            'inventarios': inventarios,
+            'centros_acopio': centros_acopio,
+        }
+        return render(request, 'admin/operaciones/venta_crear.html', context)
+    
+    elif request.method == 'POST':
+        inventario_id = request.POST.get('inventario_id')
+        cantidad = request.POST.get('cantidad')
+        precio_venta = request.POST.get('precio_venta')
+        centro_acopio_id = request.POST.get('centro_acopio_id')
+        observaciones = request.POST.get('observaciones')
+        
+        try:
+            data = {
+                'inventarioId': inventario_id,
+                'cantidad': float(cantidad),
+                'precioVenta': float(precio_venta),
+                'fechaVenta': timezone.now().isoformat(),
+                'centroAcopioId': centro_acopio_id or None,
+                'observaciones': observaciones or '',
+            }
+            respuesta = VentaInventarioService.registrar_venta(request, data)
+            if respuesta.get('error'):
+                raise ValueError(respuesta.get('mensaje', 'No se pudo registrar la venta.'))
+            messages.success(request, 'Venta registrada correctamente.')
+            return redirect('operations:listar_ventas_admin')
+        except Exception as e:
+            inventarios = Inventario.objects.select_related('material', 'punto_eca').all()
+            centros_acopio = CentroAcopio.objects.all()
+            context = {
+                'error': str(e),
+                'inventarios': inventarios,
+                'centros_acopio': centros_acopio,
+            }
+            return render(request, 'admin/operaciones/venta_crear.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def editar_venta_admin(request, venta_id):
+    """Edita una venta de inventario existente."""
+    venta = get_object_or_404(models.VentaInventario, id=venta_id)
+    
+    if request.method == 'GET':
+        inventarios = Inventario.objects.select_related('material', 'punto_eca').all()
+        centros_acopio = CentroAcopio.objects.all()
+        context = {
+            'venta': venta,
+            'inventarios': inventarios,
+            'centros_acopio': centros_acopio,
+        }
+        return render(request, 'admin/operaciones/venta_editar.html', context)
+    
+    elif request.method == 'POST':
+        cantidad = request.POST.get('cantidad')
+        precio_venta = request.POST.get('precio_venta')
+        centro_acopio_id = request.POST.get('centro_acopio_id')
+        observaciones = request.POST.get('observaciones')
+        
+        try:
+            data = {
+                'ventaId': str(venta_id),
+                'cantidad': float(cantidad),
+                'precioVenta': float(precio_venta),
+                'fechaVenta': venta.fecha_venta.isoformat(),
+                'centroAcopioId': centro_acopio_id or None,
+                'observaciones': observaciones or '',
+            }
+            respuesta = VentaInventarioService.editar_venta(request, data, venta_id)
+            if respuesta.get('error'):
+                raise ValueError(respuesta.get('mensaje', 'No se pudo actualizar la venta.'))
+            if centro_acopio_id:
+                venta.centro_acopio_id = centro_acopio_id
+                venta.save(update_fields=['centro_acopio'])
+            else:
+                venta.centro_acopio = None
+                venta.save(update_fields=['centro_acopio'])
+            messages.success(request, 'Venta actualizada correctamente.')
+            return redirect('operations:listar_ventas_admin')
+        except Exception as e:
+            inventarios = Inventario.objects.select_related('material', 'punto_eca').all()
+            centros_acopio = CentroAcopio.objects.all()
+            context = {
+                'venta': venta,
+                'error': str(e),
+                'inventarios': inventarios,
+                'centros_acopio': centros_acopio,
+            }
+            return render(request, 'admin/operaciones/venta_editar.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def eliminar_venta_admin(request, venta_id):
+    """Elimina una venta de inventario."""
+    venta = get_object_or_404(models.VentaInventario, id=venta_id)
+    
+    if request.method == 'GET':
+        context = {
+            'venta': venta,
+        }
+        return render(request, 'admin/operaciones/venta_eliminar.html', context)
+    
+    elif request.method == 'POST':
+        try:
+            respuesta = VentaInventarioService.borrar_venta(request, venta_id)
+            if respuesta.get('error'):
+                raise ValueError(respuesta.get('mensaje', 'No se pudo eliminar la venta.'))
+            messages.success(request, 'Venta eliminada correctamente.')
+            return redirect('operations:listar_ventas_admin')
+        except Exception as e:
+            context = {
+                'venta': venta,
+                'error': str(e),
+            }
+            return render(request, 'admin/operaciones/venta_eliminar.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def nueva_operacion(request):
+    """Página para seleccionar tipo de operación (compra o venta)."""
+    context = {}
+    return render(request, 'admin/operaciones/nueva_operacion.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def estadisticas_operaciones(request):
+    """Muestra estadísticas de compras y ventas."""
+    compras = models.CompraInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca'
+    ).all()
+    
+    ventas = models.VentaInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca',
+        'centro_acopio'
+    ).all()
+    
+    # Agrupar por mes para gráficos
+    from django.db.models import Sum, Count
+    from django.db.models.functions import TruncMonth
+    
+    estadisticas_por_mes = {}
+    
+    # Compras por mes
+    compras_por_mes = compras.annotate(
+        mes=TruncMonth('fecha_compra')
+    ).values('mes').annotate(
+        total_cantidad=Sum('cantidad'),
+        total_costo=Sum(models.F('cantidad') * models.F('precio_compra'), output_field=models.DecimalField()),
+        cantidad_transacciones=Count('id')
+    ).order_by('mes')
+    
+    # Ventas por mes
+    ventas_por_mes = ventas.annotate(
+        mes=TruncMonth('fecha_venta')
+    ).values('mes').annotate(
+        total_cantidad=Sum('cantidad'),
+        total_ingresos=Sum(models.F('cantidad') * models.F('precio_venta'), output_field=models.DecimalField()),
+        cantidad_transacciones=Count('id')
+    ).order_by('mes')
+    
+    context = {
+        'compras_por_mes': compras_por_mes,
+        'ventas_por_mes': ventas_por_mes,
+        'total_compras': compras.count(),
+        'total_ventas': ventas.count(),
+        'total_costo_compras': sum((c.cantidad or 0) * (c.precio_compra or 0) for c in compras),
+        'total_ingresos_ventas': sum((v.cantidad or 0) * (v.precio_venta or 0) for v in ventas),
+    }
+    
+    return render(request, 'admin/operaciones/estadisticas.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def operaciones_criticas(request):
+    """Muestra operaciones con alertas o problemas."""
+    # Compras con stock resultante negativo
+    compras_criticas = []
+    compras = models.CompraInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca'
+    ).all()
+    
+    for compra in compras:
+        # Calcular stock resultante considerando otras operaciones
+        stock_inicial = compra.inventario.stock_actual or 0
+        if (stock_inicial - (compra.cantidad or 0)) < 0:
+            compras_criticas.append(compra)
+    
+    # Ventas con stock insuficiente
+    ventas_criticas = []
+    ventas = models.VentaInventario.objects.select_related(
+        'inventario__material',
+        'inventario__punto_eca',
+        'centro_acopio'
+    ).all()
+    
+    for venta in ventas:
+        stock_disponible = venta.inventario.stock_actual or 0
+        if stock_disponible < (venta.cantidad or 0):
+            ventas_criticas.append(venta)
+    
+    context = {
+        'compras_criticas': compras_criticas,
+        'ventas_criticas': ventas_criticas,
+        'total_compras_criticas': len(compras_criticas),
+        'total_ventas_criticas': len(ventas_criticas),
+    }
+    
+    return render(request, 'admin/operaciones/criticos.html', context)

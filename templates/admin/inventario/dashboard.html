@@ -1,0 +1,143 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Dashboard Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-3"><i class="fas fa-warehouse text-warning me-2"></i>Dashboard de Inventario</h1>
+            <p class="text-muted">Resumen de inventarios y materiales</p>
+        </div>
+    </div>
+
+    <!-- Cards de Estadísticas -->
+    <div class="row g-3 mb-5">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Total Inventarios</p>
+                            <h3 class="mb-0">{{ total_inventarios }}</h3>
+                        </div>
+                        <i class="fas fa-boxes fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Stock Total</p>
+                            <h3 class="mb-0">{{ total_stock|floatformat:0 }}</h3>
+                        </div>
+                        <i class="fas fa-cubes fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Capacidad Total</p>
+                            <h3 class="mb-0">{{ total_capacidad|floatformat:0 }}</h3>
+                        </div>
+                        <i class="fas fa-warehouse fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Materiales Críticos</p>
+                            <h3 class="mb-0 text-danger">{{ inventarios_criticos }}</h3>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row g-3 mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group gap-2 flex-wrap">
+                        <a href="{% url 'inventory:crear_inventario' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Nuevo Inventario
+                        </a>
+                        <a href="{% url 'inventory:listar_inventarios' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Listar Inventarios
+                        </a>
+                        <a href="{% url 'inventory:estadisticas_inventario' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-chart-bar me-2"></i>Estadísticas
+                        </a>
+                        <a href="{% url 'inventory:materiales_criticos' %}" class="btn btn-outline-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Críticos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Ocupación por Punto ECA -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Ocupación por Punto ECA</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if estadisticas_por_punto %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Punto ECA</th>
+                                    <th>Stock Total</th>
+                                    <th>Capacidad</th>
+                                    <th>Ocupación %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for punto, stats in estadisticas_por_punto.items %}
+                                <tr>
+                                    <td><strong>{{ punto }}</strong></td>
+                                    <td>{{ stats.total_stock|floatformat:1 }}</td>
+                                    <td>{{ stats.capacidad|floatformat:1 }}</td>
+                                    <td>
+                                        <progress class="w-100" value="{{ stats.ocupacion|floatformat:0 }}" max="100" aria-label="Ocupación de {{ punto }}"></progress>
+                                        <small class="d-block text-muted">{{ stats.ocupacion|floatformat:0 }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted p-3 mb-0">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

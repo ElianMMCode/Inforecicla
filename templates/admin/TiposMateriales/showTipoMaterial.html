@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -14,8 +15,8 @@
     <div class="row g-0">
 
         <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
                 <div class="d-flex flex-column lh-sm">
                     <span class="fw-semibold">InfoRecicla</span>
                     <small class="text-white-50">Administración</small>
@@ -26,18 +27,18 @@
                     <li class="nav-item"><a href="indexTipoMaterial.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
                     <li class="nav-item"><a href="listTipoMaterial.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Listado</a></li>
                     <li class="nav-item"><a href="createTipoMaterial.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear</a></li>
-                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
+                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="{% url 'panel_admin:panel_admin' %}" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Panel</a></li>
                 </ul>
             </nav>
         </aside>
 
         <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
             <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
                     <i class="bi bi-recycle fs-3"></i>
                     <span class="fw-semibold">InfoRecicla</span>
                 </a>
-                <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
+                <a class="text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}"><i class="bi bi-house fs-5"></i></a>
             </div>
             <nav class="mt-2">
                 <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
@@ -51,14 +52,14 @@
         <main class="col offset-md-2 p-4">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
         <div>
-            <h1 class="h2 fw-bold text-warning mb-1"><i class="fas fa-tag me-2"></i>Detalle del Tipo</h1>
+            <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-tag me-2"></i>Detalle del Tipo</h1>
             <p class="text-muted mb-0">Información completa de la subclasificación</p>
         </div>
         <div class="d-flex gap-2">
             <a href="lista.html" class="btn btn-outline-secondary d-none d-sm-block">
                 <i class="fas fa-arrow-left me-1"></i> Volver a Lista
             </a>
-            <a href="editar.html" class="btn btn-warning fw-bold text-dark d-none d-sm-block shadow-sm">
+            <a href="editar.html" class="btn btn-success fw-bold text-white d-none d-sm-block shadow-sm">
                 <i class="fas fa-edit me-1"></i> Editar
             </a>
         </div>
@@ -66,15 +67,15 @@
 
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card border-warning shadow-sm h-100">
-                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <div class="card border-success shadow-sm h-100">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0 fw-bold">PET 1</h4>
                     <span class="badge bg-white text-dark border">ID: #TMAT-001</span>
                 </div>
                 <div class="card-body bg-light p-4">
                     <div class="row mb-4 g-3 border-bottom border-warning pb-3">
                         <div class="col-md-6">
-                            <strong class="text-warning text-dark text-uppercase small d-block mb-1">Nombre:</strong>
+                            <strong class="text-success text-dark text-uppercase small d-block mb-1">Nombre:</strong>
                             <span class="fs-5 fw-semibold">PET 1</span>
                         </div>
                         <div class="col-md-6">
@@ -85,7 +86,7 @@
 
                     <div class="row mb-4 g-3">
                         <div class="col-12">
-                            <strong class="text-warning text-dark text-uppercase small d-block mb-2">Descripción Detallada:</strong>
+                            <strong class="text-success text-dark text-uppercase small d-block mb-2">Descripción Detallada:</strong>
                             <div class="bg-white p-3 rounded border border-light-subtle text-muted shadow-sm">
                                 Polietileno Tereftalato, usado comúnmente en botellas de bebidas, agua y empaques transparentes. Altamente reciclable.
                             </div>
@@ -94,11 +95,11 @@
 
                     <div class="row mt-4 g-3">
                         <div class="col-md-6">
-                            <strong class="text-warning text-dark text-uppercase small d-block mb-1">Fecha de creación:</strong>
+                            <strong class="text-success text-dark text-uppercase small d-block mb-1">Fecha de creación:</strong>
                             <span class="text-muted"><i class="fas fa-calendar-alt me-1"></i> 10/01/2025</span>
                         </div>
                         <div class="col-md-6">
-                            <strong class="text-warning text-dark text-uppercase small d-block mb-1">Última modificación:</strong>
+                            <strong class="text-success text-dark text-uppercase small d-block mb-1">Última modificación:</strong>
                             <span class="text-muted"><i class="fas fa-clock me-1"></i> 18/02/2025</span>
                         </div>
                     </div>

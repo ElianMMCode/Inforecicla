@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -13,8 +14,8 @@
   <div class="row g-0">
 
     <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-        <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+        <img src="{% static 'img/logo.png' %}" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
         <div class="d-flex flex-column lh-sm">
           <span class="fw-semibold">InfoRecicla</span>
           <small class="text-white-50">Administración</small>
@@ -32,18 +33,18 @@
           <li class="nav-item"><a href="index.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
           <li class="nav-item"><a href="lista.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Ver usuarios</a></li>
           <li class="nav-item"><a href="crear.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear usuario</a></li>
-          <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
+          <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="{% url 'panel_admin:panel_admin' %}" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Panel</a></li>
         </ul>
       </nav>
     </aside>
 
     <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
       <div class="d-flex align-items-center justify-content-between px-3">
-        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
           <i class="bi bi-recycle fs-3"></i>
           <span class="fw-semibold">InfoRecicla</span>
         </a>
-        <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
+        <a class="text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}"><i class="bi bi-house fs-5"></i></a>
       </div>
       <nav class="mt-2">
         <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
@@ -61,8 +62,8 @@
           <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-pencil-square"></i> Editar Usuario</h1>
           <p class="text-muted mb-0">Actualiza la información del perfil</p>
         </div>
-        <a href="detalles.html" class="btn btn-outline-success d-none d-sm-block">
-          <i class="bi bi-arrow-left"></i> Volver a Detalles
+        <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-success d-none d-sm-block">
+          <i class="bi bi-arrow-left"></i> Volver al Listado
         </a>
       </div>
 
@@ -76,34 +77,80 @@
           <div class="alert alert-success d-flex align-items-center mb-4 border-success bg-success bg-opacity-10" role="alert">
             <i class="bi bi-info-circle-fill fs-4 me-3 text-success"></i>
             <div>
-              Estás editando la información de: <strong class="text-success">Juan Carlos Pérez</strong>
+              Estás editando la información de: <strong class="text-success">{{ usuario.nombres }} {{ usuario.apellidos }}</strong>
             </div>
           </div>
 
-          <form class="needs-validation" action="detalles.html" novalidate>
+          <form class="needs-validation" method="post" action="{% url 'panel_admin:editar_usuario_admin' usuario.id %}" novalidate>
+            {% csrf_token %}
 
             <div class="mb-4">
               <h6 class="border-bottom border-success pb-2 text-success fw-bold"><i class="bi bi-info-circle me-1"></i> Información Básica</h6>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" value="Juan Carlos" required minlength="3" maxlength="30">
+                  <input type="text" class="form-control" name="nombres" value="{{ usuario.nombres }}" required minlength="3" maxlength="30">
                   <div class="invalid-feedback">Nombres inválidos.</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" value="Pérez García" required minlength="2" maxlength="40">
+                  <input type="text" class="form-control" name="apellidos" value="{{ usuario.apellidos }}" required minlength="2" maxlength="40">
                   <div class="invalid-feedback">Apellidos inválidos.</div>
                 </div>
                 <div class="col-md-6">
+                  <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                  <input type="email" class="form-control" name="email" value="{{ usuario.email }}" required>
+                  <div class="invalid-feedback">Email inválido.</div>
+                </div>
+                <div class="col-md-6">
                   <label class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
-                  <input type="tel" class="form-control" value="3001234567" required pattern="^3\d{9}$">
+                  <input type="tel" class="form-control" name="celular" value="{{ usuario.celular|default:'' }}" pattern="^3\d{9}$">
                   <div class="invalid-feedback">Debe iniciar con 3 y tener 10 dígitos.</div>
                 </div>
                 <div class="col-md-6">
+                  <label class="form-label fw-semibold">Tipo de Documento <span class="text-danger">*</span></label>
+                  <select class="form-select" name="tipoDocumento" required>
+                    {% for value, label in tipos_documento %}
+                    <option value="{{ value }}" {% if usuario.tipo_documento == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="invalid-feedback">Seleccione un tipo de documento.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Número de Documento <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" name="numeroDocumento" value="{{ usuario.numero_documento }}" required minlength="5" maxlength="20">
+                  <div class="invalid-feedback">Número de documento inválido.</div>
+                </div>
+                <div class="col-md-6">
                   <label class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" value="Bogotá" required maxlength="15">
+                  <input type="text" class="form-control" name="ciudad" value="{{ usuario.ciudad|default:'' }}" required maxlength="15">
                   <div class="invalid-feedback">Ciudad obligatoria.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Localidad</label>
+                  <select class="form-select" name="localidad">
+                    <option value="">Seleccionar localidad...</option>
+                    {% for loc in localidades %}
+                    <option value="{{ loc.localidad_id }}" {% if usuario.localidad and usuario.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>{{ loc.nombre }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span></label>
+                  <select class="form-select" name="tipo_usuario" required>
+                    {% for value, label in tipos_usuario %}
+                    <option value="{{ value }}" {% if usuario.tipo_usuario == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="invalid-feedback">Seleccione un tipo de usuario.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
+                  <select class="form-select" name="estado_usuario" required>
+                    <option value="activo" {% if usuario.is_active %}selected{% endif %}>Activo</option>
+                    <option value="inactivo" {% if not usuario.is_active %}selected{% endif %}>Inactivo</option>
+                  </select>
+                  <div class="invalid-feedback">Seleccione un estado.</div>
                 </div>
               </div>
             </div>
@@ -112,7 +159,23 @@
               <h6 class="border-bottom border-success pb-2 text-success fw-bold"><i class="bi bi-calendar me-1"></i> Fecha de Nacimiento</h6>
               <div class="row g-3">
                 <div class="col-md-6">
-                  <input type="date" class="form-control" value="1990-05-15">
+                  <label class="form-label fw-semibold">Fecha de Nacimiento</label>
+                  <input type="date" class="form-control" name="fechaNacimiento" value="{{ usuario.fecha_nacimiento|date:'Y-m-d' }}">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <h6 class="border-bottom border-success pb-2 text-success fw-bold"><i class="bi bi-shield-lock me-1"></i> Contraseña</h6>
+              <p class="text-muted small mb-3">Completa estos campos solo si deseas cambiar la contraseña actual.</p>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Contraseña nueva</label>
+                  <input type="password" class="form-control" name="password" minlength="8" autocomplete="new-password">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Confirmar contraseña</label>
+                  <input type="password" class="form-control" name="passwordConfirm" minlength="8" autocomplete="new-password">
                 </div>
               </div>
             </div>
@@ -120,7 +183,7 @@
             <div class="mb-4">
               <h6 class="border-bottom border-success pb-2 text-success fw-bold"><i class="bi bi-file-text me-1"></i> Información Adicional</h6>
               <label class="form-label fw-semibold">Biografía / Notas</label>
-              <textarea class="form-control" rows="4" maxlength="500">Usuario muy activo en las campañas de reciclaje de su localidad. Ha participado en 3 jornadas de recolección de plásticos de un solo uso durante este semestre.</textarea>
+              <textarea class="form-control" rows="4" maxlength="500" name="biografia">{{ usuario.biografia|default:'' }}</textarea>
               <div class="d-flex justify-content-between mt-1">
                 <small class="text-muted">Añade información relevante sobre el usuario.</small>
                 <small class="text-muted">165 / 500 caracteres</small>
@@ -134,7 +197,7 @@
               <button type="reset" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-clockwise me-1"></i> Deshacer Cambios
               </button>
-              <a href="lista.html" class="btn btn-outline-danger ms-auto">
+              <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-danger ms-auto">
                 <i class="bi bi-x-circle me-1"></i> Cancelar
               </a>
             </div>

@@ -1,0 +1,186 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Estadísticas de Inventarios{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 col-md-8">
+            <h1 class="h3 mb-1"><i class="fas fa-chart-bar text-warning me-2"></i>Estadísticas de Inventarios</h1>
+            <p class="text-muted">Análisis y tendencias de ocupación por punto ECA</p>
+        </div>
+        <div class="col-12 col-md-4 text-end">
+            <a href="{% url 'inventory:listar_inventarios' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="row g-3 mb-5">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Total Inventarios</p>
+                    <h3 class="mb-0 text-info">{{ inventarios|length }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Stock Total</p>
+                    <h3 class="mb-0 text-success">{{ total_stock|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Capacidad Total</p>
+                    <h3 class="mb-0 text-primary">{{ total_capacidad|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Ocupación Promedio</p>
+                    {% if total_capacidad > 0 %}
+                        {% widthratio total_stock total_capacidad 100 as ocupacion_promedio %}
+                        <h3 class="mb-0">{{ ocupacion_promedio }}%</h3>
+                    {% else %}
+                        <h3 class="mb-0">0%</h3>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ocupación por Punto ECA -->
+    <div class="row g-3 mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Ocupación por Punto ECA</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if estadisticas_por_punto %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Punto ECA</th>
+                                    <th>Stock Total</th>
+                                    <th>Capacidad</th>
+                                    <th>Ocupación</th>
+                                    <th>Gráfico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for punto, stats in estadisticas_por_punto.items %}
+                                <tr>
+                                    <td><strong>{{ punto }}</strong></td>
+                                    <td>{{ stats.total_stock|floatformat:1 }}</td>
+                                    <td>{{ stats.capacidad|floatformat:1 }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if stats.ocupacion >= 80 %}bg-danger
+                                            {% elif stats.ocupacion >= 60 %}bg-warning
+                                            {% else %}bg-success{% endif %}">
+                                            {{ stats.ocupacion|floatformat:0 }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <progress class="w-100" value="{{ stats.ocupacion|floatformat:0 }}" max="100" aria-label="Ocupación de {{ punto }}"></progress>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución de Materiales -->
+    <div class="row g-3 mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-cube me-2"></i>Distribución de Materiales</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if inventarios %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Punto ECA</th>
+                                    <th>Stock</th>
+                                    <th>Capacidad</th>
+                                    <th>Ocupación</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inv in inventarios %}
+                                <tr>
+                                    <td>{{ inv.material.nombre }}</td>
+                                    <td>{{ inv.punto_eca.nombre }}</td>
+                                    <td>{{ inv.stock_actual|floatformat:1 }}</td>
+                                    <td>{{ inv.capacidad_maxima|floatformat:1 }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if inv.ocupacion_actual >= inv.umbral_critico %}bg-danger
+                                            {% elif inv.ocupacion_actual >= inv.umbral_alerta %}bg-warning
+                                            {% else %}bg-success{% endif %}">
+                                            {{ inv.ocupacion_actual|floatformat:0 }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if inv.ocupacion_actual >= inv.umbral_critico %}
+                                            <i class="fas fa-exclamation-triangle text-danger me-1"></i>Crítico
+                                        {% elif inv.ocupacion_actual >= inv.umbral_alerta %}
+                                            <i class="fas fa-exclamation-circle text-warning me-1"></i>Alerta
+                                        {% else %}
+                                            <i class="fas fa-check-circle text-success me-1"></i>OK
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <p class="small text-muted mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> Los datos se actualizan en tiempo real. Las estadísticas incluyen todos los inventarios registrados en el sistema.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

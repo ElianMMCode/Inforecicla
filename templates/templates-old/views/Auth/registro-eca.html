@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+{% load static %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,8 +27,20 @@
         }
 
         .register-header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 2rem;
+        }
+
+        .register-header-content {
+            text-align: center;
+            flex: 1;
+        }
+
+        .register-header-content img {
+            max-width: 72px;
+            margin-bottom: 0.75rem;
         }
 
         .register-header h2 {
@@ -41,6 +54,32 @@
             color: #666;
             font-size: 0.9rem;
             margin-top: 0.5rem;
+        }
+
+        .register-header-nav {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-nav-top {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            background: white;
+            color: #28a745;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-nav-top:hover {
+            background: #28a745;
+            color: white;
+            transform: translateY(-2px);
         }
 
         .form-label {
@@ -185,30 +224,73 @@
 <div class="register-container">
     <div class="register-card">
         <div class="register-header">
-            <h2>Registro de Punto ECA</h2>
-            <p>Registra tu estación de reciclaje en InfoRecicla</p>
+            <div class="register-header-content">
+                <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla">
+                <h2>Registro de Punto ECA</h2>
+                <p>Registra tu estación de reciclaje en InfoRecicla</p>
+            </div>
+            <div class="register-header-nav">
+                <a href="/" class="btn-nav-top">Inicio</a>
+                <a href="/login" class="btn-nav-top">Login</a>
+            </div>
         </div>
 
-        <!-- Mensaje de error general -->
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error:</strong> <span></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if errores %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Se encontraron errores:</strong>
+                <ul class="mb-0 mt-2">
+                    {% for err in errores %}
+                        <li>{{ err }}</li>
+                    {% endfor %}
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endif %}
+
+        <div class="alert alert-info" role="alert">
+            <strong>Carga masiva CSV:</strong> puedes crear puntos ECA desde archivo CSV.
+            Columnas recomendadas: <code>nombres,apellidos,email,celular,telefono_punto,direccion,ciudad,localidad,latitud,longitud,descripcion,tipoDocumento,numeroDocumento,password</code>
         </div>
+
+        <form method="POST" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            <input type="hidden" name="carga_masiva" value="1">
+            <input type="hidden" name="account_type" value="eca">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-9">
+                    <label for="archivo_csv_eca" class="form-label">Archivo CSV</label>
+                    <input type="file" id="archivo_csv_eca" name="archivo" class="form-control" accept=".csv" required>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button type="submit" class="btn btn-outline-success">Importar CSV</button>
+                </div>
+            </div>
+        </form>
 
         <form method="POST">
+            {% csrf_token %}
             <!-- Información de la Institución -->
             <h5 class="mb-3">Información de la Institución</h5>
 
             <div class="form-group">
                 <label for="nombres" class="form-label">Nombre de la Institución/ECA</label>
-                <input type="text" class="form-control" id="nombres"
+                  <input type="text" class="form-control" id="nombres" name="nombres"
                        placeholder="Ej: Centro Ambiental San Felipe" required>
                 <div class="invalid-feedback"></div>
             </div>
 
             <div class="form-group">
                 <label for="direccion" class="form-label">Dirección</label>
-                <input type="text" class="form-control" id="direccion"
+                  <input type="text" class="form-control" id="direccion" name="direccion"
                        placeholder="Calle 10 # 20 - 30" required>
                 <div class="invalid-feedback"></div>
             </div>
@@ -219,23 +301,30 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="apellidos" class="form-label">Nombre del Contacto</label>
-                    <input type="text" class="form-control" id="apellidos"
+                          <input type="text" class="form-control" id="apellidos" name="apellidos"
                            placeholder="Ej: Juan Pérez" required>
                     <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="celular" class="form-label">Teléfono de Contacto</label>
-                    <input type="text" class="form-control" id="celular"
+                    <input type="text" class="form-control" id="celular" name="celular"
                            placeholder="3001234567" required pattern="3[0-9]{9}">
                     <div class="invalid-feedback"></div>
                 </div>
             </div>
 
+            <div class="form-group">
+                <label for="telefono_punto" class="form-label">Teléfono fijo del Punto ECA</label>
+                <input type="text" class="form-control" id="telefono_punto" name="telefono_punto"
+                       placeholder="6012345678" required pattern="60[0-9]{8}">
+                <div class="invalid-feedback"></div>
+            </div>
+
             <!-- Contacto Electrónico -->
             <div class="form-group">
                 <label for="email" class="form-label">Email de Contacto</label>
-                <input type="email" class="form-control" id="email"
+                  <input type="email" class="form-control" id="email" name="email"
                        placeholder="contacto@eca.com" required>
                 <div class="invalid-feedback"></div>
             </div>
@@ -244,7 +333,7 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
-                    <select class="form-select" id="tipoDocumento">
+                    <select class="form-select" id="tipoDocumento" name="tipoDocumento">
                         <option value="">Seleccionar...</option>
                         <option value="CC">Cédula de Ciudadanía</option>
                         <option value="CE">Cédula de Extranjería</option>
@@ -256,7 +345,7 @@
 
                 <div class="form-group">
                     <label for="numeroDocumento" class="form-label">Número de Documento</label>
-                    <input type="text" class="form-control" id="numeroDocumento"
+                          <input type="text" class="form-control" id="numeroDocumento" name="numeroDocumento"
                            placeholder="123456789">
                     <div class="invalid-feedback"></div>
                 </div>
@@ -275,14 +364,14 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="latitud" class="form-label">Latitud</label>
-                    <input type="number" class="form-control" id="latitud"
+                          <input type="number" class="form-control" id="latitud" name="latitud"
                            placeholder="4.7110" step="0.0001" required>
                     <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="longitud" class="form-label">Longitud</label>
-                    <input type="number" class="form-control" id="longitud"
+                          <input type="number" class="form-control" id="longitud" name="longitud"
                            placeholder="-74.0721" step="0.0001" required>
                     <div class="invalid-feedback"></div>
                 </div>
@@ -291,7 +380,7 @@
             <div class="row-cols single">
                 <div class="form-group">
                     <label for="ciudad" class="form-label">Ciudad</label>
-                    <input type="text" class="form-control" id="ciudad"
+                          <input type="text" class="form-control" id="ciudad" name="ciudad"
                            placeholder="Bogotá" required value="Bogotá">
                 </div>
             </div>
@@ -299,9 +388,11 @@
             <div class="row-cols single">
                 <div class="form-group">
                     <label for="localidad" class="form-label">Localidad</label>
-                    <select class="form-select" id="localidad" required>
+                    <select class="form-select" id="localidad" name="localidad" required>
                         <option value="">Seleccionar localidad...</option>
-                        <option></option>
+                        {% for loc in localidades %}
+                        <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
+                        {% endfor %}
                     </select>
                     <div class="invalid-feedback"></div>
                 </div>
@@ -310,7 +401,7 @@
             <!-- Descripción -->
             <div class="form-group">
                 <label for="descripcion" class="form-label">Descripción del Punto ECA (Opcional)</label>
-                <textarea class="form-control" id="descripcion"
+                <textarea class="form-control" id="descripcion" name="descripcion"
                           placeholder="Describe tu punto ECA, servicios, horarios, etc." rows="4"></textarea>
                 <div class="invalid-feedback"></div>
             </div>
@@ -333,14 +424,14 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="password"
+                          <input type="password" class="form-control" id="password" name="password"
                            placeholder="Contraseña segura" required>
                     <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
-                    <input type="password" class="form-control" id="passwordConfirm"
+                          <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm"
                            placeholder="Repite tu contraseña" required>
                     <div class="invalid-feedback"></div>
                 </div>
@@ -348,7 +439,7 @@
 
             <!-- Términos y condiciones -->
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="terminos" required>
+                <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
                 <label class="form-check-label" for="terminos">
                     Acepto los <a href="#" target="_blank">términos y condiciones</a> de InfoRecicla
                 </label>

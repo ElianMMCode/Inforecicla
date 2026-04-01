@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -15,8 +16,8 @@
   <div class="row g-0">
 
     <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-        <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+      <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+        <img src="{% static 'img/logo.png' %}" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
         <div class="d-flex flex-column lh-sm">
           <span class="fw-semibold">InfoRecicla</span>
           <small class="text-white-50">Administración</small>
@@ -33,26 +34,26 @@
         <small class="text-white-50">Gestión completa del CRUD</small>
       </div>
 
-      <nav class="w-100" role="navigation">
+      <nav class="w-100" role="navigation" aria-label="Menú lateral de usuarios">
         <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
           <li class="nav-item">
-            <a href="index.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
+            <a href="indexUsuario.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
               <i class="bi bi-speedometer2"></i> Resumen
             </a>
           </li>
           <li class="nav-item">
-            <a href="lista.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 bg-white text-success fw-semibold border-start border-4 border-success rounded-start">
+            <a href="listUsuario.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 bg-white text-success fw-semibold border-start border-4 border-success rounded-start">
               <i class="bi bi-list"></i> Ver usuarios
             </a>
           </li>
           <li class="nav-item">
-            <a href="crear.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
+            <a href="/registro/ciudadano/" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
               <i class="bi bi-plus-circle"></i> Crear usuario
             </a>
           </li>
           <li class="nav-item mt-2 border-top border-white-50 pt-3">
-            <a href="../admin.html" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-              <i class="bi bi-house"></i> Volver al Dashboard
+            <a href="{% url 'panel_admin:panel_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
+              <i class="bi bi-house"></i> Volver al Panel
             </a>
           </li>
         </ul>
@@ -61,19 +62,19 @@
 
     <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
       <div class="d-flex align-items-center justify-content-between px-3">
-        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
           <i class="bi bi-recycle fs-3"></i>
           <span class="fw-semibold">InfoRecicla</span>
         </a>
-        <a class="text-white text-decoration-none" href="../admin.html">
+        <a class="text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
           <i class="bi bi-house fs-5"></i>
         </a>
       </div>
-      <nav class="mt-2">
+      <nav class="mt-2" aria-label="Menú móvil de usuarios">
         <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
-          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="index.html">Resumen</a></li>
-          <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="lista.html">Usuarios</a></li>
-          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="crear.html">Crear</a></li>
+          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="indexUsuario.html">Resumen</a></li>
+          <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="listUsuario.html">Usuarios</a></li>
+          <li class="nav-item"><a class="nav-link text-white text-nowrap" href="/registro/ciudadano/">Crear</a></li>
         </ul>
       </nav>
     </div>
@@ -85,7 +86,7 @@
           <h1 class="h2 fw-bold text-success mb-1">Gestión de Usuarios</h1>
           <p class="text-muted mb-0">Administra usuarios, roles y datos del sistema.</p>
         </div>
-        <a href="crear.html" class="btn btn-success d-none d-sm-block">
+        <a href="/registro/ciudadano/" class="btn btn-success d-none d-sm-block">
           <i class="bi bi-plus-circle me-1"></i> Nuevo Usuario
         </a>
       </div>
@@ -97,37 +98,39 @@
             <i class="bi bi-funnel"></i> Filtros de Búsqueda
           </div>
           <div class="card-body bg-light">
-            <div class="row g-3">
+            <form method="get" class="row g-3">
               <div class="col-md-4">
-                <input type="text" class="form-control" id="filtroNombre" placeholder="Buscar por nombre o correo...">
+                <label class="form-label text-success fw-bold small">Buscar por nombre o correo</label>
+                <input type="text" class="form-control" name="q" placeholder="Buscar por nombre o correo..." value="{{ search_query }}">
               </div>
               <div class="col-md-3">
-                <select class="form-select" id="filtroTipo">
+                <label class="form-label text-success fw-bold small">Rol</label>
+                <select class="form-select" name="tipo">
                   <option value="">Todos los roles</option>
-                  <option value="Admin">Administrador</option>
-                  <option value="Ciudadano">Ciudadano</option>
-                  <option value="GestorECA">Gestor ECA</option>
+                  <option value="ADM" {% if search_tipo == 'ADM' %}selected{% endif %}>Administrador</option>
+                  <option value="CIU" {% if search_tipo == 'CIU' %}selected{% endif %}>Ciudadano</option>
+                  <option value="GECA" {% if search_tipo == 'GECA' %}selected{% endif %}>Gestor ECA</option>
                 </select>
               </div>
               <div class="col-md-3">
-                <select class="form-select" id="filtroEstado">
+                <label class="form-label text-success fw-bold small">Estado</label>
+                <select class="form-select" name="estado">
                   <option value="">Todos los estados</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Suspendido">Suspendido</option>
-                  <option value="Bloqueado">Bloqueado</option>
+                  <option value="activo" {% if search_estado == 'activo' %}selected{% endif %}>Activo</option>
+                  <option value="inactivo" {% if search_estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
                 </select>
               </div>
               <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-success"><i class="bi bi-search"></i> Filtrar</button>
+                <button type="submit" class="btn btn-outline-success"><i class="bi bi-search"></i> Filtrar</button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
 
         <div class="card border-success shadow-sm">
           <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
             <span><i class="bi bi-table"></i> Directorio de Usuarios</span>
-            <span class="badge bg-light text-success">Total: 45</span>
+            <span class="badge bg-light text-success">Total: {{ usuarios|length }}</span>
           </div>
 
           <div class="table-responsive">
@@ -143,42 +146,38 @@
               </tr>
               </thead>
               <tbody>
+                {% for u in usuarios %}
                 <tr>
-                  <td><strong>Juan Carlos Pérez</strong></td>
-                  <td>juan.perez@email.com</td>
-                  <td>3001234567</td>
-                  <td><span class="badge bg-success">Ciudadano</span></td>
-                  <td><span class="badge bg-success">Activo</span></td>
+                  <td><strong>{{ u.nombres }} {{ u.apellidos }}</strong></td>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.celular|default:"-" }}</td>
+                  <td>
+                    {% if u.tipo_usuario == 'ADM' %}
+                    <span class="badge bg-dark">Administrador</span>
+                    {% elif u.tipo_usuario == 'GECA' %}
+                    <span class="badge bg-info text-dark">Gestor ECA</span>
+                    {% else %}
+                    <span class="badge bg-success">Ciudadano</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if u.is_active %}
+                    <span class="badge bg-success">Activo</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                  </td>
                   <td class="text-center">
-                    <a href="detalles.html" class="btn btn-outline-success btn-sm me-1" title="Ver"><i class="bi bi-eye"></i></a>
-                    <a href="editar.html" class="btn btn-outline-primary btn-sm me-1" title="Editar"><i class="bi bi-pencil"></i></a>
-                    <button class="btn btn-outline-danger btn-sm" title="Eliminar"><i class="bi bi-trash"></i></button>
+                    <a href="{% url 'panel_admin:editar_usuario_admin' u.id %}" class="btn btn-outline-success btn-sm me-1" title="Ver"><i class="bi bi-eye"></i></a>
+                    <a href="{% url 'panel_admin:editar_usuario_admin' u.id %}" class="btn btn-outline-primary btn-sm me-1" title="Editar"><i class="bi bi-pencil"></i></a>
+                    <button class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="eliminarUsuario(this)" data-user-id="{{ u.id }}"><i class="bi bi-trash"></i></button>
                   </td>
                 </tr>
+                {% empty %}
                 <tr>
-                  <td><strong>María Gómez</strong></td>
-                  <td>mgomez@admin.com</td>
-                  <td>3119876543</td>
-                  <td><span class="badge bg-dark">Administrador</span></td>
-                  <td><span class="badge bg-success">Activo</span></td>
-                  <td class="text-center">
-                    <a href="detalles.html" class="btn btn-outline-success btn-sm me-1"><i class="bi bi-eye"></i></a>
-                    <a href="editar.html" class="btn btn-outline-primary btn-sm me-1"><i class="bi bi-pencil"></i></a>
-                    <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
-                  </td>
+                  <td colspan="6" class="text-center text-muted py-3">No hay usuarios registrados.</td>
                 </tr>
-                <tr>
-                  <td><strong>Carlos Ruiz</strong></td>
-                  <td>carlos.eca@recicla.com</td>
-                  <td>3205554433</td>
-                  <td><span class="badge bg-info text-dark">Gestor ECA</span></td>
-                  <td><span class="badge bg-warning text-dark">Suspendido</span></td>
-                  <td class="text-center">
-                    <a href="detalles.html" class="btn btn-outline-success btn-sm me-1"><i class="bi bi-eye"></i></a>
-                    <a href="editar.html" class="btn btn-outline-primary btn-sm me-1"><i class="bi bi-pencil"></i></a>
-                    <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
-                  </td>
-                </tr>
+                {% endfor %}
               </tbody>
             </table>
           </div>
@@ -209,5 +208,15 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function eliminarUsuario(button) {
+  if (confirm('¿Está seguro de que desea eliminar este usuario?')) {
+    const row = button.closest('tr');
+    row.style.opacity = '0.5';
+    // Implementar lógica de eliminación con backend
+    // fetch(`/panel_admin/usuarios/${button.dataset.userId}/`, { method: 'DELETE' })
+  }
+}
+</script>
 </body>
 </html>

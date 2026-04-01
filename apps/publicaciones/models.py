@@ -26,6 +26,12 @@ class CategoriaPublicacion(CreacionModificacionModel):
 class Publicacion(CreacionModificacionModel):
     titulo = models.CharField(max_length=255, null=False)
 
+    contenido = models.TextField(null=True, blank=True)
+
+    imagen = models.ImageField(upload_to="publicaciones/", null=True, blank=True)
+
+    url_video = models.URLField(max_length=200, null=True, blank=True)
+
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     # Relacion con la tabla CategoriaPublicacion

@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -14,8 +15,8 @@
     <div class="row g-0">
 
         <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
                 <div class="d-flex flex-column lh-sm">
                     <span class="fw-semibold">InfoRecicla</span>
                     <small class="text-white-50">Administración</small>
@@ -26,18 +27,18 @@
                     <li class="nav-item"><a href="indexTipoMaterial.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
                     <li class="nav-item"><a href="listTipoMaterial.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Ver tipos</a></li>
                     <li class="nav-item"><a href="createTipoMaterial.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear tipo</a></li>
-                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
+                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="{% url 'panel_admin:panel_admin' %}" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Panel</a></li>
                 </ul>
             </nav>
         </aside>
 
         <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
             <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
                     <i class="bi bi-recycle fs-3"></i>
                     <span class="fw-semibold">InfoRecicla</span>
                 </a>
-                <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
+                <a class="text-white text-decoration-none" href="{% url 'panel_admin:panel_admin' %}"><i class="bi bi-house fs-5"></i></a>
             </div>
             <nav class="mt-2">
                 <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
@@ -51,21 +52,21 @@
         <main class="col offset-md-2 p-4">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
         <div>
-            <h1 class="h2 fw-bold text-warning mb-1"><i class="fas fa-tags me-2"></i>Dashboard de Tipos de Material</h1>
+            <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-tags me-2"></i>Dashboard de Tipos de Material</h1>
             <p class="text-muted mb-0">Resumen y métricas de las subclasificaciones</p>
         </div>
-        <a href="crear.html" class="btn btn-warning fw-bold text-dark d-none d-sm-block shadow-sm">
+        <a href="crear.html" class="btn btn-success fw-bold text-white d-none d-sm-block shadow-sm">
             <i class="fas fa-plus-circle me-1"></i> Nuevo Tipo
         </a>
     </div>
 
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-warning h-100">
+            <div class="card border-0 shadow-sm border-bottom border-3 border-success h-100">
                 <div class="card-body text-center p-4">
-                    <i class="fas fa-tags text-warning fa-2x mb-2"></i>
-                    <div class="text-warning fw-bold text-uppercase small">Total Tipos</div>
-                    <div class="display-6 text-warning fw-bold">15</div>
+                    <i class="fas fa-tags text-success fa-2x mb-2"></i>
+                    <div class="text-success fw-bold text-uppercase small">Total Tipos</div>
+                    <div class="display-6 text-success fw-bold">15</div>
                 </div>
             </div>
         </div>
@@ -109,7 +110,7 @@
                     <h6 class="mb-0 fw-bold"><i class="fas fa-lightbulb me-2"></i>Acciones Rápidas</h6>
                 </div>
                 <div class="card-body text-center bg-light p-4">
-                    <a href="crear.html" class="btn btn-warning mb-3 w-100 fw-bold text-dark shadow-sm">
+                    <a href="crear.html" class="btn btn-success mb-3 w-100 fw-bold text-white shadow-sm">
                         <i class="fas fa-plus-circle me-2"></i>Crear Nuevo Tipo
                     </a>
                     <a href="lista.html" class="btn btn-outline-dark mb-3 w-100 bg-white">

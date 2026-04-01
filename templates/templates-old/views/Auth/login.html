@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+{% load static %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,26 +25,59 @@
         }
 
         .login-header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 2rem;
         }
 
-        .login-header img {
+        .login-header-content {
+            text-align: center;
+            flex: 1;
+        }
+
+        .login-header-content img {
             max-width: 80px;
             margin-bottom: 1rem;
         }
 
-        .login-header h1 {
+        .login-header-content h1 {
             font-size: 1.8rem;
             color: #28a745;
             font-weight: bold;
             margin: 0;
         }
 
-        .login-header p {
+        .login-header-content p {
             color: #666;
             font-size: 0.9rem;
             margin-top: 0.5rem;
+        }
+
+        .login-header-nav {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-nav-top {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            background: white;
+            color: #28a745;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-nav-top:hover {
+            background: #28a745;
+            color: white;
+            transform: translateY(-2px);
         }
 
         .form-control {
@@ -215,24 +249,38 @@
 <div class="login-container">
     <div class="login-card">
         <div class="login-header">
-            <img src="/imagenes/logo.png" alt="Logo InfoRecicla">
-            <h1>InfoRecicla</h1>
-            <p>Plataforma de Reciclaje y Gestión ECA</p>
+            <div class="login-header-content">
+                <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla">
+                <h1>InfoRecicla</h1>
+                <p>Plataforma de Reciclaje y Gestión ECA</p>
+            </div>
+            <div class="login-header-nav">
+                <a href="/" class="btn-nav-top">Inicio</a>
+                <a href="/registro/ciudadano" class="btn-nav-top">Registro</a>
+            </div>
         </div>
 
-        <!-- Mensaje de error -->
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error:</strong> <span></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
 
-        <!-- Mensaje de registro exitoso -->
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>¡Éxito!</strong> <span></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
+        {% if errores %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {% for err in errores %}
+                    <div>{{ err }}</div>
+                {% endfor %}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endif %}
 
         <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next|default:'' }}">
             <div class="form-group">
                 <label for="email" class="form-label">Correo Electrónico</label>
                 <input type="email" class="form-control" id="email" name="email" placeholder="tu@email.com" required autofocus>

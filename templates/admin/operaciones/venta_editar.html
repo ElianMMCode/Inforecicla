@@ -1,0 +1,131 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Editar Venta{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-1"><i class="fas fa-edit text-warning me-2"></i>Editar Venta</h1>
+            <p class="text-muted">Actualizar detalles de la venta #{{ venta.id }}</p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Detalles de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="inventario" class="form-label">Inventario</label>
+                            <input type="text" class="form-control" id="inventario" disabled value="{{ venta.inventario.material.nombre }}">
+                            <small class="text-muted">{{ venta.inventario.punto_eca.nombre }}</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cantidad" class="form-label">Cantidad <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="cantidad" name="cantidad" 
+                                           step="0.01" min="0" value="{{ venta.cantidad }}" required>
+                                    <div class="invalid-feedback">
+                                        La cantidad es obligatoria.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="precio_venta" class="form-label">Precio Unitario <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="precio_venta" 
+                                               name="precio_venta" step="0.01" min="0" value="{{ venta.precio_venta }}" required>
+                                    </div>
+                                    <div class="invalid-feedback">
+                                        El precio es obligatorio.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="centro_acopio_id" class="form-label">Centro de Acopio</label>
+                            <select class="form-select" id="centro_acopio_id" name="centro_acopio_id">
+                                <option value="">-- Sin Centro --</option>
+                                {% for centro in centros_acopio %}
+                                <option value="{{ centro.id }}" {% if venta.centro_acopio.id == centro.id %}selected{% endif %}>{{ centro.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fecha_venta" class="form-label">Fecha de Venta</label>
+                            <input type="text" class="form-control" disabled value="{{ venta.fecha_venta|date:'d/m/Y H:i' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ venta.observaciones }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>Actualizar Venta
+                            </button>
+                            <a href="{% url 'operations:listar_ventas_admin' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Historial</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small"><strong>Información de la venta:</strong></p>
+                    <ul class="small list-unstyled">
+                        <li><strong>ID:</strong> {{ venta.id }}</li>
+                        <li><strong>Material:</strong> {{ venta.inventario.material.nombre }}</li>
+                        <li><strong>Punto ECA:</strong> {{ venta.inventario.punto_eca.nombre }}</li>
+                        <li><strong>Registrado:</strong> {{ venta.fecha_venta|date:'d/m/Y H:i' }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

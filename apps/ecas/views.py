@@ -18,8 +18,22 @@ def render_seccion(request, seccion="resumen"):
     if seccion not in SECTION_TEMPLATES:
         seccion = "resumen"
 
-    usuario_default = Usuario.objects.get(id="33333333-3333-3333-3333-333333333333")
-    punto = get_object_or_404(PuntoECA, gestor_eca=usuario_default)
+    usuario_default = Usuario.objects.filter(
+        id="33333333-3333-3333-3333-333333333333"
+    ).first()
+
+    # Fallback seguro: prioriza el usuario autenticado para evitar DoesNotExist
+    # cuando no existe el UUID semilla en la base de datos.
+    if not usuario_default and getattr(request, "user", None) and request.user.is_authenticated:
+        usuario_default = request.user
+
+    punto = None
+    if usuario_default:
+        punto = PuntoECA.objects.filter(gestor_eca=usuario_default).first()
+    if not punto:
+        punto = PuntoECA.objects.select_related("gestor_eca").first()
+    if not punto:
+        return redirect("panel_admin:panel_admin")
 
     if seccion == "perfil":
         context = _build_perfil_context(punto)

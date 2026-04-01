@@ -1,0 +1,121 @@
+{% extends "admin/admin.html" %}
+{% load static %}
+
+{% block title %}Editar Compra{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-1"><i class="fas fa-edit text-warning me-2"></i>Editar Compra</h1>
+            <p class="text-muted">Actualizar detalles de la compra #{{ compra.id }}</p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><strong>Error:</strong> {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Detalles de la Compra</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="inventario" class="form-label">Inventario</label>
+                            <input type="text" class="form-control" id="inventario" disabled value="{{ compra.inventario.material.nombre }}">
+                            <small class="text-muted">{{ compra.inventario.punto_eca.nombre }}</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cantidad" class="form-label">Cantidad <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="cantidad" name="cantidad" 
+                                           step="0.01" min="0" value="{{ compra.cantidad }}" required>
+                                    <div class="invalid-feedback">
+                                        La cantidad es obligatoria.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="precio_compra" class="form-label">Precio Unitario <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="precio_compra" 
+                                               name="precio_compra" step="0.01" min="0" value="{{ compra.precio_compra }}" required>
+                                    </div>
+                                    <div class="invalid-feedback">
+                                        El precio es obligatorio.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fecha_compra" class="form-label">Fecha de Compra</label>
+                            <input type="text" class="form-control" disabled value="{{ compra.fecha_compra|date:'d/m/Y H:i' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ compra.observaciones }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>Actualizar Compra
+                            </button>
+                            <a href="{% url 'operations:listar_compras_admin' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Historial</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small"><strong>Información de la compra:</strong></p>
+                    <ul class="small list-unstyled">
+                        <li><strong>ID:</strong> {{ compra.id }}</li>
+                        <li><strong>Material:</strong> {{ compra.inventario.material.nombre }}</li>
+                        <li><strong>Punto ECA:</strong> {{ compra.inventario.punto_eca.nombre }}</li>
+                        <li><strong>Registrado:</strong> {{ compra.fecha_compra|date:'d/m/Y H:i' }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}
