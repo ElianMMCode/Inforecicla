@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Categorías de Materiales - InfoRecicla</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 10px; color: #222; margin: 20px; }
+    h1 { color: #198754; font-size: 16px; margin-bottom: 4px; }
+    p.sub { color: #666; font-size: 9px; margin: 0 0 14px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background-color: #198754; color: white; }
+    thead th { padding: 6px 8px; text-align: left; font-size: 9px; }
+    tbody tr:nth-child(even) { background-color: #f2f9f4; }
+    tbody td { padding: 5px 8px; border-bottom: 1px solid #ddd; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: bold; }
+    .badge-activo { background: #d1f5e0; color: #145a32; }
+    .badge-otro { background: #e8e8e8; color: #555; }
+    .footer { margin-top: 12px; font-size: 8px; color: #999; text-align: right; }
+  </style>
+</head>
+<body>
+  <h1>Categorías de Materiales — InfoRecicla</h1>
+  <p class="sub">Total: {{ categorias|length }} categoría(s) &nbsp;|&nbsp; Generado: {% now "d/m/Y H:i" %}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in categorias %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ c.nombre }}</strong></td>
+        <td>{{ c.descripcion|default:"-"|truncatechars:70 }}</td>
+        <td>
+          {% if c.estado == "ACTIVO" %}
+            <span class="badge badge-activo">Activo</span>
+          {% else %}
+            <span class="badge badge-otro">{{ c.estado }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">InfoRecicla — Panel de Administración</div>
+</body>
+</html>

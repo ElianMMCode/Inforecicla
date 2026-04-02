@@ -23,14 +23,22 @@
   </div>
   {% endif %}
 
-  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
       <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-recycle me-2"></i>Tipos de Material</h1>
       <p class="text-muted mb-0">Gestiona los tipos de materiales reciclables.</p>
     </div>
-    <a href="{% url 'panel_admin:crear_tipo_material' %}" class="btn btn-success">
-      <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
-    </a>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'panel_admin:exportar_tipos_material_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+      <a href="{% url 'panel_admin:crear_tipo_material' %}" class="btn btn-success">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
+      </a>
+    </div>
   </div>
 
   <div class="card border-success mb-4 shadow-sm">

@@ -66,6 +66,151 @@ def listar_usuarios(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_usuarios_pdf(request):
+    import io
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    usuarios = Usuario.objects.all().order_by("apellidos", "nombres")
+    html = render_to_string("admin/Usuarios/usuarios_pdf.html", {"usuarios": usuarios})
+    pdf = HTML(string=html).write_pdf()
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="usuarios.pdf"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_usuarios_excel(request):
+    import io
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Usuarios"
+
+    headers = ["Nombres", "Apellidos", "Email", "Celular", "Tipo Usuario",
+               "Tipo Documento", "N° Documento", "Ciudad", "Estado", "Fecha Registro"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    tipo_labels = dict(cons.TipoUsuario.choices)
+    doc_labels = dict(cons.TipoDocumento.choices)
+
+    for row, u in enumerate(Usuario.objects.all().order_by("apellidos", "nombres"), 2):
+        ws.cell(row=row, column=1, value=u.nombres)
+        ws.cell(row=row, column=2, value=u.apellidos)
+        ws.cell(row=row, column=3, value=u.email)
+        ws.cell(row=row, column=4, value=u.celular or "")
+        ws.cell(row=row, column=5, value=tipo_labels.get(u.tipo_usuario, u.tipo_usuario))
+        ws.cell(row=row, column=6, value=doc_labels.get(u.tipo_documento, u.tipo_documento))
+        ws.cell(row=row, column=7, value=u.numero_documento)
+        ws.cell(row=row, column=8, value=u.ciudad or "")
+        ws.cell(row=row, column=9, value="Activo" if u.is_active else "Inactivo")
+        ws.cell(row=row, column=10, value=u.date_joined.strftime("%Y-%m-%d") if u.date_joined else "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    response = HttpResponse(buf.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="usuarios.xlsx"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def importar_usuarios_csv(request):
+    if request.method != "POST":
+        return redirect("panel_admin:listar_usuarios")
+
+    archivo = request.FILES.get("archivo_csv")
+    if not archivo:
+        messages.error(request, "Debe seleccionar un archivo CSV.")
+        return redirect("panel_admin:listar_usuarios")
+
+    import csv
+    import io
+
+    creados = 0
+    errores = []
+    try:
+        texto = archivo.read().decode("utf-8-sig")
+        lector = csv.DictReader(io.StringIO(texto))
+        campos_requeridos = {"nombres", "apellidos", "email", "celular", "password"}
+        fieldnames = set(lector.fieldnames or [])
+        if not campos_requeridos.issubset(fieldnames):
+            faltantes = campos_requeridos - fieldnames
+            messages.error(request, f"El CSV no tiene las columnas requeridas: {', '.join(faltantes)}")
+            return redirect("panel_admin:listar_usuarios")
+
+        for i, fila in enumerate(lector, 2):
+            try:
+                email = fila.get("email", "").strip().lower()
+                nombres = fila.get("nombres", "").strip()
+                apellidos = fila.get("apellidos", "").strip()
+                celular = fila.get("celular", "").strip()
+                password = fila.get("password", "").strip()
+                tipo_usuario = fila.get("tipo_usuario", "").strip() or cons.TipoUsuario.CIUDADANO
+                tipo_documento = fila.get("tipo_documento", "").strip() or cons.TipoDocumento.CC
+                numero_documento = fila.get("numero_documento", "").strip() or f"CSV_{email}"
+                ciudad = fila.get("ciudad", "").strip() or "Bogotá"
+
+                if not all([email, nombres, apellidos, celular, password]):
+                    errores.append(f"Fila {i}: campos obligatorios incompletos.")
+                    continue
+                if Usuario.objects.filter(email=email).exists():
+                    errores.append(f"Fila {i}: el email '{email}' ya existe.")
+                    continue
+                if Usuario.objects.filter(numero_documento=numero_documento).exists():
+                    errores.append(f"Fila {i}: el documento '{numero_documento}' ya existe.")
+                    continue
+
+                with transaction.atomic():
+                    usuario = Usuario(
+                        email=email,
+                        nombres=nombres,
+                        apellidos=apellidos,
+                        celular=celular,
+                        tipo_usuario=tipo_usuario,
+                        tipo_documento=tipo_documento,
+                        numero_documento=numero_documento,
+                        ciudad=ciudad,
+                    )
+                    usuario.set_password(password)
+                    usuario.save()
+                    creados += 1
+            except Exception as e:
+                errores.append(f"Fila {i}: {e}")
+
+    except Exception as e:
+        messages.error(request, f"Error al procesar el archivo: {e}")
+        return redirect("panel_admin:listar_usuarios")
+
+    if creados:
+        messages.success(request, f"{creados} usuario(s) importado(s) correctamente.")
+    for err in errores[:10]:
+        messages.warning(request, err)
+    if len(errores) > 10:
+        messages.warning(request, f"... y {len(errores) - 10} error(es) adicionales omitidos.")
+
+    return redirect("panel_admin:listar_usuarios")
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
 def crear_usuario_admin(request):
     localidades = Localidad.objects.all().order_by("nombre")
     tipos_documento = cons.TipoDocumento.choices
@@ -248,6 +393,73 @@ def crear_publicacion_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_puntos_eca_pdf(request):
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    html = render_to_string("admin/PuntoECA/puntos_eca_pdf.html", {"puntos": puntos})
+    pdf = HTML(string=html).write_pdf()
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="puntos_eca.pdf"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_puntos_eca_excel(request):
+    import io
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Puntos ECA"
+
+    headers = ["Nombre", "Dirección", "Localidad", "Ciudad", "Teléfono", "Email",
+               "Celular", "Gestor", "Horario", "Sitio Web", "Estado", "Latitud", "Longitud"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    for row, p in enumerate(puntos, 2):
+        gestor = f"{p.gestor_eca.nombres} {p.gestor_eca.apellidos}" if p.gestor_eca else ""
+        ws.cell(row=row, column=1, value=p.nombre)
+        ws.cell(row=row, column=2, value=p.direccion or "")
+        ws.cell(row=row, column=3, value=p.localidad.nombre if p.localidad else "")
+        ws.cell(row=row, column=4, value=p.ciudad or "")
+        ws.cell(row=row, column=5, value=p.telefono_punto or "")
+        ws.cell(row=row, column=6, value=p.email or "")
+        ws.cell(row=row, column=7, value=p.celular or "")
+        ws.cell(row=row, column=8, value=gestor)
+        ws.cell(row=row, column=9, value=p.horario_atencion or "")
+        ws.cell(row=row, column=10, value=p.sitio_web or "")
+        ws.cell(row=row, column=11, value=p.estado or "")
+        ws.cell(row=row, column=12, value=p.latitud or "")
+        ws.cell(row=row, column=13, value=p.longitud or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    response = HttpResponse(buf.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="puntos_eca.xlsx"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
 def crear_punto_eca_admin(request):
     localidades = Localidad.objects.all().order_by("nombre")
     tipos_documento = cons.TipoDocumento.choices
@@ -378,6 +590,63 @@ def listar_puntos_eca_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_materiales_pdf(request):
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    html = render_to_string("admin/Materiales/materiales_pdf.html", {"materiales": materiales})
+    pdf = HTML(string=html).write_pdf()
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="materiales.pdf"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_materiales_excel(request):
+    import io
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Materiales"
+
+    headers = ["Nombre", "Descripción", "Categoría", "Tipo", "Estado"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    for row, m in enumerate(materiales, 2):
+        ws.cell(row=row, column=1, value=m.nombre)
+        ws.cell(row=row, column=2, value=m.descripcion or "")
+        ws.cell(row=row, column=3, value=m.categoria.nombre if m.categoria else "")
+        ws.cell(row=row, column=4, value=m.tipo.nombre if m.tipo else "")
+        ws.cell(row=row, column=5, value=m.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    response = HttpResponse(buf.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="materiales.xlsx"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
 def listar_materiales_admin(request):
     materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -392,6 +661,60 @@ def listar_materiales_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_categorias_material_pdf(request):
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    html = render_to_string("admin/CategoriasMateriales/categorias_material_pdf.html", {"categorias": categorias})
+    pdf = HTML(string=html).write_pdf()
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="categorias_material.pdf"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_categorias_material_excel(request):
+    import io
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Categorías de Materiales"
+
+    headers = ["Nombre", "Descripción", "Estado"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    for row, c in enumerate(CategoriaMaterial.objects.all().order_by("nombre"), 2):
+        ws.cell(row=row, column=1, value=c.nombre)
+        ws.cell(row=row, column=2, value=c.descripcion or "")
+        ws.cell(row=row, column=3, value=c.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    response = HttpResponse(buf.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="categorias_material.xlsx"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
 def listar_categorias_material_admin(request):
     categorias = CategoriaMaterial.objects.all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -401,6 +724,70 @@ def listar_categorias_material_admin(request):
             Q(descripcion__icontains=q)
         )
     return render(request, "admin/CategoriasMateriales/listCategoriaMaterial.html", {"categorias": categorias, "search_query": q})
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_categorias_publicacion_pdf(request):
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    try:
+        from apps.publicaciones.models import CategoriaPublicacion
+        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+    except Exception:
+        categorias = []
+    html = render_to_string("admin/CategoriasPublicaciones/categorias_publicacion_pdf.html", {"categorias": categorias})
+    pdf = HTML(string=html).write_pdf()
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="categorias_publicacion.pdf"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_categorias_publicacion_excel(request):
+    import io
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Categorías de Publicaciones"
+
+    headers = ["Tipo", "Descripción", "Estado"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    try:
+        from apps.publicaciones.models import CategoriaPublicacion
+        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+    except Exception:
+        categorias = []
+
+    for row, c in enumerate(categorias, 2):
+        ws.cell(row=row, column=1, value=c.tipo)
+        ws.cell(row=row, column=2, value=c.descripcion or "")
+        ws.cell(row=row, column=3, value=c.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    response = HttpResponse(buf.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="categorias_publicacion.xlsx"'
+    return response
 
 
 @login_required(login_url="/login/")
@@ -430,6 +817,60 @@ def listar_categorias_publicacion_admin(request):
             "search_query": q,
         },
     )
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_tipos_material_pdf(request):
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    tipos = TipoMaterial.objects.all().order_by("nombre")
+    html = render_to_string("admin/TiposMateriales/tipos_material_pdf.html", {"tipos": tipos})
+    pdf = HTML(string=html).write_pdf()
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="tipos_material.pdf"'
+    return response
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def exportar_tipos_material_excel(request):
+    import io
+    import openpyxl
+    from django.http import HttpResponse
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tipos de Material"
+
+    headers = ["Nombre", "Descripción", "Estado"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    for row, t in enumerate(TipoMaterial.objects.all().order_by("nombre"), 2):
+        ws.cell(row=row, column=1, value=t.nombre)
+        ws.cell(row=row, column=2, value=t.descripcion or "")
+        ws.cell(row=row, column=3, value=t.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    response = HttpResponse(buf.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="tipos_material.xlsx"'
+    return response
 
 
 @login_required(login_url="/login/")

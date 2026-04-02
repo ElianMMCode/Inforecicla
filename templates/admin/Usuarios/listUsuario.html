@@ -23,14 +23,55 @@
   </div>
   {% endif %}
 
-  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
       <h1 class="h2 fw-bold text-success mb-1">Gestión de Usuarios</h1>
       <p class="text-muted mb-0">Administra usuarios, roles y datos del sistema.</p>
     </div>
-    <a href="{% url 'panel_admin:crear_usuario_admin' %}" class="btn btn-success">
-      <i class="bi bi-person-plus me-1"></i> Nuevo Usuario
-    </a>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'panel_admin:exportar_usuarios_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_usuarios_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+      <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalImportCSV" title="Importar CSV">
+        <i class="bi bi-upload me-1"></i> Importar CSV
+      </button>
+      <a href="{% url 'panel_admin:crear_usuario_admin' %}" class="btn btn-success">
+        <i class="bi bi-person-plus me-1"></i> Nuevo Usuario
+      </a>
+    </div>
+  </div>
+
+  <!-- Modal Importar CSV -->
+  <div class="modal fade" id="modalImportCSV" tabindex="-1" aria-labelledby="modalImportCSVLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="modalImportCSVLabel"><i class="bi bi-upload me-2"></i>Importar usuarios desde CSV</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" enctype="multipart/form-data" action="{% url 'panel_admin:importar_usuarios_csv' %}">
+          {% csrf_token %}
+          <div class="modal-body">
+            <p class="text-muted small mb-3">El archivo CSV debe tener las siguientes columnas:</p>
+            <div class="bg-light border rounded p-2 mb-3">
+              <code class="small">nombres, apellidos, email, celular, password, tipo_usuario*, tipo_documento*, numero_documento*, ciudad*</code>
+            </div>
+            <p class="small text-muted mb-3">* Opcionales. Valores válidos para <strong>tipo_usuario</strong>: <code>ADM</code>, <code>CIU</code>, <code>GECA</code>. Para <strong>tipo_documento</strong>: <code>CC</code>, <code>TI</code>, <code>CE</code>, <code>PA</code>, <code>NIT</code>.</p>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Archivo CSV <span class="text-danger">*</span></label>
+              <input type="file" name="archivo_csv" class="form-control" accept=".csv" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success"><i class="bi bi-upload me-1"></i> Importar</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <div class="card border-success mb-4 shadow-sm">
