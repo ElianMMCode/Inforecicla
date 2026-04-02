@@ -19,7 +19,12 @@ def render_login(request):
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect("/")  # Puedes cambiar el destino según tu home
+            if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
+                return redirect("/panel_admin/")
+            elif user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
+                return redirect("/punto-eca/")
+            else:
+                return redirect("/")
         else:
             errores.append("Credenciales inválidas. Verifica tu email y contraseña.")
     # Si GET o error, mostrar template

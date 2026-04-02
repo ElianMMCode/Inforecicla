@@ -116,10 +116,10 @@ class Visibilidad(models.TextChoices):
     ECA = "ECA", _("ECA")
     
 class TipoPublicacion(models.TextChoices):
-    PUNTO_ECA = "ECA", _("Punto Eca")
-    NOTICIA = "NOTIC", _("Noticia")
-    EVENTO = "Even", _("Evento"),
-    EDUCACION = "Edu", _("Educacion")
+    PUNTO_ECA = "Punto Eca", _("Punto Eca")
+    NOTICIA = "Noticia", _("Noticia")
+    EVENTO = "Evento", _("Evento"),
+    EDUCACION = "Educativo", _("Educacion")
     
 class Votos(models.TextChoices):
     LIKE = "Like", _("Like")

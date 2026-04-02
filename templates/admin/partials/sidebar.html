@@ -1,0 +1,65 @@
+{% load static %}
+<div class="container-fluid px-0">
+<div class="row g-0">
+<aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
+  <a class="d-flex align-items-center gap-2 text-white mb-4 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+    <img src="{% static 'img/logo.png' %}" alt="Logo" width="40" height="40" class="rounded bg-white p-1">
+    <div class="lh-sm">
+      <div class="fw-semibold">InfoRecicla</div>
+      <small class="text-white-50">Administración</small>
+    </div>
+  </a>
+  <nav class="w-100 flex-grow-1" role="navigation">
+    <ul class="nav nav-pills flex-column gap-1 w-100 m-0 p-0 list-unstyled">
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:panel_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'dashboard' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_usuarios' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'usuarios' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-people-fill"></i> Usuarios
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'publicaciones' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-newspaper"></i> Publicaciones
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'ecas' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-geo-alt-fill"></i> Puntos ECA
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_materiales_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'materiales' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-box-seam"></i> Materiales
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_tipos_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'tipos' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-recycle"></i> Tipos Material
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_categorias_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'cat_materiales' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-tags-fill"></i> Cat. Materiales
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'cat_publicaciones' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-folder-fill"></i> Cat. Publicaciones
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <div class="border-top border-white border-opacity-25 pt-3 mt-2">
+    <a href="/" class="nav-link text-white-50 small py-1"><i class="bi bi-house me-1"></i> Ir al Inicio</a>
+    <form method="POST" action="/logout/" class="mt-1">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-outline-light w-100">
+        <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+      </button>
+    </form>
+  </div>
+</aside>

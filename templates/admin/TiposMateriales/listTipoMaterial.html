@@ -1,172 +1,94 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Listado Tipos de Material - InfoRecicla</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </head>
-<body class="bg-light m-0 pt-5 pt-md-0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tipos de Material - InfoRecicla Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
 
-<div class="container-fluid px-0">
-    <div class="row g-0">
+{% include "admin/partials/sidebar.html" with active="tipos" %}
 
-        <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
-                <div class="d-flex flex-column lh-sm">
-                    <span class="fw-semibold">InfoRecicla</span>
-                    <small class="text-white-50">Administración</small>
-                </div>
-            </a>
-            <nav class="w-100" role="navigation">
-                <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
-                    <li class="nav-item"><a href="indexTipoMaterial.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
-                    <li class="nav-item"><a href="listTipoMaterial.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Listado</a></li>
-                    <li class="nav-item"><a href="createTipoMaterial.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear</a></li>
-                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
-                </ul>
-            </nav>
-        </aside>
-
-        <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
-            <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
-                    <i class="bi bi-recycle fs-3"></i>
-                    <span class="fw-semibold">InfoRecicla</span>
-                </a>
-                <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
-            </div>
-            <nav class="mt-2">
-                <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="indexTipoMaterial.html">Resumen</a></li>
-                    <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="listTipoMaterial.html">Listado</a></li>
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="createTipoMaterial.html">Crear</a></li>
-                </ul>
-            </nav>
-        </div>
-
-        <main class="col offset-md-2 p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-        <div>
-            <h1 class="h2 fw-bold text-warning mb-1"><i class="fas fa-tags me-2"></i>Tipos de Material</h1>
-            <p class="text-muted mb-0">Gestión de subclasificaciones de reciclaje</p>
-        </div>
-        <a href="crear.html" class="btn btn-warning fw-bold text-dark d-none d-sm-block shadow-sm">
-            <i class="fas fa-plus-circle me-1"></i> Nuevo Tipo
-        </a>
+<main class="col offset-md-2 p-4">
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
-    <div class="card border-warning shadow-sm mb-4 bg-light">
-        <div class="card-body">
-            <form class="row g-2">
-                <div class="col-md-8">
-                    <label class="form-label text-warning fw-bold small mb-1">Buscar Tipo</label>
-                    <input type="text" class="form-control" placeholder="Ej: PET 1, HDPE 2, Aluminio...">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label text-warning fw-bold small mb-1">Estado</label>
-                    <select class="form-select">
-                        <option value="">Todos los estados</option>
-                        <option value="activo">Activos</option>
-                        <option value="inactivo">Inactivos</option>
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-dark w-100 bg-white">
-                        <i class="fas fa-filter me-1"></i>Filtrar
-                    </button>
-                </div>
-            </form>
-        </div>
+  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-recycle me-2"></i>Tipos de Material</h1>
+      <p class="text-muted mb-0">Gestiona los tipos de materiales reciclables.</p>
     </div>
+    <a href="{% url 'panel_admin:crear_tipo_material' %}" class="btn btn-success">
+      <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
+    </a>
+  </div>
 
-    <div class="card border-warning shadow-sm mb-4">
-        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-bold"><i class="fas fa-list-ul me-2"></i>Directorio de Tipos</h6>
-            <span class="badge bg-white text-dark border">Total: 15</span>
+  <div class="card border-success mb-4 shadow-sm">
+    <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+    <div class="card-body">
+      <form method="get" class="row g-2">
+        <div class="col-md-10">
+          <input type="text" name="q" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}">
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-light border-bottom border-warning border-2">
-                <tr>
-                    <th class="ps-4">Nombre del Tipo</th>
-                    <th>Descripción</th>
-                    <th>Estado</th>
-                    <th class="text-end pe-4">Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td class="ps-4"><strong>PET 1</strong></td>
-                    <td><span class="text-muted small">Polietileno Tereftalato, usado en botellas de bebidas.</span></td>
-                    <td><span class="badge bg-success">Activo</span></td>
-                    <td class="text-end pe-4">
-                        <div class="btn-group btn-group-sm shadow-sm">
-                            <a href="detalles.html" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning text-dark"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="ps-4"><strong>HDPE 2</strong></td>
-                    <td><span class="text-muted small">Polietileno de Alta Densidad, envases de limpieza.</span></td>
-                    <td><span class="badge bg-success">Activo</span></td>
-                    <td class="text-end pe-4">
-                        <div class="btn-group btn-group-sm shadow-sm">
-                            <a href="detalles.html" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning text-dark"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="ps-4"><strong>PVC 3</strong></td>
-                    <td><span class="text-muted small">Policloruro de Vinilo, tubos y empaques.</span></td>
-                    <td><span class="badge bg-secondary">Inactivo</span></td>
-                    <td class="text-end pe-4">
-                        <div class="btn-group btn-group-sm shadow-sm">
-                            <a href="detalles.html" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
-                            <a href="editar.html" class="btn btn-outline-warning text-dark"><i class="fas fa-edit"></i></a>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
         </div>
-
-        <div class="card-footer bg-white py-3 d-flex justify-content-between align-items-center">
-            <span class="small text-muted d-none d-sm-block">Mostrando 3 de 15 tipos</span>
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                    <li class="page-item active"><a class="page-link bg-warning border-warning text-dark fw-bold" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link text-warning" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link text-warning" href="#">Siguiente</a></li>
-                </ul>
-            </nav>
-        </div>
+      </form>
     </div>
+  </div>
 
-    <div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    ¿Está seguro que desea eliminar este tipo de material? Esta acción no se puede deshacer.
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger">Sí, Eliminar</button>
-                </div>
-            </div>
-        </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-table me-1"></i> Listado</span>
+      <span class="badge bg-light text-success">{{ tipos|length }} resultados</span>
     </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tipo in tipos %}
+          <tr>
+            <td><strong>{{ tipo.nombre }}</strong></td>
+            <td>{{ tipo.descripcion|truncatechars:60|default:"-" }}</td>
+            <td>
+              {% if tipo.estado == "ACTIVO" %}
+                <span class="badge bg-success">Activo</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ tipo.estado }}</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{% url 'panel_admin:editar_tipo_material_admin' tipo_id=tipo.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-4">No se encontraron tipos de material.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

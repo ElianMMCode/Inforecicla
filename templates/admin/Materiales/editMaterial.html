@@ -1,130 +1,94 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Editar Material - InfoRecicla</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </head>
-<body class="bg-light m-0 pt-5 pt-md-0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar Material - InfoRecicla Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
 
-<div class="container-fluid px-0">
-    <div class="row g-0">
+{% include "admin/partials/sidebar.html" with active="materiales" %}
 
-        <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
-                <div class="d-flex flex-column lh-sm">
-                    <span class="fw-semibold">InfoRecicla</span>
-                    <small class="text-white-50">Administración</small>
-                </div>
-            </a>
-            <nav class="w-100" role="navigation">
-                <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
-                    <li class="nav-item"><a href="indexMaterial.html" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i>Resumen</a></li>
-                    <li class="nav-item"><a href="listMaterial.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="bi bi-list me-2"></i>Ver materiales</a></li>
-                    <li class="nav-item"><a href="createMaterial.html" class="nav-link text-white"><i class="bi bi-plus-circle me-2"></i>Crear material</a></li>
-                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="bi bi-house me-2"></i>Volver al Dashboard</a></li>
-                </ul>
-            </nav>
-        </aside>
-
-        <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
-            <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
-                    <i class="bi bi-recycle fs-3"></i>
-                    <span class="fw-semibold">InfoRecicla</span>
-                </a>
-                <a class="text-white text-decoration-none" href="../admin.html"><i class="bi bi-house fs-5"></i></a>
-            </div>
-            <nav class="mt-2">
-                <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="indexMaterial.html">Resumen</a></li>
-                    <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="listMaterial.html">Materiales</a></li>
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="createMaterial.html">Crear</a></li>
-                </ul>
-            </nav>
-        </div>
-
-        <main class="col-12 col-lg-10 offset-lg-2 p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-        <div>
-            <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-edit me-2"></i>Editar Material</h1>
-            <p class="text-muted mb-0">Modifica los detalles del catálogo</p>
-        </div>
-        <a href="detalles.html" class="btn btn-outline-secondary d-none d-sm-block">
-            <i class="fas fa-arrow-left me-1"></i> Volver al Detalle
-        </a>
+<main class="col offset-md-2 p-4">
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card border-success shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-pen-nib me-2"></i>Actualizar Información</h5>
-                </div>
-                <div class="card-body bg-light p-4">
-                    <form class="row g-4 needs-validation" novalidate>
-                        
-                        <div class="col-md-8">
-                            <label class="form-label text-success fw-bold">Nombre del material <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-lg" value="Botellas PET Transparentes" required>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label text-success fw-bold">Estado</label>
-                            <select class="form-select form-select-lg border-success">
-                                <option value="true" selected>Activo</option>
-                                <option value="false">Inactivo</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label text-success fw-bold">Descripción <span class="text-danger">*</span></label>
-                            <textarea class="form-control" rows="3" required>Envases de bebidas, agua y gaseosas. Deben estar limpios, sin líquidos y preferiblemente aplastados para reducir volumen.</textarea>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label text-success fw-bold">Categoría <span class="text-danger">*</span></label>
-                            <select class="form-select" required>
-                                <option value="1" selected>Plásticos</option>
-                                <option value="2">Papel y Cartón</option>
-                                <option value="3">Metales</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label text-success fw-bold">Tipo <span class="text-danger">*</span></label>
-                            <select class="form-select" required>
-                                <option value="1" selected>PET 1</option>
-                                <option value="2">HDPE 2</option>
-                                <option value="3">PVC 3</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label text-success fw-bold">URL de la imagen</label>
-                            <input type="url" class="form-control" value="https://images.unsplash.com/photo-1611288875791-766297371d79?auto=format&fit=crop&w=300&q=80">
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label text-muted fw-semibold">Vista previa de la imagen actual:</label>
-                            <div class="bg-white p-2 border rounded d-inline-block shadow-sm">
-                                <img src="https://images.unsplash.com/photo-1611288875791-766297371d79?auto=format&fit=crop&w=200&q=80" alt="Imagen actual" class="img-fluid rounded">
-                            </div>
-                        </div>
-
-                        <div class="col-12 mt-4 pt-3 border-top">
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="detalles.html" class="btn btn-outline-danger">Cancelar</a>
-                                <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i> Actualizar Material</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+  <div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-pencil me-2"></i>Editar Material</h1>
+      <p class="text-muted mb-0">{{ material.nombre }}</p>
     </div>
+    <a href="{% url 'panel_admin:listar_materiales_admin' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-success text-white"><i class="bi bi-box-seam me-1"></i> Formulario</div>
+    <div class="card-body p-4">
+      <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+            <input type="text" name="nombre" class="form-control" value="{{ material.nombre }}" required maxlength="30">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">URL Imagen</label>
+            <input type="text" name="imagen_url" class="form-control" value="{{ material.imagen_url|default:'' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Categoría</label>
+            <select name="categoria_id" class="form-select">
+              <option value="">Sin categoría</option>
+              {% for cat in categorias %}
+                <option value="{{ cat.id }}" {% if material.categoria and material.categoria.id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Tipo</label>
+            <select name="tipo_id" class="form-select">
+              <option value="">Sin tipo</option>
+              {% for tipo in tipos %}
+                <option value="{{ tipo.id }}" {% if material.tipo and material.tipo.id == tipo.id %}selected{% endif %}>{{ tipo.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Estado</label>
+            <select name="estado" class="form-select">
+              {% for val, label in estados %}
+                <option value="{{ val }}" {% if material.estado == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Descripción</label>
+            <textarea name="descripcion" class="form-control" rows="3" maxlength="500">{{ material.descripcion|default:'' }}</textarea>
+          </div>
+          <div class="col-12 pt-2">
+            <button type="submit" class="btn btn-success me-2">
+              <i class="bi bi-save me-1"></i> Guardar Cambios
+            </button>
+            <a href="{% url 'panel_admin:listar_materiales_admin' %}" class="btn btn-outline-secondary">Cancelar</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
