@@ -10,6 +10,8 @@ from apps.scheduling.views import _build_calendario_context
 from apps.inventory.views import _build_materiales_context
 from django.http import JsonResponse
 from apps.core.decorators import gestor_eca_or_admin_required
+from apps.reciclabot.service import AsistenteECAService
+import json
 
 
 @gestor_eca_or_admin_required
@@ -34,6 +36,8 @@ def render_seccion(request, seccion="resumen"):
         context = _build_centros_context(punto)
     elif seccion == "calendario":
         context = _build_calendario_context(punto)
+    elif seccion == "resumen":
+        context = _build_resumen_context(punto)
     else:
         context = _build_default_context(punto, seccion)
 
@@ -114,6 +118,36 @@ def _build_centros_context(punto):
         "centros_locales": centros_locales,
         "localidades_catalogo": localidades_catalogo,
         "tipos_catalogo": tipos_catalogo,
+    }
+
+
+import decimal
+
+def _decimal_to_float_recursive(obj):
+    if isinstance(obj, dict):
+        return {k: _decimal_to_float_recursive(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_decimal_to_float_recursive(elem) for elem in obj]
+    elif isinstance(obj, decimal.Decimal):
+        return float(obj)
+    else:
+        return obj
+
+
+def _build_resumen_context(punto):
+    """
+    Construye el contexto específico para la sección resumen.
+    Incluye datos del dashboard generados por AsistenteECAService.
+    """
+    asistente = AsistenteECAService()
+    datos_resumen = asistente.generar_datos_resumen(punto)
+    datos_resumen = _decimal_to_float_recursive(datos_resumen)
+
+    return {
+        "punto": punto,
+        "seccion": "resumen",
+        "section_template": SECTION_TEMPLATES["resumen"],
+        "datos_resumen": json.dumps(datos_resumen),  # Serializar para el template
     }
 
 

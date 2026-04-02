@@ -1,5 +1,5 @@
-<!-- Fragment: Resumen Punto ECA - Totalmente Bootstrap -->
-<section class="container-fluid py-4 px-3 px-md-4">
+<!-- Fragment: Resumen Punto ECA - Dashboard Completo Bootstrap -->
+<section class="container-fluid py-4 px-3 px-md-4" data-resumen-datos='{{ datos_resumen|safe }}'>
     <!-- Header con título y botón -->
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
@@ -22,7 +22,7 @@
                     <div class="d-flex align-items-start justify-content-between mb-3">
                         <div>
                             <span class="badge bg-success bg-opacity-25 text-success fw-semibold mb-2">Inventario</span>
-                            <h3 class="h4 fw-bold text-dark mb-0">0</h3>
+                            <h3 class="h4 fw-bold text-dark mb-0" id="inventarioTotal">0</h3>
                             <small class="text-muted">kilogramos</small>
                         </div>
                         <span class="badge bg-success rounded-circle p-3">
@@ -30,9 +30,9 @@
                         </span>
                     </div>
                     <div class="progress mb-2" role="progressbar" aria-label="Capacidad">
-                        <div class="progress-bar bg-success" style="width: 65%"></div>
+                        <div class="progress-bar bg-success" id="progressCapacidad" style="width: 0%"></div>
                     </div>
-                    <small class="text-muted">65% de capacidad</small>
+                    <small class="text-muted" id="textoCapacidad">0% de capacidad</small>
                 </div>
             </div>
         </div>
@@ -44,7 +44,7 @@
                     <div class="d-flex align-items-start justify-content-between mb-3">
                         <div>
                             <span class="badge bg-info bg-opacity-25 text-info fw-semibold mb-2">Entradas</span>
-                            <h3 class="h4 fw-bold text-dark mb-0">0</h3>
+                            <h3 class="h4 fw-bold text-dark mb-0" id="entradasMes">0</h3>
                             <small class="text-muted">este mes</small>
                         </div>
                         <span class="badge bg-info rounded-circle p-3">
@@ -66,7 +66,7 @@
                     <div class="d-flex align-items-start justify-content-between mb-3">
                         <div>
                             <span class="badge bg-warning bg-opacity-25 text-warning fw-semibold mb-2">Salidas</span>
-                            <h3 class="h4 fw-bold text-dark mb-0">0</h3>
+                            <h3 class="h4 fw-bold text-dark mb-0" id="salidasMes">0</h3>
                             <small class="text-muted">este mes</small>
                         </div>
                         <span class="badge bg-warning rounded-circle p-3">
@@ -80,12 +80,130 @@
                 </div>
             </div>
         </div>
+
+        <!-- Card: Materiales Totales -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div>
+                            <span class="badge bg-primary bg-opacity-25 text-primary fw-semibold mb-2">Materiales</span>
+                            <h3 class="h4 fw-bold text-dark mb-0" id="materialesCount">0</h3>
+                            <small class="text-muted">tipos diferentes</small>
+                        </div>
+                        <span class="badge bg-primary rounded-circle p-3">
+                            <i class="bi bi-grid-3x3-gap fs-5 text-white"></i>
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                        <span class="badge bg-danger" id="materialesCritico">0 críticos</span>
+                        <span class="badge bg-warning" id="materialesAlerta">0 alertas</span>
+                    </div>
+                    <small class="text-muted">Estado general</small>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Row: Últimos Movimientos -->
-    <div class="row g-3">
-        <!-- Columna: Últimos Movimientos -->
+    <!-- Row: Sección de Alertas y Materiales Críticos -->
+    <div class="row g-3 mb-4" id="seccionAlertas" style="display: none;">
         <div class="col-12">
+            <div class="card border-0 shadow-sm border-start border-danger border-3">
+                <div class="card-header bg-light border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle text-danger"></i>
+                        <h6 class="mb-0 fw-bold text-danger">Alertas de Inventario</h6>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Materiales Críticos -->
+                        <div class="col-12 col-lg-6">
+                            <h6 class="text-danger fw-bold mb-3">
+                                <i class="bi bi-exclamation-circle me-1"></i>Materiales Críticos
+                            </h6>
+                            <div id="materialesCriticosList">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                        </div>
+                        <!-- Materiales en Alerta -->
+                        <div class="col-12 col-lg-6">
+                            <h6 class="text-warning fw-bold mb-3">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Stock Bajo
+                            </h6>
+                            <div id="materialesAlertasList">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row: Información del Punto y Próximos Eventos -->
+    <div class="row g-3 mb-4">
+        <!-- Información del Punto ECA -->
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-building text-success"></i>
+                        <h6 class="mb-0 fw-bold">Información del Punto</h6>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="infoPuntoECA">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Próximos Eventos -->
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-calendar-event text-primary"></i>
+                            <h6 class="mb-0 fw-bold">Próximos Eventos</h6>
+                        </div>
+                        <a href="#calendario" class="btn btn-sm btn-outline-primary" onclick="irACalendario(event)">
+                            <i class="bi bi-arrow-right me-1"></i>Ver calendario
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="proximosEventos">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row: Centros de Acopio y Últimos Movimientos -->
+    <div class="row g-3">
+        <!-- Centros de Acopio -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt text-info"></i>
+                        <h6 class="mb-0 fw-bold">Centros de Acopio</h6>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="centrosAcopio">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna: Últimos Movimientos -->
+        <div class="col-12 col-lg-8">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-light border-bottom">
                     <div class="d-flex align-items-center justify-content-between">
@@ -329,10 +447,312 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Movimientos cargados en la UI');
     }
 
+    // Cargar alertas de materiales
+    function cargarAlertas() {
+        const elementoResumen = document.querySelector('[data-resumen-datos]');
+        if (!elementoResumen || !elementoResumen.getAttribute('data-resumen-datos')) {
+            return;
+        }
+
+        try {
+            const datosString = elementoResumen.getAttribute('data-resumen-datos');
+            const datos = JSON.parse(datosString);
+
+            const materialesCriticos = datos.materialesCriticos || [];
+            const materialesAlertas = datos.materialesAlertas || [];
+
+            // Actualizar contadores en las tarjetas
+            const criticoCounter = document.getElementById('materialesCritico');
+            const alertaCounter = document.getElementById('materialesAlerta');
+
+            if (criticoCounter) {
+                criticoCounter.textContent = `${materialesCriticos.length} críticos`;
+            }
+            if (alertaCounter) {
+                alertaCounter.textContent = `${materialesAlertas.length} alertas`;
+            }
+
+            // Mostrar/ocultar sección de alertas
+            const seccionAlertas = document.getElementById('seccionAlertas');
+            if (materialesCriticos.length > 0 || materialesAlertas.length > 0) {
+                seccionAlertas.style.display = 'block';
+
+                // Cargar materiales críticos
+                const criticosList = document.getElementById('materialesCriticosList');
+                if (materialesCriticos.length > 0) {
+                    let htmlCriticos = '';
+                    materialesCriticos.forEach(material => {
+                        htmlCriticos += `
+                            <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-danger bg-opacity-10 rounded">
+                                <div>
+                                    <strong class="text-danger">${material.nombre}</strong>
+                                    <small class="d-block text-muted">${material.stock_actual}/${material.capacidad_maxima} ${material.unidad}</small>
+                                </div>
+                                <span class="badge bg-danger">${material.ocupacion}%</span>
+                            </div>
+                        `;
+                    });
+                    criticosList.innerHTML = htmlCriticos;
+                } else {
+                    criticosList.innerHTML = '<p class="text-muted">Sin materiales críticos</p>';
+                }
+
+                // Cargar materiales en alerta
+                const alertasList = document.getElementById('materialesAlertasList');
+                if (materialesAlertas.length > 0) {
+                    let htmlAlertas = '';
+                    materialesAlertas.forEach(material => {
+                        htmlAlertas += `
+                            <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-warning bg-opacity-10 rounded">
+                                <div>
+                                    <strong class="text-warning">${material.nombre}</strong>
+                                    <small class="d-block text-muted">${material.stock_actual}/${material.capacidad_maxima} ${material.unidad}</small>
+                                </div>
+                                <span class="badge bg-warning">${material.ocupacion}%</span>
+                            </div>
+                        `;
+                    });
+                    alertasList.innerHTML = htmlAlertas;
+                } else {
+                    alertasList.innerHTML = '<p class="text-muted">Sin alertas de stock</p>';
+                }
+            } else {
+                seccionAlertas.style.display = 'none';
+            }
+
+            console.log('✅ Alertas cargadas:', materialesCriticos.length, 'críticos,', materialesAlertas.length, 'alertas');
+        } catch (e) {
+            console.error('❌ Error cargando alertas:', e);
+        }
+    }
+
+    // Cargar próximos eventos
+    function cargarProximosEventos() {
+        const container = document.getElementById('proximosEventos');
+        if (!container) return;
+
+        const elementoResumen = document.querySelector('[data-resumen-datos]');
+        let eventos = [];
+
+        if (elementoResumen && elementoResumen.getAttribute('data-resumen-datos')) {
+            try {
+                const datosString = elementoResumen.getAttribute('data-resumen-datos');
+                const datos = JSON.parse(datosString);
+                eventos = datos.eventosProximos || [];
+            } catch (e) {
+                console.warn('⚠️ Error parsing eventos:', e);
+            }
+        }
+
+        if (eventos.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2 small">No hay eventos próximos</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="list-group list-group-flush">';
+        eventos.forEach((evento, index) => {
+            const fechaInicio = new Date(evento.fecha_inicio);
+            const fechaFin = evento.fecha_fin ? new Date(evento.fecha_fin) : null;
+
+            const fechaFormateada = fechaInicio.toLocaleDateString('es-ES', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const borderClass = index === 0 ? '' : 'border-top';
+
+            html += `
+                <div class="list-group-item ${borderClass} px-3 py-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="text-primary">
+                            <i class="bi bi-calendar-event" style="font-size: 1.2rem;"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-bold text-dark">${evento.titulo}</h6>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>${fechaFormateada}
+                                </small>
+                                <span class="badge bg-primary bg-opacity-25 text-primary small">${evento.tipo}</span>
+                            </div>
+                            ${evento.observaciones ? `<small class="text-muted">${evento.observaciones}</small>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
+        console.log('✅ Eventos cargados:', eventos.length, 'eventos');
+    }
+
+    // Cargar centros de acopio
+    function cargarCentrosAcopio() {
+        const container = document.getElementById('centrosAcopio');
+        if (!container) return;
+
+        const elementoResumen = document.querySelector('[data-resumen-datos]');
+        let centros = { propios: [], globales: [] };
+
+        if (elementoResumen && elementoResumen.getAttribute('data-resumen-datos')) {
+            try {
+                const datosString = elementoResumen.getAttribute('data-resumen-datos');
+                const datos = JSON.parse(datosString);
+                centros = datos.centrosAcopio || { propios: [], globales: [] };
+            } catch (e) {
+                console.warn('⚠️ Error parsing centros de acopio:', e);
+            }
+        }
+
+        let html = '';
+
+        // Centros propios
+        if (centros.propios.length > 0) {
+            html += '<div class="mb-3">';
+            html += '<h6 class="fw-bold text-success mb-2"><i class="bi bi-building me-1"></i>Propios</h6>';
+            centros.propios.forEach(centro => {
+                html += `
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-success bg-opacity-10 rounded">
+                        <i class="bi bi-geo-alt text-success"></i>
+                        <div>
+                            <small class="fw-semibold text-dark">${centro.nombre}</small>
+                            <small class="d-block text-muted">${centro.tipo}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        // Centros globales
+        if (centros.globales.length > 0) {
+            html += '<div>';
+            html += '<h6 class="fw-bold text-info mb-2"><i class="bi bi-globe me-1"></i>Globales</h6>';
+            centros.globales.forEach(centro => {
+                html += `
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-info bg-opacity-10 rounded">
+                        <i class="bi bi-geo-alt text-info"></i>
+                        <div>
+                            <small class="fw-semibold text-dark">${centro.nombre}</small>
+                            <small class="d-block text-muted">${centro.tipo}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        if (centros.propios.length === 0 && centros.globales.length === 0) {
+            html = `
+                <div class="text-center py-4">
+                    <i class="bi bi-geo-alt text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2 small">No hay centros asociados</p>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+        console.log('✅ Centros de acopio cargados:', centros.propios.length, 'propios,', centros.globales.length, 'globales');
+    }
+
+    // Cargar información del punto ECA
+    function cargarInfoPuntoECA() {
+        const container = document.getElementById('infoPuntoECA');
+        if (!container) return;
+
+        const elementoResumen = document.querySelector('[data-resumen-datos]');
+        let puntoInfo = {};
+        let gestorInfo = {};
+
+        if (elementoResumen && elementoResumen.getAttribute('data-resumen-datos')) {
+            try {
+                const datosString = elementoResumen.getAttribute('data-resumen-datos');
+                const datos = JSON.parse(datosString);
+                puntoInfo = datos.puntoEca || {};
+                gestorInfo = datos.gestor || {};
+            } catch (e) {
+                console.warn('⚠️ Error parsing info del punto:', e);
+            }
+        }
+
+        let html = '';
+
+        // Información básica del punto
+        if (puntoInfo.nombre) {
+            html += `
+                <div class="mb-3">
+                    <h6 class="fw-bold text-dark mb-2">${puntoInfo.nombre}</h6>
+                    ${puntoInfo.direccion ? `<p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>${puntoInfo.direccion}</p>` : ''}
+                    ${puntoInfo.telefono ? `<p class="text-muted small mb-1"><i class="bi bi-telephone me-1"></i>${puntoInfo.telefono}</p>` : ''}
+                    ${puntoInfo.horario ? `<p class="text-muted small mb-1"><i class="bi bi-clock me-1"></i>${puntoInfo.horario}</p>` : ''}
+                    ${puntoInfo.descripcion ? `<p class="text-muted small">${puntoInfo.descripcion}</p>` : ''}
+                </div>
+            `;
+        }
+
+        // Información del gestor
+        if (gestorInfo.nombre) {
+            html += `
+                <div class="border-top pt-3">
+                    <h6 class="fw-bold text-secondary mb-2">
+                        <i class="bi bi-person-circle me-1"></i>Responsable
+                    </h6>
+                    <p class="text-dark mb-1">${gestorInfo.nombre}</p>
+                    ${gestorInfo.email ? `<p class="text-muted small mb-1"><i class="bi bi-envelope me-1"></i>${gestorInfo.email}</p>` : ''}
+                    ${gestorInfo.celular ? `<p class="text-muted small"><i class="bi bi-phone me-1"></i>${gestorInfo.celular}</p>` : ''}
+                </div>
+            `;
+        }
+
+        if (!puntoInfo.nombre && !gestorInfo.nombre) {
+            html = `
+                <div class="text-center py-4">
+                    <i class="bi bi-info-circle text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2 small">Información no disponible</p>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+        console.log('✅ Info del punto ECA cargada');
+    }
+
+    // Función para ir al calendario (si existe)
+    window.irACalendario = function(e) {
+        e.preventDefault();
+        console.log('📅 Redirigiendo a calendario...');
+
+        const pathname = window.location.pathname;
+        const pathParts = pathname.split('/').filter(p => p.length > 0);
+
+        if (pathParts.length >= 3) {
+            const nombrePuntoUrl = pathParts[1];
+            const gestorId = pathParts[2];
+            const newUrl = `/punto-eca/${nombrePuntoUrl}/${gestorId}/calendario`;
+            console.log('✅ Navegando a calendario:', newUrl);
+            window.location.href = newUrl;
+        } else {
+            console.error('❌ No se pudo determinar la URL del calendario');
+        }
+    };
+
     // Cargar todo al inicializar
     console.log('🚀 Inicializando componentes...');
     actualizarTarjetas();
     cargarUltimosMovimientos();
+    cargarAlertas();
+    cargarProximosEventos();
+    cargarCentrosAcopio();
+    cargarInfoPuntoECA();
 });
 </script>
 

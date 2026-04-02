@@ -208,6 +208,208 @@ class AsistenteECAService:
         contexto += "\n"
         return contexto
 
+    def generar_datos_resumen(self, punto_eca):
+        """
+        Genera datos estructurados específicos para el dashboard de resumen.
+        Retorna un diccionario con todos los KPIs y datos relevantes.
+        """
+        from apps.users.models import Usuario
+        from apps.operations.models import CompraInventario, VentaInventario
+        from apps.ecas.models import CentroAcopio
+        from config.constants import Visibilidad
+        import datetime
+
+        # -------------------
+        # 1. KPIs de Inventario
+        # -------------------
+        items = Inventario.objects.filter(punto_eca=punto_eca).select_related("material")
+        total_inventario = sum(item.stock_actual for item in items)
+        total_capacidad = sum(item.capacidad_maxima for item in items)
+        ocupacion_pct = round((total_inventario / total_capacidad) * 100, 1) if total_capacidad else 0.0
+
+        materiales_count = items.count()
+        materiales_alerta = items.filter(alerta="alerta").count() if hasattr(items, 'filter') else 0
+        materiales_critico = items.filter(alerta="critico").count() if hasattr(items, 'filter') else 0
+
+        # -------------------
+        # 2. Operaciones del mes
+        # -------------------
+        ahora = datetime.datetime.now()
+        primero_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        entradas_mes = CompraInventario.objects.filter(
+            inventario__punto_eca=punto_eca, fecha_compra__gte=primero_mes
+        ).aggregate(total_entradas_sum=Sum("cantidad"))["total_entradas_sum"] or 0
+
+        salidas_mes = VentaInventario.objects.filter(
+            inventario__punto_eca=punto_eca, fecha_venta__gte=primero_mes
+        ).aggregate(total_salidas_sum=Sum("cantidad"))["total_salidas_sum"] or 0
+
+        # -------------------
+        # 3. Movimientos recientes (últimos 5)
+        # -------------------
+        movimientos_entrada = list(CompraInventario.objects.filter(
+            inventario__punto_eca=punto_eca
+        ).order_by("-fecha_compra")[:3])
+
+        movimientos_salida = list(VentaInventario.objects.filter(
+            inventario__punto_eca=punto_eca
+        ).order_by("-fecha_venta")[:3])
+
+        # Combinar y ordenar todos los movimientos
+        movimientos = []
+        for mov in movimientos_entrada:
+            if mov.fecha_compra:
+                usuario = 'Sistema'
+                # Intentar obtener el usuario de diferentes campos posibles
+                for campo_usuario in ['creado_por', 'usuario', 'responsable']:
+                    if hasattr(mov, campo_usuario):
+                        usuario_obj = getattr(mov, campo_usuario, None)
+                        if usuario_obj:
+                            usuario = usuario_obj.get_full_name() if hasattr(usuario_obj, 'get_full_name') else str(usuario_obj)
+                            break
+
+                movimientos.append({
+                    'tipo': 'Entrada',
+                    'cantidad': mov.cantidad,
+                    'material': mov.inventario.material.nombre if mov.inventario and mov.inventario.material else 'Material desconocido',
+                    'fecha': mov.fecha_compra,
+                    'usuario': usuario,
+                    'icono': 'arrow-down-circle',
+                    'color': 'text-success'
+                })
+
+        for mov in movimientos_salida:
+            if mov.fecha_venta:
+                usuario = 'Sistema'
+                # Intentar obtener el usuario de diferentes campos posibles
+                for campo_usuario in ['creado_por', 'usuario', 'responsable']:
+                    if hasattr(mov, campo_usuario):
+                        usuario_obj = getattr(mov, campo_usuario, None)
+                        if usuario_obj:
+                            usuario = usuario_obj.get_full_name() if hasattr(usuario_obj, 'get_full_name') else str(usuario_obj)
+                            break
+
+                movimientos.append({
+                    'tipo': 'Salida',
+                    'cantidad': mov.cantidad,
+                    'material': mov.inventario.material.nombre if mov.inventario and mov.inventario.material else 'Material desconocido',
+                    'fecha': mov.fecha_venta,
+                    'usuario': usuario,
+                    'icono': 'arrow-up-circle',
+                    'color': 'text-warning'
+                })
+
+        # Ordenar por fecha más reciente
+        movimientos = sorted(movimientos, key=lambda x: x['fecha'], reverse=True)[:5]
+
+        # Formatear movimientos para el template
+        movimientos_formateados = []
+        for mov in movimientos:
+            movimientos_formateados.append({
+                'tipo': mov['tipo'],
+                'cantidad': mov['cantidad'],
+                'descripcion': mov['material'],
+                'usuario': mov['usuario'],
+                'fecha': mov['fecha'].isoformat() if hasattr(mov['fecha'], 'isoformat') else str(mov['fecha']),
+                'icono': mov['icono'],
+                'color': mov['color']
+            })
+
+        # -------------------
+        # 4. Próximos eventos (próximos 3)
+        # -------------------
+        now = datetime.datetime.now(pytz.UTC)
+        instancias_proximas = EventoInstancia.objects.filter(
+            punto_eca=punto_eca, fecha_inicio__gte=now
+        ).order_by("fecha_inicio")[:3]
+
+        eventos_proximos = []
+        for instancia in instancias_proximas:
+            base = instancia.evento_base
+            eventos_proximos.append({
+                'titulo': base.titulo or 'Evento',
+                'fecha_inicio': instancia.fecha_inicio.isoformat(),
+                'fecha_fin': instancia.fecha_fin.isoformat() if instancia.fecha_fin else None,
+                'tipo': base.tipo_repeticion if hasattr(base, 'tipo_repeticion') and base.tipo_repeticion else 'Único',
+                'observaciones': instancia.observaciones or ''
+            })
+
+        # -------------------
+        # 5. Materiales críticos y alertas
+        # -------------------
+        materiales_criticos = []
+        materiales_alertas = []
+
+        for item in items:
+            material_info = {
+                'nombre': item.material.nombre,
+                'stock_actual': item.stock_actual,
+                'capacidad_maxima': item.capacidad_maxima,
+                'ocupacion': item.ocupacion_actual,
+                'unidad': item.unidad_medida
+            }
+
+            if hasattr(item, 'alerta'):
+                if item.alerta == 'critico':
+                    materiales_criticos.append(material_info)
+                elif item.alerta == 'alerta':
+                    materiales_alertas.append(material_info)
+
+        # -------------------
+        # 6. Centros de acopio
+        # -------------------
+        centros_globales = CentroAcopio.objects.filter(visibilidad=Visibilidad.GLOBAL)
+        centros_propios = CentroAcopio.objects.filter(
+            puntos_eca=punto_eca, visibilidad=Visibilidad.ECA
+        )
+
+        centros_info = {
+            'propios': [{'nombre': c.nombre, 'tipo': c.tipo_centro} for c in centros_propios],
+            'globales': [{'nombre': c.nombre, 'tipo': c.tipo_centro} for c in centros_globales]
+        }
+
+        # -------------------
+        # 7. Información del responsable
+        # -------------------
+        gestor_info = {}
+        gestor = getattr(punto_eca, "gestor_eca", None)
+        if gestor and isinstance(gestor, Usuario):
+            gestor_info = {
+                'nombre': gestor.get_full_name(),
+                'email': getattr(gestor, 'email', ''),
+                'celular': getattr(gestor, 'celular', '')
+            }
+
+        return {
+            # KPIs principales
+            'inventarioTotal': total_inventario,
+            'capacidadTotal': total_capacidad,
+            'capacidadPorcentaje': ocupacion_pct,
+            'entradasMes': entradas_mes,
+            'salidasMes': salidas_mes,
+            'materialesCount': materiales_count,
+            'materialesAlerta': materiales_alerta,
+            'materialesCritico': materiales_critico,
+
+            # Datos detallados
+            'movimientos': movimientos_formateados,
+            'eventosProximos': eventos_proximos,
+            'materialesCriticos': materiales_criticos,
+            'materialesAlertas': materiales_alertas,
+            'centrosAcopio': centros_info,
+            'gestor': gestor_info,
+
+            # Información del punto
+            'puntoEca': {
+                'nombre': punto_eca.nombre,
+                'direccion': punto_eca.direccion,
+                'descripcion': getattr(punto_eca, 'descripcion', '') or '',
+                'telefono': getattr(punto_eca, 'telefono_punto', '') or '',
+                'horario': getattr(punto_eca, 'horario_atencion', '') or ''
+            }
+        }
+
     def consultar(self, punto_eca, pregunta_usuario):
         # Generar la base de conocimientos en tiempo real
         contexto_real = self.generar_contexto_eca(punto_eca)
