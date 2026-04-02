@@ -44,4 +44,6 @@ urlpatterns = [
         views.eliminar_centro,
         name="eliminar_centro",
     ),
+    path("asistente/", include("apps.reciclabot.urls", namespace="reciclabot")),
+
 ]
