@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import environ
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +28,9 @@ DEBUG = True
 
 # ALLOWED_HOSTS = ["127.0.0.1", "localhost", "10.26.42.166"]
 
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / ".env")
+GROQ_API_KEY = env("GROQ_API_KEY")
 
 # Application definition
 
