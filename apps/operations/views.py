@@ -28,6 +28,7 @@ from django.db.models import Q
 
 import unicodedata
 
+
 def normalizar_palabra(w):
     w = (
         unicodedata.normalize("NFD", w)
@@ -39,6 +40,7 @@ def normalizar_palabra(w):
     if w.endswith("s") and len(w) > 3:
         w = w[:-1]
     return w
+
 
 def extraer_keywords(texto):
     stopwords = {
@@ -58,11 +60,10 @@ def extraer_keywords(texto):
         "sin",
     }
     palabras = [
-        normalizar_palabra(p)
-        for p in texto.split()
-        if (p.isalpha() or p.isalnum())
+        normalizar_palabra(p) for p in texto.split() if (p.isalpha() or p.isalnum())
     ]
     return set(p for p in palabras if p not in stopwords)
+
 
 def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
     """
@@ -76,7 +77,9 @@ def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
     try:
         # === Búsqueda permisiva de inventario existente (palabras normalizadas ===
         keywords_busqueda = extraer_keywords(nombre_material)
-        inventarios_qs = Inventario.objects.filter(punto_eca=punto_eca).select_related("material")
+        inventarios_qs = Inventario.objects.filter(punto_eca=punto_eca).select_related(
+            "material"
+        )
         for inv in inventarios_qs:
             # Sacar keywords normalizadas del nombre del material de inventario
             kw_inv = extraer_keywords(inv.material.nombre)
