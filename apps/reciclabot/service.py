@@ -223,13 +223,20 @@ class AsistenteECAService:
         # 1. KPIs de Inventario
         # -------------------
         items = Inventario.objects.filter(punto_eca=punto_eca).select_related("material")
-        total_inventario = sum(item.stock_actual for item in items)
-        total_capacidad = sum(item.capacidad_maxima for item in items)
-        ocupacion_pct = round((total_inventario / total_capacidad) * 100, 1) if total_capacidad else 0.0
-
-        materiales_count = items.count()
-        materiales_alerta = items.filter(alerta="alerta").count() if hasattr(items, 'filter') else 0
-        materiales_critico = items.filter(alerta="critico").count() if hasattr(items, 'filter') else 0
+        if not items.exists():
+            total_inventario = 0
+            total_capacidad = 0
+            ocupacion_pct = 0.0
+            materiales_count = 0
+            materiales_alerta = 0
+            materiales_critico = 0
+        else:
+            total_inventario = sum(item.stock_actual for item in items)
+            total_capacidad = sum(item.capacidad_maxima for item in items)
+            ocupacion_pct = round((total_inventario / total_capacidad) * 100, 1) if total_capacidad else 0.0
+            materiales_count = items.count()
+            materiales_alerta = items.filter(alerta="alerta").count() if hasattr(items, 'filter') else 0
+            materiales_critico = items.filter(alerta="critico").count() if hasattr(items, 'filter') else 0
 
         # -------------------
         # 2. Operaciones del mes
@@ -381,6 +388,12 @@ class AsistenteECAService:
                 'celular': getattr(gestor, 'celular', '')
             }
 
+        import logging
+        # LOG Principal para debug completo de los datos enviados al template
+        logging.warning(f"RESUMEN puntoECA={punto_eca.pk if hasattr(punto_eca,'pk') else punto_eca} KPIs: inventarioTotal={total_inventario}, capacidadTotal={total_capacidad}, ocupacion_pct={ocupacion_pct}, entradasMes={entradas_mes}, salidasMes={salidas_mes}, materialesCount={materiales_count}, materialesAlerta={materiales_alerta}, materialesCritico={materiales_critico}")
+        logging.warning(f"MOVIMIENTOS: {movimientos_formateados}")
+        logging.warning(f"INVENTARIO ITEMS: {[{'nombre': i.material.nombre, 'stock': i.stock_actual, 'capacidad': i.capacidad_maxima} for i in items]}")
+        logging.warning(f"RESUMEN datos críticos={len(materiales_criticos)}, alertas={len(materiales_alertas)} materialesCriticos={materiales_criticos} materialesAlertas={materiales_alertas}")
         return {
             # KPIs principales
             'inventarioTotal': total_inventario,

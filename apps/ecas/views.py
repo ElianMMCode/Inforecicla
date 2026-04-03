@@ -143,6 +143,10 @@ def _build_resumen_context(punto):
     datos_resumen = asistente.generar_datos_resumen(punto)
     datos_resumen = _decimal_to_float_recursive(datos_resumen)
 
+    # DEBUG LOG temporal para validar datos
+    import logging
+    logging.warning(f"RESUMEN BACKEND DEBUG: {datos_resumen}")
+
     return {
         "punto": punto,
         "seccion": "resumen",
