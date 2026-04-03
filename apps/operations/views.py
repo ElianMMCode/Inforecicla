@@ -26,58 +26,122 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
 
+import unicodedata
+
+def normalizar_palabra(w):
+    w = (
+        unicodedata.normalize("NFD", w)
+        .encode("ascii", "ignore")
+        .decode("utf-8")
+        .lower()
+    )
+    # Singular muy naif: quita 's' si es mayor a 3 letras
+    if w.endswith("s") and len(w) > 3:
+        w = w[:-1]
+    return w
+
+def extraer_keywords(texto):
+    stopwords = {
+        "de",
+        "el",
+        "la",
+        "los",
+        "las",
+        "y",
+        "del",
+        "en",
+        "a",
+        "por",
+        "para",
+        "al",
+        "con",
+        "sin",
+    }
+    palabras = [
+        normalizar_palabra(p)
+        for p in texto.split()
+        if (p.isalpha() or p.isalnum())
+    ]
+    return set(p for p in palabras if p not in stopwords)
+
 def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
     """
-    Busca un material en el inventario del punto por nombre.
+    Busca un material en el inventario del punto por nombre o keywords permisivos.
     Si el material no existe en el inventario, lo busca en el catálogo general y lo agrega.
     Si el material no existe en el catálogo, retorna error sin crear nada.
 
-    Args:
-        nombre_material (str): Nombre del material a buscar
-        punto_eca (PuntoECA): Punto ECA donde buscar/agregar al inventario
-
     Returns:
         tuple: (inventario_item, created, error_msg)
-            - inventario_item: Instancia de Inventario si existe/se encontró, None si hubo error
-            - created: Boolean indicando si se agregó al inventario desde catálogo
-            - error_msg: String con mensaje de error, None si fue exitoso
     """
     try:
-        # 1. Buscar si ya existe en el inventario del punto
-        inventario_existente = Inventario.objects.filter(
-            punto_eca=punto_eca, material__nombre__iexact=nombre_material.strip()
-        ).first()
+        # === Búsqueda permisiva de inventario existente (palabras normalizadas ===
+        keywords_busqueda = extraer_keywords(nombre_material)
+        inventarios_qs = Inventario.objects.filter(punto_eca=punto_eca).select_related("material")
+        for inv in inventarios_qs:
+            # Sacar keywords normalizadas del nombre del material de inventario
+            kw_inv = extraer_keywords(inv.material.nombre)
+            if (
+                kw_inv
+                and keywords_busqueda
+                and (
+                    keywords_busqueda == kw_inv
+                    or keywords_busqueda <= kw_inv
+                    or kw_inv <= keywords_busqueda
+                )
+            ):
+                # Inventario existente (coincidencia permisiva)
+                return inv, False, None
 
-        if inventario_existente:
-            return inventario_existente, False, None
-
-        # 2. Buscar material en el catálogo general por nombre
+        # ==== Búsqueda en catálogo y posible creación ====
+        # Exacta y substring tradicional (más legacy)
         material_catalogo = Material.objects.filter(
             Q(nombre__iexact=nombre_material.strip())
         ).first()
-
+        if not material_catalogo:
+            material_catalogo = Material.objects.filter(
+                Q(nombre__icontains=nombre_material.strip())
+            ).first()
+        # Coincidencia permisiva de keywords
+        if not material_catalogo:
+            materiales = Material.objects.all()
+            for m in materiales:
+                keywords_mat = extraer_keywords(m.nombre)
+                if (
+                    keywords_busqueda
+                    and keywords_mat
+                    and (
+                        keywords_busqueda == keywords_mat
+                        or keywords_busqueda <= keywords_mat
+                        or keywords_mat <= keywords_busqueda
+                    )
+                ):
+                    material_catalogo = m
+                    break
         if material_catalogo:
-            # Material existe en catálogo, agregarlo al inventario del punto
+            # Volver a chequear inventario por ID material, por si hay false match con keywords pero no es el mismo objeto
+            inventario_existente = Inventario.objects.filter(
+                punto_eca=punto_eca, material=material_catalogo
+            ).first()
+            if inventario_existente:
+                return inventario_existente, False, None
             nuevo_inventario = Inventario.objects.create(
                 punto_eca=punto_eca,
                 material=material_catalogo,
                 stock_actual=0.0,
-                capacidad_maxima=999999999.0,  # Capacidad enorme para evitar errores
-                unidad_medida="KG",  # Unidad por defecto
+                capacidad_maxima=999999999.0,  # Large capacity by default
+                unidad_medida="KG",
                 precio_compra=0.0,
                 precio_venta=0.0,
-                umbral_alerta=80,  # 80% por defecto
-                umbral_critico=90,  # 90% por defecto
+                umbral_alerta=80,
+                umbral_critico=90,
             )
             return nuevo_inventario, True, None
-
-        # 3. Material no existe en el catálogo - NO crear, retornar error
+        # Material no existe ni siquiera con coincidencia permisiva, error
         return (
             None,
             False,
             f"Material '{nombre_material}' no encontrado en el catálogo. Debe ser registrado previamente.",
         )
-
     except Exception as e:
         return None, False, f"Error al buscar material: {str(e)}"
 
@@ -265,11 +329,14 @@ def editar_venta(request, venta_id):
 
 from django.views.decorators.csrf import csrf_exempt
 
+
 @csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_compra(request, compra_id):
-    if request.method != 'DELETE':
-        return JsonResponse({'success': False, 'mensaje': 'Método no permitido'}, status=405)
+    if request.method != "DELETE":
+        return JsonResponse(
+            {"success": False, "mensaje": "Método no permitido"}, status=405
+        )
     # Intento parsear body (puede venir vacío): tolerante para fetch DELETE
     data = {}
     if request.body:
@@ -281,19 +348,23 @@ def borrar_compra(request, compra_id):
         resp = CompraInventarioService.borrar_compra(request, compra_id)
         # Garantizamos formato estándar de respuesta
         if isinstance(resp, dict):
-            resp.setdefault('success', True)
+            resp.setdefault("success", True)
         else:
-            resp = {'success': True, 'mensaje': 'Compra eliminada', 'resp': resp}
+            resp = {"success": True, "mensaje": "Compra eliminada", "resp": resp}
         return JsonResponse(resp)
     except Exception as e:
-        return JsonResponse({'success': False, 'mensaje': f'Error técnico: {str(e)}'}, status=500)
+        return JsonResponse(
+            {"success": False, "mensaje": f"Error técnico: {str(e)}"}, status=500
+        )
 
 
 @csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_venta(request, venta_id):
-    if request.method != 'DELETE':
-        return JsonResponse({'success': False, 'mensaje': 'Método no permitido'}, status=405)
+    if request.method != "DELETE":
+        return JsonResponse(
+            {"success": False, "mensaje": "Método no permitido"}, status=405
+        )
     data = {}
     if request.body:
         try:
@@ -304,13 +375,14 @@ def borrar_venta(request, venta_id):
         resp = VentaInventarioService.borrar_venta(request, venta_id)
         # Garantizamos formato estándar de respuesta
         if isinstance(resp, dict):
-            resp.setdefault('success', True)
+            resp.setdefault("success", True)
         else:
-            resp = {'success': True, 'mensaje': 'Venta eliminada', 'resp': resp}
+            resp = {"success": True, "mensaje": "Venta eliminada", "resp": resp}
         return JsonResponse(resp)
     except Exception as e:
-        return JsonResponse({'success': False, 'mensaje': f'Error técnico: {str(e)}'}, status=500)
-
+        return JsonResponse(
+            {"success": False, "mensaje": f"Error técnico: {str(e)}"}, status=500
+        )
 
 
 # ============== EXPORT EXCEL =============
