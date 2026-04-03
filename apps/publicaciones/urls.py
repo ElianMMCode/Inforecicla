@@ -9,6 +9,7 @@ urlpatterns = [
     path("<uuid:publicacion_id>/", views.publicacion, name="detalle_publicacion"),
     path("<uuid:publicacion_id>/comentar/", views.agregar_comentario, name="agregar_comentario"),
     path("<uuid:publicacion_id>/votar/", views.votar_publicacion, name="votar_publicacion"),
+    path("<uuid:publicacion_id>/guardar/", views.toggle_guardado, name="toggle_guardado"),
     path("comentario/<uuid:comentario_id>/editar/", views.editar_comentario, name="editar_comentario"),
     path("comentario/<uuid:comentario_id>/eliminar/", views.eliminar_comentario, name="eliminar_comentario"),
 ]

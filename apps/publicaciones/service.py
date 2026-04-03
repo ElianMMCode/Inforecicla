@@ -1,6 +1,7 @@
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 from config import constants
 
@@ -11,7 +12,8 @@ class PublicacionService:
     @staticmethod
     def _base_queryset():
         return (
-            Publicacion.objects.select_related("usuario", "categoria")
+            Publicacion.objects.filter(estado=constants.Estado.ACTIVO)
+            .select_related("usuario", "categoria")
             .prefetch_related("comentarios__usuario", "reacciones")
             .annotate(
                 likes_count=Count(
@@ -77,6 +79,13 @@ class PublicacionService:
 
     @classmethod
     def get_detail_context(cls, publicacion_id):
+        # Verificar si existe pero no está activa → 404
+        try:
+            pub = Publicacion.objects.get(pk=publicacion_id)
+        except Publicacion.DoesNotExist:
+            raise Http404
+        if pub.estado != constants.Estado.ACTIVO:
+            raise Http404
         publicacion = get_object_or_404(cls._base_queryset(), pk=publicacion_id)
         publicaciones_relacionadas = (
             cls._base_queryset()

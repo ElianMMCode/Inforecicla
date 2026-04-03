@@ -250,7 +250,7 @@ def render_registro_ciudadano(request):
 
 @login_required(login_url="/login/")
 def perfil_ciudadano(request):
-    from apps.publicaciones.models import Comentario
+    from apps.publicaciones.models import Comentario, Guardados
     localidades = Localidad.objects.all()
     mis_comentarios = (
         Comentario.objects
@@ -258,10 +258,42 @@ def perfil_ciudadano(request):
         .select_related("publicacion")
         .order_by("-fecha_creacion")
     )
+    mis_guardados = (
+        Guardados.objects
+        .filter(usuario=request.user)
+        .select_related("publicacion")
+        .order_by("-fecha_creacion")
+    )
     return render(request, "users/perfil_ciudadano.html", {
         "localidades": localidades,
         "mis_comentarios": mis_comentarios,
+        "mis_guardados": mis_guardados,
     })
+
+
+@login_required(login_url="/login/")
+def toggle_eca_favorita(request, punto_id):
+    from django.http import JsonResponse
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+    try:
+        punto = PuntoECA.objects.get(pk=punto_id)
+    except PuntoECA.DoesNotExist:
+        return JsonResponse({"error": "No encontrado"}, status=404)
+
+    fav, created = PuntoECAFavorito.objects.get_or_create(
+        usuario=request.user, punto_eca=punto
+    )
+    if not created:
+        fav.delete()
+        guardado = False
+    else:
+        guardado = True
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if is_ajax:
+        return JsonResponse({"guardado": guardado})
+    return redirect("/perfil/#ecas")
 
 
 _SOLO_LETRAS = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")

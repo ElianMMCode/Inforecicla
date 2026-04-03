@@ -345,6 +345,7 @@ def crear_publicacion_admin(request):
         categorias = CategoriaPublicacion.objects.all().order_by("tipo")
 
         if request.method == "POST":
+            from apps.publicaciones.models import ImagenPublicacion
             titulo = (request.POST.get("titulo") or "").strip()
             contenido = (request.POST.get("contenido") or "").strip()
             categoria_id = (request.POST.get("categoria_id") or "").strip()
@@ -367,13 +368,22 @@ def crear_publicacion_admin(request):
                             },
                         )
 
+                video_file = request.FILES.get("video") or None
+                thumbnail_file = request.FILES.get("video_thumbnail") or None
+
                 publicacion = Publicacion(
                     titulo=titulo,
                     contenido=contenido,
                     usuario=request.user,
                     categoria=categoria,
+                    video=video_file,
+                    video_thumbnail=thumbnail_file,
                 )
                 publicacion.save()
+
+                for img in request.FILES.getlist("imagenes"):
+                    ImagenPublicacion.objects.create(publicacion=publicacion, imagen=img)
+
                 messages.success(request, "Publicacion creada correctamente.")
                 return redirect("panel_admin:listar_publicaciones_admin")
 
@@ -468,6 +478,7 @@ def crear_punto_eca_admin(request):
         data = request.POST
         errores = []
 
+        nombre_punto = data.get("nombre_punto", "").strip()
         nombres = data.get("nombres", "").strip()
         apellidos = data.get("apellidos", "").strip()
         email = data.get("email", "").strip().lower()
@@ -489,10 +500,12 @@ def crear_punto_eca_admin(request):
         password = data.get("password", "")
         password_confirm = data.get("passwordConfirm", "")
 
+        if not nombre_punto:
+            errores.append("Debe ingresar el nombre del punto ECA.")
         if not nombres:
-            errores.append("Debe ingresar el nombre de la institución.")
+            errores.append("Debe ingresar los nombres del gestor.")
         if not apellidos:
-            errores.append("Debe ingresar el nombre del gestor.")
+            errores.append("Debe ingresar los apellidos del gestor.")
         if not email:
             errores.append("Debe ingresar el email del punto ECA.")
         if not email_gestor:
@@ -548,7 +561,7 @@ def crear_punto_eca_admin(request):
                 usuario.save()
                 PuntoECA.objects.create(
                     gestor_eca=usuario,
-                    nombre=nombres,
+                    nombre=nombre_punto,
                     descripcion=descripcion,
                     telefono_punto=telefono_punto,
                     direccion=direccion,
@@ -563,7 +576,7 @@ def crear_punto_eca_admin(request):
                     latitud=float(latitud),
                     longitud=float(longitud),
                 )
-            messages.success(request, f"Punto ECA '{nombres}' creado correctamente.")
+            messages.success(request, f"Punto ECA '{nombre_punto}' creado correctamente.")
             return redirect("panel_admin:listar_puntos_eca_admin")
         except (IntegrityError, ValidationError) as e:
             messages.error(request, f"Error al crear el punto ECA: {e}")

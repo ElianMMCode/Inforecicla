@@ -20,13 +20,29 @@ def panel_publicaciones(request):
 
 
 def publicacion(request, publicacion_id):
-    from .models import Reaccion
+    from .models import Reaccion, Guardados
     context = PublicacionService.get_detail_context(publicacion_id)
     if request.user.is_authenticated:
         context["mi_reaccion"] = Reaccion.objects.filter(
             publicacion_id=publicacion_id, usuario=request.user
         ).values_list("valor", flat=True).first()
+        context["mi_guardado"] = Guardados.objects.filter(
+            publicacion_id=publicacion_id, usuario=request.user
+        ).exists()
     return render(request, "publicacion/publicacion.html", context)
+
+
+@login_required
+def toggle_guardado(request, publicacion_id):
+    if request.method == "POST":
+        from .models import Guardados, Publicacion
+        pub = get_object_or_404(Publicacion, pk=publicacion_id)
+        guardado = Guardados.objects.filter(usuario=request.user, publicacion=pub).first()
+        if guardado:
+            guardado.delete()
+        else:
+            Guardados.objects.create(usuario=request.user, publicacion=pub)
+    return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
 
 
 @login_required

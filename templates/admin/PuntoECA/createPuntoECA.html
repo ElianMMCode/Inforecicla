@@ -56,9 +56,9 @@
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Nombre de la Institución/ECA <span class="text-danger">*</span></label>
-            <input type="text" name="nombres" class="form-control" required
-                   value="{{ form_data.nombres|default:'' }}" placeholder="Ej: Centro Ambiental San Felipe">
+            <label class="form-label fw-semibold">Nombre del Punto ECA <span class="text-danger">*</span></label>
+            <input type="text" name="nombre_punto" class="form-control" required
+                   value="{{ form_data.nombre_punto|default:'' }}" placeholder="Ej: Centro Ambiental San Felipe">
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
@@ -171,10 +171,18 @@
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Nombre del Gestor <span class="text-danger">*</span></label>
-            <input type="text" name="apellidos" class="form-control" required
-                   value="{{ form_data.apellidos|default:'' }}" placeholder="Ej: Juan Pérez">
+            <label class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span></label>
+            <input type="text" name="nombres" class="form-control" required
+                   value="{{ form_data.nombres|default:'' }}" placeholder="Ej: Juan Carlos">
           </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span></label>
+            <input type="text" name="apellidos" class="form-control" required
+                   value="{{ form_data.apellidos|default:'' }}" placeholder="Ej: Pérez García">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span></label>
             <input type="email" name="email_gestor" class="form-control" required
