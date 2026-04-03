@@ -14,6 +14,17 @@ urlpatterns = [
         views.registros_ventas,
         name="registrar_venta",
     ),
+    # ==== Bulk Import (Cargas masivas CSV) ====
+    path(
+        "compras/bulk_import/",
+        views.bulk_import_compras,
+        name="bulk_import_compras",
+    ),
+    path(
+        "ventas/bulk_import/",
+        views.bulk_import_ventas,
+        name="bulk_import_ventas",
+    ),
     path(
         "editar-compra/<uuid:compra_id>/",
         views.editar_compra,

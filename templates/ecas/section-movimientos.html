@@ -401,6 +401,12 @@
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-2">
                                 <h6 class="mb-0 fw-bold text-dark">Historial de Compra de Material</h6>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary fw-semibold ms-2"
+                                        id="btnBulkImportCompras"
+                                        title="Carga Masiva de Compras">
+                                    <i class="bi bi-upload me-1"></i>Carga Masiva
+                                </button>
                                 <a href="/punto-eca/movimientos/exportar-compras-excel/"
                                    target="_blank"
                                    class="btn btn-sm btn-outline-success fw-semibold ms-2"
@@ -691,6 +697,12 @@
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-2">
                                 <h6 class="mb-0 fw-bold text-dark">Historial de Venta de Material</h6>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary fw-semibold ms-2"
+                                        id="btnBulkImportVentas"
+                                        title="Carga Masiva de Ventas">
+                                    <i class="bi bi-upload me-1"></i>Carga Masiva
+                                </button>
                                 <a href="/punto-eca/movimientos/exportar-ventas-excel/"
                                    target="_blank"
                                    class="btn btn-sm btn-outline-success fw-semibold ms-2"
@@ -2827,6 +2839,244 @@
             }
         });
 
+    </script>
+    <!-- MODAL REUTILIZABLE: CARGA MASIVA CSV/XLSX COMPRAS Y VENTAS -->
+    <div class="modal fade"
+         id="modalCargaMasiva"
+         tabindex="-1"
+         aria-labelledby="modalCargaMasivaLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalCargaMasivaLabel">
+                        <i class="bi bi-upload me-2"></i>Importar Carga Masiva (Compras/Ventas)
+                    </h5>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formCargaMasiva" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="inputArchivoCargaMasiva" class="form-label fw-semibold">Seleccioná el archivo CSV. <span id="spanTipoCargaMasiva" class="badge bg-info fw-normal">Compra</span></label>
+                                <input class="form-control"
+                                       type="file"
+                                       id="inputArchivoCargaMasiva"
+                                                                       name="file"
+                                       accept=".csv"
+                                       required>
+                                <div class="form-text" id="instruccionesCargaMasiva">
+                                  <!-- Mensaje dinámico según venta o compra -->
+                                  <strong>Requerimientos para carga masiva <span id="tipoOperacionRequerido">compra</span>:</strong>
+                                  <ul class="mb-1" id="requisitosCamposCargaMasiva">
+                                    <li><code>nombreMaterial</code> <span class="text-danger">(obligatorio)</span>: nombre del material tal como aparece en el sistema.</li>
+                                    <li><code>cantidad</code> <span class="text-danger">(obligatorio)</span>: cantidad numérica (usa punto decimal, sin separador de miles).</li>
+                                    <li id="campoPrecioCompra"><code>precioCompra</code> <span class="text-danger">(obligatorio)</span>: precio unitario pagado (solo para compras).</li>
+                                    <li id="campoPrecioVenta" style="display:none"><code>precioVenta</code> <span class="text-danger">(obligatorio)</span>: precio unitario vendido (solo para ventas).</li>
+                                    <li id="campoFechaCompra"><code>fechaCompra</code> <span class="text-danger">(obligatorio)</span>: fecha de compra en formato <b>YYYY-MM-DD</b> o <b>YYYY-MM-DD HH:MM</b>.</li>
+                                    <li id="campoFechaVenta" style="display:none"><code>fechaVenta</code> <span class="text-danger">(obligatorio)</span>: fecha de venta en formato <b>YYYY-MM-DD</b> o <b>YYYY-MM-DD HH:MM</b>.</li>
+                                    <li><code>observaciones</code> <span class="text-secondary">(opcional)</span>: notas adicionales.</li>
+                                  </ul>
+                                  <span class="fw-semibold text-warning">Importante:</span> No cambies los nombres de las columnas. El archivo debe estar en formato <strong>CSV delimitado por coma</strong>.
+                                  <br/>
+                                  <a href="#" id="descargarPlantillaCargaMasiva">Descargar plantilla de ejemplo</a>
+                                </div>
+                                <!-- INICIO: INFO ESCENARIOS MATERIAL NO REGISTRADO -->
+                                <div class="alert alert-info mt-3" id="info-material-no-registrado-bulk" role="alert">
+                                  <strong>¿Qué pasa si el material de una fila no existe previamente?</strong>
+                                  <ul class="mb-1" style="font-size:0.98em">
+                                    <li><b>Si el material ya existe en tu inventario:</b> se utiliza el existente y se registra la compra/venta normalmente.</li>
+                                    <li><b>Si el material no está en el inventario del punto, pero sí existe en el <u>catálogo general</u>:</b> se agrega automáticamente a tu inventario (con stock en cero, capacidad por defecto, etc.) <u>y luego se registra la operación</u> sobre ese material.</li>
+                                    <li><b>Si el material no existe ni en tu inventario ni en el catálogo:</b> <span class="text-danger">no se registra la operación y se marca un error en esa fila</span>. Deberás primero cargar o solicitar el alta de ese material en el catálogo general.</li>
+                                  </ul>
+                                  <span class="text-secondary">Podés ver estos resultados fila a fila después de subir tu archivo.</span>
+                                </div>
+                                <!-- FIN: INFO ESCENARIOS MATERIAL NO REGISTRADO -->
+                            </div>
+                            <div class="col-12">
+                                <div id="feedbackCargaMasiva" class="mt-2 small" style="min-height: 48px;">
+                                    <!-- Aquí se mostrará feedback fila a fila -->
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="submit"
+                            form="formCargaMasiva"
+                            class="btn btn-primary fw-semibold"
+                            id="btnEjecutarCargaMasiva">
+                        <i class="bi bi-arrow-bar-up me-1"></i>Subir archivo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Activa la apertura del modal de carga masiva desde ambos botones y gestiona el submit AJAX
+    (function(){
+        let modoCargaMasiva = null; // 'compras' o 'ventas'
+
+        // Centralized function to update modal UI for the selected mode
+        /**
+         * Central UI/state handler for the bulk upload modal (Carga Masiva)
+         * Resets and updates all DOM/UI for 'compras' or 'ventas' mode.
+         * No state outside this function! Only call it, don't repeat logic.
+         */
+        function setModoCargaMasiva(mode) {
+            modoCargaMasiva = mode || 'compras';
+
+            // --- Reset file input ---
+            var inputArchivo = document.getElementById('inputArchivoCargaMasiva');
+            if (inputArchivo) inputArchivo.value = '';
+
+            // --- Reset feedback box ---
+            var feedback = document.getElementById('feedbackCargaMasiva');
+            if (feedback) feedback.innerHTML = '';
+
+            // --- Span/badge 'Compra' o 'Venta' ---
+            var spanTipo = document.getElementById('spanTipoCargaMasiva');
+            if (spanTipo) {
+                spanTipo.textContent = (modoCargaMasiva === 'compras') ? 'Compra' : 'Venta';
+                spanTipo.className = (modoCargaMasiva === 'compras') ? 'badge bg-info fw-normal' : 'badge bg-success fw-normal';
+            }
+
+            // --- Texto del modo en instrucciones ---
+            var tipoOperacion = document.getElementById('tipoOperacionRequerido');
+            if (tipoOperacion) tipoOperacion.textContent = (modoCargaMasiva === 'compras') ? 'compra' : 'venta';
+
+            // --- Mostrar/ocultar campos según modo ---
+            var campoPrecioCompra = document.getElementById('campoPrecioCompra');
+            var campoFechaCompra = document.getElementById('campoFechaCompra');
+            var campoPrecioVenta = document.getElementById('campoPrecioVenta');
+            var campoFechaVenta = document.getElementById('campoFechaVenta');
+
+            if (modoCargaMasiva === 'compras') {
+                if (campoPrecioCompra) campoPrecioCompra.style.display = '';
+                if (campoFechaCompra) campoFechaCompra.style.display = '';
+                if (campoPrecioVenta) campoPrecioVenta.style.display = 'none';
+                if (campoFechaVenta) campoFechaVenta.style.display = 'none';
+            } else {
+                if (campoPrecioCompra) campoPrecioCompra.style.display = 'none';
+                if (campoFechaCompra) campoFechaCompra.style.display = 'none';
+                if (campoPrecioVenta) campoPrecioVenta.style.display = '';
+                if (campoFechaVenta) campoFechaVenta.style.display = '';
+            }
+
+            // --- Descargar plantilla ejemplo ---
+            var descargarPlantilla = document.getElementById('descargarPlantillaCargaMasiva');
+            if (descargarPlantilla) {
+                if (modoCargaMasiva === 'compras') {
+                    descargarPlantilla.href = '/static/plantilla_carga_compras.csv';
+                    descargarPlantilla.textContent = 'Descargar plantilla de ejemplo para compras';
+                } else {
+                    descargarPlantilla.href = '/static/plantilla_carga_ventas.csv';
+                    descargarPlantilla.textContent = 'Descargar plantilla de ejemplo para ventas';
+                }
+            }
+
+            // --- Cualquier otro reseteo de estado se centraliza acá!
+        }
+
+        function abrirModalCargaMasiva(e) {
+            e && e.preventDefault && e.preventDefault();
+            let mode = 'compras';
+            if (e && e.target && e.target.id === 'btnBulkImportCompras') mode = 'compras';
+            if (e && e.target && e.target.id === 'btnBulkImportVentas') mode = 'ventas';
+            setModoCargaMasiva(mode);
+            const modal = new bootstrap.Modal(document.getElementById('modalCargaMasiva'));
+            modal.show();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var btnCompras = document.getElementById('btnBulkImportCompras');
+            var btnVentas = document.getElementById('btnBulkImportVentas');
+            if (btnCompras) {
+                btnCompras.addEventListener('click', function(e) {
+                    console.log('[DEBUG] Click detectado en #btnBulkImportCompras (Compra)');
+                    abrirModalCargaMasiva(e);
+                });
+            } else {
+                console.warn('[DEBUG] No encontrado #btnBulkImportCompras');
+            }
+            if (btnVentas) {
+                btnVentas.addEventListener('click', function(e) {
+                    console.log('[DEBUG] Click detectado en #btnBulkImportVentas (Venta)');
+                    abrirModalCargaMasiva(e);
+                });
+            } else {
+                console.warn('[DEBUG] No encontrado #btnBulkImportVentas');
+            }
+            // Interceptar submit del form de carga masiva
+            var form = document.getElementById('formCargaMasiva');
+            if (form) {
+                form.addEventListener('submit', function(ev) {
+                    ev.preventDefault();
+                    var feedback = document.getElementById('feedbackCargaMasiva');
+                    feedback.innerHTML = '<span class="text-info">Subiendo archivo, por favor espera...</span>';
+                    var archivoInput = document.getElementById('inputArchivoCargaMasiva');
+                    var archivo = archivoInput && archivoInput.files && archivoInput.files[0];
+                    if (!archivo) {
+                        feedback.innerHTML = '<span class="text-danger">Debe seleccionar un archivo</span>';
+                        return;
+                    }
+                    var endpoint = modoCargaMasiva === 'compras' ? '/punto-eca/movimientos/compras/bulk_import/' : '/punto-eca/movimientos/ventas/bulk_import/';
+                    var formData = new FormData();
+                    formData.append('file', archivo);
+                    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch(endpoint, {
+                        method: 'POST',
+                        body: formData,
+                        headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        let html = '';
+                        if (data.status === 'success') {
+                            // Resumen de éxito/errores
+                            const resumen = data.resumen || {};
+                            const total = resumen.total_filas ?? (Array.isArray(data.detalles) ? data.detalles.length : 0);
+                            const exitosas = resumen.exitosas ?? 0;
+                            const conErrores = resumen.con_errores ?? 0;
+                            html += `<div class="alert alert-success py-2 fw-semibold" role="status" aria-live="polite">${data.mensaje || 'Archivo procesado correctamente.'}<br><span class='small'><b>Total filas:</b> ${total} &bullet; <span class='text-success'><b>Éxito:</b> ${exitosas}</span> &bullet; <span class='text-danger'><b>Error:</b> ${conErrores}</span></span></div>`;
+
+                            // Detalles fila a fila, accesibles y diferenciados
+                            if (Array.isArray(data.detalles) && data.detalles.length > 0) {
+                                html += `<div style="max-height:300px;overflow-y:auto" tabindex="0" aria-label="Resultados detallados por fila">
+                                    <ul class="list-group">
+                                        ${data.detalles.map(r => {
+                                            const isOk = r.status === 'success';
+                                            const icon = isOk ? '✅' : '❌';
+                                            const rowClass = isOk ? 'list-group-item list-group-item-success' : 'list-group-item list-group-item-danger';
+                                            return `<li class='${rowClass} d-flex justify-content-between align-items-center'>
+                                                <span><b>Fila ${r.fila}:</b> ${r.mensaje || r.status}</span>
+                                                <span aria-hidden="true">${icon}</span>
+                                            </li>`;
+                                        }).join('')}
+                                    </ul>
+                                </div>`;
+                            } else {
+                                html += `<div class='alert alert-info mt-2'>No se devolvieron detalles de filas.</div>`;
+                            }
+                        } else {
+                            html += `<div class="alert alert-danger py-2" role="alert">${data.mensaje || 'Ocurrió un error.'}</div>`;
+                        }
+                        feedback.innerHTML = html;
+                        // El usuario decide cuándo cerrar o recargar; no auto-reload
+                    })
+                    .catch(err => {
+                        feedback.innerHTML = `<div class="alert alert-danger py-2">Error al subir archivo: ${err && err.message ? err.message : err}</div>`;
+                    });
+                });
+            }
+        });
+    })();
     </script>
     <!-- MODALES PARA VER DETALLES, EDITAR Y ELIMINAR ENTRADAS Y SALIDAS -->
     <!-- MODAL: VER DETALLES ENTRADA (COMPRA) -->
