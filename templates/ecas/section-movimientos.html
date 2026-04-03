@@ -401,12 +401,12 @@
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-2">
                                 <h6 class="mb-0 fw-bold text-dark">Historial de Compra de Material</h6>
-                                                                <button type="button"
-                                                                   class="btn btn-sm btn-outline-primary fw-semibold ms-2"
-                                                                   id="btnBulkImportCompras"
-                                                                   title="Carga Masiva de Compras">
-                                                                    <i class="bi bi-upload me-1"></i>Carga Masiva
-                                                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary fw-semibold ms-2"
+                                        id="btnBulkImportCompras"
+                                        title="Carga Masiva de Compras">
+                                    <i class="bi bi-upload me-1"></i>Carga Masiva
+                                </button>
                                 <a href="/punto-eca/movimientos/exportar-compras-excel/"
                                    target="_blank"
                                    class="btn btn-sm btn-outline-success fw-semibold ms-2"
@@ -697,12 +697,12 @@
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-2">
                                 <h6 class="mb-0 fw-bold text-dark">Historial de Venta de Material</h6>
-                                                                <button type="button"
-                                                                   class="btn btn-sm btn-outline-primary fw-semibold ms-2"
-                                                                   id="btnBulkImportVentas"
-                                                                   title="Carga Masiva de Ventas">
-                                                                    <i class="bi bi-upload me-1"></i>Carga Masiva
-                                                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary fw-semibold ms-2"
+                                        id="btnBulkImportVentas"
+                                        title="Carga Masiva de Ventas">
+                                    <i class="bi bi-upload me-1"></i>Carga Masiva
+                                </button>
                                 <a href="/punto-eca/movimientos/exportar-ventas-excel/"
                                    target="_blank"
                                    class="btn btn-sm btn-outline-success fw-semibold ms-2"
@@ -2839,6 +2839,143 @@
             }
         });
 
+    </script>
+    <!-- MODAL REUTILIZABLE: CARGA MASIVA CSV/XLSX COMPRAS Y VENTAS -->
+    <div class="modal fade"
+         id="modalCargaMasiva"
+         tabindex="-1"
+         aria-labelledby="modalCargaMasivaLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalCargaMasivaLabel">
+                        <i class="bi bi-upload me-2"></i>Importar Carga Masiva (Compras/Ventas)
+                    </h5>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formCargaMasiva" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="inputArchivoCargaMasiva" class="form-label fw-semibold">Seleccioná el archivo CSV o XLSX</label>
+                                <input class="form-control"
+                                       type="file"
+                                       id="inputArchivoCargaMasiva"
+                                       name="archivo"
+                                       accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                       required>
+                                <div class="form-text">
+                                    El archivo debe contener los campos obligatorios de compras o ventas según corresponda.
+                                    <a href="#" id="descargarPlantillaCargaMasiva">Descargar plantilla de ejemplo</a>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div id="feedbackCargaMasiva" class="mt-2 small" style="min-height: 48px;">
+                                    <!-- Aquí se mostrará feedback fila a fila -->
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="submit"
+                            form="formCargaMasiva"
+                            class="btn btn-primary fw-semibold"
+                            id="btnEjecutarCargaMasiva">
+                        <i class="bi bi-arrow-bar-up me-1"></i>Subir archivo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Activa la apertura del modal de carga masiva desde ambos botones y gestiona el submit AJAX
+    (function(){
+        let modoCargaMasiva = null; // 'compras' o 'ventas'
+        function abrirModalCargaMasiva(e) {
+            e && e.preventDefault && e.preventDefault();
+            // Determinar en base al botón si es compras o ventas
+            if (e && e.target && e.target.id === 'btnBulkImportCompras') modoCargaMasiva = 'compras';
+            if (e && e.target && e.target.id === 'btnBulkImportVentas') modoCargaMasiva = 'ventas';
+            // Fallback si no se puede detectar
+            if (!modoCargaMasiva) modoCargaMasiva = 'compras';
+            document.getElementById('inputArchivoCargaMasiva').value = '';
+            document.getElementById('feedbackCargaMasiva').innerHTML = '';
+            const modal = new bootstrap.Modal(document.getElementById('modalCargaMasiva'));
+            modal.show();
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            var btnCompras = document.getElementById('btnBulkImportCompras');
+            var btnVentas = document.getElementById('btnBulkImportVentas');
+            if (btnCompras) {
+                            btnCompras.addEventListener('click', function(e) {
+                                console.log('[DEBUG] Click detectado en #btnBulkImportCompras (Compra)');
+                                abrirModalCargaMasiva(e);
+                            });
+                        } else {
+                            console.warn('[DEBUG] No encontrado #btnBulkImportCompras');
+                        }
+                        if (btnVentas) {
+                            btnVentas.addEventListener('click', function(e) {
+                                console.log('[DEBUG] Click detectado en #btnBulkImportVentas (Venta)');
+                                abrirModalCargaMasiva(e);
+                            });
+                        } else {
+                            console.warn('[DEBUG] No encontrado #btnBulkImportVentas');
+                        }
+            // Interceptar submit del form de carga masiva
+            var form = document.getElementById('formCargaMasiva');
+            if (form) {
+                form.addEventListener('submit', function(ev) {
+                    ev.preventDefault();
+                    var feedback = document.getElementById('feedbackCargaMasiva');
+                    feedback.innerHTML = '<span class="text-info">Subiendo archivo, por favor espera...</span>';
+                    var archivoInput = document.getElementById('inputArchivoCargaMasiva');
+                    var archivo = archivoInput && archivoInput.files && archivoInput.files[0];
+                    if (!archivo) {
+                        feedback.innerHTML = '<span class="text-danger">Debe seleccionar un archivo</span>';
+                        return;
+                    }
+                    var endpoint = modoCargaMasiva === 'compras' ? '/punto-eca/movimientos/compras/bulk_import/' : '/punto-eca/movimientos/ventas/bulk_import/';
+                    var formData = new FormData();
+                    formData.append('file', archivo);
+                    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch(endpoint, {
+                        method: 'POST',
+                        body: formData,
+                        headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            var html = `<div class="alert alert-success py-2">${data.mensaje || 'Archivo procesado correctamente.'}</div>`;
+                            if (Array.isArray(data.detalles)) {
+                                html += '<ul class="list-group">' + data.detalles.map(r =>
+                                    `<li class="list-group-item d-flex justify-content-between align-items-center ${r.status === 'success' ? 'list-group-item-success' : 'list-group-item-danger'}">`
+                                    + `<span>Fila <b>${r.fila}</b>: ${r.mensaje || r.status}</span><span>${r.status === 'success' ? '✔️' : '❌'}</span>`
+                                    + '</li>'
+                                ).join('') + '</ul>';
+                            }
+                            feedback.innerHTML = html;
+                            setTimeout(() => location.reload(), 1600); // Refresh tablita tras feedback
+                        } else {
+                            feedback.innerHTML = `<div class="alert alert-danger py-2">${data.mensaje || 'Ocurrió un error.'}</div>`;
+                        }
+                    })
+                    .catch(err => {
+                        feedback.innerHTML = `<div class="alert alert-danger py-2">Error al subir archivo: ${err && err.message ? err.message : err}</div>`;
+                    });
+                });
+            }
+        });
+    })();
     </script>
     <!-- MODALES PARA VER DETALLES, EDITAR Y ELIMINAR ENTRADAS Y SALIDAS -->
     <!-- MODAL: VER DETALLES ENTRADA (COMPRA) -->

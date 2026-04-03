@@ -11,6 +11,7 @@ from apps.inventory.views import _build_materiales_context
 from django.http import JsonResponse
 from apps.core.decorators import gestor_eca_or_admin_required
 from apps.reciclabot.service import AsistenteECAService
+import decimal
 import json
 
 
@@ -121,8 +122,6 @@ def _build_centros_context(punto):
     }
 
 
-import decimal
-
 def _decimal_to_float_recursive(obj):
     if isinstance(obj, dict):
         return {k: _decimal_to_float_recursive(v) for k, v in obj.items()}
@@ -145,6 +144,7 @@ def _build_resumen_context(punto):
 
     # DEBUG LOG temporal para validar datos
     import logging
+
     logging.warning(f"RESUMEN BACKEND DEBUG: {datos_resumen}")
 
     return {
