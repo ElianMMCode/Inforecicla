@@ -3,6 +3,8 @@
          data-punto-eca-id="{{ punto.id }}"
          data-usuario-id="{{ gestor.id }}"
          data-gestor="{{ gestor.nombre }}">
+    <!-- Importante: Las operaciones de movimientos (compra/venta/edición) gestionan mensajes de error y éxito vía JavaScript, interpretando la respuesta JSON del backend. -->
+    <!-- Si el flujo del backend se migra a vistas clásicas Django con redirects, agregar acá el bloque de Django messages/alerts como se hace en perfil/puntoECA. -->
     <!-- CSRF meta tag for AJAX POST -->
     <meta name="csrf-token" content="{{ csrf_token }}">
     <!-- Título principal -->
@@ -98,6 +100,8 @@
             </div>
         </div>
     </div>
+    <!-- Bloque de feedback para mensajes de alerta de movimientos -->
+    <div id="movimientosFeedback" class="mt-2"></div>
     <!-- ═════════════════════════════════════════════════════════════ -->
     <!-- ACORDEÓN PRINCIPAL -->
     <!-- ═════════════════════════════════════════════════════════════ -->
@@ -1101,7 +1105,9 @@
                                     data = [];
                                 }
 
-                                console.log('Total de resultados:', data.length);
+                                                            // Invertir el orden para mostrar el último registrado primero
+                                                            data = data.slice().reverse();
+                                                            console.log('Total de resultados (invertido):', data.length);
 
                                 var results = data.map(function(m) {
                                     console.log('Procesando material:', m.nmbMaterial);
@@ -2246,6 +2252,18 @@
                 entradasData = Object.values(entradasData);
             }
             if (!Array.isArray(entradasData) || !entradasData) entradasData = [];
+                    // Refuerzo: siempre ordenar por fechaCompra DESC para que lo más nuevo salga siempre primero, también después de filtros o paginación
+                    entradasData = entradasData.slice().sort((a, b) => {
+                                // Considerar fecha y hora: normalizar formato a ISO
+                                function toISO(fecha) {
+                                    if (!fecha) return 0;
+                                    // reemplaza espacio por T si existe
+                                    return new Date(fecha.replace(' ', 'T')).getTime();
+                                }
+                                const fechaA = toISO(a.fechaCompra);
+                                const fechaB = toISO(b.fechaCompra);
+                return fechaB - fechaA;
+            });
             
             if (entradasData.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="6" class="py-3"><small>Sin registros</small></td></tr>';
@@ -2274,7 +2292,7 @@
             const registrosPagina = entradasData.slice(inicio, fin);
 
             tbody.innerHTML = registrosPagina.map(entrada => {
-                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toLocaleDateString('es-CO') : '-';
+                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                 const cantidad = parseFloat(entrada.cantidad || 0);
                 const precio = parseFloat(entrada.precioCompra || 0);
                 const total = cantidad * precio;
@@ -2341,7 +2359,13 @@
                 return;
             }
 
-            const salidasData = window.SALIDAS_INICIALES || [];
+            let salidasData = window.SALIDAS_INICIALES || [];
+            // Ordenar por fechaVenta DESC para que lo más nuevo salga arriba
+            salidasData = salidasData.sort((a, b) => {
+                const fechaA = new Date(a.fechaVenta || 0).getTime();
+                const fechaB = new Date(b.fechaVenta || 0).getTime();
+                return fechaB - fechaA;
+            });
 
             if (!salidasData || salidasData.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="7" class="py-3"><small>Sin registros</small></td></tr>';
@@ -2370,7 +2394,7 @@
             const registrosPagina = salidasData.slice(inicio, fin);
 
             tbody.innerHTML = registrosPagina.map(salida => {
-                const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toLocaleDateString('es-CO') : '-';
+                const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                 const cantidad = parseFloat(salida.cantidad || 0);
                 const precio = parseFloat(salida.precioVenta || 0);
                 const total = cantidad * precio;
@@ -2542,7 +2566,7 @@
             }
 
             tbody.innerHTML = paginaMovimientos.map(mov => {
-                const fecha = new Date(mov.fecha).toLocaleDateString('es-CO');
+                const fecha = new Date(mov.fecha).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                 const cantidadNumber = parseFloat(mov.cantidad || 0);
                 const cantidad = cantidadNumber.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 const precioNumber = parseFloat(mov.precio || 0);
@@ -2802,6 +2826,99 @@
             const salidaStockActual = document.getElementById('salidaStockActual');
             const salidaStockRestante = document.getElementById('salidaStockRestante');
 
+                    // Función para mostrar feedback en el div central
+                    window.mostrarFeedbackMovimientos = function(msg, tipo = 'success') {
+                        const div = document.getElementById('movimientosFeedback');
+                        if (!div) return;
+                        div.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                            ${msg}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                        </div>`;
+                    }
+                    // ======= HANDLE SUBMIT DE COMPRA (ENTRADA) =======
+                    const formEntrada = document.getElementById('formEntrada');
+                    if(formEntrada){
+                        formEntrada.addEventListener('submit', function(ev){
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            const inventarioId = document.getElementById('entradaInventarioId')?.value;
+                            const materialId = document.getElementById('entradaMaterialId')?.value;
+                            const cantidad = document.getElementById('entradaCantidad')?.value;
+                            const fechaCompra = document.getElementById('entradaFecha')?.value;
+                            const precioCompra = document.getElementById('entradaPrecioCompra')?.value;
+                            const observaciones = document.getElementById('entradaObservaciones')?.value;
+                            const puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+                            var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            // Build request body según backend
+                            const data = {
+                                inventarioId, materialId, cantidad, fechaCompra, precioCompra, observaciones, puntoEcaId
+                            };
+                            fetch(`/punto-eca/movimientos/registrar-compra/`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrfToken
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            .then(res => res.json())
+                            .then(resp => {
+                                if (!resp.error) {
+                                    try { mostrarFeedbackMovimientos(resp.mensaje || '¡Compra registrada! 🎉', 'success'); } catch (err) {}
+                                    formEntrada.reset(); // Only reset when NO error
+                                    location.reload();
+                                } else {
+                                    try { mostrarFeedbackMovimientos(resp.mensaje || 'Error: operación no realizada', 'danger'); } catch (err) {}
+                                    // Do NOT reset the form when an error occurs
+                                }
+                            })
+                            .catch(err => {
+                                mostrarFeedbackMovimientos('Error al conectar con el backend: ' + (err && err.message ? err.message : err), 'danger');
+                            });
+                        });
+                    }
+        
+                    // ======= HANDLE SUBMIT DE VENTA (SALIDA) =======
+                    const formSalida = document.getElementById('formSalida');
+                    if(formSalida){
+                        formSalida.addEventListener('submit', function(ev){
+                            ev.preventDefault();
+                            const inventarioId = document.getElementById('salidaInventarioId')?.value;
+                            const materialId = document.getElementById('salidaMaterialId')?.value;
+                            const cantidad = document.getElementById('salidaCantidad')?.value;
+                            const fechaVenta = document.getElementById('salidaFecha')?.value;
+                            const precioVenta = document.getElementById('salidaPrecioVenta')?.value;
+                            const observaciones = document.getElementById('salidaObservaciones')?.value;
+                            const centroAcopioId = document.getElementById('salidaCentroAcopio')?.value;
+                            const puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId;
+                            var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            const data = {
+                                inventarioId, materialId, cantidad, fechaVenta, precioVenta, observaciones, centroAcopioId, puntoEcaId
+                            };
+                            fetch(`/punto-eca/movimientos/registrar-venta/`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrfToken
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            .then(res => res.json())
+                            .then(resp => {
+                                if (!resp.error) {
+                                    mostrarFeedbackMovimientos(resp.mensaje || '¡Venta registrada! 🎉', 'success');
+                                    formSalida.reset();
+                                    if(typeof renderizarSalidas === 'function'){ setTimeout(renderizarSalidas, 200); }
+                                } else {
+                                    mostrarFeedbackMovimientos(resp.mensaje || 'Error: operación no realizada', 'danger');
+                                }
+                            })
+                            .catch(err => {
+                                mostrarFeedbackMovimientos('Error al conectar con el backend: ' + (err && err.message ? err.message : err), 'danger');
+                            });
+                        });
+                    }
+        
             // Función para actualizar stock de entrada
             function actualizarStockEntrada() {
                 const stock = parseFloat(entradaStockActual?.value || 0);
@@ -2861,38 +2978,62 @@
                     <form id="formCargaMasiva" enctype="multipart/form-data">
                         <div class="row g-3">
                             <div class="col-12">
-                                <label for="inputArchivoCargaMasiva" class="form-label fw-semibold">Seleccioná el archivo CSV. <span id="spanTipoCargaMasiva" class="badge bg-info fw-normal">Compra</span></label>
+                                <label for="inputArchivoCargaMasiva" class="form-label fw-semibold">
+                                    Seleccioná el archivo CSV. <span id="spanTipoCargaMasiva" class="badge bg-info fw-normal">Compra</span>
+                                </label>
                                 <input class="form-control"
                                        type="file"
                                        id="inputArchivoCargaMasiva"
-                                                                       name="file"
+                                       name="file"
                                        accept=".csv"
                                        required>
                                 <div class="form-text" id="instruccionesCargaMasiva">
-                                  <!-- Mensaje dinámico según venta o compra -->
-                                  <strong>Requerimientos para carga masiva <span id="tipoOperacionRequerido">compra</span>:</strong>
-                                  <ul class="mb-1" id="requisitosCamposCargaMasiva">
-                                    <li><code>nombreMaterial</code> <span class="text-danger">(obligatorio)</span>: nombre del material tal como aparece en el sistema.</li>
-                                    <li><code>cantidad</code> <span class="text-danger">(obligatorio)</span>: cantidad numérica (usa punto decimal, sin separador de miles).</li>
-                                    <li id="campoPrecioCompra"><code>precioCompra</code> <span class="text-danger">(obligatorio)</span>: precio unitario pagado (solo para compras).</li>
-                                    <li id="campoPrecioVenta" style="display:none"><code>precioVenta</code> <span class="text-danger">(obligatorio)</span>: precio unitario vendido (solo para ventas).</li>
-                                    <li id="campoFechaCompra"><code>fechaCompra</code> <span class="text-danger">(obligatorio)</span>: fecha de compra en formato <b>YYYY-MM-DD</b> o <b>YYYY-MM-DD HH:MM</b>.</li>
-                                    <li id="campoFechaVenta" style="display:none"><code>fechaVenta</code> <span class="text-danger">(obligatorio)</span>: fecha de venta en formato <b>YYYY-MM-DD</b> o <b>YYYY-MM-DD HH:MM</b>.</li>
-                                    <li><code>observaciones</code> <span class="text-secondary">(opcional)</span>: notas adicionales.</li>
-                                  </ul>
-                                  <span class="fw-semibold text-warning">Importante:</span> No cambies los nombres de las columnas. El archivo debe estar en formato <strong>CSV delimitado por coma</strong>.
-                                  <br/>
-                                  <a href="#" id="descargarPlantillaCargaMasiva">Descargar plantilla de ejemplo</a>
+                                    <!-- Mensaje dinámico según venta o compra -->
+                                    <strong>Requerimientos para carga masiva <span id="tipoOperacionRequerido">compra</span>:</strong>
+                                    <ul class="mb-1" id="requisitosCamposCargaMasiva">
+                                        <li>
+                                            <code>nombreMaterial</code> <span class="text-danger">(obligatorio)</span>: nombre del material tal como aparece en el sistema.
+                                        </li>
+                                        <li>
+                                            <code>cantidad</code> <span class="text-danger">(obligatorio)</span>: cantidad numérica (usa punto decimal, sin separador de miles).
+                                        </li>
+                                        <li id="campoPrecioCompra">
+                                            <code>precioCompra</code> <span class="text-danger">(obligatorio)</span>: precio unitario pagado (solo para compras).
+                                        </li>
+                                        <li id="campoPrecioVenta" style="display:none">
+                                            <code>precioVenta</code> <span class="text-danger">(obligatorio)</span>: precio unitario vendido (solo para ventas).
+                                        </li>
+                                        <li id="campoFechaCompra">
+                                            <code>fechaCompra</code> <span class="text-danger">(obligatorio)</span>: fecha de compra en formato <b>YYYY-MM-DD</b> o <b>YYYY-MM-DD HH:MM</b>.
+                                        </li>
+                                        <li id="campoFechaVenta" style="display:none">
+                                            <code>fechaVenta</code> <span class="text-danger">(obligatorio)</span>: fecha de venta en formato <b>YYYY-MM-DD</b> o <b>YYYY-MM-DD HH:MM</b>.
+                                        </li>
+                                        <li>
+                                            <code>observaciones</code> <span class="text-secondary">(opcional)</span>: notas adicionales.
+                                        </li>
+                                    </ul>
+                                    <span class="fw-semibold text-warning">Importante:</span> No cambies los nombres de las columnas. El archivo debe estar en formato <strong>CSV delimitado por coma</strong>.
+                                    <br />
+                                    <a href="#" id="descargarPlantillaCargaMasiva">Descargar plantilla de ejemplo</a>
                                 </div>
                                 <!-- INICIO: INFO ESCENARIOS MATERIAL NO REGISTRADO -->
-                                <div class="alert alert-info mt-3" id="info-material-no-registrado-bulk" role="alert">
-                                  <strong>¿Qué pasa si el material de una fila no existe previamente?</strong>
-                                  <ul class="mb-1" style="font-size:0.98em">
-                                    <li><b>Si el material ya existe en tu inventario:</b> se utiliza el existente y se registra la compra/venta normalmente.</li>
-                                    <li><b>Si el material no está en el inventario del punto, pero sí existe en el <u>catálogo general</u>:</b> se agrega automáticamente a tu inventario (con stock en cero, capacidad por defecto, etc.) <u>y luego se registra la operación</u> sobre ese material.</li>
-                                    <li><b>Si el material no existe ni en tu inventario ni en el catálogo:</b> <span class="text-danger">no se registra la operación y se marca un error en esa fila</span>. Deberás primero cargar o solicitar el alta de ese material en el catálogo general.</li>
-                                  </ul>
-                                  <span class="text-secondary">Podés ver estos resultados fila a fila después de subir tu archivo.</span>
+                                <div class="alert alert-info mt-3"
+                                     id="info-material-no-registrado-bulk"
+                                     role="alert">
+                                    <strong>¿Qué pasa si el material de una fila no existe previamente?</strong>
+                                    <ul class="mb-1" style="font-size:0.98em">
+                                        <li>
+                                            <b>Si el material ya existe en tu inventario:</b> se utiliza el existente y se registra la compra/venta normalmente.
+                                        </li>
+                                        <li>
+                                            <b>Si el material no está en el inventario del punto, pero sí existe en el <u>catálogo general</u>:</b> se agrega automáticamente a tu inventario (con stock en cero, capacidad por defecto, etc.) <u>y luego se registra la operación</u> sobre ese material.
+                                        </li>
+                                        <li>
+                                            <b>Si el material no existe ni en tu inventario ni en el catálogo:</b> <span class="text-danger">no se registra la operación y se marca un error en esa fila</span>. Deberás primero cargar o solicitar el alta de ese material en el catálogo general.
+                                        </li>
+                                    </ul>
+                                    <span class="text-secondary">Podés ver estos resultados fila a fila después de subir tu archivo.</span>
                                 </div>
                                 <!-- FIN: INFO ESCENARIOS MATERIAL NO REGISTRADO -->
                             </div>
@@ -4224,66 +4365,6 @@
             // Manejadores ligeros para crear compra/venta sin recargar la página.
             function safeParseFloat(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
 
-            var formEntrada = document.getElementById('formEntrada');
-            if (formEntrada) {
-                formEntrada.addEventListener('submit', function(e) {
-                    e.preventDefault();
-
-                    var puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId || null;
-                    var materialId = document.getElementById('entradaMaterialId')?.value || '';
-                    var inventarioId = document.getElementById('entradaInventarioId')?.value || '';
-                    var cantidad = document.getElementById('entradaCantidad')?.value;
-                    var fechaCompra = document.getElementById('entradaFecha')?.value;
-                    var precioCompra = document.getElementById('entradaPrecioCompra')?.value;
-                    var observaciones = document.getElementById('entradaObservaciones')?.value || '';
-
-                    if (!materialId) { alert('Seleccione un material antes de guardar la compra.'); return; }
-                    if (!cantidad || safeParseFloat(cantidad) === null || safeParseFloat(cantidad) <= 0) { alert('Ingrese una cantidad mayor a cero.'); return; }
-                    if (!fechaCompra) { alert('Seleccione la fecha de compra.'); return; }
-
-                    var payload = {
-                        puntoEcaId: puntoEcaId,
-                        materialId: materialId,
-                        inventarioId: inventarioId || null,
-                        cantidad: safeParseFloat(cantidad),
-                        // datetime-local usually gives "YYYY-MM-DDTHH:MM" — asegurar segundos para Jackson
-                        fechaCompra: (fechaCompra && fechaCompra.length===16) ? (fechaCompra + ':00') : fechaCompra,
-                        precioCompra: safeParseFloat(precioCompra) || 0,
-                        observaciones: observaciones
-                    };
-                    // Bloquear si el inventarioId falta (prevención UX de error 400)
-                    if (!payload.inventarioId) {
-                        alert('No se puede guardar la compra porque falta el inventarioId. Seleccioná un material y asegurate que los datos están completos.');
-                        console.error('[COMPRA] Se intentó enviar sin inventarioId:', payload);
-                        return;
-                    }
-                    // DEBUG: mostrar payload antes de enviar
-                    console.log('[COMPRA] Payload al enviar:', payload);
-
-                    // Obtener CSRF token
-                    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                    // Enviar al endpoint correcto que espera CompraInventarioRequestDTO
-                    fetch('/punto-eca/movimientos/registrar-compra/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify(payload)
-                    })
-                    .then(function(res) { return res.json().then(function(data){ return { ok: res.ok, status: res.status, data: data }; }); })
-                    .then(function(result) {
-                        if (result.ok) {
-                            // Éxito: recargar para reflejar cambios (el backend guarda)
-                            location.reload();
-                        } else {
-                            var msg = result.data?.mensaje || result.data?.message || ('Error al guardar compra: HTTP ' + result.status);
-                            alert(msg);
-                        }
-                    })
-                    .catch(function(err){ alert('Error al guardar compra: ' + (err && err.message ? err.message : err)); });
-                });
-            }
 
             var formSalida = document.getElementById('formSalida');
             if (formSalida) {

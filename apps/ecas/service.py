@@ -34,6 +34,9 @@ class PuntoService:
         punto.longitud = float(lon) if lon not in (None, "") else None
         punto.descripcion = request.POST.get("descripcionPunto", punto.descripcion)
         punto.logo_url_punto = request.POST.get("logoUrlPunto", punto.logo_url_punto)
+        punto.horario_atencion = request.POST.get(
+            "horarioAtencionPunto", punto.horario_atencion
+        )
 
         localidad_id = request.POST.get("localidadPunto")
         if localidad_id != str(punto.localidad.localidad_id if punto.localidad else ""):

@@ -57,9 +57,7 @@ class UsuarioManager(BaseUserManager):
 
         # Crear la instancia del usuario
         user = self.model(
-            email=email,
-            numero_documento=numero_documento,
-            **extra_fields
+            email=email, numero_documento=numero_documento, **extra_fields
         )
 
         # Establecer la contraseña (hasheada)
@@ -131,7 +129,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         max_length=30,
         null=False,
         blank=False,
-        validators=[MinLengthValidator(3, "El nombre debe tener al menos 3 caracteres")],
+        validators=[
+            MinLengthValidator(3, "El nombre debe tener al menos 3 caracteres")
+        ],
         help_text="Nombres completos del usuario",
     )
 
@@ -140,7 +140,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         max_length=40,
         null=False,
         blank=False,
-        validators=[MinLengthValidator(3, "Los apellidos deben tener al menos 3 caracteres")],
+        validators=[
+            MinLengthValidator(3, "Los apellidos deben tener al menos 3 caracteres")
+        ],
         help_text="Apellidos completos del usuario",
     )
 
@@ -168,8 +170,8 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         unique=True,
         validators=[
             MinLengthValidator(
-                5,
-                message="El número de documento debe tener al menos 5 caracteres",
+                6,
+                message="El número de documento debe tener al menos 6 caracteres",
             ),
         ],
         error_messages={
@@ -212,6 +214,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         null=True,
         blank=True,
         help_text="Número de teléfono celular (opcional)",
+        validators=[
+            MinLengthValidator(
+                10, message="El número de celular debe tener al menos 10 caracteres"
+            )
+        ],
     )
 
     # =========================================================================
@@ -305,9 +312,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         # Validar que la fecha de nacimiento no sea futura
         if self.fecha_nacimiento and self.fecha_nacimiento > date.today():
             raise ValidationError(
-                {
-                    "fecha_nacimiento": "La fecha de nacimiento no puede ser futura"
-                }
+                {"fecha_nacimiento": "La fecha de nacimiento no puede ser futura"}
             )
 
     def save(self, *args, **kwargs):
