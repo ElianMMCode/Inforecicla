@@ -131,7 +131,7 @@ def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
                 punto_eca=punto_eca,
                 material=material_catalogo,
                 stock_actual=0.0,
-                capacidad_maxima=999999999.0,  # Large capacity by default
+                capacidad_maxima=100000.0,  # Large capacity by default
                 unidad_medida="KG",
                 precio_compra=0.0,
                 precio_venta=0.0,
