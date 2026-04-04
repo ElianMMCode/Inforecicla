@@ -1105,7 +1105,9 @@
                                     data = [];
                                 }
 
-                                console.log('Total de resultados:', data.length);
+                                                            // Invertir el orden para mostrar el último registrado primero
+                                                            data = data.slice().reverse();
+                                                            console.log('Total de resultados (invertido):', data.length);
 
                                 var results = data.map(function(m) {
                                     console.log('Procesando material:', m.nmbMaterial);
@@ -2250,6 +2252,18 @@
                 entradasData = Object.values(entradasData);
             }
             if (!Array.isArray(entradasData) || !entradasData) entradasData = [];
+                    // Refuerzo: siempre ordenar por fechaCompra DESC para que lo más nuevo salga siempre primero, también después de filtros o paginación
+                    entradasData = entradasData.slice().sort((a, b) => {
+                                // Considerar fecha y hora: normalizar formato a ISO
+                                function toISO(fecha) {
+                                    if (!fecha) return 0;
+                                    // reemplaza espacio por T si existe
+                                    return new Date(fecha.replace(' ', 'T')).getTime();
+                                }
+                                const fechaA = toISO(a.fechaCompra);
+                                const fechaB = toISO(b.fechaCompra);
+                return fechaB - fechaA;
+            });
             
             if (entradasData.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="6" class="py-3"><small>Sin registros</small></td></tr>';
@@ -2278,7 +2292,7 @@
             const registrosPagina = entradasData.slice(inicio, fin);
 
             tbody.innerHTML = registrosPagina.map(entrada => {
-                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toLocaleDateString('es-CO') : '-';
+                const fecha = entrada.fechaCompra ? new Date(entrada.fechaCompra).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                 const cantidad = parseFloat(entrada.cantidad || 0);
                 const precio = parseFloat(entrada.precioCompra || 0);
                 const total = cantidad * precio;
@@ -2345,7 +2359,13 @@
                 return;
             }
 
-            const salidasData = window.SALIDAS_INICIALES || [];
+            let salidasData = window.SALIDAS_INICIALES || [];
+            // Ordenar por fechaVenta DESC para que lo más nuevo salga arriba
+            salidasData = salidasData.sort((a, b) => {
+                const fechaA = new Date(a.fechaVenta || 0).getTime();
+                const fechaB = new Date(b.fechaVenta || 0).getTime();
+                return fechaB - fechaA;
+            });
 
             if (!salidasData || salidasData.length === 0) {
                 tbody.innerHTML = '<tr class="text-muted text-center"><td colspan="7" class="py-3"><small>Sin registros</small></td></tr>';
@@ -2374,7 +2394,7 @@
             const registrosPagina = salidasData.slice(inicio, fin);
 
             tbody.innerHTML = registrosPagina.map(salida => {
-                const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toLocaleDateString('es-CO') : '-';
+                const fecha = salida.fechaVenta ? new Date(salida.fechaVenta).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                 const cantidad = parseFloat(salida.cantidad || 0);
                 const precio = parseFloat(salida.precioVenta || 0);
                 const total = cantidad * precio;
@@ -2546,7 +2566,7 @@
             }
 
             tbody.innerHTML = paginaMovimientos.map(mov => {
-                const fecha = new Date(mov.fecha).toLocaleDateString('es-CO');
+                const fecha = new Date(mov.fecha).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                 const cantidadNumber = parseFloat(mov.cantidad || 0);
                 const cantidad = cantidadNumber.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 const precioNumber = parseFloat(mov.precio || 0);
