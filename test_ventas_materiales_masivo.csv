@@ -1,0 +1,301 @@
+nombreMaterial,cantidad,precioVenta,fechaVenta,observaciones
+Film stretch LDPE,47.7,4.59,2026-04-07,Venta test #1: Sin observaciones
+Ropa de poliéster,20.1,5.34,2026-04-09,Venta test #2: Descuento aplicado
+Botella PET transparente,75.5,4.16,2026-04-14,Venta test #3: Venta especial
+Frasco vidrio ámbar,97.6,4.94,2026-04-05,Venta test #4: Pedido urgente
+Tapa PP,47.0,2.48,2026-04-07,Venta test #5: Sin observaciones
+Tapa PP,28.8,5.2,2026-04-11,Venta test #6: Stock remanente
+Frasco vidrio transparente,75.8,2.62,2026-04-12,Venta test #7: Descuento aplicado
+Garrafa HDPE,21.8,5.49,2026-04-08,Venta test #8: Venta minorista
+Envase HDPE (detergente),19.7,3.88,2026-04-10,Venta test #9: Sin observaciones
+Tapa PP,31.8,0.7,2026-04-13,Venta test #10: Venta especial
+Papel periódico,65.8,1.09,2026-04-07,Venta test #11: Pedido urgente
+Material Inventado V01,29.3,2.21,2026-04-10,Venta test #12: Venta especial
+Cartulina plegadizo,38.3,3.03,2026-04-11,Venta test #13: Descuento aplicado
+Film stretch LDPE,91.1,3.06,2026-04-08,Venta test #14: Venta especial
+Revistas y mixtos,98.6,5.39,2026-04-04,Venta test #15: Sin observaciones
+Envase PP alimentos,42.9,0.69,2026-04-07,Venta test #16: Pedido urgente
+Cartulina plegadizo,26.8,5.48,2026-04-10,Venta test #17: Cliente frecuente
+Teclado/Mouse,57.7,2.2,2026-04-04,Venta test #18: Venta especial
+Envase Tetra Pak,44.0,4.07,2026-04-03,Venta test #19: Stock remanente
+Ropa de algodón,27.3,4.5,2026-04-09,Venta test #20: Venta minorista
+Frasco vidrio ámbar,53.0,5.16,2026-04-10,Venta test #21: Stock remanente
+Celular en desuso,65.2,4.65,2026-04-08,Venta test #22: Stock remanente
+Mezclas textiles,97.1,4.63,2026-04-11,Venta test #23: Pedido urgente
+Tubos PVC,11.0,2.24,2026-04-05,Venta test #24: Cliente frecuente
+Latas de bebida de aluminio,74.5,2.82,2026-04-10,Venta test #25: Venta especial
+Film stretch LDPE,13.7,4.26,2026-04-10,Venta test #26: Stock remanente
+Lata de acero/hojalata,61.3,3.8,2026-04-14,Venta test #27: Venta minorista
+Lata de aluminio,60.4,2.0,2026-04-09,Venta test #28: Venta minorista
+Celular en desuso,37.7,3.18,2026-04-12,Venta test #29: Stock remanente
+Mezclas textiles,10.8,5.28,2026-04-04,Venta test #30: Pedido urgente
+Envase Tetra Pak,40.9,2.86,2026-04-03,Venta test #31: Cliente frecuente
+Botella PET transparente,53.5,5.1,2026-04-06,Venta test #32: Venta especial
+Botella PET verde,95.1,3.28,2026-04-12,Venta test #33: Venta especial
+Chatarra férrica,49.5,4.02,2026-04-06,Venta test #34: Descuento aplicado
+Papel periódico,80.5,5.14,2026-04-05,Venta test #35: Pedido urgente
+Ropa de poliéster,55.9,4.03,2026-04-04,Venta test #36: Cliente frecuente
+Papel de oficina blanco,35.5,3.87,2026-04-09,Venta test #37: Venta especial
+Botella PET transparente,76.3,0.92,2026-04-02,Venta test #38: Cliente frecuente
+Botella PET verde,38.8,1.84,2026-04-14,Venta test #39: Cliente frecuente
+Envase PP alimentos,65.4,0.74,2026-04-04,Venta test #40: Venta minorista
+Lata de acero/hojalata,32.9,4.09,2026-04-11,Venta test #41: Stock remanente
+Botella retornable vidrio,48.5,0.5,2026-04-11,Venta test #42: Pedido urgente
+Revistas y mixtos,41.5,2.63,2026-04-08,Venta test #43: Venta minorista
+Pilas AA/AAA,19.3,5.07,2026-04-02,Venta test #44: Venta minorista
+Teclado/Mouse,56.5,2.58,2026-04-14,Venta test #45: Venta minorista
+Material Nuevo Test Venta,58.9,5.17,2026-04-07,Venta test #46: Sin observaciones
+Ropa de poliéster,27.1,1.04,2026-04-09,Venta test #47: Pedido urgente
+Frasco vidrio transparente,82.0,2.13,2026-04-11,Venta test #48: Descuento aplicado
+Envase Tetra Pak,13.7,4.02,2026-04-07,Venta test #49: Venta minorista
+Papel periódico,18.9,5.01,2026-04-14,Venta test #50: Stock remanente
+Botella retornable vidrio,47.5,2.67,2026-04-12,Venta test #51: Sin observaciones
+Llantas usadas,56.6,2.71,2026-04-04,Venta test #52: Venta minorista
+Bolsa LDPE,18.1,0.63,2026-04-12,Venta test #53: Descuento aplicado
+Laptop dañada,10.1,2.53,2026-04-10,Venta test #54: Sin observaciones
+Llantas usadas,48.9,3.64,2026-04-12,Venta test #55: Cliente frecuente
+Material Inventado V01,74.3,2.2,2026-04-03,Venta test #56: Venta minorista
+Cartón Mojado con Paja,7.7,3.04,2026-04-13,Venta test #57: Sin observaciones
+Llantas usadas,81.5,3.86,2026-04-14,Venta test #58: Stock remanente
+Material Inventado V01,88.3,1.32,2026-04-06,Venta test #59: Venta minorista
+Latas de bebida de aluminio,32.1,5.24,2026-04-12,Venta test #60: Venta especial
+Tubos PVC,53.9,3.13,2026-04-14,Venta test #61: Venta especial
+Envase HDPE (detergente),72.8,4.77,2026-04-07,Venta test #62: Descuento aplicado
+Llantas usadas,32.5,5.18,2026-04-13,Venta test #63: Venta minorista
+Pilas AA/AAA,92.4,0.61,2026-04-05,Venta test #64: Descuento aplicado
+Film stretch LDPE,31.0,4.7,2026-04-05,Venta test #65: Cliente frecuente
+Teclado/Mouse,50.3,4.58,2026-04-05,Venta test #66: Pedido urgente
+Revistas y mixtos,68.4,2.01,2026-04-02,Venta test #67: Stock remanente
+Frasco vidrio transparente,46.2,3.94,2026-04-08,Venta test #68: Stock remanente
+Aceite de cocina usado (UCE),93.5,2.52,2026-04-05,Venta test #69: Sin observaciones
+Celular en desuso,78.5,2.42,2026-04-09,Venta test #70: Sin observaciones
+Frasco vidrio transparente,43.9,4.77,2026-04-12,Venta test #71: Descuento aplicado
+Ropa de poliéster,70.4,1.87,2026-04-14,Venta test #72: Venta especial
+Botellas PET transparentes,35.5,0.81,2026-04-11,Venta test #73: Pedido urgente
+Aceite de cocina usado (UCE),63.3,5.5,2026-04-08,Venta test #74: Stock remanente
+Cartón,49.3,5.13,2026-04-02,Venta test #75: Cliente frecuente
+Botella PET transparente,55.0,4.73,2026-04-14,Venta test #76: Cliente frecuente
+Ropa de algodón,8.8,4.97,2026-04-07,Venta test #77: Cliente frecuente
+MDF/Aglomerado,49.1,2.45,2026-04-14,Venta test #78: Sin observaciones
+Teclado/Mouse,93.7,4.95,2026-04-08,Venta test #79: Descuento aplicado
+Orgánicos compostables,65.8,4.08,2026-04-09,Venta test #80: Sin observaciones
+Botella PET verde,11.0,3.89,2026-04-14,Venta test #81: Venta especial
+Pilas AA/AAA,70.7,4.03,2026-04-13,Venta test #82: Descuento aplicado
+Bolsa LDPE,45.7,4.54,2026-04-05,Venta test #83: Pedido urgente
+Icopor (PS expandido),77.1,4.29,2026-04-14,Venta test #84: Pedido urgente
+Ropa de algodón,41.3,5.35,2026-04-05,Venta test #85: Descuento aplicado
+Material Inventado V01,46.0,3.98,2026-04-09,Venta test #86: Stock remanente
+Material Experimento Beta,31.2,1.74,2026-04-10,Venta test #87: Venta minorista
+Icopor (PS expandido),51.3,1.68,2026-04-12,Venta test #88: Sin observaciones
+Laptop dañada,31.1,0.6,2026-04-03,Venta test #89: Stock remanente
+Lata de aluminio,72.4,1.93,2026-04-11,Venta test #90: Cliente frecuente
+Teclado/Mouse,81.9,2.55,2026-04-13,Venta test #91: Cliente frecuente
+Botellas PET transparentes,19.9,4.78,2026-04-07,Venta test #92: Stock remanente
+Teclado/Mouse,40.3,4.61,2026-04-05,Venta test #93: Sin observaciones
+Cartón Mojado con Paja,84.5,3.93,2026-04-06,Venta test #94: Venta minorista
+Chatarra férrica,96.2,2.8,2026-04-12,Venta test #95: Venta minorista
+Lata de acero/hojalata,61.5,3.24,2026-04-13,Venta test #96: Descuento aplicado
+Icopor (PS expandido),35.5,1.6,2026-04-14,Venta test #97: Cliente frecuente
+Garrafa HDPE,36.3,2.71,2026-04-03,Venta test #98: Descuento aplicado
+Ropa de algodón,78.5,4.09,2026-04-03,Venta test #99: Cliente frecuente
+Laptop dañada,80.5,3.14,2026-04-13,Venta test #100: Venta especial
+Lata de aluminio,7.7,4.77,2026-04-13,Venta test #101: Descuento aplicado
+Aceite de cocina usado (UCE),38.7,4.54,2026-04-09,Venta test #102: Stock remanente
+Material Inventado V01,70.6,4.35,2026-04-10,Venta test #103: Descuento aplicado
+Ropa de poliéster,99.4,2.36,2026-04-14,Venta test #104: Cliente frecuente
+Cartón,25.2,2.04,2026-04-14,Venta test #105: Stock remanente
+Film stretch LDPE,98.6,1.37,2026-04-13,Venta test #106: Sin observaciones
+Pallet de madera,8.4,4.64,2026-04-12,Venta test #107: Stock remanente
+Material Inventado V01,16.6,3.01,2026-04-04,Venta test #108: Pedido urgente
+Ropa de poliéster,44.5,1.84,2026-04-08,Venta test #109: Stock remanente
+Teclado/Mouse,52.5,3.77,2026-04-03,Venta test #110: Venta minorista
+Botella PET verde,52.8,0.78,2026-04-08,Venta test #111: Venta minorista
+Botella retornable vidrio,72.5,3.51,2026-04-09,Venta test #112: Stock remanente
+Aceite de cocina usado (UCE),8.6,4.59,2026-04-04,Venta test #113: Pedido urgente
+Envase Tetra Pak,61.7,2.92,2026-04-05,Venta test #114: Venta especial
+Frasco vidrio transparente,21.4,1.93,2026-04-06,Venta test #115: Sin observaciones
+Botella retornable vidrio,63.9,2.52,2026-04-02,Venta test #116: Venta especial
+Pilas AA/AAA,61.3,0.84,2026-04-04,Venta test #117: Venta especial
+Material Experimento Beta,78.0,1.05,2026-04-04,Venta test #118: Cliente frecuente
+Frasco vidrio transparente,27.5,3.78,2026-04-14,Venta test #119: Venta minorista
+Cartulina plegadizo,97.8,5.12,2026-04-02,Venta test #120: Descuento aplicado
+Laptop dañada,76.4,2.86,2026-04-06,Venta test #121: Sin observaciones
+Envase PP alimentos,75.7,2.17,2026-04-04,Venta test #122: Venta especial
+Latas de bebida de aluminio,34.4,0.79,2026-04-10,Venta test #123: Cliente frecuente
+Material SinStock,12.7,3.08,2026-04-05,Venta test #124: Stock remanente
+Revistas y mixtos,51.5,5.34,2026-04-13,Venta test #125: Sin observaciones
+Ropa de algodón,6.0,3.65,2026-04-05,Venta test #126: Stock remanente
+Papel bond blanco,9.8,0.53,2026-04-03,Venta test #127: Pedido urgente
+Envase HDPE (detergente),90.6,1.16,2026-04-09,Venta test #128: Venta minorista
+Pilas AA/AAA,27.4,1.24,2026-04-09,Venta test #129: Pedido urgente
+Envase Tetra Pak,61.8,4.29,2026-04-10,Venta test #130: Sin observaciones
+Material Nuevo Test Venta,81.3,1.21,2026-04-12,Venta test #131: Sin observaciones
+Ropa de poliéster,75.2,2.24,2026-04-02,Venta test #132: Sin observaciones
+Frasco vidrio ámbar,71.4,4.42,2026-04-09,Venta test #133: Pedido urgente
+Envase PP alimentos,49.3,2.2,2026-04-13,Venta test #134: Cliente frecuente
+Material Experimento Beta,84.8,4.37,2026-04-03,Venta test #135: Pedido urgente
+Botellas PET transparentes,22.7,4.57,2026-04-06,Venta test #136: Venta especial
+Latas de bebida de aluminio,34.4,5.08,2026-04-04,Venta test #137: Sin observaciones
+Chatarra férrica,51.6,3.91,2026-04-09,Venta test #138: Descuento aplicado
+Envase HDPE (detergente),22.1,2.25,2026-04-05,Venta test #139: Stock remanente
+Ropa de poliéster,83.9,1.17,2026-04-06,Venta test #140: Cliente frecuente
+Tubos PVC,66.2,4.39,2026-04-03,Venta test #141: Venta especial
+Tubos PVC,58.9,4.45,2026-04-09,Venta test #142: Cliente frecuente
+Teclado/Mouse,41.6,0.71,2026-04-12,Venta test #143: Stock remanente
+Envase Tetra Pak,93.2,4.68,2026-04-13,Venta test #144: Cliente frecuente
+Latas de bebida de aluminio,41.9,0.85,2026-04-05,Venta test #145: Venta especial
+Latas de bebida de aluminio,67.2,3.12,2026-04-07,Venta test #146: Venta minorista
+Mezclas textiles,54.0,1.39,2026-04-12,Venta test #147: Venta especial
+Bolsa LDPE,57.4,2.69,2026-04-04,Venta test #148: Cliente frecuente
+Llantas usadas,54.9,0.76,2026-04-06,Venta test #149: Pedido urgente
+Aceite de cocina usado (UCE),96.1,0.64,2026-04-13,Venta test #150: Pedido urgente
+Cartón Mojado con Paja,69.9,0.77,2026-04-09,Venta test #151: Sin observaciones
+Material SinStock,81.1,4.22,2026-04-07,Venta test #152: Pedido urgente
+Botella retornable vidrio,9.5,4.46,2026-04-06,Venta test #153: Descuento aplicado
+Revistas y mixtos,17.3,4.14,2026-04-14,Venta test #154: Stock remanente
+Material Nuevo Test Venta,61.1,1.42,2026-04-08,Venta test #155: Cliente frecuente
+Papel bond blanco,29.2,0.87,2026-04-07,Venta test #156: Descuento aplicado
+Tubos PVC,80.1,4.96,2026-04-07,Venta test #157: Sin observaciones
+Frasco vidrio verde,63.2,4.94,2026-04-06,Venta test #158: Sin observaciones
+Lata de acero/hojalata,40.9,3.71,2026-04-11,Venta test #159: Cliente frecuente
+Cargadores y cables,63.4,1.49,2026-04-07,Venta test #160: Venta minorista
+Celular en desuso,25.8,4.86,2026-04-05,Venta test #161: Sin observaciones
+Papel periódico,34.9,0.66,2026-04-06,Venta test #162: Descuento aplicado
+Aceite de cocina usado (UCE),97.7,1.3,2026-04-10,Venta test #163: Descuento aplicado
+Mezclas textiles,63.5,4.93,2026-04-08,Venta test #164: Venta especial
+Material SinStock,37.0,5.3,2026-04-11,Venta test #165: Stock remanente
+Tubos PVC,48.2,1.34,2026-04-02,Venta test #166: Pedido urgente
+Celular en desuso,87.2,2.06,2026-04-13,Venta test #167: Descuento aplicado
+Envase Tetra Pak,47.5,3.96,2026-04-02,Venta test #168: Stock remanente
+Revistas y mixtos,26.1,4.64,2026-04-06,Venta test #169: Sin observaciones
+Ropa de poliéster,54.7,0.8,2026-04-09,Venta test #170: Venta especial
+Tubos PVC,41.6,4.0,2026-04-13,Venta test #171: Stock remanente
+Botella retornable vidrio,8.7,3.49,2026-04-06,Venta test #172: Pedido urgente
+Material SinStock,12.4,2.37,2026-04-07,Venta test #173: Venta especial
+Latas de bebida de aluminio,22.5,2.56,2026-04-09,Venta test #174: Descuento aplicado
+Botella PET verde,79.5,4.98,2026-04-09,Venta test #175: Venta especial
+Botella retornable vidrio,44.0,1.35,2026-04-05,Venta test #176: Descuento aplicado
+Botellas PET transparentes,76.8,3.12,2026-04-12,Venta test #177: Cliente frecuente
+Ropa de algodón,76.3,1.13,2026-04-02,Venta test #178: Descuento aplicado
+Bolsa LDPE,82.3,3.03,2026-04-10,Venta test #179: Sin observaciones
+Icopor (PS expandido),50.8,4.66,2026-04-07,Venta test #180: Stock remanente
+Orgánicos compostables,72.3,1.69,2026-04-07,Venta test #181: Stock remanente
+Ropa de poliéster,26.2,0.66,2026-04-12,Venta test #182: Cliente frecuente
+Pallet de madera,39.5,1.41,2026-04-05,Venta test #183: Sin observaciones
+Latas de bebida de aluminio,85.2,3.36,2026-04-03,Venta test #184: Stock remanente
+Bolsa LDPE,24.6,3.52,2026-04-02,Venta test #185: Stock remanente
+Ropa de algodón,31.2,4.52,2026-04-11,Venta test #186: Pedido urgente
+Papel de oficina blanco,78.9,5.06,2026-04-10,Venta test #187: Venta minorista
+Latas de bebida de aluminio,41.9,1.31,2026-04-11,Venta test #188: Venta minorista
+Mezclas textiles,91.0,4.97,2026-04-11,Venta test #189: Pedido urgente
+Pilas AA/AAA,97.6,4.71,2026-04-03,Venta test #190: Venta especial
+Material Nuevo Test Venta,97.7,3.36,2026-04-14,Venta test #191: Sin observaciones
+Frasco vidrio verde,68.3,1.49,2026-04-13,Venta test #192: Descuento aplicado
+Pallet de madera,88.0,3.54,2026-04-03,Venta test #193: Stock remanente
+Orgánicos compostables,51.7,1.9,2026-04-05,Venta test #194: Pedido urgente
+Revistas y mixtos,39.6,1.55,2026-04-08,Venta test #195: Stock remanente
+Tapa PP,86.9,1.85,2026-04-08,Venta test #196: Venta minorista
+Mezclas textiles,77.9,4.88,2026-04-02,Venta test #197: Stock remanente
+Revistas y mixtos,92.3,0.52,2026-04-14,Venta test #198: Cliente frecuente
+Material Inventado V01,38.8,2.86,2026-04-09,Venta test #199: Descuento aplicado
+Cargadores y cables,71.9,4.33,2026-04-05,Venta test #200: Cliente frecuente
+Cartón,25.1,1.47,2026-04-06,Venta test #201: Cliente frecuente
+Frasco vidrio ámbar,19.7,5.04,2026-04-05,Venta test #202: Cliente frecuente
+Orgánicos compostables,60.9,0.85,2026-04-14,Venta test #203: Cliente frecuente
+Frasco vidrio ámbar,54.9,2.21,2026-04-14,Venta test #204: Descuento aplicado
+Pilas AA/AAA,9.0,3.77,2026-04-14,Venta test #205: Venta especial
+Cartón,14.6,3.84,2026-04-12,Venta test #206: Pedido urgente
+Material SinStock,20.7,4.92,2026-04-14,Venta test #207: Venta minorista
+Botella PET transparente,27.4,2.2,2026-04-09,Venta test #208: Stock remanente
+Laptop dañada,79.7,3.78,2026-04-05,Venta test #209: Pedido urgente
+Film stretch LDPE,65.8,4.84,2026-04-12,Venta test #210: Pedido urgente
+Pallet de madera,20.5,5.4,2026-04-12,Venta test #211: Stock remanente
+Envase Tetra Pak,61.0,4.06,2026-04-07,Venta test #212: Descuento aplicado
+Garrafa HDPE,36.9,5.36,2026-04-02,Venta test #213: Venta minorista
+Revistas y mixtos,97.1,4.98,2026-04-04,Venta test #214: Sin observaciones
+Revistas y mixtos,64.5,4.38,2026-04-09,Venta test #215: Venta minorista
+Teclado/Mouse,50.2,5.15,2026-04-14,Venta test #216: Sin observaciones
+Material SinStock,36.9,2.26,2026-04-14,Venta test #217: Stock remanente
+Cartón,41.7,4.66,2026-04-11,Venta test #218: Venta especial
+Orgánicos compostables,34.1,0.63,2026-04-09,Venta test #219: Pedido urgente
+Bolsa LDPE,45.8,2.61,2026-04-10,Venta test #220: Venta minorista
+Orgánicos compostables,94.8,1.0,2026-04-13,Venta test #221: Cliente frecuente
+Film stretch LDPE,72.8,5.41,2026-04-07,Venta test #222: Descuento aplicado
+Frasco vidrio verde,95.9,3.7,2026-04-08,Venta test #223: Descuento aplicado
+Frasco vidrio transparente,72.5,5.41,2026-04-14,Venta test #224: Stock remanente
+Aceite de cocina usado (UCE),82.8,2.0,2026-04-13,Venta test #225: Pedido urgente
+Revistas y mixtos,55.5,3.32,2026-04-11,Venta test #226: Descuento aplicado
+Material SinStock,53.4,3.68,2026-04-10,Venta test #227: Sin observaciones
+Material Experimento Beta,50.9,0.89,2026-04-05,Venta test #228: Pedido urgente
+Cartón,50.6,3.81,2026-04-03,Venta test #229: Sin observaciones
+Material Inventado V01,86.0,1.09,2026-04-09,Venta test #230: Venta especial
+Envase HDPE (detergente),95.6,2.35,2026-04-08,Venta test #231: Stock remanente
+Botella PET transparente,30.0,0.84,2026-04-14,Venta test #232: Venta especial
+Llantas usadas,97.2,1.99,2026-04-08,Venta test #233: Stock remanente
+Envase HDPE (detergente),16.6,2.44,2026-04-06,Venta test #234: Venta minorista
+Llantas usadas,25.2,0.64,2026-04-08,Venta test #235: Descuento aplicado
+Tapa PP,58.3,2.62,2026-04-07,Venta test #236: Venta especial
+Tapa PP,45.9,4.85,2026-04-04,Venta test #237: Stock remanente
+Botella retornable vidrio,91.4,3.37,2026-04-10,Venta test #238: Descuento aplicado
+MDF/Aglomerado,77.2,5.01,2026-04-04,Venta test #239: Pedido urgente
+Bolsa LDPE,89.7,3.17,2026-04-13,Venta test #240: Sin observaciones
+Llantas usadas,8.7,4.42,2026-04-14,Venta test #241: Descuento aplicado
+Frasco vidrio verde,59.5,3.39,2026-04-07,Venta test #242: Sin observaciones
+Icopor (PS expandido),40.1,3.37,2026-04-07,Venta test #243: Venta especial
+Cartón,6.0,4.42,2026-04-09,Venta test #244: Pedido urgente
+Teclado/Mouse,71.3,1.97,2026-04-06,Venta test #245: Descuento aplicado
+Material Experimento Beta,45.0,2.04,2026-04-10,Venta test #246: Stock remanente
+Frasco vidrio ámbar,26.4,5.37,2026-04-10,Venta test #247: Descuento aplicado
+Botella PET transparente,59.9,1.3,2026-04-08,Venta test #248: Venta minorista
+Film stretch LDPE,88.5,1.16,2026-04-11,Venta test #249: Sin observaciones
+Papel bond blanco,30.7,5.43,2026-04-08,Venta test #250: Sin observaciones
+Botella PET transparente,49.1,4.87,2026-04-04,Venta test #251: Cliente frecuente
+Lata de acero/hojalata,18.2,2.81,2026-04-06,Venta test #252: Venta especial
+Tapa PP,62.4,1.78,2026-04-09,Venta test #253: Descuento aplicado
+Film stretch LDPE,36.1,0.86,2026-04-04,Venta test #254: Stock remanente
+Chatarra férrica,36.9,3.34,2026-04-08,Venta test #255: Venta especial
+Mezclas textiles,49.0,1.7,2026-04-05,Venta test #256: Descuento aplicado
+Orgánicos compostables,5.8,5.3,2026-04-10,Venta test #257: Cliente frecuente
+Botella PET transparente,32.6,4.93,2026-04-02,Venta test #258: Cliente frecuente
+Icopor (PS expandido),46.4,3.08,2026-04-03,Venta test #259: Venta minorista
+Lata de aluminio,69.5,2.92,2026-04-03,Venta test #260: Venta minorista
+Cargadores y cables,33.5,2.44,2026-04-06,Venta test #261: Venta especial
+Teclado/Mouse,27.4,2.35,2026-04-08,Venta test #262: Venta especial
+Ropa de algodón,48.3,5.42,2026-04-09,Venta test #263: Sin observaciones
+Papel bond blanco,60.7,4.75,2026-04-12,Venta test #264: Stock remanente
+Cargadores y cables,23.7,3.85,2026-04-10,Venta test #265: Venta minorista
+Material Experimento Beta,75.2,1.87,2026-04-12,Venta test #266: Venta especial
+Papel periódico,53.9,1.65,2026-04-06,Venta test #267: Venta especial
+Film stretch LDPE,74.4,4.64,2026-04-11,Venta test #268: Descuento aplicado
+Revistas y mixtos,89.6,0.6,2026-04-08,Venta test #269: Cliente frecuente
+Icopor (PS expandido),59.8,3.89,2026-04-10,Venta test #270: Pedido urgente
+Cargadores y cables,11.7,1.85,2026-04-11,Venta test #271: Descuento aplicado
+Cargadores y cables,53.5,4.74,2026-04-10,Venta test #272: Descuento aplicado
+Teclado/Mouse,49.7,2.98,2026-04-08,Venta test #273: Venta especial
+Botella PET transparente,30.8,5.48,2026-04-10,Venta test #274: Cliente frecuente
+Envase PP alimentos,54.1,2.72,2026-04-04,Venta test #275: Venta minorista
+Pilas AA/AAA,6.0,1.95,2026-04-10,Venta test #276: Venta minorista
+Mezclas textiles,34.7,2.75,2026-04-11,Venta test #277: Descuento aplicado
+Film stretch LDPE,13.6,1.5,2026-04-03,Venta test #278: Pedido urgente
+Material Nuevo Test Venta,70.0,2.96,2026-04-05,Venta test #279: Pedido urgente
+Revistas y mixtos,64.3,1.91,2026-04-02,Venta test #280: Stock remanente
+Lata de acero/hojalata,65.5,3.25,2026-04-08,Venta test #281: Venta minorista
+Llantas usadas,69.5,2.2,2026-04-12,Venta test #282: Venta minorista
+Material Inventado V01,50.5,1.78,2026-04-13,Venta test #283: Cliente frecuente
+Botella retornable vidrio,39.8,4.21,2026-04-03,Venta test #284: Descuento aplicado
+Envase Tetra Pak,89.9,1.41,2026-04-08,Venta test #285: Stock remanente
+Aceite de cocina usado (UCE),9.6,0.79,2026-04-09,Venta test #286: Descuento aplicado
+Ropa de poliéster,77.8,4.46,2026-04-02,Venta test #287: Cliente frecuente
+Cartón Mojado con Paja,23.0,1.72,2026-04-13,Venta test #288: Stock remanente
+Garrafa HDPE,41.9,4.78,2026-04-07,Venta test #289: Sin observaciones
+Ropa de algodón,80.8,4.77,2026-04-04,Venta test #290: Cliente frecuente
+Cargadores y cables,83.0,1.56,2026-04-14,Venta test #291: Stock remanente
+Botella retornable vidrio,19.4,1.01,2026-04-04,Venta test #292: Cliente frecuente
+Lata de aluminio,82.8,2.95,2026-04-07,Venta test #293: Sin observaciones
+Cartón Mojado con Paja,99.3,1.43,2026-04-14,Venta test #294: Cliente frecuente
+Mezclas textiles,6.8,2.97,2026-04-11,Venta test #295: Pedido urgente
+Botella retornable vidrio,14.1,2.74,2026-04-09,Venta test #296: Cliente frecuente
+Cartulina plegadizo,22.7,4.88,2026-04-12,Venta test #297: Descuento aplicado
+Frasco vidrio ámbar,15.1,1.57,2026-04-11,Venta test #298: Venta especial
+Bolsa LDPE,41.3,4.06,2026-04-12,Venta test #299: Cliente frecuente
+Botella retornable vidrio,81.4,1.31,2026-04-07,Venta test #300: Venta minorista
