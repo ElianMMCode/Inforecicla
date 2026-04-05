@@ -112,6 +112,7 @@ class LocalizacionWebHorarioModel(LocalizacionModel):
         max_length=100,
         blank=True,
         null=True,
+        default="",
         help_text="Horario de atención al público, ej: L-V 8am-6pm",
     )
 

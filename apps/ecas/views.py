@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
 from apps.ecas.models import PuntoECA, Localidad, CentroAcopio
 from apps.users.models import Usuario
 from config import constants as cons
@@ -175,12 +176,29 @@ def editar_perfil_gestor(request, id):
     try:
         usuario = Usuario.objects.get(id=id)
     except Usuario.DoesNotExist:
+        messages.error(request, "El usuario que intenta editar no existe.")
         return redirect("punto-eca:render_seccion", seccion="perfil")
 
     # Manejar POST - actualizar usuario
     if request.method == "POST":
-        # Actualizar campos básicos del usuario
-        usuario = UserService.editar_perfil(request, id)
+        # Actualizar campos básicos del usuario y capturar errores
+        resultado = UserService.editar_perfil(request, id)
+        usuario = resultado.get('usuario')
+        errores = resultado.get('errores')
+        if errores:
+            # Always format errores as a dict mapping to a list
+            if isinstance(errores, str):
+                errores = {'__all__': [errores]}
+            elif isinstance(errores, list):
+                errores = {'__all__': errores}
+            for field, errs in errores.items():
+                for error in errs:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        messages.error(request, f"{field}: {error}")
+            return redirect("punto-eca:perfil")
+        messages.success(request, "Perfil actualizado correctamente.")
         return redirect("punto-eca:perfil")
 
     # Manejar GET - renderizar formulario
@@ -206,10 +224,12 @@ def editar_punto(request, id):
     try:
         punto = PuntoECA.objects.get(gestor_eca_id=id)
     except PuntoECA.DoesNotExist:
+        messages.error(request, "El Punto ECA que intenta editar no existe.")
         return redirect("punto-eca:render_seccion", seccion="perfil")
 
     if request.method == "POST":
         punto = PuntoService.editar_punto(request, id)
+        messages.success(request, "Punto ECA actualizado correctamente.")
         return redirect("punto-eca:perfil")
     # Manejar GET - renderizar formulario
 
