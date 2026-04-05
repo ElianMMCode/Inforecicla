@@ -13,6 +13,26 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import environ
 from pathlib import Path
 
+import sys
+import os
+
+# Opción A: Usar una variable de entorno (.env)
+# Si en Windows no configuran USE_REDIS=True, usará la memoria.
+USE_REDIS = os.environ.get("USE_REDIS", "False") == "True"
+
+if USE_REDIS or sys.platform != "win32":
+    # Entorno Omarchy Linux / Producción / Windows con Docker: Usar Redis
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [("127.0.0.1", 6379)],
+            },
+        },
+    }
+else:
+    # Entorno Windows puro (Desarrollo local sin Redis)
+    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -34,10 +54,11 @@ GROQ_API_KEY = env("GROQ_API_KEY")
 
 # Application definition
 
-ASGI_APPLICATION = 'config.asgi.application'
+ASGI_APPLICATION = "config.asgi.application"
 
 INSTALLED_APPS = [
-    'channels',
+    "daphne",
+    "channels",
     "rest_framework",
     "import_export",
     "django.contrib.admin",
@@ -86,7 +107,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
+# WSGI_APPLICATION = "config.wsgi.application"
+WSGI_APPLICATION = "config.asgi.application"
 
 
 # Database
