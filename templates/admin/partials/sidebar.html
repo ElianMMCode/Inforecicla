@@ -54,6 +54,9 @@
     </ul>
   </nav>
   <div class="border-top border-white border-opacity-25 pt-3 mt-2">
+    <a href="{% url 'panel_admin:perfil_admin' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2 {% if active == 'perfil' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+      <i class="bi bi-person-circle"></i> Mi Perfil
+    </a>
     <a href="/" class="nav-link text-white-50 small py-1"><i class="bi bi-house me-1"></i> Ir al Inicio</a>
     <form method="POST" action="/logout/" class="mt-1">
       {% csrf_token %}
