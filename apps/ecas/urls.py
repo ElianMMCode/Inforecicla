@@ -46,4 +46,6 @@ urlpatterns = [
     ),
     path("asistente/", include("apps.reciclabot.urls", namespace="reciclabot")),
 
+    # Endpoint para buscador de puntos ECA
+    path("puntos-eca-json/", views.puntos_eca_json, name="puntos_eca_json"),
 ]
