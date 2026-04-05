@@ -1,9 +1,10 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Publicación - InfoRecicla</title>
+    <title>{{ publicacion.titulo }} - InfoRecicla</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -12,7 +13,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-success">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <img src="/imagenes/logo.png" alt="Logo InfoRecicla" width="90" height="90" class="rounded">
+            <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla" width="70" height="70" class="rounded">
             <span class="fs-1 fw-semibold">InfoRecicla</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
@@ -21,23 +22,33 @@
         </button>
         <div id="mainNav" class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                <li class="nav-item"><a class="nav-link active" href="/publicaciones">Publicaciones</a></li>
+                <li class="nav-item"><a class="nav-link" href="/publicaciones">Publicaciones</a></li>
                 <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
+
+                {% if user.is_authenticated %}
                 <li class="nav-item dropdown">
                     <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#"
-                       data-bs-toggle="dropdown" aria-expanded="false">Usuario</a>
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <span>{{ user.get_short_name|default:"Usuario" }}</span>
+                    </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/gestor"><i class="fas fa-store me-2"></i>Modo Gestor ECA</a></li>
+                        {% if user.is_staff or user.is_superuser or user.tipo_usuario == "ADM" %}
+                            <li><a class="dropdown-item" href="/panel_admin/">Panel Admin</a></li>
+                        {% elif user.tipo_usuario == "GECA" %}
+                            <li><a class="dropdown-item" href="/punto-eca/">Dashboard</a></li>
+                        {% else %}
+                            <li><a class="dropdown-item" href="/perfil/">Mi Perfil</a></li>
+                        {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <form method="POST" style="display:inline;">
+                            <form method="POST" action="/logout/" style="display:inline;">
+                                {% csrf_token %}
                                 <button type="submit" class="dropdown-item">Cerrar sesión</button>
                             </form>
                         </li>
                     </ul>
                 </li>
+                {% else %}
                 <li class="nav-item dropdown">
                     <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login"
                        data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
@@ -48,6 +59,7 @@
                         <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
                     </ul>
                 </li>
+                {% endif %}
             </ul>
         </div>
     </div>
@@ -55,7 +67,7 @@
 
 <section class="bg-success text-white py-4">
     <div class="container">
-        <a href="/publicaciones" class="text-white text-decoration-none small">
+        <a href="{% url 'publicacion:publicaciones' %}" class="text-white text-decoration-none small">
             <i class="fas fa-arrow-left me-1"></i>Volver a publicaciones
         </a>
     </div>
@@ -70,94 +82,120 @@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-white py-3">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5" style="width:52px;height:52px;">M</div>
+                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5" style="width:52px;height:52px;">{{ publicacion.usuario.nombres|first }}</div>
                             <div>
-                                <div class="fw-semibold">María López</div>
-                                <div class="text-muted small">12 de febrero de 2025 · <span class="badge bg-success-subtle text-success">Consejos de reciclaje</span></div>
+                                <div class="fw-semibold">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
+                                <div class="text-muted small">{{ publicacion.fecha_creacion|date:"d/m/Y H:i" }} · <span class="badge bg-success-subtle text-success">{{ publicacion.categoria.get_tipo_display }}</span></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="card-body px-4 py-4">
-                        <h1 class="fw-bold h2 mb-3">5 errores comunes al reciclar en casa</h1>
+                        <h1 class="fw-bold h2 mb-3">{{ publicacion.titulo }}</h1>
 
-                        <p class="text-muted">Muchos hogares en Colombia realizan esfuerzos por reciclar, pero sin saberlo cometen errores que reducen significativamente el impacto positivo de esta práctica. A continuación te contamos los cinco errores más frecuentes y cómo evitarlos.</p>
+                        {% if publicacion.video %}
+                        <div class="mb-4 rounded overflow-hidden">
+                            <video class="w-100 rounded" controls preload="metadata"
+                                   {% if publicacion.video_thumbnail %}poster="{{ publicacion.video_thumbnail.url }}"{% endif %}>
+                                <source src="{{ publicacion.video.url }}">
+                                Tu navegador no soporta la reproducción de video.
+                            </video>
+                        </div>
+                        {% endif %}
 
-                        <h5 class="fw-bold mt-4">1. Mezclar residuos húmedos con secos</h5>
-                        <p class="text-muted">Uno de los errores más comunes es depositar materiales reciclables junto con residuos orgánicos. La humedad contamina el papel, el cartón y otros materiales, haciendo imposible su aprovechamiento en el punto ECA.</p>
+                        {% if publicacion.imagenes.exists and not publicacion.video %}
+                        <div id="carruselPublicacion" class="carousel slide mb-4 rounded overflow-hidden" data-bs-ride="carousel">
 
-                        <h5 class="fw-bold mt-4">2. No lavar los envases antes de reciclarlos</h5>
-                        <p class="text-muted">Los envases con restos de alimentos generan olores, bacterias y contaminan los demás materiales en la bolsa de reciclaje. Un enjuague rápido es suficiente para evitarlo.</p>
+                            {% if publicacion.imagenes.count > 1 %}
+                            <div class="carousel-indicators">
+                                {% for img in publicacion.imagenes.all %}
+                                <button type="button" data-bs-target="#carruselPublicacion"
+                                        data-bs-slide-to="{{ forloop.counter0 }}"
+                                        {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                                        aria-label="Imagen {{ forloop.counter }}"></button>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
 
-                        <h5 class="fw-bold mt-4">3. Reciclar bolsas plásticas junto con botellas</h5>
-                        <p class="text-muted">Las bolsas plásticas tienen un proceso de reciclaje diferente al de las botellas PET. Mezclarlas genera problemas en las maquinarias de los centros de aprovechamiento. Entrega las bolsas por separado o búscalas en puntos especializados.</p>
+                            <div class="carousel-inner">
+                                {% for img in publicacion.imagenes.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ img.imagen.url }}" class="d-block w-100 rounded"
+                                         alt="{{ img.descripcion|default:'Imagen de la publicación' }}"
+                                         style="max-height:420px; object-fit:cover;">
+                                    {% if img.descripcion %}
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-1">
+                                        <p class="mb-0 small">{{ img.descripcion }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
 
-                        <h5 class="fw-bold mt-4">4. Tirar tapas de botellas separadas del envase</h5>
-                        <p class="text-muted">Las tapas pequeñas suelen caerse en las bandas transportadoras de las plantas de reciclaje. Lo correcto es dejar la tapa puesta en la botella o depositarla en contenedores especiales para tapas.</p>
+                            {% if publicacion.imagenes.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carruselPublicacion" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carruselPublicacion" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
+                            {% endif %}
+                        </div>
 
-                        <h5 class="fw-bold mt-4">5. Asumir que todo plástico se recicla igual</h5>
-                        <p class="text-muted">Existen siete tipos de plástico identificados por el número dentro del símbolo de reciclaje. No todos los puntos ECA aceptan todos los tipos. Revisa qué acepta tu punto más cercano antes de llevar el material.</p>
+                        <div class="text-muted small mb-3">
+                            <i class="fas fa-images me-1"></i>{{ publicacion.imagenes.count }} imagen{{ publicacion.imagenes.count|pluralize:"es" }}
+                        </div>
+                        {% endif %}
+
+                        <div class="fs-5 lh-lg">{{ publicacion.contenido|linebreaks }}</div>
                     </div>
 
                     <div class="card-footer bg-white px-4 py-3 border-top">
-                        <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
                             <span class="fw-semibold small text-muted">Calificar publicación:</span>
-                            <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-2">
+                            {% if user.is_authenticated %}
+                            <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="valor" value="Like">
+                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_reaccion == 'Like' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <span>Me gusta</span>
+                                    <span class="badge {% if mi_reaccion == 'Like' %}bg-white text-success{% else %}bg-success{% endif %}">{{ publicacion.likes_count }}</span>
+                                </button>
+                            </form>
+                            <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="valor" value="Dislike">
+                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_reaccion == 'Dislike' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                    <i class="fas fa-thumbs-down"></i>
+                                    <span>No me gusta</span>
+                                    <span class="badge {% if mi_reaccion == 'Dislike' %}bg-white text-danger{% else %}bg-danger{% endif %}">{{ publicacion.dislikes_count }}</span>
+                                </button>
+                            </form>
+                            {% if user.tipo_usuario == "CIU" %}
+                            <form method="POST" action="{% url 'publicacion:toggle_guardado' publicacion.id %}" class="d-inline ms-auto">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_guardado %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    <i class="fas fa-bookmark"></i>
+                                    <span>{% if mi_guardado %}Guardado{% else %}Guardar{% endif %}</span>
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% else %}
+                            <a href="/login" class="btn btn-outline-success btn-sm d-flex align-items-center gap-2">
                                 <i class="fas fa-thumbs-up"></i>
                                 <span>Me gusta</span>
-                                <span class="badge bg-success">24</span>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
+                                <span class="badge bg-success">{{ publicacion.likes_count }}</span>
+                            </a>
+                            <a href="/login" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
                                 <i class="fas fa-thumbs-down"></i>
                                 <span>No me gusta</span>
-                                <span class="badge bg-danger">3</span>
-                            </button>
+                                <span class="badge bg-danger">{{ publicacion.dislikes_count }}</span>
+                            </a>
+                            {% endif %}
                         </div>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="fw-bold mb-0"><i class="fas fa-comment-dots text-success me-2"></i>Comentarios <span class="badge bg-success-subtle text-success">3</span></h5>
-                    </div>
-                    <div class="card-body px-4 py-3">
-
-                        <div class="d-flex gap-3 mb-4 pb-4 border-bottom">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">C</div>
-                            <div>
-                                <div class="fw-semibold small">Carlos R. <span class="text-muted fw-normal">· 13 feb 2025</span></div>
-                                <p class="mb-0 small text-muted mt-1">No sabía que las tapas de plástico se deben depositar por separado. Muy útil esta información.</p>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-3 mb-4 pb-4 border-bottom">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">A</div>
-                            <div>
-                                <div class="fw-semibold small">Ana P. <span class="text-muted fw-normal">· 14 feb 2025</span></div>
-                                <p class="mb-0 small text-muted mt-1">Excelente contenido, lo compartí con toda mi familia. Ojalá hubiera más publicaciones así.</p>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-3 mb-4">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">L</div>
-                            <div>
-                                <div class="fw-semibold small">Luis G. <span class="text-muted fw-normal">· 15 feb 2025</span></div>
-                                <p class="mb-0 small text-muted mt-1">Alguien sabe dónde llevar pilas usadas en Bogotá?</p>
-                            </div>
-                        </div>
-
-                        <hr>
-
-                        <div class="d-flex gap-3 mt-3">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:38px;height:38px;">T</div>
-                            <div class="flex-grow-1">
-                                <textarea class="form-control mb-2" rows="3" placeholder="Escribe un comentario..."></textarea>
-                                <button class="btn btn-success btn-sm px-4">
-                                    <i class="fas fa-paper-plane me-1"></i>Comentar
-                                </button>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
@@ -170,19 +208,8 @@
                         <span class="fw-semibold small">Sobre el autor</span>
                     </div>
                     <div class="card-body text-center py-4">
-                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3 mx-auto mb-3" style="width:64px;height:64px;">M</div>
-                        <div class="fw-bold">María López</div>
-                        <div class="text-muted small mb-3">Ciudadana · Miembro desde 2024</div>
-                        <div class="d-flex justify-content-around text-center border-top pt-3">
-                            <div>
-                                <div class="fw-bold text-success">12</div>
-                                <div class="text-muted" style="font-size:.75rem;">Publicaciones</div>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-success">48</div>
-                                <div class="text-muted" style="font-size:.75rem;">Comentarios</div>
-                            </div>
-                        </div>
+                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3 mx-auto mb-3" style="width:64px;height:64px;">{{ publicacion.usuario.nombres|first }}</div>
+                        <div class="fw-bold">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
                     </div>
                 </div>
 
@@ -191,18 +218,15 @@
                         <span class="fw-semibold small">Publicaciones relacionadas</span>
                     </div>
                     <div class="list-group list-group-flush">
-                        <a href="#" class="list-group-item list-group-item-action py-3">
-                            <div class="fw-semibold small">Qué materiales acepta tu punto ECA</div>
-                            <div class="text-muted" style="font-size:.75rem;">28 ene 2025</div>
+                        {% for relacionada in publicaciones_relacionadas %}
+                        <a href="{% url 'publicacion:detalle_publicacion' relacionada.id %}" class="list-group-item list-group-item-action py-3">
+                            <span class="badge bg-success-subtle text-success mb-1">{{ relacionada.categoria.get_tipo_display }}</span>
+                            <div class="fw-semibold small">{{ relacionada.titulo }}</div>
+                            <div class="text-muted" style="font-size:.75rem;">{{ relacionada.fecha_creacion|date:"d/m/Y" }}</div>
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action py-3">
-                            <div class="fw-semibold small">Compostaje en apartamento: sí es posible</div>
-                            <div class="text-muted" style="font-size:.75rem;">15 ene 2025</div>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action py-3">
-                            <div class="fw-semibold small">Nueva normativa de residuos sólidos</div>
-                            <div class="text-muted" style="font-size:.75rem;">10 ene 2025</div>
-                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-muted small">No hay publicaciones relacionadas.</div>
+                        {% endfor %}
                     </div>
                 </div>
 
@@ -212,6 +236,174 @@
     </div>
 </section>
 
+<section class="pb-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white py-3 d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold">
+                            <i class="fas fa-comments me-2"></i>Comentarios
+                        </span>
+                        <span class="badge bg-white text-success">{{ publicacion.comentarios.count }}</span>
+                    </div>
+
+                    {% if messages %}
+                    <div class="px-4 pt-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'danger' }} alert-dismissible fade show py-2 small" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                    <div class="card-body border-bottom px-4 py-3">
+                        <form method="POST" action="{% url 'publicacion:agregar_comentario' publicacion.id %}"
+                              novalidate id="formComentar">
+                            {% csrf_token %}
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;">{{ user.nombres|first }}</div>
+                                <div class="flex-grow-1">
+                                    <textarea name="texto" id="textoNuevo" class="form-control mb-1" rows="2"
+                                              placeholder="Escribe un comentario..."
+                                              minlength="1" maxlength="1000" required></textarea>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <button type="submit" class="btn btn-success btn-sm px-3">
+                                            <i class="fas fa-paper-plane me-1"></i>Comentar
+                                        </button>
+                                        <span class="text-muted" style="font-size:.75rem;">
+                                            <span id="cntNuevo">0</span>/1000
+                                        </span>
+                                    </div>
+                                    <div class="invalid-feedback">El comentario no puede estar vacío ni superar 1000 caracteres.</div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="card-body border-bottom px-4 py-3 text-center text-muted small">
+                        <a href="/login" class="text-success fw-semibold">Inicia sesión</a> para dejar un comentario.
+                    </div>
+                    {% endif %}
+
+                    <div class="list-group list-group-flush">
+                        {% for comentario in publicacion.comentarios.all %}
+                        <div class="list-group-item px-4 py-3">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;">{{ comentario.usuario.nombres|first }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-semibold small">{{ comentario.usuario.nombres }} {{ comentario.usuario.apellidos }}</span>
+                                            <span class="text-muted" style="font-size:.75rem;">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                        </div>
+                                        {% if user.is_authenticated and comentario.usuario == user %}
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditar{{ comentario.id|slugify }}">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </button>
+                                            <form method="POST" action="{% url 'publicacion:eliminar_comentario' comentario.id %}"
+                                                  onsubmit="return confirm('¿Eliminar este comentario?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0 small">{{ comentario.texto }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if user.is_authenticated and comentario.usuario == user %}
+                        <div class="modal fade" id="modalEditar{{ comentario.id|slugify }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-success text-white">
+                                        <h6 class="modal-title mb-0">Editar comentario</h6>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{% url 'publicacion:editar_comentario' comentario.id %}"
+                                          novalidate class="form-editar">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <textarea name="texto" class="form-control" rows="3"
+                                                      minlength="1" maxlength="1000"
+                                                      required>{{ comentario.texto }}</textarea>
+                                            <div class="d-flex justify-content-end mt-1">
+                                                <span class="text-muted cnt-editar" style="font-size:.75rem;">{{ comentario.texto|length }}/1000</span>
+                                            </div>
+                                            <div class="invalid-feedback">El comentario no puede estar vacío ni superar 1000 caracteres.</div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-success btn-sm">Guardar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% empty %}
+                        <div class="list-group-item px-4 py-4 text-center text-muted small">
+                            <i class="fas fa-comment-slash me-1"></i>Sé el primero en comentar.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Contador y validación del formulario nuevo comentario
+    const textoNuevo = document.getElementById('textoNuevo');
+    const cntNuevo = document.getElementById('cntNuevo');
+    if (textoNuevo) {
+        textoNuevo.addEventListener('input', function () {
+            cntNuevo.textContent = this.value.length;
+        });
+    }
+    const formComentar = document.getElementById('formComentar');
+    if (formComentar) {
+        formComentar.addEventListener('submit', function (e) {
+            if (!formComentar.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            formComentar.classList.add('was-validated');
+        });
+    }
+
+    // Contador y validación de formularios de edición
+    document.querySelectorAll('.form-editar').forEach(function (form) {
+        const ta = form.querySelector('textarea');
+        const cnt = form.querySelector('.cnt-editar');
+        if (ta && cnt) {
+            ta.addEventListener('input', function () {
+                cnt.textContent = this.value.length + '/1000';
+            });
+        }
+        form.addEventListener('submit', function (e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+</script>
 </body>
 </html>

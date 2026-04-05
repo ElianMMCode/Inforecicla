@@ -332,36 +332,28 @@
                                     <span>{{ user.get_short_name|default:"Usuario" }}</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    {% if user.tipo_usuario == "GECA" %}
+                                    {% if user.is_staff or user.is_superuser or user.tipo_usuario == "ADM" %}
+                                        <li>
+                                            <a class="dropdown-item" href="/panel_admin/">Panel Admin</a>
+                                        </li>
+                                    {% elif user.tipo_usuario == "GECA" %}
                                         <li>
                                             <a class="dropdown-item" href="/punto-eca/">Dashboard</a>
                                         </li>
-                                        <li>
-                                            <hr class="dropdown-divider" />
-                                        </li>
-                                        <li>
-                                            <form method="POST" action="/logout/" style="display: inline">
-                                                {% csrf_token %}
-                                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                                            </form>
-                                        </li>
                                     {% else %}
                                         <li>
-                                            <a class="dropdown-item" href="/perfil">Mi Perfil</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="/dashboard">Dashboard</a>
-                                        </li>
-                                        <li>
-                                            <hr class="dropdown-divider" />
-                                        </li>
-                                        <li>
-                                            <form method="POST" action="/logout/" style="display: inline">
-                                                {% csrf_token %}
-                                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                                            </form>
+                                            <a class="dropdown-item" href="/perfil/">Mi Perfil</a>
                                         </li>
                                     {% endif %}
+                                    <li>
+                                        <hr class="dropdown-divider" />
+                                    </li>
+                                    <li>
+                                        <form method="POST" action="/logout/" style="display: inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                                        </form>
+                                    </li>
                                 </ul>
                             </li>
                         {% else %}

@@ -17,6 +17,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from apps.core.views import inicio
 from apps.users import views
 
@@ -31,6 +33,13 @@ urlpatterns = [
     path("punto-eca/", include("apps.ecas.urls")),
     path("login/", views.render_login, name="login"),
     path("logout/", LogoutView.as_view(next_page="/login/"), name="logout"),
+    path("perfil/", views.perfil_ciudadano, name="perfil_ciudadano"),
+    path("perfil/actualizar/", views.actualizar_datos_ciudadano, name="actualizar_datos_ciudadano"),
+    path("perfil/cambiar-contrasena/", views.cambiar_contrasena_ciudadano, name="cambiar_contrasena_ciudadano"),
     path("registro/", include("apps.users.urls")),
     path("mapa/", include("apps.map.urls")),
+    path("publicaciones/", include("apps.publicaciones.urls", namespace="publicacion")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -36,6 +36,22 @@ class Publicacion(CreacionModificacionModel):
         related_name="publicaciones",
     )
 
+    contenido = models.TextField()
+
+    video = models.FileField(
+        upload_to='publicaciones/videos/',
+        blank=True,
+        null=True,
+        verbose_name="Video",
+    )
+
+    video_thumbnail = models.ImageField(
+        upload_to='publicaciones/thumbnails/',
+        blank=True,
+        null=True,
+        verbose_name="Miniatura del video",
+    )
+
     # Relacion con la tabla de Usuarios (autor de la publicacion)
     usuario = models.ForeignKey(
         Usuario, on_delete=models.RESTRICT, related_name="publicaciones"
@@ -45,6 +61,19 @@ class Publicacion(CreacionModificacionModel):
         verbose_name = "Publicacion"
         verbose_name_plural = "Publicaciones"
         db_table = "publicacion"
+
+
+class ImagenPublicacion(models.Model):
+    publicacion = models.ForeignKey(
+        Publicacion,
+        on_delete=models.CASCADE,
+        related_name='imagenes',
+    )
+    imagen = models.ImageField(upload_to='publicaciones/imagenes/')
+    descripcion = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        db_table = 'imagen_publicacion'
 
 
 ##########################################################
@@ -98,3 +127,20 @@ class Reaccion(CreacionModificacionModel):
         verbose_name = "Reaccion"
         verbose_name_plural = "Reacciones"
         db_table = "reacciones"
+
+
+######################################################################
+class Guardados(CreacionModificacionModel):
+    usuario = models.ForeignKey(
+        Usuario, on_delete=models.CASCADE, related_name="guardados"
+    )
+
+    publicacion = models.ForeignKey(
+        Publicacion, on_delete=models.CASCADE, related_name="guardados", null=True
+    )
+
+    class Meta(CreacionModificacionModel.Meta):
+        verbose_name = "Guardado"
+        verbose_name_plural = "Guardados"
+        db_table = "tb_guardados"
+        unique_together = ['usuario', 'publicacion']

@@ -1,11 +1,14 @@
+import re
+from datetime import date as date_type
 from django.shortcuts import render, redirect
 from django.db import transaction, IntegrityError
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from apps.users.models import Usuario
 from apps.ecas.models import PuntoECA, Localidad
 from config import constants as cons
 from django.core.exceptions import ValidationError
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, update_session_auth_hash
 
 
 def render_login(request):
@@ -16,7 +19,12 @@ def render_login(request):
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect("/")  # Puedes cambiar el destino según tu home
+            if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
+                return redirect("/panel_admin/")
+            elif user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
+                return redirect("/punto-eca/")
+            else:
+                return redirect("/")
         else:
             errores.append("Credenciales inválidas. Verifica tu email y contraseña.")
     # Si GET o error, mostrar template
@@ -150,3 +158,262 @@ def render_registro_eca(request):
     # GET normal
     localidades = Localidad.objects.all()
     return render(request, "users/registro_eca.html", {"localidades": localidades})
+
+
+def render_registro_ciudadano(request):
+    if request.method == "POST":
+        data = request.POST
+        errores = []
+
+        nombres = data.get("nombres", "").strip()
+        apellidos = data.get("apellidos", "").strip()
+        email = data.get("email", "").strip().lower()
+        celular = data.get("celular", "").strip()
+        tipo_documento = data.get("tipoDocumento", "").strip() or cons.TipoDocumento.CC
+        numero_documento = data.get("numeroDocumento", "").strip()
+        ciudad = data.get("ciudad", "Bogotá").strip()
+        localidad_id = data.get("localidad", "").strip()
+        fecha_nacimiento = data.get("fechaNacimiento", "").strip() or None
+        password = data.get("password", "")
+        password_confirm = data.get("passwordConfirm", "")
+        terminos = data.get("terminos")
+
+        if not nombres or len(nombres) < 3:
+            errores.append("El nombre debe tener al menos 3 caracteres.")
+        if not apellidos or len(apellidos) < 3:
+            errores.append("Los apellidos deben tener al menos 3 caracteres.")
+        if not email:
+            errores.append("Debe ingresar un email válido.")
+        if not celular or not celular.startswith("3") or len(celular) != 10:
+            errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
+        if not ciudad:
+            errores.append("Debe especificar la ciudad.")
+        if not password or not password_confirm:
+            errores.append("Se requiere una contraseña.")
+        elif password != password_confirm:
+            errores.append("Las contraseñas no coinciden.")
+        elif len(password) < 8:
+            errores.append("La contraseña debe tener al menos 8 caracteres.")
+        if not terminos:
+            errores.append("Debe aceptar los términos y condiciones.")
+
+        if email and Usuario.objects.filter(email=email).exists():
+            errores.append("Ya existe un usuario con ese correo electrónico.")
+        if numero_documento and Usuario.objects.filter(numero_documento=numero_documento).exists():
+            errores.append("Ya existe un usuario con ese número de documento.")
+
+        localidad_inst = None
+        localidades = Localidad.objects.all()
+        if localidad_id:
+            try:
+                localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
+            except Localidad.DoesNotExist:
+                errores.append("La localidad seleccionada no existe.")
+
+        if errores:
+            return render(
+                request,
+                "users/registro_ciudadano.html",
+                {**data.dict(), "localidades": localidades, "errores": errores},
+            )
+
+        try:
+            with transaction.atomic():
+                usuario = Usuario(
+                    email=email,
+                    numero_documento=numero_documento or f"CIU_{email}",
+                    nombres=nombres,
+                    apellidos=apellidos,
+                    celular=celular,
+                    tipo_documento=tipo_documento,
+                    tipo_usuario=cons.TipoUsuario.CIUDADANO,
+                    ciudad=ciudad,
+                    localidad=localidad_inst,
+                    fecha_nacimiento=fecha_nacimiento if fecha_nacimiento else None,
+                )
+                usuario.set_password(password)
+                usuario.save()
+            login(request, usuario)
+            messages.success(request, "¡Registro exitoso! Bienvenido a InfoRecicla.")
+            return redirect("perfil_ciudadano")
+        except (IntegrityError, ValidationError) as e:
+            errores.append("Error al registrar el usuario: %s" % str(e))
+            return render(
+                request,
+                "users/registro_ciudadano.html",
+                {**data.dict(), "localidades": localidades, "errores": errores},
+            )
+
+    localidades = Localidad.objects.all()
+    return render(request, "users/registro_ciudadano.html", {"localidades": localidades})
+
+
+@login_required(login_url="/login/")
+def perfil_ciudadano(request):
+    from apps.publicaciones.models import Comentario, Guardados
+    localidades = Localidad.objects.all()
+    mis_comentarios = (
+        Comentario.objects
+        .filter(usuario=request.user)
+        .select_related("publicacion")
+        .order_by("-fecha_creacion")
+    )
+    mis_guardados = (
+        Guardados.objects
+        .filter(usuario=request.user)
+        .select_related("publicacion")
+        .order_by("-fecha_creacion")
+    )
+    return render(request, "users/perfil_ciudadano.html", {
+        "localidades": localidades,
+        "mis_comentarios": mis_comentarios,
+        "mis_guardados": mis_guardados,
+    })
+
+
+@login_required(login_url="/login/")
+def toggle_eca_favorita(request, punto_id):
+    from django.http import JsonResponse
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+    try:
+        punto = PuntoECA.objects.get(pk=punto_id)
+    except PuntoECA.DoesNotExist:
+        return JsonResponse({"error": "No encontrado"}, status=404)
+
+    fav, created = PuntoECAFavorito.objects.get_or_create(
+        usuario=request.user, punto_eca=punto
+    )
+    if not created:
+        fav.delete()
+        guardado = False
+    else:
+        guardado = True
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if is_ajax:
+        return JsonResponse({"guardado": guardado})
+    return redirect("/perfil/#ecas")
+
+
+_SOLO_LETRAS = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")
+_SOLO_CIUDAD = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$")
+_CELULAR = re.compile(r"^3\d{9}$")
+_PASSWORD_COMPLEJA = re.compile(
+    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$"
+)
+
+
+@login_required(login_url="/login/")
+def actualizar_datos_ciudadano(request):
+    if request.method != "POST":
+        return redirect("perfil_ciudadano")
+
+    user = request.user
+    errores = []
+
+    nombres = request.POST.get("nombres", "").strip()
+    apellidos = request.POST.get("apellidos", "").strip()
+    celular = request.POST.get("celular", "").strip()
+    ciudad = request.POST.get("ciudad", "").strip()
+    localidad_id = request.POST.get("localidad", "").strip()
+    fecha_str = request.POST.get("fechaNacimiento", "").strip()
+
+    # --- Validar nombres ---
+    if not nombres or len(nombres) < 3:
+        errores.append("El nombre debe tener al menos 3 caracteres.")
+    elif len(nombres) > 30:
+        errores.append("El nombre no puede superar los 30 caracteres.")
+    elif not _SOLO_LETRAS.match(nombres):
+        errores.append("El nombre solo puede contener letras.")
+
+    # --- Validar apellidos ---
+    if not apellidos or len(apellidos) < 3:
+        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+    elif len(apellidos) > 40:
+        errores.append("Los apellidos no pueden superar los 40 caracteres.")
+    elif not _SOLO_LETRAS.match(apellidos):
+        errores.append("Los apellidos solo pueden contener letras.")
+
+    # --- Validar celular (opcional) ---
+    if celular and not _CELULAR.match(celular):
+        errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
+
+    # --- Validar ciudad ---
+    if ciudad and len(ciudad) > 15:
+        errores.append("La ciudad no puede superar los 15 caracteres.")
+    elif ciudad and not _SOLO_CIUDAD.match(ciudad):
+        errores.append("La ciudad solo puede contener letras.")
+
+    # --- Validar fecha de nacimiento ---
+    fecha_nacimiento = None
+    if fecha_str:
+        try:
+            fecha_nacimiento = date_type.fromisoformat(fecha_str)
+            if fecha_nacimiento > date_type.today():
+                errores.append("La fecha de nacimiento no puede ser futura.")
+        except ValueError:
+            errores.append("Formato de fecha inválido.")
+
+    # --- Validar localidad (UUID) ---
+    localidad_inst = user.localidad
+    if localidad_id:
+        try:
+            localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
+        except (Localidad.DoesNotExist, ValueError):
+            errores.append("La localidad seleccionada no es válida.")
+
+    if errores:
+        for e in errores:
+            messages.error(request, e)
+        return redirect("perfil_ciudadano")
+
+    try:
+        user.nombres = nombres
+        user.apellidos = apellidos
+        user.celular = celular if celular else None
+        user.ciudad = ciudad if ciudad else "Bogotá"
+        user.localidad = localidad_inst
+        user.fecha_nacimiento = fecha_nacimiento
+        user.save()
+        messages.success(request, "Datos actualizados correctamente.")
+    except (IntegrityError, ValidationError):
+        messages.error(request, "No se pudieron guardar los cambios. Verifica los datos ingresados.")
+
+    return redirect("perfil_ciudadano")
+
+
+@login_required(login_url="/login/")
+def cambiar_contrasena_ciudadano(request):
+    if request.method != "POST":
+        return redirect("perfil_ciudadano")
+
+    user = request.user
+    actual = request.POST.get("contrasenaActual", "")
+    nueva = request.POST.get("contrasenaNueva", "")
+    confirmar = request.POST.get("confirmarContrasena", "")
+
+    # Límite de longitud para evitar ataques de payload grande
+    if len(actual) > 128 or len(nueva) > 128 or len(confirmar) > 128:
+        messages.error(request, "La contraseña no puede superar los 128 caracteres.")
+        return redirect("perfil_ciudadano")
+
+    if not actual or not nueva or not confirmar:
+        messages.error(request, "Todos los campos de contraseña son obligatorios.")
+    elif not user.check_password(actual):
+        messages.error(request, "La contraseña actual es incorrecta.")
+    elif not _PASSWORD_COMPLEJA.match(nueva):
+        messages.error(
+            request,
+            "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula, "
+            "una minúscula, un número y un símbolo (@$!%*?&).",
+        )
+    elif nueva != confirmar:
+        messages.error(request, "Las contraseñas nuevas no coinciden.")
+    else:
+        user.set_password(nueva)
+        user.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Contraseña actualizada correctamente.")
+
+    return redirect("perfil_ciudadano")

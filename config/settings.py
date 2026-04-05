@@ -35,6 +35,7 @@ GROQ_API_KEY = env("GROQ_API_KEY")
 # Application definition
 
 INSTALLED_APPS = [
+    "rest_framework",
     "import_export",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -51,7 +52,7 @@ INSTALLED_APPS = [
     "apps.map.apps.MapConfig",
     "apps.users.apps.UsersConfig",
     "apps.panel_admin.apps.PanelAdminConfig",
-    # "admin.interfaceapps.publicaciones.apps.PublicacionesConfig",
+    "apps.publicaciones.apps.PublicacionesConfig",
 ]
 
 MIDDLEWARE = [
@@ -140,5 +141,9 @@ STATICFILES_DIRS = [
 ]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # Definición del modelo de usuario personalizado
 AUTH_USER_MODEL = "users.Usuario"

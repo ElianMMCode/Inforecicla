@@ -1,97 +1,172 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Crear Usuario - InfoRecicla</title>
+  <title>Nuevo Usuario - InfoRecicla Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
 </head>
-<body class="bg-light m-0 pt-5 pt-md-0">
+<body class="bg-light">
 
-<div class="container-fluid px-0">
-  <div class="row g-0">
+{% include "admin/partials/sidebar.html" with active="usuarios" %}
 
-    <main class="col offset-md-2 p-4">
-
-      <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-        <div>
-          <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h1>
-          <p class="text-muted mb-0">Registro de usuarios en el sistema</p>
-        </div>
-        <a href="lista.html" class="btn btn-outline-success d-none d-sm-block">
-          <i class="bi bi-arrow-left"></i> Volver a la lista
-        </a>
-      </div>
-
-      <div class="card border-success shadow-sm">
-        <div class="card-header bg-success text-white">
-          <i class="bi bi-pencil-square"></i> Formulario de creación
-        </div>
-
-        <div class="card-body bg-light">
-          <form class="needs-validation" action="lista.html" novalidate>
-
-            <div class="mb-4">
-              <h6 class="border-bottom pb-2 text-success"><i class="bi bi-info-circle"></i> Información Básica</h6>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" placeholder="Ej: Juan Carlos" required>
-                  <div class="invalid-feedback">Ingresa nombres válidos (3-30).</div>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" placeholder="Ej: Pérez García" required>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Correo Electrónico <span class="text-danger">*</span></label>
-                  <input type="email" class="form-control" placeholder="correo@ejemplo.com" required>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
-                  <input type="tel" class="form-control" placeholder="3001234567" required>
-                </div>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <h6 class="border-bottom pb-2 text-success"><i class="bi bi-shield-lock"></i> Rol y Acceso</h6>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span></label>
-                  <select class="form-select" required>
-                    <option value="" selected disabled>-- Selecciona un rol --</option>
-                    <option value="Admin">Administrador</option>
-                    <option value="Ciudadano">Ciudadano</option>
-                    <option value="GestorECA">Gestor ECA</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Contraseña Temporal <span class="text-danger">*</span></label>
-                  <input type="password" class="form-control" placeholder="Mínimo 8 caracteres" required>
-                  <small class="text-muted d-block mt-1">Debe contener mayúscula, minúscula, número y símbolo.</small>
-                </div>
-              </div>
-            </div>
-
-            <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
-              <button type="submit" class="btn btn-success">
-                <i class="bi bi-save me-1"></i> Guardar Usuario
-              </button>
-              <button type="reset" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
-              </button>
-            </div>
-
-          </form>
-        </div>
-      </div>
-
-    </main>
+<main class="col offset-md-2 p-4">
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
   </div>
-</div>
+  {% endif %}
+
+  <div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-person-plus me-2"></i>Nuevo Usuario</h1>
+      <p class="text-muted mb-0">Crea un nuevo usuario en el sistema.</p>
+    </div>
+    <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+  </div>
+
+  {% if errores %}
+  <div class="alert alert-danger alert-dismissible fade show mb-4">
+    <strong>Por favor corrige los siguientes errores:</strong>
+    <ul class="mb-0 mt-2">
+      {% for error in errores %}
+        <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-success text-white"><i class="bi bi-person me-1"></i> Formulario</div>
+    <div class="card-body p-4">
+      <form method="post" id="createUserForm">
+        {% csrf_token %}
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
+            <input type="text" name="nombres" class="form-control" required minlength="3"
+                   value="{{ form_data.nombres|default:'' }}" placeholder="Nombres">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
+            <input type="text" name="apellidos" class="form-control" required minlength="3"
+                   value="{{ form_data.apellidos|default:'' }}" placeholder="Apellidos">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="form-control" required
+                   value="{{ form_data.email|default:'' }}" placeholder="usuario@ejemplo.com">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
+            <input type="text" name="celular" class="form-control" required
+                   pattern="3[0-9]{9}" maxlength="10"
+                   value="{{ form_data.celular|default:'' }}" placeholder="3001234567">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Tipo de Documento</label>
+            <select name="tipoDocumento" class="form-select">
+              <option value="">Seleccionar...</option>
+              {% for val, label in tipos_documento %}
+                <option value="{{ val }}" {% if form_data.tipoDocumento == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Número de Documento</label>
+            <input type="text" name="numeroDocumento" class="form-control"
+                   value="{{ form_data.numeroDocumento|default:'' }}" placeholder="1234567890">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
+            <input type="text" name="ciudad" class="form-control" required
+                   value="{{ form_data.ciudad|default:'Bogotá' }}" placeholder="Bogotá">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
+            <select name="localidad" class="form-select" required>
+              <option value="">Seleccionar localidad...</option>
+              {% for loc in localidades %}
+                <option value="{{ loc.localidad_id }}"
+                  {% if form_data.localidad == loc.localidad_id|stringformat:'s' %}selected{% endif %}>
+                  {{ loc.nombre }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Fecha de Nacimiento</label>
+            <input type="date" name="fechaNacimiento" class="form-control"
+                   value="{{ form_data.fechaNacimiento|default:'' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span></label>
+            <select name="tipo_usuario" class="form-select" required>
+              {% for val, label in tipos_usuario %}
+                <option value="{{ val }}" {% if form_data.tipo_usuario == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+            <input type="password" name="password" id="password" class="form-control" required minlength="8"
+                   placeholder="Mínimo 8 caracteres">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
+            <input type="password" name="passwordConfirm" id="passwordConfirm" class="form-control" required minlength="8"
+                   placeholder="Repite la contraseña">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-person-check me-1"></i> Crear Usuario
+          </button>
+          <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    const p = document.getElementById('password').value;
+    const pc = document.getElementById('passwordConfirm').value;
+    if (p !== pc) {
+      e.preventDefault();
+      alert('Las contraseñas no coinciden.');
+    }
+  });
+</script>
 </body>
 </html>
