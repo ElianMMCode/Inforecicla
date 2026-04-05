@@ -9,7 +9,9 @@ class ChatListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Chat.objects.filter(ciudadano=user)
+        qs = Chat.objects.filter(ciudadano=user)
+        print(f"[CHAT DEBUG] Usuario: {user} | Chats encontrados: {qs.count()} | Chats: {[str(c) for c in qs]}")
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(ciudadano=self.request.user)

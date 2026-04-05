@@ -533,9 +533,7 @@
                                     <i class="bi bi-chat-left-text me-1"></i>Historial de chats
                                 </h6>
                             </div>
-                            <div id="chat-sidebar-list" class="list-group list-group-flush">
-                                <div class="text-center text-muted py-3 small">Aún no tenés chats iniciados.</div>
-                            </div>
+                            <div id="chat-sidebar-list" class="list-group list-group-flush"></div>
                         </div>
                         <!-- Panel derecho principal -->
                         <div class="col-12 col-md-8 px-4 d-flex flex-column justify-content-between" style="height: 100%;">
@@ -611,6 +609,29 @@
     const chatMensajes = document.getElementById('chat-mensajes');
     let chatsCiudadano = [];
 
+    // Renderiza el historial de chats en el sidebar
+    function renderHistorialChats() {
+        const sidebar = document.getElementById('chat-sidebar-list');
+        if (!sidebar) return;
+        if (!chatsCiudadano.length) {
+            sidebar.innerHTML = '<div class="text-center text-muted py-3 small">Aún no tenés chats iniciados.</div>';
+            return;
+        }
+        sidebar.innerHTML = chatsCiudadano.map(chat => `
+            <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                data-chat-id="${chat.id}" data-punto-id="${chat.punto}">
+                <span><i class="bi bi-geo-alt me-2 text-success"></i>Chat con Punto #${chat.punto}</span>
+                <small class="text-muted">${chat.created_at ? (new Date(chat.created_at)).toLocaleDateString('es-ES') : ''}</small>
+            </button>
+        `).join('');
+        // Bind click events para cargar mensajes
+        sidebar.querySelectorAll('button[data-chat-id]').forEach(btn => {
+            btn.onclick = function() {
+                cargarMensajesDePunto(btn.getAttribute('data-punto-id'));
+            };
+        });
+    }
+
     // Inicializar Select2 para buscar puntos ECA por AJAX
     function initSelect2PuntosECA() {
         var $el = $('#buscador-puntos-select2');
@@ -655,12 +676,53 @@
         });
 
         // Manejar selección de Punto ECA para cargar mensajes
-        $('#buscador-puntos-select2').on('select2:select', function (e) {
+        $('#buscador-puntos-select2').on('select2:select', async function (e) {
             const puntoId = e.params.data.id;
-            if (puntoId) {
-                cargarMensajesDePunto(puntoId);
-            } else {
+            if (!puntoId) {
                 chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Seleccioná un punto ECA para ver el chat.</div>';
+                return;
+            }
+            await cargarChatsCiudadano();
+            let chat = chatsCiudadano.find(c => String(c.punto) === String(puntoId));
+            if (!chat) {
+                // Si no hay chat, creá uno nuevo (POST)
+                try {
+                    const resp = await fetch('/mensajes/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ punto: puntoId })
+                    });
+                    if (resp.ok) {
+                        await cargarChatsCiudadano(); // Refrescar lista
+                        chat = chatsCiudadano.find(c => String(c.punto) === String(puntoId));
+                        if (chat) {
+                            await cargarMensajesDePunto(puntoId);
+                        }
+                    } else {
+                        let errorMsg = `Error al crear chat. Intentá de nuevo.`;
+                        try {
+                            const data = await resp.json();
+                            if (data && data.punto) {
+                                errorMsg += `<br><code>${data.punto}</code>`;
+                            } else if (data && data.detail) {
+                                errorMsg += `<br><code>${data.detail}</code>`;
+                            } else {
+                                errorMsg += `<br><code>${JSON.stringify(data)}</code>`;
+                            }
+                        } catch (e) {
+                            // probablemente no es json
+                        }
+                        chatMensajes.innerHTML = `<div class=\"text-danger small\">${errorMsg}</div>`;
+                    }
+                } catch (err) {
+                    chatMensajes.innerHTML = '<div class="text-danger small">Error al conectar con el servidor.</div>';
+                }
+            } else {
+                await cargarMensajesDePunto(puntoId);
             }
         });
     }
@@ -668,12 +730,13 @@
     async function cargarChatsCiudadano() {
         // Carga todos los chats del ciudadano (necesitamos su relación punto)
         // NOTA: ajustar la URL base si se monta diferente
-        const res = await fetch('/api/chat/chats/', { credentials: 'same-origin' });
+        const res = await fetch('/mensajes/', { credentials: 'same-origin' });
         if(res.ok) {
             chatsCiudadano = await res.json();
         } else {
             chatsCiudadano = [];
         }
+        renderHistorialChats(); // <-- Actualiza el sidebar
     }
 
     let currentChatId = null;
@@ -694,7 +757,7 @@
     }
 
     async function cargarMensajesHistorial(chatId) {
-        const url = `/api/chat/chats/${chatId}/mensajes/`;
+        const url = `/mensajes/${chatId}/mensajes/`;
         const res = await fetch(url, { credentials: 'same-origin' });
         if(res.ok) {
             const mensajes = await res.json();
@@ -788,6 +851,7 @@
     if (chatTabBtn) {
       chatTabBtn.addEventListener('shown.bs.tab', function () {
         setTimeout(initSelect2PuntosECA, 0); // Esperar al DOM
+        setTimeout(cargarChatsCiudadano, 0); // Refrescar historial de chats al entrar a la pestaña
       });
     }
     // Inicializar al vuelo si la pestaña ya está visible

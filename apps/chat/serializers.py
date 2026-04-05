@@ -5,6 +5,7 @@ class ChatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
         fields = ['id', 'punto', 'ciudadano', 'created_at']
+        read_only_fields = ['ciudadano']
 
 class MensajeSerializer(serializers.ModelSerializer):
     class Meta:

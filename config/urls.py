@@ -50,6 +50,8 @@ urlpatterns = [
     path("publicaciones/", include("apps.publicaciones.urls", namespace="publicacion")),
     # Endpoint para buscador de puntos ECA
     path("puntos-eca-json/", ecas_views.puntos_eca_json, name="puntos_eca_json"),
+    # API chat
+    path("mensajes/", include("apps.chat.urls")),
 ]
 
 if settings.DEBUG:
