@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil Ciudadano - InfoRecicla</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -63,6 +64,10 @@
             min-height: 100vh;
         }
     </style>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
 <body class="bg-light">
 <div class="d-flex">
@@ -354,6 +359,7 @@
                                         <strong>Requisitos:</strong> mínimo 8 caracteres &bull; una mayúscula &bull; una minúscula &bull; un número &bull; un símbolo <code>@$!%*?&</code>
                                     </div>
                                     <form method="POST" action="/perfil/cambiar-contrasena/" novalidate id="formPass">
+                                        <input type="text" name="username" autocomplete="username" hidden>
                                         {% csrf_token %}
                                         <div class="row g-3">
                                             <div class="col-md-4">
@@ -509,17 +515,16 @@
                 </div>
 
             </div>
-        </div>
         <!-- Tab: Chat / Mensajes dentro del sistema de tabs correctamente -->
+        </div>
         <div class="tab-pane fade" id="chat">
+            <!-- Buscador para iniciar nuevo chat (ahora al inicio de la sección) -->
+            <div class="mb-4">
+                <label for="buscador-puntos" class="form-label fw-semibold text-muted">Buscá un Punto ECA para iniciar chat</label>
+                <select id="buscador-puntos-select2" class="form-select" style="width: 100%;"></select>
+            </div>
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-4 px-2">
-                    <!-- Buscador para iniciar nuevo chat (arriba del historial + conversación) -->
-                    <div class="mb-4">
-                        <label for="buscador-puntos" class="form-label fw-semibold text-muted">Buscá un Punto ECA para iniciar chat</label>
-                        <input type="text" class="form-control" placeholder="Ej: Punto Barrio Norte" id="buscador-puntos" autocomplete="off" />
-                        <div id="buscador-resultados" class="list-group position-absolute w-100" style="z-index:99;"></div>
-                    </div>
                     <div class="row g-0" style="height: 500px; min-height: 350px;">
                         <!-- Sidebar de chats previos -->
                         <div class="col-12 col-md-4 border-end" style="overflow-y: auto; height: 100%;">
@@ -612,9 +617,63 @@
     });
 
     // --- Chat Frontend Integración REST ---
-    const chatSelect = document.getElementById('chat-punto-select');
+    const chatSelect = document.getElementById('buscador-puntos-select2');
     const chatMensajes = document.getElementById('chat-mensajes');
     let chatsCiudadano = [];
+
+    // Inicializar Select2 para buscar puntos ECA por AJAX
+    function initSelect2PuntosECA() {
+        var $el = $('#buscador-puntos-select2');
+        if (!$el.length) return; // No existe aún
+        if ($el.data('select2')) {
+            $el.select2('destroy');
+        }
+        $el.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccioná un Punto ECA',
+            width: 'style',
+            ajax: {
+                url: '/puntos-eca-json/',
+                dataType: 'json',
+                delay: 250,
+                processResults: function (data) {
+                    // Agrupa puntos por localidad (optgroups)
+                    const puntos = data.puntos;
+                    const grupos = {};
+                    puntos.forEach(item => {
+                        const key = item.localidad__nombre || 'Sin localidad';
+                        if (!grupos[key]) grupos[key] = [];
+                        grupos[key].push({ id: item.id, text: item.nombre });
+                    });
+                    // Transforma a formato requerido por select2 (array de optgroups)
+                    const results = Object.keys(grupos).sort().map(nombreLocalidad => ({
+                        text: nombreLocalidad,
+                        children: grupos[nombreLocalidad]
+                    }));
+                    return { results };
+                },
+                cache: true
+            },
+            dropdownParent: $('#chat'),
+            language: {
+                noResults: function() {
+                    return "No se encontraron puntos";
+                }
+            },
+            minimumInputLength: 2,
+            width: '100%'
+        });
+
+        // Manejar selección de Punto ECA para cargar mensajes
+        $('#buscador-puntos-select2').on('select2:select', function (e) {
+            const puntoId = e.params.data.id;
+            if (puntoId) {
+                cargarMensajesDePunto(puntoId);
+            } else {
+                chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Seleccioná un punto ECA para ver el chat.</div>';
+            }
+        });
+    }
 
     async function cargarChatsCiudadano() {
         // Carga todos los chats del ciudadano (necesitamos su relación punto)
@@ -680,15 +739,21 @@
         }
     }
 
+    // Variable para identificar si el usuario actual es el remitente
+    window.CIUDADANO_USER_ID = '{{ user.id|default:"" }}';
     function anadirMensajeRealtime(mensaje) {
         // Si la lista está vacía o muestra el cartel de "no hay", reemplazar
         if (chatMensajes.innerHTML.includes('no hay mensajes')) {
             chatMensajes.innerHTML = '';
         }
+        // Defensive: ensure ID is always present and compared as string
+                const remitenteStr = mensaje.remitente !== undefined && mensaje.remitente !== null ? String(mensaje.remitente) : '';
+                const usuarioIdStr = String(window.CIUDADANO_USER_ID);
+                const esCiudadano = remitenteStr !== '' && remitenteStr === usuarioIdStr;
         chatMensajes.innerHTML += `
             <div class="mb-2">
-                <small class="fw-semibold ${mensaje.remitente === {{ user.id }} ? 'text-success' : 'text-secondary'}">
-                    ${mensaje.remitente === {{ user.id }} ? 'Vos' : 'ECA'}
+                <small class="fw-semibold ${esCiudadano ? 'text-success' : 'text-secondary'}">
+                    ${esCiudadano ? 'Vos' : 'ECA'}
                 </small>:
                 <span>${mensaje.texto}</span>
                 <small class="text-muted ms-2" style="font-size:0.8em">${mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : ''}</small>
@@ -702,30 +767,18 @@
             chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
             return;
         }
-        chatMensajes.innerHTML = mensajes.map(m => `
-    // --- Envío de mensajes por WebSocket ---
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    if (chatForm && chatInput) {
-        chatForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const mensaje = chatInput.value.trim();
-            if (!mensaje || !currentWS || currentWS.readyState !== 1 || !currentChatId) return;
-            // Formato esperado por el consumer WS (ajustar si backend requiere otro formato)
-            currentWS.send(JSON.stringify({ tipo: 'nuevo_mensaje', texto: mensaje }));
-            chatInput.value = '';
-        });
-    }
-
-            <div class="mb-2">
-                <small class="fw-semibold ${m.remitente === {{ user.id }} ? 'text-success' : 'text-secondary'}">
-                    ${m.remitente === {{ user.id }} ? 'Vos' : 'ECA'}
+        chatMensajes.innerHTML = mensajes.map(m => {
+            const esCiudadano = String(m.remitente) === String(window.CIUDADANO_USER_ID);
+            return `<div class="mb-2">
+                <small class="fw-semibold ${esCiudadano ? 'text-success' : 'text-secondary'}">
+                    ${esCiudadano ? 'Vos' : 'ECA'}
                 </small>:
                 <span>${m.texto}</span>
                 <small class="text-muted ms-2" style="font-size:0.8em">${m.enviado_en ? new Date(m.enviado_en).toLocaleString('es-ES') : ''}</small>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
+    
 
     if(chatSelect) {
         chatSelect.addEventListener('change', function() {
@@ -738,6 +791,18 @@
         });
         // Estado inicial
         chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Seleccioná un punto ECA para ver el chat.</div>';
+    }
+
+    // --- Fix para tabs: inicializar Select2 al mostrar la pestaña de chat ---
+    const chatTabBtn = document.querySelector('a[href="#chat"]');
+    if (chatTabBtn) {
+      chatTabBtn.addEventListener('shown.bs.tab', function () {
+        setTimeout(initSelect2PuntosECA, 0); // Esperar al DOM
+      });
+    }
+    // Inicializar al vuelo si la pestaña ya está visible
+    if (document.querySelector('#chat').classList.contains('active')) {
+      setTimeout(initSelect2PuntosECA, 0);
     }
 </script>
 </body>

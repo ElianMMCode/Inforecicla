@@ -398,6 +398,8 @@ def eliminar_centro(request, id):
 def puntos_eca_json(request):
     # Busca y devuelve todos los puntos ECA listos para el buscador en perfil_ciudadano
     lista_puntos = list(
-        PuntoECA.objects.values("id", "nombre", "direccion", "ciudad")[:50]
+        PuntoECA.objects.values(
+            "id", "nombre", "direccion", "ciudad", "localidad_id", "localidad__nombre"
+        )[:50]
     )
     return JsonResponse({"puntos": lista_puntos})
