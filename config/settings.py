@@ -34,7 +34,10 @@ GROQ_API_KEY = env("GROQ_API_KEY")
 
 # Application definition
 
+ASGI_APPLICATION = 'config.asgi.application'
+
 INSTALLED_APPS = [
+    'channels',
     "rest_framework",
     "import_export",
     "django.contrib.admin",
