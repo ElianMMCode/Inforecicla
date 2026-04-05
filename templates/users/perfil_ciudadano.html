@@ -846,6 +846,51 @@
         chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Seleccioná un punto ECA para ver el chat.</div>';
     }
 
+    // --- Submit de mensaje en chat ---
+    const chatForm = document.getElementById('chat-form');
+    if (chatForm) {
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg || !currentChatId) return;
+            input.disabled = true;
+            let errorMsg = '';
+            try {
+                const resp = await fetch(`/mensajes/${currentChatId}/mensajes/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ texto: msg })
+                });
+                if (resp.ok) {
+                    input.value = '';
+                    await cargarMensajesHistorial(currentChatId);
+                } else {
+                    try {
+                        const data = await resp.json();
+                        errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
+                    } catch {
+                        errorMsg = 'Error al enviar mensaje';
+                    }
+                }
+            } catch (err) {
+                errorMsg = 'Error al conectar con el servidor';
+            }
+            input.disabled = false;
+            if (errorMsg) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'text-danger small mt-2';
+                errorDiv.innerHTML = errorMsg;
+                input.parentElement.appendChild(errorDiv);
+                setTimeout(()=>errorDiv.remove(), 3000);
+            }
+        });
+    }
+
     // --- Fix para tabs: inicializar Select2 al mostrar la pestaña de chat ---
     const chatTabBtn = document.querySelector('a[href="#chat"]');
     if (chatTabBtn) {
