@@ -1010,6 +1010,42 @@
     if (document.querySelector('#chat').classList.contains('active')) {
       setTimeout(initSelect2PuntosECA, 0);
     }
+
+    // Auto-abrir chat con un punto ECA si viene ?chat_punto=<UUID> desde el mapa
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatPuntoId = urlParams.get('chat_punto');
+    if (chatPuntoId) {
+        // Activar la pestaña de mensajes
+        const chatTabLink = document.querySelector('a[href="#chat"]');
+        if (chatTabLink) {
+            const bsTab = new bootstrap.Tab(chatTabLink);
+            bsTab.show();
+        }
+        // Esperar a que el tab esté visible y Select2 listo, luego iniciar el chat
+        setTimeout(async function () {
+            initSelect2PuntosECA();
+            await cargarChatsCiudadano();
+            let chat = chatsCiudadano.find(c => String(c.punto) === String(chatPuntoId));
+            if (!chat) {
+                // Crear nuevo chat con ese punto
+                try {
+                    const resp = await fetch('/mensajes/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ punto: chatPuntoId })
+                    });
+                    if (resp.ok) {
+                        await cargarChatsCiudadano();
+                    }
+                } catch (e) { /* silencioso */ }
+            }
+            await cargarMensajesDePunto(chatPuntoId);
+        }, 300);
+    }
 </script>
 </body>
 </html>
