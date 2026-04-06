@@ -937,6 +937,20 @@
     </div>
     <!-- FIN DEL ACORDEÓN -->
     <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
+    <style>
+      /* Multi-line pagination wrapping for footers if too many pages */
+      .pagination {
+        flex-wrap: wrap !important;
+      }
+      .pagination .page-item {
+        margin-bottom: 4px;
+      }
+      .card-footer .pagination {
+        row-gap: 4px;
+        justify-content: center;
+      }
+    </style>
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
           rel="stylesheet" />
