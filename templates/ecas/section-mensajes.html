@@ -1,24 +1,198 @@
 {% load static %}
 <div class="container-fluid p-0">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h4 class="fw-bold text-success mb-0"><i class="bi bi-chat-dots-fill me-2"></i>Mensajes</h4>
-            <small class="text-muted">Visualizá y respondé los mensajes de los ciudadanos hacia tu Punto ECA.</small>
-        </div>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="fw-bold text-success mb-0"><i class="bi bi-chat-dots-fill me-2"></i>Mensajes de Ciudadanos</h4>
+      <small class="text-muted">Gestioná tus chats y respondé a los ciudadanos de manera directa.</small>
     </div>
-    <div class="card border-0 shadow-sm">
-        <div class="card-body py-4 px-3">
-            <!-- Chat dashboard placeholder -->
-            <div class="row g-0" style="min-height:350px;">
-                <div class="col-12 text-center text-muted py-5">
-                    <span class="d-inline-block mb-2">
-                        <i class="bi bi-chat-left-text text-success" style="font-size:2rem;"></i>
-                    </span>
-                    <h6 class="fw-semibold mb-1">Acá verás tus chats con ciudadanos</h6>
-                    <p class="text-muted small mb-0">En breve vas a poder gestionar y responder mensajes desde este panel.</p>
-                </div>
+  </div>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body py-4 px-2">
+      <div class="row g-0" style="min-height:400px; max-height:600px;">
+        <!-- Sidebar: Listado de chats abiertos -->
+        <div class="col-12 col-md-4 border-end" style="overflow-y: auto; max-height: 540px;">
+          <div class="d-flex align-items-center justify-content-between px-3 mb-3">
+            <h6 class="fw-bold mb-0 text-success">
+              <i class="bi bi-people me-1"></i>Chats
+            </h6>
+          </div>
+          <div id="chat-sidebar-eca" class="list-group list-group-flush"></div>
+          <!--
+            NOTA: El listado de chats debe obtenerse vía fetch a "/punto-eca/mensajes/chats/".
+            El endpoint devuelve los chats donde el PuntoECA actual es gestor.
+          -->
+          
+        </div>
+        <!-- Main conversation panel -->
+        <div class="col-12 col-md-8 px-4 d-flex flex-column justify-content-between" style="height: 100%;">
+          <div class="flex-grow-1 mb-3 d-flex flex-column">
+            <div class="text-center mb-2 text-success fw-bold" id="chat-titulo-ciudadano">
+              Seleccioná un chat con un ciudadano.
             </div>
+            <div id="chat-mensajes-eca" class="flex-grow-1" style="min-height:180px; max-height:340px; overflow-y:auto; border:1px solid #eee; border-radius:8px; background:#fcfcfc; padding:1rem; margin-bottom:1.5rem;"></div>
+          </div>
+          <form id="chat-form-eca" class="d-flex align-items-center gap-2 mt-auto">
+            <input type="text" id="chat-input-eca" class="form-control" placeholder="Escribí una respuesta" required maxlength="500" autocomplete="off" />
+            <button type="submit" class="btn btn-success"><i class="bi bi-send"></i></button>
+          </form>
         </div>
+      </div>
     </div>
-</div>
+  </div>
+
+  <!-- Chat styles (reutilizados del perfil ciudadano) -->
+  <style>
+    .chat-bubble {
+      padding: 0.75rem 1.1rem;
+      border-radius: 1.1rem;
+      max-width: 75%;
+      word-break: break-word;
+      font-size: 1rem;
+      box-shadow: 0 2px 8px rgba(25,135,84,.04);
+      position: relative;
+    }
+    .bubble-punto {
+      background: linear-gradient(90deg, #d2f4e5 0%, #afe6ce 100%);
+      color: #198754;
+      border-bottom-right-radius: 0.3rem;
+      align-self: flex-end;
+    }
+    .bubble-ciudadano {
+      background: #fff;
+      color: #333;
+      border-bottom-left-radius: 0.3rem;
+      border: 1px solid #e5e5e5;
+      align-self: flex-start;
+    }
+    .chat-meta {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+    #chat-sidebar-eca .chat-sidebar-item.active {
+      background-color: #eafff2;
+      color: #198754;
+      font-weight: 600;
+      border-left: 4px solid #198754;
+    }
+  </style>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('/punto-eca/mensajes/chats/')
+      .then(response => response.json())
+      .then(data => {
+        const sidebar = document.getElementById('chat-sidebar-eca');
+        sidebar.innerHTML = '';
+        if(Array.isArray(data) && data.length > 0) {
+          data.forEach(chat => {
+            // Ajustar 'ciudadano' según el serializer si hace falta
+            const name = chat.ciudadano || 'Ciudadano';
+            const item = document.createElement('a');
+            item.className = 'list-group-item list-group-item-action chat-sidebar-item';
+            item.innerText = name + ' (Chat ' + chat.id + ')';
+            item.href = '#';
+                    item.dataset.chatId = chat.id;
+                    item.dataset.ciudadano = name;
+                    item.addEventListener('click', function(e) {
+                      e.preventDefault();
+                      document.querySelectorAll('.chat-sidebar-item').forEach(i => i.classList.remove('active'));
+                      item.classList.add('active');
+                      abrirChat(chat.id, name);
+                    });
+            sidebar.appendChild(item);
+          });
+        } else {
+          sidebar.innerHTML = `<div class="text-muted text-center py-4 small">No hay chats abiertos.<br><pre class='small text-info' style='white-space:pre-wrap;'>${JSON.stringify(data,null,2)}</pre></div>`;
+        }
+      })
+      .catch(() => {
+        document.getElementById('chat-sidebar-eca').innerHTML = '<div class="text-danger text-center py-4 small">Error cargando chats.</div>';
+      });
+  });
+  
+// --- Nuevos métodos para gestión de mensajes y envío en Punto ECA ---
+let currentChatIdEca = null;
+
+function renderMensajesEca(mensajes, ciudadano) {
+  const panel = document.getElementById('chat-mensajes-eca');
+  if (!panel) return;
+  if (!Array.isArray(mensajes) || !mensajes.length) {
+    panel.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
+    return;
+  }
+  panel.innerHTML = '';
+  mensajes.forEach(msg => {
+    // El remitente es igual al nombre del ciudadano o no (nombre vs ECA)
+    const esCiudadano = msg.remitente === ciudadano;
+    const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
+    const align = esCiudadano ? 'align-self-start' : 'align-self-end';
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `d-flex ${align}`;
+    msgDiv.innerHTML = `
+      <div class='chat-bubble ${bubbleClass} mb-2'>
+        <span>${msg.texto}</span>
+        <div class='chat-meta'>${msg.enviado_en ? new Date(msg.enviado_en).toLocaleString('es-ES') : ''}</div>
+      </div>
+    `;
+    panel.appendChild(msgDiv);
+  });
+  panel.scrollTop = panel.scrollHeight; // Scroll al fondo
+}
+
+// Se extiende abrirChat para guardar el id y mostrar bien los mensajes
+function abrirChat(chatId, ciudadano) {
+  currentChatIdEca = chatId;
+  document.getElementById('chat-titulo-ciudadano').innerText = ciudadano;
+  const mensajesPanel = document.getElementById('chat-mensajes-eca');
+  mensajesPanel.innerHTML = '<div class="text-muted text-center">Cargando mensajes...</div>';
+  fetch(`/mensajes/${chatId}/mensajes/`)
+    .then(res => res.json())
+    .then(msgs => {
+      renderMensajesEca(msgs, ciudadano);
+    })
+    .catch(() => {
+      mensajesPanel.innerHTML = '<div class="text-danger text-center">Error cargando mensajes.</div>';
+    });
+}
+
+// Manejar envío del formulario (solo si visible)
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('chat-form-eca');
+  if(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-eca');
+      const msg = input.value.trim();
+      if (!msg || !currentChatIdEca) return;
+      input.disabled = true;
+      fetch(`/mensajes/${currentChatIdEca}/mensajes/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ texto: msg })
+      }).then(resp => {
+        if (resp.ok) {
+          input.value = '';
+          // Reload mensajes after sending
+          return fetch(`/mensajes/${currentChatIdEca}/mensajes/`)
+            .then(r => r.json())
+            .then(msgs => renderMensajesEca(msgs, document.getElementById('chat-titulo-ciudadano').innerText));
+        }
+        return resp.json().then(data => { throw data; });
+      }).catch(err => {
+        let errorMsg = err && (err.texto || err.detail) ? err.texto || err.detail : 'Error al enviar mensaje';
+        const mensajesPanel = document.getElementById('chat-mensajes-eca');
+        const errDiv = document.createElement('div');
+        errDiv.className = 'text-danger small py-2';
+        errDiv.innerHTML = errorMsg;
+        mensajesPanel.appendChild(errDiv);
+        setTimeout(()=>errDiv.remove(), 3000);
+      }).finally(()=>{ input.disabled = false; });
+    });
+  }
+});
+
+</script>
 
