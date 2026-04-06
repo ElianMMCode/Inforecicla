@@ -51,18 +51,24 @@
       box-shadow: 0 2px 8px rgba(25,135,84,.04);
       position: relative;
     }
-    .bubble-punto {
+    .bubble-ciudadano {
       background: linear-gradient(90deg, #d2f4e5 0%, #afe6ce 100%);
       color: #198754;
       border-bottom-right-radius: 0.3rem;
       align-self: flex-end;
     }
-    .bubble-ciudadano {
+    .bubble-punto {
       background: #fff;
       color: #333;
       border-bottom-left-radius: 0.3rem;
       border: 1px solid #e5e5e5;
       align-self: flex-start;
+    }
+    .align-self-end {
+      align-self: flex-end !important;
+    }
+    .align-self-start {
+      align-self: flex-start !important;
     }
     .chat-meta {
       font-size: 0.75rem;
@@ -84,19 +90,21 @@
         sidebar.innerHTML = '';
         if(Array.isArray(data) && data.length > 0) {
           data.forEach(chat => {
-            // Ajustar 'ciudadano' según el serializer si hace falta
-            const name = chat.ciudadano || 'Ciudadano';
+            // Debug: log el objeto chat para ver las claves que manda el backend
+            console.log('Chat:', chat);
+            const name = chat.ciudadano_nombre || 'Ciudadano';
+            const ciudadanoId = chat.ciudadano; // uuid para comparación exacta
             const item = document.createElement('a');
             item.className = 'list-group-item list-group-item-action chat-sidebar-item';
-            item.innerText = name + ' (Chat ' + chat.id + ')';
+            item.innerText = name;
             item.href = '#';
                     item.dataset.chatId = chat.id;
-                    item.dataset.ciudadano = name;
+                    item.dataset.ciudadano = ciudadanoId;
                     item.addEventListener('click', function(e) {
                       e.preventDefault();
                       document.querySelectorAll('.chat-sidebar-item').forEach(i => i.classList.remove('active'));
                       item.classList.add('active');
-                      abrirChat(chat.id, name);
+                      abrirChat(chat.id, ciudadanoId);
                     });
             sidebar.appendChild(item);
           });
@@ -122,15 +130,23 @@ function renderMensajesEca(mensajes, ciudadano) {
   panel.innerHTML = '';
   mensajes.forEach(msg => {
     // El remitente es igual al nombre del ciudadano o no (nombre vs ECA)
-    const esCiudadano = msg.remitente === ciudadano;
-    const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
-    const align = esCiudadano ? 'align-self-start' : 'align-self-end';
+    // Analizo si el mensaje es del ciudadano usando una comparación menos estricta
+    const nombreRemitente = (msg.remitente || '').toLocaleLowerCase().trim();
+    const nombreCiudadano = (ciudadano || '').toLocaleLowerCase().trim();
+    const esCiudadano = nombreRemitente && nombreCiudadano && nombreRemitente.includes(nombreCiudadano);
+    // Debug: log values para verificar
+    console.log('Remitente:', msg.remitente, 'Comparando con:', ciudadano, '-> esCiudadano:', esCiudadano);
+    // Invertimos: si esCiudadano, va a la izquierda y burbuja blanca; si es del Punto, va a la derecha y es verde
+    const bubbleClass = esCiudadano ? 'bubble-punto' : 'bubble-ciudadano';
+    const justify = esCiudadano ? 'justify-content-start' : 'justify-content-end';
     const msgDiv = document.createElement('div');
-    msgDiv.className = `d-flex ${align}`;
+    msgDiv.className = `d-flex ${justify} mb-2`;
+    const label = esCiudadano ? 'Ciudadano' : 'Tú';
+    const fecha = msg.enviado_en ? new Date(msg.enviado_en).toLocaleString('es-ES') : '';
     msgDiv.innerHTML = `
-      <div class='chat-bubble ${bubbleClass} mb-2'>
+      <div class='chat-bubble ${bubbleClass}'>
         <span>${msg.texto}</span>
-        <div class='chat-meta'>${msg.enviado_en ? new Date(msg.enviado_en).toLocaleString('es-ES') : ''}</div>
+        <div class='chat-meta mt-1 fw-bold'>${label} <span class='fw-normal text-muted small'>${fecha}</span></div>
       </div>
     `;
     panel.appendChild(msgDiv);
