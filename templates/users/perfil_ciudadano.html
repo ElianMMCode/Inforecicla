@@ -881,8 +881,14 @@
 
         currentWS.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            if (data.tipo === 'nuevo_mensaje' && data.mensaje) {
-                anadirMensajeRealtime(data.mensaje);
+            // El backend puede enviar { message, user_id } al recibir un nuevo mensaje por el grupo
+            if (data.message) {
+                // Convierte el formato del mensaje a lo que espera anadirMensajeRealtime
+                anadirMensajeRealtime({
+                    texto: data.message,
+                    remitente: data.user_id,
+                    enviado_en: new Date().toISOString() // podés ajustar esto si querés poner la hora correcta
+                });
             }
         };
         currentWS.onclose = function() {
@@ -904,19 +910,25 @@
         if (chatMensajes.innerHTML.includes('no hay mensajes')) {
             chatMensajes.innerHTML = '';
         }
-        // Defensive: ensure ID is always present and compared as string
-                const remitenteStr = mensaje.remitente !== undefined && mensaje.remitente !== null ? String(mensaje.remitente) : '';
-                const usuarioIdStr = String(window.CIUDADANO_USER_ID);
-                const esCiudadano = remitenteStr !== '' && remitenteStr === usuarioIdStr;
-        chatMensajes.innerHTML += `
-            <div class="mb-2">
-                <small class="fw-semibold ${esCiudadano ? 'text-success' : 'text-secondary'}">
-                    ${esCiudadano ? 'Tu' : 'ECA'}
-                </small>:
-                <span>${mensaje.texto}</span>
-                <small class="text-muted ms-2" style="font-size:0.8em">${mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : ''}</small>
+        const remitenteStr = mensaje.remitente !== undefined && mensaje.remitente !== null ? String(mensaje.remitente) : '';
+        const usuarioIdStr = String(window.CIUDADANO_USER_ID);
+        const esCiudadano = remitenteStr !== '' && remitenteStr === usuarioIdStr;
+        const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
+        const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
+        const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
+        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
+        const wrapper = document.createElement('div');
+        wrapper.className = `d-flex ${justify} mb-1`;
+        wrapper.innerHTML = `
+            <div class="chat-bubble ${bubbleClass} position-relative">
+                <div class="mensaje-texto">${mensaje.texto}</div>
+                <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+                    <span class="fw-semibold">${nombreLabel}</span>
+                    <span class="text-muted">${fecha}</span>
+                </div>
             </div>
         `;
+        chatMensajes.appendChild(wrapper);
         chatMensajes.scrollTop = chatMensajes.scrollHeight;
     }
 
@@ -1030,31 +1042,47 @@
             if (!msg || !currentChatId) return;
             input.disabled = true;
             let errorMsg = '';
-            try {
-                const resp = await fetch(`/mensajes/${currentChatId}/mensajes/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ texto: msg })
-                });
-                if (resp.ok) {
+            // Preferentemente usar WebSocket para enviar el mensaje
+            if (currentWS && currentWS.readyState === 1) {
+                try {
+                    currentWS.send(JSON.stringify({
+                                            message: msg
+                    }));
                     input.value = '';
-                    await cargarMensajesHistorial(currentChatId);
-                } else {
-                    try {
-                        const data = await resp.json();
-                        errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
-                    } catch {
-                        errorMsg = 'Error al enviar mensaje';
-                    }
+                    input.disabled = false;
+                    // El mensaje se mostrará cuando lo recibas vía onmessage (evita duplicidad)
+                } catch (err) {
+                    errorMsg = 'Error al enviar por WebSocket';
+                    input.disabled = false;
                 }
-            } catch (err) {
-                errorMsg = 'Error al conectar con el servidor';
+            } else {
+                // Fallback a fetch/AJAX si no hay WS
+                try {
+                    const resp = await fetch(`/mensajes/${currentChatId}/mensajes/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ texto: msg })
+                    });
+                    if (resp.ok) {
+                        input.value = '';
+                        await cargarMensajesHistorial(currentChatId);
+                    } else {
+                        try {
+                            const data = await resp.json();
+                            errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
+                        } catch {
+                            errorMsg = 'Error al enviar mensaje';
+                        }
+                    }
+                } catch (err) {
+                    errorMsg = 'Error al conectar con el servidor';
+                }
+                input.disabled = false;
             }
-            input.disabled = false;
             if (errorMsg) {
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'text-danger small mt-2';
