@@ -9,6 +9,7 @@ from apps.ecas.models import PuntoECA, Localidad
 from config import constants as cons
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate, login, update_session_auth_hash
+from apps.users.decorators import ciudadano_required
 
 
 def render_login(request):
@@ -19,7 +20,11 @@ def render_login(request):
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
-            if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
+            if (
+                user.is_staff
+                or user.is_superuser
+                or user.tipo_usuario == cons.TipoUsuario.ADMIN
+            ):
                 return redirect("/panel_admin/")
             elif user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
                 return redirect("/punto-eca/")
@@ -71,8 +76,14 @@ def render_registro_eca(request):
             )
         if not direccion:
             errores.append("Debe ingresar la dirección.")
-        if not telefono_punto or not telefono_punto.startswith("60") or len(telefono_punto) != 10:
-            errores.append("El teléfono del punto debe ser válido, iniciar con 60 y tener 10 dígitos.")
+        if (
+            not telefono_punto
+            or not telefono_punto.startswith("60")
+            or len(telefono_punto) != 10
+        ):
+            errores.append(
+                "El teléfono del punto debe ser válido, iniciar con 60 y tener 10 dígitos."
+            )
         if not latitud or not longitud:
             errores.append("Debe seleccionar una ubicación en el mapa.")
         if not ciudad:
@@ -199,7 +210,10 @@ def render_registro_ciudadano(request):
 
         if email and Usuario.objects.filter(email=email).exists():
             errores.append("Ya existe un usuario con ese correo electrónico.")
-        if numero_documento and Usuario.objects.filter(numero_documento=numero_documento).exists():
+        if (
+            numero_documento
+            and Usuario.objects.filter(numero_documento=numero_documento).exists()
+        ):
             errores.append("Ya existe un usuario con ese número de documento.")
 
         localidad_inst = None
@@ -245,38 +259,44 @@ def render_registro_ciudadano(request):
             )
 
     localidades = Localidad.objects.all()
-    return render(request, "users/registro_ciudadano.html", {"localidades": localidades})
+    return render(
+        request, "users/registro_ciudadano.html", {"localidades": localidades}
+    )
 
 
-@login_required(login_url="/login/")
+@ciudadano_required
 def perfil_ciudadano(request, tab="datos"):
     if request.user.is_staff or request.user.is_superuser:
         return redirect("/panel_admin/perfil/")
     from apps.publicaciones.models import Comentario, Guardados
+
     localidades = Localidad.objects.all()
     mis_comentarios = (
-        Comentario.objects
-        .filter(usuario=request.user)
+        Comentario.objects.filter(usuario=request.user)
         .select_related("publicacion")
         .order_by("-fecha_creacion")
     )
     mis_guardados = (
-        Guardados.objects
-        .filter(usuario=request.user)
+        Guardados.objects.filter(usuario=request.user)
         .select_related("publicacion")
         .order_by("-fecha_creacion")
     )
-    return render(request, "users/perfil_ciudadano.html", {
-        "localidades": localidades,
-        "mis_comentarios": mis_comentarios,
-        "mis_guardados": mis_guardados,
-        "tab_activo": tab,
-    })
+    return render(
+        request,
+        "users/perfil_ciudadano.html",
+        {
+            "localidades": localidades,
+            "mis_comentarios": mis_comentarios,
+            "mis_guardados": mis_guardados,
+            "tab_activo": tab,
+        },
+    )
 
 
-@login_required(login_url="/login/")
+@ciudadano_required
 def toggle_eca_favorita(request, punto_id):
     from django.http import JsonResponse
+
     if request.method != "POST":
         return JsonResponse({"error": "Método no permitido"}, status=405)
     try:
@@ -307,7 +327,7 @@ _PASSWORD_COMPLEJA = re.compile(
 )
 
 
-@login_required(login_url="/login/")
+@ciudadano_required
 def actualizar_datos_ciudadano(request):
     if request.method != "POST":
         return redirect("perfil_ciudadano")
@@ -340,7 +360,9 @@ def actualizar_datos_ciudadano(request):
 
     # --- Validar celular (opcional) ---
     if celular and not _CELULAR.match(celular):
-        errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
+        errores.append(
+            "El celular debe iniciar con 3 y contener exactamente 10 dígitos."
+        )
 
     # --- Validar ciudad ---
     if ciudad and len(ciudad) > 15:
@@ -381,7 +403,10 @@ def actualizar_datos_ciudadano(request):
         user.save()
         messages.success(request, "Datos actualizados correctamente.")
     except (IntegrityError, ValidationError):
-        messages.error(request, "No se pudieron guardar los cambios. Verifica los datos ingresados.")
+        messages.error(
+            request,
+            "No se pudieron guardar los cambios. Verifica los datos ingresados.",
+        )
 
     return redirect("perfil_ciudadano")
 
