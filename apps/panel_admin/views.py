@@ -1142,8 +1142,9 @@ def crear_tipo_material(request):
         resultado = AdminCatalogService.crear_tipo_material(request.POST)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:crear_tipo_material")
-        messages.error(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+        return redirect("/panel_admin/materiales/gestion/?tab=tipos")
 
     return render(request, "admin/TiposMateriales/createTipoMaterial.html")
 
@@ -1155,10 +1156,57 @@ def crear_categoria_material(request):
         resultado = AdminCatalogService.crear_categoria_material(request.POST)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:crear_categoria_material")
-        messages.error(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+        return redirect("/panel_admin/materiales/gestion/?tab=categorias")
 
     return render(request, "admin/CategoriasMateriales/createCategoriaMaterial.html")
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def crear_material_admin(request):
+    if request.method == "POST":
+        resultado = AdminCatalogService.crear_material(request.POST)
+        if resultado["ok"]:
+            messages.success(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+    return redirect("/panel_admin/materiales/gestion/?tab=materiales")
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def gestion_materiales(request):
+    q_mat = request.GET.get('q_mat', '').strip()
+    q_tipo = request.GET.get('q_tipo', '').strip()
+    q_cat = request.GET.get('q_cat', '').strip()
+    tab = request.GET.get('tab', 'materiales')
+
+    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    tipos = TipoMaterial.objects.all().order_by("nombre")
+    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+
+    if q_mat:
+        materiales = materiales.filter(
+            Q(nombre__icontains=q_mat) | Q(descripcion__icontains=q_mat) |
+            Q(categoria__nombre__icontains=q_mat) | Q(tipo__nombre__icontains=q_mat)
+        )
+    if q_tipo:
+        tipos = tipos.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
+    if q_cat:
+        categorias = categorias.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
+
+    return render(request, "admin/materiales_gestion.html", {
+        "materiales": materiales,
+        "tipos": tipos,
+        "categorias": categorias,
+        "q_mat": q_mat, "q_tipo": q_tipo, "q_cat": q_cat,
+        "tab": tab,
+        "estados": cons.Estado.choices,
+        "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),
+        "todos_tipos": TipoMaterial.objects.all().order_by("nombre"),
+    })
 
 
 @login_required(login_url="/login/")
@@ -1172,3 +1220,126 @@ def crear_categoria_publicacion(request):
         messages.error(request, resultado["message"])
 
     return render(request, "admin/CategoriasPublicaciones/createCategoriaPublicacion.html")
+
+
+# ─── Perfil del Administrador ───────────────────────────────────────────────
+
+import re as _re
+from django.contrib.auth import update_session_auth_hash
+
+_SOLO_LETRAS   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")
+_SOLO_CIUDAD   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$")
+_CELULAR       = _re.compile(r"^3\d{9}$")
+_PASSWORD_COMP = _re.compile(
+    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$"
+)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def perfil_admin(request):
+    localidades = Localidad.objects.all()
+    return render(request, "admin/perfil_admin.html", {"localidades": localidades})
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def actualizar_datos_admin(request):
+    if request.method != "POST":
+        return redirect("panel_admin:perfil_admin")
+
+    user = request.user
+    nombres        = request.POST.get("nombres", "").strip()
+    apellidos      = request.POST.get("apellidos", "").strip()
+    celular        = request.POST.get("celular", "").strip()
+    ciudad         = request.POST.get("ciudad", "").strip()
+    localidad_id   = request.POST.get("localidad", "").strip()
+    fecha_str      = request.POST.get("fechaNacimiento", "").strip()
+
+    from datetime import date as date_type
+    errores = []
+
+    if not nombres or len(nombres) < 3:
+        errores.append("El nombre debe tener al menos 3 caracteres.")
+    elif len(nombres) > 30 or not _SOLO_LETRAS.match(nombres):
+        errores.append("El nombre solo puede contener letras (máx. 30).")
+
+    if not apellidos or len(apellidos) < 3:
+        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+    elif len(apellidos) > 40 or not _SOLO_LETRAS.match(apellidos):
+        errores.append("Los apellidos solo pueden contener letras (máx. 40).")
+
+    if celular and not _CELULAR.match(celular):
+        errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
+
+    if ciudad and (len(ciudad) > 15 or not _SOLO_CIUDAD.match(ciudad)):
+        errores.append("La ciudad solo puede contener letras (máx. 15).")
+
+    fecha_nacimiento = None
+    if fecha_str:
+        try:
+            fecha_nacimiento = date_type.fromisoformat(fecha_str)
+            if fecha_nacimiento > date_type.today():
+                errores.append("La fecha de nacimiento no puede ser futura.")
+        except ValueError:
+            errores.append("Formato de fecha inválido.")
+
+    localidad_inst = user.localidad
+    if localidad_id:
+        try:
+            localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
+        except (Localidad.DoesNotExist, ValueError):
+            errores.append("La localidad seleccionada no es válida.")
+
+    if errores:
+        for e in errores:
+            messages.error(request, e)
+        return redirect("panel_admin:perfil_admin")
+
+    try:
+        user.nombres         = nombres
+        user.apellidos       = apellidos
+        user.celular         = celular if celular else None
+        user.ciudad          = ciudad if ciudad else "Bogotá"
+        user.localidad       = localidad_inst
+        user.fecha_nacimiento = fecha_nacimiento
+        user.save()
+        messages.success(request, "Datos actualizados correctamente.")
+    except Exception:
+        messages.error(request, "No se pudieron guardar los cambios.")
+
+    return redirect("panel_admin:perfil_admin")
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+def cambiar_contrasena_admin(request):
+    if request.method != "POST":
+        return redirect("panel_admin:perfil_admin")
+
+    user      = request.user
+    actual    = request.POST.get("contrasenaActual", "")
+    nueva     = request.POST.get("contrasenaNueva", "")
+    confirmar = request.POST.get("confirmarContrasena", "")
+
+    if len(actual) > 128 or len(nueva) > 128 or len(confirmar) > 128:
+        messages.error(request, "La contraseña no puede superar los 128 caracteres.")
+    elif not actual or not nueva or not confirmar:
+        messages.error(request, "Todos los campos de contraseña son obligatorios.")
+    elif not user.check_password(actual):
+        messages.error(request, "La contraseña actual es incorrecta.")
+    elif not _PASSWORD_COMP.match(nueva):
+        messages.error(
+            request,
+            "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula, "
+            "una minúscula, un número y un símbolo (@$!%*?&).",
+        )
+    elif nueva != confirmar:
+        messages.error(request, "Las contraseñas nuevas no coinciden.")
+    else:
+        user.set_password(nueva)
+        user.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Contraseña actualizada correctamente.")
+
+    return redirect("panel_admin:perfil_admin")

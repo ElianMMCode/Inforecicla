@@ -28,6 +28,8 @@ urlpatterns = [
 
     # Materiales
     path('materiales/', views.listar_materiales_admin, name='listar_materiales_admin'),
+    path('materiales/gestion/', views.gestion_materiales, name='gestion_materiales'),
+    path('materiales/crear/', views.crear_material_admin, name='crear_material_admin'),
     path('materiales/exportar/pdf/', views.exportar_materiales_pdf, name='exportar_materiales_pdf'),
     path('materiales/exportar/excel/', views.exportar_materiales_excel, name='exportar_materiales_excel'),
     path('materiales/<uuid:material_id>/editar/', views.editar_material_admin, name='editar_material_admin'),
@@ -52,4 +54,9 @@ urlpatterns = [
     path('tipos-materiales/exportar/excel/', views.exportar_tipos_material_excel, name='exportar_tipos_material_excel'),
     path('tipos-materiales/crear/', views.crear_tipo_material, name='crear_tipo_material'),
     path('tipos-materiales/<uuid:tipo_id>/editar/', views.editar_tipo_material_admin, name='editar_tipo_material_admin'),
+
+    # Perfil del administrador
+    path('perfil/', views.perfil_admin, name='perfil_admin'),
+    path('perfil/actualizar/', views.actualizar_datos_admin, name='actualizar_datos_admin'),
+    path('perfil/cambiar-contrasena/', views.cambiar_contrasena_admin, name='cambiar_contrasena_admin'),
 ]

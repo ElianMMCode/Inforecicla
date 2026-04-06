@@ -250,6 +250,8 @@ def render_registro_ciudadano(request):
 
 @login_required(login_url="/login/")
 def perfil_ciudadano(request):
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect("/panel_admin/perfil/")
     from apps.publicaciones.models import Comentario, Guardados
     localidades = Localidad.objects.all()
     mis_comentarios = (
