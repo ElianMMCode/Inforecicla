@@ -108,6 +108,45 @@ class AdminCatalogService:
 
     @staticmethod
     @transaction.atomic
+    def crear_material(data):
+        nombre = (data.get("nombre") or "").strip()
+        descripcion = (data.get("descripcion") or "").strip() or None
+        estado = (data.get("estado") or "ACTIVO").strip().upper()
+        categoria_id = data.get("categoria_id")
+        tipo_id = data.get("tipo_id")
+        imagen_url = (data.get("imagen_url") or "").strip()
+
+        estados_validos = {value for value, _ in cons.Estado.choices}
+        if not nombre:
+            return {"ok": False, "message": "El nombre es obligatorio."}
+        if len(nombre) > 30:
+            return {"ok": False, "message": "El nombre no puede superar 30 caracteres."}
+        if estado not in estados_validos:
+            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+
+        categoria = None
+        if categoria_id:
+            categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
+            if not categoria:
+                return {"ok": False, "message": "Categoría de material inválida."}
+
+        tipo = None
+        if tipo_id:
+            tipo = TipoMaterial.objects.filter(id=tipo_id).first()
+            if not tipo:
+                return {"ok": False, "message": "Tipo de material inválido."}
+
+        try:
+            obj = Material(nombre=nombre, descripcion=descripcion, estado=estado,
+                           categoria=categoria, tipo=tipo, imagen_url=imagen_url)
+            obj.full_clean()
+            obj.save()
+            return {"ok": True, "message": "Material creado correctamente."}
+        except (ValidationError, IntegrityError) as e:
+            return {"ok": False, "message": f"No se pudo guardar: {e}"}
+
+    @staticmethod
+    @transaction.atomic
     def crear_categoria_publicacion(data):
         try:
             from apps.publicaciones.models import CategoriaPublicacion

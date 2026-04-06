@@ -2,13 +2,28 @@
 <div class="container-fluid px-0">
 <div class="row g-0">
 <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-  <a class="d-flex align-items-center gap-2 text-white mb-4 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
+  <a class="d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
     <img src="{% static 'img/logo.png' %}" alt="Logo" width="40" height="40" class="rounded bg-white p-1">
     <div class="lh-sm">
       <div class="fw-semibold">InfoRecicla</div>
       <small class="text-white-50">Administración</small>
     </div>
   </a>
+
+  <hr class="border-white opacity-25 my-2">
+
+  <div class="text-center mb-3">
+    <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:64px;height:64px;">
+      <i class="bi bi-person-fill fs-2 text-white"></i>
+    </div>
+    <div class="fw-semibold small">{{ user.get_short_name }}</div>
+    <div class="text-white-50" style="font-size:.75rem;">{{ user.get_full_name }}</div>
+    <span class="badge bg-danger mt-1">
+      <i class="bi bi-shield-fill me-1"></i>Administrador
+    </span>
+  </div>
+
+  <hr class="border-white opacity-25 my-2">
   <nav class="w-100 flex-grow-1" role="navigation">
     <ul class="nav nav-pills flex-column gap-1 w-100 m-0 p-0 list-unstyled">
       <li class="nav-item">
@@ -32,18 +47,8 @@
         </a>
       </li>
       <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_materiales_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'materiales' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+        <a href="{% url 'panel_admin:gestion_materiales' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'materiales' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
           <i class="bi bi-box-seam"></i> Materiales
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_tipos_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'tipos' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-recycle"></i> Tipos Material
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_categorias_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'cat_materiales' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-tags-fill"></i> Cat. Materiales
         </a>
       </li>
       <li class="nav-item">

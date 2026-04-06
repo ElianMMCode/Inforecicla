@@ -1,324 +1,230 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - InfoRecicla</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
 </head>
-
 <body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center fw-semibold" href="/">
-                <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla" height="40" class="me-2 rounded bg-white p-1">
-                InfoRecicla
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'panel_admin:panel_admin' %}">
-                            <i class="fas fa-tachometer-alt me-1"></i> Panel
-                        </a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav align-items-lg-center gap-2">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">
-                            <i class="fas fa-home me-1"></i> Inicio
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <form method="POST" action="/logout/">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-light">
-                                <i class="fas fa-sign-out-alt me-1"></i> Cerrar sesión
-                            </button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
+
+{% include "admin/partials/sidebar.html" with active="dashboard" %}
+
+<main class="col offset-md-2 p-4">
+
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    </nav>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-    <div class="container-fluid px-0">
-        <div class="row g-0">
-            <!-- Sidebar desktop -->
-            <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm" style="margin-top: 56px;">
-                <nav class="w-100 mt-2" role="navigation">
-                    <ul class="nav nav-pills flex-column gap-1 w-100 m-0 p-0 list-unstyled">
-                        <li class="nav-item">
-                            <a href="{% url 'panel_admin:listar_usuarios' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-                                <i class="fas fa-users me-2"></i>Usuarios
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-                                <i class="fas fa-newspaper me-2"></i>Publicaciones
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-                                <i class="fas fa-map-marker-alt me-2"></i>Puntos ECA
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'panel_admin:listar_materiales_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-                                <i class="fas fa-box me-2"></i>Materiales
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'panel_admin:listar_tipos_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-                                <i class="fas fa-recycle me-2"></i>Tipos Material
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'panel_admin:listar_categorias_material_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-                                <i class="fas fa-tags me-2"></i>Cat. Materiales
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white">
-                                <i class="fas fa-folder me-2"></i>Cat. Publicaciones
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-                <div class="mt-auto small text-white-50">&copy; 2025 InfoRecicla</div>
-            </aside>
-
-            <main class="col offset-md-2 p-4">
-                {% if messages %}
-                <div class="mb-3">
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <div class="bg-light bg-opacity-75 rounded-3 p-4 p-md-5 shadow-sm mb-5 border-start border-5 border-success">
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <h1 class="display-5 fw-bold text-success mb-3">Panel de Administración</h1>
-                            <p class="lead text-muted mb-0">Gestiona todos los aspectos de InfoRecicla desde un solo lugar.</p>
-                        </div>
-                        <div class="col-lg-4 d-flex align-items-center justify-content-end">
-                            <span class="text-muted small">Bienvenido, <strong>{{ request.user.get_short_name }}</strong></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Resumen con datos reales -->
-                <div class="row mb-5">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-success text-white">
-                                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Resumen General del Sistema</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row text-center">
-                                    <div class="col-md-2 col-6 mb-3">
-                                        <div class="border-end border-light-subtle">
-                                            <div class="h3 text-success fw-bold mb-1">{{ resumen_general.total_usuarios }}</div>
-                                            <small class="text-muted text-uppercase fw-semibold">Usuarios</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2 col-6 mb-3">
-                                        <div class="border-end border-light-subtle">
-                                            <div class="h3 text-info fw-bold mb-1">{{ resumen_general.total_puntos_eca }}</div>
-                                            <small class="text-muted text-uppercase fw-semibold">Puntos ECA</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2 col-6 mb-3">
-                                        <div class="border-end border-light-subtle">
-                                            <div class="h3 text-warning fw-bold mb-1">{{ resumen_general.total_materiales }}</div>
-                                            <small class="text-muted text-uppercase fw-semibold">Materiales</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2 col-6 mb-3">
-                                        <div class="border-end border-light-subtle">
-                                            <div class="h3 text-primary fw-bold mb-1">{{ resumen_general.total_publicaciones }}</div>
-                                            <small class="text-muted text-uppercase fw-semibold">Publicaciones</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2 col-6 mb-3">
-                                        <div class="border-end border-light-subtle">
-                                            <div class="h3 text-danger fw-bold mb-1">{{ resumen_general.total_categorias_materiales }}</div>
-                                            <small class="text-muted text-uppercase fw-semibold">Cat. Materiales</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2 col-6 mb-3">
-                                        <div>
-                                            <div class="h3 text-secondary fw-bold mb-1">{{ resumen_general.total_tipos_material }}</div>
-                                            <small class="text-muted text-uppercase fw-semibold">Tipos Material</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Acciones rápidas -->
-                <div class="row mb-5">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm border-top border-3 border-success">
-                            <div class="card-body">
-                                <h5 class="card-title text-success mb-3"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
-                                <div class="row g-2">
-                                    <div class="col-md-3 col-6">
-                                        <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-outline-primary w-100 py-2">
-                                            <i class="fas fa-edit me-1"></i> Nueva Publicación
-                                        </a>
-                                    </div>
-                                    <div class="col-md-3 col-6">
-                                        <a href="{% url 'panel_admin:crear_tipo_material' %}" class="btn btn-outline-secondary w-100 py-2">
-                                            <i class="fas fa-recycle me-1"></i> Nuevo Tipo Material
-                                        </a>
-                                    </div>
-                                    <div class="col-md-3 col-6">
-                                        <a href="{% url 'panel_admin:crear_categoria_material' %}" class="btn btn-outline-danger w-100 py-2">
-                                            <i class="fas fa-tags me-1"></i> Nueva Cat. Material
-                                        </a>
-                                    </div>
-                                    <div class="col-md-3 col-6">
-                                        <a href="{% url 'panel_admin:crear_categoria_publicacion' %}" class="btn btn-outline-warning w-100 py-2 text-dark">
-                                            <i class="fas fa-folder me-1"></i> Nueva Cat. Publicación
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Módulos -->
-                <h4 class="text-secondary mb-4 border-bottom pb-2">Módulos del Sistema</h4>
-                <div class="row g-4">
-                    <div class="col-md-6 col-lg-4">
-                        <a href="{% url 'panel_admin:listar_usuarios' %}" class="text-decoration-none text-dark">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body text-center p-4">
-                                    <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3" style="width:64px;height:64px;">
-                                        <i class="fas fa-users text-white fs-3"></i>
-                                    </div>
-                                    <h3 class="h5 mb-2 text-success fw-semibold">Gestión de Usuarios</h3>
-                                    <p class="text-muted mb-0 small">Administra usuarios, roles y permisos del sistema.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="text-decoration-none text-dark">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body text-center p-4">
-                                    <div class="bg-info rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3" style="width:64px;height:64px;">
-                                        <i class="fas fa-map-marker-alt text-white fs-3"></i>
-                                    </div>
-                                    <h3 class="h5 mb-2 text-info fw-semibold">Puntos ECA</h3>
-                                    <p class="text-muted mb-0 small">Administra las estaciones de clasificación y aprovechamiento.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <a href="{% url 'panel_admin:listar_materiales_admin' %}" class="text-decoration-none text-dark">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body text-center p-4">
-                                    <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3" style="width:64px;height:64px;">
-                                        <i class="fas fa-box text-white fs-3"></i>
-                                    </div>
-                                    <h3 class="h5 mb-2 text-warning fw-semibold">Materiales</h3>
-                                    <p class="text-muted mb-0 small">Gestiona los materiales reciclables del sistema.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <a href="{% url 'panel_admin:listar_tipos_material_admin' %}" class="text-decoration-none text-dark">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body text-center p-4">
-                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3" style="width:64px;height:64px;">
-                                        <i class="fas fa-recycle text-white fs-3"></i>
-                                    </div>
-                                    <h3 class="h5 mb-2 text-secondary fw-semibold">Tipos de Material</h3>
-                                    <p class="text-muted mb-0 small">Gestiona los tipos de materiales reciclables.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <a href="{% url 'panel_admin:listar_categorias_material_admin' %}" class="text-decoration-none text-dark">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body text-center p-4">
-                                    <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3" style="width:64px;height:64px;">
-                                        <i class="fas fa-tags text-white fs-3"></i>
-                                    </div>
-                                    <h3 class="h5 mb-2 text-danger fw-semibold">Categorías de Materiales</h3>
-                                    <p class="text-muted mb-0 small">Gestiona las categorías de materiales.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="text-decoration-none text-dark">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body text-center p-4">
-                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3" style="width:64px;height:64px;">
-                                        <i class="fas fa-newspaper text-white fs-3"></i>
-                                    </div>
-                                    <h3 class="h5 mb-2 text-primary fw-semibold">Publicaciones</h3>
-                                    <p class="text-muted mb-0 small">Gestiona las publicaciones y artículos del sistema.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="text-decoration-none text-dark">
-                            <div class="card h-100 shadow-sm border-0">
-                                <div class="card-body text-center p-4">
-                                    <div class="bg-primary bg-opacity-75 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 p-3" style="width:64px;height:64px;">
-                                        <i class="fas fa-folder text-white fs-3"></i>
-                                    </div>
-                                    <h3 class="h5 mb-2 text-primary fw-semibold">Categorías de Publicaciones</h3>
-                                    <p class="text-muted mb-0 small">Organiza las publicaciones por categorías.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </main>
+    <div class="bg-light bg-opacity-75 rounded-3 p-4 p-md-5 shadow-sm mb-5 border-start border-5 border-success">
+        <div class="row">
+            <div class="col-lg-8">
+                <h1 class="display-5 fw-bold text-success mb-3">Panel de Administración</h1>
+                <p class="lead text-muted mb-0">Gestiona todos los aspectos de InfoRecicla desde un solo lugar.</p>
+            </div>
+            <div class="col-lg-4 d-flex align-items-center justify-content-end">
+                <span class="text-muted small">Bienvenido, <strong>{{ request.user.get_short_name }}</strong></span>
+            </div>
         </div>
     </div>
 
-    <footer class="bg-dark text-white py-4 mt-5">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6 text-center text-md-start">
-                    <p class="mb-0">© 2025 InfoRecicla. Todos los derechos reservados.</p>
+    <!-- Resumen con datos reales -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Resumen General del Sistema</h5>
                 </div>
-                <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
-                    <p class="mb-0 text-white-50"><i class="fas fa-recycle me-1"></i> Sistema de Gestión de Reciclaje</p>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-light-subtle">
+                                <div class="h3 text-success fw-bold mb-1">{{ resumen_general.total_usuarios }}</div>
+                                <small class="text-muted text-uppercase fw-semibold">Usuarios</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-light-subtle">
+                                <div class="h3 text-info fw-bold mb-1">{{ resumen_general.total_puntos_eca }}</div>
+                                <small class="text-muted text-uppercase fw-semibold">Puntos ECA</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-light-subtle">
+                                <div class="h3 text-warning fw-bold mb-1">{{ resumen_general.total_materiales }}</div>
+                                <small class="text-muted text-uppercase fw-semibold">Materiales</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-light-subtle">
+                                <div class="h3 text-primary fw-bold mb-1">{{ resumen_general.total_publicaciones }}</div>
+                                <small class="text-muted text-uppercase fw-semibold">Publicaciones</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-light-subtle">
+                                <div class="h3 text-danger fw-bold mb-1">{{ resumen_general.total_categorias_materiales }}</div>
+                                <small class="text-muted text-uppercase fw-semibold">Cat. Materiales</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div>
+                                <div class="h3 text-secondary fw-bold mb-1">{{ resumen_general.total_tipos_material }}</div>
+                                <small class="text-muted text-uppercase fw-semibold">Tipos Material</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </footer>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Acciones rápidas -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm border-top border-3 border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success mb-3"><i class="bi bi-lightning-fill me-2"></i>Acciones Rápidas</h5>
+                    <div class="row g-2">
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-outline-primary w-100 py-2">
+                                <i class="bi bi-pencil-fill me-1"></i> Nueva Publicación
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos" class="btn btn-outline-secondary w-100 py-2">
+                                <i class="bi bi-recycle me-1"></i> Nuevo Tipo Material
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="btn btn-outline-danger w-100 py-2">
+                                <i class="bi bi-tags-fill me-1"></i> Nueva Cat. Material
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{% url 'panel_admin:crear_categoria_publicacion' %}" class="btn btn-outline-warning w-100 py-2 text-dark">
+                                <i class="bi bi-folder-fill me-1"></i> Nueva Cat. Publicación
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulos -->
+    <h4 class="text-secondary mb-4 border-bottom pb-2">Módulos del Sistema</h4>
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'panel_admin:listar_usuarios' %}" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-people-fill text-white fs-3"></i>
+                        </div>
+                        <h3 class="h5 mb-2 text-success fw-semibold">Gestión de Usuarios</h3>
+                        <p class="text-muted mb-0 small">Administra usuarios, roles y permisos del sistema.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-info rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-geo-alt-fill text-white fs-3"></i>
+                        </div>
+                        <h3 class="h5 mb-2 text-info fw-semibold">Puntos ECA</h3>
+                        <p class="text-muted mb-0 small">Administra las estaciones de clasificación y aprovechamiento.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'panel_admin:gestion_materiales' %}" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-box-seam text-white fs-3"></i>
+                        </div>
+                        <h3 class="h5 mb-2 text-warning fw-semibold">Materiales</h3>
+                        <p class="text-muted mb-0 small">Gestiona los materiales reciclables del sistema.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-recycle text-white fs-3"></i>
+                        </div>
+                        <h3 class="h5 mb-2 text-secondary fw-semibold">Tipos de Material</h3>
+                        <p class="text-muted mb-0 small">Gestiona los tipos de materiales reciclables.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-tags-fill text-white fs-3"></i>
+                        </div>
+                        <h3 class="h5 mb-2 text-danger fw-semibold">Categorías de Materiales</h3>
+                        <p class="text-muted mb-0 small">Gestiona las categorías de materiales.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-newspaper text-white fs-3"></i>
+                        </div>
+                        <h3 class="h5 mb-2 text-primary fw-semibold">Publicaciones</h3>
+                        <p class="text-muted mb-0 small">Gestiona las publicaciones y artículos del sistema.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-75 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
+                            <i class="bi bi-folder-fill text-white fs-3"></i>
+                        </div>
+                        <h3 class="h5 mb-2 text-primary fw-semibold">Categorías de Publicaciones</h3>
+                        <p class="text-muted mb-0 small">Organiza las publicaciones por categorías.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
