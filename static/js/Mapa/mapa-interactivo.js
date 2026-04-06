@@ -528,7 +528,7 @@ class MapaInteractivo {
     if (btnMensaje) {
       const esPuntoPlataforma = puntoId && !String(puntoId).startsWith("arcgis_");
       if (esPuntoPlataforma) {
-        btnMensaje.href = `/perfil/?chat_punto=${puntoId}`;
+        btnMensaje.href = `/perfil/mensajes/?chat_punto=${puntoId}`;
         btnMensaje.classList.remove("d-none");
       } else {
         btnMensaje.classList.add("d-none");
