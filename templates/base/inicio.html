@@ -13,6 +13,22 @@
       .hero-img {
         max-width: 420px;
       }
+      /* Animación para entrada fade+slide */
+      .animated-card {
+        opacity: 0;
+        transform: translateY(40px) scale(0.96);
+        transition: all 0.7s cubic-bezier(.39,.575,.565,1.000);
+      }
+      .animated-card.is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      .animated-card.is-visible:hover, .animated-card.is-visible:focus-visible {
+        z-index: 2;
+        box-shadow: 0 0 24px 0 rgba(0,128,0,.20), 0 4px 24px 0 rgba(0,0,0,.18);
+        transform: translateY(-4px) scale(1.035);
+        transition: box-shadow 0.18s, transform 0.18s;
+      }
     </style>
   </head>
   <body>
@@ -114,9 +130,9 @@
       <section class="bg-success text-white py-5">
         <div class="container">
           <div class="row g-4">
-            <div class="col-md-12">
+            <div class="col-md-6">
               <a href="/mapa" class="text-decoration-none text-white">
-                <div class="card h-100 bg-transparent shadow-lg border-white">
+                            <div class="card h-100 bg-transparent shadow-lg border-white animated-card">
                   <div class="card-body text-center text-white">
                     <h2 class="h2 fw-semibold mb-3">Mapa de Puntos ECA</h2>
                     <img
@@ -128,6 +144,24 @@
                     <p class="mb-0">
                       Visualiza estaciones en Bogotá, filtra por proximidad y
                       consulta contacto y capacidad.
+                    </p>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div class="col-md-6">
+              <a href="/publicaciones" class="text-decoration-none text-white">
+                            <div class="card h-100 bg-transparent shadow-lg border-white animated-card">
+                  <div class="card-body text-center text-white">
+                    <h2 class="h2 fw-semibold mb-3">Publicaciones</h2>
+                    <img
+                      src="{% static 'img/publicaciones.png' %}"
+                      alt="Publicaciones"
+                      class="img-fluid mb-3"
+                      style="max-width: 210px"
+                    />
+                    <p class="mb-0">
+                      Explorá experiencias, tips y novedades sobre reciclaje. Compartí saberes y descubrí lo que otros recomiendan.
                     </p>
                   </div>
                 </div>
@@ -195,5 +229,25 @@
       {% endif %}
     </main>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Intersection Observer para animar tarjetas al entrar en la vista
+      document.addEventListener('DOMContentLoaded', function() {
+        const animatedCards = document.querySelectorAll('.animated-card');
+        if ('IntersectionObserver' in window) {
+          const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.2 });
+          animatedCards.forEach(card => observer.observe(card));
+        } else {
+          // Fallback para browsers viejos
+          animatedCards.forEach(card => card.classList.add('is-visible'));
+        }
+      });
+    </script>
   </body>
 </html>
