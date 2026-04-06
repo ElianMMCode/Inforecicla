@@ -189,6 +189,54 @@
                             </button>
                         </div>
                     </form>
+                    <!-- Cambiar contraseña -->
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold text-success mb-4">
+                                <i class="bi bi-shield-lock-fill me-2"></i>
+                                Cambiar Contraseña
+                            </h5>
+                            <div class="alert alert-light border-start border-success border-4 py-2 mb-3 small">
+                                <strong>Requisitos:</strong> mínimo 8 caracteres &bull; una mayúscula &bull; una minúscula &bull; un número &bull; un símbolo <code>@$!%*?&</code>
+                            </div>
+                            <form method="POST" action="/perfil/cambiar-contrasena/" novalidate id="formPass">
+                                <input type="text" name="username" autocomplete="username" hidden>
+                                {% csrf_token %}
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Contraseña Actual</label>
+                                        <input type="password" name="contrasenaActual" class="form-control"
+                                               required maxlength="128"
+                                               autocomplete="current-password"
+                                               placeholder="Tu contraseña actual">
+                                        <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Nueva Contraseña</label>
+                                        <input type="password" name="contrasenaNueva" class="form-control"
+                                               required minlength="8" maxlength="128" id="nuevaPass"
+                                               autocomplete="new-password"
+                                               pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}"
+                                               placeholder="Nueva contraseña">
+                                        <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Confirmar Nueva</label>
+                                        <input type="password" name="confirmarContrasena" class="form-control"
+                                               required maxlength="128" id="confirmarPass"
+                                               autocomplete="new-password"
+                                               placeholder="Repite la nueva contraseña">
+                                        <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <button type="submit" class="btn btn-success px-4">
+                                            <i class="bi bi-lock-fill me-2"></i>Actualizar Contraseña
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
