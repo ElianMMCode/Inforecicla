@@ -1,3 +1,6 @@
+from django.http import JsonResponse
+from apps.ecas.models import PuntoECA
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from apps.ecas.models import PuntoECA, Localidad, CentroAcopio
@@ -183,17 +186,17 @@ def editar_perfil_gestor(request, id):
     if request.method == "POST":
         # Actualizar campos básicos del usuario y capturar errores
         resultado = UserService.editar_perfil(request, id)
-        usuario = resultado.get('usuario')
-        errores = resultado.get('errores')
+        usuario = resultado.get("usuario")
+        errores = resultado.get("errores")
         if errores:
             # Always format errores as a dict mapping to a list
             if isinstance(errores, str):
-                errores = {'__all__': [errores]}
+                errores = {"__all__": [errores]}
             elif isinstance(errores, list):
-                errores = {'__all__': errores}
+                errores = {"__all__": errores}
             for field, errs in errores.items():
                 for error in errs:
-                    if field == '__all__':
+                    if field == "__all__":
                         messages.error(request, error)
                     else:
                         messages.error(request, f"{field}: {error}")
@@ -389,3 +392,14 @@ def eliminar_centro(request, id):
         return JsonResponse(
             {"status": "error", "message": "Método no permitido"}, status=405
         )
+
+
+@login_required
+def puntos_eca_json(request):
+    # Busca y devuelve todos los puntos ECA listos para el buscador en perfil_ciudadano
+    lista_puntos = list(
+        PuntoECA.objects.values(
+            "id", "nombre", "direccion", "ciudad", "localidad_id", "localidad__nombre"
+        )[:50]
+    )
+    return JsonResponse({"puntos": lista_puntos})
