@@ -456,7 +456,7 @@ class MapaInteractivo {
       })
       .then((detalles) => {
         console.log("✅ Detalles cargados:", detalles);
-        this.mostrarModalDetalles(detalles);
+        this.mostrarModalDetalles(detalles, puntoId);
       })
       .catch((error) => {
         console.error("❌ Error al cargar detalles:", error);
@@ -474,7 +474,7 @@ class MapaInteractivo {
             email: puntoBasico.email || '',
             horarioAtencion: puntoBasico.horarioAtencion || '',
             materiales: [],
-          });
+          }, puntoId);
         } else {
           alert("Error al cargar los detalles del punto ECA");
         }
@@ -484,7 +484,7 @@ class MapaInteractivo {
   /**
    * Muestra el modal con los detalles del punto
    */
-  mostrarModalDetalles(detalles) {
+  mostrarModalDetalles(detalles, puntoId) {
     // Llenar información general
     document.getElementById("detalleNombre").textContent =
       detalles.nombrePunto || "";
@@ -522,6 +522,19 @@ class MapaInteractivo {
 
     // Llenar tabla de materiales
     this.llenarTablaMateriales(detalles.materiales);
+
+    // Botón "Enviar mensaje": solo para puntos de la plataforma (no arcgis)
+    const btnMensaje = document.getElementById("btnEnviarMensaje");
+    if (btnMensaje) {
+      const esPuntoPlataforma = puntoId && !String(puntoId).startsWith("arcgis_");
+      if (esPuntoPlataforma) {
+        btnMensaje.href = `/perfil/mensajes/?chat_punto=${puntoId}`;
+        btnMensaje.classList.remove("d-none");
+      } else {
+        btnMensaje.classList.add("d-none");
+        btnMensaje.href = "#";
+      }
+    }
 
     // Mostrar modal
     const modal = new bootstrap.Modal(

@@ -24,7 +24,7 @@ def render_login(request):
             elif user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
                 return redirect("/punto-eca/")
             else:
-                return redirect("/")
+                return redirect("/perfil/")
         else:
             errores.append("Credenciales inválidas. Verifica tu email y contraseña.")
     # Si GET o error, mostrar template
@@ -249,7 +249,7 @@ def render_registro_ciudadano(request):
 
 
 @login_required(login_url="/login/")
-def perfil_ciudadano(request):
+def perfil_ciudadano(request, tab="datos"):
     if request.user.is_staff or request.user.is_superuser:
         return redirect("/panel_admin/perfil/")
     from apps.publicaciones.models import Comentario, Guardados
@@ -270,6 +270,7 @@ def perfil_ciudadano(request):
         "localidades": localidades,
         "mis_comentarios": mis_comentarios,
         "mis_guardados": mis_guardados,
+        "tab_activo": tab,
     })
 
 

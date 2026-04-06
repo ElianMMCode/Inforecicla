@@ -1,214 +1,313 @@
 {% load static %}
 <div class="container-fluid p-0">
+
+  <!-- Header -->
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
       <h4 class="fw-bold text-success mb-0"><i class="bi bi-chat-dots-fill me-2"></i>Mensajes de Ciudadanos</h4>
-      <small class="text-muted">Gestioná tus chats y respondé a los ciudadanos de manera directa.</small>
+      <small class="text-muted">Responde directamente a los ciudadanos que se han contactado contigo.</small>
     </div>
   </div>
-  <div class="card border-0 shadow-sm">
-    <div class="card-body py-4 px-2">
-      <div class="row g-0" style="min-height:400px; max-height:600px;">
-        <!-- Sidebar: Listado de chats abiertos -->
-        <div class="col-12 col-md-4 border-end" style="overflow-y: auto; max-height: 540px;">
-          <div class="d-flex align-items-center justify-content-between px-3 mb-3">
-            <h6 class="fw-bold mb-0 text-success">
-              <i class="bi bi-people me-1"></i>Chats
-            </h6>
-          </div>
-          <div id="chat-sidebar-eca" class="list-group list-group-flush"></div>
-          <!--
-            NOTA: El listado de chats debe obtenerse vía fetch a "/punto-eca/mensajes/chats/".
-            El endpoint devuelve los chats donde el PuntoECA actual es gestor.
-          -->
-          
+
+  <!-- Panel principal -->
+  <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+    <div class="row g-0" style="height: 440px;">
+
+      <!-- Columna izquierda: lista de chats -->
+      <div class="col-12 col-md-4 border-end d-flex flex-column" style="height: 440px;">
+        <div class="px-3 py-3 border-bottom" style="background: #f8faf9;">
+          <h6 class="fw-bold mb-0 text-success">
+            <i class="bi bi-people-fill me-2"></i>Conversaciones
+          </h6>
         </div>
-        <!-- Main conversation panel -->
-        <div class="col-12 col-md-8 px-4 d-flex flex-column justify-content-between" style="height: 100%;">
-          <div class="flex-grow-1 mb-3 d-flex flex-column">
-            <div class="text-center mb-2 text-success fw-bold" id="chat-titulo-ciudadano">
-              Seleccioná un chat con un ciudadano.
+        <div id="chat-sidebar-eca" class="flex-grow-1" style="overflow-y: auto;">
+          <div class="text-center text-muted py-5 px-3">
+            <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
+              <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
             </div>
-            <div id="chat-mensajes-eca" class="flex-grow-1" style="min-height:180px; max-height:340px; overflow-y:auto; border:1px solid #eee; border-radius:8px; background:#fcfcfc; padding:1rem; margin-bottom:1.5rem;"></div>
+            <p class="mb-0 small">Cargando conversaciones...</p>
           </div>
-          <form id="chat-form-eca" class="d-flex align-items-center gap-2 mt-auto">
-            <input type="text" id="chat-input-eca" class="form-control" placeholder="Escribí una respuesta" required maxlength="500" autocomplete="off" />
-            <button type="submit" class="btn btn-success"><i class="bi bi-send"></i></button>
+        </div>
+      </div>
+
+      <!-- Columna derecha: mensajes + input -->
+      <div class="col-12 col-md-8 d-flex flex-column" style="height: 440px;">
+        <!-- Cabecera del chat activo -->
+        <div class="px-4 py-3 border-bottom d-flex align-items-center gap-3" style="background: #f8faf9;">
+          <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;">
+            <i class="bi bi-person-fill text-white" style="font-size:.9rem;"></i>
+          </div>
+          <span class="fw-semibold text-success" id="chat-titulo-ciudadano">
+            Selecciona una conversación
+          </span>
+        </div>
+
+        <!-- Área de mensajes -->
+        <div id="chat-mensajes-eca" class="flex-grow-1 p-3 d-flex flex-column gap-2" style="overflow-y: auto; background: #f8faf9;">
+          <div class="text-center text-muted my-auto small">
+            <i class="bi bi-arrow-left-circle me-1"></i>Selecciona una conversación para ver los mensajes
+          </div>
+        </div>
+
+        <!-- Input de envío -->
+        <div class="p-3 border-top bg-white">
+          <form id="chat-form-eca" class="d-flex align-items-center gap-2">
+            {% csrf_token %}
+            <input type="text" id="chat-input-eca" class="form-control"
+                   placeholder="Escribe tu respuesta..." required maxlength="500" autocomplete="off"
+                   style="border-radius: 20px; border-color: #d0ead8;">
+            <button type="submit" class="btn btn-success d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:40px;height:40px;padding:0;border-radius:50%;">
+              <i class="bi bi-send-fill"></i>
+            </button>
           </form>
         </div>
       </div>
+
     </div>
   </div>
+</div>
 
-  <!-- Chat styles (reutilizados del perfil ciudadano) -->
-  <style>
-    .chat-bubble {
-      padding: 0.75rem 1.1rem;
-      border-radius: 1.1rem;
-      max-width: 75%;
-      word-break: break-word;
-      font-size: 1rem;
-      box-shadow: 0 2px 8px rgba(25,135,84,.04);
-      position: relative;
-    }
-    .bubble-ciudadano {
-      background: linear-gradient(90deg, #d2f4e5 0%, #afe6ce 100%);
-      color: #198754;
-      border-bottom-right-radius: 0.3rem;
-      align-self: flex-end;
-    }
-    .bubble-punto {
-      background: #fff;
-      color: #333;
-      border-bottom-left-radius: 0.3rem;
-      border: 1px solid #e5e5e5;
-      align-self: flex-start;
-    }
-    .align-self-end {
-      align-self: flex-end !important;
-    }
-    .align-self-start {
-      align-self: flex-start !important;
-    }
-    .chat-meta {
-      font-size: 0.75rem;
-      opacity: 0.7;
-    }
-    #chat-sidebar-eca .chat-sidebar-item.active {
-      background-color: #eafff2;
-      color: #198754;
-      font-weight: 600;
-      border-left: 4px solid #198754;
-    }
-  </style>
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    fetch('/punto-eca/mensajes/chats/')
-      .then(response => response.json())
+<style>
+  .chat-bubble {
+    padding: 0.65rem 1rem;
+    border-radius: 1.1rem;
+    max-width: 72%;
+    word-break: break-word;
+    font-size: .9rem;
+    line-height: 1.4;
+  }
+  .bubble-ciudadano {
+    background: #fff;
+    color: #333;
+    border-bottom-left-radius: 0.25rem;
+    border: 1px solid #e5e5e5;
+    align-self: flex-start;
+  }
+  .bubble-punto {
+    background: linear-gradient(135deg, #d2f4e5 0%, #afe6ce 100%);
+    color: #146c43;
+    border-bottom-right-radius: 0.25rem;
+    align-self: flex-end;
+  }
+  .chat-meta {
+    font-size: 0.7rem;
+    opacity: 0.65;
+    margin-top: 3px;
+  }
+  .chat-sidebar-item-eca {
+    border-bottom: 1px solid #f0f0f0;
+    padding: .75rem 1rem;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .chat-sidebar-item-eca:hover { background-color: #f0faf5; }
+  .chat-sidebar-item-eca.active {
+    background-color: #eafff2;
+    border-left: 4px solid #198754;
+  }
+  #chat-mensajes-eca::-webkit-scrollbar { width: 5px; }
+  #chat-mensajes-eca::-webkit-scrollbar-thumb { background: #d0ead8; border-radius: 10px; }
+</style>
+
+<script>
+  // ID del gestor actual para distinguir burbujas
+  window.GESTOR_USER_ID = '{{ request.user.id }}';
+  let currentChatIdEca = null;
+  let currentCiudadanoNombre = '';
+
+  // ----- Cargar lista de chats -----
+  function cargarChatsEca() {
+    fetch('/punto-eca/mensajes/chats/', { credentials: 'same-origin' })
+      .then(r => r.json())
       .then(data => {
         const sidebar = document.getElementById('chat-sidebar-eca');
-        sidebar.innerHTML = '';
-        if(Array.isArray(data) && data.length > 0) {
-          data.forEach(chat => {
-            // Debug: log el objeto chat para ver las claves que manda el backend
-            console.log('Chat:', chat);
-            const name = chat.ciudadano_nombre || 'Ciudadano';
-            const ciudadanoId = chat.ciudadano; // uuid para comparación exacta
-            const item = document.createElement('a');
-            item.className = 'list-group-item list-group-item-action chat-sidebar-item';
-            item.innerText = name;
-            item.href = '#';
-                    item.dataset.chatId = chat.id;
-                    item.dataset.ciudadano = ciudadanoId;
-                    item.addEventListener('click', function(e) {
-                      e.preventDefault();
-                      document.querySelectorAll('.chat-sidebar-item').forEach(i => i.classList.remove('active'));
-                      item.classList.add('active');
-                      abrirChat(chat.id, ciudadanoId);
-                    });
-            sidebar.appendChild(item);
-          });
-        } else {
-          sidebar.innerHTML = `<div class="text-muted text-center py-4 small">No hay chats abiertos.<br><pre class='small text-info' style='white-space:pre-wrap;'>${JSON.stringify(data,null,2)}</pre></div>`;
+        if (!Array.isArray(data) || !data.length) {
+          sidebar.innerHTML = `
+            <div class="text-center text-muted py-5 px-3">
+              <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
+                <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
+              </div>
+              <p class="mb-0 small">Aún no tienes conversaciones.</p>
+            </div>`;
+          return;
         }
+        sidebar.innerHTML = data.map(chat => `
+          <div class="chat-sidebar-item-eca d-flex align-items-center gap-3 ${String(chat.id) === String(currentChatIdEca) ? 'active' : ''}"
+               data-chat-id="${chat.id}" data-ciudadano-id="${chat.ciudadano}"
+               data-ciudadano-nombre="${chat.ciudadano_nombre || 'Ciudadano'}" role="button">
+            <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:38px;height:38px;">
+              <i class="bi bi-person-fill text-white" style="font-size:.9rem;"></i>
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-semibold small text-truncate">${chat.ciudadano_nombre || 'Ciudadano'}</div>
+              <div class="text-muted" style="font-size:.7rem;">${chat.created_at ? new Date(chat.created_at).toLocaleDateString('es-ES') : ''}</div>
+            </div>
+          </div>
+        `).join('');
+
+        sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
+          item.addEventListener('click', function () {
+            sidebar.querySelectorAll('[data-chat-id]').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            currentChatIdEca = item.dataset.chatId;
+            currentCiudadanoNombre = item.dataset.ciudadanoNombre;
+            document.getElementById('chat-titulo-ciudadano').textContent = currentCiudadanoNombre;
+            cargarMensajesEca(currentChatIdEca);
+          });
+        });
       })
       .catch(() => {
-        document.getElementById('chat-sidebar-eca').innerHTML = '<div class="text-danger text-center py-4 small">Error cargando chats.</div>';
+        document.getElementById('chat-sidebar-eca').innerHTML =
+          '<div class="text-danger text-center py-4 small">Error al cargar conversaciones.</div>';
       });
-  });
-  
-// --- Nuevos métodos para gestión de mensajes y envío en Punto ECA ---
-let currentChatIdEca = null;
-
-function renderMensajesEca(mensajes, ciudadano) {
-  const panel = document.getElementById('chat-mensajes-eca');
-  if (!panel) return;
-  if (!Array.isArray(mensajes) || !mensajes.length) {
-    panel.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
-    return;
   }
-  panel.innerHTML = '';
-  mensajes.forEach(msg => {
-    // El remitente es igual al nombre del ciudadano o no (nombre vs ECA)
-    // Analizo si el mensaje es del ciudadano usando una comparación menos estricta
-    const nombreRemitente = (msg.remitente || '').toLocaleLowerCase().trim();
-    const nombreCiudadano = (ciudadano || '').toLocaleLowerCase().trim();
-    const esCiudadano = nombreRemitente && nombreCiudadano && nombreRemitente.includes(nombreCiudadano);
-    // Debug: log values para verificar
-    console.log('Remitente:', msg.remitente, 'Comparando con:', ciudadano, '-> esCiudadano:', esCiudadano);
-    // Invertimos: si esCiudadano, va a la izquierda y burbuja blanca; si es del Punto, va a la derecha y es verde
-    const bubbleClass = esCiudadano ? 'bubble-punto' : 'bubble-ciudadano';
-    const justify = esCiudadano ? 'justify-content-start' : 'justify-content-end';
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `d-flex ${justify} mb-2`;
-    const label = esCiudadano ? 'Ciudadano' : 'Tú';
-    const fecha = msg.enviado_en ? new Date(msg.enviado_en).toLocaleString('es-ES') : '';
-    msgDiv.innerHTML = `
-      <div class='chat-bubble ${bubbleClass}'>
-        <span>${msg.texto}</span>
-        <div class='chat-meta mt-1 fw-bold'>${label} <span class='fw-normal text-muted small'>${fecha}</span></div>
-      </div>
-    `;
-    panel.appendChild(msgDiv);
-  });
-  panel.scrollTop = panel.scrollHeight; // Scroll al fondo
-}
 
-// Se extiende abrirChat para guardar el id y mostrar bien los mensajes
-function abrirChat(chatId, ciudadano) {
-  currentChatIdEca = chatId;
-  document.getElementById('chat-titulo-ciudadano').innerText = ciudadano;
-  const mensajesPanel = document.getElementById('chat-mensajes-eca');
-  mensajesPanel.innerHTML = '<div class="text-muted text-center">Cargando mensajes...</div>';
-  fetch(`/mensajes/${chatId}/mensajes/`)
-    .then(res => res.json())
-    .then(msgs => {
-      renderMensajesEca(msgs, ciudadano);
-    })
-    .catch(() => {
-      mensajesPanel.innerHTML = '<div class="text-danger text-center">Error cargando mensajes.</div>';
+  // ----- Cargar mensajes del chat -----
+  function cargarMensajesEca(chatId) {
+    const panel = document.getElementById('chat-mensajes-eca');
+    panel.innerHTML = '<div class="text-muted text-center small py-3">Cargando mensajes...</div>';
+    fetch(`/mensajes/${chatId}/mensajes/`, { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(msgs => renderMensajesEca(msgs))
+      .catch(() => {
+        panel.innerHTML = '<div class="text-danger text-center small py-3">Error al cargar mensajes.</div>';
+      });
+  }
+
+  // ----- Renderizar mensajes -----
+  function renderMensajesEca(mensajes) {
+    const panel = document.getElementById('chat-mensajes-eca');
+    if (!Array.isArray(mensajes) || !mensajes.length) {
+      panel.innerHTML = `
+        <div class="text-center text-muted my-auto small">
+          <i class="bi bi-chat me-1"></i>Aún no hay mensajes en esta conversación.
+        </div>`;
+      return;
+    }
+    panel.innerHTML = '';
+    mensajes.forEach(msg => {
+      const esGestor = String(msg.remitente) === String(window.GESTOR_USER_ID);
+      const bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
+      const justify = esGestor ? 'justify-content-end' : 'justify-content-start';
+      const nombreLabel = esGestor ? 'Tú' : (msg.remitente_nombre || currentCiudadanoNombre || 'Ciudadano');
+      const fecha = msg.enviado_en ? new Date(msg.enviado_en).toLocaleString('es-ES') : '';
+      const editadoBadge = msg.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `d-flex ${justify} mb-1`;
+      wrapper.innerHTML = `
+        <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${msg.id}">
+          <div class="mensaje-texto">${msg.texto}</div>
+          <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+            <span class="fw-semibold">${nombreLabel}</span>
+            <span class="text-muted">${fecha}</span>
+            ${editadoBadge}
+            ${esGestor ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${msg.id}" data-texto="${msg.texto.replace(/"/g,'&quot;')}" title="Editar" style="font-size:.75rem;color:#198754;line-height:1;">
+              <i class="bi bi-pencil-fill"></i>
+            </button>` : ''}
+          </div>
+          <div class="form-editar-msg d-none mt-2">
+            <div class="d-flex gap-1">
+              <input type="text" class="form-control form-control-sm input-editar" value="${msg.texto.replace(/"/g,'&quot;')}" maxlength="500" style="border-radius:12px;">
+              <button class="btn btn-success btn-sm btn-confirmar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-check-lg"></i></button>
+              <button class="btn btn-secondary btn-sm btn-cancelar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-x-lg"></i></button>
+            </div>
+          </div>
+        </div>`;
+
+      // Lógica de edición
+      const bubble = wrapper.querySelector('.chat-bubble');
+      const btnEditar = wrapper.querySelector('.btn-editar-msg');
+      const formEditar = wrapper.querySelector('.form-editar-msg');
+      const inputEditar = wrapper.querySelector('.input-editar');
+      const btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
+      const btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
+
+      if (btnEditar) {
+        btnEditar.addEventListener('click', () => {
+          formEditar.classList.remove('d-none');
+          inputEditar.focus();
+        });
+        btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
+        btnConfirmar.addEventListener('click', () => editarMensaje(msg.id, inputEditar, bubble, formEditar));
+        inputEditar.addEventListener('keydown', e => {
+          if (e.key === 'Enter') editarMensaje(msg.id, inputEditar, bubble, formEditar);
+          if (e.key === 'Escape') formEditar.classList.add('d-none');
+        });
+      }
+
+      panel.appendChild(wrapper);
     });
-}
+    panel.scrollTop = panel.scrollHeight;
+  }
 
-// Manejar envío del formulario (solo si visible)
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.getElementById('chat-form-eca');
-  if(form) {
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const input = document.getElementById('chat-input-eca');
-      const msg = input.value.trim();
-      if (!msg || !currentChatIdEca) return;
-      input.disabled = true;
-      fetch(`/mensajes/${currentChatIdEca}/mensajes/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ texto: msg })
-      }).then(resp => {
+  function editarMensaje(msgId, inputEl, bubble, formEl) {
+    const nuevoTexto = inputEl.value.trim();
+    if (!nuevoTexto || !currentChatIdEca) return;
+    fetch(`/mensajes/${currentChatIdEca}/mensajes/${msgId}/editar/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ texto: nuevoTexto })
+    }).then(r => {
+      if (r.ok) {
+        bubble.querySelector('.mensaje-texto').textContent = nuevoTexto;
+        formEl.classList.add('d-none');
+        // Mostrar badge editado si no existe
+        if (!bubble.querySelector('.badge-editado')) {
+          const meta = bubble.querySelector('.chat-meta');
+          const badge = document.createElement('span');
+          badge.className = 'text-muted badge-editado ms-1';
+          badge.style.fontSize = '.65rem';
+          badge.textContent = '(editado)';
+          meta.appendChild(badge);
+        }
+      } else {
+        r.json().then(d => alert(d.texto || d.detail || 'Error al editar.'));
+      }
+    }).catch(() => alert('Error de conexión.'));
+  }
+
+  // ----- Enviar mensaje -----
+  document.getElementById('chat-form-eca').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const input = document.getElementById('chat-input-eca');
+    const msg = input.value.trim();
+    if (!msg || !currentChatIdEca) return;
+    input.disabled = true;
+    fetch(`/mensajes/${currentChatIdEca}/mensajes/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ texto: msg })
+    })
+      .then(resp => {
         if (resp.ok) {
           input.value = '';
-          // Reload mensajes after sending
-          return fetch(`/mensajes/${currentChatIdEca}/mensajes/`)
-            .then(r => r.json())
-            .then(msgs => renderMensajesEca(msgs, document.getElementById('chat-titulo-ciudadano').innerText));
+          cargarMensajesEca(currentChatIdEca);
+        } else {
+          return resp.json().then(data => { throw data; });
         }
-        return resp.json().then(data => { throw data; });
-      }).catch(err => {
-        let errorMsg = err && (err.texto || err.detail) ? err.texto || err.detail : 'Error al enviar mensaje';
-        const mensajesPanel = document.getElementById('chat-mensajes-eca');
+      })
+      .catch(err => {
+        const panel = document.getElementById('chat-mensajes-eca');
         const errDiv = document.createElement('div');
-        errDiv.className = 'text-danger small py-2';
-        errDiv.innerHTML = errorMsg;
-        mensajesPanel.appendChild(errDiv);
-        setTimeout(()=>errDiv.remove(), 3000);
-      }).finally(()=>{ input.disabled = false; });
-    });
-  }
-});
+        errDiv.className = 'text-danger small text-center py-1';
+        errDiv.textContent = (err && (err.texto || err.detail)) || 'Error al enviar mensaje.';
+        panel.appendChild(errDiv);
+        setTimeout(() => errDiv.remove(), 3000);
+      })
+      .finally(() => { input.disabled = false; });
+  });
 
+  // ----- Inicializar al cargar -----
+  cargarChatsEca();
 </script>
-

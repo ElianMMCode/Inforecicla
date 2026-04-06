@@ -41,6 +41,7 @@ class Mensaje(models.Model):
     texto = models.TextField()
     enviado_en = models.DateTimeField(auto_now_add=True)
     leido = models.BooleanField(default=False)
+    editado = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Mensaje de {self.remitente} en chat {self.chat.id}"

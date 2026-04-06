@@ -35,6 +35,9 @@ urlpatterns = [
     path("login/", views.render_login, name="login"),
     path("logout/", LogoutView.as_view(next_page="/login/"), name="logout"),
     path("perfil/", views.perfil_ciudadano, name="perfil_ciudadano"),
+    path("perfil/comentarios/", views.perfil_ciudadano, {"tab": "comentarios"}, name="perfil_comentarios"),
+    path("perfil/mensajes/", views.perfil_ciudadano, {"tab": "chat"}, name="perfil_mensajes"),
+    path("perfil/guardados/", views.perfil_ciudadano, {"tab": "guardados"}, name="perfil_guardados"),
     path(
         "perfil/actualizar/",
         views.actualizar_datos_ciudadano,

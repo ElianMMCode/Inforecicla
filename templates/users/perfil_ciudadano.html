@@ -141,13 +141,13 @@
 
             <ul class="nav flex-column gap-2">
                 <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded active bg-white bg-opacity-25" href="#datos" data-bs-toggle="tab">
+                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'datos' or not tab_activo %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_ciudadano' %}">
                         <i class="bi bi-person-fill fs-5 me-3"></i>
                         <span class="fw-semibold">Mis Datos</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="#comentarios" data-bs-toggle="tab">
+                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'comentarios' %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_comentarios' %}">
                         <i class="bi bi-chat-left-text-fill fs-5 me-3"></i>
                         <span class="fw-semibold">Mis Comentarios</span>
                         {% if mis_comentarios %}
@@ -156,13 +156,13 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="#chat" data-bs-toggle="tab">
-                                        <i class="bi bi-chat-dots-fill fs-5 me-3"></i>
-                                        <span class="fw-semibold">Mensajes</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="#guardados" data-bs-toggle="tab">
+                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'chat' %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_mensajes' %}">
+                        <i class="bi bi-chat-dots-fill fs-5 me-3"></i>
+                        <span class="fw-semibold">Mensajes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'guardados' %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_guardados' %}">
                         <i class="bi bi-bookmark-fill fs-5 me-3"></i>
                         <span class="fw-semibold">Guardados</span>
                         {% if mis_guardados %}
@@ -238,7 +238,7 @@
             {% endif %}
 
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="datos">
+                <div class="tab-pane fade {% if tab_activo == 'datos' or not tab_activo %}show active{% endif %}" id="datos">
                     <div class="row g-4">
                         <!-- Tarjeta de resumen -->
                         <div class="col-12">
@@ -448,7 +448,7 @@
                 </div>
 
                 <!-- Tab: Guardados -->
-                <div class="tab-pane fade" id="guardados">
+                <div class="tab-pane fade {% if tab_activo == 'guardados' %}show active{% endif %}" id="guardados">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <div>
                             <h4 class="fw-bold text-success mb-0"><i class="bi bi-bookmark-fill me-2"></i>Publicaciones Guardadas</h4>
@@ -507,7 +507,7 @@
                 </div>
 
                 <!-- Tab: Mis Comentarios -->
-                <div class="tab-pane fade" id="comentarios">
+                <div class="tab-pane fade {% if tab_activo == 'comentarios' %}show active{% endif %}" id="comentarios">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <div>
                             <h4 class="fw-bold text-success mb-0"><i class="bi bi-chat-left-text-fill me-2"></i>Mis Comentarios</h4>
@@ -561,7 +561,7 @@
                 </div>
 
                 <!-- Tab: Mensajes -->
-                <div class="tab-pane fade" id="chat">
+                <div class="tab-pane fade {% if tab_activo == 'chat' %}show active{% endif %}" id="chat">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <div>
                             <h4 class="fw-bold text-success mb-0"><i class="bi bi-chat-dots-fill me-2"></i>Mensajes</h4>
@@ -925,18 +925,85 @@
             chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
             return;
         }
-        chatMensajes.innerHTML = mensajes.map(m => {
+        chatMensajes.innerHTML = '';
+        mensajes.forEach(m => {
             const esCiudadano = String(m.remitente) === String(window.CIUDADANO_USER_ID);
-            return `<div class="d-flex mb-2 ${esCiudadano ? 'justify-content-end' : 'justify-content-start'}">
-                <div class="chat-bubble ${esCiudadano ? 'bubble-ciudadano' : 'bubble-punto'}">
-                    <span class="mensaje-texto">${m.texto}</span>
-                    <div class="chat-meta small mt-1">
-                        <span class="${esCiudadano ? 'text-success' : 'text-secondary'} fw-semibold">${esCiudadano ? 'Tu' : 'Punto ECA'}</span>
-                        <span class="text-muted ms-2" style="font-size:0.8em">${m.enviado_en ? new Date(m.enviado_en).toLocaleString('es-ES') : ''}</span>
+            const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
+            const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
+            const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
+            const fecha = m.enviado_en ? new Date(m.enviado_en).toLocaleString('es-ES') : '';
+            const editadoBadge = m.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = `d-flex ${justify} mb-1`;
+            wrapper.innerHTML = `
+                <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${m.id}">
+                    <div class="mensaje-texto">${m.texto}</div>
+                    <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+                        <span class="fw-semibold">${nombreLabel}</span>
+                        <span class="text-muted">${fecha}</span>
+                        ${editadoBadge}
+                        ${esCiudadano ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${m.id}" title="Editar" style="font-size:.75rem;color:#198754;line-height:1;">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>` : ''}
                     </div>
-                </div>
-            </div>`;
-        }).join('');
+                    <div class="form-editar-msg d-none mt-2">
+                        <div class="d-flex gap-1">
+                            <input type="text" class="form-control form-control-sm input-editar" value="${m.texto.replace(/"/g,'&quot;')}" maxlength="500" style="border-radius:12px;">
+                            <button class="btn btn-success btn-sm btn-confirmar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-check-lg"></i></button>
+                            <button class="btn btn-secondary btn-sm btn-cancelar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+
+            const bubble = wrapper.querySelector('.chat-bubble');
+            const btnEditar = wrapper.querySelector('.btn-editar-msg');
+            const formEditar = wrapper.querySelector('.form-editar-msg');
+            const inputEditar = wrapper.querySelector('.input-editar');
+            const btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
+            const btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
+
+            if (btnEditar) {
+                btnEditar.addEventListener('click', () => { formEditar.classList.remove('d-none'); inputEditar.focus(); });
+                btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
+                btnConfirmar.addEventListener('click', () => editarMensajeCiudadano(m.id, inputEditar, bubble, formEditar));
+                inputEditar.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') editarMensajeCiudadano(m.id, inputEditar, bubble, formEditar);
+                    if (e.key === 'Escape') formEditar.classList.add('d-none');
+                });
+            }
+            chatMensajes.appendChild(wrapper);
+        });
+        chatMensajes.scrollTop = chatMensajes.scrollHeight;
+    }
+
+    function editarMensajeCiudadano(msgId, inputEl, bubble, formEl) {
+        const nuevoTexto = inputEl.value.trim();
+        if (!nuevoTexto || !currentChatId) return;
+        fetch(`/mensajes/${currentChatId}/mensajes/${msgId}/editar/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ texto: nuevoTexto })
+        }).then(r => {
+            if (r.ok) {
+                bubble.querySelector('.mensaje-texto').textContent = nuevoTexto;
+                formEl.classList.add('d-none');
+                if (!bubble.querySelector('.badge-editado')) {
+                    const meta = bubble.querySelector('.chat-meta');
+                    const badge = document.createElement('span');
+                    badge.className = 'text-muted badge-editado ms-1';
+                    badge.style.fontSize = '.65rem';
+                    badge.textContent = '(editado)';
+                    meta.appendChild(badge);
+                }
+            } else {
+                r.json().then(d => alert(d.texto || d.detail || 'Error al editar.'));
+            }
+        }).catch(() => alert('Error de conexión.'));
     }
     
 
@@ -1006,9 +1073,40 @@
         setTimeout(cargarChatsCiudadano, 0); // Refrescar historial de chats al entrar a la pestaña
       });
     }
-    // Inicializar al vuelo si la pestaña ya está visible
+    // Inicializar al vuelo si la pestaña ya está visible (viene activa desde el servidor)
     if (document.querySelector('#chat').classList.contains('active')) {
       setTimeout(initSelect2PuntosECA, 0);
+      setTimeout(cargarChatsCiudadano, 0);
+    }
+
+    // Auto-abrir chat con un punto ECA si viene ?chat_punto=<UUID> desde el mapa
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatPuntoId = urlParams.get('chat_punto');
+    if (chatPuntoId) {
+        // Tab ya activo por el servidor — solo iniciar el chat
+        setTimeout(async function () {
+            initSelect2PuntosECA();
+            await cargarChatsCiudadano();
+            let chat = chatsCiudadano.find(c => String(c.punto) === String(chatPuntoId));
+            if (!chat) {
+                // Crear nuevo chat con ese punto
+                try {
+                    const resp = await fetch('/mensajes/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ punto: chatPuntoId })
+                    });
+                    if (resp.ok) {
+                        await cargarChatsCiudadano();
+                    }
+                } catch (e) { /* silencioso */ }
+            }
+            await cargarMensajesDePunto(chatPuntoId);
+        }, 300);
     }
 </script>
 </body>
