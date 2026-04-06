@@ -1,0 +1,248 @@
+[
+{
+  "model": "publicaciones.categoriapublicacion",
+  "pk": "22222222-2222-2222-2222-222222222222",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-03-27T02:59:55.125Z",
+    "fecha_modificacion": "2026-04-01T23:34:34.043Z",
+    "tipo": "Noticia"
+  }
+},
+{
+  "model": "publicaciones.categoriapublicacion",
+  "pk": "cae43657-4247-4db7-9426-7d3d71102d0f",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-01T23:10:16.497Z",
+    "fecha_modificacion": "2026-04-01T23:34:41.238Z",
+    "tipo": "Evento"
+  }
+},
+{
+  "model": "publicaciones.publicacion",
+  "pk": "33333333-3333-3333-3333-333333333333",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-03-27T02:59:55.125Z",
+    "titulo": "Bienvenidos al módulo de publicaciones de InfoRecicla",
+    "fecha_creacion": "2026-03-27T02:59:55.125Z",
+    "categoria": "22222222-2222-2222-2222-222222222222",
+    "contenido": "Esta publicación de demostración fue creada para validar el panel de publicaciones. Desde aquí puedes verificar que el módulo lista contenido, muestra una publicación destacada y permite navegar al detalle individual.",
+    "video": "",
+    "video_thumbnail": "",
+    "usuario": "11111111-1111-1111-1111-111111111111"
+  }
+},
+{
+  "model": "publicaciones.publicacion",
+  "pk": "3ea0aba2-792e-4936-bc0e-b02e2680162a",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-02T00:04:20.292Z",
+    "titulo": "Campañaaa",
+    "fecha_creacion": "2026-04-02T00:04:20.292Z",
+    "categoria": "22222222-2222-2222-2222-222222222222",
+    "contenido": "asdfgwertgtrhnjyujkyurkuiytrertyuerytuytjgkjvcncvcxvbftghwrtywretyrtyrtyrty",
+    "video": "",
+    "video_thumbnail": "",
+    "usuario": "7c17a4ad-bb64-4de9-9756-f0c1f856bef2"
+  }
+},
+{
+  "model": "publicaciones.publicacion",
+  "pk": "6930d147-a5c5-4ce9-9795-61995848b006",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-03T16:40:05.017Z",
+    "titulo": "¿Por que el reciclaje es importante?",
+    "fecha_creacion": "2026-04-03T16:40:05.017Z",
+    "categoria": "cae43657-4247-4db7-9426-7d3d71102d0f",
+    "contenido": "Reciclar no es solo separar residuos, es una forma de cuidar nuestro entorno y asegurar un mejor futuro. Cada acción cuenta: reutilizar, reducir y reciclar ayuda a disminuir la contaminación y a aprovechar mejor los recursos. Hoy es un buen día para empezar",
+    "video": "",
+    "video_thumbnail": "",
+    "usuario": "7c17a4ad-bb64-4de9-9756-f0c1f856bef2"
+  }
+},
+{
+  "model": "publicaciones.imagenpublicacion",
+  "pk": 1,
+  "fields": {
+    "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+    "imagen": "publicaciones/imagenes/images.jfif",
+    "descripcion": ""
+  }
+},
+{
+  "model": "publicaciones.comentario",
+  "pk": "0e78179f-4d03-412c-9bd8-83eeb42669cd",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-02T01:12:40.261Z",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f",
+    "publicacion": "33333333-3333-3333-3333-333333333333",
+    "tipo": "Noticia",
+    "texto": "djksabghfhweb",
+    "fecha_creacion": "2026-04-02T01:12:40.261Z"
+  }
+},
+{
+  "model": "publicaciones.comentario",
+  "pk": "1a857ce0-a614-4cce-8b42-83aeb4a51b85",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-01T02:11:44.500Z",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f",
+    "publicacion": "33333333-3333-3333-3333-333333333333",
+    "tipo": "NOTIC",
+    "texto": "holass",
+    "fecha_creacion": "2026-04-01T01:03:30.522Z"
+  }
+},
+{
+  "model": "publicaciones.comentario",
+  "pk": "21a376c4-343e-4af9-ad65-a4a2146267d0",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-05T01:25:33.927Z",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f",
+    "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+    "tipo": "Noticia",
+    "texto": "asdad",
+    "fecha_creacion": "2026-04-05T01:25:33.927Z"
+  }
+},
+{
+  "model": "publicaciones.comentario",
+  "pk": "403455c3-fa96-42ae-865e-351d084db24e",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-02T01:13:29.548Z",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f",
+    "publicacion": "3ea0aba2-792e-4936-bc0e-b02e2680162a",
+    "tipo": "Noticia",
+    "texto": "asdasd",
+    "fecha_creacion": "2026-04-02T01:13:01.222Z"
+  }
+},
+{
+  "model": "publicaciones.comentario",
+  "pk": "4e2bf97b-ab90-4618-bfa1-677e7aa8c819",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-04T06:11:48.000Z",
+    "usuario": "18c4f0be-8094-4be5-83ae-bf262cf2d72e",
+    "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+    "tipo": "Noticia",
+    "texto": "Buena publicacion",
+    "fecha_creacion": "2026-04-04T06:11:48.000Z"
+  }
+},
+{
+  "model": "publicaciones.comentario",
+  "pk": "662a8092-9e56-4850-951d-0be8f4be88be",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-01T23:52:03.802Z",
+    "usuario": "fbc1ba58-1b24-43f5-a09c-8dfbfe3c0f9e",
+    "publicacion": "33333333-3333-3333-3333-333333333333",
+    "tipo": "Noticia",
+    "texto": "Gran publicacion",
+    "fecha_creacion": "2026-04-01T23:52:03.802Z"
+  }
+},
+{
+  "model": "publicaciones.comentario",
+  "pk": "e5f3c08a-247e-4949-8e8d-23c98f5ed53f",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_modificacion": "2026-04-01T02:31:34.308Z",
+    "usuario": "c4e964ef-75a6-4b88-b23e-d04c1a027c89",
+    "publicacion": "33333333-3333-3333-3333-333333333333",
+    "tipo": "NOTIC",
+    "texto": "Buena publicacion",
+    "fecha_creacion": "2026-04-01T02:14:15.023Z"
+  }
+},
+{
+  "model": "publicaciones.reaccion",
+  "pk": "4a96063e-9bad-4ce0-a2ae-b90aeb8384e1",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-03T05:38:27.579Z",
+    "fecha_modificacion": "2026-04-03T05:38:27.579Z",
+    "valor": "Like",
+    "publicacion": "3ea0aba2-792e-4936-bc0e-b02e2680162a",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f"
+  }
+},
+{
+  "model": "publicaciones.reaccion",
+  "pk": "4d8d591a-1094-4b74-9147-a9e9ee2deba1",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-05T01:25:21.218Z",
+    "fecha_modificacion": "2026-04-05T01:25:21.218Z",
+    "valor": "Like",
+    "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f"
+  }
+},
+{
+  "model": "publicaciones.reaccion",
+  "pk": "53a9cc3b-1665-4044-8e94-dc206bb4fbe4",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-01T23:51:50.346Z",
+    "fecha_modificacion": "2026-04-01T23:51:50.346Z",
+    "valor": "Like",
+    "publicacion": "33333333-3333-3333-3333-333333333333",
+    "usuario": "fbc1ba58-1b24-43f5-a09c-8dfbfe3c0f9e"
+  }
+},
+{
+  "model": "publicaciones.reaccion",
+  "pk": "695b423c-45d9-443a-a6fb-7f199fca18ab",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-02T01:12:27.823Z",
+    "fecha_modificacion": "2026-04-02T01:12:31.589Z",
+    "valor": "Dislike",
+    "publicacion": "33333333-3333-3333-3333-333333333333",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f"
+  }
+},
+{
+  "model": "publicaciones.guardados",
+  "pk": "23a1d7c1-ab14-4298-a410-b4e7adedb7e2",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-05T01:25:44.885Z",
+    "fecha_modificacion": "2026-04-05T01:25:44.886Z",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f",
+    "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006"
+  }
+},
+{
+  "model": "publicaciones.guardados",
+  "pk": "39d284ff-e5fe-486a-8286-5ce3047ac568",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-04T06:12:14.198Z",
+    "fecha_modificacion": "2026-04-04T06:12:14.198Z",
+    "usuario": "18c4f0be-8094-4be5-83ae-bf262cf2d72e",
+    "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006"
+  }
+},
+{
+  "model": "publicaciones.guardados",
+  "pk": "7e50661e-ec24-487e-b21d-b19c8f8eb3b3",
+  "fields": {
+    "estado": "ACTIVO",
+    "fecha_creacion": "2026-04-03T15:55:55.372Z",
+    "fecha_modificacion": "2026-04-03T15:55:55.372Z",
+    "usuario": "2e6aee83-2823-4328-991f-8c1db286830f",
+    "publicacion": "3ea0aba2-792e-4936-bc0e-b02e2680162a"
+  }
+}
+]
