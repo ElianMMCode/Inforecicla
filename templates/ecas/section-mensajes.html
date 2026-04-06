@@ -164,16 +164,77 @@
       });
   }
 
-  // ----- Cargar mensajes del chat -----
+  // --- Estado global ---
+  let currentWSEca = null;
+
+  // ----- Cargar mensajes del chat, setup WS -----
   function cargarMensajesEca(chatId) {
+    cerrarWSEca();
     const panel = document.getElementById('chat-mensajes-eca');
     panel.innerHTML = '<div class="text-muted text-center small py-3">Cargando mensajes...</div>';
     fetch(`/mensajes/${chatId}/mensajes/`, { credentials: 'same-origin' })
       .then(r => r.json())
-      .then(msgs => renderMensajesEca(msgs))
+      .then(msgs => {
+        renderMensajesEca(msgs);
+        iniciarWSEca(chatId);
+      })
       .catch(() => {
         panel.innerHTML = '<div class="text-danger text-center small py-3">Error al cargar mensajes.</div>';
       });
+  }
+
+  // --- WebSocket realtime ---
+  function iniciarWSEca(chatId) {
+    cerrarWSEca();
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${protocol}://${window.location.host}/ws/chat/${chatId}/`;
+    currentWSEca = new WebSocket(url);
+    currentWSEca.onmessage = function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.message) {
+          anadirMensajeRealtimeEca({
+            texto: data.message,
+            remitente: data.user_id,
+            enviado_en: new Date().toISOString()
+          });
+        }
+      } catch (e) { /* ignore */ }
+    };
+    currentWSEca.onclose = function() {/* opcional: reconectar here */};
+  }
+  function cerrarWSEca() {
+    if (currentWSEca) {
+      try { currentWSEca.close(); } catch(e){}
+      currentWSEca = null;
+    }
+  }
+  function anadirMensajeRealtimeEca(mensaje) {
+    const panel = document.getElementById('chat-mensajes-eca');
+    if (panel.innerHTML.includes('no hay mensajes')) {
+      panel.innerHTML = '';
+    }
+    const remitenteStr = mensaje.remitente ? String(mensaje.remitente) : '';
+    const gestorIdStr = String(window.GESTOR_USER_ID);
+    const esGestor = remitenteStr && remitenteStr === gestorIdStr;
+    const bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
+    const justify = esGestor ? 'justify-content-end' : 'justify-content-start';
+    const nombreLabel = esGestor ? 'Tú' : (currentCiudadanoNombre || 'Ciudadano');
+    const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
+    // Crear burbuja clonando el render de mensajes históricos
+    const wrapper = document.createElement('div');
+    wrapper.className = `d-flex ${justify} mb-1`;
+    wrapper.innerHTML = `
+      <div class="chat-bubble ${bubbleClass} position-relative">
+        <div class="mensaje-texto">${mensaje.texto}</div>
+        <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+          <span class="fw-semibold">${nombreLabel}</span>
+          <span class="text-muted">${fecha}</span>
+        </div>
+      </div>
+    `;
+    panel.appendChild(wrapper);
+    panel.scrollTop = panel.scrollHeight;
   }
 
   // ----- Renderizar mensajes -----
@@ -273,39 +334,60 @@
     }).catch(() => alert('Error de conexión.'));
   }
 
-  // ----- Enviar mensaje -----
-  document.getElementById('chat-form-eca').addEventListener('submit', function (e) {
+  // ----- Enviar mensaje (ahora con WebSocket optimista + fallback AJAX) -----
+  document.getElementById('chat-form-eca').addEventListener('submit', async function (e) {
     e.preventDefault();
     const input = document.getElementById('chat-input-eca');
     const msg = input.value.trim();
     if (!msg || !currentChatIdEca) return;
     input.disabled = true;
-    fetch(`/mensajes/${currentChatIdEca}/mensajes/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
-      },
-      credentials: 'same-origin',
-      body: JSON.stringify({ texto: msg })
-    })
-      .then(resp => {
+    let errorMsg = '';
+    // Preferentemente usar WebSocket para enviar el mensaje
+    if (currentWSEca && currentWSEca.readyState === 1) {
+      try {
+        currentWSEca.send(JSON.stringify({ message: msg }));
+        input.value = '';
+        input.disabled = false;
+        // El mensaje vendrá por onmessage (pero podríamos hacer optimista si necesitás UX+)
+      } catch (err) {
+        errorMsg = 'Error al enviar por WebSocket';
+        input.disabled = false;
+      }
+    } else {
+      // Fallback a fetch/AJAX si no hay WS
+      try {
+        const resp = await fetch(`/mensajes/${currentChatIdEca}/mensajes/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ texto: msg })
+        });
         if (resp.ok) {
           input.value = '';
           cargarMensajesEca(currentChatIdEca);
         } else {
-          return resp.json().then(data => { throw data; });
+          try {
+            const data = await resp.json();
+            errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
+          } catch {
+            errorMsg = 'Error al enviar mensaje';
+          }
         }
-      })
-      .catch(err => {
-        const panel = document.getElementById('chat-mensajes-eca');
-        const errDiv = document.createElement('div');
-        errDiv.className = 'text-danger small text-center py-1';
-        errDiv.textContent = (err && (err.texto || err.detail)) || 'Error al enviar mensaje.';
-        panel.appendChild(errDiv);
-        setTimeout(() => errDiv.remove(), 3000);
-      })
-      .finally(() => { input.disabled = false; });
+      } catch (err) {
+        errorMsg = 'Error al conectar con el servidor';
+      }
+      input.disabled = false;
+    }
+    if (errorMsg) {
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'text-danger small mt-2';
+      errorDiv.innerHTML = errorMsg;
+      input.parentElement.appendChild(errorDiv);
+      setTimeout(()=>errorDiv.remove(), 3000);
+    }
   });
 
   // ----- Inicializar al cargar -----
