@@ -7,4 +7,5 @@ SECTION_TEMPLATES = {
     "materiales": "ecas/section-materiales.html",
     "movimientos": "ecas/section-movimientos.html",
     "perfil": "ecas/section-perfil.html",
+    "mensajes": "ecas/section-mensajes.html",
 }

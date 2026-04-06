@@ -1,6 +1,7 @@
 from django.urls import path, include
 from apps.ecas.views import render_seccion, editar_perfil_gestor, editar_punto
 from . import views
+from apps.chat.views import PuntoChatListView
 
 # Este archivo contiene rutas propias de secciones del punto-eca y edición de perfil.
 app_name = "punto-eca"
@@ -9,6 +10,8 @@ urlpatterns = [
     path("", render_seccion, {"seccion": "resumen"}, name="render_seccion"),
     path("calendario/", render_seccion, {"seccion": "calendario"}, name="calendario"),
     path("centros/", render_seccion, {"seccion": "centros"}, name="centros"),
+    path("mensajes/", render_seccion, {"seccion": "mensajes"}, name="mensajes"),
+    path("mensajes/chats/", PuntoChatListView.as_view(), name="mensajes-chats"),
     path(
         "configuracion/",
         render_seccion,

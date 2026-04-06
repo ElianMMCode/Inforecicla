@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.chat.models import Chat, Mensaje
 
+
 class ChatSerializer(serializers.ModelSerializer):
     punto_nombre = serializers.CharField(source='punto.nombre', read_only=True)
 
@@ -12,6 +13,5 @@ class ChatSerializer(serializers.ModelSerializer):
 class MensajeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mensaje
-        fields = ['id', 'chat', 'remitente', 'texto', 'enviado_en', 'leido']
-        read_only_fields = ['chat', 'remitente']
-
+        fields = ["id", "chat", "remitente", "texto", "enviado_en", "leido"]
+        read_only_fields = ["chat", "remitente"]

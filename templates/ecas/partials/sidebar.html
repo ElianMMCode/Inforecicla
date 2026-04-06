@@ -141,6 +141,12 @@
                 <i class="bi bi-building me-2"></i>Centros
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'mensajes' %}active{% endif %}"
+               href="{% url 'punto-eca:mensajes' %}">
+                <i class="bi bi-chat-dots-fill me-2"></i>Mensajes
+            </a>
+        </li>
         <li class="nav-item dropdown sidebar-dropdown">
             <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'perfil' %}active{% endif %} sidebar-dropdown-toggle"
                href="{% url 'punto-eca:perfil' %}">
