@@ -9,6 +9,7 @@ urlpatterns = [
     path("", render_seccion, {"seccion": "resumen"}, name="render_seccion"),
     path("calendario/", render_seccion, {"seccion": "calendario"}, name="calendario"),
     path("centros/", render_seccion, {"seccion": "centros"}, name="centros"),
+    path("mensajes/", render_seccion, {"seccion": "mensajes"}, name="mensajes"),
     path(
         "configuracion/",
         render_seccion,
