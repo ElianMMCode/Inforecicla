@@ -31,6 +31,66 @@ def render_login(request):
     return render(request, "users/login.html", {"errores": errores})
 
 
+def recuperar_contrasena(request):
+    errores = []
+    mostrar_reset = False
+    email = ""
+
+    if request.method == "POST":
+        accion = request.POST.get("action", "buscar")
+        email = request.POST.get("email", "").strip().lower()
+
+        if accion == "buscar":
+            if not email:
+                errores.append("Debes ingresar un correo electrónico.")
+            else:
+                usuario = Usuario.objects.filter(email=email, is_active=True).first()
+                if usuario is None:
+                    errores.append("No existe una cuenta registrada con ese correo.")
+                else:
+                    request.session["recovery_user_id"] = str(usuario.pk)
+                    mostrar_reset = True
+
+        elif accion == "reset":
+            nueva_password = request.POST.get("password", "")
+            confirmar_password = request.POST.get("passwordConfirm", "")
+            recovery_user_id = request.session.get("recovery_user_id")
+            usuario = Usuario.objects.filter(email=email, is_active=True).first()
+
+            if usuario is None or recovery_user_id != str(usuario.pk):
+                errores.append(
+                    "Debes validar primero tu correo para poder restablecer la contraseña."
+                )
+            elif not nueva_password or not confirmar_password:
+                errores.append("Debes completar ambos campos de contraseña.")
+                mostrar_reset = True
+            elif len(nueva_password) < 8:
+                errores.append("La nueva contraseña debe tener al menos 8 caracteres.")
+                mostrar_reset = True
+            elif nueva_password != confirmar_password:
+                errores.append("Las contraseñas no coinciden.")
+                mostrar_reset = True
+            else:
+                usuario.set_password(nueva_password)
+                usuario.save()
+                request.session.pop("recovery_user_id", None)
+                messages.success(
+                    request,
+                    "Tu contraseña se restableció correctamente. Ahora puedes iniciar sesión.",
+                )
+                return redirect("login")
+
+    return render(
+        request,
+        "users/recuperar_contrasena.html",
+        {
+            "errores": errores,
+            "mostrar_reset": mostrar_reset,
+            "email": email,
+        },
+    )
+
+
 def render_registro_eca(request):
     if request.method == "POST":
         # Obtenemos los datos del formulario

@@ -2,12 +2,12 @@ from django.db import models
 
 from apps.users.models import Usuario
 from config import constants
-from config.base_models import CreacionModificacionModel
+from config.base_models import CreacionModificacionModel, DescripcionModel
 # Create your models here.
 
 
 ##########################################################
-class CategoriaPublicacion(CreacionModificacionModel):
+class CategoriaPublicacion(DescripcionModel):
     tipo = models.CharField(
         max_length=30,
         null=False,

@@ -68,7 +68,7 @@ class PublicacionService:
 
         return {
             "publicaciones": publicaciones,
-            "categorias": CategoriaPublicacion.objects.order_by("tipo"),
+            "categorias": CategoriaPublicacion.objects.order_by("nombre", "tipo"),
             "publicacion_destacada": publicacion_destacada,
             "filtros": {
                 "q": query,

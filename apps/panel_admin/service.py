@@ -57,6 +57,35 @@ class AdminCatalogService:
     """Servicio para administradores - gestion de catalogos"""
 
     @staticmethod
+    def _tipos_publicacion_disponibles(excluir_categoria_id=None):
+        tipos = list(cons.TipoPublicacion.choices)
+        valores = {value for value, _ in tipos}
+
+        try:
+            from apps.publicaciones.models import CategoriaPublicacion
+
+            categorias = CategoriaPublicacion.objects.all()
+            if excluir_categoria_id:
+                categorias = categorias.exclude(pk=excluir_categoria_id)
+
+            nombres = (
+                categorias.exclude(nombre__isnull=True)
+                .exclude(nombre="")
+                .values_list("nombre", flat=True)
+                .distinct()
+                .order_by("nombre")
+            )
+
+            for nombre in nombres:
+                if nombre not in valores:
+                    tipos.append((nombre, nombre))
+                    valores.add(nombre)
+        except Exception:
+            pass
+
+        return tipos
+
+    @staticmethod
     @transaction.atomic
     def crear_tipo_material(data):
         nombre = (data.get("nombre") or "").strip()
@@ -108,13 +137,12 @@ class AdminCatalogService:
 
     @staticmethod
     @transaction.atomic
-    def crear_material(data):
+    def crear_material(data, files=None):
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip() or None
         estado = (data.get("estado") or "ACTIVO").strip().upper()
         categoria_id = data.get("categoria_id")
         tipo_id = data.get("tipo_id")
-        imagen_url = (data.get("imagen_url") or "").strip()
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if not nombre:
@@ -138,7 +166,10 @@ class AdminCatalogService:
 
         try:
             obj = Material(nombre=nombre, descripcion=descripcion, estado=estado,
-                           categoria=categoria, tipo=tipo, imagen_url=imagen_url)
+                           categoria=categoria, tipo=tipo)
+            # Si se sube una imagen, Django se encarga de guardarla automáticamente
+            if files and "imagen" in files:
+                obj.imagen = files["imagen"]
             obj.full_clean()
             obj.save()
             return {"ok": True, "message": "Material creado correctamente."}
@@ -156,19 +187,50 @@ class AdminCatalogService:
                 "message": "El modulo de publicaciones no esta habilitado en la configuracion actual.",
             }
 
+        nombre = (data.get("nombre") or "").strip()
+        descripcion = (data.get("descripcion") or "").strip()
         tipo = (data.get("tipo") or "").strip()
+        tipo_otro = (data.get("tipo_otro") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
 
-        tipos_validos = {value for value, _ in cons.TipoPublicacion.choices}
+        # Si el usuario selecciona "Otro tipo", tomar el valor del input libre.
+        if tipo == "__otro__":
+            tipo = tipo_otro
+
+        if not tipo:
+            return {"ok": False, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
+        if len(tipo) > 30:
+            return {"ok": False, "message": "El tipo no puede exceder 30 caracteres."}
+
+        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         estados_validos = {value for value, _ in cons.Estado.choices}
-        if tipo not in tipos_validos:
-            return {"ok": False, "message": "Tipo de categoria invalido."}
         if estado not in estados_validos:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
         try:
-            obj = CategoriaPublicacion(tipo=tipo, estado=estado)
-            obj.full_clean()
+            # El modelo puede o no incluir nombre/descripcion según la versión actual del proyecto.
+            campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
+            payload = {"tipo": tipo, "estado": estado}
+
+            if "nombre" in campos_modelo:
+                if not nombre:
+                    return {"ok": False, "message": "El nombre de la categoría es obligatorio."}
+                if len(nombre) > 30:
+                    return {"ok": False, "message": "El nombre no puede exceder 30 caracteres."}
+                payload["nombre"] = nombre
+
+            if "descripcion" in campos_modelo:
+                if len(descripcion) > 500:
+                    return {"ok": False, "message": "La descripción no puede exceder 500 caracteres."}
+                payload["descripcion"] = descripcion
+
+            obj = CategoriaPublicacion(**payload)
+
+            if tipo in tipos_base:
+                obj.full_clean()
+            else:
+                obj.clean_fields(exclude=["tipo"])
+
             obj.save()
             return {"ok": True, "message": "Categoria de publicacion creada correctamente."}
         except (ValidationError, IntegrityError) as e:
@@ -230,7 +292,7 @@ class AdminCatalogService:
 
     @staticmethod
     @transaction.atomic
-    def actualizar_material(material_id, data):
+    def actualizar_material(material_id, data, files=None):
         material = Material.objects.filter(id=material_id).first()
         if not material:
             return {"ok": False, "message": "Material no encontrado."}
@@ -240,7 +302,6 @@ class AdminCatalogService:
         estado = (data.get("estado") or "").strip().upper()
         categoria_id = data.get("categoria_id")
         tipo_id = data.get("tipo_id")
-        imagen_url = (data.get("imagen_url") or "").strip()
 
         if not nombre:
             return {"ok": False, "message": "El nombre es obligatorio."}
@@ -267,7 +328,11 @@ class AdminCatalogService:
             material.estado = estado
             material.categoria = categoria
             material.tipo = tipo
-            material.imagen_url = imagen_url
+            
+            # Si se sube una imagen, Django se encarga de guardarla automáticamente
+            if files and "imagen" in files:
+                material.imagen = files["imagen"]
+            
             material.full_clean()
             material.save()
             return {"ok": True, "message": "Material actualizado correctamente."}
@@ -371,20 +436,49 @@ class AdminCatalogService:
         if not categoria:
             return {"ok": False, "message": "Categoria de publicacion no encontrada."}
 
+        nombre = (data.get("nombre") or "").strip()
+        descripcion = (data.get("descripcion") or "").strip()
         tipo = (data.get("tipo") or "").strip()
+        tipo_otro = (data.get("tipo_otro") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
 
-        tipos_validos = {value for value, _ in cons.TipoPublicacion.choices}
+        if tipo == "__otro__":
+            tipo = tipo_otro
+
+        if not tipo:
+            return {"ok": False, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
+        if len(tipo) > 30:
+            return {"ok": False, "message": "El tipo no puede superar 30 caracteres."}
+
+        tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
+        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         estados_validos = {value for value, _ in cons.Estado.choices}
-        if tipo not in tipos_validos:
+        if tipo not in tipos_validos and tipo != tipo_otro:
             return {"ok": False, "message": "Tipo de categoria invalido."}
         if estado not in estados_validos:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
         try:
+            campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
+
+            if "nombre" in campos_modelo:
+                if not nombre:
+                    return {"ok": False, "message": "El nombre de la categoría es obligatorio."}
+                if len(nombre) > 30:
+                    return {"ok": False, "message": "El nombre no puede exceder 30 caracteres."}
+                categoria.nombre = nombre
+
+            if "descripcion" in campos_modelo:
+                if len(descripcion) > 500:
+                    return {"ok": False, "message": "La descripción no puede exceder 500 caracteres."}
+                categoria.descripcion = descripcion
+
             categoria.tipo = tipo
             categoria.estado = estado
-            categoria.full_clean()
+            if tipo in tipos_base:
+                categoria.full_clean()
+            else:
+                categoria.clean_fields(exclude=["tipo"])
             categoria.save()
             return {"ok": True, "message": "Categoria de publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
