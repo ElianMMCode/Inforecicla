@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from apps.core.views import inicio
+from apps.core.views import inicio, error_400, error_403, error_404, error_500
 from apps.users import views
 from apps.ecas import views as ecas_views
 
@@ -56,7 +56,15 @@ urlpatterns = [
     path("puntos-eca-json/", ecas_views.puntos_eca_json, name="puntos_eca_json"),
     # API chat
     path("mensajes/", include("apps.chat.urls")),
+    # Previsualización de errores
+    path("", include("apps.core.urls", namespace="core")),
 ]
+
+# ── Handlers globales de error ─────────────────────────────────────────────────
+handler400 = error_400
+handler403 = error_403
+handler404 = error_404
+handler500 = error_500
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
