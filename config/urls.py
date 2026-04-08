@@ -33,6 +33,7 @@ urlpatterns = [
     path("panel_admin/", include("apps.panel_admin.urls", namespace="panel_admin")),
     path("punto-eca/", include("apps.ecas.urls")),
     path("login/", views.render_login, name="login"),
+    path("recuperar-contrasena/", views.recuperar_contrasena, name="recuperar_contrasena"),
     path("logout/", LogoutView.as_view(next_page="/login/"), name="logout"),
     path("perfil/", views.perfil_ciudadano, name="perfil_ciudadano"),
     path("perfil/comentarios/", views.perfil_ciudadano, {"tab": "comentarios"}, name="perfil_comentarios"),

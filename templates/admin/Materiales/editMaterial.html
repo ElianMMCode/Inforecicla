@@ -36,7 +36,7 @@
   <div class="card shadow-sm border-0">
     <div class="card-header bg-success text-white"><i class="bi bi-box-seam me-1"></i> Formulario</div>
     <div class="card-body p-4">
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row g-3">
           <div class="col-md-6">
@@ -44,8 +44,16 @@
             <input type="text" name="nombre" class="form-control" value="{{ material.nombre }}" required maxlength="30">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">URL Imagen</label>
-            <input type="text" name="imagen_url" class="form-control" value="{{ material.imagen_url|default:'' }}">
+            <label class="form-label fw-semibold">Imagen del Material</label>
+            <div class="mb-2">
+              {% if material.imagen_url %}
+                <div class="mb-2">
+                  <img src="{{ material.imagen_url }}" alt="{{ material.nombre }}" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                </div>
+              {% endif %}
+              <input type="file" name="imagen" class="form-control" accept="image/*">
+              <small class="form-text text-muted">Formatos: JPG, PNG, GIF (máximo 5MB)</small>
+            </div>
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Categoría</label>

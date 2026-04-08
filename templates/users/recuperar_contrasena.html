@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Recuperar Contraseña - InfoRecicla</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+              rel="stylesheet">
+        <style>
+        .recovery-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .recovery-card {
+            width: 100%;
+            max-width: 460px;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            background: white;
+        }
+
+        .recovery-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .recovery-header img {
+            max-width: 80px;
+            margin-bottom: 1rem;
+        }
+
+        .recovery-header h1 {
+            font-size: 1.7rem;
+            color: #28a745;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .recovery-header p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .btn-main {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-main:hover {
+            background: #218838;
+        }
+
+        .helper-links {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .helper-links a {
+            color: #28a745;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .helper-links a:hover {
+            text-decoration: underline;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="recovery-container">
+            <div class="recovery-card">
+                <div class="recovery-header">
+                    <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla">
+                    <h1>Recuperar Contraseña</h1>
+                    <p>Ingresa tu correo para validar tu cuenta y restablecer contraseña.</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if errores %}
+                    <div class="alert alert-danger" role="alert">
+                        <ul style="margin-bottom: 0;">
+                            {% for err in errores %}<li>{{ err }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {% if not mostrar_reset %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="buscar">
+                        <div class="form-group">
+                            <label for="email" class="form-label">Correo Electrónico</label>
+                            <input type="email"
+                                   class="form-control"
+                                   id="email"
+                                   name="email"
+                                   value="{{ email }}"
+                                   placeholder="tu@email.com"
+                                   required>
+                        </div>
+                        <button type="submit" class="btn-main">Validar Correo</button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-success" role="alert">
+                        Correo validado: <strong>{{ email }}</strong>. Ahora define tu nueva contraseña.
+                    </div>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset">
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <div class="form-group">
+                            <label for="password" class="form-label">Nueva Contraseña</label>
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   name="password"
+                                   minlength="8"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
+                            <input type="password"
+                                   class="form-control"
+                                   id="passwordConfirm"
+                                   name="passwordConfirm"
+                                   minlength="8"
+                                   required>
+                        </div>
+                        <button type="submit" class="btn-main">Restablecer Contraseña</button>
+                    </form>
+                {% endif %}
+
+                <div class="helper-links">
+                    <a href="/login/">Volver al inicio de sesión</a>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

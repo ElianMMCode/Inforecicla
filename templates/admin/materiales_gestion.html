@@ -305,7 +305,7 @@
         <h5 class="modal-title" id="labelCrearMaterial"><i class="bi bi-plus-circle me-2"></i>Nuevo Material</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form method="POST" action="{% url 'panel_admin:crear_material_admin' %}" novalidate id="formCrearMaterial">
+      <form method="POST" action="{% url 'panel_admin:crear_material_admin' %}" novalidate id="formCrearMaterial" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="modal-body">
           <div class="row g-3">
@@ -345,8 +345,9 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">URL Imagen <span class="text-muted fw-normal small">(opcional)</span></label>
-              <input type="url" name="imagen_url" class="form-control" placeholder="https://...">
+              <label class="form-label fw-semibold">Imagen <span class="text-muted fw-normal small">(opcional)</span></label>
+              <input type="file" name="imagen" class="form-control" accept="image/*">
+              <small class="form-text text-muted">JPG, PNG, GIF (máximo 5MB)</small>
             </div>
           </div>
         </div>
