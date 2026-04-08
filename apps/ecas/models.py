@@ -6,14 +6,22 @@ from config.constants import TipoCentroAcopio, Visibilidad
 
 
 class PuntoECA(LocalizacionWebHorarioModel):
-    # Relación OneToOne con Usuario.
+    """
+    Representa un punto ECA (Estación de Clasificación y Aprovechamiento).
+    Relaciones principales:
+    - gestor_eca: OneToOne con usuario (un gestor solo puede gestionar un Punto ECA y viceversa; permite asignación exclusiva opcional de responsable).
+    - inventarios: ManyToMany con Inventario (un Punto puede tener múltiples inventarios y un inventario puede operar en más de un Punto ECA; soporta gestión distribuida de recursos).
+    - puntos_eca <-> CentroAcopio: la relación se define desde el otro modelo, permitiendo que un Punto ECA pertenezca a varios Centros de Acopio.
+    Hereda localización y horarios estandarizados.
+    """
+
     gestor_eca = models.OneToOneField(
-        # Definimos la relación con el modelo de usuario personalizado usando settings.AUTH_USER_MODEL
-        settings.AUTH_USER_MODEL,
+        settings.AUTH_USER_MODEL,  # Relación con el modelo de usuario de Django
         on_delete=models.CASCADE,
         related_name="punto_eca",
         null=True,
         blank=True,
+        help_text="Usuario gestor asociado a este punto ECA (opcional)",
     )
 
     nombre = models.CharField(
@@ -45,6 +53,7 @@ class PuntoECA(LocalizacionWebHorarioModel):
                 message="El teléfono fijo debe tener el formato 60 + indicativo + 7 dígitos (ej: 6012345678)",
             ),
         ],
+        help_text="Teléfono de contacto del punto ECA (único y validado sobre formato específico)",
     )
 
     direccion = models.CharField("Dirección", max_length=150, blank=True)
@@ -54,7 +63,10 @@ class PuntoECA(LocalizacionWebHorarioModel):
     foto_url_punto = models.URLField("Foto URL punto", max_length=200, blank=True)
 
     inventarios = models.ManyToManyField(
-        "inventory.Inventario", blank=True, related_name="puntos_eca_inventario"
+        "inventory.Inventario",
+        blank=True,
+        related_name="puntos_eca_inventario",
+        help_text="Inventarios asociados al punto ECA",
     )
 
     class Meta(LocalizacionWebHorarioModel.Meta):
@@ -67,6 +79,15 @@ class PuntoECA(LocalizacionWebHorarioModel):
 
 
 class CentroAcopio(LocalizacionWebHorarioModel):
+    """
+    Modelo que representa un centro de acopio (recibe, organiza o distribuye materiales reciclables).
+    Relaciones principales:
+    - puntos_eca: ManyToMany con PuntoECA (un Centro puede asociar múltiples Puntos ECA y un Punto ECA puede participar en varios Centros, permitiendo flexibilidad operativa y geográfica).
+    - tipo_centro: Usa un enum para clasificar el tipo operativo del centro (ej: planta, estación transitoria).
+    - visibilidad: Controla el acceso y visualización para distintos roles/sistemas mediante opciones predefinidas.
+    Acepta datos de contacto directo, notas internas y hereda localización y horarios.
+    """
+
     nombre = models.CharField(
         "Nombre del centro de acopio",
         max_length=100,
@@ -94,7 +115,6 @@ class CentroAcopio(LocalizacionWebHorarioModel):
         help_text="Define quién puede ver este centro de acopio",
     )
 
-    # Cambio de CharField a TextField para textos largos
     descripcion = models.TextField(
         max_length=500,
         blank=True,
@@ -109,7 +129,6 @@ class CentroAcopio(LocalizacionWebHorarioModel):
         help_text="Información adicional o notas internas",
     )
 
-    # Mejora de validación para nombre de contacto
     nombre_contacto = models.CharField(
         "Nombre del contacto",
         max_length=100,
@@ -123,7 +142,6 @@ class CentroAcopio(LocalizacionWebHorarioModel):
         help_text="Nombre de la persona de contacto del centro",
     )
 
-    # Relación ManyToMany con PuntoECA
     puntos_eca = models.ManyToManyField(
         "PuntoECA",
         blank=True,
@@ -142,6 +160,11 @@ class CentroAcopio(LocalizacionWebHorarioModel):
 
 
 class Localidad(models.Model):
+    """
+    Representa la entidad geográfica de una localidad.
+    Utiliza UUID como identificador único y su nombre está validado en longitud.
+    Relacionada con otros modelos vía claves foráneas, siguiendo convenciones Django.
+    """
     localidad_id = models.UUIDField(
         primary_key=True,
         editable=False,
