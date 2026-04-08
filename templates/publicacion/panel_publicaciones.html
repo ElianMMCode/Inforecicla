@@ -83,7 +83,7 @@
                     <select class="form-select" name="categoria">
                         <option value="">Todas las categorías</option>
                         {% for cat in categorias %}
-                        <option value="{{ cat.id }}" {% if filtros.categoria == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.get_tipo_display }}</option>
+                        <option value="{{ cat.id }}" {% if filtros.categoria == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.nombre|default:cat.get_tipo_display }}{% if cat.descripcion %} - {{ cat.descripcion|truncatechars:35 }}{% endif %}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -114,7 +114,10 @@
                             <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">{{ pub.usuario.nombres|first }}</div>
                             <div>
                                 <div class="fw-semibold small">{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</div>
-                                <div class="text-muted" style="font-size:.78rem;">{{ pub.fecha_creacion|date:"d M Y" }} · <span class="badge bg-success-subtle text-success">{{ pub.categoria.get_tipo_display }}</span></div>
+                                <div class="text-muted" style="font-size:.78rem;">{{ pub.fecha_creacion|date:"d M Y" }} · <span class="badge bg-success-subtle text-success">{{ pub.categoria.nombre|default:pub.categoria.get_tipo_display }}</span></div>
+                                {% if pub.categoria and pub.categoria.descripcion %}
+                                <div class="text-muted" style="font-size:.78rem;">{{ pub.categoria.descripcion|truncatechars:80 }}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

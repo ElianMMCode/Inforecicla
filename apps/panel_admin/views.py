@@ -812,9 +812,10 @@ def listar_categorias_publicacion_admin(request):
     try:
         from apps.publicaciones.models import CategoriaPublicacion
 
-        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+        categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
         if q:
             categorias = categorias.filter(
+                Q(nombre__icontains=q) |
                 Q(tipo__icontains=q) |
                 Q(descripcion__icontains=q)
             )
@@ -1031,7 +1032,7 @@ def editar_material_admin(request, material_id):
         return redirect("panel_admin:listar_materiales_admin")
 
     if request.method == "POST":
-        resultado = AdminCatalogService.actualizar_material(material_id, request.POST)
+        resultado = AdminCatalogService.actualizar_material(material_id, request.POST, request.FILES)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
             return redirect("panel_admin:editar_material_admin", material_id=material_id)
@@ -1090,20 +1091,41 @@ def editar_categoria_publicacion_admin(request, categoria_id):
         messages.error(request, "Categoria de publicacion no encontrada.")
         return redirect("panel_admin:listar_categorias_publicacion_admin")
 
+    form_data = {
+        "nombre": getattr(categoria, "nombre", ""),
+        "descripcion": getattr(categoria, "descripcion", ""),
+        "tipo": categoria.tipo,
+        "tipo_otro": "",
+        "estado": categoria.estado,
+    }
+
+    tipos_publicacion = AdminCatalogService._tipos_publicacion_disponibles()
+    tipos_validos = {value for value, _ in tipos_publicacion}
+    if categoria.tipo not in tipos_validos:
+        form_data["tipo"] = "__otro__"
+        form_data["tipo_otro"] = categoria.tipo
+
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_categoria_publicacion(categoria_id, request.POST)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
             return redirect("panel_admin:editar_categoria_publicacion_admin", categoria_id=categoria_id)
         messages.error(request, resultado["message"])
-        categoria.refresh_from_db()
+        form_data = {
+            "nombre": request.POST.get("nombre", ""),
+            "descripcion": request.POST.get("descripcion", ""),
+            "tipo": request.POST.get("tipo", ""),
+            "tipo_otro": request.POST.get("tipo_otro", ""),
+            "estado": request.POST.get("estado", ""),
+        }
 
     return render(
         request,
         "admin/CategoriasPublicaciones/editCategoriaPublicacion.html",
         {
             "categoria": categoria,
-            "tipos_publicacion": cons.TipoPublicacion.choices,
+            "form_data": form_data,
+            "tipos_publicacion": tipos_publicacion,
             "estados": cons.Estado.choices,
         },
     )
@@ -1167,7 +1189,7 @@ def crear_categoria_material(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 def crear_material_admin(request):
     if request.method == "POST":
-        resultado = AdminCatalogService.crear_material(request.POST)
+        resultado = AdminCatalogService.crear_material(request.POST, request.FILES)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
         else:
@@ -1212,14 +1234,31 @@ def gestion_materiales(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def crear_categoria_publicacion(request):
+    context = {
+        "tipos_publicacion": AdminCatalogService._tipos_publicacion_disponibles(),
+        "form_data": {
+            "nombre": "",
+            "descripcion": "",
+            "tipo": "",
+            "tipo_otro": "",
+            "estado": "ACTIVO",
+        },
+    }
     if request.method == "POST":
         resultado = AdminCatalogService.crear_categoria_publicacion(request.POST)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
             return redirect("panel_admin:crear_categoria_publicacion")
         messages.error(request, resultado["message"])
+        context["form_data"] = {
+            "nombre": request.POST.get("nombre", ""),
+            "descripcion": request.POST.get("descripcion", ""),
+            "tipo": request.POST.get("tipo", ""),
+            "tipo_otro": request.POST.get("tipo_otro", ""),
+            "estado": request.POST.get("estado", "ACTIVO"),
+        }
 
-    return render(request, "admin/CategoriasPublicaciones/createCategoriaPublicacion.html")
+    return render(request, "admin/CategoriasPublicaciones/createCategoriaPublicacion.html", context)
 
 
 # ─── Perfil del Administrador ───────────────────────────────────────────────

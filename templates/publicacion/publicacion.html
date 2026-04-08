@@ -85,7 +85,10 @@
                             <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5" style="width:52px;height:52px;">{{ publicacion.usuario.nombres|first }}</div>
                             <div>
                                 <div class="fw-semibold">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
-                                <div class="text-muted small">{{ publicacion.fecha_creacion|date:"d/m/Y H:i" }} · <span class="badge bg-success-subtle text-success">{{ publicacion.categoria.get_tipo_display }}</span></div>
+                                <div class="text-muted small">{{ publicacion.fecha_creacion|date:"d/m/Y H:i" }} · <span class="badge bg-success-subtle text-success">{{ publicacion.categoria.nombre|default:publicacion.categoria.get_tipo_display }}</span></div>
+                                {% if publicacion.categoria and publicacion.categoria.descripcion %}
+                                <div class="text-muted small">{{ publicacion.categoria.descripcion }}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -220,7 +223,10 @@
                     <div class="list-group list-group-flush">
                         {% for relacionada in publicaciones_relacionadas %}
                         <a href="{% url 'publicacion:detalle_publicacion' relacionada.id %}" class="list-group-item list-group-item-action py-3">
-                            <span class="badge bg-success-subtle text-success mb-1">{{ relacionada.categoria.get_tipo_display }}</span>
+                            <span class="badge bg-success-subtle text-success mb-1">{{ relacionada.categoria.nombre|default:relacionada.categoria.get_tipo_display }}</span>
+                            {% if relacionada.categoria and relacionada.categoria.descripcion %}
+                            <div class="text-muted small mb-1">{{ relacionada.categoria.descripcion|truncatechars:80 }}</div>
+                            {% endif %}
                             <div class="fw-semibold small">{{ relacionada.titulo }}</div>
                             <div class="text-muted" style="font-size:.75rem;">{{ relacionada.fecha_creacion|date:"d/m/Y" }}</div>
                         </a>
