@@ -2,6 +2,7 @@ from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from .service import AsistenteECAService
 from apps.ecas.models import PuntoECA
+from django.utils.html import escape
 
 
 @login_required
@@ -25,6 +26,7 @@ def asistente_api_view(request):
     asistente = AsistenteECAService()
     respuesta = asistente.consultar(punto_eca, pregunta)
     # Devuelvo ambos: primero el mensaje del usuario, luego el del asistente
-    user_msg = f'<div class="chat-msg-user alert alert-success bg-success text-white" role="alert">{pregunta}</div>'
+
+    user_msg = f'<div class="chat-msg-user alert alert-success bg-success text-white" role="alert">{escape(pregunta)}</div>'
     ai_msg = f'<div class="chat-msg-ai ">{respuesta}</div>'
     return HttpResponse(user_msg + ai_msg)
