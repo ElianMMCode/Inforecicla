@@ -14,7 +14,6 @@ class UserService:
 
         # Obtener usuario o redirigir si no existe
         try:
-            # usuario = Usuario.objects.get(id=id)
             usuario = Usuario.objects.select_for_update().get(
                 id=id
             )  # Bloqueo para evitar condiciones de carrera
@@ -53,13 +52,18 @@ class UserService:
         )
 
         from django.core.exceptions import ValidationError
+
         errores = None
         try:
             usuario.save()
         except ValidationError as ex:
-            errores = ex.message_dict if hasattr(ex, 'message_dict') else {'__all__': [str(ex)]}
+            errores = (
+                ex.message_dict
+                if hasattr(ex, "message_dict")
+                else {"__all__": [str(ex)]}
+            )
         except Exception as ex:
             print(f"[ERROR] al guardar usuario: {ex}")
-            errores = {'__all__': [str(ex)]}
+            errores = {"__all__": [str(ex)]}
 
-        return {'usuario': usuario, 'errores': errores}
+        return {"usuario": usuario, "errores": errores}
