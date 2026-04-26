@@ -1,0 +1,46 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Usuario (Cualquier Rol)" as User
+
+package "Sistema InfoRecicla: Módulo de Acceso y Seguridad" {
+    usecase "CU-00: Iniciar Sesión" as UC_Login
+    
+    usecase "CU-00.1: Validar Credenciales (Email/Password)" as UC_Val
+    usecase "CU-00.2: Determinar Rol y Cargar Permisos" as UC_Role
+    usecase "CU-00.3: Gestionar Token de Sesión (JWT)" as UC_Token
+    
+    usecase "EXT-41: Notificar Error - Credenciales Inválidas" as UC_ErrCred
+    usecase "EXT-42: Bloquear Cuenta - Exceso de Intentos Fallidos" as UC_Lock
+    usecase "EXT-43: Recuperar Contraseña (Enviar Email)" as UC_Forgot
+}
+
+' Relación del Actor (Universal para Ciudadano, Gestor y Admin)
+User --> UC_Login
+
+' Relaciones de Inclusión (Pasos internos del backend)
+UC_Login ..> UC_Val : <<include>>
+UC_Login ..> UC_Role : <<include>>
+UC_Login ..> UC_Token : <<include>>
+
+' Relaciones de Extensión (Flujos alternos y de recuperación)
+UC_Val <.. UC_ErrCred : <<extend>>
+UC_Val <.. UC_Lock : <<extend>>
+UC_Login <.. UC_Forgot : <<extend>>
+
+note right of UC_Token
+  Seguridad Técnica:
+  Se recomienda el uso de JSON Web Tokens (JWT)
+  para mantener sesiones sin estado (stateless)
+  en aplicaciones móviles y web.
+end note
+
+note bottom of UC_Lock
+  Regla de Seguridad:
+  Tras 3 o 5 intentos fallidos, el sistema 
+  debe bloquear el acceso temporalmente 
+  para prevenir ataques de fuerza bruta.
+end note
+
+@enduml

@@ -1,0 +1,50 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Administrador (Superusuario)" as Admin
+
+package "Sistema InfoRecicla: Módulo de Infraestructura" {
+    usecase "CU-17: Generar Respaldo de Base de Datos (Backup)" as UC_Backup
+    
+    usecase "CU-17.1: Validar Privilegios Absolutos (is_superuser)" as UC_Auth
+    usecase "CU-17.2: Compilar Volcado Estructural y de Datos" as UC_Dump
+    usecase "CU-17.3: Empaquetar y Entregar Archivo (JSON/SQL)" as UC_File
+    
+    usecase "EXT-28: Bloquear Acción - Privilegios Insuficientes" as UC_ErrAuth
+    usecase "EXT-29: Notificar Error - Falla de Lectura/Escritura" as UC_ErrIOM
+    usecase "EXT-30: Ejecutar Copia Espejo (Subida a la Nube)" as UC_Cloud
+}
+
+' Relación del Actor Principal
+Admin --> UC_Backup
+
+' Relaciones de Inclusión (Validación y ejecución secuencial estricta)
+UC_Backup ..> UC_Auth : <<include>>
+UC_Backup ..> UC_Dump : <<include>>
+UC_Backup ..> UC_File : <<include>>
+
+' Relaciones de Extensión (Excepciones de seguridad y del sistema)
+UC_Auth <.. UC_ErrAuth : <<extend>>
+UC_Dump <.. UC_ErrIOM : <<extend>>
+UC_File <.. UC_Cloud : <<extend>>
+
+note right of UC_Auth
+  Seguridad Crítica:
+  Este proceso exige el nivel 
+  máximo de autorización. Un 
+  administrador estándar (Staff) 
+  no debe tener acceso al volcado 
+  completo para evitar fugas de 
+  datos sensibles.
+end note
+
+note bottom of UC_Dump
+  Ejecución en Background:
+  El volcado no debe bloquear
+  las transacciones activas de
+  compras/ventas en los ECAs
+  mientras se genera el archivo.
+end note
+
+@enduml

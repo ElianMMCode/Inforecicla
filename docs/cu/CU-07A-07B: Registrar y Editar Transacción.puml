@@ -1,0 +1,45 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Gestor ECA" as UserG
+
+package "Sistema InfoRecicla: Módulo de Inventario y Operaciones" {
+    usecase "CU-07A: Registrar Nueva Transacción" as UC_Create
+    usecase "CU-07B: Editar Transacción Existente" as UC_Edit
+    
+    usecase "CU-07.1: Validar Datos de Entrada" as UC_Val
+    usecase "CU-07.2: Calcular Delta y Recalcular Stock" as UC_Calc
+    usecase "CU-07.3: Actualizar Historial de Operaciones" as UC_Hist
+    
+    usecase "EXT-07: Mostrar Error - Datos Inválidos" as UC_ErrData
+    usecase "EXT-08: Bloquear Acción - Límite de Capacidad Superado" as UC_ErrCap
+    usecase "EXT-09: Bloquear Acción - Stock Insuficiente" as UC_ErrStock
+}
+
+' Relación del Actor Principal con las acciones base
+UserG --> UC_Create
+UserG --> UC_Edit
+
+' Ambas acciones convergen en el mismo motor de validación y cálculo
+UC_Create ..> UC_Val : <<include>>
+UC_Create ..> UC_Calc : <<include>>
+UC_Create ..> UC_Hist : <<include>>
+
+UC_Edit ..> UC_Val : <<include>>
+UC_Edit ..> UC_Calc : <<include>>
+UC_Edit ..> UC_Hist : <<include>>
+
+' Manejo de excepciones (Protección de integridad de BD)
+UC_Val <.. UC_ErrData : <<extend>>
+UC_Calc <.. UC_ErrCap : <<extend>>
+UC_Calc <.. UC_ErrStock : <<extend>>
+
+note right of UC_Edit
+  Lógica de Edición (Cálculo de Delta):
+  Si se edita una compra de 10kg a 15kg, 
+  el sistema identifica un Delta de +5kg.
+  Solo se suman 5kg al stock del ECA.
+end note
+
+@enduml

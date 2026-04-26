@@ -1,0 +1,46 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Administrador" as Admin
+
+package "Sistema InfoRecicla: Módulo de Administración" {
+    usecase "CU-16: Monitorear Dashboard General (KPIs)" as UC_Dash
+    
+    usecase "CU-16.1: Calcular Métricas de Usuarios Activos" as UC_CalcUsers
+    usecase "CU-16.2: Agregar Volumen Histórico por Material" as UC_CalcMat
+    usecase "CU-16.3: Renderizar Componentes Gráficos" as UC_Render
+    
+    usecase "EXT-14: Aplicar Filtro de Rango Temporal" as UC_Filter
+    usecase "EXT-15: Cargar Datos desde Caché (Optimización)" as UC_Cache
+    usecase "EXT-16: Notificar Error - Tiempo de Consulta Excedido (Timeout)" as UC_Timeout
+}
+
+' Relación del Actor Principal
+Admin --> UC_Dash
+
+' Relaciones de Inclusión (La carga del dashboard requiere estos cálculos)
+UC_Dash ..> UC_CalcUsers : <<include>>
+UC_Dash ..> UC_CalcMat : <<include>>
+UC_Dash ..> UC_Render : <<include>>
+
+' Relaciones de Extensión (Filtros dinámicos y estrategias de rendimiento)
+UC_Dash <.. UC_Filter : <<extend>>
+UC_CalcMat <.. UC_Cache : <<extend>>
+UC_CalcMat <.. UC_Timeout : <<extend>>
+
+note right of UC_Dash
+  Arquitectura de Datos:
+  Las métricas consolidadas (KPIs)
+  incluyen toneladas recicladas, 
+  puntos ECA con mayor flujo y
+  crecimiento de la base de usuarios.
+end note
+
+note bottom of UC_CalcMat
+  Para prevenir el bloqueo de la BD,
+  las consultas complejas deben usar
+  caché si no hay filtros activos.
+end note
+
+@enduml

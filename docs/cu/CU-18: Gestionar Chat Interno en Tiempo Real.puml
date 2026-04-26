@@ -1,0 +1,52 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Ciudadano" as UserC
+actor "Gestor ECA" as UserG
+
+package "Sistema InfoRecicla: Módulo de Mensajería P2P" {
+    usecase "CU-18: Gestionar Chat Interno en Tiempo Real" as UC_Chat
+    
+    usecase "CU-18.1: Establecer Conexión de Sockets (Handshake)" as UC_Connect
+    usecase "CU-18.2: Cargar Historial de Mensajes Persistidos" as UC_History
+    usecase "CU-18.3: Transmitir / Recibir Mensajes (WebSockets)" as UC_Stream
+    usecase "CU-18.4: Emitir Notificación de Nuevo Mensaje" as UC_Notify
+    
+    usecase "EXT-39: Bloquear Envío - Mensaje Vacío o Archivo no Soportado" as UC_ErrEmpty
+    usecase "EXT-40: Notificar Error - Pérdida de Conexión (Reconectando...)" as UC_ErrDrop
+}
+
+' Ambos actores interactúan con el mismo núcleo de comunicación
+UserC --> UC_Chat
+UserG --> UC_Chat
+
+' Secuencia de Inclusión Obligatoria
+UC_Chat ..> UC_Connect : <<include>>
+UC_Chat ..> UC_History : <<include>>
+UC_Chat ..> UC_Stream : <<include>>
+
+' La notificación ocurre dinámicamente durante el streaming
+UC_Stream ..> UC_Notify : <<include>>
+
+' Validaciones y Manejo de Excepciones
+UC_Stream <.. UC_ErrEmpty : <<extend>>
+UC_Connect <.. UC_ErrDrop : <<extend>>
+UC_Stream <.. UC_ErrDrop : <<extend>>
+
+note right of UC_Connect
+  Arquitectura de Red (Django Channels):
+  La comunicación no utilizará HTTP estándar.
+  El backend requerirá un servidor ASGI (ej. Daphne)
+  para mantener canales bidireccionales abiertos
+  constantemente entre ambos usuarios.
+end note
+
+note bottom of UC_Notify
+  Manejo de Estado:
+  Si el Gestor no está en la vista del chat,
+  la notificación (CU-18.4) se renderiza como un
+  indicador global (ej. campana con un "1").
+end note
+
+@enduml

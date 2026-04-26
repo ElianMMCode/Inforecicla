@@ -1,0 +1,54 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Administrador" as Admin
+
+package "Sistema InfoRecicla: Módulo de Contenido" {
+    usecase "CU-14: Gestionar Publicaciones del Feed" as UC_Content
+
+    usecase "CU-14.1: Redactar Nueva Publicación" as UC_Create
+    usecase "CU-14.2: Adjuntar Archivos Multimedia" as UC_Media
+    usecase "CU-14.3: Editar Contenido Existente" as UC_Update
+    usecase "CU-14.4: Ocultar / Eliminar Publicación" as UC_Delete
+
+    usecase "EXT-26: Bloquear Acción - Contenido de Texto Vacío" as UC_ErrEmpty
+    usecase "EXT-27: Rechazar Archivo - Formato Inválido o Peso Excedido" as UC_ErrMedia
+}
+
+' Relación del Actor Principal
+Admin --> UC_Content
+
+' Operaciones de Gestión
+UC_Content ..> UC_Create : <<include>>
+UC_Content ..> UC_Update : <<include>>
+UC_Content ..> UC_Delete : <<include>>
+
+' Manejo de Multimedia (Opcional o dependiente de la creación/edición)
+UC_Create <.. UC_Media : <<extend>>
+UC_Update <.. UC_Media : <<extend>>
+
+' Validaciones Estrictas
+UC_Create <.. UC_ErrEmpty : <<extend>>
+UC_Update <.. UC_ErrEmpty : <<extend>>
+
+UC_Media <.. UC_ErrMedia : <<extend>>
+
+note right of UC_Media
+  Manejo de Archivos:
+  El sistema debe validar el MIME type
+  (ej. image/jpeg, image/png) y limitar 
+  el tamaño de carga (ej. Max 5MB) antes
+  de guardar el archivo en el servidor.
+end note
+
+note bottom of UC_Delete
+  Protección de Referencias:
+  Si la publicación tiene comentarios
+  de ciudadanos (CU-05), la eliminación
+  debe manejarse como "Oculta" (is_published=False)
+  o aplicar eliminación en cascada de los
+  comentarios vinculados.
+end note
+
+@enduml

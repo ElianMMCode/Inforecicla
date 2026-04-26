@@ -1,0 +1,53 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Gestor ECA" as UserG
+
+package "Sistema InfoRecicla: Módulo de Eventos" {
+    usecase "CU-12: Gestionar Calendario Operativo" as UC_Calendar
+    
+    usecase "CU-12.1: Renderizar Vista de Calendario" as UC_View
+    usecase "CU-12.2: Programar Nuevo Evento" as UC_Create
+    usecase "CU-12.3: Modificar / Cancelar Evento" as UC_Update
+    
+    usecase "EXT-36: Bloquear Acción - Fecha/Hora en el Pasado" as UC_ErrPast
+    usecase "EXT-37: Mostrar Alerta - Conflicto de Horario (Solapamiento)" as UC_ErrOverlap
+    usecase "EXT-38: Sincronizar Evento Público con Mapa del Ciudadano" as UC_SyncMap
+}
+
+' Relación del Actor Principal
+UserG --> UC_Calendar
+
+' Operaciones Base (CRUD temporal)
+UC_Calendar ..> UC_View : <<include>>
+UC_Calendar ..> UC_Create : <<include>>
+UC_Calendar ..> UC_Update : <<include>>
+
+' Validaciones Cronológicas Estrictas
+UC_Create <.. UC_ErrPast : <<extend>>
+UC_Update <.. UC_ErrPast : <<extend>>
+
+UC_Create <.. UC_ErrOverlap : <<extend>>
+UC_Update <.. UC_ErrOverlap : <<extend>>
+
+' Integración Inter-Módulos (Opcional según el tipo de evento)
+UC_Create <.. UC_SyncMap : <<extend>>
+
+note right of UC_ErrOverlap
+  Validación Matemática Temporal:
+  El backend debe consultar si existe 
+  otro evento cuyo rango (Inicio-Fin) 
+  intercepte el rango del nuevo evento 
+  antes de permitir la persistencia en BD.
+end note
+
+note bottom of UC_SyncMap
+  Acoplamiento Funcional:
+  Si el Gestor marca el evento como "Público", 
+  este se expone a través de la API para que
+  el Frontend lo renderice como un marcador
+  temporal dentro del Mapa Interactivo (CU-02).
+end note
+
+@enduml

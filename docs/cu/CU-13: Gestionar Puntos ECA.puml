@@ -1,0 +1,55 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Administrador" as Admin
+
+package "Sistema InfoRecicla: Módulo de Administración de ECAs" {
+    usecase "CU-13: Gestionar Puntos ECA (Operaciones CRUD)" as UC_Crud
+
+    usecase "CU-13.1: Registrar Nuevo Punto ECA" as UC_Create
+    usecase "CU-13.2: Editar Detalles y Capacidad Máxima" as UC_Update
+    usecase "CU-13.3: Alternar Estado Operativo (Activar/Inactivar)" as UC_State
+    usecase "CU-13.4: Archivar / Eliminar Registro de ECA" as UC_Delete
+
+    usecase "EXT-23: Bloquear Acción - Capacidad Negativa o Cero" as UC_ErrCap
+    usecase "EXT-24: Mostrar Error - Coordenadas Geográficas Inválidas" as UC_ErrGeo
+    usecase "EXT-25: Denegar Eliminación - ECA con Inventario o Historial" as UC_ErrDel
+}
+
+' Relación del Actor Principal
+Admin --> UC_Crud
+
+' Relaciones de Inclusión (Las 4 operaciones base del CRUD)
+UC_Crud ..> UC_Create : <<include>>
+UC_Crud ..> UC_Update : <<include>>
+UC_Crud ..> UC_State : <<include>>
+UC_Crud ..> UC_Delete : <<include>>
+
+' Validaciones de Datos (Aplican a Creación y Edición)
+UC_Create <.. UC_ErrCap : <<extend>>
+UC_Update <.. UC_ErrCap : <<extend>>
+
+UC_Create <.. UC_ErrGeo : <<extend>>
+UC_Update <.. UC_ErrGeo : <<extend>>
+
+' Protección de Integridad Referencial
+UC_Delete <.. UC_ErrDel : <<extend>>
+
+note right of UC_Delete
+  Arquitectura de Datos (Soft Delete):
+  En bases de datos relacionales, 
+  un ECA nunca se elimina con 'DROP'
+  si tiene transacciones. Se debe marcar 
+  como "inactivo" (is_deleted=True)
+  para no romper el historial financiero.
+end note
+
+note bottom of UC_ErrCap
+  Cumplimiento de Escenario 012-05/06:
+  El sistema rechaza explícitamente 
+  valores como '-50' en la 
+  asignación de capacidad.
+end note
+
+@enduml
