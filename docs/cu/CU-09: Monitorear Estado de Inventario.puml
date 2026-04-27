@@ -1,0 +1,47 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Gestor ECA" as UserG
+actor "Motor de Alertas (Background)" as SysAlert <<System>>
+
+package "Sistema InfoRecicla: Módulo de Monitoreo" {
+    usecase "CU-09: Monitorear Estado de Inventario" as UC_Monitor
+    
+    usecase "CU-09.1: Consultar Ocupación Global (%)" as UC_Global
+    usecase "CU-09.2: Visualizar Desglose por Material" as UC_Detail
+    
+    usecase "EXT-34: Disparar Alerta de Capacidad Crítica (>85%)" as UC_Alert
+    usecase "EXT-35: Sugerir Programación de Recolección" as UC_Suggest
+}
+
+' Relación del Actor Principal
+UserG --> UC_Monitor
+
+' Inclusiones (Datos obligatorios para que el monitoreo tenga sentido)
+UC_Monitor ..> UC_Global : <<include>>
+UC_Monitor ..> UC_Detail : <<include>>
+
+' Extensiones basadas en reglas de negocio estables
+UC_Global <.. UC_Alert : <<extend>>
+UC_Alert <.. UC_Suggest : <<extend>>
+
+' Interacción del sistema automatizado (El sistema vigila en segundo plano)
+SysAlert --> UC_Alert : Evalúa umbrales tras cada \n transacción (CU-07)
+
+note bottom of UC_Alert
+  Regla de Negocio (Umbrales):
+  Si el cálculo de inventario proyecta que 
+  el volumen físico supera el 85% de la 
+  capacidad máxima del ECA, el sistema 
+  emite una notificación prioritaria.
+end note
+
+note right of SysAlert
+  Arquitectura Reactiva:
+  Esta alerta no debe depender de que el
+  Gestor recargue la página. Se calcula
+  automáticamente en el backend.
+end note
+
+@enduml

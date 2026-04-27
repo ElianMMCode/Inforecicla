@@ -1,27 +1,41 @@
+"""
+Modelos de operaciones de inventario (compras y ventas).
+Este módulo define la lógica y las restricciones para registrar movimientos de materiales
+(añadidos y salidas) y sus relaciones con entidades de inventario y centros de acopio.
+Las validaciones aseguran operaciones consistentes con el negocio y el flujo esperado.
+"""
+
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from config.base_models import CreacionModificacionModel
 
-
 def validar_fecha_operacion(value):
     """
-    Valida que la fecha de la operación no sea mayor al día de hoy
-    y que no sea menor al mes actual
+    Validador de fechas para operaciones de compra/venta.
+    - No permite fechas futuras.
+    - La fecha no puede ser anterior al primer día del mes actual (según control de gestión del negocio).
     """
     if value.date() > timezone.now().date():
         raise ValidationError("La fecha no puede ser mayor al día de hoy.")
-
-    # Validar que no sea menor al mes actual
-    fecha_limite = timezone.now().replace(day=1).date()  # Primer día del mes actual
+    fecha_limite = timezone.now().replace(day=1).date()
     if value.date() < fecha_limite:
         raise ValidationError("La fecha no puede ser menor al mes actual.")
     return value
 
-
-# Create your models here.
 class CompraInventario(CreacionModificacionModel):
+    """
+    Representa una compra de material hacia el inventario. Cada instancia implica un ingreso de stock asociado
+    a un Inventario específico. Soporta registro de cantidad, precio unitario, observaciones y restricciones de fecha.
+
+    Relaciones:
+        - inventario: referencia al modelo Inventario (obligatorio).
+    Lógica de negocio:
+        - La fecha de compra debe ser en el mes actual y nunca futura (validaciones de gestión).
+        - La cantidad mínima debe ser mayor a 0.
+        - Precio de compra opcional, pero nunca negativo.
+    """
     inventario = models.ForeignKey(
         "inventory.Inventario",
         on_delete=models.CASCADE,
@@ -74,6 +88,18 @@ class CompraInventario(CreacionModificacionModel):
 
 
 class VentaInventario(CreacionModificacionModel):
+    """
+    Representa una venta de material desde el inventario. Cada instancia es una salida de stock asociada a un
+    Inventario específico y opcionalmente ligada a un Centro de Acopio (si corresponde el circuito de venta).
+
+    Relaciones:
+        - inventario: ForeignKey a Inventario (obligatorio).
+        - centro_acopio: ForeignKey a CentroAcopio (opcional). Puede ser null si la venta no requiere centro externo.
+    Lógica de negocio:
+        - La fecha de venta debe ser dentro del mes en curso y nunca futura.
+        - La cantidad vendida debe ser mayor a 0.
+        - El precio unitario es opcional pero nunca negativo.
+    """
     inventario = models.ForeignKey(
         "inventory.Inventario",
         on_delete=models.CASCADE,

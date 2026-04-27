@@ -1,0 +1,44 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Gestor ECA" as UserG
+actor "Motor de IA (LLM)" as AI <<System>>
+
+package "Sistema InfoRecicla: Módulo Asistente Inteligente" {
+    usecase "CU-11: Consultar Asistente (ReciclaBot)" as UC_Chat
+    
+    usecase "CU-11.1: Cargar Historial de Conversación" as UC_Load
+    usecase "CU-11.2: Validar Entrada de Texto" as UC_Val
+    usecase "CU-11.3: Procesar Mensaje en Tiempo Real" as UC_Socket
+    usecase "CU-11.4: Persistir Intercambio en Base de Datos" as UC_Save
+    
+    usecase "EXT-12: Bloquear Envío - Consulta Vacía" as UC_Empty
+    usecase "EXT-13: Notificar Error - Desconexión del Servicio IA" as UC_ErrAI
+}
+
+' Relaciones del Actor Principal
+UserG --> UC_Chat
+
+' Interacción con el Sistema Externo (La IA)
+UC_Socket --> AI : Transmite contexto / Recibe respuesta
+
+' Relaciones de Inclusión (Secuencia lógica del chat)
+UC_Chat ..> UC_Load : <<include>>
+UC_Chat ..> UC_Val : <<include>>
+UC_Chat ..> UC_Socket : <<include>>
+UC_Chat ..> UC_Save : <<include>>
+
+' Relaciones de Extensión (Manejo de excepciones en la interfaz y red)
+UC_Val <.. UC_Empty : <<extend>>
+UC_Socket <.. UC_ErrAI : <<extend>>
+
+note right of UC_Socket
+  Arquitectura de Comunicación:
+  Para evitar bloqueos (Timeouts) mientras
+  la IA genera la respuesta, este proceso
+  no debe usar HTTP tradicional, sino 
+  conexiones persistentes (WebSockets).
+end note
+
+@enduml

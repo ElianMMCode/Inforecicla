@@ -2,10 +2,16 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from config.base_models import CreacionModificacionModel, DescripcionModel
 from config.constants import Alerta, UnidadMedida
-from django.utils import timezone
 
 
 class Inventario(CreacionModificacionModel):
+    """
+    Modelo principal para gestionar el stock de materiales en puntos ECA y, opcionalmente, asociarlos a un Centro de Acopio.
+    - Un Inventario representa el stock de UN tipo de Material en UN Punto ECA (definido como único).
+    - Relaciona la ocupación, stock actual y umbrales para alertas tipo warning y crítico.
+    - La relación con Centro de Acopio es opcional, mientras que Material y Punto ECA son obligatorios.
+    - Alerta y ocupación se recalculan automáticamente al guardar.
+    """
     capacidad_maxima = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -174,6 +180,14 @@ class Inventario(CreacionModificacionModel):
 
 
 class Material(DescripcionModel):
+    """
+    Representa un tipo de material reciclable, vinculado a una categoría y un tipo específico.
+
+    Relaciones clave:
+    - Relación 1 a N con Inventario: Un material puede estar presente en varios inventarios, pero en cada punto ECA existe solo un inventario por material.
+    - Categoría (ForeignKey): Agrupa materiales según su función o naturaleza (por ejemplo, plásticos, metales).
+    - Tipo (ForeignKey): Subclasifica el material para análisis más detallados o reglas de negocio.
+    """
     imagen_url = models.URLField("Foto material", max_length=200, blank=True)
 
     categoria = models.ForeignKey(
@@ -206,7 +220,10 @@ class Material(DescripcionModel):
 
 
 class CategoriaMaterial(DescripcionModel):
-    pass
+    """
+    Categoría para clasificar materiales reciclables (ejemplo: Plástico, Metal).
+    Relación 1 a N con Material: una categoría puede contener varios materiales.
+    """
 
     class Meta(DescripcionModel.Meta):
         verbose_name = "Categoría de material"
@@ -218,7 +235,9 @@ class CategoriaMaterial(DescripcionModel):
 
 
 class TipoMaterial(DescripcionModel):
-    pass
+    """
+    Especifica subtipos particulares para materiales reciclables permitiendo analizar, filtrar o definir reglas de negocio a un nivel más fino. Relación 1 a N con Material.
+    """
 
     class Meta(DescripcionModel.Meta):
         verbose_name = "Tipo de material"

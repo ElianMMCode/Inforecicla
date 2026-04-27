@@ -1,0 +1,42 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Ciudadano" as UserC
+actor "Gestor ECA" as UserG
+
+package "Sistema InfoRecicla: Módulo de Acceso" {
+    usecase "CU-01/06: Registrar Cuenta en Plataforma" as UC_Reg
+    usecase "CU-01.1: Validar Formato de Datos" as UC_Val
+    usecase "CU-01.2: Aceptar Términos y Condiciones" as UC_Term
+    usecase "CU-01.3: Verificar Disponibilidad de Correo" as UC_Mail
+    usecase "CU-01.4: Validar Fortaleza de Contraseña" as UC_Pass
+    usecase "CU-01.5: Enviar Enlace de Activación" as UC_Act
+    
+    usecase "EXT-01: Notificar Error - Correo Duplicado" as UC_ErrMail
+    usecase "EXT-02: Notificar Error - Contraseña Débil" as UC_ErrPass
+}
+
+' Relaciones de los Actores hacia el Caso Principal
+UserC --> UC_Reg
+UserG --> UC_Reg
+
+' Relaciones de Inclusión (Pasos lógicos obligatorios para completar CU-01)
+UC_Reg ..> UC_Val : <<include>>
+UC_Reg ..> UC_Term : <<include>>
+UC_Reg ..> UC_Mail : <<include>>
+UC_Reg ..> UC_Act : <<include>>
+UC_Reg ..> UC_Pass : <<include>>
+
+' Relaciones de Extensión (Rutas alternativas o de error)
+UC_Mail <.. UC_ErrMail : <<extend>>
+UC_Pass <.. UC_ErrPass : <<extend>>
+
+note right of UC_Reg
+  Criterios de Aceptación:
+  - Formato de correo válido (@)
+  - Términos obligatoriamente marcados
+  - Contraseña > 8 caracteres (Sugerido)
+end note
+
+@enduml

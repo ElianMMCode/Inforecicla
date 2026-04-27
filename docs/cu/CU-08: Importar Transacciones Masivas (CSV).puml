@@ -1,0 +1,45 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Gestor ECA" as UserG
+
+package "Sistema InfoRecicla: Módulo de Operaciones Masivas" {
+    usecase "CU-08: Importar Transacciones Masivas (CSV)" as UC_Batch
+    
+    usecase "CU-08.1: Validar Integridad del Archivo CSV" as UC_ValFile
+    usecase "CU-08.2: Procesar Lotes de Transacciones" as UC_Process
+    usecase "CU-08.3: Generar Reporte de Importación" as UC_Report
+    
+    usecase "EXT-10: Abortar Operación - Archivo Corrupto o Formato Inválido" as UC_ErrFile
+    usecase "EXT-11: Omitir Fila - Error de Datos o Stock Insuficiente" as UC_ErrRow
+}
+
+' Relación del Actor Principal
+UserG --> UC_Batch
+
+' Relaciones de Inclusión (Flujo secuencial obligatorio)
+UC_Batch ..> UC_ValFile : <<include>>
+UC_Batch ..> UC_Process : <<include>>
+UC_Batch ..> UC_Report : <<include>>
+
+' Relaciones de Extensión (Manejo de excepciones a nivel de archivo y a nivel de fila)
+UC_ValFile <.. UC_ErrFile : <<extend>>
+UC_Process <.. UC_ErrRow : <<extend>>
+
+note right of UC_Process
+  Integración Arquitectónica:
+  Este proceso itera sobre el archivo y
+  reutiliza internamente la lógica de
+  validación y cálculo de inventario 
+  definida en el CU-07 por cada fila.
+end note
+
+note bottom of UC_Report
+  El reporte final debe detallar:
+  - Filas procesadas con éxito.
+  - Filas omitidas con el motivo exacto
+    (ej. "Fila 45: Stock insuficiente").
+end note
+
+@enduml

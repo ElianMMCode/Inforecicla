@@ -1,0 +1,42 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Ciudadano" as UserC
+actor "API de Mapas Externa" as MapAPI <<System>>
+
+package "Sistema InfoRecicla: Módulo de Exploración" {
+    usecase "CU-03: Consultar Detalle de Punto ECA" as UC_Detail
+    
+    usecase "CU-03.1: Renderizar Información Base (Nombre, Dirección)" as UC_Base
+    usecase "CU-03.2: Consultar Horarios y Estado Operativo" as UC_Time
+    usecase "CU-03.3: Listar Materiales Aceptados y Precios" as UC_Mat
+    
+    usecase "EXT-19: Mostrar Alerta visual - ECA Fuera de Servicio / Cerrado" as UC_Closed
+    usecase "EXT-20: Trazar Ruta de Navegación hacia el ECA" as UC_Route
+}
+
+' Relación del Actor Principal
+UserC --> UC_Detail
+
+' Relaciones de Inclusión (La vista de detalle requiere consolidar todos estos datos)
+UC_Detail ..> UC_Base : <<include>>
+UC_Detail ..> UC_Time : <<include>>
+UC_Detail ..> UC_Mat : <<include>>
+
+' Relaciones de Extensión (Condiciones dinámicas basadas en el estado o acción del usuario)
+UC_Time <.. UC_Closed : <<extend>>
+UC_Detail <.. UC_Route : <<extend>>
+
+' Interacción con el sistema externo para el trazado de rutas
+UC_Route --> MapAPI
+
+note right of UC_Time
+  Cálculo de Estado en Tiempo Real:
+  El backend (Django) debe comparar la hora 
+  actual del servidor con la jornada laboral 
+  registrada en la BD para devolver un 
+  flag booleano (is_open = True/False).
+end note
+
+@enduml

@@ -9,48 +9,52 @@ class UserService:
     @transaction.atomic
     def editar_perfil(request, id):
         """
-        Vista para editar el perfil del gestor ECA.
+        Edita el perfil del usuario identificado por 'id' según los datos provistos en un request POST.
+        Pensada para editores de perfil de tipo gestor ECA.
+        - Actualiza campos personales, de contacto, documento y localidad.
+        - Si el usuario no existe, redirige al inicio.
+        - Utiliza transacciones atómicas para evitar condiciones de carrera durante el guardado.
+        - Devuelve un diccionario con el usuario actualizado y posibles errores de validación.
+        Args:
+            request: HttpRequest de Django con datos en request.POST
+            id: ID del usuario a editar
+        Returns:
+            dict | HttpResponseRedirect: {'usuario': usuario, 'errores': errores} o redirección si no existe el usuario.
         """
 
-        # Obtener usuario o redirigir si no existe
+        # 1. Buscar usuario y hacer lock de fila para evitar condiciones de carrera
         try:
-            usuario = Usuario.objects.select_for_update().get(
-                id=id
-            )  # Bloqueo para evitar condiciones de carrera
-
+            usuario = Usuario.objects.select_for_update().get(id=id)
         except Usuario.DoesNotExist:
+            # Si el usuario no existe, volvemos al inicio
             return redirect("base:inicio")
 
-        # Actualizar campos básicos del usuario
+        # 2. Actualizar datos básicos (nombre, apellido, email, teléfono, biografía)
         usuario.nombres = request.POST.get("nombre", usuario.nombres)
         usuario.apellidos = request.POST.get("apellido", usuario.apellidos)
         usuario.email = request.POST.get("email", usuario.email)
         usuario.celular = request.POST.get("telefono", usuario.celular)
         usuario.biografia = request.POST.get("biografia", usuario.biografia)
-        # Manejo robusto para fecha: si viene vacía (""), setea None
-        fecha_nacimiento = request.POST.get("fechaNacimiento")
-        if fecha_nacimiento:
-            usuario.fecha_nacimiento = fecha_nacimiento
-        else:
-            usuario.fecha_nacimiento = None
 
-        # Manejo de la localidad como objeto
+        # 3. Fecha de nacimiento: setea None si viene vacía
+        fecha_nacimiento = request.POST.get("fechaNacimiento")
+        usuario.fecha_nacimiento = fecha_nacimiento if fecha_nacimiento else None
+
+        # 4. Localidad: actualiza sólo si la id cambió y la nueva localidad existe
         localidad_id = request.POST.get("localidad")
-        if localidad_id != str(
-            usuario.localidad.localidad_id if usuario.localidad else ""
-        ):
+        id_actual = str(usuario.localidad.localidad_id) if usuario.localidad else ""
+        if localidad_id != id_actual:
             try:
                 usuario.localidad = Localidad.objects.get(localidad_id=localidad_id)
             except Localidad.DoesNotExist:
-                pass  # Mantener la localidad actual si no existe la nueva
+                # Si no se encuentra la nueva localidad, mantiene la actual
+                pass
 
-        usuario.tipo_documento = request.POST.get(
-            "tipo_documento", usuario.tipo_documento
-        )
-        usuario.numero_documento = request.POST.get(
-            "numero_documento", usuario.numero_documento
-        )
+        # 5. Documento
+        usuario.tipo_documento = request.POST.get("tipo_documento", usuario.tipo_documento)
+        usuario.numero_documento = request.POST.get("numero_documento", usuario.numero_documento)
 
+        # 6. Intentar guardar y capturar errores de validación
         from django.core.exceptions import ValidationError
 
         errores = None
@@ -58,12 +62,11 @@ class UserService:
             usuario.save()
         except ValidationError as ex:
             errores = (
-                ex.message_dict
-                if hasattr(ex, "message_dict")
-                else {"__all__": [str(ex)]}
+                ex.message_dict if hasattr(ex, "message_dict") else {"__all__": [str(ex)]}
             )
         except Exception as ex:
             print(f"[ERROR] al guardar usuario: {ex}")
             errores = {"__all__": [str(ex)]}
 
+        # Devuelve siempre el usuario (modificado o no) y cualquier error de validación
         return {"usuario": usuario, "errores": errores}

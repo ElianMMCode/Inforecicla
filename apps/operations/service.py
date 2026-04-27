@@ -336,6 +336,7 @@ class VentaInventarioService:
         centro_acopio_inst = None
         if centro_acopio_id:
             from apps.ecas.models import CentroAcopio
+
             try:
                 centro_acopio_inst = CentroAcopio.objects.get(id=centro_acopio_id)
             except CentroAcopio.DoesNotExist:

@@ -1,0 +1,53 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Ciudadano" as UserC
+
+package "Sistema InfoRecicla: Módulo de Participación" {
+    usecase "CU-04: Explorar Feed de Publicaciones" as UC_Feed
+    usecase "CU-04.1: Consultar Lista Paginada" as UC_List
+    usecase "CU-04.2: Visualizar Detalle y Multimedia" as UC_Detail
+    usecase "CU-04.3: Agregar a Colección de Favoritos" as UC_Save
+
+    usecase "CU-05: Retroalimentar Contenido" as UC_Interact
+    usecase "CU-05.1: Alternar Estado de 'Me Gusta' (Toggle)" as UC_Like
+    usecase "CU-05.2: Publicar Comentario" as UC_Comment
+
+    usecase "EXT-17: Mostrar Error - Límite Excedido (> 500 caracteres)" as UC_ErrLimit
+    usecase "EXT-18: Bloquear Acción - Comentario Vacío" as UC_ErrEmpty
+}
+
+' Relación del Actor Principal
+UserC --> UC_Feed
+UserC --> UC_Interact
+
+' Lógica de Exploración del Feed
+UC_Feed ..> UC_List : <<include>>
+UC_List <.. UC_Detail : <<extend>>
+UC_Detail <.. UC_Save : <<extend>>
+
+' Lógica de Interacción (Requiere estar viendo el detalle o la tarjeta)
+UC_Interact ..> UC_Detail : <<include>>
+UC_Detail <.. UC_Like : <<extend>>
+UC_Detail <.. UC_Comment : <<extend>>
+
+' Validaciones Estrictas del Comentario (Extraídas de los requerimientos)
+UC_Comment <.. UC_ErrLimit : <<extend>>
+UC_Comment <.. UC_ErrEmpty : <<extend>>
+
+note right of UC_Comment
+  Reglas de Validación (Backend/Frontend):
+  - Prevención de inyección de código (XSS).
+  - La longitud máxima estricta es de
+    500 caracteres por comentario.
+end note
+
+note bottom of UC_Like
+  Gestión de Estado:
+  La acción debe actuar como un interruptor.
+  Si el ciudadano ya otorgó un "Me Gusta",
+  ejecutar la acción nuevamente lo retira.
+end note
+
+@enduml

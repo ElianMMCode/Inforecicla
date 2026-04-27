@@ -1,0 +1,47 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Ciudadano" as UserC
+actor "API de Mapas Externa" as MapAPI <<System>>
+
+package "Sistema InfoRecicla: Módulo de Exploración" {
+    usecase "CU-02: Explorar Puntos ECA en Mapa" as UC_Map
+    
+    usecase "CU-02.1: Solicitar Permiso de Geolocalización" as UC_Geo
+    usecase "CU-02.2: Renderizar Mapa Base" as UC_Render
+    usecase "CU-02.3: Consultar ECAs Activos en Base de Datos" as UC_Fetch
+
+    usecase "EXT-03: Aplicar Filtro por Material (Ej. Plástico, Cartón)" as UC_Filter
+    usecase "EXT-04: Manejar Geolocalización Denegada (Centrar en Bogotá)" as UC_ErrGeo
+    usecase "EXT-05: Mostrar Error de Carga (API Caída)" as UC_ErrAPI
+    usecase "EXT-06: Notificar 'Sin Resultados / Fuera de Rango'" as UC_Empty
+}
+
+' Relaciones del Actor Principal (Ciudadano)
+UserC --> UC_Map
+
+' Relaciones con Actores Externos (El sistema pide el mapa a la API)
+UC_Render --> MapAPI
+
+' Relaciones de Inclusión (Procesos obligatorios que el sistema ejecuta en segundo plano)
+UC_Map ..> UC_Geo : <<include>>
+UC_Map ..> UC_Render : <<include>>
+UC_Map ..> UC_Fetch : <<include>>
+
+' Relaciones de Extensión (Interacciones opcionales o manejo de excepciones)
+UC_Map <.. UC_Filter : <<extend>>
+UC_Geo <.. UC_ErrGeo : <<extend>>
+UC_Render <.. UC_ErrAPI : <<extend>>
+
+' El mensaje de "Sin Resultados" puede ocurrir tanto al cargar inicialmente como al filtrar
+UC_Fetch <.. UC_Empty : <<extend>>
+UC_Filter <.. UC_Empty : <<extend>>
+
+note bottom of UC_Map
+  Requisitos Técnicos:
+  - El usuario no requiere estar autenticado.
+  - La consulta a BD (CU-02.3) debe retornar coordenadas (Lat/Lon).
+end note
+
+@enduml

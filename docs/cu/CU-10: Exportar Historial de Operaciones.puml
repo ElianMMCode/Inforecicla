@@ -1,0 +1,44 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor "Gestor ECA" as UserG
+
+package "Sistema InfoRecicla: Módulo de Reportes" {
+    usecase "CU-10: Exportar Historial de Operaciones" as UC_Export
+    
+    usecase "CU-10.1: Aplicar Filtros (Rango de Fechas, Material)" as UC_Filter
+    usecase "CU-10.2: Extraer y Compilar Registros de BD" as UC_Fetch
+    usecase "CU-10.3: Generar y Descargar Archivo (CSV/Excel)" as UC_File
+    
+    usecase "EXT-21: Abortar Exportación - 'Sin resultados en rango'" as UC_Empty
+    usecase "EXT-22: Delegar a Segundo Plano (Archivo de Gran Tamaño)" as UC_Async
+}
+
+' Relación del Actor Principal
+UserG --> UC_Export
+
+' Relaciones de Inclusión (Flujo secuencial obligatorio para la exportación)
+UC_Export ..> UC_Filter : <<include>>
+UC_Export ..> UC_Fetch : <<include>>
+UC_Export ..> UC_File : <<include>>
+
+' Relaciones de Extensión (Manejo de excepciones de datos y rendimiento)
+UC_Fetch <.. UC_Empty : <<extend>>
+UC_File <.. UC_Async : <<extend>>
+
+note right of UC_File
+  Manejo de Memoria:
+  El backend debe generar el archivo 
+  utilizando flujos de datos (Streams)
+  en lugar de cargar todos los registros
+  simultáneamente en la memoria RAM.
+end note
+
+note bottom of UC_Async
+  Para exportaciones masivas (ej. > 10,000 
+  registros), el sistema enviará el reporte 
+  al correo del Gestor cuando finalice.
+end note
+
+@enduml
