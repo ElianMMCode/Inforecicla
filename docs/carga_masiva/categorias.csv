@@ -1,0 +1,35 @@
+pk,nombre,descripcion,estado,fecha_creacion,fecha_modificacion
+0bf0c497-64bd-4e9d-8e61-d97477bbaf01,Envases Plásticos,Residuos de envases plásticos como botellas y empaques domésticos.,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+afd61604-1bb0-4382-96e8-71cb6acfd572,Papel y Cartón,"Residuos de papel y cartón limpios y secos, aptos para reciclaje.",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+d3ab111a-4860-4438-b72c-3f793b5ff6c4,Metales,"Latas, chatarra liviana y otros metales reciclables.",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f84d371e-97ed-11f0-a638-c4cbe12e39be,PET,"Polietileno tereftalato, usado en botellas y envases",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9558dd5-97ed-11f0-a638-c4cbe12e39be,PEAD (HDPE),"Polietileno de alta densidad, usado en envases de limpieza y garrafas",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f956eeb1-97ed-11f0-a638-c4cbe12e39be,PVC,"Policloruro de vinilo, usado en tuberías y perfiles",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9580b3b-97ed-11f0-a638-c4cbe12e39be,PEBD (LDPE),"Polietileno de baja densidad, usado en bolsas y films",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9592284-97ed-11f0-a638-c4cbe12e39be,PP,"Polipropileno, usado en tapas, envases de yogur y salsas",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f95a0f6a-97ed-11f0-a638-c4cbe12e39be,PS,"Poliestireno, incluye icopor y empaques",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f95afc66-97ed-11f0-a638-c4cbe12e39be,Otros Plásticos,Otros polímeros no comunes en reciclaje,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f95c182a-97ed-11f0-a638-c4cbe12e39be,Cartón corrugado,Cajas corrugadas para embalaje,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f95da2f4-97ed-11f0-a638-c4cbe12e39be,Cartón plegadizo,Empaques de cartón delgado,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f95ed27b-97ed-11f0-a638-c4cbe12e39be,Papel periódico,"Papel prensa, limpio y seco",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f95fb892-97ed-11f0-a638-c4cbe12e39be,Papel blanco (bond),Hojas blancas de oficina,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f960a77b-97ed-11f0-a638-c4cbe12e39be,Revistas/mixtos,"Revistas, catálogos y papeles mixtos",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f961bf79-97ed-11f0-a638-c4cbe12e39be,Transparente,Vidrio incoloro reciclable,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f962a2e6-97ed-11f0-a638-c4cbe12e39be,Ámbar,Vidrio color ámbar usado en botellas,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f96444cd-97ed-11f0-a638-c4cbe12e39be,Verde,Vidrio verde reciclable,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f965ddd7-97ed-11f0-a638-c4cbe12e39be,Aluminio,Latas y envases de aluminio reciclables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f966bbeb-97ed-11f0-a638-c4cbe12e39be,Acero/Hojalata,Latas de conservas y envases de hojalata,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f967a7ed-97ed-11f0-a638-c4cbe12e39be,Chatarra férrica,Residuos metálicos férricos,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9688235-97ed-11f0-a638-c4cbe12e39be,Algodón,Textiles de fibra natural reciclables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9697461-97ed-11f0-a638-c4cbe12e39be,Poliéster,Textiles de fibra sintética reciclables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f96a5212-97ed-11f0-a638-c4cbe12e39be,Mezcla (mixtos),Combinación de fibras textiles,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f96b3c02-97ed-11f0-a638-c4cbe12e39be,Pallets,Pallets de madera reutilizables o reciclables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f96c3c45-97ed-11f0-a638-c4cbe12e39be,Aglomerado/MDF,Tableros de aglomerado o MDF reciclables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f96d0928-97ed-11f0-a638-c4cbe12e39be,Envase multicapa,Envases Tetra Pak reciclables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f96e14db-97ed-11f0-a638-c4cbe12e39be,Pequeños aparatos,Electrodomésticos pequeños fuera de uso,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f96f35ac-97ed-11f0-a638-c4cbe12e39be,Grandes aparatos,Electrodomésticos grandes fuera de uso,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9701a17-97ed-11f0-a638-c4cbe12e39be,Periféricos/Accesorios,"Accesorios electrónicos como teclados, ratones, cables",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9711af7-97ed-11f0-a638-c4cbe12e39be,Pilas/Baterías,Pilas y baterías de diferentes tipos,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f972aad0-97ed-11f0-a638-c4cbe12e39be,Compostables,Residuos biodegradables para compostaje,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9738c79-97ed-11f0-a638-c4cbe12e39be,Aceite de cocina usado,Aceite usado que requiere gestión especial,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9751f8a-97ed-11f0-a638-c4cbe12e39be,Llantas,Neumáticos y llantas usadas reciclables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z

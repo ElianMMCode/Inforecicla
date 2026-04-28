@@ -1,0 +1,41 @@
+pk,nombre,descripcion,imagen_url,categoria_nombre,tipo_nombre,estado,fecha_creacion,fecha_modificacion
+90d4c292-a02c-447c-ab80-ed13b931ccde,Botellas PET transparentes,"Botellas y envases PET transparentes, enjuagados y sin tapa.",,Envases Plásticos,Plástico PET,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+baa7d539-1662-454d-a25d-e48bb6e1b27e,Papel de oficina blanco,"Hojas y resmas de papel blanco, sin clips ni anillos metálicos.",,Papel y Cartón,Papel Blanco,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+68aaf633-d250-4346-a780-5bd3ead7f0b4,Latas de bebida de aluminio,"Latas de bebidas y alimentos, limpias y aplastadas.",,Metales,Aluminio,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+0199750c-af0e-70ef-b951-c581b4fe7d96,Cartón Mojado con Paja,Cartón mojado con contenido de paja,,Cartón corrugado,Papel y Cartón,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f981963d-97ed-11f0-a638-c4cbe12e39be,Botella PET transparente,"Botella PET clara, enjuagada y sin etiqueta",,PET,Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f984cdf5-97ed-11f0-a638-c4cbe12e39be,Botella PET verde,"Botella PET verde, limpia y seca",,PET,Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f986ae09-97ed-11f0-a638-c4cbe12e39be,Envase HDPE (detergente),"Envase PEAD/HDPE de limpieza, sin residuos",,PEAD (HDPE),Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f98977b1-97ed-11f0-a638-c4cbe12e39be,Garrafa HDPE,"Garrafa de PEAD (aceite, agua), enjuagada",,PEAD (HDPE),Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f98b672f-97ed-11f0-a638-c4cbe12e39be,Bolsa LDPE,Bolsa plástica flexible limpia (PEBD/LDPE),,PEBD (LDPE),Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f98cf80c-97ed-11f0-a638-c4cbe12e39be,Film stretch LDPE,Plástico film estirable limpio,,PEBD (LDPE),Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f98fb86d-97ed-11f0-a638-c4cbe12e39be,Tapa PP,Tapa de envase de polipropileno,,PP,Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f991a139-97ed-11f0-a638-c4cbe12e39be,Envase PP alimentos,"Envase de PP (yogur, salsas), limpio",,PP,Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9936cc7-97ed-11f0-a638-c4cbe12e39be,Icopor (PS expandido),Bandejas o vasos de PS limpio (según gestor),,PS,Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f99525aa-97ed-11f0-a638-c4cbe12e39be,Tubos PVC,Retales de PVC limpios (sin contaminantes),,PVC,Plástico,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f997041b-97ed-11f0-a638-c4cbe12e39be,Cartón,"Cajas plegadas, limpias y secas",,Cartón corrugado,Papel y Cartón,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f998f2d9-97ed-11f0-a638-c4cbe12e39be,Cartulina plegadizo,"Empaques de cartón delgado, sin grasa",,Cartón plegadizo,Papel y Cartón,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f99b35bd-97ed-11f0-a638-c4cbe12e39be,Papel periódico,Papel periódico limpio y seco,,Papel periódico,Papel y Cartón,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f99d329a-97ed-11f0-a638-c4cbe12e39be,Papel bond blanco,"Hojas blancas (sin clips, sin espiral)",,Papel blanco (bond),Papel y Cartón,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f99f5353-97ed-11f0-a638-c4cbe12e39be,Revistas y mixtos,"Revistas, catálogos (sin plastificar excesivo)",,Revistas/mixtos,Papel y Cartón,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9a13a49-97ed-11f0-a638-c4cbe12e39be,Frasco vidrio transparente,"Frascos/botellas claras, sin tapa, limpios",,Transparente,Vidrio,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9a254a7-97ed-11f0-a638-c4cbe12e39be,Frasco vidrio ámbar,"Envases color ámbar, limpios",,Ámbar,Vidrio,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9a46885-97ed-11f0-a638-c4cbe12e39be,Frasco vidrio verde,"Botellas/ frascos verdes, limpios",,Verde,Vidrio,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9a60de0-97ed-11f0-a638-c4cbe12e39be,Lata de aluminio,Latas de bebidas aplastadas y limpias,,Aluminio,Metales,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9a7b726-97ed-11f0-a638-c4cbe12e39be,Lata de acero/hojalata,"Conservas, alimentos; limpias",,Acero/Hojalata,Metales,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9a98c0e-97ed-11f0-a638-c4cbe12e39be,Chatarra férrica,Recortes y piezas ferrosas,,Chatarra férrica,Metales,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9ac1263-97ed-11f0-a638-c4cbe12e39be,Envase Tetra Pak,"Cajas de leche/jugos, enjuagadas y plegadas",,Envase multicapa,Tetra Pak,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9ad35d5-97ed-11f0-a638-c4cbe12e39be,Ropa de algodón,Textil de algodón reutilizable o reciclable,,Algodón,Textiles,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9af1eb4-97ed-11f0-a638-c4cbe12e39be,Ropa de poliéster,Textil sintético para valorización,,Poliéster,Textiles,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9b0f71a-97ed-11f0-a638-c4cbe12e39be,Mezclas textiles,Algodón/poliéster u otras mezclas,,Mezcla (mixtos),Textiles,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9b2baa3-97ed-11f0-a638-c4cbe12e39be,Pallet de madera,Pallets en buen estado para reuso/reciclaje,,Pallets,Madera,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9b40f8d-97ed-11f0-a638-c4cbe12e39be,MDF/Aglomerado,Retales de aglomerado o MDF,,Aglomerado/MDF,Madera,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9b57372-97ed-11f0-a638-c4cbe12e39be,Celular en desuso,Teléfonos para disposición en puntos RAEE,,Pequeños aparatos,RAEE,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9b801e1-97ed-11f0-a638-c4cbe12e39be,Teclado/Mouse,Periféricos y accesorios electrónicos,,Periféricos/Accesorios,RAEE,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9ba4657-97ed-11f0-a638-c4cbe12e39be,Cargadores y cables,"Cables, cargadores y adaptadores",,Periféricos/Accesorios,RAEE,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9bc2c94-97ed-11f0-a638-c4cbe12e39be,Laptop dañada,Computadores portátiles fuera de uso,,Grandes aparatos,RAEE,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9be6e57-97ed-11f0-a638-c4cbe12e39be,Pilas AA/AAA,Pilas para puntos posconsumo autorizados,,Pilas/Baterías,RAEE,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9c0f45b-97ed-11f0-a638-c4cbe12e39be,Botella retornable vidrio,Retornable (consultar política del gestor),,Transparente,Vidrio,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9c29d31-97ed-11f0-a638-c4cbe12e39be,Aceite de cocina usado (UCE),Almacenado en botella plástica cerrada,,Aceite de cocina usado,Especiales,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9c43c0d-97ed-11f0-a638-c4cbe12e39be,Llantas usadas,Llantas enteras para programas de recolección,,Llantas,Especiales,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9c5f576-97ed-11f0-a638-c4cbe12e39be,Orgánicos compostables,Restos de comida/jardín para compostaje,,Compostables,Orgánicos,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
