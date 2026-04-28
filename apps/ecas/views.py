@@ -183,9 +183,7 @@ def _procesar_errores_perfil(errores, request):
     Procesa y muestra los errores de validación del perfil.
     """
     if not isinstance(errores, dict):
-        errores = {
-            "__all__": errores if isinstance(errores, list) else [errores]
-        }
+        errores = {"__all__": errores if isinstance(errores, list) else [errores]}
     for field, errs in errores.items():
         for error in errs:
             messages.error(
