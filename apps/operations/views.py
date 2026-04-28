@@ -13,6 +13,8 @@ from apps.core.decorators import gestor_eca_or_admin_required
 from .resources import CompraInventarioResource, VentaInventarioResource
 from import_export.formats.base_formats import XLSX
 from weasyprint import HTML
+
+INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
 from django.template.loader import render_to_string
 
 # =========== BULK IMPORT ===========
@@ -261,9 +263,7 @@ def registros_compras(request):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse(
-                {"error": "Cuerpo de petición JSON inválido"}, status=400
-            )
+            return JsonResponse({"error": INVALID_JSON_BODY_ERROR}, status=400)
     try:
         response = CompraInventarioService.registro_compra(request, data)
         return JsonResponse(response, safe=False)

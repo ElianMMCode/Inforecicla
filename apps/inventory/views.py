@@ -5,6 +5,8 @@ from apps.inventory.service import InventoryService
 from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse
 from apps.core.decorators import gestor_eca_or_admin_required
+
+INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
 import json
 
 
@@ -150,9 +152,7 @@ def agregar_al_inventario_view(request):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse(
-                {"error", "Cuerpo de petición JSON inválido"}, status=400
-            )
+            return JsonResponse({"error": INVALID_JSON_BODY_ERROR}, status=400)
     try:
         response = InventoryService.crear_inventario(data)
         return JsonResponse(response)
@@ -201,9 +201,7 @@ def actualizar_inventario_view(request, inventario_id):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse(
-                {"error": "Cuerpo de petición JSON inválido"}, status=400
-            )
+            return JsonResponse({"error": INVALID_JSON_BODY_ERROR}, status=400)
     try:
         response_data = InventoryService.actualizar_inventario(inventario_id, data)
         return JsonResponse(response_data, safe=False)
@@ -235,11 +233,11 @@ def buscar_materiales_inventario_view(request):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse(
-                {"error": "Cuerpo de petición JSON inválido"}, status=400
-            )
+            return JsonResponse({"error": INVALID_JSON_BODY_ERROR}, status=400)
     parametros_busqueda = {**filtros, **data}
-    resultados = InventoryService.buscar_materiales_dentro_inventario(parametros_busqueda)
+    resultados = InventoryService.buscar_materiales_dentro_inventario(
+        parametros_busqueda
+    )
     return JsonResponse(resultados, safe=False)
 
 
