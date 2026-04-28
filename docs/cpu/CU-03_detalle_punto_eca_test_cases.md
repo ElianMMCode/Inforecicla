@@ -64,6 +64,7 @@ establecidos para el caso de uso CU-03: Consultar Detalle de Punto ECA.
 | **Módulo de Django a Testear** | `map/views.py` (api_puntos_eca_detalle)                                                                                                                  |
 
 ---
+
 ## Notas finales
 
 Estos casos de prueba están diseñados para garantizar el cumplimiento de las

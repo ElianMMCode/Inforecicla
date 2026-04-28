@@ -82,6 +82,7 @@ establecidos para el caso de uso CU-02: Explorar Puntos ECA en Mapa.
 | **Módulo de Django a Testear** | `map/views.py`, `map/models.py`                                                                                                                  |
 
 ---
+
 ## Notas finales
 
 Estos casos de prueba están diseñados para garantizar el cumplimiento de las

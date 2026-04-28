@@ -82,6 +82,7 @@ establecidos para el caso de uso CU-04/05: Explorar Feed y Retroalimentar.
 | **Módulo de Django a Testear** | `publicaciones/views.py` (agregar_comentario - validación `_COMENTARIO_MIN` y `.strip()`)                                                                                                                  |
 
 ---
+
 ## Notas finales
 
 Estos casos de prueba están diseñados para garantizar el cumplimiento de las
