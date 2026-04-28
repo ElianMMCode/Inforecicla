@@ -1,0 +1,14 @@
+pk,nombre,descripcion,estado,fecha_creacion,fecha_modificacion
+9643d8d3-03fd-485d-b082-df5bdba6fa0c,Plástico PET,Plástico tipo PET de botellas y envases.,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+d81329db-24fe-4821-b1be-1854766c6cc0,Papel Blanco,Papel blanco de oficina o cuadernos sin grapas.,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+d5a3bf03-402c-460c-b569-311217c1ab8e,Aluminio,Latas y otros residuos de aluminio limpios.,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9763c5a-97ed-11f0-a638-c4cbe12e39be,Plástico,"Material polimérico reciclable usado en envases, empaques y objetos de uso común",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9773e0a-97ed-11f0-a638-c4cbe12e39be,Papel y Cartón,"Materiales fibrosos de origen vegetal reciclables, usados en empaques y escritura",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9781a33-97ed-11f0-a638-c4cbe12e39be,Vidrio,Material inorgánico reciclable presente en botellas y frascos,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f979766e-97ed-11f0-a638-c4cbe12e39be,Metales,"Materiales metálicos reciclables como aluminio, acero y otros férricos",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f97adc17-97ed-11f0-a638-c4cbe12e39be,Textiles,Materiales de fibras naturales o sintéticas reciclables y reutilizables,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f97c035e-97ed-11f0-a638-c4cbe12e39be,Madera,Material lignocelulósico reciclable y reutilizable en muebles y embalajes,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f97cfc41-97ed-11f0-a638-c4cbe12e39be,Tetra Pak,"Envases multicapa compuestos de cartón, aluminio y plástico reciclables",ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f97e0dab-97ed-11f0-a638-c4cbe12e39be,RAEE,Residuos de aparatos eléctricos y electrónicos reciclables en puntos autorizados,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f97f4b5d-97ed-11f0-a638-c4cbe12e39be,Orgánicos,Residuos biodegradables de origen vegetal o animal aptos para compostaje,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
+f9807198-97ed-11f0-a638-c4cbe12e39be,Especiales,Residuos de manejo especial como llantas y aceites usados,ACTIVO,2026-03-01T12:00:00Z,2026-03-01T12:00:00Z
