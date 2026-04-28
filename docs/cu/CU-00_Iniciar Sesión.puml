@@ -9,11 +9,11 @@ package "Sistema InfoRecicla: Módulo de Acceso y Seguridad" {
     
     usecase "CU-00.1: Validar Credenciales (Email/Password)" as UC_Val
     usecase "CU-00.2: Determinar Rol y Cargar Permisos" as UC_Role
-    usecase "CU-00.3: Gestionar Token de Sesión (JWT)" as UC_Token
+    usecase "CU-00.3: Gestionar Sesión de Usuario" as UC_Token
     
     usecase "EXT-41: Notificar Error - Credenciales Inválidas" as UC_ErrCred
     usecase "EXT-42: Bloquear Cuenta - Exceso de Intentos Fallidos" as UC_Lock
-    usecase "EXT-43: Recuperar Contraseña (Enviar Email)" as UC_Forgot
+    usecase "EXT-43: Recuperar Contraseña" as UC_Forgot
 }
 
 ' Relación del Actor (Universal para Ciudadano, Gestor y Admin)
