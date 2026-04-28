@@ -3,20 +3,23 @@ from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
-from apps.ecas.models import PuntoECA, Localidad, CentroAcopio
+from apps.ecas.models import Localidad, CentroAcopio
 from apps.users.models import Usuario
 from config import constants as cons
 from apps.core.service import UserService
-from apps.ecas.service import PuntoService
+from apps.ecas.service import PuntoService, Helper
 from apps.ecas.constants import SECTION_TEMPLATES
 from apps.operations.views import _build_movimientos_context
 from apps.scheduling.views import _build_calendario_context
 from apps.inventory.views import _build_materiales_context
-from django.http import JsonResponse
 from apps.core.decorators import gestor_eca_or_admin_required
 from apps.reciclabot.service import AsistenteECAService
 import decimal
 import json
+
+CONSTANTE_RENDER = "punto-eca:render_seccion"
+CONSTANTE_PERFIL = "punto-eca:perfil"
+CONSTANTE_NO_ENCONTRADO = "Centro no encontrado"
 
 
 @gestor_eca_or_admin_required
@@ -175,6 +178,21 @@ def _build_default_context(punto, seccion):
     }
 
 
+def _procesar_errores_perfil(errores, request):
+    """
+    Procesa y muestra los errores de validación del perfil.
+    """
+    if not isinstance(errores, dict):
+        errores = {
+            "__all__": errores if isinstance(errores, list) else [errores]
+        }
+    for field, errs in errores.items():
+        for error in errs:
+            messages.error(
+                request, f"{field}: {error}" if field != "__all__" else error
+            )
+
+
 @gestor_eca_or_admin_required
 def editar_perfil_gestor(request, id):
     """
@@ -193,30 +211,18 @@ def editar_perfil_gestor(request, id):
       - Usa redirect para prevenir doble submit en POST (PRG pattern)
       - El acceso debe estar protegido con decorador correspondiente
     """
-    try:
-        usuario = Usuario.objects.get(id=id)
-    except Usuario.DoesNotExist:
-        messages.error(request, "El usuario que intenta editar no existe.")
-        return redirect("punto-eca:render_seccion", seccion="perfil")
+
+    usuario = buscar_usuario(request)
 
     if request.method == "POST":
         resultado = UserService.editar_perfil(request, id)
         usuario = resultado.get("usuario")
         errores = resultado.get("errores")
         if errores:
-            if isinstance(errores, str):
-                errores = {"__all__": [errores]}
-            elif isinstance(errores, list):
-                errores = {"__all__": errores}
-            for field, errs in errores.items():
-                for error in errs:
-                    if field == "__all__":
-                        messages.error(request, error)
-                    else:
-                        messages.error(request, f"{field}: {error}")
-            return redirect("punto-eca:perfil")
+            _procesar_errores_perfil(errores, request)
+            return redirect(CONSTANTE_RENDER)
         messages.success(request, "Perfil actualizado correctamente.")
-        return redirect("punto-eca:perfil")
+        return redirect(CONSTANTE_PERFIL)
 
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
     context = {
@@ -253,12 +259,12 @@ def editar_punto(request, id):
         punto = PuntoECA.objects.get(gestor_eca_id=id)
     except PuntoECA.DoesNotExist:
         messages.error(request, "El Punto ECA que intenta editar no existe.")
-        return redirect("punto-eca:render_seccion", seccion="perfil")
+        return redirect(CONSTANTE_RENDER, seccion="perfil")
 
     if request.method == "POST":
         punto = PuntoService.editar_punto(request, id)
         messages.success(request, "Punto ECA actualizado correctamente.")
-        return redirect("punto-eca:perfil")
+        return redirect(CONSTANTE_PERFIL)
 
     usuario = punto.gestor_eca
     context = {
@@ -293,14 +299,7 @@ def editar_centro(request, id):
       - Retorna JSON en caso de error si la petición es AJAX (usando header x-requested-with). Para navegadores, usa HTTP estándar.
       - El contexto utiliza _build_centros_context para mantener DRY y coherencia de datos.
     """
-    try:
-        punto = PuntoECA.objects.get(gestor_eca_id=request.user.id)
-    except PuntoECA.DoesNotExist:
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse(
-                {"status": "error", "message": "Punto ECA no encontrado"}, status=404
-            )
-        return redirect("punto-eca:render_seccion", seccion="perfil")
+    punto = buscar_puntos_eca(request)
 
     try:
         centro = CentroAcopio.objects.get(
@@ -309,17 +308,20 @@ def editar_centro(request, id):
     except CentroAcopio.DoesNotExist:
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
-                {"status": "error", "message": "Centro no encontrado"}, status=404
+                {"status": "error", "message": CONSTANTE_NO_ENCONTRADO}, status=404
             )
         from django.http import Http404
-        raise Http404("Centro no encontrado")
+
+        raise Http404(CONSTANTE_NO_ENCONTRADO)
 
     if request.method == "POST":
         centro.nombre = request.POST.get("nombreCentro", centro.nombre)
         centro.tipo_centro = request.POST.get("tipoCentro", centro.tipo_centro)
         centro.celular = request.POST.get("celularCentro", centro.celular)
         centro.email = request.POST.get("emailCentro", centro.email)
-        centro.nombre_contacto = request.POST.get("nombreContacto", centro.nombre_contacto)
+        centro.nombre_contacto = request.POST.get(
+            "nombreContacto", centro.nombre_contacto
+        )
         centro.nota = request.POST.get("nota", centro.nota)
         localidad_id = request.POST.get("localidadCentro")
         if localidad_id and (
@@ -339,7 +341,7 @@ def editar_centro(request, id):
                     "mensaje": "Centro editado correctamente",
                 }
             )
-        return redirect("punto-eca:render_seccion", seccion="centros")
+        return redirect(CONSTANTE_RENDER, seccion="centros")
 
     context = _build_centros_context(punto)
     return render(request, "ecas/editar_centro.html", context)
@@ -364,14 +366,7 @@ def registrar_centro(request):
       - Siempre limita los nuevos centros a visibilidad ECA y pertenencia programática al punto.
       - La respuesta es consistente en ambos mundos (UI tradicional y JS/AJAX).
     """
-    try:
-        punto = PuntoECA.objects.get(gestor_eca_id=request.user.id)
-    except PuntoECA.DoesNotExist:
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse(
-                {"status": "error", "message": "Punto ECA no encontrado"}, status=404
-            )
-        return redirect("punto-eca:render_seccion", seccion="perfil")
+    punto = buscar_puntos_eca(request)
 
     if request.method == "POST":
         nombre = request.POST.get("nombreCentro")
@@ -411,7 +406,7 @@ def registrar_centro(request):
                     "mensaje": "Centro registrado correctamente",
                 }
             )
-        return redirect("punto-eca:render_seccion", seccion="centros")
+        return redirect(CONSTANTE_RENDER, seccion="centros")
 
     context = _build_centros_context(punto)
     return render(request, "ecas/registrar_centro.html", context)
@@ -438,7 +433,7 @@ def eliminar_centro(request, id):
             return JsonResponse({"status": "ok", "mensaje": "Centro eliminado"})
         except CentroAcopio.DoesNotExist:
             return JsonResponse(
-                {"status": "error", "message": "Centro no encontrado"}, status=404
+                {"status": "error", "message": CONSTANTE_NO_ENCONTRADO}, status=404
             )
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -449,7 +444,7 @@ def eliminar_centro(request, id):
 
 
 @login_required
-def puntos_eca_json(request):
+def puntos_eca_json():
     """
     API endpoint que devuelve un listado de puntos ECA simplificado para autocompletado y mapas en el perfil ciudadano.
     Retorna los primeros 50 puntos, serializados como lista de diccionarios.
@@ -460,3 +455,25 @@ def puntos_eca_json(request):
         )[:50]
     )
     return JsonResponse({"puntos": lista_puntos})
+
+
+def buscar_puntos_eca(request):
+    try:
+        punto = PuntoECA.objects.get(gestor_eca_id=request.user.id)
+    except PuntoECA.DoesNotExist:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {"status": "error", "message": "Punto ECA no encontrado"}, status=404
+            )
+        return redirect(CONSTANTE_RENDER, seccion="perfil")
+    return punto
+
+
+def buscar_usuario(request):
+    try:
+        usuario = Usuario.objects.get(id=request.user.id)
+    except Usuario.DoesNotExist:
+        return Helper.redireccionar_con_error(
+            CONSTANTE_NO_ENCONTRADO, "El usuario que intenta editar no existe."
+        )(request)
+    return usuario

@@ -31,7 +31,9 @@ class PuntoService:
         try:
             punto = PuntoECA.objects.get(gestor_eca_id=id)
         except PuntoECA.DoesNotExist:
-            return redirect("base:inicio")
+            return Helper.redireccionar_con_error(
+                "base:inicio", "Punto ECA no encontrado."
+            )
 
         # Actualización campo a campo (si el dato no viene, deja el valor actual)
         punto.nombre = request.POST.get("nombrePunto", punto.nombre)
@@ -48,7 +50,9 @@ class PuntoService:
         punto.longitud = float(lon) if lon not in (None, "") else None
         punto.descripcion = request.POST.get("descripcionPunto", punto.descripcion)
         punto.logo_url_punto = request.POST.get("logoUrlPunto", punto.logo_url_punto)
-        punto.horario_atencion = request.POST.get("horarioAtencionPunto", punto.horario_atencion)
+        punto.horario_atencion = request.POST.get(
+            "horarioAtencionPunto", punto.horario_atencion
+        )
 
         # Si la localidad efectivamente cambió, la busca y actualiza. No la borra si no existe el id
         localidad_id = request.POST.get("localidadPunto")
@@ -66,3 +70,19 @@ class PuntoService:
             raise
 
         return punto
+
+
+class Helper:
+    """
+    Clase auxiliar para manejar redireccionamientos y organización de errores de forma centralizada.
+    """
+
+    @staticmethod
+    def redireccionar_con_error(url_name, mensaje):
+        from django.contrib import messages
+
+        def wrapped_redirect(request):
+            messages.error(request, mensaje)
+            return redirect(url_name)
+
+        return wrapped_redirect
