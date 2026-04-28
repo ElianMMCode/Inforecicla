@@ -12,7 +12,7 @@ package "Sistema InfoRecicla: Módulo de Exploración" {
     usecase "CU-03.2: Consultar Horarios y Estado Operativo" as UC_Time
     usecase "CU-03.3: Listar Materiales Aceptados y Precios" as UC_Mat
     
-    usecase "EXT-19: Mostrar Alerta visual - ECA Fuera de Servicio / Cerrado" as UC_Closed
+    usecase "EXT-19: Mostrar Alerta Visual - ECA Fuera de Servicio / Cerrado" as UC_Closed
     usecase "EXT-20: Trazar Ruta de Navegación hacia el ECA" as UC_Route
 }
 
