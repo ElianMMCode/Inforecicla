@@ -216,12 +216,12 @@ def editar_perfil_gestor(request, id):
 
     if request.method == "POST":
         resultado = UserService.editar_perfil(request, id)
-        usuario = resultado.get("usuario")
         errores = resultado.get("errores")
         if errores:
             _procesar_errores_perfil(errores, request)
             return redirect(CONSTANTE_RENDER)
         messages.success(request, "Perfil actualizado correctamente.")
+        usuario = resultado.get("usuario", usuario)
         return redirect(CONSTANTE_PERFIL)
 
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
