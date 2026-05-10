@@ -232,7 +232,7 @@ def editar_perfil_gestor(request, id):
         "tipos_documento": cons.TipoDocumento.choices,
     }
 
-    return render(request, "ecas/editar_perfil.html", context)
+    return render(request, "ecas/section-perfil.html", context)
 
 
 @gestor_eca_or_admin_required
@@ -274,7 +274,7 @@ def editar_punto(request, id):
         "tipos_documento": cons.TipoDocumento.choices,
     }
 
-    return render(request, "ecas/editar_perfil.html", context)
+    return render(request, "ecas/section-perfil.html", context)
 
 
 @gestor_eca_or_admin_required
@@ -342,7 +342,7 @@ def editar_centro(request, id):
         return redirect(CONSTANTE_RENDER, seccion="centros")
 
     context = _build_centros_context(punto)
-    return render(request, "ecas/editar_centro.html", context)
+    return render(request, "ecas/section-perfil.html", context)
 
 
 @gestor_eca_or_admin_required
@@ -407,7 +407,7 @@ def registrar_centro(request):
         return redirect(CONSTANTE_RENDER, seccion="centros")
 
     context = _build_centros_context(punto)
-    return render(request, "ecas/registrar_centro.html", context)
+    return render(request, "ecas/section-centros.html", context)
 
 
 @gestor_eca_or_admin_required
