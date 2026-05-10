@@ -1,5 +1,3 @@
-from typing import Final
-
 """
 Constants para la app ECAS.
 
@@ -19,3 +17,4 @@ SECTION_TEMPLATES = {
     "perfil": "ecas/section-perfil.html",
     "mensajes": "ecas/section-mensajes.html",
 }
+# Si agregás una nueva sección, sumala acá para que quede centralizado su template.
