@@ -70,7 +70,7 @@ class TestRegistroPuntoECA(TestCase):
             "latitud": "4.6097",
             "longitud": "-74.0817",
             "password": self.password_aleatorio,
-            "passwordConfirm": "newpass123",
+            "passwordConfirm": self.password_aleatorio,
             "terminos": "on",
         }
         response = self.client.post(self.url, data)
