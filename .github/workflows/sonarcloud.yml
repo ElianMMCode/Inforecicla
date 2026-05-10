@@ -1,0 +1,31 @@
+# 1. Nombre del proceso que aparecerá en la interfaz de GitHub
+name: Code Quality Audit (SonarCloud)
+
+# 2. EL TRIGGER (El "Disparador"): Aquí definimos CUÁNDO se ejecuta.
+on:
+  pull_request:
+    # Solo se activará si el PR va dirigido a estas ramas
+    branches:
+      - main
+    # Se ejecutará cuando se abra el PR, se suba nuevo código o se reabra
+    types: [opened, synchronize, reopened]
+
+# 3. EL TRABAJO: Qué acciones va a realizar el servidor de GitHub
+jobs:
+  sonarcloud-analysis:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest # La máquina virtual donde correrá el proceso
+
+    steps:
+      # PASO A: Clonar el código en la máquina virtual
+      - name: 🔍 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necesario para que SonarCloud vea el historial y compare ramas
+
+      # PASO B: Ejecutar el análisis (Esta acción es oficial de SonarSource)
+      - name: 📤 SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Proporcionado automáticamente por GitHub
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Este lo debes crear tú en SonarCloud
