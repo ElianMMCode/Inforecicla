@@ -226,81 +226,117 @@ document.addEventListener("DOMContentLoaded", function () {
       hour12: false,
     },
     events: EVENTOS, // <-- now uses events from backend, not the mock
-    eventContent: function(arg) {
+    eventContent: function (arg) {
       // Custom rendering para visualizar más info en la celda, no solo en tooltip
       const e = arg.event;
       const tipo = e.extendedProps.type || e.type || "";
-      let innerHtml = '';
+      let innerHtml = "";
       if (tipo === "venta") {
-        let material = e.extendedProps.nombreMaterial || e.title || '-';
-        let cantidad = e.extendedProps.cantidad !== undefined ? parseFloat(e.extendedProps.cantidad) : '';
-        let precio = e.extendedProps.precioUnitario !== undefined ? parseFloat(e.extendedProps.precioUnitario) : '';
-        let total = cantidad !== '' && precio !== '' ? cantidad * precio : '';
-        innerHtml = `<b>Venta:</b> ${material}` +
-          (cantidad !== '' ? ` (${cantidad})` : '') +
-          (total !== '' ? ` - $${total}` : '');
+        let material = e.extendedProps.nombreMaterial || e.title || "-";
+        let cantidad =
+          e.extendedProps.cantidad !== undefined
+            ? parseFloat(e.extendedProps.cantidad)
+            : "";
+        let precio =
+          e.extendedProps.precioUnitario !== undefined
+            ? parseFloat(e.extendedProps.precioUnitario)
+            : "";
+        let total = cantidad !== "" && precio !== "" ? cantidad * precio : "";
+        innerHtml =
+          `<b>Venta:</b> ${material}` +
+          (cantidad !== "" ? ` (${cantidad})` : "") +
+          (total !== "" ? ` - $${total}` : "");
       } else if (tipo === "compra") {
-        let material = e.extendedProps.nombreMaterial || e.title || '-';
-        let cantidad = e.extendedProps.cantidad !== undefined ? parseFloat(e.extendedProps.cantidad) : '';
-        let precio = e.extendedProps.precioUnitario !== undefined ? parseFloat(e.extendedProps.precioUnitario) : '';
-        let total = cantidad !== '' && precio !== '' ? cantidad * precio : '';
-        innerHtml = `<b>Compra:</b> ${material}` +
-          (cantidad !== '' ? ` (${cantidad})` : '') +
-          (total !== '' ? ` - $${total}` : '');
+        let material = e.extendedProps.nombreMaterial || e.title || "-";
+        let cantidad =
+          e.extendedProps.cantidad !== undefined
+            ? parseFloat(e.extendedProps.cantidad)
+            : "";
+        let precio =
+          e.extendedProps.precioUnitario !== undefined
+            ? parseFloat(e.extendedProps.precioUnitario)
+            : "";
+        let total = cantidad !== "" && precio !== "" ? cantidad * precio : "";
+        innerHtml =
+          `<b>Compra:</b> ${material}` +
+          (cantidad !== "" ? ` (${cantidad})` : "") +
+          (total !== "" ? ` - $${total}` : "");
       } else {
         // Mostramos título, descripción corta, material y centro si existen
-        let desc = e.extendedProps.descripcion || e.extendedProps.description || '';
-        let material = e.extendedProps.material || e.extendedProps.nombreMaterial || '';
-        let centro = e.extendedProps.centro || e.extendedProps.nombreCentroAcopio || '';
+        let desc =
+          e.extendedProps.descripcion || e.extendedProps.description || "";
+        let material =
+          e.extendedProps.material || e.extendedProps.nombreMaterial || "";
+        let centro =
+          e.extendedProps.centro || e.extendedProps.nombreCentroAcopio || "";
         innerHtml = `<b>${e.title}</b>`;
-        if(desc) innerHtml += `<br><span style='font-size:0.90em;'>${desc}</span>`;
-        if(material) innerHtml += `<br><span style='font-size:0.88em;color:#555;'>${material}</span>`;
-        if(centro) innerHtml += `<br><span style='font-size:0.88em;color:#555;'>${centro}</span>`;
+        if (desc)
+          innerHtml += `<br><span style='font-size:0.90em;'>${desc}</span>`;
+        if (material)
+          innerHtml += `<br><span style='font-size:0.88em;color:#555;'>${material}</span>`;
+        if (centro)
+          innerHtml += `<br><span style='font-size:0.88em;color:#555;'>${centro}</span>`;
       }
-      return { html: `<span style="font-size:0.95em;white-space:normal;word-break:break-word;">${innerHtml}</span>` };
+      return {
+        html: `<span style="font-size:0.95em;white-space:normal;word-break:break-word;">${innerHtml}</span>`,
+      };
     },
-    eventDidMount: function(info) {
+    eventDidMount: function (info) {
       // Forzar el color definido en cada evento
       if (info.event.backgroundColor) {
         info.el.style.backgroundColor = info.event.backgroundColor;
         info.el.style.borderColor = info.event.backgroundColor;
-        info.el.style.color = '#fff'; // texto blanco para contraste
+        info.el.style.color = "#fff"; // texto blanco para contraste
       }
       // Armamos el contenido para el tooltip según el tipo
       var e = info.event;
       var tipo = e.extendedProps.type || e.type || "";
-      var contenido = '';
+      var contenido = "";
       if (tipo === "venta") {
-        let cantidad = e.extendedProps.cantidad !== undefined ? parseFloat(e.extendedProps.cantidad) : null;
-        let precio = e.extendedProps.precioUnitario !== undefined ? parseFloat(e.extendedProps.precioUnitario) : null;
-        let total = (cantidad && precio) ? cantidad * precio : null;
-        contenido = `<b>Venta</b><br>Material: ${e.extendedProps.nombreMaterial || e.title || '-'}<br>` +
-          (cantidad !== null ? `Cantidad: ${cantidad}<br>` : '') +
-          (precio !== null ? `Precio unitario: $${precio}<br>` : '') +
-          (total !== null ? `Total: $${total}<br>` : '') +
-          `Centro: ${e.extendedProps.nombreCentroAcopio || e.extendedProps.centro || '-'}<br>` +
-          `${e.extendedProps.descripcion || e.extendedProps.description || ''}`;
+        let cantidad =
+          e.extendedProps.cantidad !== undefined
+            ? parseFloat(e.extendedProps.cantidad)
+            : null;
+        let precio =
+          e.extendedProps.precioUnitario !== undefined
+            ? parseFloat(e.extendedProps.precioUnitario)
+            : null;
+        let total = cantidad && precio ? cantidad * precio : null;
+        contenido =
+          `<b>Venta</b><br>Material: ${e.extendedProps.nombreMaterial || e.title || "-"}<br>` +
+          (cantidad !== null ? `Cantidad: ${cantidad}<br>` : "") +
+          (precio !== null ? `Precio unitario: $${precio}<br>` : "") +
+          (total !== null ? `Total: $${total}<br>` : "") +
+          `Centro: ${e.extendedProps.nombreCentroAcopio || e.extendedProps.centro || "-"}<br>` +
+          `${e.extendedProps.descripcion || e.extendedProps.description || ""}`;
       } else if (tipo === "compra") {
-        let cantidad = e.extendedProps.cantidad !== undefined ? parseFloat(e.extendedProps.cantidad) : null;
-        let precio = e.extendedProps.precioUnitario !== undefined ? parseFloat(e.extendedProps.precioUnitario) : null;
-        let total = (cantidad && precio) ? cantidad * precio : null;
-        contenido = `<b>Compra</b><br>Material: ${e.extendedProps.nombreMaterial || e.title || '-'}<br>` +
-          (cantidad !== null ? `Cantidad: ${cantidad}<br>` : '') +
-          (precio !== null ? `Precio unitario: $${precio}<br>` : '') +
-          (total !== null ? `Total: $${total}<br>` : '') +
-          `Centro: ${e.extendedProps.nombreCentroAcopio || e.extendedProps.centro || '-'}<br>` +
-          `${e.extendedProps.descripcion || e.extendedProps.description || ''}`;
+        let cantidad =
+          e.extendedProps.cantidad !== undefined
+            ? parseFloat(e.extendedProps.cantidad)
+            : null;
+        let precio =
+          e.extendedProps.precioUnitario !== undefined
+            ? parseFloat(e.extendedProps.precioUnitario)
+            : null;
+        let total = cantidad && precio ? cantidad * precio : null;
+        contenido =
+          `<b>Compra</b><br>Material: ${e.extendedProps.nombreMaterial || e.title || "-"}<br>` +
+          (cantidad !== null ? `Cantidad: ${cantidad}<br>` : "") +
+          (precio !== null ? `Precio unitario: $${precio}<br>` : "") +
+          (total !== null ? `Total: $${total}<br>` : "") +
+          `Centro: ${e.extendedProps.nombreCentroAcopio || e.extendedProps.centro || "-"}<br>` +
+          `${e.extendedProps.descripcion || e.extendedProps.description || ""}`;
       } else {
         contenido =
           `<b>${e.title}</b><br>` +
-          (e.extendedProps.descripcion || e.extendedProps.description || '');
+          (e.extendedProps.descripcion || e.extendedProps.description || "");
       }
       // Setear el atributo y activar el tooltip de Bootstrap
-      info.el.setAttribute('data-bs-toggle', 'tooltip');
-      info.el.setAttribute('data-bs-html', 'true');
-      info.el.setAttribute('title', contenido);
+      info.el.setAttribute("data-bs-toggle", "tooltip");
+      info.el.setAttribute("data-bs-html", "true");
+      info.el.setAttribute("title", contenido);
       // Ahora inicializamos el tooltip de Bootstrap 5
-      if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+      if (typeof bootstrap !== "undefined" && bootstrap.Tooltip) {
         new bootstrap.Tooltip(info.el);
       }
     },
@@ -392,7 +428,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Forzar recarga al cerrar el modal de crear evento (vía cualquier método)
   var modalCrear = document.getElementById("modalCrearEvento");
   if (modalCrear) {
-    modalCrear.addEventListener('hidden.bs.modal', function () {
+    modalCrear.addEventListener("hidden.bs.modal", function () {
       window.location.reload();
     });
   }
