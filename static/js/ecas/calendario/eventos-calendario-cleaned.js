@@ -7,10 +7,12 @@ document.addEventListener("DOMContentLoaded", function () {
     let cookieValue = null;
     if (document.cookie && document.cookie !== "") {
       const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === name + "=") {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+      for (const cookie of cookies) {
+        const trimmedCookie = cookie.trim();
+        if (trimmedCookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(
+            trimmedCookie.substring(name.length + 1),
+          );
           break;
         }
       }
@@ -78,7 +80,8 @@ document.addEventListener("DOMContentLoaded", function () {
             result.error || "Error desconocido al crear el evento";
           document.getElementById("alertError").classList.remove("d-none");
         }
-      } catch (e) {
+      } catch (error) {
+        console.error("Caught error:", error);
         document.getElementById("alertErrorText").innerText =
           "Error de red o servidor";
         document.getElementById("alertError").classList.remove("d-none");

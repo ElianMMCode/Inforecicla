@@ -9,10 +9,10 @@ function llenarModalEdicion(evento) {
     return;
   }
   function setSelectValue(selId, value, labelFallback) {
-    var sel = document.getElementById(selId);
+    let sel = document.getElementById(selId);
     if (!sel) return;
     if (value && !Array.from(sel.options).some((opt) => opt.value == value)) {
-      var opt = document.createElement("option");
+      let opt = document.createElement("option");
       opt.value = value;
       opt.text = labelFallback || value;
       sel.appendChild(opt);
@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
           eliminarEvento("serie");
         };
         // Ocultar el modal de detalle cuando abrís el de eliminación
-        var modalDetalle = bootstrap.Modal.getInstance(
+        let modalDetalle = bootstrap.Modal.getInstance(
           document.getElementById("modalDetalleEvento"),
         );
         if (modalDetalle) modalDetalle.hide();
@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error de red al intentar eliminar.");
         });
       // Cerrar modal de eliminar si existe
-      var modalEliminar = bootstrap.Modal.getInstance(
+      let modalEliminar = bootstrap.Modal.getInstance(
         document.getElementById("modalEliminarEvento"),
       );
       if (modalEliminar) modalEliminar.hide();
@@ -153,12 +153,12 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("DEBUG boton editar: eventoActual =", window.eventoActual);
       // Antes de abrir modal, poblar selects de edición desde los de creación (garantiza opciones)
       function copiarOpcionesSelect(srcId, destId) {
-        var src = document.getElementById(srcId);
-        var dest = document.getElementById(destId);
+        let src = document.getElementById(srcId);
+        let dest = document.getElementById(destId);
         if (!src || !dest) return;
         dest.innerHTML = "";
         Array.from(src.options).forEach(function (opt) {
-          var copia = opt.cloneNode(true);
+          let copia = opt.cloneNode(true);
           dest.appendChild(copia);
         });
       }
@@ -178,13 +178,13 @@ document.addEventListener("DOMContentLoaded", function () {
         );
       }
       // Buscamos los modales
-      var detalleModal = document.getElementById("modalDetalleEvento");
-      var editarModal = document.getElementById("modalEditarEvento");
+      let detalleModal = document.getElementById("modalDetalleEvento");
+      let editarModal = document.getElementById("modalEditarEvento");
       if (detalleModal && editarModal) {
-        var bootstrapModalDetalle =
+        let bootstrapModalDetalle =
           bootstrap.Modal.getInstance(detalleModal) ||
           new bootstrap.Modal(detalleModal);
-        var bootstrapModalEditar =
+        let bootstrapModalEditar =
           bootstrap.Modal.getInstance(editarModal) ||
           new bootstrap.Modal(editarModal);
         bootstrapModalDetalle.hide();
@@ -194,11 +194,11 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   });
-  var calendarEl = document.getElementById("calendar");
+  let calendarEl = document.getElementById("calendar");
   if (!calendarEl) return;
 
   // --- MOCK de eventos iniciales (luego pueden venir desde backend) ---
-  var eventosMock = [
+  let eventosMock = [
     {
       id: "1",
       title: "Venta Semanal de Plástico",
@@ -212,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
 
   // --- Inicializa FullCalendar ---
-  var calendar = new FullCalendar.Calendar(calendarEl, {
+  let calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
     locale: "es",
     headerToolbar: {
@@ -289,9 +289,9 @@ document.addEventListener("DOMContentLoaded", function () {
         info.el.style.color = "#fff"; // texto blanco para contraste
       }
       // Armamos el contenido para el tooltip según el tipo
-      var e = info.event;
-      var tipo = e.extendedProps.type || e.type || "";
-      var contenido = "";
+      let e = info.event;
+      let tipo = e.extendedProps.type || e.type || "";
+      let contenido = "";
       if (tipo === "venta") {
         let cantidad =
           e.extendedProps.cantidad !== undefined
@@ -331,7 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
           `<b>${e.title}</b><br>` +
           (e.extendedProps.descripcion || e.extendedProps.description || "");
       }
-      // Setear el atributo y activar el tooltip de Bootstrap
+      // Setear el atributo y actilet el tooltip de Bootstrap
       info.el.setAttribute("data-bs-toggle", "tooltip");
       info.el.setAttribute("data-bs-html", "true");
       info.el.setAttribute("title", contenido);
@@ -342,7 +342,7 @@ document.addEventListener("DOMContentLoaded", function () {
     },
     eventClick: function (info) {
       // Siempre setea window.eventoActual ANTES de mostrar detalles
-      var e = info.event;
+      let e = info.event;
       window.eventoActual = {
         id: e.id,
         title: e.title,
@@ -410,7 +410,7 @@ document.addEventListener("DOMContentLoaded", function () {
   window._calendarioEca = calendar;
 
   // --- Captura submit del formulario para crear evento ---
-  var form = document.getElementById("formCrearEvento");
+  let form = document.getElementById("formCrearEvento");
   if (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -418,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
   // También por si usan el botón explícito
-  var btnGuardar = document.getElementById("btnGuardarEvento");
+  let btnGuardar = document.getElementById("btnGuardarEvento");
   if (btnGuardar) {
     btnGuardar.addEventListener("click", function (e) {
       agregarEventoDesdeFormulario();
@@ -426,7 +426,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Forzar recarga al cerrar el modal de crear evento (vía cualquier método)
-  var modalCrear = document.getElementById("modalCrearEvento");
+  let modalCrear = document.getElementById("modalCrearEvento");
   if (modalCrear) {
     modalCrear.addEventListener("hidden.bs.modal", function () {
       window.location.reload();
@@ -435,21 +435,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function agregarEventoDesdeFormulario() {
     // Obtener valores de los campos
-    var titulo = document.getElementById("inputTitulo").value;
-    var descripcion = document.getElementById("inputDescripcion").value;
-    var material =
+    let titulo = document.getElementById("inputTitulo").value;
+    let descripcion = document.getElementById("inputDescripcion").value;
+    let material =
       document.getElementById("selectMaterial").options[
         document.getElementById("selectMaterial").selectedIndex
       ]?.text;
-    var centro =
+    let centro =
       document.getElementById("selectCentroAcopio").options[
         document.getElementById("selectCentroAcopio").selectedIndex
       ]?.text;
-    var fecha = document.getElementById("inputFechaInicio").value;
-    var horaInicio = document.getElementById("inputHoraInicio").value;
-    var horaFin = document.getElementById("inputHoraFin").value;
-    var color = document.getElementById("inputColor").value;
-    var observaciones = document.getElementById("inputObservaciones").value;
+    let fecha = document.getElementById("inputFechaInicio").value;
+    let horaInicio = document.getElementById("inputHoraInicio").value;
+    let horaFin = document.getElementById("inputHoraFin").value;
+    let color = document.getElementById("inputColor").value;
+    let observaciones = document.getElementById("inputObservaciones").value;
 
     if (!titulo || !fecha || !horaInicio || !horaFin) {
       mostrarError("Faltan datos obligatorios");
@@ -457,9 +457,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Construir dates ISO
-    var start = fecha + "T" + horaInicio;
-    var end = fecha + "T" + horaFin;
-    var nuevoEvento = {
+    let start = fecha + "T" + horaInicio;
+    let end = fecha + "T" + horaFin;
+    let nuevoEvento = {
       id: String(Date.now()),
       title: titulo,
       start: start,
@@ -474,7 +474,7 @@ document.addEventListener("DOMContentLoaded", function () {
     mostrarExito();
     // Cerrar el modal, limpiar el form y recargar la página
     setTimeout(function () {
-      var modal = bootstrap.Modal.getOrCreateInstance(
+      let modal = bootstrap.Modal.getOrCreateInstance(
         document.getElementById("modalCrearEvento"),
       );
       modal.hide();
@@ -486,7 +486,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==============================================
   // Lógica para editar evento desde el modal edición
   // ==============================================
-  var btnGuardarEditar = document.getElementById("btnGuardarEditarEvento");
+  let btnGuardarEditar = document.getElementById("btnGuardarEditarEvento");
   if (btnGuardarEditar) {
     btnGuardarEditar.addEventListener("click", async function () {
       const data = {
@@ -557,7 +557,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .getElementById("alertEditarSuccess")
             .classList.remove("d-none");
           setTimeout(function () {
-            var modal = bootstrap.Modal.getOrCreateInstance(
+            let modal = bootstrap.Modal.getOrCreateInstance(
               document.getElementById("modalEditarEvento"),
             );
             modal.hide();
@@ -595,7 +595,7 @@ function mostrarDetallesVenta(evento) {
       : evento.start
     : "-";
   // Cantidad
-  var cantidad =
+  let cantidad =
     evento.extendedProps.cantidad !== undefined
       ? parseFloat(evento.extendedProps.cantidad)
       : "";
@@ -607,7 +607,7 @@ function mostrarDetallesVenta(evento) {
         })
       : "-";
   // Precio unitario
-  var precio =
+  let precio =
     evento.extendedProps.precioUnitario !== undefined
       ? parseFloat(evento.extendedProps.precioUnitario)
       : "";
@@ -620,7 +620,7 @@ function mostrarDetallesVenta(evento) {
         })
       : "-";
   // Total
-  var total = cantidad !== "" && precio !== "" ? cantidad * precio : "";
+  let total = cantidad !== "" && precio !== "" ? cantidad * precio : "";
   document.getElementById("detallesVentaTotal").textContent =
     total !== ""
       ? "$" +
@@ -641,7 +641,7 @@ function mostrarDetallesVenta(evento) {
   document.getElementById("detallesVentaObservaciones").textContent =
     evento.extendedProps.observaciones || "Sin observaciones";
   // Mostrar el modal usando el nuevo ID
-  var modalVenta = new bootstrap.Modal(
+  let modalVenta = new bootstrap.Modal(
     document.getElementById("modalDetallesVenta"),
   );
   modalVenta.show();
@@ -733,7 +733,7 @@ globalThis.mostrarDetalleEvento = function mostrarDetalleEvento(evento) {
   document.getElementById("eventoDetalleObservaciones").textContent =
     evento.extendedProps.observaciones || "Sin observaciones";
   // Mostrar el modal
-  var modal = new bootstrap.Modal(
+  let modal = new bootstrap.Modal(
     document.getElementById("modalDetalleEvento"),
   );
   modal.show();
@@ -750,7 +750,7 @@ function mostrarDetallesCompra(evento) {
       : evento.start
     : "-";
   // Para compras, los campos de cantidad/precio/unitario/total pueden venir en extendedProps
-  var cantidad =
+  let cantidad =
     evento.extendedProps.cantidad !== undefined
       ? parseFloat(evento.extendedProps.cantidad)
       : "";
@@ -761,7 +761,7 @@ function mostrarDetallesCompra(evento) {
           maximumFractionDigits: 2,
         })
       : "-";
-  var precio =
+  let precio =
     evento.extendedProps.precioUnitario !== undefined
       ? parseFloat(evento.extendedProps.precioUnitario)
       : "";
@@ -773,7 +773,7 @@ function mostrarDetallesCompra(evento) {
           maximumFractionDigits: 2,
         })
       : "-";
-  var total = cantidad !== "" && precio !== "" ? cantidad * precio : "";
+  let total = cantidad !== "" && precio !== "" ? cantidad * precio : "";
   document.getElementById("detCompraTotal").textContent =
     total !== ""
       ? "$" +
@@ -788,27 +788,27 @@ function mostrarDetallesCompra(evento) {
     evento.extendedProps.description ||
     "Sin observaciones";
   // Mostrar el modal usando el nuevo ID
-  var modalCompra = new bootstrap.Modal(
+  let modalCompra = new bootstrap.Modal(
     document.getElementById("modalDetallesCompra"),
   );
   modalCompra.show();
 }
 
 function mostrarError(msg) {
-  var alert = document.getElementById("alertError");
-  var text = document.getElementById("alertErrorText");
+  let alert = document.getElementById("alertError");
+  let text = document.getElementById("alertErrorText");
   if (alert && text) {
     text.textContent = msg;
     alert.classList.remove("d-none");
   }
 }
 function mostrarExito() {
-  var alert = document.getElementById("alertSuccess");
+  let alert = document.getElementById("alertSuccess");
   if (alert) alert.classList.remove("d-none");
 }
 function ocultarAlertas() {
-  var error = document.getElementById("alertError");
-  var ok = document.getElementById("alertSuccess");
+  let error = document.getElementById("alertError");
+  let ok = document.getElementById("alertSuccess");
   if (error) error.classList.add("d-none");
   if (ok) ok.classList.add("d-none");
 }
