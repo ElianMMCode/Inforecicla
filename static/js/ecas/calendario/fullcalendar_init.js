@@ -65,24 +65,26 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("click", function (event) {
     // Handler Eliminar Evento - solo si no es tipo venta/compra
     if (event.target && event.target.id === "btnEliminarEvento") {
-      if (!window.eventoActual) return;
+      if (!globalThis.eventoActual) return;
       const tipo =
-        window.eventoActual.tipoRepeticion || window.eventoActual.tipo || "";
+        globalThis.eventoActual.tipoRepeticion ||
+        globalThis.eventoActual.tipo ||
+        "";
       const isVenta =
-        window.eventoActual && window.eventoActual.tipo === "venta";
+        globalThis.eventoActual && globalThis.eventoActual.tipo === "venta";
       const isCompra =
-        window.eventoActual && window.eventoActual.tipo === "compra";
+        globalThis.eventoActual && globalThis.eventoActual.tipo === "compra";
       if (isVenta || isCompra) {
         alert(
           "No se puede eliminar eventos de tipo Venta o Compra desde aquí.",
         );
         return;
       }
-      const eventoId = window.eventoActual.id;
+      const eventoId = globalThis.eventoActual.id;
       const esRepetido = eventoId && eventoId.startsWith("evinst-");
       const esSerie =
-        window.eventoActual.tipoRepeticion &&
-        window.eventoActual.tipoRepeticion !== "NINGUNA";
+        globalThis.eventoActual.tipoRepeticion &&
+        globalThis.eventoActual.tipoRepeticion !== "NINGUNA";
       if (esRepetido || esSerie) {
         // Abrir modal custom para opciones de eliminación
         const modalEliminar = new bootstrap.Modal(
@@ -110,7 +112,9 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         // Evento normal/sin repeticiones - confirm para borrar
         if (
-          !window.confirm("¿Estás seguro de que querés eliminar este evento?")
+          !globalThis.confirm(
+            "¿Estás seguro de que querés eliminar este evento?",
+          )
         )
           return;
         eliminarEvento("serie");
@@ -120,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Nueva función dedicada para eliminar
     function eliminarEvento(deleteMode) {
-      const eventoId = window.eventoActual.id;
+      const eventoId = globalThis.eventoActual.id;
       fetch("/punto-eca/calendario/evento/eliminar/", {
         method: "POST",
         headers: {
@@ -135,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((res) => res.json())
         .then((result) => {
           if (result.success) {
-            window.location.reload();
+            globalThis.location.reload();
           } else {
             alert(result.error || "Error eliminando el evento");
           }
@@ -150,7 +154,10 @@ document.addEventListener("DOMContentLoaded", function () {
       if (modalEliminar) modalEliminar.hide();
     }
     if (event.target && event.target.id === "btnEditarEvento") {
-      console.log("DEBUG boton editar: eventoActual =", window.eventoActual);
+      console.log(
+        "DEBUG boton editar: eventoActual =",
+        globalThis.eventoActual,
+      );
       // Antes de abrir modal, poblar selects de edición desde los de creación (garantiza opciones)
       function copiarOpcionesSelect(srcId, destId) {
         let src = document.getElementById(srcId);
@@ -170,8 +177,8 @@ document.addEventListener("DOMContentLoaded", function () {
         "editarSelectTipoRepeticion",
       );
       // Llenar los datos del evento a editar
-      if (typeof llenarModalEdicion === "function" && window.eventoActual) {
-        llenarModalEdicion(window.eventoActual);
+      if (typeof llenarModalEdicion === "function" && globalThis.eventoActual) {
+        llenarModalEdicion(globalThis.eventoActual);
       } else {
         console.warn(
           "llenarModalEdicion no se ejecutó o eventoActual no seteado",
@@ -341,9 +348,9 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     },
     eventClick: function (info) {
-      // Siempre setea window.eventoActual ANTES de mostrar detalles
+      // Siempre setea globalThis.eventoActual ANTES de mostrar detalles
       let e = info.event;
-      window.eventoActual = {
+      globalThis.eventoActual = {
         id: e.id,
         title: e.title,
         descripcion:
@@ -377,22 +384,22 @@ document.addEventListener("DOMContentLoaded", function () {
         puntoEcaId:
           e.extendedProps.puntoEcaId ||
           e.extendedProps.punto_eca_id ||
-          window._PUNTO_ECA_ID ||
+          globalThis._PUNTO_ECA_ID ||
           "",
         usuarioId:
           e.extendedProps.usuarioId ||
           e.extendedProps.usuario_id ||
-          window._USUARIO_ID ||
+          globalThis._USUARIO_ID ||
           "",
       };
-      if (!window.eventoActual || !window.eventoActual.id) {
+      if (!globalThis.eventoActual || !globalThis.eventoActual.id) {
         console.warn(
           "DEBUG: eventoActual quedó incompleto",
-          window.eventoActual,
+          globalThis.eventoActual,
           e.extendedProps,
         );
       } else {
-        console.log("eventoActual seteado:", window.eventoActual);
+        console.log("eventoActual seteado:", globalThis.eventoActual);
       }
       const tipo = e.extendedProps.type || e.type || "";
       if (tipo === "venta") {
@@ -407,7 +414,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   calendar.render();
   // Exponer el calendar globalmente para usarlo desde otros scripts
-  window._calendarioEca = calendar;
+  globalThis._calendarioEca = calendar;
 
   // --- Captura submit del formulario para crear evento ---
   let form = document.getElementById("formCrearEvento");
@@ -429,7 +436,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let modalCrear = document.getElementById("modalCrearEvento");
   if (modalCrear) {
     modalCrear.addEventListener("hidden.bs.modal", function () {
-      window.location.reload();
+      globalThis.location.reload();
     });
   }
 
@@ -480,7 +487,7 @@ document.addEventListener("DOMContentLoaded", function () {
       modal.hide();
       form.reset();
       ocultarAlertas();
-      window.location.reload(); // Recarga la página al guardar un evento nuevo
+      globalThis.location.reload(); // Recarga la página al guardar un evento nuevo
     }, 800);
   }
   // ==============================================
@@ -565,7 +572,7 @@ document.addEventListener("DOMContentLoaded", function () {
               .getElementById("alertEditarSuccess")
               .classList.add("d-none");
             // Refrescar el calendario podría implicar reload de eventos, según estructura
-            window.location.reload();
+            globalThis.location.reload();
           }, 1200);
         } else {
           document.getElementById("alertEditarErrorText").innerText =
@@ -650,7 +657,7 @@ function mostrarDetallesVenta(evento) {
 // Modal para DETALLE GENÉRICO DE EVENTO
 globalThis.mostrarDetalleEvento = function mostrarDetalleEvento(evento) {
   // Refuerzo: setea global el evento actual mostrado
-  window.eventoActual = window.eventoActual = {
+  globalThis.eventoActual = globalThis.eventoActual = {
     id: evento.id,
     title: evento.title || evento.extendedProps.titulo || "",
     descripcion:
@@ -690,7 +697,7 @@ globalThis.mostrarDetalleEvento = function mostrarDetalleEvento(evento) {
     usuarioId:
       evento.extendedProps.usuarioId || evento.extendedProps.usuario_id || "",
   };
-  console.log("Refuerzo eventoActual modal:", window.eventoActual);
+  console.log("Refuerzo eventoActual modal:", globalThis.eventoActual);
   // Mostrar en consola para debug
   console.log("Evento para detalle:", evento, evento.extendedProps);
   document.getElementById("eventoDetalleTitulo").textContent =
