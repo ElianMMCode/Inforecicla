@@ -1,91 +1,104 @@
-// --- Archivo de JavaScript para Eventos del Calendario (Extraído de HTML) ---
+// --- Archivo de JavaScript para Eventos del Calendario (Refactorizado) ---
 
-// ==== Esperar a que el DOM esté cargado ==== //
 document.addEventListener("DOMContentLoaded", function () {
-  // Obtener cookies para CSRF
+  // Helper para obtener cookies (simplificado con .startsWith)
   function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (const cookie of cookies) {
-        const trimmedCookie = cookie.trim();
-        if (trimmedCookie.substring(0, name.length + 1) === name + "=") {
-          cookieValue = decodeURIComponent(
-            trimmedCookie.substring(name.length + 1),
-          );
-          break;
-        }
+    if (!document.cookie) return null;
+    for (const cookie of document.cookie.split(";")) {
+      const trimmed = cookie.trim();
+      if (trimmed.startsWith(name + "=")) {
+        return decodeURIComponent(trimmed.substring(name.length + 1));
       }
     }
-    return cookieValue;
+    return null;
   }
 
-  // Botón Guardar Evento
+  // Helpers de DOM para evitar repetir document.getElementById
+  const getVal = (id) => document.getElementById(id)?.value || "";
+  const alertError = document.getElementById("alertError");
+  const alertErrorText = document.getElementById("alertErrorText");
+  const alertSuccess = document.getElementById("alertSuccess");
+
+  // Helpers para manejo de alertas
+  function mostrarError(msg, debugData = null) {
+    if (alertErrorText && alertError) {
+      alertErrorText.innerText = msg;
+      alertError.classList.remove("d-none");
+    }
+    if (debugData) console.warn("Datos enviados:", debugData);
+  }
+
+  function mostrarExito() {
+    if (alertError) alertError.classList.add("d-none");
+    if (alertSuccess) alertSuccess.classList.remove("d-none");
+  }
+
+  // Inicio de lógica principal
   const btnGuardar = document.getElementById("btnGuardarEvento");
   if (!btnGuardar) {
-    alert("No se encontró el botón Guardar Evento");
-  } else {
-    btnGuardar.addEventListener("click", async function () {
-      const data = {
-        materialId: document.getElementById("selectMaterial").value,
-        centroAcopioId: document.getElementById("selectCentroAcopio").value,
-        puntoEcaId: document.getElementById("inputPuntoEcaId").value,
-        usuarioId: document.getElementById("inputUsuarioId").value,
-        titulo: document.getElementById("inputTitulo").value,
-        descripcion: document.getElementById("inputDescripcion").value,
-        fechaInicio: document.getElementById("inputFechaInicio").value,
-        horaInicio: document.getElementById("inputHoraInicio").value,
-        horaFin: document.getElementById("inputHoraFin").value,
-        color: document.getElementById("inputColor").value,
-        tipoRepeticion: document.getElementById("selectTipoRepeticion").value,
-        fechaFinRepeticion: document.getElementById("inputFechaFinRepeticion")
-          .value,
-        observaciones: document.getElementById("inputObservaciones").value,
-      };
-
-      // Validar campos completos
-      const faltan = [];
-      if (!data.materialId) faltan.push("Material");
-      if (!data.puntoEcaId) faltan.push("Punto ECA");
-      if (!data.usuarioId) faltan.push("Usuario");
-      if (!data.titulo) faltan.push("Título");
-      if (!data.fechaInicio) faltan.push("Fecha Inicio");
-      if (!data.horaInicio) faltan.push("Hora Inicio");
-      if (!data.horaFin) faltan.push("Hora Fin");
-
-      if (faltan.length > 0) {
-        document.getElementById("alertErrorText").innerText =
-          "Faltan campos obligatorios: " + faltan.join(", ");
-        document.getElementById("alertError").classList.remove("d-none");
-        console.warn("Datos enviados:", data);
-        return;
-      }
-
-      // Enviar datos al backend
-      try {
-        const response = await fetch("/punto-eca/calendario/evento/nuevo/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify(data),
-        });
-        const result = await response.json();
-        if (result.success) {
-          document.getElementById("alertError").classList.add("d-none");
-          document.getElementById("alertSuccess").classList.remove("d-none");
-        } else {
-          document.getElementById("alertErrorText").innerText =
-            result.error || "Error desconocido al crear el evento";
-          document.getElementById("alertError").classList.remove("d-none");
-        }
-      } catch (error) {
-        console.error("Caught error:", error);
-        document.getElementById("alertErrorText").innerText =
-          "Error de red o servidor";
-        document.getElementById("alertError").classList.remove("d-none");
-      }
-    });
+    console.warn("No se encontró el botón Guardar Evento");
+    return;
   }
+
+  btnGuardar.addEventListener("click", async function () {
+    // 1. Extracción de datos súper limpia
+    const data = {
+      materialId: getVal("selectMaterial"),
+      centroAcopioId: getVal("selectCentroAcopio"),
+      puntoEcaId: getVal("inputPuntoEcaId"),
+      usuarioId: getVal("inputUsuarioId"),
+      titulo: getVal("inputTitulo"),
+      descripcion: getVal("inputDescripcion"),
+      fechaInicio: getVal("inputFechaInicio"),
+      horaInicio: getVal("inputHoraInicio"),
+      horaFin: getVal("inputHoraFin"),
+      color: getVal("inputColor"),
+      tipoRepeticion: getVal("selectTipoRepeticion"),
+      fechaFinRepeticion: getVal("inputFechaFinRepeticion"),
+      observaciones: getVal("inputObservaciones"),
+    };
+
+    // 2. Validación dinámica y automatizada
+    const requeridos = {
+      materialId: "Material",
+      puntoEcaId: "Punto ECA",
+      usuarioId: "Usuario",
+      titulo: "Título",
+      fechaInicio: "Fecha Inicio",
+      horaInicio: "Hora Inicio",
+      horaFin: "Hora Fin",
+    };
+
+    const faltan = Object.keys(requeridos)
+      .filter((key) => !data[key])
+      .map((key) => requeridos[key]);
+
+    if (faltan.length > 0) {
+      mostrarError("Faltan campos obligatorios: " + faltan.join(", "), data);
+      return;
+    }
+
+    // 3. Envío al backend
+    try {
+      const response = await fetch("/punto-eca/calendario/evento/nuevo/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        mostrarExito();
+      } else {
+        mostrarError(result.error || "Error desconocido al crear el evento");
+      }
+    } catch (error) {
+      console.error("Caught error:", error);
+      mostrarError("Error de red o servidor");
+    }
+  });
 });
