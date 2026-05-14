@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro Ciudadano - InfoRecicla</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         body {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -76,9 +77,10 @@
             border: none;
         }
 
-        .btn-register {
+        .btn-login {
             width: 100%;
-            padding: 0.75rem;
+            height: 48px;
+            padding: 0 1rem;
             font-size: 1rem;
             font-weight: 600;
             border: none;
@@ -86,11 +88,47 @@
             background: #28a745;
             color: white;
             cursor: pointer;
-            transition: background 0.3s, transform 0.2s;
+            transition: background 0.3s, transform 0.2s, box-shadow 0.12s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
         }
 
-        .btn-register:hover {
+        .btn-login:hover {
             background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-login:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(40,167,69,0.12);
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            width: 18px;
+            height: 18px;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .btn-login.btn-ghost {
+            background: transparent;
+            color: #28a745;
+            border: 2px solid #28a745;
+            height: 48px;
+        }
+
+        .btn-login.btn-ghost .btn-icon {
+            color: #28a745;
+        }
+
+        .btn-login.btn-ghost:hover {
+            background: #28a745;
+            color: white;
             transform: translateY(-2px);
         }
 
@@ -293,11 +331,11 @@
             <div class="password-info">
                 <strong>Requisitos de contraseña:</strong>
                 <ul>
-                    <li>Mínimo 8 caracteres</li>
-                    <li>Al menos una mayúscula (A-Z)</li>
-                    <li>Al menos una minúscula (a-z)</li>
-                    <li>Al menos un número (0-9)</li>
-                    <li>Al menos un símbolo especial (@$!%*?&)</li>
+                    <li id="reqMinusculas">❌ Mínimo una letra minúscula (a-z)</li>
+                    <li id="reqMayusculas">❌ Mínimo una letra mayúscula (A-Z)</li>
+                    <li id="reqNumeros">❌ Mínimo un número (0-9)</li>
+                    <li id="reqEspeciales">❌ Mínimo un carácter especial (@$!%*?&)</li>
+                    <li id="reqLongitud">❌ Mínimo 8 caracteres</li>
                 </ul>
             </div>
 
@@ -305,14 +343,24 @@
             <div class="row-cols">
                 <div class="form-group">
                     <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="password" name="password"
-                           placeholder="Contraseña segura" required>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" name="password"
+                               placeholder="Contraseña segura" required>
+                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                            <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
-                    <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm"
-                           placeholder="Repite tu contraseña" required>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm"
+                               placeholder="Repite tu contraseña" required>
+                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                            <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -325,7 +373,10 @@
             </div>
 
             <!-- Botón de registro -->
-            <button type="submit" class="btn-register">Registrarse como Ciudadano</button>
+            <button type="submit" class="btn-login">
+                <i class="bi bi-person-plus btn-icon" aria-hidden="true"></i>
+                Registrarse como Ciudadano
+            </button>
         </form>
 
         <!-- Footer -->
@@ -364,6 +415,57 @@
             });
         }, false);
     })();
+
+    // Inicializar toggles de mostrar/ocultar contraseña
+    document.querySelectorAll('.toggle-password').forEach(function(icon){
+        icon.addEventListener('click', function(){
+            const targetSelector = icon.getAttribute('data-target');
+            const input = document.querySelector(targetSelector);
+            if (!input) return;
+            if (input.type === 'password'){
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+    });
+
+    // Resaltar requisitos a medida que se digita la contraseña
+    const pwdInput = document.getElementById('password');
+    if (pwdInput) {
+        const reqs = {
+            lower: document.getElementById('reqMinusculas'),
+            upper: document.getElementById('reqMayusculas'),
+            num: document.getElementById('reqNumeros'),
+            special: document.getElementById('reqEspeciales'),
+            len: document.getElementById('reqLongitud'),
+        };
+        function checkPwd(val){
+            if (!reqs.lower) return;
+            const hasLower = /[a-z]/.test(val);
+            const hasUpper = /[A-Z]/.test(val);
+            const hasNum = /\d/.test(val);
+            const hasSpecial = /[@$!%*?&]/.test(val);
+            const longEnough = val.length >= 8;
+            reqs.lower.classList.toggle('text-success', hasLower);
+            reqs.upper.classList.toggle('text-success', hasUpper);
+            reqs.num.classList.toggle('text-success', hasNum);
+            reqs.special.classList.toggle('text-success', hasSpecial);
+            reqs.len.classList.toggle('text-success', longEnough);
+            reqs.lower.innerText = (hasLower ? '✅ ' : '❌ ') + 'Mínimo una letra minúscula (a-z)';
+            reqs.upper.innerText = (hasUpper ? '✅ ' : '❌ ') + 'Mínimo una letra mayúscula (A-Z)';
+            reqs.num.innerText = (hasNum ? '✅ ' : '❌ ') + 'Mínimo un número (0-9)';
+            reqs.special.innerText = (hasSpecial ? '✅ ' : '❌ ') + 'Mínimo un carácter especial (@$!%*?&)';
+            reqs.len.innerText = (longEnough ? '✅ ' : '❌ ') + 'Mínimo 8 caracteres';
+        }
+        pwdInput.addEventListener('input', function(e){ checkPwd(e.target.value); });
+        // inicializar
+        checkPwd(pwdInput.value || '');
+    }
 </script>
 </body>
 </html>

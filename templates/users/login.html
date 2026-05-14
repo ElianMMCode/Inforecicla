@@ -5,8 +5,9 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Iniciar Sesión - InfoRecicla</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
               rel="stylesheet">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
         <style>
         .login-container {
             display: flex;
@@ -73,7 +74,8 @@
 
         .btn-login {
             width: 100%;
-            padding: 0.75rem;
+            height: 48px;
+            padding: 0 1rem;
             font-size: 1rem;
             font-weight: 600;
             border: none;
@@ -81,11 +83,53 @@
             background: #28a745;
             color: white;
             cursor: pointer;
-            transition: background 0.3s, transform 0.2s;
+            transition: background 0.3s, transform 0.2s, box-shadow 0.12s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
         }
 
         .btn-login:hover {
             background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-login:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(40,167,69,0.12);
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            width: 18px;
+            height: 18px;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .btn-icon .bi, .btn-icon.bi {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        /* Ghost variant: transparent by default, filled on hover */
+        .btn-login.btn-ghost {
+            background: transparent;
+            color: #28a745;
+            border: 2px solid #28a745;
+            height: 48px;
+        }
+
+        .btn-login.btn-ghost .btn-icon {
+            color: #28a745;
+        }
+
+        .btn-login.btn-ghost:hover {
+            background: #28a745;
+            color: white;
             transform: translateY(-2px);
         }
 
@@ -97,6 +141,16 @@
             border-radius: 8px;
             margin-bottom: 1.5rem;
             border: none;
+        }
+
+        .alert-info {
+            background-color: #e8f4fd;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background-color: #d1e7dd;
+            color: #0f5132;
         }
 
         .alert-danger {
@@ -148,7 +202,7 @@
             gap: 0.75rem;
         }
 
-        .register-links a {
+        .register-links a:not(.btn-login) {
             display: block;
             padding: 0.75rem;
             border: 2px solid #28a745;
@@ -161,9 +215,30 @@
             font-size: 0.9rem;
         }
 
-        .register-links a:hover {
+        .register-links a:not(.btn-login):hover {
             background-color: #28a745;
             color: white;
+        }
+
+        .activation-box {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            border: 1px solid #d8eadf;
+            border-radius: 12px;
+            background: #f8fff9;
+        }
+
+        .activation-box h2 {
+            font-size: 1rem;
+            color: #1d7a3a;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .activation-box p {
+            font-size: 0.9rem;
+            color: #5f6b66;
+            margin-bottom: 1rem;
         }
 
         .form-check {
@@ -191,15 +266,22 @@
             margin-bottom: 1rem;
         }
 
-        .forgot-password a {
+        .inline-action-btn {
             color: #28a745;
             text-decoration: none;
             font-size: 0.85rem;
             font-weight: 500;
         }
 
-        .forgot-password a:hover {
+        .inline-action-btn:hover {
             text-decoration: underline;
+        }
+
+        .auth-helper-btn {
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 8px;
+            font-weight: 600;
         }
         </style>
     </head>
@@ -222,9 +304,21 @@
                                 aria-label="Cerrar"></button>
                     </div>
                 {% endif %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="alert"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
                 <div id="js-error-container"></div>
                 <form method="POST" id="loginForm">
                     {% csrf_token %}
+                    <input type="hidden" id="loginAction" name="action" value="login">
                     <div class="form-group">
                         <label for="email" class="form-label">Correo Electrónico</label>
                         <input type="email"
@@ -232,17 +326,23 @@
                                id="email"
                                name="email"
                                placeholder="tu@email.com"
+                               value="{{ email|default:'' }}"
                                required
                                autofocus>
                     </div>
                     <div class="form-group">
                         <label for="password" class="form-label">Contraseña</label>
-                        <input type="password"
-                               class="form-control"
-                               id="password"
-                               name="password"
-                               placeholder="Contraseña"
-                               required>
+                        <div class="input-group">
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   name="password"
+                                   placeholder="Contraseña"
+                                   required>
+                            <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input"
@@ -252,15 +352,43 @@
                         <label class="form-check-label" for="rememberMe">Recuérdame</label>
                     </div>
                     <div class="forgot-password">
-                        <a href="/recuperar-contrasena/">Olvidé mi contraseña</a>
+                        <button type="button"
+                                class="btn btn-link p-0 inline-action-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#recoveryModal">
+                            Olvidé mi contraseña
+                        </button>
+                        <br>
+                        <button type="submit"
+                                class="btn btn-link p-0 inline-action-btn"
+                                formnovalidate
+                                onclick="document.getElementById('loginAction').value='reenviar';">
+                            Reenviar token para activar cuenta
+                        </button>
                     </div>
-                    <button type="submit" class="btn-login">Iniciar Sesión</button>
+                    <button type="submit" class="btn-login">
+                        <i class="bi bi-box-arrow-in-right btn-icon" aria-hidden="true"></i>
+                        Iniciar Sesión
+                    </button>
                 </form>
                 <div class="divider">O registrarse</div>
                 <div class="register-links">
-                    <a href="/registro/ciudadano">Registrarse como Ciudadano</a>
-                    <a href="/registro/eca">Registrar Punto ECA</a>
+                    <a href="/registro/ciudadano" class="btn-login btn-ghost">
+                        <i class="bi bi-person-plus btn-icon" aria-hidden="true"></i>
+                        Registrarse como Ciudadano
+                    </a>
+                    <a href="/registro/eca" class="btn-login btn-ghost">
+                        <i class="bi bi-geo-alt-fill btn-icon" aria-hidden="true"></i>
+                        Registrar Punto ECA
+                    </a>
                 </div>
+                <button type="button"
+                    class="btn-login auth-helper-btn btn-ghost"
+                        data-bs-toggle="modal"
+                        data-bs-target="#activationModal">
+                    <i class="bi bi-check2-circle btn-icon" aria-hidden="true"></i>
+                    Activar cuenta por correo
+                </button>
                 <div class="login-footer">
                     <p>
                         <a href="/" style="margin-top:1rem;display:inline-block;font-size:0.95rem;">&larr; Volver al inicio</a>
@@ -268,12 +396,144 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="activationModal" tabindex="-1" aria-labelledby="activationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="activationModalLabel">Activar cuenta por correo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted">Ingresa tu correo y el código de 6 dígitos para activar tu cuenta.</p>
+                        <form method="POST" id="activationForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="activar">
+                            <div class="form-group">
+                                <label for="activationEmail" class="form-label">Correo electrónico</label>
+                                <input type="email"
+                                       class="form-control"
+                                       id="activationEmail"
+                                       name="email"
+                                       placeholder="tu@email.com"
+                                       value="{{ email|default:'' }}"
+                                       required>
+                            </div>
+                            <div class="form-group">
+                                <label for="activationCode" class="form-label">Código de activación</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="activationCode"
+                                       name="codigo"
+                                       placeholder="123456"
+                                       maxlength="6"
+                                       pattern="[0-9]{6}"
+                                       inputmode="numeric"
+                                       required>
+                            </div>
+                            <button type="submit" class="btn-login">
+                                <i class="bi bi-check2-circle btn-icon" aria-hidden="true"></i>
+                                Activar cuenta
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="recoveryModal" tabindex="-1" aria-labelledby="recoveryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="recoveryModalLabel">Recuperar contraseña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% if recovery_step == 'cambiar' %}
+                            <p class="text-muted">Crea una nueva contraseña para <strong>{{ recovery_email }}</strong>.</p>
+                            <form method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="recuperar_cambiar">
+                                <input type="hidden" name="recovery_email" value="{{ recovery_email }}">
+                                <div class="form-group">
+                                    <label for="recoveryPassword" class="form-label">Nueva contraseña</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="recoveryPassword" name="recovery_password" required>
+                                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                            <i class="bi bi-eye toggle-password" data-target="#recoveryPassword" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                        <label for="recoveryPasswordConfirm" class="form-label">Confirmar contraseña</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="recoveryPasswordConfirm" name="recovery_password_confirm" required>
+                                            <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                                <i class="bi bi-eye toggle-password" data-target="#recoveryPasswordConfirm" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                </div>
+                                <button type="submit" class="btn-login">
+                                    <i class="bi bi-key-fill btn-icon" aria-hidden="true"></i>
+                                    Cambiar contraseña
+                                </button>
+                            </form>
+                        {% elif recovery_step == 'codigo' %}
+                            <p class="text-muted">Ingresa el código enviado a <strong>{{ recovery_email }}</strong>.</p>
+                            <form method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="recuperar_validar">
+                                <input type="hidden" name="recovery_email" value="{{ recovery_email }}">
+                                <div class="form-group">
+                                    <label for="recoveryCode" class="form-label">Código de verificación</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="recoveryCode"
+                                           name="recovery_codigo"
+                                           placeholder="123456"
+                                           maxlength="6"
+                                           pattern="[0-9]{6}"
+                                           inputmode="numeric"
+                                           required>
+                                </div>
+                                <button type="submit" class="btn-login">
+                                    <i class="bi bi-check2 btn-icon" aria-hidden="true"></i>
+                                    Validar código
+                                </button>
+                            </form>
+                        {% else %}
+                            <p class="text-muted">Te enviaremos un código de verificación por correo.</p>
+                            <form method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="recuperar_enviar">
+                                <div class="form-group">
+                                    <label for="recoveryEmail" class="form-label">Correo electrónico</label>
+                                    <input type="email"
+                                           class="form-control"
+                                           id="recoveryEmail"
+                                           name="recovery_email"
+                                           value="{{ email|default:'' }}"
+                                           placeholder="tu@email.com"
+                                           required>
+                                </div>
+                                <button type="submit" class="btn-login">
+                                    <i class="bi bi-envelope-fill btn-icon" aria-hidden="true"></i>
+                                    Enviar código
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
         document.addEventListener('DOMContentLoaded', function () {
             const loginForm = document.getElementById('loginForm');
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
+            const loginAction = document.getElementById('loginAction');
             const jsErrorContainer = document.getElementById('js-error-container');
 
             function showErrors(errors) {
@@ -284,6 +544,7 @@
                 let errors = [];
                 const emailValue = emailInput.value.trim();
                 const passwordValue = passwordInput.value;
+                const actionValue = loginAction.value;
                 // Validación de email
                 if (!emailValue) {
                     errors.push('El correo electrónico es obligatorio.');
@@ -294,9 +555,11 @@
                         errors.push('El correo electrónico no tiene un formato válido.');
                     }
                 }
-                // Validación de contraseña
-                if (!passwordValue) {
-                    errors.push('La contraseña es obligatoria.');
+                if (actionValue !== 'reenviar') {
+                    // Validación de contraseña solo para inicio de sesión
+                    if (!passwordValue) {
+                        errors.push('La contraseña es obligatoria.');
+                    }
                 }
                 if (errors.length > 0) {
                     e.preventDefault();
@@ -304,10 +567,50 @@
                     // Foco al primer campo inválido
                     if (!emailValue) {
                        emailInput.focus();
-                    } else if (!passwordValue) {
+                    } else if (actionValue !== 'reenviar' && !passwordValue) {
                        passwordInput.focus();
                     }
+                } else if (actionValue === 'reenviar') {
+                    passwordInput.value = '';
                 }
+            });
+
+            const currentAction = "{{ action|default:''|escapejs }}";
+            const recoveryStep = "{{ recovery_step|default:'enviar'|escapejs }}";
+            const activationModalEl = document.getElementById('activationModal');
+            const recoveryModalEl = document.getElementById('recoveryModal');
+
+            if (currentAction === 'activar' && activationModalEl) {
+                const activationModal = new bootstrap.Modal(activationModalEl);
+                activationModal.show();
+            }
+
+            if (
+                ['recuperar_enviar', 'recuperar_validar', 'recuperar_cambiar'].includes(currentAction)
+                || recoveryStep !== 'enviar'
+            ) {
+                if (recoveryModalEl) {
+                    const recoveryModal = new bootstrap.Modal(recoveryModalEl);
+                    recoveryModal.show();
+                }
+            }
+
+            // Inicializar toggles de mostrar/ocultar contraseña
+            document.querySelectorAll('.toggle-password').forEach(function(icon){
+                icon.addEventListener('click', function(e){
+                    const targetSelector = icon.getAttribute('data-target');
+                    const input = document.querySelector(targetSelector);
+                    if (!input) return;
+                    if (input.type === 'password'){
+                        input.type = 'text';
+                        icon.classList.remove('bi-eye');
+                        icon.classList.add('bi-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('bi-eye-slash');
+                        icon.classList.add('bi-eye');
+                    }
+                });
             });
         });
         </script>

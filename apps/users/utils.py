@@ -1,0 +1,182 @@
+"""
+Utilidades para manejo de validación de usuarios, tokens y envío de emails.
+"""
+import random
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.utils import timezone
+from datetime import timedelta
+from django.conf import settings
+from apps.users.models import TokenValidacion
+
+
+def generar_token_aleatorio(longitud=6):
+    """
+    Genera un token aleatorio de dígitos.
+    
+    Args:
+        longitud (int): Longitud del token (default: 6)
+    
+    Returns:
+        str: Token numérico aleatorio
+    """
+    return ''.join(str(random.randint(0, 9)) for _ in range(longitud))
+
+
+def crear_token_validacion(email, tipo, usuario=None, minutos_expiracion=15):
+    """
+    Crea un token de validación en la base de datos.
+    
+    Args:
+        email (str): Email para el cual se crea el token
+        tipo (str): Tipo de token ('recuperacion' o 'verificacion')
+        usuario (Usuario): Usuario asociado (opcional)
+        minutos_expiracion (int): Minutos hasta que expire el token
+    
+    Returns:
+        TokenValidacion: Instancia del token creado
+    """
+    # Desactivar tokens previos del mismo email y tipo
+    TokenValidacion.objects.filter(
+        email=email,
+        tipo=tipo,
+        activo=True
+    ).update(activo=False)
+    
+    token = generar_token_aleatorio()
+    
+    # Asegurar que el token sea único
+    while TokenValidacion.objects.filter(token=token, activo=True).exists():
+        token = generar_token_aleatorio()
+    
+    fecha_expiracion = timezone.now() + timedelta(minutes=minutos_expiracion)
+    
+    token_obj = TokenValidacion.objects.create(
+        usuario=usuario,
+        email=email.lower(),
+        tipo=tipo,
+        token=token,
+        fecha_expiracion=fecha_expiracion
+    )
+    
+    return token_obj
+
+
+def enviar_email_recuperacion(email, token):
+    """
+    Envía un email con el token para recuperación de contraseña.
+    
+    Args:
+        email (str): Email del destinatario
+        token (str): Token de validación
+    
+    Returns:
+        int: Número de emails enviados (0 o 1)
+    """
+    asunto = "Recuperación de Contraseña - InfoRecicla"
+    
+    contexto = {
+        'email': email,
+        'token': token,
+        'minutos': 15,
+        # Enlace actualizado para abrir el modal de recuperación en la página de login
+        'enlace_validacion': f"{settings.SITE_URL}/login/?email={email}&recovery_step=codigo"
+    }
+    
+    # Renderizar template HTML
+    html_mensaje = render_to_string('users/email/recuperar_contrasena.html', contexto)
+    texto_plano = strip_tags(html_mensaje)
+    
+    try:
+        resultado = send_mail(
+            asunto,
+            texto_plano,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            html_message=html_mensaje,
+            fail_silently=False,
+        )
+        return resultado
+    except Exception as e:
+        print(f"Error enviando email a {email}: {str(e)}")
+        return 0
+
+
+def enviar_email_verificacion(email, token):
+    """
+    Envía un email con el token para verificación de registro.
+    
+    Args:
+        email (str): Email del destinatario
+        token (str): Token de validación
+    
+    Returns:
+        int: Número de emails enviados (0 o 1)
+    """
+    asunto = "Confirma tu Email - InfoRecicla"
+    
+    contexto = {
+        'email': email,
+        'token': token,
+        'minutos': 15,
+    }
+    
+    # Renderizar template HTML
+    html_mensaje = render_to_string('users/email/verificar_email.html', contexto)
+    texto_plano = strip_tags(html_mensaje)
+    
+    try:
+        resultado = send_mail(
+            asunto,
+            texto_plano,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            html_message=html_mensaje,
+            fail_silently=False,
+        )
+        return resultado
+    except Exception as e:
+        print(f"Error enviando email a {email}: {str(e)}")
+        return 0
+
+
+def verificar_token(email, token, tipo):
+    """
+    Verifica un token de validación.
+    
+    Args:
+        email (str): Email asociado al token
+        token (str): Token a validar
+        tipo (str): Tipo de token esperado
+    
+    Returns:
+        tuple: (bool, str, TokenValidacion|None)
+                - bool: True si el token es válido
+                - str: Mensaje de error/éxito
+                - TokenValidacion: Objeto del token (o None si hay error)
+    """
+    email = email.lower()
+    
+    # Buscar el token
+    token_obj = TokenValidacion.objects.filter(
+        email=email,
+        token=token,
+        tipo=tipo
+    ).first()
+    
+    if not token_obj:
+        return False, "Código de verificación inválido.", None
+    
+    # Verificar que el token pueda validarse
+    if not token_obj.puede_validarse():
+        if token_obj.esta_expirado():
+            return False, "El código de verificación ha expirado. Por favor, solicita uno nuevo.", None
+        else:
+            return False, "Demasiados intentos fallidos. Por favor, solicita un nuevo código.", None
+    
+    # Token válido
+    return True, "Código verificado correctamente.", token_obj
+# Nota: Las funciones auxiliares `obtener_o_crear_token` y `limpiar_tokens_expirados` fueron
+# eliminadas porque no se referencian en el flujo actual. Si en el futuro se requiere
+# reintroducir lógica de limpieza o reuso de tokens, recrear funciones con la lógica necesaria.
