@@ -39,7 +39,7 @@ class PuntoECAFactory(DjangoModelFactory):
     nombre = Sequence(lambda n: f"Punto ECA {n}")
     descripcion = Faker("text", max_nb_chars=50)
     celular = Sequence(lambda n: f"3{n:09d}")
-    telefono_punto = Sequence(lambda n: f"60123456{n:02d}")
+    telefono_punto = Sequence(lambda n: f"60123456{(n % 100):02d}")
     direccion = Faker("address")
     logo_url_punto = Faker("url")
     foto_url_punto = Faker("url")
