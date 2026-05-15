@@ -15,6 +15,7 @@ La lógica de permisos se basa en el usuario autenticado y la relación de perte
 
 from rest_framework import generics, permissions, serializers as drf_serializers
 from rest_framework.exceptions import PermissionDenied
+from django.http import Http404
 from apps.chat.models import Chat, Mensaje
 from apps.chat.serializers import ChatSerializer, MensajeSerializer
 from apps.ecas.models import PuntoECA
@@ -77,7 +78,8 @@ class MensajeUpdateView(generics.UpdateAPIView):
             chat_id=self.kwargs['chat_id']
         ).first()
         if not mensaje:
-            raise drf_serializers.ValidationError("Mensaje no encontrado.")
+            from django.http import Http404
+            raise Http404("Mensaje no encontrado.")
         if mensaje.remitente != self.request.user:
             raise PermissionDenied("Solo puedes editar tus propios mensajes.")
         return mensaje
