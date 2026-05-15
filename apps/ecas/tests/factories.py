@@ -18,7 +18,7 @@ class UserFactory(DjangoModelFactory):
     numero_documento = Sequence(lambda n: f"12345678{n}")
     nombres = Sequence(lambda n: f"Nombre{n}")
     apellidos = Sequence(lambda n: f"Apellido{n}")
-    password = "testpass123"
+    password = Faker("password", length=12)
     is_active = True
 
 
@@ -37,7 +37,7 @@ class PuntoECAFactory(DjangoModelFactory):
 
     gestor_eca = SubFactory(UserFactory)
     nombre = Sequence(lambda n: f"Punto ECA {n}")
-    descripcion = Faker("text", max_nb_chars=500)
+    descripcion = Faker("text", max_nb_chars=50)
     celular = Sequence(lambda n: f"3{n:09d}")
     telefono_punto = Sequence(lambda n: f"60123456{n:02d}")
     direccion = Faker("address")
