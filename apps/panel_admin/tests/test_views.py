@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
-import random
+import secrets
 import string
 
 User = get_user_model()
@@ -24,21 +24,28 @@ class AdminViewsTestCase(TestCase):
         digits = string.digits
         special = "@$!%*?&"  # Must match the regex in views.py
         
-        # Ensure at least one from each set
+        # Ensure at least one from each set using cryptographically secure random choice
         password = [
-            random.choice(uppercase),
-            random.choice(lowercase),
-            random.choice(digits),
-            random.choice(special)
+            secrets.choice(uppercase),
+            secrets.choice(lowercase),
+            secrets.choice(digits),
+            secrets.choice(special)
         ]
         
         # Fill the rest with random choices from all sets
         all_chars = uppercase + lowercase + digits + special
-        password.extend(random.choice(all_chars) for _ in range(length - 4))
+        password.extend(secrets.choice(all_chars) for _ in range(length - 4))
         
-        # Shuffle the list and join into string
-        random.shuffle(password)
-        return ''.join(password)
+        # Shuffle the list using cryptographically secure shuffle
+        # We'll use secrets.choice in a loop to shuffle securely
+        shuffled_password = []
+        remaining_indices = list(range(len(password)))
+        while remaining_indices:
+            idx = secrets.choice(remaining_indices)
+            shuffled_password.append(password[idx])
+            remaining_indices.remove(idx)
+        
+        return ''.join(shuffled_password)
 
     def setUp(self):
         """Set up test data"""
