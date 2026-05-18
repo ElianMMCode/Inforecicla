@@ -1,23 +1,16 @@
-{% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gestión de Materiales - InfoRecicla Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+{% extends "admin/base.html" %}
+{% block page_title %}Gestión de Materiales - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block extra_styles %}
   <style>
     .nav-tabs .nav-link { color: #198754; font-weight: 500; }
     .nav-tabs .nav-link.active { color: #fff; background-color: #198754; border-color: #198754; }
     .nav-tabs .nav-link:hover:not(.active) { background-color: rgba(25,135,84,.08); }
   </style>
-</head>
-<body class="bg-light">
+{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="materiales" %}{% endblock %}
 
-{% include "admin/partials/sidebar.html" with active="materiales" %}
-
-<main class="col offset-md-2 p-4">
+{% block content %}
 
   {% if messages %}
   <div class="mb-3">
@@ -36,8 +29,9 @@
   </div>
 
   <!-- Tabs -->
-  <ul class="nav nav-tabs mb-4" id="materialesTabs" role="tablist">
-    <li class="nav-item" role="presentation">
+  <nav aria-label="Pestañas Materiales">
+  <ul class="nav nav-tabs mb-4" id="materialesTabs">
+    <li class="nav-item">
       <button class="nav-link {% if tab == 'materiales' or not tab %}active{% endif %}"
               id="tab-materiales" data-bs-toggle="tab" data-bs-target="#pane-materiales"
               type="button" role="tab">
@@ -45,7 +39,7 @@
         <span class="badge bg-success ms-1">{{ materiales|length }}</span>
       </button>
     </li>
-    <li class="nav-item" role="presentation">
+    <li class="nav-item">
       <button class="nav-link {% if tab == 'tipos' %}active{% endif %}"
               id="tab-tipos" data-bs-toggle="tab" data-bs-target="#pane-tipos"
               type="button" role="tab">
@@ -53,7 +47,7 @@
         <span class="badge bg-success ms-1">{{ tipos|length }}</span>
       </button>
     </li>
-    <li class="nav-item" role="presentation">
+    <li class="nav-item">
       <button class="nav-link {% if tab == 'categorias' %}active{% endif %}"
               id="tab-categorias" data-bs-toggle="tab" data-bs-target="#pane-categorias"
               type="button" role="tab">
@@ -62,6 +56,7 @@
       </button>
     </li>
   </ul>
+  </nav>
 
   <div class="tab-content" id="materialesTabsContent">
 
@@ -89,7 +84,7 @@
           <form method="get" class="row g-2">
             <input type="hidden" name="tab" value="materiales">
             <div class="col-md-10">
-              <input type="text" name="q_mat" class="form-control" placeholder="Nombre, descripción, categoría o tipo..." value="{{ q_mat }}">
+              <input type="text" name="q_mat" class="form-control" placeholder="Nombre, descripción, categoría o tipo..." value="{{ q_mat }}" aria-label="Buscar materiales">
             </div>
             <div class="col-md-2 d-grid">
               <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
@@ -168,7 +163,7 @@
           <form method="get" class="row g-2">
             <input type="hidden" name="tab" value="tipos">
             <div class="col-md-10">
-              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}">
+              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" aria-label="Buscar tipos de material">
             </div>
             <div class="col-md-2 d-grid">
               <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
@@ -243,7 +238,7 @@
           <form method="get" class="row g-2">
             <input type="hidden" name="tab" value="categorias">
             <div class="col-md-10">
-              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}">
+              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" aria-label="Buscar categorías">
             </div>
             <div class="col-md-2 d-grid">
               <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
@@ -297,6 +292,9 @@
   </div><!-- /tab-content -->
 </main>
 
+{% endblock %}
+
+{% block extra_modals %}
 <!-- ===== MODAL CREAR MATERIAL ===== -->
 <div class="modal fade" id="modalCrearMaterial" tabindex="-1" aria-labelledby="labelCrearMaterial" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -310,17 +308,17 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-12">
-              <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-              <input type="text" name="nombre" class="form-control" placeholder="Ej: Botella PET, Papel Blanco..." required maxlength="30">
+              <label for="formCrearMaterial_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+              <input id="formCrearMaterial_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Botella PET, Papel Blanco..." required maxlength="30">
               <div class="invalid-feedback">El nombre es obligatorio (máx. 30 caracteres).</div>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Descripción</label>
-              <textarea name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Características, usos y especificaciones..."></textarea>
+              <label for="formCrearMaterial_descripcion" class="form-label fw-semibold">Descripción</label>
+              <textarea id="formCrearMaterial_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Características, usos y especificaciones..."></textarea>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Categoría</label>
-              <select name="categoria_id" class="form-select">
+              <label for="formCrearMaterial_categoria_id" class="form-label fw-semibold">Categoría</label>
+              <select id="formCrearMaterial_categoria_id" name="categoria_id" class="form-select">
                 <option value="">Sin categoría</option>
                 {% for cat in todas_categorias %}
                 <option value="{{ cat.id }}">{{ cat.nombre }}</option>
@@ -328,8 +326,8 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Tipo</label>
-              <select name="tipo_id" class="form-select">
+              <label for="formCrearMaterial_tipo_id" class="form-label fw-semibold">Tipo</label>
+              <select id="formCrearMaterial_tipo_id" name="tipo_id" class="form-select">
                 <option value="">Sin tipo</option>
                 {% for tipo in todos_tipos %}
                 <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
@@ -337,16 +335,16 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
-              <select name="estado" class="form-select" required>
+              <label for="formCrearMaterial_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
+              <select id="formCrearMaterial_estado" name="estado" class="form-select" required>
                 {% for val, label in estados %}
                 <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Imagen <span class="text-muted fw-normal small">(opcional)</span></label>
-              <input type="file" name="imagen" class="form-control" accept="image/*">
+              <label for="formCrearMaterial_imagen" class="form-label fw-semibold">Imagen <span class="text-muted fw-normal small">(opcional)</span></label>
+              <input id="formCrearMaterial_imagen" type="file" name="imagen" class="form-control" accept="image/*">
               <small class="form-text text-muted">JPG, PNG, GIF (máximo 5MB)</small>
             </div>
           </div>
@@ -359,8 +357,7 @@
     </div>
   </div>
 </div>
-
-<!-- ===== MODAL CREAR TIPO ===== -->
+    <!-- ===== MODAL CREAR TIPO ===== -->
 <div class="modal fade" id="modalCrearTipo" tabindex="-1" aria-labelledby="labelCrearTipo" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -373,17 +370,17 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-              <input type="text" name="nombre" class="form-control" placeholder="Ej: PET, Cartón corrugado..." required maxlength="30">
+              <label for="formCrearTipo_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+              <input id="formCrearTipo_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: PET, Cartón corrugado..." required maxlength="30">
               <div class="invalid-feedback">El nombre es obligatorio (máx. 30 caracteres).</div>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Descripción</label>
-              <textarea name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Descripción del tipo de material..."></textarea>
+              <label for="formCrearTipo_descripcion" class="form-label fw-semibold">Descripción</label>
+              <textarea id="formCrearTipo_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Descripción del tipo de material..."></textarea>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
-              <select name="estado" class="form-select" required>
+              <label for="formCrearTipo_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
+              <select id="formCrearTipo_estado" name="estado" class="form-select" required>
                 {% for val, label in estados %}
                 <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
@@ -413,17 +410,17 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-              <input type="text" name="nombre" class="form-control" placeholder="Ej: Plásticos, Metales, Papel..." required maxlength="30">
+              <label for="formCrearCategoria_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+              <input id="formCrearCategoria_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Plásticos, Metales, Papel..." required maxlength="30">
               <div class="invalid-feedback">El nombre es obligatorio (máx. 30 caracteres).</div>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Descripción</label>
-              <textarea name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Descripción de la categoría..."></textarea>
+              <label for="formCrearCategoria_descripcion" class="form-label fw-semibold">Descripción</label>
+              <textarea id="formCrearCategoria_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Descripción de la categoría..."></textarea>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
-              <select name="estado" class="form-select" required>
+              <label for="formCrearCategoria_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
+              <select id="formCrearCategoria_estado" name="estado" class="form-select" required>
                 {% for val, label in estados %}
                 <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
@@ -439,19 +436,19 @@
     </div>
   </div>
 </div>
+    {% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-// Validación de formularios modales
-['formCrearMaterial', 'formCrearTipo', 'formCrearCategoria'].forEach(function(id) {
-  var form = document.getElementById(id);
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-      this.classList.add('was-validated');
+    {% block extra_scripts %}
+    <script>
+    // Validación de formularios modales
+    ['formCrearMaterial', 'formCrearTipo', 'formCrearCategoria'].forEach(function(id) {
+      var form = document.getElementById(id);
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+          this.classList.add('was-validated');
+        });
+      }
     });
-  }
-});
-</script>
-</body>
-</html>
+    </script>
+    {% endblock %}

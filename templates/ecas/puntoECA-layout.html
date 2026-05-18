@@ -66,64 +66,13 @@
     </div>
 
     {% include 'ecas/partials/chat_asistente.html' %}
-    <!-- JS MODALS Y FUNCIONALIDAD EXTRA (igual que antes) -->
-    <!-- <script src="{% static 'js/modal-centros-propios.js' %}"></script>  Removido porque causaba 404 -->
-    <script src="{% static 'js/cambiar-contrasena.js' %}"></script>
     <!-- Sidebar subsections smooth scroll/enfoque logic -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.sidebar-subsection-link').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-          var anchor = this.getAttribute('data-anchor');
-          var urlBase = this.getAttribute('href').split('#')[0];
-          if (window.location.pathname === urlBase || window.location.pathname === urlBase + '/') {
-            e.preventDefault();
-            setTimeout(function() {
-              var section = document.querySelector(anchor);
-              if (section) {
-                if (!section.classList.contains('show')) {
-                  var header = document.querySelector('[data-bs-target="'+anchor+'"]');
-                  if (header) header.click();
-                  setTimeout(function() {
-                    section.scrollIntoView({ behavior: 'smooth', block: 'center'});
-                  }, 420);
-                } else {
-                  section.scrollIntoView({ behavior: 'smooth', block: 'center'});
-                }
-              }
-            }, 60);
-          }
-        });
-      });
-    });
-    </script>
-    <!-- Tus scripts personalizados y bootstrap/Select2 también quedarían aquí bajo el mismo orden -->
-    <script>
-      // ...(acá iría tu lógica JS para los eventos y modals, igual que antes, o separado en archivos)
-    </script>
+    <script src="{% static 'js/ecas/dashboard/sidebar_subsections.js' %}"></script>
     <style>
       html { scroll-behavior: smooth; }
       body, .min-vh-100 { min-height: 100vh; }
     </style>
-    <script src="{% static 'js/PuntoECA/fullcalendar_init.js' %}"></script>
-    <!-- Mover todos los scripts que dependen de window.eventoActual después de cargar fullcalendar_init.js -->
-    <script defer>
-      // Logging robusto para debug scope global
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('DEBUG: window:', window);
-        console.log('DEBUG: typeof window.eventoActual:', typeof window.eventoActual, 'valor:', window.eventoActual);
-        console.log('DEBUG: window === globalThis?', window === globalThis);
-      });
-      // Forzar inicialización Select2 SOBRE MODAL cada vez que se abre
-      var modal = document.getElementById('modalCrearEvento');
-      if (modal) {
-        modal.addEventListener('shown.bs.modal', function () {
-          if (window.inicializarSelect2Centros) {
-            setTimeout(window.inicializarSelect2Centros, 50);
-          }
-        });
-      }
-    </script>
+    <script src="{% static 'js/ecas/calendario/fullcalendar_init.js' %}"></script>
     <script src="https://unpkg.com/htmx.org@1.9.5"></script>
 
   </body>

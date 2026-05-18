@@ -1,16 +1,9 @@
+{% extends "admin/base.html" %}
 {% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tipos de Material - InfoRecicla Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-</head>
-<body class="bg-light">
-
-{% include "admin/partials/sidebar.html" with active="tipos" %}
+{% block page_title %}Tipos de Material - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="tipos" %}{% endblock %}
+{% block content %}
 
 <main class="col offset-md-2 p-4">
   {% if messages %}
@@ -46,7 +39,7 @@
     <div class="card-body">
       <form method="get" class="row g-2">
         <div class="col-md-10">
-          <input type="text" name="q" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}">
+          <input type="text" name="q" aria-label="Buscar tipos de material" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}">
         </div>
         <div class="col-md-2 d-grid">
           <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
@@ -97,6 +90,4 @@
   </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,430 @@
+[
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "00e2e8d0-243a-476d-a507-d4b4d0c04c1a",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-05-17T16:34:02.220Z",
+        "fecha_modificacion": "2026-05-17T16:34:02.220Z",
+        "nombre": "OR 1=1; DROP TABLE users;",
+        "descripcion": "prueba db",
+        "tipo": "Punto Eca"
+    }
+},
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "06d00998-f137-434f-a3a5-92e916106837",
+    "fields": {
+        "estado": "INACTIVO",
+        "fecha_creacion": "2026-05-17T16:34:23.970Z",
+        "fecha_modificacion": "2026-05-17T16:34:23.970Z",
+        "nombre": "asdfasdf",
+        "descripcion": "asdfasdf",
+        "tipo": "Noticia"
+    }
+},
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "22222222-2222-2222-2222-222222222222",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-03-27T02:59:55.125Z",
+        "fecha_modificacion": "2026-04-07T23:07:44.283Z",
+        "nombre": "fiesta",
+        "descripcion": "Celebracion",
+        "tipo": "Noticia"
+    }
+},
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "41b42ff1-44da-43e5-adf7-b96de1a79cee",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-05-17T16:31:19.125Z",
+        "fecha_modificacion": "2026-05-17T16:35:50.579Z",
+        "nombre": "a",
+        "descripcion": "s",
+        "tipo": "asdf"
+    }
+},
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "63c940ac-5a6a-4aab-8228-70feb4966a45",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-05-17T16:32:44.953Z",
+        "fecha_modificacion": "2026-05-17T16:32:44.953Z",
+        "nombre": "<script>alert(\"XSS\")</script>",
+        "descripcion": "test js",
+        "tipo": "Punto Eca"
+    }
+},
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "86ee9c80-1416-443c-aeb7-d05c1276dd69",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-05-17T16:35:08.593Z",
+        "fecha_modificacion": "2026-05-17T16:35:08.594Z",
+        "nombre": "prueba 1",
+        "descripcion": "asdf",
+        "tipo": "Punto Eca"
+    }
+},
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "c54f22cf-ba55-44b4-91fd-baa15db87b98",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-05-17T16:32:16.675Z",
+        "fecha_modificacion": "2026-05-17T16:32:16.675Z",
+        "nombre": "Guia 100%",
+        "descripcion": "asdf",
+        "tipo": "Punto Eca"
+    }
+},
+{
+    "model": "publicaciones.categoriapublicacion",
+    "pk": "cae43657-4247-4db7-9426-7d3d71102d0f",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-01T23:10:16.497Z",
+        "fecha_modificacion": "2026-04-07T23:07:07.377Z",
+        "nombre": "Celebracion",
+        "descripcion": "None",
+        "tipo": "Evento"
+    }
+},
+{
+    "model": "publicaciones.publicacion",
+    "pk": "33333333-3333-3333-3333-333333333333",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-03-27T02:59:55.125Z",
+        "titulo": "Bienvenidos al módulo de publicaciones de InfoRecicla",
+        "fecha_creacion": "2026-03-27T02:59:55.125Z",
+        "categoria": "22222222-2222-2222-2222-222222222222",
+        "contenido": "Esta publicación de demostración fue creada para validar el panel de publicaciones. Desde aquí puedes verificar que el módulo lista contenido, muestra una publicación destacada y permite navegar al detalle individual.",
+        "video": "",
+        "video_thumbnail": "",
+        "usuario": [
+            "demo.publicaciones@inforecicla.local"
+        ]
+    }
+},
+{
+    "model": "publicaciones.publicacion",
+    "pk": "3ea0aba2-792e-4936-bc0e-b02e2680162a",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-02T00:04:20.292Z",
+        "titulo": "Campañaaa",
+        "fecha_creacion": "2026-04-02T00:04:20.292Z",
+        "categoria": "22222222-2222-2222-2222-222222222222",
+        "contenido": "asdfgwertgtrhnjyujkyurkuiytrertyuerytuytjgkjvcncvcxvbftghwrtywretyrtyrtyrty",
+        "video": "",
+        "video_thumbnail": "",
+        "usuario": [
+            "elian19@gmail.com"
+        ]
+    }
+},
+{
+    "model": "publicaciones.publicacion",
+    "pk": "6930d147-a5c5-4ce9-9795-61995848b006",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-03T16:40:05.017Z",
+        "titulo": "¿Por que el reciclaje es importante?",
+        "fecha_creacion": "2026-04-03T16:40:05.017Z",
+        "categoria": "cae43657-4247-4db7-9426-7d3d71102d0f",
+        "contenido": "Reciclar no es solo separar residuos, es una forma de cuidar nuestro entorno y asegurar un mejor futuro. Cada acción cuenta: reutilizar, reducir y reciclar ayuda a disminuir la contaminación y a aprovechar mejor los recursos. Hoy es un buen día para empezar",
+        "video": "",
+        "video_thumbnail": "",
+        "usuario": [
+            "elian19@gmail.com"
+        ]
+    }
+},
+{
+    "model": "publicaciones.imagenpublicacion",
+    "pk": 1,
+    "fields": {
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "imagen": "publicaciones/imagenes/images.jfif",
+        "descripcion": ""
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "0e78179f-4d03-412c-9bd8-83eeb42669cd",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-02T01:12:40.261Z",
+        "usuario": [
+            "jorge@gmail.com"
+        ],
+        "publicacion": "33333333-3333-3333-3333-333333333333",
+        "tipo": "Noticia",
+        "texto": "djksabghfhweb",
+        "fecha_creacion": "2026-04-02T01:12:40.261Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "1a857ce0-a614-4cce-8b42-83aeb4a51b85",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-01T02:11:44.500Z",
+        "usuario": [
+            "jorge@gmail.com"
+        ],
+        "publicacion": "33333333-3333-3333-3333-333333333333",
+        "tipo": "NOTIC",
+        "texto": "holass",
+        "fecha_creacion": "2026-04-01T01:03:30.522Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "21a376c4-343e-4af9-ad65-a4a2146267d0",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-05T01:25:33.927Z",
+        "usuario": [
+            "jorge@gmail.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "tipo": "Noticia",
+        "texto": "asdad",
+        "fecha_creacion": "2026-04-05T01:25:33.927Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "403455c3-fa96-42ae-865e-351d084db24e",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-02T01:13:29.548Z",
+        "usuario": [
+            "jorge@gmail.com"
+        ],
+        "publicacion": "3ea0aba2-792e-4936-bc0e-b02e2680162a",
+        "tipo": "Noticia",
+        "texto": "asdasd",
+        "fecha_creacion": "2026-04-02T01:13:01.222Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "4e2bf97b-ab90-4618-bfa1-677e7aa8c819",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-04T06:11:48Z",
+        "usuario": [
+            "carlos.ramirez@example.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "tipo": "Noticia",
+        "texto": "Buena publicacion",
+        "fecha_creacion": "2026-04-04T06:11:48Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "662a8092-9e56-4850-951d-0be8f4be88be",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-01T23:52:03.802Z",
+        "usuario": [
+            "andres@gmail.com"
+        ],
+        "publicacion": "33333333-3333-3333-3333-333333333333",
+        "tipo": "Noticia",
+        "texto": "Gran publicacion",
+        "fecha_creacion": "2026-04-01T23:52:03.802Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "70dd32f7-5873-4377-807d-b9e519f53ead",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-06T03:18:03.063Z",
+        "usuario": [
+            "elian@gmail.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "tipo": "Noticia",
+        "texto": "Que interesante!!!!",
+        "fecha_creacion": "2026-04-06T03:18:03.063Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "c9e5411f-a4a2-46bb-80cc-53029b5e6036",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-05-09T20:33:17.708Z",
+        "usuario": [
+            "elian@gmail.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "tipo": "Noticia",
+        "texto": "<script>alert(1)</script>",
+        "fecha_creacion": "2026-05-09T20:33:17.708Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "e5f3c08a-247e-4949-8e8d-23c98f5ed53f",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-04-01T02:31:34.308Z",
+        "usuario": [
+            "sofia@gmail.com"
+        ],
+        "publicacion": "33333333-3333-3333-3333-333333333333",
+        "tipo": "NOTIC",
+        "texto": "Buena publicacion",
+        "fecha_creacion": "2026-04-01T02:14:15.023Z"
+    }
+},
+{
+    "model": "publicaciones.comentario",
+    "pk": "f76c033d-3068-4645-9f6e-7bea75b43af0",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_modificacion": "2026-05-09T20:33:26.681Z",
+        "usuario": [
+            "elian@gmail.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "tipo": "Noticia",
+        "texto": "<script>alert(1)</script>",
+        "fecha_creacion": "2026-05-09T20:33:26.681Z"
+    }
+},
+{
+    "model": "publicaciones.reaccion",
+    "pk": "4a96063e-9bad-4ce0-a2ae-b90aeb8384e1",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-03T05:38:27.579Z",
+        "fecha_modificacion": "2026-04-03T05:38:27.579Z",
+        "valor": "Like",
+        "publicacion": "3ea0aba2-792e-4936-bc0e-b02e2680162a",
+        "usuario": [
+            "jorge@gmail.com"
+        ]
+    }
+},
+{
+    "model": "publicaciones.reaccion",
+    "pk": "4d8d591a-1094-4b74-9147-a9e9ee2deba1",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-05T01:25:21.218Z",
+        "fecha_modificacion": "2026-04-05T01:25:21.218Z",
+        "valor": "Like",
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "usuario": [
+            "jorge@gmail.com"
+        ]
+    }
+},
+{
+    "model": "publicaciones.reaccion",
+    "pk": "53a9cc3b-1665-4044-8e94-dc206bb4fbe4",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-01T23:51:50.346Z",
+        "fecha_modificacion": "2026-04-01T23:51:50.346Z",
+        "valor": "Like",
+        "publicacion": "33333333-3333-3333-3333-333333333333",
+        "usuario": [
+            "andres@gmail.com"
+        ]
+    }
+},
+{
+    "model": "publicaciones.reaccion",
+    "pk": "695b423c-45d9-443a-a6fb-7f199fca18ab",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-02T01:12:27.823Z",
+        "fecha_modificacion": "2026-04-02T01:12:31.589Z",
+        "valor": "Dislike",
+        "publicacion": "33333333-3333-3333-3333-333333333333",
+        "usuario": [
+            "jorge@gmail.com"
+        ]
+    }
+},
+{
+    "model": "publicaciones.reaccion",
+    "pk": "dba19efd-fdaa-479b-a992-572d3b4dbbc4",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-06T03:17:49.467Z",
+        "fecha_modificacion": "2026-04-06T03:17:49.467Z",
+        "valor": "Like",
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
+        "usuario": [
+            "elian@gmail.com"
+        ]
+    }
+},
+{
+    "model": "publicaciones.guardados",
+    "pk": "23a1d7c1-ab14-4298-a410-b4e7adedb7e2",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-05T01:25:44.885Z",
+        "fecha_modificacion": "2026-04-05T01:25:44.886Z",
+        "usuario": [
+            "jorge@gmail.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006"
+    }
+},
+{
+    "model": "publicaciones.guardados",
+    "pk": "39d284ff-e5fe-486a-8286-5ce3047ac568",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-04T06:12:14.198Z",
+        "fecha_modificacion": "2026-04-04T06:12:14.198Z",
+        "usuario": [
+            "carlos.ramirez@example.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006"
+    }
+},
+{
+    "model": "publicaciones.guardados",
+    "pk": "7e50661e-ec24-487e-b21d-b19c8f8eb3b3",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-03T15:55:55.372Z",
+        "fecha_modificacion": "2026-04-03T15:55:55.372Z",
+        "usuario": [
+            "jorge@gmail.com"
+        ],
+        "publicacion": "3ea0aba2-792e-4936-bc0e-b02e2680162a"
+    }
+},
+{
+    "model": "publicaciones.guardados",
+    "pk": "ffb241d3-c971-4a4f-9f6a-8024cdef4849",
+    "fields": {
+        "estado": "ACTIVO",
+        "fecha_creacion": "2026-04-06T03:18:21.122Z",
+        "fecha_modificacion": "2026-04-06T03:18:21.122Z",
+        "usuario": [
+            "elian@gmail.com"
+        ],
+        "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006"
+    }
+}
+]

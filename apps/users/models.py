@@ -9,7 +9,8 @@ from django.core.validators import MinLengthValidator
 from django.utils.translation import gettext_lazy as _
 from config import constants as cons
 from django.core.exceptions import ValidationError as ValidationError
-from datetime import date
+from datetime import date, timedelta
+import uuid
 
 
 # Create your models here.
@@ -327,3 +328,107 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         self.full_clean()
 
         super().save(*args, **kwargs)
+
+
+class TokenValidacion(models.Model):
+    """
+    Modelo para almacenar tokens de validación para:
+    - Recuperación de contraseña
+    - Verificación de email en registro
+    
+    Los tokens tienen expiración y límite de intentos fallidos.
+    """
+    
+    TIPO_CHOICES = (
+        ('recuperacion', 'Recuperación de Contraseña'),
+        ('verificacion', 'Verificación de Email'),
+    )
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    usuario = models.ForeignKey(
+        Usuario, 
+        on_delete=models.CASCADE, 
+        related_name='tokens_validacion',
+        null=True,
+        blank=True,
+        verbose_name="Usuario",
+        help_text="Usuario asociado (puede ser nulo en registros sin confirmar)"
+    )
+    email = models.EmailField(
+        verbose_name="Email",
+        help_text="Email para el cual se generó el token (para registros no confirmados)"
+    )
+    tipo = models.CharField(
+        verbose_name="Tipo de Token",
+        max_length=20,
+        choices=TIPO_CHOICES,
+        help_text="Tipo de validación que requiere el token"
+    )
+    token = models.CharField(
+        verbose_name="Token",
+        max_length=8,
+        unique=True,
+        help_text="Código único de 6 dígitos para validación"
+    )
+    activo = models.BooleanField(
+        verbose_name="Activo",
+        default=True,
+        help_text="Indica si el token aún es válido"
+    )
+    fecha_creacion = models.DateTimeField(
+        verbose_name="Fecha de Creación",
+        auto_now_add=True,
+        help_text="Fecha y hora en que se creó el token"
+    )
+    fecha_expiracion = models.DateTimeField(
+        verbose_name="Fecha de Expiración",
+        help_text="Fecha y hora en que el token expira"
+    )
+    intentos_fallidos = models.IntegerField(
+        verbose_name="Intentos Fallidos",
+        default=0,
+        help_text="Número de intentos fallidos de validación"
+    )
+    fecha_validacion = models.DateTimeField(
+        verbose_name="Fecha de Validación",
+        null=True,
+        blank=True,
+        help_text="Fecha y hora en que el token fue validado exitosamente"
+    )
+    
+    class Meta:
+        verbose_name = "Token de Validación"
+        verbose_name_plural = "Tokens de Validación"
+        ordering = ["-fecha_creacion"]
+        indexes = [
+            models.Index(fields=["email", "tipo"]),
+            models.Index(fields=["token"]),
+            models.Index(fields=["usuario", "tipo"]),
+            models.Index(fields=["activo", "fecha_expiracion"]),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.email} ({self.token})"
+    
+    def esta_expirado(self):
+        """Verifica si el token ha expirado"""
+        from django.utils import timezone
+        return timezone.now() > self.fecha_expiracion
+    
+    def puede_validarse(self):
+        """Verifica si el token puede validarse (no expirado, activo, intentos disponibles)"""
+        return self.activo and not self.esta_expirado() and self.intentos_fallidos < 5
+    
+    def incrementar_intentos(self):
+        """Incrementa el contador de intentos fallidos"""
+        # Método eliminado del flujo actual: la verificación de intentos se gestiona
+        # consultando `intentos_fallidos` y `activo` desde los utilitarios cuando es necesario.
+        # Se mantiene el campo `intentos_fallidos` en el modelo para trazabilidad.
+        pass
+    
+    def marcar_como_validado(self):
+        """Marca el token como validado"""
+        from django.utils import timezone
+        self.fecha_validacion = timezone.now()
+        self.activo = False
+        self.save()

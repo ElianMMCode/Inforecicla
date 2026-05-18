@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from decimal import Decimal as decimal
 from django.utils import timezone
 import datetime
+from apps.ecas.models import CentroAcopio
 
 
 class CompraInventarioService:
@@ -428,6 +429,26 @@ class VentaInventarioService:
             venta.precio_venta = precio_venta
             venta.observaciones = data.get("observaciones", "")
             venta.fecha_venta = fecha_venta
+            # Actualizar centro de acopio si se proporcionó
+            centro_id = data.get("centroAcopioId") or data.get("centro_acopio")
+            if centro_id is not None:
+                # permitir cadena vacía para desasignar
+                try:
+                    centro_id_str = str(centro_id) if centro_id != "" else ""
+                except Exception:
+                    centro_id_str = ""
+                if centro_id_str:
+                    try:
+                        centro_inst = CentroAcopio.objects.get(id=centro_id_str)
+                        venta.centro_acopio = centro_inst
+                    except CentroAcopio.DoesNotExist:
+                        return {
+                            "error": True,
+                            "mensaje": "Centro de acopio no encontrado.",
+                            "status": 404,
+                        }
+                else:
+                    venta.centro_acopio = None
             venta.save()
             return {
                 "error": False,

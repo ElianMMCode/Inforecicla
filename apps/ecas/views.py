@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.db.models import Q
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
@@ -20,6 +21,7 @@ import json
 CONSTANTE_RENDER = "punto-eca:render_seccion"
 CONSTANTE_PERFIL = "punto-eca:perfil"
 CONSTANTE_NO_ENCONTRADO = "Centro no encontrado"
+TEMPLATE_SECTION_PERFIL = "ecas/section-perfil.html"
 
 
 @gestor_eca_or_admin_required
@@ -219,7 +221,7 @@ def editar_perfil_gestor(request, id):
             _procesar_errores_perfil(errores, request)
             return redirect(CONSTANTE_RENDER)
         messages.success(request, "Perfil actualizado correctamente.")
-        usuario = resultado.get("usuario", usuario)
+        usuario = resultado.get("usuario") or usuario
         return redirect(CONSTANTE_PERFIL)
 
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
@@ -232,7 +234,7 @@ def editar_perfil_gestor(request, id):
         "tipos_documento": cons.TipoDocumento.choices,
     }
 
-    return render(request, "ecas/editar_perfil.html", context)
+    return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
 @gestor_eca_or_admin_required
@@ -274,7 +276,7 @@ def editar_punto(request, id):
         "tipos_documento": cons.TipoDocumento.choices,
     }
 
-    return render(request, "ecas/editar_perfil.html", context)
+    return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
 @gestor_eca_or_admin_required
@@ -342,7 +344,7 @@ def editar_centro(request, id):
         return redirect(CONSTANTE_RENDER, seccion="centros")
 
     context = _build_centros_context(punto)
-    return render(request, "ecas/editar_centro.html", context)
+    return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
 @gestor_eca_or_admin_required
@@ -442,13 +444,24 @@ def eliminar_centro(request, id):
 
 
 @login_required
-def puntos_eca_json():
+def puntos_eca_json(request):
     """
     API endpoint que devuelve un listado de puntos ECA simplificado para autocompletado y mapas en el perfil ciudadano.
     Retorna los primeros 50 puntos, serializados como lista de diccionarios.
     """
+    term = request.GET.get("term", "").strip()
+    puntos_qs = PuntoECA.objects.all()
+
+    if term:
+        puntos_qs = puntos_qs.filter(
+            Q(nombre__icontains=term)
+            | Q(direccion__icontains=term)
+            | Q(ciudad__icontains=term)
+            | Q(localidad__nombre__icontains=term)
+        ).distinct()
+
     lista_puntos = list(
-        PuntoECA.objects.values(
+        puntos_qs.values(
             "id", "nombre", "direccion", "ciudad", "localidad_id", "localidad__nombre"
         )[:50]
     )

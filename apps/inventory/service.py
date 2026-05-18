@@ -183,6 +183,9 @@ class InventoryService:
                     else:
                         estado_alerta = "OK"
 
+                    print(item.material.nombre, porcentaje_ocupacion, estado_alerta)
+                    print(item.precio_compra, item.precio_venta, item.stock_actual)
+
                     resultados.append(
                         {
                             "inventarioId": str(item.id),

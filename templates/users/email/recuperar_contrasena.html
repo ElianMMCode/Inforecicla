@@ -1,0 +1,34 @@
+{% extends "users/email/base.html" %}
+
+{% block page_title %}Recuperación de Contraseña - InfoRecicla{% endblock %}
+{% block brand_color %}#27ae60{% endblock %}
+{% block brand_color_dark %}#176336{% endblock %}
+{% block email_title %}Recuperación de Contraseña{% endblock %}
+
+{% block content %}
+<p>¡Hola!</p>
+
+<p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en <strong>InfoRecicla</strong>.</p>
+
+<p><strong>Tu código de verificación es:</strong></p>
+
+<div class="code-box">
+    <div class="code">{{ token }}</div>
+</div>
+
+<p>Usa este código para validar tu identidad y establecer una nueva contraseña.</p>
+
+<a href="{{ enlace_validacion }}" class="button">Restablecer Contraseña</a>
+
+<div class="info">
+    <strong>⏱️ Este código caduca en {{ minutos }} minutos.</strong>
+</div>
+
+<div class="warning">
+    <strong>⚠️ Por tu seguridad:</strong> Nunca compartir este código con nadie. InfoRecicla nunca te pedirá que lo hagas.
+</div>
+
+<p>Si <strong>no</strong> solicitaste esta recuperación de contraseña, ignora este correo. Tu contraseña permanecerá igual.</p>
+
+<p>¿Problemas? <a href="mailto:soporte@inforecicla.com">Contacta al equipo de soporte</a></p>
+{% endblock %}
