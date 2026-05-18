@@ -20,6 +20,7 @@ import json
 CONSTANTE_RENDER = "punto-eca:render_seccion"
 CONSTANTE_PERFIL = "punto-eca:perfil"
 CONSTANTE_NO_ENCONTRADO = "Centro no encontrado"
+TEMPLATE_SECTION_PERFIL = "ecas/section-perfil.html"
 
 
 @gestor_eca_or_admin_required
@@ -219,7 +220,7 @@ def editar_perfil_gestor(request, id):
             _procesar_errores_perfil(errores, request)
             return redirect(CONSTANTE_RENDER)
         messages.success(request, "Perfil actualizado correctamente.")
-        usuario = resultado.get("usuario", usuario)
+        usuario = resultado.get("usuario") or usuario
         return redirect(CONSTANTE_PERFIL)
 
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
@@ -232,7 +233,7 @@ def editar_perfil_gestor(request, id):
         "tipos_documento": cons.TipoDocumento.choices,
     }
 
-    return render(request, "ecas/editar_perfil.html", context)
+    return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
 @gestor_eca_or_admin_required
@@ -274,7 +275,7 @@ def editar_punto(request, id):
         "tipos_documento": cons.TipoDocumento.choices,
     }
 
-    return render(request, "ecas/editar_perfil.html", context)
+    return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
 @gestor_eca_or_admin_required
@@ -342,7 +343,7 @@ def editar_centro(request, id):
         return redirect(CONSTANTE_RENDER, seccion="centros")
 
     context = _build_centros_context(punto)
-    return render(request, "ecas/editar_centro.html", context)
+    return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
 @gestor_eca_or_admin_required
