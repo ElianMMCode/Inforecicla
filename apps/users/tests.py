@@ -41,6 +41,9 @@ def _generar_password():
 
 _PASSWORD_VALIDA = _generar_password()
 _PASSWORD_NUEVA = _generar_password()
+_PWD_INCORRECTO = _generar_password()   # distinto a _PASSWORD_VALIDA, para tests de fallo
+_PWD_CORTO = "ab1"                      # demasiado corto para superar validación de longitud
+_PWD_VACIO = ""                         # campo vacío para tests de campo obligatorio
 
 
 # ── Helper de creación de usuarios ────────────────────────────────────────────
@@ -107,7 +110,7 @@ class ValidarCredencialesTests(TestCase):
         """TC-CU00.1-03: Password incorrecto → mensaje de error genérico."""
         response = self.client.post(
             _LOGIN,
-            {"email": "usuario@test.com", "password": "PasswordIncorrecto!"},
+            {"email": "usuario@test.com", "password": _PWD_INCORRECTO},
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(_CRED_INVALIDAS, response.context["errores"])
@@ -305,7 +308,7 @@ class NotificacionErrorCredencialesTests(TestCase):
         """TC-EXT41-01: Email no registrado retorna el mensaje canónico de error."""
         response = self.client.post(
             _LOGIN,
-            {"email": "noexiste@test.com", "password": "cualquiera"},
+            {"email": "noexiste@test.com", "password": _PWD_INCORRECTO},
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(_CRED_INVALIDAS, response.context["errores"])
@@ -314,7 +317,7 @@ class NotificacionErrorCredencialesTests(TestCase):
         """TC-EXT41-02: Password incorrecto retorna el mensaje canónico de error."""
         response = self.client.post(
             _LOGIN,
-            {"email": "existente@test.com", "password": "incorrecto123"},
+            {"email": "existente@test.com", "password": _PWD_INCORRECTO},
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(_CRED_INVALIDAS, response.context["errores"])
@@ -324,11 +327,11 @@ class NotificacionErrorCredencialesTests(TestCase):
         y para password incorrecto, evitando la enumeración de usuarios."""
         resp_email_inexistente = self.client.post(
             _LOGIN,
-            {"email": "fantasma@test.com", "password": "cualquiera"},
+            {"email": "fantasma@test.com", "password": _PWD_INCORRECTO},
         )
         resp_password_incorrecto = self.client.post(
             _LOGIN,
-            {"email": "existente@test.com", "password": "wrongpass"},
+            {"email": "existente@test.com", "password": _PWD_INCORRECTO},
         )
 
         self.assertEqual(
@@ -338,7 +341,7 @@ class NotificacionErrorCredencialesTests(TestCase):
 
     def test_tc_ext41_04_ambos_campos_vacios_no_autentican(self):
         """TC-EXT41-04a: Enviar email y password vacíos no autentica al usuario."""
-        response = self.client.post(_LOGIN, {"email": "", "password": ""})
+        response = self.client.post(_LOGIN, {"email": "", "password": _PWD_VACIO})
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
@@ -349,7 +352,7 @@ class NotificacionErrorCredencialesTests(TestCase):
         Django rechaza autenticaciones con contraseñas vacías por diseño."""
         response = self.client.post(
             _LOGIN,
-            {"email": "existente@test.com", "password": ""},
+            {"email": "existente@test.com", "password": _PWD_VACIO},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -390,7 +393,7 @@ class BloqueoIntentosFallidosTests(TestCase):
         for _ in range(5):
             self.client.post(
                 _LOGIN,
-                {"email": "bloqueo@test.com", "password": "incorrecto"},
+                {"email": "bloqueo@test.com", "password": _PWD_INCORRECTO},
             )
 
         response = self.client.post(
@@ -408,7 +411,7 @@ class BloqueoIntentosFallidosTests(TestCase):
         for _ in range(2):
             self.client.post(
                 _LOGIN,
-                {"email": "bloqueo@test.com", "password": "incorrecto"},
+                {"email": "bloqueo@test.com", "password": _PWD_INCORRECTO},
             )
 
         self.client.post(
@@ -518,8 +521,8 @@ class RecuperarContrasenaTests(TestCase):
             {
                 "action": "reset",
                 "email": "usuario@test.com",
-                "password": "123",
-                "passwordConfirm": "123",
+                "password": _PWD_CORTO,
+                "passwordConfirm": _PWD_CORTO,
             },
         )
 
@@ -548,7 +551,7 @@ class RecuperarContrasenaTests(TestCase):
                 "action": "reset",
                 "email": "usuario@test.com",
                 "password": _PASSWORD_VALIDA,
-                "passwordConfirm": "Password456!",
+                "passwordConfirm": _PASSWORD_NUEVA,
             },
         )
 
@@ -566,8 +569,8 @@ class RecuperarContrasenaTests(TestCase):
             {
                 "action": "reset",
                 "email": "usuario@test.com",
-                "password": "cualquiera123",
-                "passwordConfirm": "cualquiera123",
+                "password": _PWD_INCORRECTO,
+                "passwordConfirm": _PWD_INCORRECTO,
             },
         )
 
