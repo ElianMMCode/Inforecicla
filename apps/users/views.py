@@ -18,6 +18,146 @@ from apps.users.utils import (
     verificar_token,
 )
 
+# Mensajes reutilizables
+MSG_PW_MISMATCH = "Las contraseñas no coinciden."
+
+
+def _handle_activate_get(request, email, token):
+    errores = []
+    if not email or not token:
+        errores.append("El enlace de activación no es válido. Solicita uno nuevo desde inicio de sesión.")
+        return None, errores
+
+    es_valido, mensaje, token_obj = verificar_token(email, token, "verificacion")
+    if not es_valido:
+        errores.append(mensaje)
+        return None, errores
+
+    token_obj.marcar_como_validado()
+    usuario = Usuario.objects.filter(email=email).first()
+    if usuario:
+        usuario.is_active = True
+        usuario.save()
+    messages.success(request, "Cuenta activada correctamente. Ya puedes iniciar sesión.")
+    return redirect(f"{reverse('login')}?email={email}"), []
+
+
+def _handle_login_post(request):
+    errores = []
+    email = request.POST.get("email", "").strip().lower()
+    password = request.POST.get("password", "")
+
+    if not email or not password:
+        errores.append("Debes ingresar email y contraseña.")
+        return None, errores, None, None
+
+    usuario_inactivo = Usuario.objects.filter(email=email, is_active=False).first()
+    if usuario_inactivo is not None:
+        try:
+            token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
+            enviar_email_verificacion(email, token_obj.token)
+            messages.info(
+                request,
+                "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo.",
+            )
+            errores.append("Cuenta no activada. Revisa tu correo y usa el enlace de activación.")
+        except Exception:
+            errores.append("No fue posible reenviar el enlace de activación. Intenta más tarde.")
+        return None, errores, None, None
+
+    user = authenticate(request, username=email, password=password)
+    if user is not None:
+        login(request, user)
+        if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
+            return redirect("/panel_admin/"), [], None, None
+        if user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
+            return redirect("/punto-eca/"), [], None, None
+        return redirect("/perfil/"), [], None, None
+
+    errores.append("Credenciales inválidas. Verifica tu email y contraseña.")
+    return None, errores, None, None
+
+
+def _handle_reenviar_post(request):
+    errores = []
+    email = request.POST.get("email", "").strip().lower()
+    usuario_inactivo = Usuario.objects.filter(email=email, is_active=False).first()
+    if usuario_inactivo is not None:
+        try:
+            token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
+            resultado = enviar_email_verificacion(email, token_obj.token)
+            if not resultado:
+                raise RuntimeError("No fue posible reenviar el enlace de activación.")
+            messages.info(request, "Se reenvió el enlace de activación a tu correo.")
+        except Exception:
+            errores.append("No fue posible reenviar el enlace en este momento.")
+    else:
+        errores.append("No existe una cuenta inactiva con ese correo.")
+    return None, errores, None, None
+
+
+def _handle_recuperar_enviar(request):
+    errores = []
+    email = (request.POST.get("recovery_email") or request.POST.get("email") or "").strip().lower()
+    if not email:
+        errores.append("Debes ingresar un correo.")
+        return None, errores, None, None
+    usuario = Usuario.objects.filter(email=email).first()
+    if usuario is None:
+        errores.append("No existe una cuenta registrada con ese correo.")
+    else:
+        token_obj = crear_token_validacion(email=email, tipo="recuperacion", usuario=usuario)
+        enviar_email_recuperacion(email, token_obj.token)
+        messages.success(request, f"Se envió el código de recuperación a {email}.")
+        return None, [], email, "codigo"
+    return None, errores, None, None
+
+
+def _handle_recuperar_validar(request):
+    errores = []
+    email = (request.POST.get("recovery_email") or request.POST.get("email") or "").strip().lower()
+    codigo = (request.POST.get("recovery_codigo") or request.POST.get("codigo") or "").strip()
+    es_valido, mensaje, token_obj = verificar_token(email, codigo, "recuperacion")
+    if not es_valido:
+        errores.append(mensaje)
+    else:
+        token_obj.marcar_como_validado()
+        request.session["recovery_email_validated"] = email
+        request.session["recovery_token_id"] = str(token_obj.id)
+        messages.success(request, "Código validado. Ingresa tu nueva contraseña.")
+        return None, [], email, "cambiar"
+    return None, errores, None, None
+
+
+def _handle_recuperar_cambiar(request):
+    errores = []
+    email = (request.POST.get("recovery_email") or request.POST.get("email") or "").strip().lower()
+    nueva_password = request.POST.get("recovery_password") or request.POST.get("password") or ""
+    confirmar_password = request.POST.get("recovery_password_confirm") or request.POST.get("passwordConfirm") or ""
+    email_validado = request.session.get("recovery_email_validated")
+    token_id = request.session.get("recovery_token_id")
+    if email_validado != email or not token_id:
+        errores.append("Debes validar el código de verificación primero.")
+    elif not nueva_password or not confirmar_password:
+        errores.append("Debes completar ambos campos de contraseña.")
+    elif len(nueva_password) < 8:
+        errores.append("La nueva contraseña debe tener al menos 8 caracteres.")
+    elif nueva_password != confirmar_password:
+        errores.append(MSG_PW_MISMATCH)
+    else:
+        usuario = Usuario.objects.filter(email=email).first()
+        if usuario is None:
+            errores.append("No se encontró el usuario.")
+        else:
+            usuario.set_password(nueva_password)
+            usuario.save()
+            request.session.pop("recovery_email_validated", None)
+            request.session.pop("recovery_token_id", None)
+            messages.success(request, "Tu contraseña se restableció correctamente. Ahora puedes iniciar sesión.")
+            return redirect("login"), [], None, None
+    return None, errores, None, None
+
+
 
 def render_login(request):
     errores = []
@@ -45,111 +185,31 @@ def render_login(request):
 
     if request.method == "POST":
         action = request.POST.get("action", "login")
+        response = None
+        handler_result = (None, [], None, None)
 
         if action == "login":
-            email = request.POST.get("email", "").strip().lower()
-            password = request.POST.get("password", "")
-
-            if not email or not password:
-                errores.append("Debes ingresar email y contraseña.")
-            else:
-                usuario_inactivo = Usuario.objects.filter(email=email, is_active=False).first()
-                if usuario_inactivo is not None:
-                    try:
-                        token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
-                        enviar_email_verificacion(email, token_obj.token)
-                        mensajes = (
-                            "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo."
-                        )
-                        messages.info(request, mensajes)
-                        errores.append("Cuenta no activada. Revisa tu correo y usa el enlace de activación.")
-                    except Exception:
-                        errores.append("No fue posible reenviar el enlace de activación. Intenta más tarde.")
-                else:
-                    user = authenticate(request, username=email, password=password)
-                    if user is not None:
-                        login(request, user)
-                        if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
-                            return redirect("/panel_admin/")
-                        elif user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
-                            return redirect("/punto-eca/")
-                        else:
-                            return redirect("/perfil/")
-                    else:
-                        errores.append("Credenciales inválidas. Verifica tu email y contraseña.")
-
+            handler_result = _handle_login_post(request)
         elif action == "reenviar":
-            email = request.POST.get("email", "").strip().lower()
-            usuario_inactivo = Usuario.objects.filter(email=email, is_active=False).first()
-            if usuario_inactivo is not None:
-                try:
-                    token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
-                    resultado = enviar_email_verificacion(email, token_obj.token)
-                    if not resultado:
-                        raise ValidationError("No fue posible reenviar el enlace de activación.")
-                    messages.info(request, "Se reenvió el enlace de activación a tu correo.")
-                except Exception:
-                    errores.append("No fue posible reenviar el enlace en este momento.")
-            else:
-                errores.append("No existe una cuenta inactiva con ese correo.")
-
+            handler_result = _handle_reenviar_post(request)
         elif action == "recuperar_enviar":
-            # Aceptar tanto 'recovery_email' (desde modal) como 'email'
-            email = (request.POST.get("recovery_email") or request.POST.get("email") or "").strip().lower()
-            if not email:
-                errores.append("Debes ingresar un correo.")
-            else:
-                usuario = Usuario.objects.filter(email=email).first()
-                if usuario is None:
-                    errores.append("No existe una cuenta registrada con ese correo.")
-                else:
-                    token_obj = crear_token_validacion(email=email, tipo="recuperacion", usuario=usuario)
-                    enviar_email_recuperacion(email, token_obj.token)
-                    recovery_email = email
-                    recovery_step = "codigo"
-                    messages.success(request, f"Se envió el código de recuperación a {email}.")
-
+            handler_result = _handle_recuperar_enviar(request)
         elif action == "recuperar_validar":
-            # Aceptar nombres desde el modal: 'recovery_email' y 'recovery_codigo'
-            email = (request.POST.get("recovery_email") or request.POST.get("email") or "").strip().lower()
-            codigo = (request.POST.get("recovery_codigo") or request.POST.get("codigo") or "").strip()
-            es_valido, mensaje, token_obj = verificar_token(email, codigo, "recuperacion")
-            if not es_valido:
-                errores.append(mensaje)
-            else:
-                token_obj.marcar_como_validado()
-                request.session["recovery_email_validated"] = email
-                request.session["recovery_token_id"] = str(token_obj.id)
-                recovery_email = email
-                recovery_step = "cambiar"
-                messages.success(request, "Código validado. Ingresa tu nueva contraseña.")
-
+            handler_result = _handle_recuperar_validar(request)
         elif action == "recuperar_cambiar":
-            # Aceptar nombres desde el modal: 'recovery_email', 'recovery_password', 'recovery_password_confirm'
-            email = (request.POST.get("recovery_email") or request.POST.get("email") or "").strip().lower()
-            nueva_password = request.POST.get("recovery_password") or request.POST.get("password") or ""
-            confirmar_password = request.POST.get("recovery_password_confirm") or request.POST.get("passwordConfirm") or ""
-            email_validado = request.session.get("recovery_email_validated")
-            token_id = request.session.get("recovery_token_id")
-            if email_validado != email or not token_id:
-                errores.append("Debes validar el código de verificación primero.")
-            elif not nueva_password or not confirmar_password:
-                errores.append("Debes completar ambos campos de contraseña.")
-            elif len(nueva_password) < 8:
-                errores.append("La nueva contraseña debe tener al menos 8 caracteres.")
-            elif nueva_password != confirmar_password:
-                errores.append("Las contraseñas no coinciden.")
-            else:
-                usuario = Usuario.objects.filter(email=email).first()
-                if usuario is None:
-                    errores.append("No se encontró el usuario.")
-                else:
-                    usuario.set_password(nueva_password)
-                    usuario.save()
-                    request.session.pop("recovery_email_validated", None)
-                    request.session.pop("recovery_token_id", None)
-                    messages.success(request, "Tu contraseña se restableció correctamente. Ahora puedes iniciar sesión.")
-                    return redirect("login")
+            handler_result = _handle_recuperar_cambiar(request)
+        else:
+            errores.append("Acción inválida.")
+
+        response, new_errores, new_recovery_email, new_recovery_step = handler_result
+        if new_errores:
+            errores.extend(new_errores)
+        if new_recovery_email:
+            recovery_email = new_recovery_email
+        if new_recovery_step:
+            recovery_step = new_recovery_step
+        if response:
+            return response
 
     # Si vinimos con ?email=... (por enlace del correo), prellenar el campo de email
     if not email and recovery_email:
@@ -223,8 +283,8 @@ def render_registro_eca(request):
             errores.append("Debe especificar la ciudad.")
         if not password or not password_confirm:
             errores.append("Se requiere una contraseña.")
-        if password != password_confirm:
-            errores.append("Las contraseñas no coinciden.")
+            if password != password_confirm:
+                errores.append(MSG_PW_MISMATCH)
         if not terminos:
             errores.append("Debe aceptar los términos y condiciones.")
         if len(password) < 8:
