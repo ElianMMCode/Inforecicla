@@ -250,6 +250,12 @@ document.addEventListener("click", function (e) {
                   .attr("data-categoria", m.nmbCategoria || "")[0],
                 data: m,
               };
+
+              // Inicializar validación en tiempo real cuando el DOM esté listo
+              document.addEventListener("DOMContentLoaded", function () {
+                agregarValidacionEnTiempoRealEntrada();
+                agregarValidacionEnTiempoRealSalida();
+              });
             });
             return { results: results };
           },
@@ -1992,10 +1998,251 @@ document.addEventListener("DOMContentLoaded", function () {
             ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>`;
   };
 
+  // Función para mostrar error de campo usando Bootstrap validation
+  globalThis.mostrarErrorCampo = function (input, mensaje) {
+    // Limpiar cualquier error existente
+    limpiarErrorCampo(input);
+
+    // Añadir clase is-invalid al input
+    input.classList.add("is-invalid");
+
+    // Crear y insertar el div de feedback
+    const feedbackDiv = document.createElement("div");
+    feedbackDiv.className = "invalid-feedback";
+    feedbackDiv.textContent = mensaje;
+
+    // Insertar después del input
+    input.parentNode.insertBefore(feedbackDiv, input.nextSibling);
+  };
+
+  // Función para limpiar error de campo
+  globalThis.limpiarErrorCampo = function (input) {
+    // Remover clase is-invalid
+    input.classList.remove("is-invalid");
+
+    // Remover div de feedback si existe
+    const feedbackDiv = input.parentNode.querySelector(".invalid-feedback");
+    if (feedbackDiv) {
+      feedbackDiv.remove();
+    }
+  };
+
+  // Función para validar un campo requerido
+  globalThis.validarCampoRequerido = function (
+    input,
+    mensajeError = "Este campo es requerido",
+  ) {
+    limpiarErrorCampo(input);
+
+    let esValido = true;
+    const valor = input.value.trim();
+
+    // Para inputs tipo number, también verificamos que no esté vacío o sea 0 cuando es requerido
+    if (input.type === "number") {
+      if (valor === "" || Number.parseFloat(valor) <= 0) {
+        esValido = false;
+      }
+    } else if (input.type === "select-one" || input.tagName === "SELECT") {
+      if (valor === "") {
+        esValido = false;
+      }
+    }
+
+    if (!esValido) {
+      mostrarErrorCampo(input, mensajeError);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Función especializada para validar cantidades
+  globalThis.validarCantidad = function (input) {
+    limpiarErrorCampo(input);
+
+    const valor = input.value.trim();
+
+    // Verificar si está vacío
+    if (valor === "") {
+      mostrarErrorCampo(input, "Ingrese la cantidad");
+      return false;
+    }
+
+    // Convertir a número
+    const cantidad = Number.parseFloat(valor);
+
+    // Verificar si es negativo
+    if (cantidad < 0) {
+      mostrarErrorCampo(input, "No se permiten valores negativos");
+      return false;
+    }
+
+    // Verificar si es cero
+    if (cantidad === 0) {
+      mostrarErrorCampo(input, "La cantidad debe ser mayor a 0");
+      return false;
+    }
+
+    // Verificar si es un número válido
+    if (Number.isNaN(cantidad)) {
+      mostrarErrorCampo(input, "Ingrese una cantidad válida");
+      return false;
+    }
+
+    return true;
+  };
+
+  // Función para validar campos de fecha
+  globalThis.validarCampoFecha = function (
+    input,
+    mensajeError = "Fecha requerida",
+  ) {
+    limpiarErrorCampo(input);
+
+    let esValido = true;
+    const valor = input.value.trim();
+
+    if (valor === "") {
+      esValido = false;
+    }
+
+    if (!esValido) {
+      mostrarErrorCampo(input, mensajeError);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Agregar validación en tiempo real (blur) a los campos de entrada
+  function agregarValidacionEnTiempoRealEntrada() {
+    const campos = [
+      {
+        id: "entradaCantidad",
+        tipo: "cantidad",
+        mensaje: "Ingrese la cantidad",
+      },
+      { id: "entradaFecha", tipo: "fecha", mensaje: "Seleccione una fecha" },
+      {
+        id: "entradaPrecioCompra",
+        tipo: "requerido",
+        mensaje: "Ingrese un precio de compra",
+      },
+    ];
+
+    campos.forEach((campo) => {
+      const input = document.getElementById(campo.id);
+      if (input) {
+        input.addEventListener("blur", function () {
+          if (campo.tipo === "requerido") {
+            validarCampoRequerido(input, campo.mensaje);
+          } else if (campo.tipo === "fecha") {
+            validarCampoFecha(input, campo.mensaje);
+          } else if (campo.tipo === "cantidad") {
+            validarCantidad(input);
+          }
+        });
+
+        // También validar al escribir para quitar errores si el usuario corrige
+        input.addEventListener("input", function () {
+          limpiarErrorCampo(input);
+        });
+      }
+    });
+  }
+
+  // Agregar validación en tiempo real (blur) a los campos de salida
+  function agregarValidacionEnTiempoRealSalida() {
+    const campos = [
+      {
+        id: "salidaCantidad",
+        tipo: "cantidad",
+        mensaje: "Ingrese la cantidad",
+      },
+      { id: "salidaFecha", tipo: "fecha", mensaje: "Seleccione una fecha" },
+      {
+        id: "salidaPrecioVenta",
+        tipo: "requerido",
+        mensaje: "Ingrese un precio de venta",
+      },
+      {
+        id: "salidaCentroAcopio",
+        tipo: "select",
+        mensaje: "Seleccione un centro de acopio",
+      },
+    ];
+
+    campos.forEach((campo) => {
+      const input = document.getElementById(campo.id);
+      if (input) {
+        input.addEventListener("blur", function () {
+          if (campo.tipo === "requerido") {
+            validarCampoRequerido(input, campo.mensaje);
+          } else if (campo.tipo === "fecha") {
+            validarCampoFecha(input, campo.mensaje);
+          } else if (campo.tipo === "cantidad") {
+            validarCantidad(input);
+          } else if (campo.tipo === "select") {
+            if (input.value === "") {
+              mostrarErrorCampo(input, campo.mensaje);
+            } else {
+              limpiarErrorCampo(input);
+            }
+          }
+        });
+
+        // También validar al escribir para quitar errores si el usuario corrige
+        input.addEventListener("input", function () {
+          limpiarErrorCampo(input);
+        });
+      }
+    });
+  }
+
   const formEntrada = document.getElementById("formEntrada");
   if (formEntrada) {
     formEntrada.addEventListener("submit", function (ev) {
+      console.log("Validando formulario de entrada");
       ev.preventDefault();
+
+      // Validar campos requeridos
+      const materialSeleccionado = document.getElementById(
+        "entradaMaterialSeleccionado",
+      );
+      const cantidad = document.getElementById("entradaCantidad");
+      const fecha = document.getElementById("entradaFecha");
+      const precioCompra = document.getElementById("entradaPrecioCompra");
+
+      let esValido = true;
+
+      if (materialSeleccionado && materialSeleccionado.value.trim() === "") {
+        console.log("Material no seleccionado");
+        mostrarErrorCampo(materialSeleccionado, "Seleccione un material");
+        esValido = false;
+      }
+
+      if (!validarCantidad(cantidad)) {
+        console.log("Cantidad inválida");
+        esValido = false;
+      }
+
+      if (!validarCampoFecha(fecha, "Seleccione una fecha")) {
+        console.log("Fecha inválida");
+        esValido = false;
+      }
+
+      if (!validarCampoRequerido(precioCompra, "Ingrese un precio de compra")) {
+        console.log("Precio de compra inválido");
+        esValido = false;
+      }
+
+      if (!esValido) {
+        console.log("Formulario no válido, deteniendo envío");
+        return; // Detener el envío si hay errores de validación
+      }
+
+      console.log("Formulario válido, enviando...");
+
       const data = {
         inventarioId: document.getElementById("entradaInventarioId")?.value,
         materialId: document.getElementById("entradaMaterialId")?.value,
@@ -2025,6 +2272,11 @@ document.addEventListener("DOMContentLoaded", function () {
               resp.mensaje || "¡Compra registrada! 🎉",
               "success",
             );
+            // Limpiar alertas de campos
+            const inputsEntrada = formEntrada.querySelectorAll(
+              "input, select, textarea",
+            );
+            inputsEntrada.forEach((input) => limpiarErrorCampo(input));
             formEntrada.reset();
             location.reload();
           } else {
@@ -2046,7 +2298,62 @@ document.addEventListener("DOMContentLoaded", function () {
   const formSalida = document.getElementById("formSalida");
   if (formSalida) {
     formSalida.addEventListener("submit", function (ev) {
+      console.log("Validando formulario de salida");
       ev.preventDefault();
+
+      // Validar campos requeridos
+      const materialSeleccionado = document.getElementById(
+        "salidaMaterialSeleccionado",
+      );
+      const cantidad = document.getElementById("salidaCantidad");
+      const fecha = document.getElementById("salidaFecha");
+      const precioVenta = document.getElementById("salidaPrecioVenta");
+      const centroAcopio = document.getElementById("salidaCentroAcopio");
+
+      let esValido = true;
+
+      if (materialSeleccionado && materialSeleccionado.value.trim() === "") {
+        console.log("Material no seleccionado");
+        mostrarErrorCampo(materialSeleccionado, "Seleccione un material");
+        esValido = false;
+      }
+
+      if (!validarCantidad(cantidad)) {
+        console.log("Cantidad inválida");
+        esValido = false;
+      }
+
+      if (!validarCantidad(cantidad)) {
+        console.log("Cantidad inválida");
+        esValido = false;
+      }
+
+      if (!validarCampoFecha(fecha, "Seleccione una fecha")) {
+        console.log("Fecha inválida");
+        esValido = false;
+      }
+
+      if (!validarCampoRequerido(precioVenta, "Ingrese un precio de venta")) {
+        console.log("Precio de venta inválido");
+        esValido = false;
+      }
+
+      // Validar centro de acopio (select)
+      if (centroAcopio && centroAcopio.value === "") {
+        console.log("Centro de acopio no seleccionado");
+        crearAlertaCampo(
+          centroAcopio,
+          "Seleccione un centro de acopio",
+          "danger",
+        );
+        esValido = false;
+      }
+
+      if (!esValido) {
+        console.log("Formulario no válido, deteniendo envío");
+        return; // Detener el envío si hay errores de validación
+      }
+
       const data = {
         inventarioId: document.getElementById("salidaInventarioId")?.value,
         materialId: document.getElementById("salidaMaterialId")?.value,
@@ -2077,6 +2384,11 @@ document.addEventListener("DOMContentLoaded", function () {
               resp.mensaje || "¡Venta registrada! 🎉",
               "success",
             );
+            // Limpiar alertas de campos
+            const inputsSalida = formSalida.querySelectorAll(
+              "input, select, textarea",
+            );
+            inputsSalida.forEach((input) => limpiarErrorCampo(input));
             formSalida.reset();
             setTimeout(renderizarSalidas, 200);
           } else {
@@ -2479,3 +2791,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // Lo dejamos como un wrapper seguro para cualquier lógica extra que necesites agregar.
 })();
 
+// Inicializar validación en tiempo real cuando el DOM esté listo
+document.addEventListener("DOMContentLoaded", function () {
+  agregarValidacionEnTiempoRealEntrada();
+  agregarValidacionEnTiempoRealSalida();
+});
