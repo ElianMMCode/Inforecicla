@@ -20,6 +20,9 @@ from apps.users.utils import (
 
 # Mensajes reutilizables
 MSG_PW_MISMATCH = "Las contraseñas no coinciden."
+DEFAULT_CITY = "Bogotá"
+TEMPLATE_REGISTRO_ECA = "users/registro_eca.html"
+TEMPLATE_REGISTRO_CIUDADANO = "users/registro_ciudadano.html"
 
 
 def _handle_activate_get(request, email, token):
@@ -56,10 +59,7 @@ def _handle_login_post(request):
         try:
             token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
             enviar_email_verificacion(email, token_obj.token)
-            messages.info(
-                request,
-                "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo.",
-            )
+            messages.info(request, "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo.")
             errores.append("Cuenta no activada. Revisa tu correo y usa el enlace de activación.")
         except Exception:
             errores.append("No fue posible reenviar el enlace de activación. Intenta más tarde.")
@@ -78,22 +78,46 @@ def _handle_login_post(request):
     return None, errores, None, None
 
 
-def _handle_reenviar_post(request):
+def _handle_login_request(request):
     errores = []
-    email = request.POST.get("email", "").strip().lower()
-    usuario_inactivo = Usuario.objects.filter(email=email, is_active=False).first()
-    if usuario_inactivo is not None:
-        try:
-            token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
-            resultado = enviar_email_verificacion(email, token_obj.token)
-            if not resultado:
-                raise RuntimeError("No fue posible reenviar el enlace de activación.")
-            messages.info(request, "Se reenvió el enlace de activación a tu correo.")
-        except Exception:
-            errores.append("No fue posible reenviar el enlace en este momento.")
-    else:
-        errores.append("No existe una cuenta inactiva con ese correo.")
-    return None, errores, None, None
+    email = request.GET.get("email", "").strip().lower()
+    action = request.POST.get("action") if request.method == "POST" else request.GET.get("action", "")
+    recovery_email = ""
+    recovery_step = request.GET.get("recovery_step", "enviar")
+
+    resp, errs = _process_activate_get(request, email, action)
+    if errs:
+        errores.extend(errs)
+    if resp:
+        return resp, {}
+
+    if request.method == "POST":
+        resp, new_errores, new_recovery_email, new_recovery_step = _dispatch_login_post(request)
+        if new_errores:
+            errores.extend(new_errores)
+        if new_recovery_email:
+            recovery_email = new_recovery_email
+        if new_recovery_step:
+            recovery_step = new_recovery_step
+        if resp:
+            return resp, {}
+
+    email = email or recovery_email
+    context = {
+        "errores": errores,
+        "email": email,
+        "action": action,
+        "recovery_email": recovery_email,
+        "recovery_step": recovery_step,
+    }
+    return None, context
+
+
+def _process_activate_get(request, email, action):
+    if request.method != "GET" or action != "activar":
+        return None, []
+    token = request.GET.get("token", "").strip()
+    return _handle_activate_get(request, email, token)
 
 
 def _handle_recuperar_enviar(request):
@@ -160,335 +184,262 @@ def _handle_recuperar_cambiar(request):
 
 
 def render_login(request):
-    errores = []
-    email = request.GET.get("email", "").strip().lower()
-    action = request.POST.get("action") if request.method == "POST" else request.GET.get("action", "")
-    recovery_email = email
-    recovery_step = request.GET.get("recovery_step", "enviar")
+    resp, context = _handle_login_request(request)
+    if resp:
+        return resp
+    return render(request, "users/login.html", context)
 
-    if request.method == "GET" and action == "activar":
-        token = request.GET.get("token", "").strip()
-        if not email or not token:
-            errores.append("El enlace de activación no es válido. Solicita uno nuevo desde inicio de sesión.")
-        else:
-            es_valido, mensaje, token_obj = verificar_token(email, token, "verificacion")
-            if not es_valido:
-                errores.append(mensaje)
-            else:
-                token_obj.marcar_como_validado()
-                usuario = Usuario.objects.filter(email=email).first()
-                if usuario:
-                    usuario.is_active = True
-                    usuario.save()
-                messages.success(request, "Cuenta activada correctamente. Ya puedes iniciar sesión.")
-                return redirect(f"{reverse('login')}?email={email}")
 
-    if request.method == "POST":
-        action = request.POST.get("action", "login")
-        response = None
-        handler_result = (None, [], None, None)
-
-        if action == "login":
-            handler_result = _handle_login_post(request)
-        elif action == "reenviar":
-            handler_result = _handle_reenviar_post(request)
-        elif action == "recuperar_enviar":
-            handler_result = _handle_recuperar_enviar(request)
-        elif action == "recuperar_validar":
-            handler_result = _handle_recuperar_validar(request)
-        elif action == "recuperar_cambiar":
-            handler_result = _handle_recuperar_cambiar(request)
-        else:
-            errores.append("Acción inválida.")
-
-        response, new_errores, new_recovery_email, new_recovery_step = handler_result
-        if new_errores:
-            errores.extend(new_errores)
-        if new_recovery_email:
-            recovery_email = new_recovery_email
-        if new_recovery_step:
-            recovery_step = new_recovery_step
-        if response:
-            return response
-
-    # Si vinimos con ?email=... (por enlace del correo), prellenar el campo de email
-    if not email and recovery_email:
-        email = recovery_email
-
-    return render(
-        request,
-        "users/login.html",
-        {
-            "errores": errores,
-            "email": email,
-            "action": action,
-            "recovery_email": recovery_email,
-            "recovery_step": recovery_step,
-        },
-    )
+def _dispatch_login_post(request):
+    action = request.POST.get("action", "login")
+    if action == "login":
+        return _handle_login_post(request)
+    if action == "reenviar":
+        return _handle_reenviar_post(request)
+    if action == "recuperar_enviar":
+        return _handle_recuperar_enviar(request)
+    if action == "recuperar_validar":
+        return _handle_recuperar_validar(request)
+    if action == "recuperar_cambiar":
+        return _handle_recuperar_cambiar(request)
+    return None, ["Acción inválida."], None, None
 
 
 
 def render_registro_eca(request):
     if request.method == "POST":
-        # Obtenemos los datos del formulario
         data = request.POST
-        errores = []
-        # 1. Validaciones básicas de campos
-        nombres = data.get("nombres", "").strip()
-        apellidos = data.get("apellidos", "").strip()
-        email = data.get("email", "").strip().lower()
-        tipo_documento = data.get("tipoDocumento") or cons.TipoDocumento.CC
-        numero_documento = data.get("numeroDocumento", "").strip()
-        celular = data.get("celular", "").strip()
-        telefono_punto = data.get("telefono_punto", "").strip()
-        direccion = data.get("direccion", "").strip()
-        ciudad = data.get("ciudad", "Bogotá")
-        localidad_id = data.get("localidad")
-        latitud = data.get("latitud")
-        longitud = data.get("longitud")
-        descripcion = data.get("descripcion", "")
-        sitio_web = data.get("sitio_web", "").strip()
-        logo_url_punto = data.get("logo_url_punto", "").strip()
-        foto_url_punto = data.get("foto_url_punto", "").strip()
-        horario_atencion = data.get("horario_atencion", "").strip()
-        password = data.get("password", "")
-        password_confirm = data.get("passwordConfirm", "")
-        terminos = data.get("terminos")
-
-        # Validaciones del lado backend
-        if not nombres:
-            errores.append("Debe ingresar el nombre de la institución.")
-        if not apellidos:
-            errores.append("Debe ingresar el nombre del contacto.")
-        if not email:
-            errores.append("Debe ingresar un email válido.")
-        if not celular or not celular.startswith("3") or len(celular) != 10:
-            errores.append(
-                "El celular debe ser válido, iniciar con 3 y tener 10 dígitos."
-            )
-        if not direccion:
-            errores.append("Debe ingresar la dirección.")
-        if (
-            not telefono_punto
-            or not telefono_punto.startswith("60")
-            or len(telefono_punto) != 10
-        ):
-            errores.append(
-                "El teléfono del punto debe ser válido, iniciar con 60 y tener 10 dígitos."
-            )
-        if not latitud or not longitud:
-            errores.append("Debe seleccionar una ubicación en el mapa.")
-        if not ciudad:
-            errores.append("Debe especificar la ciudad.")
-        if not password or not password_confirm:
-            errores.append("Se requiere una contraseña.")
-            if password != password_confirm:
-                errores.append(MSG_PW_MISMATCH)
-        if not terminos:
-            errores.append("Debe aceptar los términos y condiciones.")
-        if len(password) < 8:
-            errores.append("La contraseña debe tener al menos 8 caracteres.")
-        # Podrías agregar validaciones adicionales aquí (regex, mayúscula, minúscula, etc)
-        # Validar unicidad de email y documento
-        if Usuario.objects.filter(email=email).exists():
-            errores.append("Ya existe un usuario con ese correo electrónico.")
-        if (
-            numero_documento
-            and Usuario.objects.filter(numero_documento=numero_documento).exists()
-        ):
-            errores.append("Ya existe un usuario con ese número de documento.")
-        # Validar localidad
-        localidad_inst = None
-        if localidad_id:
-            try:
-                localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
-            except Localidad.DoesNotExist:
-                errores.append("La localidad seleccionada no existe.")
-        # Si hay errores, renderiza de nuevo con los mensajes
+        errores, fields = _validate_registro_eca(data)
         localidades = Localidad.objects.all()
         if errores:
-            # Nos aseguramos que "localidades" en el contexto siempre sea el queryset, no un dato del formulario:
-            return render(
-                request,
-                "users/registro_eca.html",
-                {**data.dict(), "localidades": localidades, "errores": errores},
-            )
+            return render(request, TEMPLATE_REGISTRO_ECA, {**data.dict(), "localidades": localidades, "errores": errores})
+
         try:
-            with transaction.atomic():
-                # Crear usuario gestor ECA - INACTIVO hasta confirmar email
-                usuario = Usuario(
-                    email=email,
-                    numero_documento=numero_documento or f"GESTORECA_{email}",
-                    celular=celular,
-                    nombres=nombres,
-                    apellidos=apellidos,
-                    tipo_documento=tipo_documento,
-                    tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
-                    is_active=False,  # Usuario inactivo hasta confirmar email
-                )
-                usuario.set_password(password)
-                usuario.save()
-                
-                # Crear PuntoECA asociado
-                punto = PuntoECA.objects.create(
-                    gestor_eca=usuario,
-                    nombre=nombres,
-                    descripcion=descripcion,
-                    telefono_punto=telefono_punto,
-                    direccion=direccion,
-                    ciudad=ciudad,
-                    email=email,
-                    celular=celular,
-                    logo_url_punto=logo_url_punto,
-                    foto_url_punto=foto_url_punto,
-                    sitio_web=sitio_web,
-                    horario_atencion=horario_atencion,
-                    localidad=localidad_inst,
-                    latitud=float(latitud),
-                    longitud=float(longitud),
-                )
-                
-                # Generar token de verificación
-                token_obj = crear_token_validacion(
-                    email=email,
-                    tipo='verificacion',
-                    usuario=usuario
-                )
-                
-                # Enviar email de verificación
-                resultado = enviar_email_verificacion(email, token_obj.token)
-                
-                if not resultado:
-                    raise ValidationError("Error al enviar el correo de verificación.")
-            
-            # Redirigir a pantalla de validación
-            messages.success(
-                request,
-                f"¡Punto ECA registrado! Se ha enviado un código de verificación a {email}."
-            )
-            return redirect(f"{reverse('login')}?email={email}")
+            _create_registro_eca(fields)
+            messages.success(request, f"¡Punto ECA registrado! Se ha enviado un código de verificación a {fields['email'] }.")
+            return redirect(f"{reverse('login')}?email={fields['email']}")
         except (IntegrityError, ValidationError) as e:
             errores.append("Error al registrar el usuario: %s" % str(e))
+            return render(request, TEMPLATE_REGISTRO_ECA, {**data.dict(), "localidades": localidades, "errores": errores})
 
-        # Si falló, renderiza el form con errores
-        return render(
-            request, "users/registro_eca.html", {"errores": errores, **data.dict()}
-        )
-    # GET normal
     localidades = Localidad.objects.all()
-    return render(request, "users/registro_eca.html", {"localidades": localidades})
+    return render(request, TEMPLATE_REGISTRO_ECA, {"localidades": localidades})
+
+
+def _validate_registro_eca(data):
+    fields = _collect_registro_eca_fields(data)
+    errores = _validate_registro_eca_basic(fields)
+    # Unicidad
+    if Usuario.objects.filter(email=fields["email"]).exists():
+        errores.append("Ya existe un usuario con ese correo electrónico.")
+    if fields["numero_documento"] and Usuario.objects.filter(numero_documento=fields["numero_documento"]).exists():
+        errores.append("Ya existe un usuario con ese número de documento.")
+    # localidad
+    if fields.get("localidad_id"):
+        try:
+            fields["localidad_inst"] = Localidad.objects.get(localidad_id=fields.get("localidad_id"))
+        except Localidad.DoesNotExist:
+            errores.append("La localidad seleccionada no existe.")
+
+    return errores, fields
+
+
+def _collect_registro_eca_fields(data):
+    return {
+        "nombres": data.get("nombres", "").strip(),
+        "apellidos": data.get("apellidos", "").strip(),
+        "email": data.get("email", "").strip().lower(),
+        "tipo_documento": data.get("tipoDocumento") or cons.TipoDocumento.CC,
+        "numero_documento": data.get("numeroDocumento", "").strip(),
+        "celular": data.get("celular", "").strip(),
+        "telefono_punto": data.get("telefono_punto", "").strip(),
+        "direccion": data.get("direccion", "").strip(),
+        "ciudad": data.get("ciudad", DEFAULT_CITY),
+        "localidad_id": data.get("localidad"),
+        "latitud": data.get("latitud"),
+        "longitud": data.get("longitud"),
+        "descripcion": data.get("descripcion", ""),
+        "sitio_web": data.get("sitio_web", "").strip(),
+        "logo_url_punto": data.get("logo_url_punto", "").strip(),
+        "foto_url_punto": data.get("foto_url_punto", "").strip(),
+        "horario_atencion": data.get("horario_atencion", "").strip(),
+        "password": data.get("password", ""),
+        "password_confirm": data.get("passwordConfirm", ""),
+        "terminos": data.get("terminos"),
+    }
+
+
+def _validate_registro_eca_basic(fields):
+    errores = []
+    if not fields["nombres"]:
+        errores.append("Debe ingresar el nombre de la institución.")
+    if not fields["apellidos"]:
+        errores.append("Debe ingresar el nombre del contacto.")
+    if not fields["email"]:
+        errores.append("Debe ingresar un email válido.")
+    errores.extend(_validate_registro_eca_contact(fields))
+    if not fields["password"] or not fields["password_confirm"]:
+        errores.append("Se requiere una contraseña.")
+    elif fields["password"] != fields["password_confirm"]:
+        errores.append(MSG_PW_MISMATCH)
+    if not fields["terminos"]:
+        errores.append("Debe aceptar los términos y condiciones.")
+    if len(fields["password"]) < 8:
+        errores.append("La contraseña debe tener al menos 8 caracteres.")
+    return errores
+
+
+def _validate_registro_eca_contact(fields):
+    errores = []
+    if not fields["celular"] or not fields["celular"].startswith("3") or len(fields["celular"]) != 10:
+        errores.append("El celular debe ser válido, iniciar con 3 y tener 10 dígitos.")
+    if not fields["direccion"]:
+        errores.append("Debe ingresar la dirección.")
+    if not fields["telefono_punto"] or not fields["telefono_punto"].startswith("60") or len(fields["telefono_punto"]) != 10:
+        errores.append("El teléfono del punto debe ser válido, iniciar con 60 y tener 10 dígitos.")
+    if not fields["latitud"] or not fields["longitud"]:
+        errores.append("Debe seleccionar una ubicación en el mapa.")
+    if not fields["ciudad"]:
+        errores.append("Debe especificar la ciudad.")
+    return errores
+
+
+def _create_registro_eca(fields):
+    with transaction.atomic():
+        usuario = Usuario(
+            email=fields["email"],
+            numero_documento=fields["numero_documento"] or f"GESTORECA_{fields['email']}",
+            celular=fields["celular"],
+            nombres=fields["nombres"],
+            apellidos=fields["apellidos"],
+            tipo_documento=fields["tipo_documento"],
+            tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+            is_active=False,
+        )
+        usuario.set_password(fields["password"])
+        usuario.save()
+
+        PuntoECA.objects.create(
+            gestor_eca=usuario,
+            nombre=fields["nombres"],
+            descripcion=fields["descripcion"],
+            telefono_punto=fields["telefono_punto"],
+            direccion=fields["direccion"],
+            ciudad=fields["ciudad"],
+            email=fields["email"],
+            celular=fields["celular"],
+            logo_url_punto=fields["logo_url_punto"],
+            foto_url_punto=fields["foto_url_punto"],
+            sitio_web=fields["sitio_web"],
+            horario_atencion=fields["horario_atencion"],
+            localidad=fields["localidad_inst"],
+            latitud=float(fields["latitud"]),
+            longitud=float(fields["longitud"]),
+        )
+
+        token_obj = crear_token_validacion(email=fields["email"], tipo="verificacion", usuario=usuario)
+        resultado = enviar_email_verificacion(fields["email"], token_obj.token)
+        if not resultado:
+            raise ValidationError("Error al enviar el correo de verificación.")
 
 
 def render_registro_ciudadano(request):
     if request.method == "POST":
         data = request.POST
-        errores = []
-
-        nombres = data.get("nombres", "").strip()
-        apellidos = data.get("apellidos", "").strip()
-        email = data.get("email", "").strip().lower()
-        celular = data.get("celular", "").strip()
-        tipo_documento = data.get("tipoDocumento", "").strip() or cons.TipoDocumento.CC
-        numero_documento = data.get("numeroDocumento", "").strip()
-        ciudad = data.get("ciudad", "Bogotá").strip()
-        localidad_id = data.get("localidad", "").strip()
-        fecha_nacimiento = data.get("fechaNacimiento", "").strip() or None
-        password = data.get("password", "")
-        password_confirm = data.get("passwordConfirm", "")
-        terminos = data.get("terminos")
-
-        if not nombres or len(nombres) < 3:
-            errores.append("El nombre debe tener al menos 3 caracteres.")
-        if not apellidos or len(apellidos) < 3:
-            errores.append("Los apellidos deben tener al menos 3 caracteres.")
-        if not email:
-            errores.append("Debe ingresar un email válido.")
-        if not celular or not celular.startswith("3") or len(celular) != 10:
-            errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
-        if not ciudad:
-            errores.append("Debe especificar la ciudad.")
-        if not password or not password_confirm:
-            errores.append("Se requiere una contraseña.")
-        elif password != password_confirm:
-            errores.append("Las contraseñas no coinciden.")
-        elif len(password) < 8:
-            errores.append("La contraseña debe tener al menos 8 caracteres.")
-        if not terminos:
-            errores.append("Debe aceptar los términos y condiciones.")
-
-        if email and Usuario.objects.filter(email=email).exists():
-            errores.append("Ya existe un usuario con ese correo electrónico.")
-        if (
-            numero_documento
-            and Usuario.objects.filter(numero_documento=numero_documento).exists()
-        ):
-            errores.append("Ya existe un usuario con ese número de documento.")
-
-        localidad_inst = None
+        errores, fields = _validate_registro_ciudadano(data)
         localidades = Localidad.objects.all()
-        if localidad_id:
-            try:
-                localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
-            except Localidad.DoesNotExist:
-                errores.append("La localidad seleccionada no existe.")
-
         if errores:
-            return render(
-                request,
-                "users/registro_ciudadano.html",
-                {**data.dict(), "localidades": localidades, "errores": errores},
-            )
+            return render(request, TEMPLATE_REGISTRO_CIUDADANO, {**data.dict(), "localidades": localidades, "errores": errores})
 
         try:
-            with transaction.atomic():
-                usuario = Usuario(
-                    email=email,
-                    numero_documento=numero_documento or f"CIU_{email}",
-                    nombres=nombres,
-                    apellidos=apellidos,
-                    celular=celular,
-                    tipo_documento=tipo_documento,
-                    tipo_usuario=cons.TipoUsuario.CIUDADANO,
-                    ciudad=ciudad,
-                    localidad=localidad_inst,
-                    fecha_nacimiento=fecha_nacimiento if fecha_nacimiento else None,
-                    is_active=False,  # Usuario inactivo hasta confirmar email
-                )
-                usuario.set_password(password)
-                usuario.save()
-                
-                # Generar token de verificación
-                token_obj = crear_token_validacion(
-                    email=email,
-                    tipo='verificacion',
-                    usuario=usuario
-                )
-                
-                # Enviar email de verificación
-                resultado = enviar_email_verificacion(email, token_obj.token)
-                
-                if not resultado:
-                    raise ValidationError("Error al enviar el correo de verificación.")
-            
-            # Redirigir a pantalla de validación
-            messages.success(
-                request,
-                f"¡Registro completado! Se ha enviado un código de verificación a {email}."
-            )
-            return redirect(f"{reverse('login')}?email={email}")
+            _create_registro_ciudadano(fields)
+            messages.success(request, f"¡Registro completado! Se ha enviado un código de verificación a {fields['email'] }.")
+            return redirect(f"{reverse('login')}?email={fields['email']}")
         except (IntegrityError, ValidationError) as e:
             errores.append("Error al registrar el usuario: %s" % str(e))
-            return render(
-                request,
-                "users/registro_ciudadano.html",
-                {**data.dict(), "localidades": localidades, "errores": errores},
-            )
+            return render(request, TEMPLATE_REGISTRO_CIUDADANO, {**data.dict(), "localidades": localidades, "errores": errores})
 
     localidades = Localidad.objects.all()
-    return render(
-        request, "users/registro_ciudadano.html", {"localidades": localidades}
-    )
+    return render(request, TEMPLATE_REGISTRO_CIUDADANO, {"localidades": localidades})
+
+
+def _validate_registro_ciudadano(data):
+    fields = _collect_registro_ciudadano_fields(data)
+    errores = _validate_registro_ciudadano_basic(fields)
+    if fields.get("email") and Usuario.objects.filter(email=fields.get("email")).exists():
+        errores.append("Ya existe un usuario con ese correo electrónico.")
+    if fields.get("numero_documento") and Usuario.objects.filter(numero_documento=fields.get("numero_documento")).exists():
+        errores.append("Ya existe un usuario con ese número de documento.")
+    if fields.get("localidad_id"):
+        try:
+            fields["localidad_inst"] = Localidad.objects.get(localidad_id=fields.get("localidad_id"))
+        except Localidad.DoesNotExist:
+            errores.append("La localidad seleccionada no existe.")
+    return errores, fields
+
+
+def _collect_registro_ciudadano_fields(data):
+    return {
+        "nombres": data.get("nombres", "").strip(),
+        "apellidos": data.get("apellidos", "").strip(),
+        "email": data.get("email", "").strip().lower(),
+        "celular": data.get("celular", "").strip(),
+        "tipo_documento": data.get("tipoDocumento", "").strip() or cons.TipoDocumento.CC,
+        "numero_documento": data.get("numeroDocumento", "").strip(),
+        "ciudad": data.get("ciudad", DEFAULT_CITY).strip(),
+        "localidad_id": data.get("localidad", "").strip(),
+        "fecha_nacimiento": data.get("fechaNacimiento", "").strip() or None,
+        "password": data.get("password", ""),
+        "password_confirm": data.get("passwordConfirm", ""),
+        "terminos": data.get("terminos"),
+    }
+
+
+def _validate_registro_ciudadano_basic(fields):
+    errores = []
+    if not fields["nombres"] or len(fields["nombres"]) < 3:
+        errores.append("El nombre debe tener al menos 3 caracteres.")
+    if not fields["apellidos"] or len(fields["apellidos"]) < 3:
+        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+    if not fields["email"]:
+        errores.append("Debe ingresar un email válido.")
+    if not fields["celular"] or not fields["celular"].startswith("3") or len(fields["celular"]) != 10:
+        errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
+    if not fields["ciudad"]:
+        errores.append("Debe especificar la ciudad.")
+    if not fields["password"] or not fields["password_confirm"]:
+        errores.append("Se requiere una contraseña.")
+    elif fields["password"] != fields["password_confirm"]:
+        errores.append(MSG_PW_MISMATCH)
+    elif len(fields["password"]) < 8:
+        errores.append("La contraseña debe tener al menos 8 caracteres.")
+    if not fields["terminos"]:
+        errores.append("Debe aceptar los términos y condiciones.")
+    return errores
+
+
+def _create_registro_ciudadano(fields):
+    with transaction.atomic():
+        usuario = Usuario(
+            email=fields["email"],
+            numero_documento=fields["numero_documento"] or f"CIU_{fields['email']}",
+            nombres=fields["nombres"],
+            apellidos=fields["apellidos"],
+            celular=fields["celular"],
+            tipo_documento=fields["tipo_documento"],
+            tipo_usuario=cons.TipoUsuario.CIUDADANO,
+            ciudad=fields["ciudad"],
+            localidad=fields["localidad_inst"],
+            fecha_nacimiento=fields["fecha_nacimiento"] if fields["fecha_nacimiento"] else None,
+            is_active=False,
+        )
+        usuario.set_password(fields["password"])
+        usuario.save()
+
+        token_obj = crear_token_validacion(email=fields["email"], tipo="verificacion", usuario=usuario)
+        resultado = enviar_email_verificacion(fields["email"], token_obj.token)
+        if not resultado:
+            raise ValidationError("Error al enviar el correo de verificación.")
 
 
 @ciudadano_required
@@ -559,45 +510,74 @@ def actualizar_datos_ciudadano(request):
     if request.method != "POST":
         return redirect("perfil_ciudadano")
 
+    errores, updates = _validate_actualizar_datos_ciudadano(request)
+    if errores:
+        for e in errores:
+            messages.error(request, e)
+        return redirect("perfil_ciudadano")
+
     user = request.user
+    try:
+        user.nombres = updates.get("nombres")
+        user.apellidos = updates.get("apellidos")
+        user.celular = updates.get("celular")
+        user.ciudad = updates.get("ciudad") or DEFAULT_CITY
+        user.localidad = updates.get("localidad_inst")
+        user.fecha_nacimiento = updates.get("fecha_nacimiento")
+        user.save()
+        messages.success(request, "Datos actualizados correctamente.")
+    except (IntegrityError, ValidationError):
+        messages.error(request, "No se pudieron guardar los cambios. Verifica los datos ingresados.")
+
+    return redirect("perfil_ciudadano")
+
+
+def _validate_actualizar_datos_ciudadano(request):
+    fields = _collect_actualizar_fields(request)
+    errores = _validate_actualizar_basic(fields)
+    if fields.get("localidad_id"):
+        try:
+            fields["localidad_inst"] = Localidad.objects.get(localidad_id=fields.get("localidad_id"))
+        except (Localidad.DoesNotExist, ValueError):
+            errores.append("La localidad seleccionada no es válida.")
+
+    updates = {
+        "nombres": fields.get("nombres"),
+        "apellidos": fields.get("apellidos"),
+        "celular": fields.get("celular") if fields.get("celular") else None,
+        "ciudad": fields.get("ciudad"),
+        "localidad_inst": fields.get("localidad_inst"),
+        "fecha_nacimiento": fields.get("fecha_nacimiento"),
+    }
+    return errores, updates
+
+
+def _collect_actualizar_fields(request):
+    return {
+        "nombres": request.POST.get("nombres", "").strip(),
+        "apellidos": request.POST.get("apellidos", "").strip(),
+        "celular": request.POST.get("celular", "").strip(),
+        "ciudad": request.POST.get("ciudad", "").strip(),
+        "localidad_id": request.POST.get("localidad", "").strip(),
+        "fecha_str": request.POST.get("fechaNacimiento", "").strip(),
+    }
+
+
+def _validate_actualizar_basic(fields):
     errores = []
+    errores.extend(_validate_nombre_apellidos(fields.get("nombres"), fields.get("apellidos")))
+    celular = fields.get("celular")
+    ciudad = fields.get("ciudad")
+    fecha_str = fields.get("fecha_str")
 
-    nombres = request.POST.get("nombres", "").strip()
-    apellidos = request.POST.get("apellidos", "").strip()
-    celular = request.POST.get("celular", "").strip()
-    ciudad = request.POST.get("ciudad", "").strip()
-    localidad_id = request.POST.get("localidad", "").strip()
-    fecha_str = request.POST.get("fechaNacimiento", "").strip()
-
-    # --- Validar nombres ---
-    if not nombres or len(nombres) < 3:
-        errores.append("El nombre debe tener al menos 3 caracteres.")
-    elif len(nombres) > 30:
-        errores.append("El nombre no puede superar los 30 caracteres.")
-    elif not _SOLO_LETRAS.match(nombres):
-        errores.append("El nombre solo puede contener letras.")
-
-    # --- Validar apellidos ---
-    if not apellidos or len(apellidos) < 3:
-        errores.append("Los apellidos deben tener al menos 3 caracteres.")
-    elif len(apellidos) > 40:
-        errores.append("Los apellidos no pueden superar los 40 caracteres.")
-    elif not _SOLO_LETRAS.match(apellidos):
-        errores.append("Los apellidos solo pueden contener letras.")
-
-    # --- Validar celular (opcional) ---
     if celular and not _CELULAR.match(celular):
-        errores.append(
-            "El celular debe iniciar con 3 y contener exactamente 10 dígitos."
-        )
+        errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
 
-    # --- Validar ciudad ---
     if ciudad and len(ciudad) > 15:
         errores.append("La ciudad no puede superar los 15 caracteres.")
     elif ciudad and not _SOLO_CIUDAD.match(ciudad):
         errores.append("La ciudad solo puede contener letras.")
 
-    # --- Validar fecha de nacimiento ---
     fecha_nacimiento = None
     if fecha_str:
         try:
@@ -607,35 +587,26 @@ def actualizar_datos_ciudadano(request):
         except ValueError:
             errores.append("Formato de fecha inválido.")
 
-    # --- Validar localidad (UUID) ---
-    localidad_inst = user.localidad
-    if localidad_id:
-        try:
-            localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
-        except (Localidad.DoesNotExist, ValueError):
-            errores.append("La localidad seleccionada no es válida.")
+    fields["fecha_nacimiento"] = fecha_nacimiento
+    return errores
 
-    if errores:
-        for e in errores:
-            messages.error(request, e)
-        return redirect("perfil_ciudadano")
 
-    try:
-        user.nombres = nombres
-        user.apellidos = apellidos
-        user.celular = celular if celular else None
-        user.ciudad = ciudad if ciudad else "Bogotá"
-        user.localidad = localidad_inst
-        user.fecha_nacimiento = fecha_nacimiento
-        user.save()
-        messages.success(request, "Datos actualizados correctamente.")
-    except (IntegrityError, ValidationError):
-        messages.error(
-            request,
-            "No se pudieron guardar los cambios. Verifica los datos ingresados.",
-        )
+def _validate_nombre_apellidos(nombres, apellidos):
+    errores = []
+    if not nombres or len(nombres) < 3:
+        errores.append("El nombre debe tener al menos 3 caracteres.")
+    elif len(nombres) > 30:
+        errores.append("El nombre no puede superar los 30 caracteres.")
+    elif not _SOLO_LETRAS.match(nombres):
+        errores.append("El nombre solo puede contener letras.")
 
-    return redirect("perfil_ciudadano")
+    if not apellidos or len(apellidos) < 3:
+        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+    elif len(apellidos) > 40:
+        errores.append("Los apellidos no pueden superar los 40 caracteres.")
+    elif not _SOLO_LETRAS.match(apellidos):
+        errores.append("Los apellidos solo pueden contener letras.")
+    return errores
 
 
 @login_required(login_url="/login/")
