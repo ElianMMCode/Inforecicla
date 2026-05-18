@@ -1,4 +1,14 @@
-{% extends "publicacion/base.html" %}
+{% load static publicaciones_extras %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ publicacion.titulo }} - InfoRecicla</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
 
 {% block page_title %}{{ publicacion.titulo }} - InfoRecicla{% endblock %}
 {% block main_class %}py-5{% endblock %}
@@ -200,9 +210,9 @@
                     </div>
 
                     {% if messages %}
-                    <div class="px-4 pt-3">
+                    <div class="px-4 pt-3" id="mensajesComentario">
                         {% for message in messages %}
-                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mb-0" role="alert">
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2 small" role="alert">
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
@@ -219,9 +229,73 @@
                             </div>
                             <button type="submit" class="btn btn-success">Comentar</button>
                         </form>
-                        {% else %}
-                        <div class="alert alert-light border mb-4">
-                            <a href="/login">Inicia sesión</a> para participar en los comentarios.
+                    </div>
+                    {% else %}
+                    <div class="card-body border-bottom px-4 py-3 text-center text-muted small">
+                        <a href="/login" class="text-success fw-semibold">Inicia sesión</a> para dejar un comentario.
+                    </div>
+                    {% endif %}
+
+                    <div class="list-group list-group-flush">
+                        {% for comentario in publicacion.comentarios.all %}
+                        <div class="list-group-item px-4 py-3">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;">{{ comentario.usuario.nombres|first }}</div>
+                                <div class="flex-grow-1" style="min-width: 0;">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-semibold small">{{ comentario.usuario.nombres }} {{ comentario.usuario.apellidos }}</span>
+                                            <span class="text-muted" style="font-size:.75rem;">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                        </div>
+                                        {% if user.is_authenticated and comentario.usuario == user %}
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditar{{ comentario.id|slugify }}">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </button>
+                                            <form method="POST" action="{% url 'publicacion:eliminar_comentario' comentario.id %}"
+                                                  onsubmit="return confirm('¿Eliminar este comentario?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0 small" style="white-space: pre-wrap; overflow-wrap: break-word;">{{ comentario.texto|urlize_blank }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if user.is_authenticated and comentario.usuario == user %}
+                        <div class="modal fade" id="modalEditar{{ comentario.id|slugify }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-success text-white">
+                                        <h6 class="modal-title mb-0">Editar comentario</h6>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{% url 'publicacion:editar_comentario' comentario.id %}"
+                                          novalidate class="form-editar">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <textarea name="texto" class="form-control" rows="3"
+                                                      minlength="1" maxlength="1000"
+                                                      required>{{ comentario.texto }}</textarea>
+                                            <div class="d-flex justify-content-end mt-1">
+                                                <span class="text-muted cnt-editar" style="font-size:.75rem;">{{ comentario.texto|length }}/1000</span>
+                                            </div>
+                                            <div class="invalid-feedback">El comentario no puede estar vacío ni superar 1000 caracteres.</div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-success btn-sm">Guardar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                         {% endif %}
 
@@ -245,4 +319,51 @@
         </div>
     </div>
 </section>
-{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Contador y validación del formulario nuevo comentario
+    const textoNuevo = document.getElementById('textoNuevo');
+    const cntNuevo = document.getElementById('cntNuevo');
+    if (textoNuevo) {
+        textoNuevo.addEventListener('input', function () {
+            cntNuevo.textContent = this.value.length;
+        });
+    }
+    const formComentar = document.getElementById('formComentar');
+    if (formComentar) {
+        formComentar.addEventListener('submit', function (e) {
+            if (!formComentar.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            formComentar.classList.add('was-validated');
+        });
+    }
+
+    // Contador y validación de formularios de edición
+    document.querySelectorAll('.form-editar').forEach(function (form) {
+        const ta = form.querySelector('textarea');
+        const cnt = form.querySelector('.cnt-editar');
+        if (ta && cnt) {
+            ta.addEventListener('input', function () {
+                cnt.textContent = this.value.length + '/1000';
+            });
+        }
+        form.addEventListener('submit', function (e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+
+    // Scroll automático al mensaje si existe
+    const mensajes = document.getElementById('mensajesComentario');
+    if (mensajes) {
+        mensajes.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+</script>
+</body>
+</html>
