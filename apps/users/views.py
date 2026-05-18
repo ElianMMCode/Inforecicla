@@ -593,8 +593,11 @@ def _validate_actualizar_basic(fields):
     errores = []
     errores.extend(_validate_nombre_apellidos(fields.get("nombres"), fields.get("apellidos")))
 
-    celular = fields.get("celular")
-    ciudad = fields.get("ciudad")
+    nombres = request.POST.get("nombres", "").strip()
+    apellidos = request.POST.get("apellidos", "").strip()
+    celular = request.POST.get("celular", "").strip()
+    localidad_id = request.POST.get("localidad", "").strip()
+    fecha_str = request.POST.get("fechaNacimiento", "").strip()
 
     if celular and not _CELULAR.match(celular):
         errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
@@ -625,14 +628,51 @@ def _validate_nombre_apellidos(nombres, apellidos):
     return errores
 
 
-def _parse_fecha_nacimiento(fecha_str):
-    if not fecha_str:
-        return None, []
+    # --- Validar fecha de nacimiento ---
+    fecha_nacimiento = None
+    if fecha_str:
+        try:
+            fecha_nacimiento = date_type.fromisoformat(fecha_str)
+            today = date_type.today()
+            if fecha_nacimiento > today:
+                errores.append("La fecha de nacimiento no puede ser futura.")
+            else:
+                try:
+                    limite = today.replace(year=today.year - 5)
+                except ValueError:
+                    limite = today.replace(year=today.year - 5, day=28)
+                if fecha_nacimiento > limite:
+                    errores.append("La fecha de nacimiento debe corresponder a una edad mínima de 5 años.")
+        except ValueError:
+            errores.append("Formato de fecha inválido.")
+
+    # --- Validar localidad (UUID) ---
+    localidad_inst = None
+    if localidad_id:
+        try:
+            localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
+        except (Localidad.DoesNotExist, ValueError):
+            errores.append("La localidad seleccionada no es válida.")
+
+    if errores:
+        for e in errores:
+            messages.error(request, e)
+        return redirect("perfil_ciudadano")
 
     try:
-        fecha_nacimiento = date_type.fromisoformat(fecha_str)
-    except ValueError:
-        return None, ["Formato de fecha inválido."]
+        user.nombres = nombres
+        user.apellidos = apellidos
+        user.celular = celular if celular else None
+        user.ciudad = "Bogotá"
+        user.localidad = localidad_inst
+        user.fecha_nacimiento = fecha_nacimiento
+        user.save()
+        messages.success(request, "Datos actualizados correctamente.")
+    except (IntegrityError, ValidationError):
+        messages.error(
+            request,
+            "No se pudieron guardar los cambios. Verifica los datos ingresados.",
+        )
 
     if fecha_nacimiento > date_type.today():
         return None, ["La fecha de nacimiento no puede ser futura."]

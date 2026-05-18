@@ -1,3 +1,5 @@
+import secrets
+import string
 import unittest
 
 from django.contrib.auth import SESSION_KEY, get_user_model
@@ -20,11 +22,32 @@ _PUNTO_ECA = "/punto-eca/"
 _CRED_INVALIDAS = "Credenciales inválidas. Verifica tu email y contraseña."
 
 
+# ── Generador de contraseñas aleatorias para tests ────────────────────────────
+
+def _generar_password():
+    """Genera una contraseña aleatoria que cumple los requisitos de complejidad."""
+    simbolos = "@$!%*?&"
+    alphabet = string.ascii_letters + string.digits + simbolos
+    while True:
+        pwd = "".join(secrets.choice(alphabet) for _ in range(16))
+        if (
+            any(c.isupper() for c in pwd)
+            and any(c.islower() for c in pwd)
+            and any(c.isdigit() for c in pwd)
+            and any(c in simbolos for c in pwd)
+        ):
+            return pwd
+
+
+_PASSWORD_VALIDA = _generar_password()
+_PASSWORD_NUEVA = _generar_password()
+
+
 # ── Helper de creación de usuarios ────────────────────────────────────────────
 
 def _crear_usuario(
     email,
-    password="Password123!",
+    password=None,
     numero_documento="123456",
     nombres="Test",
     apellidos="Usuario",
@@ -40,7 +63,7 @@ def _crear_usuario(
     return Usuario.objects.create_user(
         email=email,
         numero_documento=numero_documento,
-        password=password,
+        password=password if password is not None else _PASSWORD_VALIDA,
         nombres=nombres,
         apellidos=apellidos,
         tipo_usuario=tipo_usuario,
@@ -67,7 +90,7 @@ class ValidarCredencialesTests(TestCase):
         """TC-CU00.1-01: Credenciales correctas → redirección al perfil del rol."""
         response = self.client.post(
             _LOGIN,
-            {"email": "usuario@test.com", "password": "Password123!"},
+            {"email": "usuario@test.com", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
 
@@ -75,7 +98,7 @@ class ValidarCredencialesTests(TestCase):
         """TC-CU00.1-02: Email no registrado → mensaje de error genérico."""
         response = self.client.post(
             _LOGIN,
-            {"email": "noexiste@test.com", "password": "Password123!"},
+            {"email": "noexiste@test.com", "password": _PASSWORD_VALIDA},
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(_CRED_INVALIDAS, response.context["errores"])
@@ -94,7 +117,7 @@ class ValidarCredencialesTests(TestCase):
         de autenticar; la autenticación debe ser exitosa."""
         response = self.client.post(
             _LOGIN,
-            {"email": "USUARIO@TEST.COM", "password": "Password123!"},
+            {"email": "USUARIO@TEST.COM", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
 
@@ -103,7 +126,7 @@ class ValidarCredencialesTests(TestCase):
         de autenticar; la autenticación debe ser exitosa."""
         response = self.client.post(
             _LOGIN,
-            {"email": "  usuario@test.com  ", "password": "Password123!"},
+            {"email": "  usuario@test.com  ", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
 
@@ -126,7 +149,7 @@ class RolRedireccionTests(TestCase):
         )
         response = self.client.post(
             _LOGIN,
-            {"email": "ciudadano@test.com", "password": "Password123!"},
+            {"email": "ciudadano@test.com", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
 
@@ -139,7 +162,7 @@ class RolRedireccionTests(TestCase):
         )
         response = self.client.post(
             _LOGIN,
-            {"email": "gestor@test.com", "password": "Password123!"},
+            {"email": "gestor@test.com", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PUNTO_ECA, fetch_redirect_response=False)
 
@@ -152,7 +175,7 @@ class RolRedireccionTests(TestCase):
         )
         response = self.client.post(
             _LOGIN,
-            {"email": "admin@test.com", "password": "Password123!"},
+            {"email": "admin@test.com", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PANEL_ADMIN, fetch_redirect_response=False)
 
@@ -167,7 +190,7 @@ class RolRedireccionTests(TestCase):
         )
         response = self.client.post(
             _LOGIN,
-            {"email": "staff@test.com", "password": "Password123!"},
+            {"email": "staff@test.com", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PANEL_ADMIN, fetch_redirect_response=False)
 
@@ -178,7 +201,7 @@ class RolRedireccionTests(TestCase):
             numero_documento="500005",
             tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
         )
-        self.client.login(username="gestor2@test.com", password="Password123!")
+        self.client.login(username="gestor2@test.com", password=_PASSWORD_VALIDA)
         response = self.client.get(_PERFIL)
         self.assertRedirects(response, _PUNTO_ECA, fetch_redirect_response=False)
 
@@ -189,7 +212,7 @@ class RolRedireccionTests(TestCase):
             numero_documento="600006",
             tipo_usuario=cons.TipoUsuario.ADMIN,
         )
-        self.client.login(username="admin2@test.com", password="Password123!")
+        self.client.login(username="admin2@test.com", password=_PASSWORD_VALIDA)
         response = self.client.get(_PERFIL)
         self.assertRedirects(response, _PANEL_ADMIN, fetch_redirect_response=False)
 
@@ -222,13 +245,13 @@ class GestionSesionTests(TestCase):
         """TC-CU00.3-01: Login exitoso establece SESSION_KEY en la sesión Django."""
         self.client.post(
             _LOGIN,
-            {"email": "sesion@test.com", "password": "Password123!"},
+            {"email": "sesion@test.com", "password": _PASSWORD_VALIDA},
         )
         self.assertIn(SESSION_KEY, self.client.session)
 
     def test_tc_cu003_02_sesion_persiste_entre_peticiones(self):
         """TC-CU00.3-02: El SESSION_KEY permanece igual tras navegar a vistas protegidas."""
-        self.client.login(username="sesion@test.com", password="Password123!")
+        self.client.login(username="sesion@test.com", password=_PASSWORD_VALIDA)
         session_key_inicial = self.client.session[SESSION_KEY]
 
         self.client.get(_PERFIL)
@@ -238,7 +261,7 @@ class GestionSesionTests(TestCase):
 
     def test_tc_cu003_03_logout_destruye_sesion_y_redirige_a_login(self):
         """TC-CU00.3-03: Logout elimina SESSION_KEY y redirige a /login/."""
-        self.client.login(username="sesion@test.com", password="Password123!")
+        self.client.login(username="sesion@test.com", password=_PASSWORD_VALIDA)
         self.assertIn(SESSION_KEY, self.client.session)
 
         response = self.client.post(_LOGOUT)
@@ -250,7 +273,7 @@ class GestionSesionTests(TestCase):
         """TC-CU00.3-04: Sin sesión válida en el servidor, la vista protegida
         redirige a /login/?next=<url>. Se simula la expiración eliminando todos
         los registros de sesión de la base de datos."""
-        self.client.login(username="sesion@test.com", password="Password123!")
+        self.client.login(username="sesion@test.com", password=_PASSWORD_VALIDA)
         self.assertIn(SESSION_KEY, self.client.session)
 
         Session.objects.all().delete()
@@ -372,7 +395,7 @@ class BloqueoIntentosFallidosTests(TestCase):
 
         response = self.client.post(
             _LOGIN,
-            {"email": "bloqueo@test.com", "password": "Password123!"},
+            {"email": "bloqueo@test.com", "password": _PASSWORD_VALIDA},
         )
 
         self.assertFalse(response.wsgi_request.user.is_authenticated)
@@ -390,7 +413,7 @@ class BloqueoIntentosFallidosTests(TestCase):
 
         self.client.post(
             _LOGIN,
-            {"email": "bloqueo@test.com", "password": "Password123!"},
+            {"email": "bloqueo@test.com", "password": _PASSWORD_VALIDA},
         )
 
         self.usuario.refresh_from_db()
@@ -472,14 +495,14 @@ class RecuperarContrasenaTests(TestCase):
             {
                 "action": "reset",
                 "email": "usuario@test.com",
-                "password": "NuevaPass123!",
-                "passwordConfirm": "NuevaPass123!",
+                "password": _PASSWORD_NUEVA,
+                "passwordConfirm": _PASSWORD_NUEVA,
             },
         )
 
         self.assertRedirects(response, _LOGIN, fetch_redirect_response=False)
         self.usuario.refresh_from_db()
-        self.assertTrue(self.usuario.check_password("NuevaPass123!"))
+        self.assertTrue(self.usuario.check_password(_PASSWORD_NUEVA))
         self.assertNotIn("recovery_user_id", self.client.session)
 
     def test_tc_ext43_04_reset_con_password_corta_muestra_error(self):
@@ -507,7 +530,7 @@ class RecuperarContrasenaTests(TestCase):
         )
         self.usuario.refresh_from_db()
         self.assertTrue(
-            self.usuario.check_password("Password123!"),
+            self.usuario.check_password(_PASSWORD_VALIDA),
             "La contraseña original no debe haberse modificado.",
         )
 
@@ -524,7 +547,7 @@ class RecuperarContrasenaTests(TestCase):
             {
                 "action": "reset",
                 "email": "usuario@test.com",
-                "password": "Password123!",
+                "password": _PASSWORD_VALIDA,
                 "passwordConfirm": "Password456!",
             },
         )
