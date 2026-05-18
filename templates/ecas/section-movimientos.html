@@ -297,6 +297,9 @@
                     class="form-control form-control-sm border-danger border-2"
                     placeholder="0.00"
                     required
+                    onkeydown="
+                      return !['e', 'E', '-', '+'].includes(event.key);
+                    "
                     oninput="
                       if (this.value.length > 10)
                         this.value = this.value.slice(0, 10);
@@ -332,6 +335,9 @@
                     class="form-control form-control-sm border-danger border-2"
                     placeholder="0.00"
                     required
+                    onkeydown="
+                      return !['e', 'E', '-', '+'].includes(event.key);
+                    "
                     oninput="
                       if (this.value.length > 12)
                         this.value = this.value.slice(0, 12);
@@ -674,6 +680,9 @@
                     class="form-control form-control-sm border-success border-2"
                     placeholder="0.00"
                     required
+                    onkeydown="
+                      return !['e', 'E', '-', '+'].includes(event.key);
+                    "
                     oninput="
                       if (this.value.length > 10)
                         this.value = this.value.slice(0, 10);
@@ -711,6 +720,9 @@
                     class="form-control form-control-sm border-success border-2"
                     placeholder="0.00"
                     required
+                    onkeydown="
+                      return !['e', 'E', '-', '+'].includes(event.key);
+                    "
                     oninput="
                       if (this.value.length > 12)
                         this.value = this.value.slice(0, 12);
