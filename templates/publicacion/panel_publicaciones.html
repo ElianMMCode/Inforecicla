@@ -35,7 +35,7 @@
                         {% if user.is_staff or user.is_superuser or user.tipo_usuario == "ADM" %}
                             <li><a class="dropdown-item" href="/panel_admin/">Panel Admin</a></li>
                         {% elif user.tipo_usuario == "GECA" %}
-                            <li><a class="dropdown-item" href="/punto-eca/">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/punto-eca/">Inicio</a></li>
                         {% else %}
                             <li><a class="dropdown-item" href="/perfil/">Mi Perfil</a></li>
                         {% endif %}

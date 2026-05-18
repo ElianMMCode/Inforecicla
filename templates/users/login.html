@@ -316,7 +316,10 @@
                     {% endfor %}
                 {% endif %}
                 <div id="js-error-container"></div>
-                <form method="POST" id="loginForm">
+                    <form method="POST"
+                        id="loginForm"
+                        data-current-action="{{ action|default:''|escapejs }}"
+                        data-recovery-step="{{ recovery_step|default:'enviar'|escapejs }}">
                     {% csrf_token %}
                     <input type="hidden" id="loginAction" name="action" value="login">
                     <div class="form-group">
@@ -363,7 +366,7 @@
                                 class="btn btn-link p-0 inline-action-btn"
                                 formnovalidate
                                 onclick="document.getElementById('loginAction').value='reenviar';">
-                            Reenviar token para activar cuenta
+                            Reenviar enlace para activar cuenta
                         </button>
                     </div>
                     <button type="submit" class="btn-login">
@@ -382,61 +385,10 @@
                         Registrar Punto ECA
                     </a>
                 </div>
-                <button type="button"
-                    class="btn-login auth-helper-btn btn-ghost"
-                        data-bs-toggle="modal"
-                        data-bs-target="#activationModal">
-                    <i class="bi bi-check2-circle btn-icon" aria-hidden="true"></i>
-                    Activar cuenta por correo
-                </button>
                 <div class="login-footer">
                     <p>
                         <a href="/" style="margin-top:1rem;display:inline-block;font-size:0.95rem;">&larr; Volver al inicio</a>
                     </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal fade" id="activationModal" tabindex="-1" aria-labelledby="activationModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="activationModalLabel">Activar cuenta por correo</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-muted">Ingresa tu correo y el código de 6 dígitos para activar tu cuenta.</p>
-                        <form method="POST" id="activationForm">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="activar">
-                            <div class="form-group">
-                                <label for="activationEmail" class="form-label">Correo electrónico</label>
-                                <input type="email"
-                                       class="form-control"
-                                       id="activationEmail"
-                                       name="email"
-                                       placeholder="tu@email.com"
-                                       value="{{ email|default:'' }}"
-                                       required>
-                            </div>
-                            <div class="form-group">
-                                <label for="activationCode" class="form-label">Código de activación</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="activationCode"
-                                       name="codigo"
-                                       placeholder="123456"
-                                       maxlength="6"
-                                       pattern="[0-9]{6}"
-                                       inputmode="numeric"
-                                       required>
-                            </div>
-                            <button type="submit" class="btn-login">
-                                <i class="bi bi-check2-circle btn-icon" aria-hidden="true"></i>
-                                Activar cuenta
-                            </button>
-                        </form>
-                    </div>
                 </div>
             </div>
         </div>
@@ -528,91 +480,6 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const loginForm = document.getElementById('loginForm');
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('password');
-            const loginAction = document.getElementById('loginAction');
-            const jsErrorContainer = document.getElementById('js-error-container');
-
-            function showErrors(errors) {
-                jsErrorContainer.innerHTML = `<div class="alert alert-danger" role="alert"><ul style="margin-bottom: 0;">${errors.map(err => `<li>${err}</li>`).join('')}</ul></div>`;
-            }
-
-            loginForm.addEventListener('submit', function (e) {
-                let errors = [];
-                const emailValue = emailInput.value.trim();
-                const passwordValue = passwordInput.value;
-                const actionValue = loginAction.value;
-                // Validación de email
-                if (!emailValue) {
-                    errors.push('El correo electrónico es obligatorio.');
-                } else {
-                    // Regex básica de email
-                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailPattern.test(emailValue)) {
-                        errors.push('El correo electrónico no tiene un formato válido.');
-                    }
-                }
-                if (actionValue !== 'reenviar') {
-                    // Validación de contraseña solo para inicio de sesión
-                    if (!passwordValue) {
-                        errors.push('La contraseña es obligatoria.');
-                    }
-                }
-                if (errors.length > 0) {
-                    e.preventDefault();
-                    showErrors(errors);
-                    // Foco al primer campo inválido
-                    if (!emailValue) {
-                       emailInput.focus();
-                    } else if (actionValue !== 'reenviar' && !passwordValue) {
-                       passwordInput.focus();
-                    }
-                } else if (actionValue === 'reenviar') {
-                    passwordInput.value = '';
-                }
-            });
-
-            const currentAction = "{{ action|default:''|escapejs }}";
-            const recoveryStep = "{{ recovery_step|default:'enviar'|escapejs }}";
-            const activationModalEl = document.getElementById('activationModal');
-            const recoveryModalEl = document.getElementById('recoveryModal');
-
-            if (currentAction === 'activar' && activationModalEl) {
-                const activationModal = new bootstrap.Modal(activationModalEl);
-                activationModal.show();
-            }
-
-            if (
-                ['recuperar_enviar', 'recuperar_validar', 'recuperar_cambiar'].includes(currentAction)
-                || recoveryStep !== 'enviar'
-            ) {
-                if (recoveryModalEl) {
-                    const recoveryModal = new bootstrap.Modal(recoveryModalEl);
-                    recoveryModal.show();
-                }
-            }
-
-            // Inicializar toggles de mostrar/ocultar contraseña
-            document.querySelectorAll('.toggle-password').forEach(function(icon){
-                icon.addEventListener('click', function(e){
-                    const targetSelector = icon.getAttribute('data-target');
-                    const input = document.querySelector(targetSelector);
-                    if (!input) return;
-                    if (input.type === 'password'){
-                        input.type = 'text';
-                        icon.classList.remove('bi-eye');
-                        icon.classList.add('bi-eye-slash');
-                    } else {
-                        input.type = 'password';
-                        icon.classList.remove('bi-eye-slash');
-                        icon.classList.add('bi-eye');
-                    }
-                });
-            });
-        });
-        </script>
+        <script src="{% static 'js/Registro/login.js' %}"></script>
     </body>
 </html>

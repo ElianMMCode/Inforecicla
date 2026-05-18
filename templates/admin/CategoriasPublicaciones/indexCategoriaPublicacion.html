@@ -41,7 +41,7 @@
         </div>
 
         <main class="col offset-md-2 p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
         <div>
             <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-tags me-2"></i>Categorías de Publicaciones</h1>
             <p class="text-muted mb-0">Resumen y métricas de la clasificación de contenido</p>
@@ -55,6 +55,8 @@
             </a>
         </div>
     </div>
+
+    {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'categorias_publicacion' %}
 
     <div class="row g-3 mb-4">
         <div class="col-md-4">

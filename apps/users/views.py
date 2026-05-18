@@ -21,10 +21,27 @@ from apps.users.utils import (
 
 def render_login(request):
     errores = []
-    email = ""
+    email = request.GET.get("email", "").strip().lower()
     action = request.POST.get("action") if request.method == "POST" else request.GET.get("action", "")
-    recovery_email = request.GET.get("email", "")
+    recovery_email = email
     recovery_step = request.GET.get("recovery_step", "enviar")
+
+    if request.method == "GET" and action == "activar":
+        token = request.GET.get("token", "").strip()
+        if not email or not token:
+            errores.append("El enlace de activación no es válido. Solicita uno nuevo desde inicio de sesión.")
+        else:
+            es_valido, mensaje, token_obj = verificar_token(email, token, "verificacion")
+            if not es_valido:
+                errores.append(mensaje)
+            else:
+                token_obj.marcar_como_validado()
+                usuario = Usuario.objects.filter(email=email).first()
+                if usuario:
+                    usuario.is_active = True
+                    usuario.save()
+                messages.success(request, "Cuenta activada correctamente. Ya puedes iniciar sesión.")
+                return redirect(f"{reverse('login')}?email={email}")
 
     if request.method == "POST":
         action = request.POST.get("action", "login")
@@ -42,12 +59,12 @@ def render_login(request):
                         token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
                         enviar_email_verificacion(email, token_obj.token)
                         mensajes = (
-                            "Tu cuenta aún no está activada. Reenviamos un token a tu correo."
+                            "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo."
                         )
                         messages.info(request, mensajes)
-                        errores.append("Cuenta no activada. Revisa tu correo para activar la cuenta.")
+                        errores.append("Cuenta no activada. Revisa tu correo y usa el enlace de activación.")
                     except Exception:
-                        errores.append("No fue posible reenviar el token de activación. Intenta más tarde.")
+                        errores.append("No fue posible reenviar el enlace de activación. Intenta más tarde.")
                 else:
                     user = authenticate(request, username=email, password=password)
                     if user is not None:
@@ -69,27 +86,12 @@ def render_login(request):
                     token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario_inactivo)
                     resultado = enviar_email_verificacion(email, token_obj.token)
                     if not resultado:
-                        raise ValidationError("No fue posible reenviar el código de activación.")
-                    messages.info(request, "Se reenvió el código de activación a tu correo.")
+                        raise ValidationError("No fue posible reenviar el enlace de activación.")
+                    messages.info(request, "Se reenvió el enlace de activación a tu correo.")
                 except Exception:
-                    errores.append("No fue posible reenviar el token en este momento.")
+                    errores.append("No fue posible reenviar el enlace en este momento.")
             else:
                 errores.append("No existe una cuenta inactiva con ese correo.")
-
-        elif action == "activar":
-            email = request.POST.get("email", "").strip().lower()
-            codigo = request.POST.get("codigo", "").strip()
-            es_valido, mensaje, token_obj = verificar_token(email, codigo, "verificacion")
-            if not es_valido:
-                errores.append(mensaje)
-            else:
-                token_obj.marcar_como_validado()
-                usuario = Usuario.objects.filter(email=email).first()
-                if usuario:
-                    usuario.is_active = True
-                    usuario.save()
-                messages.success(request, "Cuenta activada correctamente. Ya puedes iniciar sesión.")
-                return redirect(f"{reverse('login')}?email={email}")
 
         elif action == "recuperar_enviar":
             # Aceptar tanto 'recovery_email' (desde modal) como 'email'

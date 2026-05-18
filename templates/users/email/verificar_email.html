@@ -105,13 +105,22 @@
 
             <p>Para completar tu registro, necesitamos confirmar que eres el propietario de este correo electrónico.</p>
 
-            <p><strong>Tu código de verificación es:</strong></p>
+            <p><strong>Activa tu cuenta con este enlace:</strong></p>
+
+            <p style="text-align: center;">
+                <a class="button" href="{{ enlace_activacion }}">Activar cuenta</a>
+            </p>
+
+            <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+            <p style="word-break: break-all; color: #2e7d32;">{{ enlace_activacion }}</p>
+
+            <p><strong>Tu código de respaldo es:</strong></p>
 
             <div class="code-box">
                 <div class="code">{{ token }}</div>
             </div>
 
-            <p>Ingresa este código en la pantalla de verificación para confirmar tu email.</p>
+            <p>También puedes conservar este código como respaldo hasta que la cuenta quede activada.</p>
 
             <div class="info">
                 <strong>⏱️ Este código caduca en {{ minutos }} minutos.</strong>
@@ -119,13 +128,13 @@
 
             <p><strong>¿Cómo verificar tu email?</strong></p>
             <ol>
-                <li>Regresa a la pantalla de registro en InfoRecicla</li>
-                <li>Ingresa el código de 6 dígitos: <span style="color: #27ae60; font-weight: bold;">{{ token }}</span></li>
+                <li>Haz clic en el botón "Activar cuenta" de este correo</li>
+                <li>Si es necesario, abre el enlace manual compartido arriba</li>
                 <li>¡Listo! Tu cuenta estará activa</li>
             </ol>
 
             <div class="warning">
-                <strong>⚠️ Por tu seguridad:</strong> No compartas este código con nadie. InfoRecicla nunca te pedirá que lo hagas.
+                <strong>⚠️ Por tu seguridad:</strong> No compartas este enlace ni el código de respaldo con nadie. InfoRecicla nunca te pedirá que lo hagas.
             </div>
 
             <p>Si no creaste una cuenta en InfoRecicla, ignora este correo.</p>

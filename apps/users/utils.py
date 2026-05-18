@@ -1,13 +1,16 @@
 """
 Utilidades para manejo de validación de usuarios, tokens y envío de emails.
 """
-import random
+import secrets
+import string
+from urllib.parse import urlencode
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+from django.urls import reverse
 from apps.users.models import TokenValidacion
 
 
@@ -21,7 +24,8 @@ def generar_token_aleatorio(longitud=6):
     Returns:
         str: Token numérico aleatorio
     """
-    return ''.join(str(random.randint(0, 9)) for _ in range(longitud))
+    # Use the `secrets` module for cryptographically secure random digits
+    return ''.join(secrets.choice(string.digits) for _ in range(longitud))
 
 
 def crear_token_validacion(email, tipo, usuario=None, minutos_expiracion=15):
@@ -116,10 +120,18 @@ def enviar_email_verificacion(email, token):
     """
     asunto = "Confirma tu Email - InfoRecicla"
     
+    query = urlencode({
+        'action': 'activar',
+        'email': email,
+        'token': token,
+    })
+    enlace_activacion = f"{settings.SITE_URL.rstrip('/')}{reverse('login')}?{query}"
+
     contexto = {
         'email': email,
         'token': token,
         'minutos': 15,
+        'enlace_activacion': enlace_activacion,
     }
     
     # Renderizar template HTML

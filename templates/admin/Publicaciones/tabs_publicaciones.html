@@ -1,0 +1,31 @@
+<style>
+  .admin-section-tabs .nav-link {
+    color: #198754;
+    font-weight: 600;
+  }
+
+  .admin-section-tabs .nav-link.active {
+    color: #fff;
+    background-color: #198754;
+    border-color: #198754;
+  }
+
+  .admin-section-tabs .nav-link:hover:not(.active) {
+    background-color: rgba(25, 135, 84, 0.08);
+  }
+</style>
+
+<ul class="nav nav-tabs mb-4 admin-section-tabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <a class="nav-link {% if active_tab == 'publicaciones' %}active{% endif %}"
+       href="{% url 'panel_admin:listar_publicaciones_admin' %}">
+      <i class="bi bi-newspaper me-1"></i> Publicaciones
+    </a>
+  </li>
+  <li class="nav-item" role="presentation">
+    <a class="nav-link {% if active_tab == 'categorias_publicacion' %}active{% endif %}"
+       href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}">
+      <i class="bi bi-folder-fill me-1"></i> Categorías de publicaciones
+    </a>
+  </li>
+</ul>

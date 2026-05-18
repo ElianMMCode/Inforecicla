@@ -13,6 +13,7 @@
 {% include "admin/partials/sidebar.html" with active="publicaciones" %}
 
 <main class="col offset-md-2 p-4">
+  {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
   {% if messages %}
   <div class="mb-3">
     {% for message in messages %}
@@ -61,7 +62,7 @@
             <select name="categoria_id" class="form-select">
               <option value="">Sin categoría</option>
               {% for cat in categorias %}
-                <option value="{{ cat.id }}" {% if form_data.categoria_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.tipo }}</option>
+                <option value="{{ cat.id }}" {% if form_data.categoria_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nombre }} ({{ cat.get_tipo_display }})</option>
               {% endfor %}
             </select>
           </div>
