@@ -455,18 +455,24 @@ document.addEventListener("click", function (e) {
                 : capacidadMax !== null
                   ? capacidadMax
                   : null;
-            let finalPrecioCompra =
-              res && res.precioCompra !== undefined && res.precioCompra !== null
-                ? parseFloat(res.precioCompra)
-                : precioCompra !== null
-                  ? precioCompra
-                  : null;
-            let finalPrecioVenta =
-              res && res.precioVenta !== undefined && res.precioVenta !== null
-                ? parseFloat(res.precioVenta)
-                : precioVenta !== null
-                  ? precioVenta
-                  : null;
+let finalPrecioCompra =
+  res &&
+  res.precioCompra !== undefined &&
+  res.precioCompra !== null &&
+  res.precioCompra !== ""
+    ? parseFloat(res.precioCompra)
+    : precioCompra !== null
+    ? precioCompra
+    : null;
+let finalPrecioVenta =
+  res &&
+  res.precioVenta !== undefined &&
+  res.precioVenta !== null &&
+  res.precioVenta !== ""
+    ? parseFloat(res.precioVenta)
+    : precioVenta !== null
+    ? precioVenta
+    : null;
 
             if (inputEntrada) {
               inputEntrada.value = appliedMaterialNombre;
@@ -544,21 +550,22 @@ document.addEventListener("click", function (e) {
                   .trigger("change");
               } catch (e) {}
             }
-            if (precioCompraEntrada) {
-              precioCompraEntrada.value =
-                finalPrecioCompra !== null && !isNaN(finalPrecioCompra)
-                  ? finalPrecioCompra.toFixed(2)
-                  : "";
-              try {
-                $(precioCompraEntrada)
-                  .val(
-                    finalPrecioCompra !== null && !isNaN(finalPrecioCompra)
-                      ? finalPrecioCompra.toFixed(2)
-                      : "",
-                  )
-                  .trigger("change");
-              } catch (e) {}
-            }
+if (precioCompraEntrada) {
+  precioCompraEntrada.value =
+    finalPrecioCompra !== null && !isNaN(finalPrecioCompra)
+      ? finalPrecioCompra.toFixed(2)
+      : "";
+  try {
+    $(precioCompraEntrada)
+      .val(
+        finalPrecioCompra !== null && !isNaN(finalPrecioCompra)
+          ? finalPrecioCompra.toFixed(2)
+          : "",
+      )
+      .trigger("change");
+    triggerEvents(precioCompraEntrada);
+  } catch (e) {}
+}
 
             if (inputSalida) {
               inputSalida.value = appliedMaterialNombre;
@@ -1979,17 +1986,58 @@ document.addEventListener("DOMContentLoaded", function () {
       resEl.textContent = isNaN(resultante) ? "-" : resultante.toFixed(2);
   }
   const entCant = document.getElementById("entradaCantidad"),
+    entPrecio = document.getElementById("entradaPrecioCompra"),
+    entTotal = document.getElementById("entradaTotalCompra"),
     entStock = document.getElementById("entradaStockActual");
-  if (entCant)
-    entCant.addEventListener("input", () => actualizarStock("entrada", "+"));
-  if (entStock)
+  
+  function actualizarTotalEntrada() {
+    const cantidad = parseFloat(entCant?.value || 0);
+    const precio = parseFloat(entPrecio?.value || 0);
+    const total = cantidad * precio;
+    if (entTotal) entTotal.value = !isNaN(total) ? total.toFixed(2) : "";
+  }
+  
+  if (entCant) {
+    entCant.addEventListener("input", () => {
+      actualizarStock("entrada", "+");
+      actualizarTotalEntrada();
+    });
+  }
+  
+  if (entPrecio) {
+    entPrecio.addEventListener("input", actualizarTotalEntrada);
+  }
+  
+  if (entStock) {
     entStock.addEventListener("change", () => actualizarStock("entrada", "+"));
+  }
+  
   const salCant = document.getElementById("salidaCantidad"),
+    salPrecio = document.getElementById("salidaPrecioVenta"),
+    salTotal = document.getElementById("salidaTotalVenta"),
     salStock = document.getElementById("salidaStockActual");
-  if (salCant)
-    salCant.addEventListener("input", () => actualizarStock("salida", "-"));
-  if (salStock)
+  
+  function actualizarTotalSalida() {
+    const cantidad = parseFloat(salCant?.value || 0);
+    const precio = parseFloat(salPrecio?.value || 0);
+    const total = cantidad * precio;
+    if (salTotal) salTotal.value = !isNaN(total) ? total.toFixed(2) : "";
+  }
+  
+  if (salCant) {
+    salCant.addEventListener("input", () => {
+      actualizarStock("salida", "-");
+      actualizarTotalSalida();
+    });
+  }
+  
+  if (salPrecio) {
+    salPrecio.addEventListener("input", actualizarTotalSalida);
+  }
+  
+  if (salStock) {
     salStock.addEventListener("change", () => actualizarStock("salida", "-"));
+  }
 
   globalThis.mostrarFeedbackMovimientos = function (msg, tipo = "success") {
     const div = document.getElementById("movimientosFeedback");
@@ -2791,8 +2839,74 @@ document.addEventListener("DOMContentLoaded", function () {
   // Lo dejamos como un wrapper seguro para cualquier lógica extra que necesites agregar.
 })();
 
+// Calcular total de compra cuando cambie precio o cantidad
+function inicializarCalculoCompra() {
+  const precioCompraInput = document.getElementById("entradaPrecioCompra");
+  const cantidadInput = document.getElementById("entradaCantidad");
+  const totalCompraInput = document.getElementById("entradaTotalCompra");
+  const stockResultanteSpan = document.getElementById("entradaStockResultante");
+  const stockActualInput = document.getElementById("entradaStockActual");
+
+  function calcularTotalCompra() {
+    const precio = parseFloat(precioCompraInput.value) || 0;
+    const cantidad = parseFloat(cantidadInput.value) || 0;
+    const total = precio * cantidad;
+    totalCompraInput.value = total.toFixed(2);
+    
+    // Calcular stock resultante
+    const stockActual = parseFloat(stockActualInput.value) || 0;
+    const stockResultante = stockActual + cantidad;
+    stockResultanteSpan.textContent = stockResultante.toFixed(2);
+  }
+
+  // Agregar listeners
+  if (precioCompraInput) {
+    precioCompraInput.addEventListener("input", calcularTotalCompra);
+  }
+  if (cantidadInput) {
+    cantidadInput.addEventListener("input", calcularTotalCompra);
+  }
+
+  // También calcular al inicializar
+  calcularTotalCompra();
+}
+
+// Calcular total de venta cuando cambie precio o cantidad
+function inicializarCalculoVenta() {
+  const precioVentaInput = document.getElementById("salidaPrecioVenta");
+  const cantidadInput = document.getElementById("salidaCantidad");
+  const totalVentaInput = document.getElementById("salidaTotalVenta");
+  const stockRestanteSpan = document.getElementById("salidaStockRestante");
+  const stockActualInput = document.getElementById("salidaStockActual");
+
+  function calcularTotalVenta() {
+    const precio = parseFloat(precioVentaInput.value) || 0;
+    const cantidad = parseFloat(cantidadInput.value) || 0;
+    const total = precio * cantidad;
+    totalVentaInput.value = total.toFixed(2);
+    
+    // Calcular stock resultante (para venta es resta)
+    const stockActual = parseFloat(stockActualInput.value) || 0;
+    const stockRestante = stockActual - cantidad;
+    stockRestanteSpan.textContent = stockRestante.toFixed(2);
+  }
+
+  // Agregar listeners
+  if (precioVentaInput) {
+    precioVentaInput.addEventListener("input", calcularTotalVenta);
+  }
+  if (cantidadInput) {
+    cantidadInput.addEventListener("input", calcularTotalVenta);
+  }
+
+  // También calcular al inicializar
+  calcularTotalVenta();
+}
+
 // Inicializar validación en tiempo real cuando el DOM esté listo
 document.addEventListener("DOMContentLoaded", function () {
-  agregarValidacionEnTiempoRealEntrada();
-  agregarValidacionEnTiempoRealSalida();
+  // agregarValidacionEnTiempoRealEntrada();
+  // agregarValidacionEnTiempoRealSalida();
+  inicializarCalculoCompra();
+  inicializarCalculoVenta();
 });
