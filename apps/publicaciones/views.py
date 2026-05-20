@@ -61,7 +61,6 @@ def agregar_comentario(request, publicacion_id):
                 publicacion=pub,
                 texto=texto,
             )
-            messages.success(request, "Tu comentario ha sido publicado con éxito.")
     return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
 
 
