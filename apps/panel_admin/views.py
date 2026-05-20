@@ -369,25 +369,6 @@ def crear_publicacion_admin(request):
                             },
                         )
 
-                limite_bytes = 6 * 1024 * 1024  # 6 MB
-                imagenes = request.FILES.getlist("imagenes")
-                imagenes_grandes = [img.name for img in imagenes if img.size > limite_bytes]
-                if imagenes_grandes:
-                    nombres = ", ".join(imagenes_grandes)
-                    messages.error(
-                        request,
-                        f"Las siguientes imágenes superan el límite de 6 MB y no pueden subirse: {nombres}.",
-                    )
-                    return render(
-                        request,
-                        "admin/Publicaciones/createPublicacion.html",
-                        {
-                            "publicaciones_habilitadas": publicaciones_habilitadas,
-                            "categorias": categorias,
-                            "form_data": request.POST,
-                        },
-                    )
-
                 video_file = request.FILES.get("video") or None
                 thumbnail_file = request.FILES.get("video_thumbnail") or None
 
@@ -401,7 +382,7 @@ def crear_publicacion_admin(request):
                 )
                 publicacion.save()
 
-                for img in imagenes:
+                for img in request.FILES.getlist("imagenes"):
                     ImagenPublicacion.objects.create(publicacion=publicacion, imagen=img)
 
                 messages.success(request, "Publicacion creada correctamente.")

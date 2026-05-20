@@ -357,11 +357,11 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold">Ciudad</label>
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
-                                                    <input type="text" class="form-control bg-light text-muted" value="Bogotá" disabled>
-                                                </div>
-                                                <small class="text-muted">El servicio está disponible únicamente en Bogotá.</small>
+                                                <input type="text" name="ciudad" class="form-control"
+                                                       value="{{ user.ciudad|default:'Bogotá' }}"
+                                                       maxlength="15"
+                                                       pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+">
+                                                <div class="invalid-feedback">Solo letras, máximo 15 caracteres.</div>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-semibold">Localidad</label>
@@ -675,9 +675,7 @@
     // Limitar fecha de nacimiento a hoy como máximo
     const fechaNac = document.getElementById('fechaNac');
     if (fechaNac) {
-        const maxFecha = new Date();
-        maxFecha.setFullYear(maxFecha.getFullYear() - 5);
-        fechaNac.setAttribute('max', maxFecha.toISOString().split('T')[0]);
+        fechaNac.setAttribute('max', new Date().toISOString().split('T')[0]);
     }
 
     // Validación de coincidencia de contraseñas
