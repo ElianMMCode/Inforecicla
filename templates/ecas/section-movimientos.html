@@ -146,6 +146,8 @@
   <script>
     window.ENTRADAS_INICIALES = {{ entradas|safe }};
     window.SALIDAS_INICIALES = {{ salidas|safe }};
+    console.log("ENTRADAS_INICIALES:", window.ENTRADAS_INICIALES);
+    console.log("SALIDAS_INICIALES:", window.SALIDAS_INICIALES);
     window.HISTORIAL_COMPRAS = {{ HISTORIAL_COMPRAS|safe }};
     window.HISTORIAL_VENTAS = {{ HISTORIAL_VENTAS|safe }};
 
