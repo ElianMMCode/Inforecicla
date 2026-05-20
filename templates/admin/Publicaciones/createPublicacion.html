@@ -72,9 +72,10 @@
 
           <!-- Imágenes -->
           <div class="col-md-6">
-            <label for="inputImagenes" class="form-label fw-semibold">Imágenes</label>
-            <input id="inputImagenes" type="file" name="imagenes" class="form-control" accept="image/*" multiple>
-            <div class="form-text">Formatos: JPG, PNG, WEBP. Puedes seleccionar varias.</div>
+            <label class="form-label fw-semibold">Imágenes</label>
+            <input type="file" name="imagenes" id="inputImagenes" class="form-control" accept="image/*" multiple>
+            <div class="form-text">Formatos: JPG, PNG, WEBP. Puedes seleccionar varias. <strong>Máximo 6 MB por imagen.</strong></div>
+            <div id="alertImagenes" class="alert alert-danger py-2 small mt-2 d-none" role="alert"></div>
             <div id="previewImagenes" class="d-flex flex-wrap gap-2 mt-2"></div>
           </div>
 
@@ -113,28 +114,70 @@
 
 {% block extra_scripts %}
 <script>
-  // Guarded preview listeners
-  (function () {
-    const inputImagenes = document.getElementById('inputImagenes');
-    if (inputImagenes) {
-      inputImagenes.addEventListener('change', function () {
-        const container = document.getElementById('previewImagenes');
-        if (!container) return;
-        container.innerHTML = '';
-        Array.from(this.files).forEach(function (file) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'position:relative;width:80px;height:80px;';
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #198754;';
-            wrapper.appendChild(img);
-            container.appendChild(wrapper);
-          };
-          reader.readAsDataURL(file);
-        });
-      });
+  const LIMITE_MB = 6;
+  const LIMITE_BYTES = LIMITE_MB * 1024 * 1024;
+
+  // Validación de tamaño al seleccionar imágenes
+  document.getElementById('inputImagenes').addEventListener('change', function () {
+    const container = document.getElementById('previewImagenes');
+    const alerta = document.getElementById('alertImagenes');
+    container.innerHTML = '';
+    alerta.classList.add('d-none');
+    alerta.textContent = '';
+
+    const grandes = Array.from(this.files).filter(f => f.size > LIMITE_BYTES);
+    if (grandes.length > 0) {
+      const nombres = grandes.map(f => `"${f.name}"`).join(', ');
+      alerta.textContent = `Las siguientes imágenes superan ${LIMITE_MB} MB y no se pueden subir: ${nombres}.`;
+      alerta.classList.remove('d-none');
+      this.value = '';
+      return;
+    }
+
+    Array.from(this.files).forEach(function (file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:relative;width:80px;height:80px;';
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #198754;';
+        wrapper.appendChild(img);
+        container.appendChild(wrapper);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  // Bloqueo en el submit por si el usuario omite el cambio de archivo
+  document.querySelector('form').addEventListener('submit', function (e) {
+    const input = document.getElementById('inputImagenes');
+    const grandes = Array.from(input.files).filter(f => f.size > LIMITE_BYTES);
+    if (grandes.length > 0) {
+      e.preventDefault();
+      const alerta = document.getElementById('alertImagenes');
+      const nombres = grandes.map(f => `"${f.name}"`).join(', ');
+      alerta.textContent = `Las siguientes imágenes superan ${LIMITE_MB} MB y no se pueden subir: ${nombres}.`;
+      alerta.classList.remove('d-none');
+      alerta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  // Preview video
+  document.getElementById('inputVideo').addEventListener('change', function () {
+    const container = document.getElementById('previewVideo');
+    const thumbnail = document.getElementById('wrapperThumbnail');
+    container.innerHTML = '';
+    if (this.files[0]) {
+      const url = URL.createObjectURL(this.files[0]);
+      const video = document.createElement('video');
+      video.src = url;
+      video.controls = true;
+      video.style.cssText = 'width:100%;max-height:200px;border-radius:8px;border:2px solid #198754;';
+      container.appendChild(video);
+      thumbnail.style.display = '';
+    } else {
+      thumbnail.style.display = 'none';
     }
 
     const inputVideo = document.getElementById('inputVideo');

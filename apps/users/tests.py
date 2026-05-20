@@ -39,10 +39,20 @@ def _generar_password():
             return pwd
 
 
+def _generar_password_corta():
+    """Genera un input aleatorio de 3 caracteres para tests de validación de longitud.
+
+    NO es una credencial real: es un fixture que el validador debe rechazar
+    por no cumplir el mínimo de 8 caracteres.
+    """
+    alphabet = string.ascii_lowercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(3))
+
+
 _PASSWORD_VALIDA = _generar_password()
 _PASSWORD_NUEVA = _generar_password()
 _PWD_INCORRECTO = _generar_password()   # distinto a _PASSWORD_VALIDA, para tests de fallo
-_PWD_CORTO = "ab1"                      # demasiado corto para superar validación de longitud
+_PWD_CORTO = _generar_password_corta()  # demasiado corto para superar validación de longitud
 _PWD_VACIO = ""                         # campo vacío para tests de campo obligatorio
 
 
