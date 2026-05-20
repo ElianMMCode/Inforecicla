@@ -174,3 +174,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Definición del modelo de usuario personalizado
 AUTH_USER_MODEL = "users.Usuario"
+
+# Mapeo de niveles de mensaje Django a clases Bootstrap
+from django.contrib.messages import constants as message_constants
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}

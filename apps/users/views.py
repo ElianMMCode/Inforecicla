@@ -398,7 +398,6 @@ def actualizar_datos_ciudadano(request):
     nombres = request.POST.get("nombres", "").strip()
     apellidos = request.POST.get("apellidos", "").strip()
     celular = request.POST.get("celular", "").strip()
-    ciudad = request.POST.get("ciudad", "").strip()
     localidad_id = request.POST.get("localidad", "").strip()
     fecha_str = request.POST.get("fechaNacimiento", "").strip()
 
@@ -424,24 +423,26 @@ def actualizar_datos_ciudadano(request):
             "El celular debe iniciar con 3 y contener exactamente 10 dígitos."
         )
 
-    # --- Validar ciudad ---
-    if ciudad and len(ciudad) > 15:
-        errores.append("La ciudad no puede superar los 15 caracteres.")
-    elif ciudad and not _SOLO_CIUDAD.match(ciudad):
-        errores.append("La ciudad solo puede contener letras.")
-
     # --- Validar fecha de nacimiento ---
     fecha_nacimiento = None
     if fecha_str:
         try:
             fecha_nacimiento = date_type.fromisoformat(fecha_str)
-            if fecha_nacimiento > date_type.today():
+            today = date_type.today()
+            if fecha_nacimiento > today:
                 errores.append("La fecha de nacimiento no puede ser futura.")
+            else:
+                try:
+                    limite = today.replace(year=today.year - 5)
+                except ValueError:
+                    limite = today.replace(year=today.year - 5, day=28)
+                if fecha_nacimiento > limite:
+                    errores.append("La fecha de nacimiento debe corresponder a una edad mínima de 5 años.")
         except ValueError:
             errores.append("Formato de fecha inválido.")
 
     # --- Validar localidad (UUID) ---
-    localidad_inst = user.localidad
+    localidad_inst = None
     if localidad_id:
         try:
             localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
@@ -457,7 +458,7 @@ def actualizar_datos_ciudadano(request):
         user.nombres = nombres
         user.apellidos = apellidos
         user.celular = celular if celular else None
-        user.ciudad = ciudad if ciudad else "Bogotá"
+        user.ciudad = "Bogotá"
         user.localidad = localidad_inst
         user.fecha_nacimiento = fecha_nacimiento
         user.save()
