@@ -1508,6 +1508,120 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function obtenerPuntoEcaIdExportacion() {
+    return (
+      document.querySelector("section[data-punto-eca-id]")?.dataset.puntoEcaId ||
+      ""
+    );
+  }
+
+  function construirUrlExportacion(baseUrl, filtros) {
+    const url = new URL(baseUrl, window.location.origin);
+    Object.entries(filtros).forEach(([clave, valor]) => {
+      if (valor !== undefined && valor !== null && String(valor).trim() !== "") {
+        url.searchParams.set(clave, String(valor).trim());
+      }
+    });
+    return url.toString();
+  }
+
+  function nombreArchivoDesdeRespuesta(response, fallback) {
+    const contentDisposition = response.headers.get("content-disposition") || "";
+    const match = contentDisposition.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)(?:\")?/i);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1].replace(/\"/g, ""));
+    }
+    return fallback;
+  }
+
+  async function descargarExportacion(url, fallbackNombre) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/octet-stream,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/json",
+        },
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok) {
+        let mensaje = "No se pudo generar la exportación.";
+        if (contentType.includes("application/json")) {
+          const data = await response.json();
+          mensaje = data.mensaje || data.message || mensaje;
+        } else {
+          const texto = await response.text();
+          if (texto) mensaje = texto;
+        }
+        alert(mensaje);
+        return;
+      }
+
+      const blob = await response.blob();
+      const nombreArchivo = nombreArchivoDesdeRespuesta(response, fallbackNombre);
+      const blobUrl = window.URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      enlace.href = blobUrl;
+      enlace.download = nombreArchivo;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch (error) {
+      alert(
+        "Error al exportar: " +
+          (error && error.message ? error.message : String(error)),
+      );
+    }
+  }
+
+  document.querySelectorAll("[data-export-section][data-export-format]").forEach((btn) => {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      const puntoEcaId = obtenerPuntoEcaIdExportacion();
+      const section = this.dataset.exportSection;
+      const format = this.dataset.exportFormat;
+      const baseUrl = this.getAttribute("href") || "";
+      const filtroBase = { punto_eca_id: puntoEcaId };
+
+      if (section === "compras") {
+        Object.assign(filtroBase, {
+          material: document.getElementById("filtroCompraMaterial")?.value || "",
+          categoria: document.getElementById("filtroCompraCategoria")?.value || "",
+          tipo: document.getElementById("filtroCompraTipo")?.value || "",
+          fecha_desde: document.getElementById("filtroCompraFechaDesde")?.value || "",
+          fecha_hasta: document.getElementById("filtroCompraFechaHasta")?.value || "",
+        });
+      } else if (section === "ventas") {
+        Object.assign(filtroBase, {
+          material: document.getElementById("filtroVentaMaterial")?.value || "",
+          categoria: document.getElementById("filtroVentaCategoria")?.value || "",
+          tipo: document.getElementById("filtroVentaTipo")?.value || "",
+          centro_acopio: document.getElementById("filtroVentaCentro")?.value || "",
+          fecha_desde: document.getElementById("filtroVentaFechaDesde")?.value || "",
+          fecha_hasta: document.getElementById("filtroVentaFechaHasta")?.value || "",
+        });
+      } else if (section === "historial") {
+        Object.assign(filtroBase, {
+          material: document.getElementById("filtroHistorialMaterial")?.value || "",
+          categoria: document.getElementById("filtroHistorialCategoria")?.value || "",
+          tipo: document.getElementById("filtroHistorialTipo")?.value || "",
+          centro_acopio: document.getElementById("filtroHistorialCentroAcopio")?.value || "",
+          tipo_movimiento: document.getElementById("filtroHistorialTipoMovimiento")?.value || "",
+          fecha_desde: document.getElementById("filtroHistorialDesde")?.value || "",
+          fecha_hasta: document.getElementById("filtroHistorialHasta")?.value || "",
+        });
+      }
+
+      const url = construirUrlExportacion(baseUrl, filtroBase);
+      const nombreBase =
+        section === "historial"
+          ? `historial.${format === "pdf" ? "pdf" : "xlsx"}`
+          : `${section}.${format === "pdf" ? "pdf" : "xlsx"}`;
+      descargarExportacion(url, nombreBase);
+    });
+  });
+
   // CARGA INICIAL DE DATOS
   renderizarEntradas();
   renderizarSalidas();

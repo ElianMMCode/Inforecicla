@@ -8,6 +8,8 @@ from django.http import JsonResponse, HttpResponse
 import json
 from apps.ecas.models import CentroAcopio
 from apps.core.decorators import gestor_eca_or_admin_required
+from django.utils.dateparse import parse_date
+from datetime import datetime
 
 # ===== import-export
 from .resources import CompraInventarioResource, VentaInventarioResource
@@ -65,6 +67,132 @@ def extraer_keywords(texto):
         normalizar_palabra(p) for p in texto.split() if (p.isalpha() or p.isalnum())
     ]
     return set(p for p in palabras if p not in stopwords)
+
+
+def _obtener_punto_eca_id_export(request):
+    punto_eca_id = request.GET.get("punto_eca_id") or request.GET.get("puntoId")
+    if punto_eca_id:
+        return str(punto_eca_id)
+    try:
+        punto_eca = request.user.punto_eca
+    except Exception:
+        punto_eca = None
+    if punto_eca and getattr(punto_eca, "id", None):
+        return str(punto_eca.id)
+    return ""
+
+
+def _responder_exportacion_vacia(mensaje):
+    return JsonResponse({"success": False, "mensaje": mensaje}, status=404)
+
+
+def _filtrar_queryset_compra_export(request, queryset):
+    punto_eca_id = _obtener_punto_eca_id_export(request)
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+
+    material = (request.GET.get("material") or "").strip()
+    categoria = (request.GET.get("categoria") or "").strip()
+    tipo = (request.GET.get("tipo") or "").strip()
+    fecha_desde = parse_date(request.GET.get("fecha_desde") or "")
+    fecha_hasta = parse_date(request.GET.get("fecha_hasta") or "")
+
+    if material:
+        queryset = queryset.filter(inventario__material__nombre__iexact=material)
+    if categoria:
+        queryset = queryset.filter(inventario__material__categoria__nombre__iexact=categoria)
+    if tipo:
+        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
+    if fecha_desde:
+        queryset = queryset.filter(fecha_compra__date__gte=fecha_desde)
+    if fecha_hasta:
+        queryset = queryset.filter(fecha_compra__date__lte=fecha_hasta)
+    return queryset
+
+
+def _filtrar_queryset_venta_export(request, queryset):
+    punto_eca_id = _obtener_punto_eca_id_export(request)
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+
+    material = (request.GET.get("material") or "").strip()
+    categoria = (request.GET.get("categoria") or "").strip()
+    tipo = (request.GET.get("tipo") or "").strip()
+    centro_acopio = (request.GET.get("centro_acopio") or "").strip()
+    fecha_desde = parse_date(request.GET.get("fecha_desde") or "")
+    fecha_hasta = parse_date(request.GET.get("fecha_hasta") or "")
+
+    if material:
+        queryset = queryset.filter(inventario__material__nombre__iexact=material)
+    if categoria:
+        queryset = queryset.filter(inventario__material__categoria__nombre__iexact=categoria)
+    if tipo:
+        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
+    if centro_acopio:
+        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
+    if fecha_desde:
+        queryset = queryset.filter(fecha_venta__date__gte=fecha_desde)
+    if fecha_hasta:
+        queryset = queryset.filter(fecha_venta__date__lte=fecha_hasta)
+    return queryset
+
+
+def _filtrar_historial_export(request, compras_queryset, ventas_queryset):
+    punto_eca_id = _obtener_punto_eca_id_export(request)
+    if punto_eca_id:
+        compras_queryset = compras_queryset.filter(
+            inventario__punto_eca__id=str(punto_eca_id)
+        )
+        ventas_queryset = ventas_queryset.filter(
+            inventario__punto_eca__id=str(punto_eca_id)
+        )
+
+    material = (request.GET.get("material") or "").strip()
+    categoria = (request.GET.get("categoria") or "").strip()
+    tipo = (request.GET.get("tipo") or "").strip()
+    centro_acopio = (request.GET.get("centro_acopio") or "").strip()
+    tipo_movimiento = (request.GET.get("tipo_movimiento") or "").strip().lower()
+    fecha_desde = parse_date(request.GET.get("fecha_desde") or "")
+    fecha_hasta = parse_date(request.GET.get("fecha_hasta") or "")
+
+    if material:
+        compras_queryset = compras_queryset.filter(
+            inventario__material__nombre__iexact=material
+        )
+        ventas_queryset = ventas_queryset.filter(
+            inventario__material__nombre__iexact=material
+        )
+    if categoria:
+        compras_queryset = compras_queryset.filter(
+            inventario__material__categoria__nombre__iexact=categoria
+        )
+        ventas_queryset = ventas_queryset.filter(
+            inventario__material__categoria__nombre__iexact=categoria
+        )
+    if tipo:
+        compras_queryset = compras_queryset.filter(
+            inventario__material__tipo__nombre__iexact=tipo
+        )
+        ventas_queryset = ventas_queryset.filter(
+            inventario__material__tipo__nombre__iexact=tipo
+        )
+    if centro_acopio:
+        ventas_queryset = ventas_queryset.filter(
+            centro_acopio__nombre__iexact=centro_acopio
+        )
+    if fecha_desde:
+        compras_queryset = compras_queryset.filter(fecha_compra__date__gte=fecha_desde)
+        ventas_queryset = ventas_queryset.filter(fecha_venta__date__gte=fecha_desde)
+    if fecha_hasta:
+        compras_queryset = compras_queryset.filter(fecha_compra__date__lte=fecha_hasta)
+        ventas_queryset = ventas_queryset.filter(fecha_venta__date__lte=fecha_hasta)
+
+    if tipo_movimiento == "compra":
+        ventas_queryset = ventas_queryset.none()
+    elif tipo_movimiento == "venta":
+        compras_queryset = compras_queryset.none()
+
+    return compras_queryset, ventas_queryset
 
 
 def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
@@ -391,12 +519,12 @@ def borrar_venta(request, venta_id):
 # ============== EXPORT EXCEL =============
 @gestor_eca_or_admin_required
 def exportar_compras_excel(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_queryset_compra_export(request, queryset)
+    if not queryset.exists():
+        return _responder_exportacion_vacia("No hay compras para exportar con los filtros actuales.")
     dataset = CompraInventarioResource().export(queryset)
     export_data = dataset.xlsx
     response = HttpResponse(
@@ -410,12 +538,12 @@ def exportar_compras_excel(request):
 # ============== EXPORT PDF =============
 @gestor_eca_or_admin_required
 def exportar_compras_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_queryset_compra_export(request, queryset)
+    if not queryset.exists():
+        return _responder_exportacion_vacia("No hay compras para exportar con los filtros actuales.")
     compras = list(queryset)
     # Renderizar el HTML como string
     html_string = render_to_string("operations/compras_pdf.html", {"compras": compras})
@@ -428,12 +556,12 @@ def exportar_compras_pdf(request):
 
 @gestor_eca_or_admin_required
 def exportar_ventas_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_queryset_venta_export(request, queryset)
+    if not queryset.exists():
+        return _responder_exportacion_vacia("No hay ventas para exportar con los filtros actuales.")
     ventas = list(queryset)
     # Calcular total_venta por cada venta, si no viene en el modelo
     ventas_out = []
@@ -455,12 +583,12 @@ def exportar_ventas_pdf(request):
 
 @gestor_eca_or_admin_required
 def exportar_ventas_excel(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_queryset_venta_export(request, queryset)
+    if not queryset.exists():
+        return _responder_exportacion_vacia("No hay ventas para exportar con los filtros actuales.")
     dataset = VentaInventarioResource().export(queryset)
     export_data = dataset.xlsx
     response = HttpResponse(
@@ -848,16 +976,13 @@ def exportar_historial_excel(request):
     """
     Exporta un Excel combinado de compras y ventas para el historial de movimientos
     """
-    punto_eca_id = request.GET.get("punto_eca_id")
     compras = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
     ventas = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        compras = compras.filter(inventario__punto_eca__id=str(punto_eca_id))
-        ventas = ventas.filter(inventario__punto_eca__id=str(punto_eca_id))
+    compras, ventas = _filtrar_historial_export(request, compras, ventas)
 
     rows = []
     # Normalizar compras
@@ -891,7 +1016,16 @@ def exportar_historial_excel(request):
         )
 
     # Ordenar por fecha descendente
-    rows = sorted(rows, key=lambda r: r["fecha"], reverse=True)
+    rows = sorted(
+        rows,
+        key=lambda r: r["fecha"].isoformat() if r["fecha"] else "",
+        reverse=True,
+    )
+
+    if not rows:
+        return _responder_exportacion_vacia(
+            "No hay movimientos para exportar con los filtros actuales."
+        )
 
     from tablib import Dataset
 
@@ -936,20 +1070,15 @@ def exportar_historial_excel(request):
 
 @gestor_eca_or_admin_required
 def exportar_historial_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     compras_queryset = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
     ventas_queryset = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        compras_queryset = compras_queryset.filter(
-            inventario__punto_eca__id=str(punto_eca_id)
-        )
-        ventas_queryset = ventas_queryset.filter(
-            inventario__punto_eca__id=str(punto_eca_id)
-        )
+    compras_queryset, ventas_queryset = _filtrar_historial_export(
+        request, compras_queryset, ventas_queryset
+    )
 
     compras = list(compras_queryset)
     ventas = list(ventas_queryset)
@@ -987,7 +1116,14 @@ def exportar_historial_pdf(request):
                 else "",
             }
         )
-    historial.sort(key=lambda m: m["fecha"] or "", reverse=True)
+    if not historial:
+        return _responder_exportacion_vacia(
+            "No hay movimientos para exportar con los filtros actuales."
+        )
+    historial.sort(
+        key=lambda m: m["fecha"].isoformat() if m["fecha"] else "",
+        reverse=True,
+    )
     html_string = render_to_string(
         "operations/historial_pdf.html", {"historial": historial}
     )
