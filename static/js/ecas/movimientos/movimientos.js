@@ -2639,6 +2639,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Listeners Modales de Edición (Envuelto en DOMContentLoaded para proteger funciones)
 document.addEventListener("DOMContentLoaded", function () {
+  function limpiarEstadoModales() {
+    if (document.querySelectorAll(".modal.show").length > 0) return;
+    document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+  }
+
+  ["detallesEntradaModal", "detallesSalidaModal", "editarCompraModal", "editarVentaModal"].forEach((modalId) => {
+    const modalElement = document.getElementById(modalId);
+    if (!modalElement) return;
+    modalElement.addEventListener("hidden.bs.modal", limpiarEstadoModales);
+  });
+
   // Ver Detalles de Entrada
   document.addEventListener("click", function (e) {
     const btn = e.target.closest(".btn-detalles-entrada");
@@ -2730,45 +2744,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Editar entrada desde modal
-  const btnEditarEntrada = document.getElementById("btnEditarEntrada");
-  if (btnEditarEntrada) {
-    btnEditarEntrada.addEventListener("click", function () {
-      const compraId = this.dataset.compraId;
-      const entrada = globalThis.ENTRADAS_INICIALES.find(
-        (e) => e.compraId === compraId,
-      );
-      if (!entrada) return;
-
-      const modalDetalles = bootstrap.Modal.getInstance(
-        document.getElementById("detallesEntradaModal"),
-      );
-      if (modalDetalles) modalDetalles.hide();
-
-      document.getElementById("editCompraId").value = entrada.compraId || "";
-      document.getElementById("editInventarioId").value =
-        entrada.inventarioId || "";
-      document.getElementById("editCompraMaterialId").value =
-        entrada.materialId || "";
-      document.getElementById("editCompraMaterial").value =
-        entrada.nombreMaterial || "";
-      document.getElementById("editCompraFecha").value = entrada.fechaCompra
-        ? new Date(entrada.fechaCompra).toISOString().slice(0, 16)
-        : "";
-      document.getElementById("editCompraCantidad").value =
-        entrada.cantidad || "";
-      document.getElementById("editCompraPrecio").value =
-        entrada.precioCompra || "";
-      document.getElementById("editCompraObservaciones").value =
-        entrada.observaciones || "";
-
-      const modalEditar = new bootstrap.Modal(
-        document.getElementById("editarCompraModal"),
-      );
-      modalEditar.show();
-    });
-  }
-
    // Guardar Edición Compra
    const btnGuardarCompra = document.getElementById("btnGuardarCompra");
    if (btnGuardarCompra) {
@@ -2814,71 +2789,6 @@ document.addEventListener("DOMContentLoaded", function () {
             alert(data.mensaje || data.message || "Error al actualizar");
           }
         });
-     });
-   }
-
-   // Editar salida desde modal
-   const btnEditarSalida = document.getElementById("btnEditarSalida");
-   if (btnEditarSalida) {
-     btnEditarSalida.addEventListener("click", function () {
-       const ventaId = this.dataset.ventaId;
-       const salida = globalThis.SALIDAS_INICIALES.find(
-         (s) => s.ventaId === ventaId,
-       );
-       if (!salida) return;
-
-       const modalDetalles = bootstrap.Modal.getInstance(
-         document.getElementById("detallesSalidaModal"),
-       );
-       if (modalDetalles) modalDetalles.hide();
-
-       document.getElementById("editVentaId").value = salida.ventaId || "";
-       document.getElementById("editInventarioIdVenta").value =
-         salida.inventarioId || "";
-       document.getElementById("editVentaMaterialId").value =
-         salida.materialId || "";
-       document.getElementById("editVentaMaterial").value =
-         salida.nombreMaterial || "";
-       document.getElementById("editVentaFecha").value = salida.fechaVenta
-         ? new Date(salida.fechaVenta).toISOString().slice(0, 16)
-         : "";
-       document.getElementById("editVentaCantidad").value =
-         salida.cantidad || "";
-       document.getElementById("editVentaPrecio").value =
-         salida.precioVenta || "";
-      // Asegurar que el select de centros tenga las opciones antes de asignar valor
-      function populateEditVentaCentros(selectedId) {
-        try {
-          const select = document.getElementById("editVentaCentro");
-          if (!select) return;
-          // Clear existing non-empty options
-          select.innerHTML = "<option value=''>Selecciona un centro...</option>";
-          let centros = globalThis.CENTROS || window.CENTROS || [];
-          if (!Array.isArray(centros) && typeof centros === "object") {
-            centros = Object.values(centros || {});
-          }
-          centros.forEach((c) => {
-            const opt = document.createElement("option");
-            opt.value = c.id || c.id === 0 ? String(c.id) : "";
-            opt.textContent = c.nombre || c.nmbCentro || c.nmbCentroAcopio || "";
-            select.appendChild(opt);
-          });
-          if (selectedId) {
-            select.value = selectedId;
-          }
-        } catch (e) {
-          console.error("populateEditVentaCentros error:", e);
-        }
-      }
-
-      populateEditVentaCentros(salida.centroAcopioId || "");
-       document.getElementById("editVentaObservaciones").value =
-         salida.observaciones || "";
-
-       const modalEditar = new bootstrap.Modal(
-         document.getElementById("editarVentaModal"),
-       );
-       modalEditar.show();
      });
    }
 
@@ -3083,51 +2993,6 @@ document.addEventListener("DOMContentLoaded", function () {
      }
    });
  });
-
-// Ver Detalles de Salida
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".btn-detalles-salida");
-  if (!btn) return;
-  const ventaId = btn.dataset.ventaId;
-  const salida = globalThis.SALIDAS_INICIALES.find(
-    (s) => s.ventaId === ventaId,
-  );
-  if (!salida) {
-    alert("No se encontraron los detalles de esta venta");
-    return;
-  }
-
-  const fecha = salida.fechaVenta
-    ? new Date(salida.fechaVenta).toLocaleDateString("es-CO")
-    : "-";
-  const cantidad = parseFloat(salida.cantidad || 0);
-  const precio = parseFloat(salida.precioVenta || 0);
-  const total = cantidad * precio;
-
-  document.getElementById("detSalidaMaterial").textContent =
-    salida.nombreMaterial || "-";
-  document.getElementById("detSalidaFecha").textContent = fecha;
-  document.getElementById("detSalidaCantidad").textContent =
-    cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaPrecio").textContent =
-    "$" + precio.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaTotal").textContent =
-    "$" + total.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaObservaciones").textContent =
-    salida.observaciones || "Sin observaciones";
-  document.getElementById("detSalidaCentro").textContent =
-    salida.nombreCentroAcopio || "-";
-
-  const btnDel = document.getElementById("btnEliminarSalida");
-  const btnEdit = document.getElementById("btnEditarSalida");
-  if (btnDel) btnDel.dataset.ventaId = ventaId;
-  if (btnEdit) btnEdit.dataset.ventaId = ventaId;
-
-  const modal = new bootstrap.Modal(
-    document.getElementById("detallesSalidaModal"),
-  );
-  modal.show();
-});
 
 // Manejadores Ligeros Adicionales (Reparación de la función huérfana del final)
 (function () {
