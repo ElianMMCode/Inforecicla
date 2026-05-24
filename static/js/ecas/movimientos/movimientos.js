@@ -190,7 +190,11 @@ document.addEventListener("click", function (e) {
       </div>`;
   }
 
-  function mostrarSwalExitoMovimiento(tipo, data, onClose) {
+  globalThis.mostrarSwalExitoMovimiento = function mostrarSwalExitoMovimiento(
+    tipo,
+    data,
+    onClose,
+  ) {
     if (typeof Swal === "undefined") {
       if (typeof onClose === "function") onClose();
       return;
@@ -229,7 +233,7 @@ document.addEventListener("click", function (e) {
     }).then(() => {
       if (typeof onClose === "function") onClose();
     });
-  }
+  };
 
   // Esperar a que jQuery y Select2 estén listos
   function inicializarSelect2() {
@@ -2426,7 +2430,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((res) => res.json())
         .then((resp) => {
           if (!resp.error) {
-            mostrarSwalExitoMovimiento(
+            globalThis.mostrarSwalExitoMovimiento(
               "Compra",
               {
                 material: document.getElementById("entradaMaterialSeleccionado")?.value,
@@ -2471,6 +2475,11 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Validando formulario de salida");
         ev.preventDefault();
 
+        if (formSalida.dataset.enviando === "1") {
+          return;
+        }
+        formSalida.dataset.enviando = "1";
+
         // Disable submit button to prevent duplicate submissions
         const submitBtn = this.querySelector('button[type="submit"]');
         if (submitBtn) {
@@ -2511,6 +2520,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (!esValido) {
         console.log("Formulario no válido, deteniendo envío");
+        formSalida.dataset.enviando = "0";
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
@@ -2544,28 +2554,46 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((res) => res.json())
         .then((resp) => {
           if (!resp.error) {
-            mostrarSwalExitoMovimiento(
-              "Venta",
-              {
-                material: document.getElementById("salidaMaterialSeleccionado")?.value,
-                cantidad: document.getElementById("salidaCantidad")?.value,
-                fecha: document.getElementById("salidaFecha")?.value,
-                precio: document.getElementById("salidaPrecioVenta")?.value,
-                total:
-                  (parseFloat(document.getElementById("salidaCantidad")?.value || 0) || 0) *
-                  (parseFloat(document.getElementById("salidaPrecioVenta")?.value || 0) || 0),
-                observaciones: document.getElementById("salidaObservaciones")?.value,
-                centroAcopio:
-                  document.getElementById("salidaCentroAcopio")?.selectedOptions?.[0]?.textContent ||
-                  document.getElementById("salidaCentroAcopio")?.value ||
-                  "-",
-                idRegistro:
-                  resp.venta_id || resp.ventaId || resp.id || resp.registroId || "-",
-              },
-              () => window.location.reload(),
+            const datosExitoVenta = {
+              material: document.getElementById("salidaMaterialSeleccionado")?.value,
+              cantidad: document.getElementById("salidaCantidad")?.value,
+              fecha: document.getElementById("salidaFecha")?.value,
+              precio: document.getElementById("salidaPrecioVenta")?.value,
+              total:
+                (parseFloat(document.getElementById("salidaCantidad")?.value || 0) || 0) *
+                (parseFloat(document.getElementById("salidaPrecioVenta")?.value || 0) || 0),
+              observaciones: document.getElementById("salidaObservaciones")?.value,
+              centroAcopio:
+                document.getElementById("salidaCentroAcopio")?.selectedOptions?.[0]?.textContent ||
+                document.getElementById("salidaCentroAcopio")?.value ||
+                "-",
+              idRegistro:
+                resp.venta_id || resp.ventaId || resp.id || resp.registroId || "-",
+            };
+
+            try {
+              if (typeof globalThis.mostrarSwalExitoMovimiento === "function") {
+                globalThis.mostrarSwalExitoMovimiento(
+                  "Venta",
+                  datosExitoVenta,
+                  () => window.location.reload(),
+                );
+                return;
+              }
+            } catch (errorSwal) {
+              console.error("Error mostrando Swal de venta:", errorSwal);
+            }
+
+            mostrarFeedbackMovimientos(
+              "Venta registrada correctamente",
+              "success",
             );
+            window.setTimeout(() => {
+              window.location.reload();
+            }, 100);
             return;
           } else {
+            formSalida.dataset.enviando = "0";
             mostrarFeedbackMovimientos(
               resp.mensaje || "Error: operación no realizada",
               "danger",
@@ -2573,13 +2601,18 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         })
         .catch((err) => {
+          formSalida.dataset.enviando = "0";
           mostrarFeedbackMovimientos(
             "Error al conectar con el backend: " + err,
             "danger",
           );
         })
         .finally(() => {
-          if (submitBtn && document.querySelectorAll(".swal2-container").length === 0) {
+          if (
+            submitBtn &&
+            formSalida.dataset.enviando !== "1" &&
+            document.querySelectorAll(".swal2-container").length === 0
+          ) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
           }
