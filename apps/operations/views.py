@@ -26,6 +26,7 @@ ERROR_METODO_NO_PERMITIDO = "Método no permitido"
 MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 MIME_PDF = "application/pdf"
 CSV_UTF8_ERROR_MESSAGE = "Error al leer el archivo. Verifique que sea UTF-8"
+TEXT_PLAIN = "text/plain"
 
 
 def _responder_error_json(mensaje, status=400):
@@ -769,7 +770,9 @@ def exportar_compras_pdf(request):
         return response
     except Exception as exc:
         logging.exception("Error generando PDF de compras")
-        return HttpResponse(f"Error generando PDF: {str(exc)}", status=500, content_type="text/plain")
+        return HttpResponse(
+            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
+        )
 
 
 @gestor_eca_or_admin_required
@@ -799,7 +802,9 @@ def exportar_ventas_pdf(request):
         return response
     except Exception as exc:
         logging.exception("Error generando PDF de ventas")
-        return HttpResponse(f"Error generando PDF: {str(exc)}", status=500, content_type="text/plain")
+        return HttpResponse(
+            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
+        )
 
 
 @gestor_eca_or_admin_required
@@ -936,4 +941,6 @@ def exportar_historial_pdf(request):
         return response
     except Exception as exc:
         logging.exception("Error generando PDF de historial")
-        return HttpResponse(f"Error generando PDF: {str(exc)}", status=500, content_type="text/plain")
+        return HttpResponse(
+            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
+        )

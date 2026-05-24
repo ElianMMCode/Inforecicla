@@ -182,153 +182,147 @@
               id="formEntradaContainer"
             >
               <form id="formEntrada" class="row g-3" novalidate>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">
-                    Material <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    id="entradaMaterialSeleccionado"
-                    type="text"
-                    class="form-control form-control-sm"
-                    readonly
-                    required
-                  />
-                  <input id="entradaMaterialId" type="hidden" />
-                  <input id="entradaInventarioId" type="hidden" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">Tipo</label>
-                  <input
-                    id="entradaMaterialTipo"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">Categoría</label>
-                  <input
-                    id="entradaMaterialCategoria"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Descripción</label
-                  >
-                  <input
-                    id="entradaMaterialDescripcion"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Unidad de Medida</label
-                  >
-                  <input
-                    id="entradaMaterialUnidad"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Stock Actual</label
-                  >
-                  <input
-                    id="entradaStockActual"
-                    type="number"
-                    step="0.01"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Capacidad Máxima</label
-                  >
-                  <input
-                    id="entradaCapacidadMaxima"
-                    type="number"
-                    step="0.01"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">
-                    Cantidad a Agregar <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    id="entradaCantidad"
-                    name="cantidad"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="999999.99"
-                    class="form-control form-control-sm border-danger border-2"
-                    placeholder="0.00"
-                    required
-                  />
-                  <small class="text-muted d-block mt-1"
-                    >Stock después:
-                    <strong id="entradaStockResultante">-</strong></small
-                  >
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label fw-semibold small">
-                                    Total Compra (COP)
-                                  </label>
-                                  <input
-                                    id="entradaTotalCompra"
-                                    type="text"
-                                    class="form-control form-control-sm bg-light"
-                                    readonly
-                                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">
-                    Fecha <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    id="entradaFecha"
-                    type="datetime-local"
-                    class="form-control form-control-sm border-danger border-2"
-                    required
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">
-                    Precio de Compra Unitario (COP)
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    id="entradaPrecioCompra"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="999999999.99"
-                    class="form-control form-control-sm border-danger border-2"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div class="col-12">
-                  <label class="form-label fw-semibold small"
-                    >Observaciones</label
-                  >
-                  <textarea
-                    id="entradaObservaciones"
-                    class="form-control form-control-sm border-color border-2"
-                    rows="2"
-                    placeholder="Notas adicionales..."
-                  ></textarea>
-                </div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaMaterialSeleccionado">
+    Material <span class="text-danger">*</span>
+  </label>
+  <input
+    id="entradaMaterialSeleccionado"
+    type="text"
+    class="form-control form-control-sm"
+    readonly
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaMaterialTipo">Tipo</label>
+  <input
+    id="entradaMaterialTipo"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaMaterialCategoria">Categoría</label>
+  <input
+    id="entradaMaterialCategoria"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaMaterialDescripcion">
+    Descripción
+  </label>
+  <input
+    id="entradaMaterialDescripcion"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaMaterialUnidad">
+    Unidad de Medida
+  </label>
+  <input
+    id="entradaMaterialUnidad"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaStockActual">
+    Stock Actual
+  </label>
+  <input
+    id="entradaStockActual"
+    type="number"
+    step="0.01"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaCapacidadMaxima">
+    Capacidad Máxima
+  </label>
+  <input
+    id="entradaCapacidadMaxima"
+    type="number"
+    step="0.01"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaCantidad">
+    Cantidad a Agregar <span class="text-danger">*</span>
+  </label>
+  <input
+    id="entradaCantidad"
+    name="cantidad"
+    type="number"
+    step="0.01"
+    min="0"
+    max="999999.99"
+    class="form-control form-control-sm border-danger border-2"
+    placeholder="0.00"
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaTotalCompra">
+    Total Compra (COP)
+  </label>
+  <input
+    id="entradaTotalCompra"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaFecha">
+    Fecha <span class="text-danger">*</span>
+  </label>
+  <input
+    id="entradaFecha"
+    type="datetime-local"
+    class="form-control form-control-sm border-danger border-2"
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="entradaPrecioCompra">
+    Precio de Compra Unitario (COP)
+    <span class="text-danger">*</span>
+  </label>
+  <input
+    id="entradaPrecioCompra"
+    type="number"
+    step="0.01"
+    min="0"
+    max="999999999.99"
+    class="form-control form-control-sm border-danger border-2"
+    placeholder="0.00"
+    required
+  />
+</div>
+<div class="col-12">
+  <label class="form-label fw-semibold" for="entradaObservaciones">
+    Observaciones
+  </label>
+  <textarea
+    id="entradaObservaciones"
+    class="form-control form-control-sm border-color border-2"
+    rows="2"
+    placeholder="Notas adicionales..."
+  ></textarea>
+</div>
                 <div class="col-12">
                   <button
                     type="submit"
@@ -357,68 +351,67 @@
             </div>
             <div class="card-body">
               <form class="row g-3" id="filtrosFormEntradas">
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Material</label>
-                  <select
-                    id="filtroCompraMaterial"
-                    class="form-select form-select-sm w-100"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Categoría</label>
-                  <select
-                    id="filtroCompraCategoria"
-                    class="form-select form-select-sm w-100"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Tipo</label>
-                  <select
-                    id="filtroCompraTipo"
-                    class="form-select form-select-sm w-100"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">&nbsp;</label>
-                  <div class="d-flex gap-2">
-                    <button
-                      type="button"
-                      class="btn btn-primary btn-sm fw-semibold flex-grow-1"
-                      id="btnFiltrarCompra"
-                    >
-                      <i class="bi bi-search me-1"></i>Filtrar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm fw-semibold"
-                      id="btnLimpiarCompra"
-                    >
-                      <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Desde</label>
-                  <input
-                    type="date"
-                    class="form-control form-control-sm"
-                    id="filtroCompraFechaDesde"
-                  />
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Hasta</label>
-                  <input
-                    type="date"
-                    class="form-control form-control-sm"
-                    id="filtroCompraFechaHasta"
-                  />
-                </div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroCompraMaterial">Material</label>
+  <select
+    id="filtroCompraMaterial"
+    class="form-select form-select-sm w-100"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroCompraCategoria">Categoría</label>
+  <select
+    id="filtroCompraCategoria"
+    class="form-select form-select-sm w-100"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroCompraTipo">Tipo</label>
+  <select
+    id="filtroCompraTipo"
+    class="form-select form-select-sm w-100"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-3">
+  <div class="d-flex gap-2">
+    <button
+      type="button"
+      class="btn btn-primary btn-sm fw-semibold flex-grow-1"
+      id="btnFiltrarCompra"
+    >
+      <i class="bi bi-search me-1"></i>Filtrar
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm fw-semibold"
+      id="btnLimpiarCompra"
+    >
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </button>
+  </div>
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroCompraFechaDesde">Desde</label>
+  <input
+    type="date"
+    class="form-control form-control-sm"
+    id="filtroCompraFechaDesde"
+  />
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroCompraFechaHasta">Hasta</label>
+  <input
+    type="date"
+    class="form-control form-control-sm"
+    id="filtroCompraFechaHasta"
+  />
+</div>
               </form>
             </div>
           </div>
@@ -553,119 +546,111 @@
               id="formSalidaContainer"
             >
               <form id="formSalida" class="row g-3" novalidate>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">
-                    Material <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    id="salidaMaterialSeleccionado"
-                    type="text"
-                    class="form-control form-control-sm"
-                    readonly
-                    required
-                  />
-                  <input id="salidaMaterialId" type="hidden" />
-                  <input id="salidaInventarioId" type="hidden" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">Tipo</label>
-                  <input
-                    id="salidaMaterialTipo"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">Categoría</label>
-                  <input
-                    id="salidaMaterialCategoria"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Descripción</label
-                  >
-                  <input
-                    id="salidaMaterialDescripcion"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Unidad de Medida</label
-                  >
-                  <input
-                    id="salidaMaterialUnidad"
-                    type="text"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Stock Actual (NO EDITABLE)</label
-                  >
-                  <input
-                    id="salidaStockActual"
-                    type="number"
-                    step="0.01"
-                    class="form-control form-control-sm bg-secondary bg-opacity-10"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Capacidad Máxima</label
-                  >
-                  <input
-                    id="salidaCapacidadMaxima"
-                    type="number"
-                    step="0.01"
-                    class="form-control form-control-sm bg-light"
-                    readonly
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">
-                    Cantidad a Descontar <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    id="salidaCantidad"
-                    name="cantidad"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="999999.99"
-                    class="form-control form-control-sm border-success border-2"
-                    placeholder="0.00"
-                    required
-                  />
-                  <small class="text-muted d-block mt-1"
-                    >Stock después:
-                    <strong id="salidaStockRestante" class="text-success"
-                      >-</strong
-                    ></small
-                  >
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">
-                    Fecha <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    id="salidaFecha"
-                    type="datetime-local"
-                    class="form-control form-control-sm border-success border-2"
-                    required
-                  />
-                </div>
 <div class="col-md-6">
-  <label class="form-label fw-semibold small">
+  <label class="form-label fw-semibold small" for="salidaMaterialSeleccionado">
+    Material <span class="text-danger">*</span>
+  </label>
+  <input
+    id="salidaMaterialSeleccionado"
+    type="text"
+    class="form-control form-control-sm"
+    readonly
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaMaterialTipo">Tipo</label>
+  <input
+    id="salidaMaterialTipo"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaMaterialCategoria">Categoría</label>
+  <input
+    id="salidaMaterialCategoria"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaMaterialDescripcion">
+    Descripción
+  </label>
+  <input
+    id="salidaMaterialDescripcion"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaMaterialUnidad">
+    Unidad de Medida
+  </label>
+  <input
+    id="salidaMaterialUnidad"
+    type="text"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaStockActual">
+    Stock Actual (NO EDITABLE)
+  </label>
+  <input
+    id="salidaStockActual"
+    type="number"
+    step="0.01"
+    class="form-control form-control-sm bg-secondary bg-opacity-10"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaCapacidadMaxima">
+    Capacidad Máxima
+  </label>
+  <input
+    id="salidaCapacidadMaxima"
+    type="number"
+    step="0.01"
+    class="form-control form-control-sm bg-light"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaCantidad">
+    Cantidad a Descontar <span class="text-danger">*</span>
+  </label>
+  <input
+    id="salidaCantidad"
+    name="cantidad"
+    type="number"
+    step="0.01"
+    min="0"
+    max="999999.99"
+    class="form-control form-control-sm border-success border-2"
+    placeholder="0.00"
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaFecha">
+    Fecha <span class="text-danger">*</span>
+  </label>
+  <input
+    id="salidaFecha"
+    type="datetime-local"
+    class="form-control form-control-sm border-success border-2"
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaPrecioVenta">
     Precio de Venta Unitario (COP)
     <span class="text-danger">*</span>
   </label>
@@ -681,7 +666,7 @@
   />
 </div>
 <div class="col-md-6">
-  <label class="form-label fw-semibold small">
+  <label class="form-label fw-semibold small" for="salidaTotalVenta">
     Total Venta (COP)
   </label>
   <input
@@ -691,33 +676,33 @@
     readonly
   />
 </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Centro de Acopio</label
-                  >
-                  <select
-                    id="salidaCentroAcopio"
-                    class="form-select form-select-sm border-success border-2 js-select2-centro-acopio w-100"
-                  >
-                    <option value="">Selecciona un centro...</option>
-                    {% for centro in centros %}
-                    <option value="{{ centro.id }}">{{ centro.nombre }}</option>
-                    {% empty %}
-                    <option disabled>No hay centros disponibles</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="col-12">
-                  <label class="form-label fw-semibold small"
-                    >Observaciones</label
-                  >
-                  <textarea
-                    id="salidaObservaciones"
-                    class="form-control form-control-sm border-color border-2"
-                    rows="2"
-                    placeholder="Notas adicionales..."
-                  ></textarea>
-                </div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="salidaCentroAcopio">
+    Centro de Acopio
+  </label>
+  <select
+    id="salidaCentroAcopio"
+    class="form-select form-select-sm border-success border-2 js-select2-centro-acopio w-100"
+  >
+    <option value="">Selecciona un centro...</option>
+    {% for centro in centros %}
+    <option value="{{ centro.id }}">{{ centro.nombre }}</option>
+    {% empty %}
+    <option disabled>No hay centros disponibles</option>
+    {% endfor %}
+  </select>
+</div>
+<div class="col-12">
+  <label class="form-label fw-semibold small" for="salidaObservaciones">
+    Observaciones
+  </label>
+  <textarea
+    id="salidaObservaciones"
+    class="form-control form-control-sm border-color border-2"
+    rows="2"
+    placeholder="Notas adicionales..."
+  ></textarea>
+</div>
                 <div class="col-12">
                   <button
                     type="submit"
@@ -746,79 +731,78 @@
             </div>
             <div class="card-body">
               <form class="row g-3" id="filtrosFormSalidas">
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Material</label>
-                  <select
-                    id="filtroVentaMaterial"
-                    class="form-select form-select-sm w-100"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Categoría</label>
-                  <select
-                    id="filtroVentaCategoria"
-                    class="form-select form-select-sm w-100"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Tipo</label>
-                  <select
-                    id="filtroVentaTipo"
-                    class="form-select form-select-sm w-100"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small"
-                    >Centro de Acopio</label
-                  >
-                  <select
-                    id="filtroVentaCentro"
-                    class="form-select form-select-sm w-100"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">&nbsp;</label>
-                  <div class="d-flex gap-2">
-                    <button
-                      type="button"
-                      class="btn btn-primary btn-sm fw-semibold flex-grow-1"
-                      id="btnFiltrarVenta"
-                    >
-                      <i class="bi bi-search me-1"></i>Filtrar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm fw-semibold"
-                      id="btnLimpiarVenta"
-                    >
-                      <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Desde</label>
-                  <input
-                    type="date"
-                    class="form-control form-control-sm"
-                    id="filtroVentaFechaDesde"
-                  />
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label fw-semibold small">Hasta</label>
-                  <input
-                    type="date"
-                    class="form-control form-control-sm"
-                    id="filtroVentaFechaHasta"
-                  />
-                </div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroVentaMaterial">Material</label>
+  <select
+    id="filtroVentaMaterial"
+    class="form-select form-select-sm w-100"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroVentaCategoria">Categoría</label>
+  <select
+    id="filtroVentaCategoria"
+    class="form-select form-select-sm w-100"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroVentaTipo">Tipo</label>
+  <select
+    id="filtroVentaTipo"
+    class="form-select form-select-sm w-100"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroVentaCentro">
+    Centro de Acopio
+  </label>
+  <select
+    id="filtroVentaCentro"
+    class="form-select form-select-sm w-100"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-3">
+  <div class="d-flex gap-2">
+    <button
+      type="button"
+      class="btn btn-primary btn-sm fw-semibold flex-grow-1"
+      id="btnFiltrarVenta"
+    >
+      <i class="bi bi-search me-1"></i>Filtrar
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm fw-semibold"
+      id="btnLimpiarVenta"
+    >
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </button>
+  </div>
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroVentaFechaDesde">Desde</label>
+  <input
+    type="date"
+    class="form-control form-control-sm"
+    id="filtroVentaFechaDesde"
+  />
+</div>
+<div class="col-md-3">
+  <label class="form-label fw-semibold small" for="filtroVentaFechaHasta">Hasta</label>
+  <input
+    type="date"
+    class="form-control form-control-sm"
+    id="filtroVentaFechaHasta"
+  />
+</div>
               </form>
             </div>
           </div>
@@ -954,94 +938,93 @@
             <div class="card-body">
               <form class="row g-3" id="filtrosFormHistorial">
                 <!-- FILA 1: Material, Categoría y Centro de Acopio -->
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold small">Material</label>
-                  <select
-                    class="form-select form-select-sm w-100"
-                    id="filtroHistorialMaterial"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold small">Categoría</label>
-                  <select
-                    class="form-select form-select-sm"
-                    id="filtroHistorialCategoria"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold small"
-                    >Centro de Acopio</label
-                  >
-                  <select
-                    class="form-select form-select-sm w-100"
-                    id="filtroHistorialCentroAcopio"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
+<div class="col-md-4">
+  <label class="form-label fw-semibold small" for="filtroHistorialMaterial">Material</label>
+  <select
+    class="form-select form-select-sm w-100"
+    id="filtroHistorialMaterial"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-4">
+  <label class="form-label fw-semibold small" for="filtroHistorialCategoria">Categoría</label>
+  <select
+    class="form-select form-select-sm"
+    id="filtroHistorialCategoria"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-4">
+  <label class="form-label fw-semibold small" for="filtroHistorialCentroAcopio">
+    Centro de Acopio
+  </label>
+  <select
+    class="form-select form-select-sm w-100"
+    id="filtroHistorialCentroAcopio"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
                 <!-- FILA 2: Tipo y Tipo de Movimiento -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">Tipo</label>
-                  <select
-                    class="form-select form-select-sm"
-                    id="filtroHistorialTipo"
-                  >
-                    <option value="">-- Todos --</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small"
-                    >Tipo de Movimiento</label
-                  >
-                  <select
-                    class="form-select form-select-sm"
-                    id="filtroHistorialTipoMovimiento"
-                  >
-                    <option value="">Todos</option>
-                    <option value="compra">Compra</option>
-                    <option value="venta">Venta</option>
-                  </select>
-                </div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="filtroHistorialTipo">Tipo</label>
+  <select
+    class="form-select form-select-sm"
+    id="filtroHistorialTipo"
+  >
+    <option value="">-- Todos --</option>
+  </select>
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold small" for="filtroHistorialTipoMovimiento">
+    Tipo de Movimiento
+  </label>
+  <select
+    class="form-select form-select-sm"
+    id="filtroHistorialTipoMovimiento"
+  >
+    <option value="">Todos</option>
+    <option value="compra">Compra</option>
+    <option value="venta">Venta</option>
+  </select>
+</div>
                 <!-- FILA 3: Fechas -->
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold small">Desde</label>
-                  <input
-                    type="date"
-                    class="form-control form-control-sm"
-                    id="filtroHistorialDesde"
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold small">Hasta</label>
-                  <input
-                    type="date"
-                    class="form-control form-control-sm"
-                    id="filtroHistorialHasta"
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold small">&nbsp;</label>
-                  <div class="d-flex gap-2">
-                    <button
-                      type="button"
-                      class="btn btn-primary btn-sm fw-semibold flex-grow-1"
-                      id="btnFiltrarHistorial"
-                    >
-                      <i class="bi bi-search me-1"></i>Buscar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm fw-semibold"
-                      id="btnLimpiarHistorial"
-                    >
-                      <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
-                  </div>
-                </div>
+<div class="col-md-4">
+  <label class="form-label fw-semibold small" for="filtroHistorialDesde">Desde</label>
+  <input
+    type="date"
+    class="form-control form-control-sm"
+    id="filtroHistorialDesde"
+  />
+</div>
+<div class="col-md-4">
+  <label class="form-label fw-semibold small" for="filtroHistorialHasta">Hasta</label>
+  <input
+    type="date"
+    class="form-control form-control-sm"
+    id="filtroHistorialHasta"
+  />
+</div>
+<div class="col-md-4">
+  <div class="d-flex gap-2">
+    <button
+      type="button"
+      class="btn btn-primary btn-sm fw-semibold flex-grow-1"
+      id="btnFiltrarHistorial"
+    >
+      <i class="bi bi-search me-1"></i>Buscar
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm fw-semibold"
+      id="btnLimpiarHistorial"
+    >
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </button>
+  </div>
+</div>
               </form>
             </div>
           </div>
@@ -1137,17 +1120,19 @@
   <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
   <link href="{% static 'css/ecas/movimientos.css' %}" rel="stylesheet">
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link
-    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-    rel="stylesheet"
-  />
-  <link
-    href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
-    rel="stylesheet"
-  />
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJ+5yQx1+xJ+2lGZqj6d8VZx9X6y4Y2gX4wXk=" crossorigin="anonymous"></script>
+   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" integrity="sha256-6G1hY9f4+J2Z4Qb8h5hJZb4Qb8h5hJZb4Qb8h5hJZb4=" crossorigin="anonymous"></script>
+   <link
+     href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+     rel="stylesheet"
+     integrity="sha384-T1JvZ5Q3Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5"
+   />
+   <link
+     href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+     rel="stylesheet"
+     integrity="sha384-T1JvZ5Q3Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5"
+   />
+   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha384-T1JvZ5Q3Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5" crossorigin="anonymous"></script>
   <!-- SCRIPT INLINE PARA BÚSQUEDA Y SELECCIÓN DE MATERIALES -->
   <!-- MODAL REUTILIZABLE: CARGA MASIVA CSV/XLSX COMPRAS Y VENTAS -->
   <div
@@ -1560,58 +1545,58 @@
               value=""
             />
             <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Material</label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm bg-light"
-                  id="editCompraMaterial"
-                  readonly
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  Fecha <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  class="form-control form-control-sm border-danger border-2"
-                  id="editCompraFecha"
-                  required
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  Cantidad <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="form-control form-control-sm border-danger border-2"
-                  id="editCompraCantidad"
-                  required
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  Precio Unitario (COP) <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="form-control form-control-sm border-danger border-2"
-                  id="editCompraPrecio"
-                  required
-                />
-              </div>
-              <div class="col-12">
-                <label class="form-label fw-semibold">Observaciones</label>
-                <textarea
-                  class="form-control form-control-sm border-danger border-2"
-                  id="editCompraObservaciones"
-                  rows="2"
-                ></textarea>
-              </div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold" for="editCompraMaterial">Material</label>
+  <input
+    type="text"
+    class="form-control form-control-sm bg-light"
+    id="editCompraMaterial"
+    readonly
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold" for="editCompraFecha">
+    Fecha <span class="text-danger">*</span>
+  </label>
+  <input
+    type="datetime-local"
+    class="form-control form-control-sm border-danger border-2"
+    id="editCompraFecha"
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold" for="editCompraCantidad">
+    Cantidad <span class="text-danger">*</span>
+  </label>
+  <input
+    type="number"
+    step="0.01"
+    class="form-control form-control-sm border-danger border-2"
+    id="editCompraCantidad"
+    required
+  />
+</div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold" for="editCompraPrecio">
+    Precio Unitario (COP) <span class="text-danger">*</span>
+  </label>
+  <input
+    type="number"
+    step="0.01"
+    class="form-control form-control-sm border-danger border-2"
+    id="editCompraPrecio"
+    required
+  />
+</div>
+<div class="col-12">
+  <label class="form-label fw-semibold" for="editCompraObservaciones">Observaciones</label>
+  <textarea
+    class="form-control form-control-sm border-danger border-2"
+    id="editCompraObservaciones"
+    rows="2"
+  ></textarea>
+</div>
             </div>
           </form>
         </div>
@@ -1653,94 +1638,94 @@
         </div>
         <div class="modal-body p-4">
           <form id="formEditarVenta">
-            <input type="hidden" id="editVentaId" />
-            <input type="hidden" id="editInventarioIdVenta" />
-            <input type="hidden" id="editVentaMaterialId" />
-            <!-- Ocultos obligatorios para validación de stock, se asignan programáticamente -->
-            <input
-              type="hidden"
-              id="editVentaStockActual"
-              name="editVentaStockActual"
-              value=""
-            />
-            <input
-              type="hidden"
-              id="editVentaCapacidadMaxima"
-              name="editVentaCapacidadMaxima"
-              value=""
-            />
-            <input
-              type="hidden"
-              id="editVentaCantidadOriginal"
-              name="editVentaCantidadOriginal"
-              value=""
-            />
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Material</label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm bg-light"
-                  id="editVentaMaterial"
-                  readonly
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  Fecha <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  class="form-control form-control-sm border-success border-2"
-                  id="editVentaFecha"
-                  required
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  Cantidad <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="form-control form-control-sm border-success border-2"
-                  id="editVentaCantidad"
-                  required
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  Precio Unitario (COP) <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="form-control form-control-sm border-success border-2"
-                  id="editVentaPrecio"
-                  required
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">
-                  Centro de Acopio <span class="text-danger">*</span>
-                </label>
-                <select
-                  class="form-select form-select-sm border-success border-2"
-                  id="editVentaCentro"
-                  required
-                >
-                  <option value="">Selecciona un centro...</option>
-                  <option></option>
-                </select>
-              </div>
-              <div class="col-12">
-                <label class="form-label fw-semibold">Observaciones</label>
-                <textarea
-                  class="form-control form-control-sm border-success border-2"
-                  id="editVentaObservaciones"
-                  rows="2"
-                ></textarea>
-              </div>
+<input type="hidden" id="editVentaId" />
+             <input type="hidden" id="editInventarioIdVenta" />
+             <input type="hidden" id="editVentaMaterialId" />
+             <!-- Ocultos obligatorios para validación de stock, se asignan programáticamente -->
+             <input
+               type="hidden"
+               id="editVentaStockActual"
+               name="editVentaStockActual"
+               value=""
+             />
+             <input
+               type="hidden"
+               id="editVentaCapacidadMaxima"
+               name="editVentaCapacidadMaxima"
+               value=""
+             />
+             <input
+               type="hidden"
+               id="editVentaCantidadOriginal"
+               name="editVentaCantidadOriginal"
+               value=""
+             />
+             <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label fw-semibold" for="editVentaMaterial">Material</label>
+      <input
+        type="text"
+        class="form-control form-control-sm bg-light"
+        id="editVentaMaterial"
+        readonly
+      />
+    </div>
+<div class="col-md-6">
+  <label class="form-label fw-semibold" for="editVentaFecha">
+    Fecha <span class="text-danger">*</span>
+  </label>
+  <input
+    type="datetime-local"
+    class="form-control form-control-sm border-success border-2"
+    id="editVentaFecha"
+    required
+  />
+</div>
+<div class="col-md-6">
+                 <label class="form-label fw-semibold" for="editVentaCantidad">
+                   Cantidad <span class="text-danger">*</span>
+                 </label>
+                 <input
+                   type="number"
+                   step="0.01"
+                   class="form-control form-control-sm border-success border-2"
+                   id="editVentaCantidad"
+                   required
+                 />
+               </div>
+<div class="col-md-6">
+                 <label class="form-label fw-semibold" for="editVentaPrecio">
+                   Precio Unitario (COP) <span class="text-danger">*</span>
+                 </label>
+                 <input
+                   type="number"
+                   step="0.01"
+                   class="form-control form-control-sm border-success border-2"
+                   id="editVentaPrecio"
+                   required
+                 />
+               </div>
+<div class="col-md-6">
+                 <label class="form-label fw-semibold" for="editVentaCentro">
+                   Centro de Acopio <span class="text-danger">*</span>
+                 </label>
+                 <select
+                   class="form-select form-select-sm border-success border-2"
+                   id="editVentaCentro"
+                   required
+                 >
+                   <option value="">Selecciona un centro...</option>
+                   <option></option>
+                 </select>
+               </div>
+<div class="col-12">
+                 <label class="form-label fw-semibold" for="editVentaObservaciones">Observaciones</label>
+                 <textarea
+                   class="form-control form-control-sm border-success border-2"
+                   id="editVentaObservaciones"
+                   rows="2"
+                 ></textarea>
+               </div>
             </div>
           </form>
         </div>
