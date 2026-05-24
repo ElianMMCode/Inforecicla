@@ -138,6 +138,99 @@ document.addEventListener("click", function (e) {
     } catch (e) {}
   }
 
+  function escaparHtml(valor) {
+    return String(valor ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatearMoneda(valor) {
+    const numero = Number(valor || 0);
+    return numero.toLocaleString("es-CO", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  function formatearFechaHora(valor) {
+    if (!valor) return "-";
+    const fecha = new Date(valor);
+    if (Number.isNaN(fecha.getTime())) return String(valor);
+    return fecha.toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function construirHtmlExitoMovimiento(titulo, campos) {
+    const filas = campos
+      .map(
+        (campo) => `
+          <tr>
+            <td class="text-muted fw-semibold text-start py-2">${escaparHtml(campo.etiqueta)}</td>
+            <td class="text-dark text-end py-2">${escaparHtml(campo.valor)}</td>
+          </tr>`,
+      )
+      .join("");
+
+    return `
+      <div class="text-start">
+        <p class="mb-3">${escaparHtml(titulo)}</p>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function mostrarSwalExitoMovimiento(tipo, data, onClose) {
+    if (typeof Swal === "undefined") {
+      if (typeof onClose === "function") onClose();
+      return;
+    }
+
+    const esCompra = tipo === "Compra";
+    const titulo = esCompra
+      ? "Compra registrada correctamente"
+      : "Venta registrada correctamente";
+    const html = construirHtmlExitoMovimiento(titulo, [
+      { etiqueta: "Material", valor: data.material || "-" },
+      { etiqueta: "Cantidad", valor: data.cantidad || "-" },
+      { etiqueta: "Fecha", valor: formatearFechaHora(data.fecha) },
+      {
+        etiqueta: esCompra ? "Precio compra" : "Precio venta",
+        valor: "$" + formatearMoneda(data.precio),
+      },
+      { etiqueta: "Total", valor: "$" + formatearMoneda(data.total) },
+      { etiqueta: "Observaciones", valor: data.observaciones || "-" },
+      ...(esCompra
+        ? []
+        : [{ etiqueta: "Centro de acopio", valor: data.centroAcopio || "-" }]),
+      { etiqueta: "ID registro", valor: data.idRegistro || "-" },
+    ]);
+
+    Swal.fire({
+      icon: "success",
+      title: titulo,
+      html,
+      confirmButtonText: "Cerrar",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: {
+        popup: "swal2-movimientos-success",
+      },
+    }).then(() => {
+      if (typeof onClose === "function") onClose();
+    });
+  }
+
   // Esperar a que jQuery y Select2 estén listos
   function inicializarSelect2() {
     let btnLimpiarBusqueda = document.getElementById("btnLimpiarBusquedaMov");
@@ -243,19 +336,13 @@ document.addEventListener("click", function (e) {
                 text: m.nmbMaterial || m.nombre || "Material sin nombre",
                 element: $("<option>")
                   .attr(
-                    "data-imagen",
+                  "data-imagen",
                     m.imagenUrl || "/imagenes/materiales.png",
                   )
                   .attr("data-tipo", m.nmbTipo || "")
-                  .attr("data-categoria", m.nmbCategoria || "")[0],
+                  .attr("data-categoria", m.nmbCategoria || "") [0],
                 data: m,
               };
-
-              // Inicializar validación en tiempo real cuando el DOM esté listo
-              document.addEventListener("DOMContentLoaded", function () {
-                agregarValidacionEnTiempoRealEntrada();
-                agregarValidacionEnTiempoRealSalida();
-              });
             });
             return { results: results };
           },
@@ -1508,120 +1595,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function obtenerPuntoEcaIdExportacion() {
-    return (
-      document.querySelector("section[data-punto-eca-id]")?.dataset.puntoEcaId ||
-      ""
-    );
-  }
-
-  function construirUrlExportacion(baseUrl, filtros) {
-    const url = new URL(baseUrl, window.location.origin);
-    Object.entries(filtros).forEach(([clave, valor]) => {
-      if (valor !== undefined && valor !== null && String(valor).trim() !== "") {
-        url.searchParams.set(clave, String(valor).trim());
-      }
-    });
-    return url.toString();
-  }
-
-  function nombreArchivoDesdeRespuesta(response, fallback) {
-    const contentDisposition = response.headers.get("content-disposition") || "";
-    const match = contentDisposition.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)(?:\")?/i);
-    if (match && match[1]) {
-      return decodeURIComponent(match[1].replace(/\"/g, ""));
-    }
-    return fallback;
-  }
-
-  async function descargarExportacion(url, fallbackNombre) {
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/octet-stream,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/json",
-        },
-      });
-
-      const contentType = response.headers.get("content-type") || "";
-      if (!response.ok) {
-        let mensaje = "No se pudo generar la exportación.";
-        if (contentType.includes("application/json")) {
-          const data = await response.json();
-          mensaje = data.mensaje || data.message || mensaje;
-        } else {
-          const texto = await response.text();
-          if (texto) mensaje = texto;
-        }
-        alert(mensaje);
-        return;
-      }
-
-      const blob = await response.blob();
-      const nombreArchivo = nombreArchivoDesdeRespuesta(response, fallbackNombre);
-      const blobUrl = window.URL.createObjectURL(blob);
-      const enlace = document.createElement("a");
-      enlace.href = blobUrl;
-      enlace.download = nombreArchivo;
-      document.body.appendChild(enlace);
-      enlace.click();
-      enlace.remove();
-      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch (error) {
-      alert(
-        "Error al exportar: " +
-          (error && error.message ? error.message : String(error)),
-      );
-    }
-  }
-
-  document.querySelectorAll("[data-export-section][data-export-format]").forEach((btn) => {
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      const puntoEcaId = obtenerPuntoEcaIdExportacion();
-      const section = this.dataset.exportSection;
-      const format = this.dataset.exportFormat;
-      const baseUrl = this.getAttribute("href") || "";
-      const filtroBase = { punto_eca_id: puntoEcaId };
-
-      if (section === "compras") {
-        Object.assign(filtroBase, {
-          material: document.getElementById("filtroCompraMaterial")?.value || "",
-          categoria: document.getElementById("filtroCompraCategoria")?.value || "",
-          tipo: document.getElementById("filtroCompraTipo")?.value || "",
-          fecha_desde: document.getElementById("filtroCompraFechaDesde")?.value || "",
-          fecha_hasta: document.getElementById("filtroCompraFechaHasta")?.value || "",
-        });
-      } else if (section === "ventas") {
-        Object.assign(filtroBase, {
-          material: document.getElementById("filtroVentaMaterial")?.value || "",
-          categoria: document.getElementById("filtroVentaCategoria")?.value || "",
-          tipo: document.getElementById("filtroVentaTipo")?.value || "",
-          centro_acopio: document.getElementById("filtroVentaCentro")?.value || "",
-          fecha_desde: document.getElementById("filtroVentaFechaDesde")?.value || "",
-          fecha_hasta: document.getElementById("filtroVentaFechaHasta")?.value || "",
-        });
-      } else if (section === "historial") {
-        Object.assign(filtroBase, {
-          material: document.getElementById("filtroHistorialMaterial")?.value || "",
-          categoria: document.getElementById("filtroHistorialCategoria")?.value || "",
-          tipo: document.getElementById("filtroHistorialTipo")?.value || "",
-          centro_acopio: document.getElementById("filtroHistorialCentroAcopio")?.value || "",
-          tipo_movimiento: document.getElementById("filtroHistorialTipoMovimiento")?.value || "",
-          fecha_desde: document.getElementById("filtroHistorialDesde")?.value || "",
-          fecha_hasta: document.getElementById("filtroHistorialHasta")?.value || "",
-        });
-      }
-
-      const url = construirUrlExportacion(baseUrl, filtroBase);
-      const nombreBase =
-        section === "historial"
-          ? `historial.${format === "pdf" ? "pdf" : "xlsx"}`
-          : `${section}.${format === "pdf" ? "pdf" : "xlsx"}`;
-      descargarExportacion(url, nombreBase);
-    });
-  });
-
   // CARGA INICIAL DE DATOS
   renderizarEntradas();
   renderizarSalidas();
@@ -2350,11 +2323,6 @@ document.addEventListener("DOMContentLoaded", function () {
         tipo: "requerido",
         mensaje: "Ingrese un precio de venta",
       },
-      {
-        id: "salidaCentroAcopio",
-        tipo: "select",
-        mensaje: "Seleccione un centro de acopio",
-      },
     ];
 
     campos.forEach((campo) => {
@@ -2367,12 +2335,6 @@ document.addEventListener("DOMContentLoaded", function () {
             validarCampoFecha(input, campo.mensaje);
           } else if (campo.tipo === "cantidad") {
             validarCantidad(input);
-          } else if (campo.tipo === "select") {
-            if (input.value === "") {
-              mostrarErrorCampo(input, campo.mensaje);
-            } else {
-              limpiarErrorCampo(input);
-            }
           }
         });
 
@@ -2389,14 +2351,14 @@ document.addEventListener("DOMContentLoaded", function () {
       formEntrada.addEventListener("submit", function (ev) {
         console.log("Validando formulario de entrada");
         ev.preventDefault();
-        
+
         // Disable submit button to prevent duplicate submissions
         const submitBtn = this.querySelector('button[type="submit"]');
         if (submitBtn) {
           submitBtn.disabled = true;
           submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
         }
-        
+
         // Validar campos requeridos
         const materialSeleccionado = document.getElementById(
           "entradaMaterialSeleccionado",
@@ -2430,6 +2392,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (!esValido) {
         console.log("Formulario no válido, deteniendo envío");
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
+        }
         return; // Detener el envío si hay errores de validación
       }
 
@@ -2460,17 +2426,23 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((res) => res.json())
         .then((resp) => {
           if (!resp.error) {
-            mostrarFeedbackMovimientos(
-              resp.mensaje || "¡Compra registrada! 🎉",
-              "success",
+            mostrarSwalExitoMovimiento(
+              "Compra",
+              {
+                material: document.getElementById("entradaMaterialSeleccionado")?.value,
+                cantidad: document.getElementById("entradaCantidad")?.value,
+                fecha: document.getElementById("entradaFecha")?.value,
+                precio: document.getElementById("entradaPrecioCompra")?.value,
+                total:
+                  (parseFloat(document.getElementById("entradaCantidad")?.value || 0) || 0) *
+                  (parseFloat(document.getElementById("entradaPrecioCompra")?.value || 0) || 0),
+                observaciones: document.getElementById("entradaObservaciones")?.value,
+                idRegistro:
+                  resp.compra_id || resp.compraId || resp.id || resp.registroId || "-",
+              },
+              () => window.location.reload(),
             );
-            // Limpiar alertas de campos
-            const inputsEntrada = formEntrada.querySelectorAll(
-              "input, select, textarea",
-            );
-            inputsEntrada.forEach((input) => limpiarErrorCampo(input));
-            formEntrada.reset();
-            location.reload();
+            return;
           } else {
             mostrarFeedbackMovimientos(
               resp.mensaje || "Error: operación no realizada",
@@ -2483,6 +2455,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Error al conectar con el backend: " + err,
             "danger",
           );
+        })
+        .finally(() => {
+          if (submitBtn && document.querySelectorAll(".swal2-container").length === 0) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
+          }
         });
     });
   }
@@ -2492,14 +2470,14 @@ document.addEventListener("DOMContentLoaded", function () {
       formSalida.addEventListener("submit", function (ev) {
         console.log("Validando formulario de salida");
         ev.preventDefault();
-        
+
         // Disable submit button to prevent duplicate submissions
         const submitBtn = this.querySelector('button[type="submit"]');
         if (submitBtn) {
           submitBtn.disabled = true;
           submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
         }
-        
+
         // Validar campos requeridos
       const materialSeleccionado = document.getElementById(
         "salidaMaterialSeleccionado",
@@ -2507,18 +2485,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const cantidad = document.getElementById("salidaCantidad");
       const fecha = document.getElementById("salidaFecha");
       const precioVenta = document.getElementById("salidaPrecioVenta");
-      const centroAcopio = document.getElementById("salidaCentroAcopio");
 
       let esValido = true;
 
       if (materialSeleccionado && materialSeleccionado.value.trim() === "") {
         console.log("Material no seleccionado");
         mostrarErrorCampo(materialSeleccionado, "Seleccione un material");
-        esValido = false;
-      }
-
-      if (!validarCantidad(cantidad)) {
-        console.log("Cantidad inválida");
         esValido = false;
       }
 
@@ -2537,19 +2509,12 @@ document.addEventListener("DOMContentLoaded", function () {
         esValido = false;
       }
 
-      // Validar centro de acopio (select)
-      if (centroAcopio && centroAcopio.value === "") {
-        console.log("Centro de acopio no seleccionado");
-        crearAlertaCampo(
-          centroAcopio,
-          "Seleccione un centro de acopio",
-          "danger",
-        );
-        esValido = false;
-      }
-
       if (!esValido) {
         console.log("Formulario no válido, deteniendo envío");
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
+        }
         return; // Detener el envío si hay errores de validación
       }
 
@@ -2579,17 +2544,27 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((res) => res.json())
         .then((resp) => {
           if (!resp.error) {
-            mostrarFeedbackMovimientos(
-              resp.mensaje || "¡Venta registrada! 🎉",
-              "success",
+            mostrarSwalExitoMovimiento(
+              "Venta",
+              {
+                material: document.getElementById("salidaMaterialSeleccionado")?.value,
+                cantidad: document.getElementById("salidaCantidad")?.value,
+                fecha: document.getElementById("salidaFecha")?.value,
+                precio: document.getElementById("salidaPrecioVenta")?.value,
+                total:
+                  (parseFloat(document.getElementById("salidaCantidad")?.value || 0) || 0) *
+                  (parseFloat(document.getElementById("salidaPrecioVenta")?.value || 0) || 0),
+                observaciones: document.getElementById("salidaObservaciones")?.value,
+                centroAcopio:
+                  document.getElementById("salidaCentroAcopio")?.selectedOptions?.[0]?.textContent ||
+                  document.getElementById("salidaCentroAcopio")?.value ||
+                  "-",
+                idRegistro:
+                  resp.venta_id || resp.ventaId || resp.id || resp.registroId || "-",
+              },
+              () => window.location.reload(),
             );
-            // Limpiar alertas de campos
-            const inputsSalida = formSalida.querySelectorAll(
-              "input, select, textarea",
-            );
-            inputsSalida.forEach((input) => limpiarErrorCampo(input));
-            formSalida.reset();
-            setTimeout(renderizarSalidas, 200);
+            return;
           } else {
             mostrarFeedbackMovimientos(
               resp.mensaje || "Error: operación no realizada",
@@ -2602,6 +2577,12 @@ document.addEventListener("DOMContentLoaded", function () {
             "Error al conectar con el backend: " + err,
             "danger",
           );
+        })
+        .finally(() => {
+          if (submitBtn && document.querySelectorAll(".swal2-container").length === 0) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
+          }
         });
     });
   }
@@ -3169,7 +3150,7 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".btn-editar-historial-compra, .btn-editar-historial-venta");
   if (!btn) return;
   let movimientoId, tipoMovimiento, modalId;
-  
+
   if (btn.classList.contains("btn-editar-historial-compra")) {
     movimientoId = btn.dataset.compraId;
     tipoMovimiento = "Compra";
@@ -3179,7 +3160,7 @@ document.addEventListener("click", function (e) {
     tipoMovimiento = "Venta";
     modalId = "detallesSalidaModal"; // Usar modal de salida para ventas
   }
-  
+
   let movimiento;
   if (tipoMovimiento === "Compra") {
     movimiento = globalThis.HISTORIAL_COMPRAS.find(
@@ -3190,7 +3171,7 @@ document.addEventListener("click", function (e) {
       (v) => v.ventaId === movimientoId,
     );
   }
-  
+
   if (!movimiento) {
     alert("No se encontraron los detalles de este movimiento");
     return;
