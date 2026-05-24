@@ -42,8 +42,7 @@
           >
           <select
             id="buscarMaterialMovimientos"
-            class="form-control js-example-tags form-control-lg border-2 border-primary"
-            style="width: 100%"
+            class="form-control js-example-tags form-control-lg border-2 border-primary w-100"
             aria-label="Buscar material"
           >
             <option></option>
@@ -60,8 +59,7 @@
           >
           <select
             id="selectCategoriaMov"
-            class="form-select border-2 border-primary js-select2-categoria-mov"
-            style="width: 100%"
+            class="form-select border-2 border-primary js-select2-categoria-mov w-100"
           >
             <option value="">-- Ninguno --</option>
             {% for categoria in categoria_inventario %}
@@ -77,8 +75,7 @@
           >
           <select
             id="selectTipoMov"
-            class="form-select border-2 border-primary js-select2-tipo-mov"
-            style="width: 100%"
+            class="form-select border-2 border-primary js-select2-tipo-mov w-100"
           >
             <option value="">-- Ninguno --</option>
             {% for tipo in tipo_inventario %}
@@ -139,25 +136,13 @@
   <!-- ═════════════════════════════════════════════════════════════ -->
   <!-- ACORDEÓN PRINCIPAL -->
   <!-- ═════════════════════════════════════════════════════════════ -->
-  <!-- Inyectar datos del backend ANTES de los scripts -->
-  <script>
-    window.CENTROS = {{ centros|safe }};
-  </script>
-  <script>
-    window.ENTRADAS_INICIALES = {{ entradas|safe }};
-    window.SALIDAS_INICIALES = {{ salidas|safe }};
-    console.log("ENTRADAS_INICIALES:", window.ENTRADAS_INICIALES);
-    console.log("SALIDAS_INICIALES:", window.SALIDAS_INICIALES);
-    window.HISTORIAL_COMPRAS = {{ HISTORIAL_COMPRAS|safe }};
-    window.HISTORIAL_VENTAS = {{ HISTORIAL_VENTAS|safe }};
-
-    // Variables para paginación
-    window.PAGINA_ACTUAL_ENTRADAS = 1;
-    window.PAGINA_ACTUAL_SALIDAS = 1;
-    window.REGISTROS_POR_PAGINA = 5;
-    window.PAGINA_ACTUAL_HISTORIAL = 1;
-    window.REGISTROS_POR_PAGINA_HISTORIAL = 10;
-  </script>
+  <!-- Inyectar datos del backend ANTES de los scripts (uso seguro de json_script) -->
+  {{ centros|json_script:"centros-data" }}
+  {{ entradas|json_script:"entradas-data" }}
+  {{ salidas|json_script:"salidas-data" }}
+  {{ HISTORIAL_COMPRAS|json_script:"historial-compras-data" }}
+  {{ HISTORIAL_VENTAS|json_script:"historial-ventas-data" }}
+  <!-- Data inyectada por Django (parseada por static/js/ecas/movimientos/movimientos.js) -->
   <div class="accordion accordion-flush shadow-sm" id="movimientosAccordion">
     <!-- ITEM 1: ENTRADAS DE MATERIAL -->
     <div class="accordion-item border-start border-5 border-danger">
@@ -168,16 +153,7 @@
           data-bs-toggle="collapse"
           data-bs-target="#collapseEntradas"
         >
-          <span
-            class="bg-danger p-2 rounded-circle me-3"
-            style="
-              width: 40px;
-              height: 40px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            "
-          >
+          <span class="bg-danger p-2 rounded-circle me-3 movimientos-icon-circle">
             <i class="bi bi-arrow-down text-white"></i>
           </span>
           <span>
@@ -202,9 +178,8 @@
               </h6>
             </div>
             <div
-              class="card-body"
+              class="card-body d-none"
               id="formEntradaContainer"
-              style="display: none"
             >
               <form id="formEntrada" class="row g-3" novalidate>
                 <div class="col-md-6">
@@ -299,13 +274,6 @@
                     class="form-control form-control-sm border-danger border-2"
                     placeholder="0.00"
                     required
-                    onkeydown="
-                      return !['e', 'E', '-', '+'].includes(event.key);
-                    "
-                    oninput="
-                      if (this.value.length > 10)
-                        this.value = this.value.slice(0, 10);
-                    "
                   />
                   <small class="text-muted d-block mt-1"
                     >Stock después:
@@ -348,13 +316,6 @@
                     class="form-control form-control-sm border-danger border-2"
                     placeholder="0.00"
                     required
-                    onkeydown="
-                      return !['e', 'E', '-', '+'].includes(event.key);
-                    "
-                    oninput="
-                      if (this.value.length > 12)
-                        this.value = this.value.slice(0, 12);
-                    "
                   />
                 </div>
                 <div class="col-12">
@@ -378,7 +339,7 @@
                   <button
                     type="button"
                     class="btn btn-outline-primary btn-sm fw-semibold"
-                    onclick="cambiarMaterial()"
+                    data-action="cambiar-material"
                   >
                     <i class="bi bi-arrow-counterclockwise me-2"></i>Cambiar
                     Material
@@ -400,8 +361,7 @@
                   <label class="form-label fw-semibold small">Material</label>
                   <select
                     id="filtroCompraMaterial"
-                    class="form-select form-select-sm"
-                    style="width: 100%"
+                    class="form-select form-select-sm w-100"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -410,8 +370,7 @@
                   <label class="form-label fw-semibold small">Categoría</label>
                   <select
                     id="filtroCompraCategoria"
-                    class="form-select form-select-sm"
-                    style="width: 100%"
+                    class="form-select form-select-sm w-100"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -420,8 +379,7 @@
                   <label class="form-label fw-semibold small">Tipo</label>
                   <select
                     id="filtroCompraTipo"
-                    class="form-select form-select-sm"
-                    style="width: 100%"
+                    class="form-select form-select-sm w-100"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -482,16 +440,20 @@
                   <i class="bi bi-upload me-1"></i>Carga Masiva
                 </button>
                 <a
+                  id="btnExportComprasExcel"
                   href="/punto-eca/movimientos/exportar-compras-excel/"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="btn btn-sm btn-outline-success fw-semibold ms-2"
                   title="Exportar a Excel"
                 >
                   <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
                 </a>
                 <a
+                  id="btnExportComprasPdf"
                   href="/punto-eca/movimientos/exportar-compras-pdf/"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="btn btn-sm btn-outline-danger fw-semibold ms-2"
                   title="Exportar a PDF"
                 >
@@ -538,13 +500,13 @@
                   id="paginacionEntradas"
                 >
                   <li class="page-item disabled">
-                    <a class="page-link" href="#">Anterior</a>
+                    <button class="page-link" type="button" disabled>Anterior</button>
                   </li>
                   <li class="page-item active">
-                    <a class="page-link" href="#">1</a>
+                    <button class="page-link" type="button" aria-current="page">1</button>
                   </li>
                   <li class="page-item">
-                    <a class="page-link" href="#">Siguiente</a>
+                    <button class="page-link" type="button">Siguiente</button>
                   </li>
                 </ul>
               </nav>
@@ -562,16 +524,7 @@
           data-bs-toggle="collapse"
           data-bs-target="#collapseSalidas"
         >
-          <span
-            class="bg-success p-2 rounded-circle me-3"
-            style="
-              width: 40px;
-              height: 40px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            "
-          >
+            <span class="bg-success p-2 rounded-circle me-3 movimientos-icon-circle">
             <i class="bi bi-arrow-up text-white"></i>
           </span>
           <span>
@@ -596,9 +549,8 @@
               </h6>
             </div>
             <div
-              class="card-body"
+              class="card-body d-none"
               id="formSalidaContainer"
-              style="display: none"
             >
               <form id="formSalida" class="row g-3" novalidate>
                 <div class="col-md-6">
@@ -693,13 +645,6 @@
                     class="form-control form-control-sm border-success border-2"
                     placeholder="0.00"
                     required
-                    onkeydown="
-                      return !['e', 'E', '-', '+'].includes(event.key);
-                    "
-                    oninput="
-                      if (this.value.length > 10)
-                        this.value = this.value.slice(0, 10);
-                    "
                   />
                   <small class="text-muted d-block mt-1"
                     >Stock después:
@@ -733,13 +678,6 @@
     class="form-control form-control-sm border-success border-2"
     placeholder="0.00"
     required
-    onkeydown="
-      return !['e', 'E', '-', '+'].includes(event.key);
-    "
-    oninput="
-      if (this.value.length > 12)
-        this.value = this.value.slice(0, 12);
-    "
   />
 </div>
 <div class="col-md-6">
@@ -759,8 +697,7 @@
                   >
                   <select
                     id="salidaCentroAcopio"
-                    class="form-select form-select-sm border-success border-2 js-select2-centro-acopio"
-                    style="width: 100%"
+                    class="form-select form-select-sm border-success border-2 js-select2-centro-acopio w-100"
                   >
                     <option value="">Selecciona un centro...</option>
                     {% for centro in centros %}
@@ -791,7 +728,7 @@
                   <button
                     type="button"
                     class="btn btn-outline-primary btn-sm fw-semibold"
-                    onclick="cambiarMaterial()"
+                    data-action="cambiar-material"
                   >
                     <i class="bi bi-arrow-counterclockwise me-2"></i>Cambiar
                     Material
@@ -813,8 +750,7 @@
                   <label class="form-label fw-semibold small">Material</label>
                   <select
                     id="filtroVentaMaterial"
-                    class="form-select form-select-sm"
-                    style="width: 100%"
+                    class="form-select form-select-sm w-100"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -823,8 +759,7 @@
                   <label class="form-label fw-semibold small">Categoría</label>
                   <select
                     id="filtroVentaCategoria"
-                    class="form-select form-select-sm"
-                    style="width: 100%"
+                    class="form-select form-select-sm w-100"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -833,8 +768,7 @@
                   <label class="form-label fw-semibold small">Tipo</label>
                   <select
                     id="filtroVentaTipo"
-                    class="form-select form-select-sm"
-                    style="width: 100%"
+                    class="form-select form-select-sm w-100"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -845,8 +779,7 @@
                   >
                   <select
                     id="filtroVentaCentro"
-                    class="form-select form-select-sm"
-                    style="width: 100%"
+                    class="form-select form-select-sm w-100"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -907,16 +840,20 @@
                   <i class="bi bi-upload me-1"></i>Carga Masiva
                 </button>
                 <a
+                  id="btnExportVentasExcel"
                   href="/punto-eca/movimientos/exportar-ventas-excel/"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="btn btn-sm btn-outline-success fw-semibold ms-2"
                   title="Exportar a Excel"
                 >
                   <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
                 </a>
                 <a
+                  id="btnExportVentasPdf"
                   href="/punto-eca/movimientos/exportar-ventas-pdf/"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="btn btn-sm btn-outline-danger fw-semibold ms-2"
                   title="Exportar a PDF"
                 >
@@ -964,13 +901,13 @@
                   id="paginacionSalidas"
                 >
                   <li class="page-item disabled">
-                    <a class="page-link" href="#">Anterior</a>
+                    <button class="page-link" type="button" disabled>Anterior</button>
                   </li>
                   <li class="page-item active">
-                    <a class="page-link" href="#">1</a>
+                    <button class="page-link" type="button" aria-current="page">1</button>
                   </li>
                   <li class="page-item">
-                    <a class="page-link" href="#">Siguiente</a>
+                    <button class="page-link" type="button">Siguiente</button>
                   </li>
                 </ul>
               </nav>
@@ -988,16 +925,7 @@
           data-bs-toggle="collapse"
           data-bs-target="#collapseHistorial"
         >
-          <span
-            class="bg-secondary p-2 rounded-circle me-3"
-            style="
-              width: 40px;
-              height: 40px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            "
-          >
+          <span class="bg-secondary p-2 rounded-circle me-3 movimientos-icon-circle">
             <i class="bi bi-search text-white"></i>
           </span>
           <span>
@@ -1029,9 +957,8 @@
                 <div class="col-md-4">
                   <label class="form-label fw-semibold small">Material</label>
                   <select
-                    class="form-select form-select-sm"
+                    class="form-select form-select-sm w-100"
                     id="filtroHistorialMaterial"
-                    style="width: 100%"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -1050,9 +977,8 @@
                     >Centro de Acopio</label
                   >
                   <select
-                    class="form-select form-select-sm"
+                    class="form-select form-select-sm w-100"
                     id="filtroHistorialCentroAcopio"
-                    style="width: 100%"
                   >
                     <option value="">-- Todos --</option>
                   </select>
@@ -1127,16 +1053,20 @@
               <div class="d-flex align-items-center gap-2">
                 <h6 class="mb-0 fw-bold text-dark">Todos los Movimientos</h6>
                 <a
+                  id="btnExportHistorialExcel"
                   href="/punto-eca/movimientos/exportar-historial-excel/"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="btn btn-sm btn-outline-success fw-semibold ms-2"
                   title="Exportar a Excel"
                 >
                   <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
                 </a>
                 <a
+                  id="btnExportHistorialPdf"
                   href="/punto-eca/movimientos/exportar-historial-pdf/"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="btn btn-sm btn-outline-danger fw-semibold ms-2"
                   title="Exportar a PDF"
                 >
@@ -1187,13 +1117,13 @@
                   id="paginacionHistorial"
                 >
                   <li class="page-item disabled">
-                    <a class="page-link" href="#">Anterior</a>
+                    <button class="page-link" type="button" disabled>Anterior</button>
                   </li>
                   <li class="page-item active">
-                    <a class="page-link" href="#">1</a>
+                    <button class="page-link" type="button" aria-current="page">1</button>
                   </li>
                   <li class="page-item">
-                    <a class="page-link" href="#">Siguiente</a>
+                    <button class="page-link" type="button">Siguiente</button>
                   </li>
                 </ul>
               </nav>
@@ -1205,19 +1135,7 @@
   </div>
   <!-- FIN DEL ACORDEÓN -->
   <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
-  <style>
-    /* Multi-line pagination wrapping for footers if too many pages */
-    .pagination {
-      flex-wrap: wrap !important;
-    }
-    .pagination .page-item {
-      margin-bottom: 4px;
-    }
-    .card-footer .pagination {
-      row-gap: 4px;
-      justify-content: center;
-    }
-  </style>
+  <link href="{% static 'css/ecas/movimientos.css' %}" rel="stylesheet">
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -1296,7 +1214,7 @@
                       <span class="text-danger">(obligatorio)</span>: precio
                       unitario pagado (solo para compras).
                     </li>
-                    <li id="campoPrecioVenta" style="display: none">
+                    <li id="campoPrecioVenta" class="d-none">
                       <code>precioVenta</code>
                       <span class="text-danger">(obligatorio)</span>: precio
                       unitario vendido (solo para ventas).
@@ -1307,7 +1225,7 @@
                       compra en formato <b>YYYY-MM-DD</b> o
                       <b>YYYY-MM-DD HH:MM</b>.
                     </li>
-                    <li id="campoFechaVenta" style="display: none">
+                    <li id="campoFechaVenta" class="d-none">
                       <code>fechaVenta</code>
                       <span class="text-danger">(obligatorio)</span>: fecha de
                       venta en formato <b>YYYY-MM-DD</b> o
@@ -1323,9 +1241,7 @@
                   cambies los nombres de las columnas. El archivo debe estar en
                   formato <strong>CSV delimitado por coma</strong>.
                   <br />
-                  <a href="#" id="descargarPlantillaCargaMasiva"
-                    >Descargar plantilla de ejemplo</a
-                  >
+                  <button id="descargarPlantillaCargaMasiva" type="button" class="btn btn-link p-0">Descargar plantilla de ejemplo</button>
                 </div>
                 <!-- INICIO: INFO ESCENARIOS MATERIAL NO REGISTRADO -->
                 <div
@@ -1337,7 +1253,7 @@
                     >¿Qué pasa si el material de una fila no existe
                     previamente?</strong
                   >
-                  <ul class="mb-1" style="font-size: 0.98em">
+                  <ul class="mb-1 movimientos-small-list">
                     <li>
                       <b>Si el material ya existe en tu inventario:</b> se
                       utiliza el existente y se registra la compra/venta
@@ -1373,11 +1289,7 @@
                 <!-- FIN: INFO ESCENARIOS MATERIAL NO REGISTRADO -->
               </div>
               <div class="col-12">
-                <div
-                  id="feedbackCargaMasiva"
-                  class="mt-2 small"
-                  style="min-height: 48px"
-                >
+                <div id="feedbackCargaMasiva" class="mt-2 small min-h-48">
                   <!-- Aquí se mostrará feedback fila a fila -->
                 </div>
               </div>

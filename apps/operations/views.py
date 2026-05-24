@@ -11,6 +11,7 @@ from .resources import CompraInventarioResource, VentaInventarioResource
 from weasyprint import HTML
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
+import logging
 import csv
 import io
 import unicodedata
@@ -309,6 +310,61 @@ def _filtrar_historial_ventas_export(request, queryset):
     return queryset
 
 
+def _filtrar_compras_export(request, queryset):
+    punto_eca_id = _obtener_punto_eca_id_export(request)
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+
+    material = _obtener_filtro_export(request, "material")
+    categoria = _obtener_filtro_export(request, "categoria")
+    tipo = _obtener_filtro_export(request, "tipo")
+    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
+    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
+
+    if material:
+        queryset = queryset.filter(inventario__material__nombre__iexact=material)
+    if categoria:
+        queryset = queryset.filter(
+            inventario__material__categoria__nombre__iexact=categoria
+        )
+    if tipo:
+        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
+    if fecha_desde:
+        queryset = queryset.filter(fecha_compra__date__gte=fecha_desde)
+    if fecha_hasta:
+        queryset = queryset.filter(fecha_compra__date__lte=fecha_hasta)
+    return queryset
+
+
+def _filtrar_ventas_export(request, queryset):
+    punto_eca_id = _obtener_punto_eca_id_export(request)
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+
+    material = _obtener_filtro_export(request, "material")
+    categoria = _obtener_filtro_export(request, "categoria")
+    tipo = _obtener_filtro_export(request, "tipo")
+    centro_acopio = _obtener_filtro_export(request, "centro_acopio")
+    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
+    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
+
+    if material:
+        queryset = queryset.filter(inventario__material__nombre__iexact=material)
+    if categoria:
+        queryset = queryset.filter(
+            inventario__material__categoria__nombre__iexact=categoria
+        )
+    if tipo:
+        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
+    if centro_acopio:
+        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
+    if fecha_desde:
+        queryset = queryset.filter(fecha_venta__date__gte=fecha_desde)
+    if fecha_hasta:
+        queryset = queryset.filter(fecha_venta__date__lte=fecha_hasta)
+    return queryset
+
+
 def _normalizar_historial_compra(compra):
     return {
         "tipo_movimiento": "Compra",
@@ -566,12 +622,12 @@ def _build_movimientos_context(punto):
             .distinct()
         ),
         "centros": centros_list,
-        "entradas": json.dumps(compras_list),
-        "salidas": json.dumps(ventas_list),
+        "entradas": compras_list,
+        "salidas": ventas_list,
         "historial_compras": compras_list,
         "historial_ventas": ventas_list,
-        "HISTORIAL_COMPRAS": json.dumps(compras_list),
-        "HISTORIAL_VENTAS": json.dumps(ventas_list),
+        "HISTORIAL_COMPRAS": compras_list,
+        "HISTORIAL_VENTAS": ventas_list,
     }
 
 
@@ -683,12 +739,10 @@ def borrar_venta(request, venta_id):
 # ============== EXPORT EXCEL =============
 @gestor_eca_or_admin_required
 def exportar_compras_excel(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_compras_export(request, queryset)
     dataset = CompraInventarioResource().export(queryset)
     export_data = dataset.xlsx
     response = HttpResponse(export_data, content_type=MIME_XLSX)
@@ -699,30 +753,31 @@ def exportar_compras_excel(request):
 # ============== EXPORT PDF =============
 @gestor_eca_or_admin_required
 def exportar_compras_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_compras_export(request, queryset)
     compras = list(queryset)
     # Renderizar el HTML como string
     html_string = render_to_string("operations/compras_pdf.html", {"compras": compras})
-    # Generar PDF desde el HTML
-    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
-    response = HttpResponse(pdf_file, content_type=MIME_PDF)
-    response["Content-Disposition"] = 'attachment; filename="compras.pdf"'
-    return response
+    # Generar PDF desde el HTML — usar base_url para resolver static y capturar errores
+    try:
+        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
+        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
+        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
+        response["Content-Disposition"] = 'inline; filename="compras.pdf"'
+        return response
+    except Exception as exc:
+        logging.exception("Error generando PDF de compras")
+        return HttpResponse(f"Error generando PDF: {str(exc)}", status=500, content_type="text/plain")
 
 
 @gestor_eca_or_admin_required
 def exportar_ventas_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_ventas_export(request, queryset)
     ventas = list(queryset)
     # Calcular total_venta por cada venta, si no viene en el modelo
     ventas_out = []
@@ -736,20 +791,23 @@ def exportar_ventas_pdf(request):
         "operations/ventas_pdf.html",
         {"ventas": ventas_out, "total_ventas": total_ventas},
     )
-    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
-    response = HttpResponse(pdf_file, content_type=MIME_PDF)
-    response["Content-Disposition"] = 'attachment; filename="ventas.pdf"'
-    return response
+    try:
+        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
+        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
+        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
+        response["Content-Disposition"] = 'inline; filename="ventas.pdf"'
+        return response
+    except Exception as exc:
+        logging.exception("Error generando PDF de ventas")
+        return HttpResponse(f"Error generando PDF: {str(exc)}", status=500, content_type="text/plain")
 
 
 @gestor_eca_or_admin_required
 def exportar_ventas_excel(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_ventas_export(request, queryset)
     dataset = VentaInventarioResource().export(queryset)
     export_data = dataset.xlsx
     response = HttpResponse(export_data, content_type=MIME_XLSX)
@@ -870,7 +928,12 @@ def exportar_historial_pdf(request):
     html_string = render_to_string(
         "operations/historial_pdf.html", {"historial": historial}
     )
-    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
-    response = HttpResponse(pdf_file, content_type=MIME_PDF)
-    response["Content-Disposition"] = 'attachment; filename="historial.pdf"'
-    return response
+    try:
+        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
+        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
+        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
+        response["Content-Disposition"] = 'inline; filename="historial.pdf"'
+        return response
+    except Exception as exc:
+        logging.exception("Error generando PDF de historial")
+        return HttpResponse(f"Error generando PDF: {str(exc)}", status=500, content_type="text/plain")

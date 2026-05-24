@@ -1,0 +1,27 @@
+/* Movimientos styles moved from templates/ecas/section-movimientos.html */
+
+/* Multi-line pagination wrapping for footers if too many pages */
+.pagination {
+  flex-wrap: wrap !important;
+}
+.pagination .page-item {
+  margin-bottom: 4px;
+}
+.card-footer .pagination {
+  row-gap: 4px;
+  justify-content: center;
+}
+/* Movimientos: reusable classes to avoid inline styles flagged by Sonar */
+.movimientos-icon-circle {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.movimientos-small-list {
+  font-size: 0.98em;
+}
+.min-h-48 {
+  min-height: 48px;
+}
