@@ -7,54 +7,72 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".btn-eliminar-historial-compra");
   if (!btn) return;
   const compraId = btn.dataset.compraId;
-  if (!confirm("¿Estás seguro de que deseas eliminar esta compra?")) return;
-  // Buscar en HISTORIAL_COMPRAS o ENTRADAS_INICIALES
-  const entrada =
-    (globalThis.HISTORIAL_COMPRAS || []).find(
-      (e) => String(e.compraId) === String(compraId),
-    ) ||
-    (globalThis.ENTRADAS_INICIALES || []).find(
-      (e) => String(e.compraId) === String(compraId),
-    );
-  if (!entrada) {
-    alert("No se encontraron los datos de esta compra");
-    return;
-  }
-  const puntoId = document.querySelector("section[data-punto-eca-id]")?.dataset
-    .puntoEcaId;
-  const inventarioId = entrada.inventarioId || "";
-  const materialId = entrada.materialId || "";
-  const datosEliminar = { compraId, inventarioId, puntoId, materialId };
-  let csrfToken =
-    document
-      .querySelector('meta[name="csrf-token"]')
-      ?.getAttribute("content") || "";
-  fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": csrfToken,
-    },
-    body: JSON.stringify(datosEliminar),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success || data.ok || !data.error) {
-        alert("Compra eliminada correctamente");
-        location.reload();
-      } else {
-        alert(
-          "Error al eliminar: " +
-            (data.mensaje || data.message || "Error desconocido"),
-        );
-      }
-    })
-    .catch((error) => {
-      alert(
-        "Error al procesar la solicitud: " +
-          (error && error.message ? error.message : error),
+  globalThis.confirmarSwalMovimiento({
+    title: "Eliminar compra",
+    text: "¿Estás seguro de que deseas eliminar esta compra?",
+  }).then((confirmado) => {
+    if (!confirmado) return;
+    const entrada =
+      (globalThis.HISTORIAL_COMPRAS || []).find(
+        (e) => String(e.compraId) === String(compraId),
+      ) ||
+      (globalThis.ENTRADAS_INICIALES || []).find(
+        (e) => String(e.compraId) === String(compraId),
       );
-    });
+    if (!entrada) {
+      globalThis.mostrarSwalMensajeMovimiento({
+        icon: "info",
+        title: "Sin datos",
+        text: "No se encontraron los datos de esta compra",
+      });
+      return;
+    }
+    const puntoId = document.querySelector("section[data-punto-eca-id]")?.dataset
+      .puntoEcaId;
+    const inventarioId = entrada.inventarioId || "";
+    const materialId = entrada.materialId || "";
+    const datosEliminar = { compraId, inventarioId, puntoId, materialId };
+    let csrfToken =
+      document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") || "";
+    fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify(datosEliminar),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success || data.ok || !data.error) {
+          globalThis.mostrarSwalMensajeMovimiento({
+            icon: "success",
+            title: "Compra eliminada",
+            text: "Compra eliminada correctamente",
+            onClose: () => location.reload(),
+          });
+        } else {
+          globalThis.mostrarSwalMensajeMovimiento({
+            icon: "error",
+            title: "Error al eliminar",
+            text:
+              "Error al eliminar: " +
+              (data.mensaje || data.message || "Error desconocido"),
+          });
+        }
+      })
+      .catch((error) => {
+        globalThis.mostrarSwalMensajeMovimiento({
+          icon: "error",
+          title: "Error de red",
+          text:
+            "Error al procesar la solicitud: " +
+            (error && error.message ? error.message : error),
+        });
+      });
+  });
 });
 
 // Eliminar venta desde historial
@@ -62,54 +80,72 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".btn-eliminar-historial-venta");
   if (!btn) return;
   const ventaId = btn.dataset.ventaId;
-  if (!confirm("¿Estás seguro de que deseas eliminar esta venta?")) return;
-  // Buscar en HISTORIAL_VENTAS o SALIDAS_INICIALES
-  const salida =
-    (globalThis.HISTORIAL_VENTAS || []).find(
-      (s) => String(s.ventaId) === String(ventaId),
-    ) ||
-    (globalThis.SALIDAS_INICIALES || []).find(
-      (s) => String(s.ventaId) === String(ventaId),
-    );
-  if (!salida) {
-    alert("No se encontraron los datos de esta venta");
-    return;
-  }
-  const puntoId = document.querySelector("section[data-punto-eca-id]")?.dataset
-    .puntoEcaId;
-  const inventarioId = salida.inventarioId || "";
-  const materialId = salida.materialId || "";
-  const datosEliminar = { ventaId, inventarioId, puntoId, materialId };
-  let csrfToken =
-    document
-      .querySelector('meta[name="csrf-token"]')
-      ?.getAttribute("content") || "";
-  fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": csrfToken,
-    },
-    body: JSON.stringify(datosEliminar),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success || data.ok || !data.error) {
-        alert("Venta eliminada correctamente");
-        location.reload();
-      } else {
-        alert(
-          "Error al eliminar: " +
-            (data.mensaje || data.message || "Error desconocido"),
-        );
-      }
-    })
-    .catch((error) => {
-      alert(
-        "Error al procesar la solicitud: " +
-          (error && error.message ? error.message : error),
+  globalThis.confirmarSwalMovimiento({
+    title: "Eliminar venta",
+    text: "¿Estás seguro de que deseas eliminar esta venta?",
+  }).then((confirmado) => {
+    if (!confirmado) return;
+    const salida =
+      (globalThis.HISTORIAL_VENTAS || []).find(
+        (s) => String(s.ventaId) === String(ventaId),
+      ) ||
+      (globalThis.SALIDAS_INICIALES || []).find(
+        (s) => String(s.ventaId) === String(ventaId),
       );
-    });
+    if (!salida) {
+      globalThis.mostrarSwalMensajeMovimiento({
+        icon: "info",
+        title: "Sin datos",
+        text: "No se encontraron los datos de esta venta",
+      });
+      return;
+    }
+    const puntoId = document.querySelector("section[data-punto-eca-id]")?.dataset
+      .puntoEcaId;
+    const inventarioId = salida.inventarioId || "";
+    const materialId = salida.materialId || "";
+    const datosEliminar = { ventaId, inventarioId, puntoId, materialId };
+    let csrfToken =
+      document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") || "";
+    fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify(datosEliminar),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success || data.ok || !data.error) {
+          globalThis.mostrarSwalMensajeMovimiento({
+            icon: "success",
+            title: "Venta eliminada",
+            text: "Venta eliminada correctamente",
+            onClose: () => location.reload(),
+          });
+        } else {
+          globalThis.mostrarSwalMensajeMovimiento({
+            icon: "error",
+            title: "Error al eliminar",
+            text:
+              "Error al eliminar: " +
+              (data.mensaje || data.message || "Error desconocido"),
+          });
+        }
+      })
+      .catch((error) => {
+        globalThis.mostrarSwalMensajeMovimiento({
+          icon: "error",
+          title: "Error de red",
+          text:
+            "Error al procesar la solicitud: " +
+            (error && error.message ? error.message : error),
+        });
+      });
+  });
 });
 
 (function () {
@@ -189,6 +225,56 @@ document.addEventListener("click", function (e) {
         </div>
       </div>`;
   }
+
+  globalThis.mostrarSwalMensajeMovimiento = function mostrarSwalMensajeMovimiento({
+    icon = "info",
+    title = "Aviso",
+    text = "",
+    html = "",
+    confirmButtonText = "Cerrar",
+    onClose,
+  } = {}) {
+    if (typeof Swal === "undefined") {
+      alert(text ? `${title}\n\n${text}` : title);
+      if (typeof onClose === "function") onClose();
+      return;
+    }
+
+    Swal.fire({
+      icon,
+      title,
+      text: html ? undefined : text,
+      html: html || undefined,
+      confirmButtonText,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    }).then(() => {
+      if (typeof onClose === "function") onClose();
+    });
+  };
+
+  globalThis.confirmarSwalMovimiento = function confirmarSwalMovimiento({
+    title = "Confirmar acción",
+    text = "",
+    confirmButtonText = "Sí, continuar",
+    cancelButtonText = "Cancelar",
+  } = {}) {
+    if (typeof Swal === "undefined") {
+      return Promise.resolve(confirm(text || title));
+    }
+
+    return Swal.fire({
+      icon: "question",
+      title,
+      text,
+      showCancelButton: true,
+      confirmButtonText,
+      cancelButtonText,
+      reverseButtons: true,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    }).then((result) => result.isConfirmed);
+  };
 
   globalThis.mostrarSwalExitoMovimiento = function mostrarSwalExitoMovimiento(
     tipo,
@@ -2790,7 +2876,11 @@ document.addEventListener("DOMContentLoaded", function () {
       (e) => e.compraId === compraId,
     );
     if (!entrada) {
-      alert("No se encontraron los detalles de esta entrada");
+      mostrarSwalMensajeMovimiento({
+        icon: "info",
+        title: "Sin detalles",
+        text: "No se encontraron los detalles de esta entrada",
+      });
       return;
     }
 
@@ -2829,46 +2919,65 @@ document.addEventListener("DOMContentLoaded", function () {
   if (btnEliminarEntradaModal) {
     btnEliminarEntradaModal.addEventListener("click", function () {
       const compraId = this.dataset.compraId;
-      if (!confirm("¿Estás seguro de que deseas eliminar esta entrada?"))
-        return;
+      confirmarSwalMovimiento({
+        title: "Eliminar entrada",
+        text: "¿Estás seguro de que deseas eliminar esta entrada?",
+      }).then((confirmado) => {
+        if (!confirmado) return;
 
-      const entrada = globalThis.ENTRADAS_INICIALES.find(
-        (e) => e.compraId === compraId,
-      );
-      if (!entrada) return;
+        const entrada = globalThis.ENTRADAS_INICIALES.find(
+          (e) => e.compraId === compraId,
+        );
+        if (!entrada) {
+          mostrarSwalMensajeMovimiento({
+            icon: "info",
+            title: "Sin datos",
+            text: "No se encontraron los datos de esta entrada",
+          });
+          return;
+        }
 
-      const puntoId = document.querySelector("section[data-punto-eca-id]")
-        ?.dataset.puntoEcaId;
-      const datosEliminar = {
-        compraId: compraId,
-        inventarioId: entrada.inventarioId || "",
-        puntoId: puntoId,
-        materialId: entrada.materialId || "",
-      };
+        const puntoId = document.querySelector("section[data-punto-eca-id]")
+          ?.dataset.puntoEcaId;
+        const datosEliminar = {
+          compraId: compraId,
+          inventarioId: entrada.inventarioId || "",
+          puntoId: puntoId,
+          materialId: entrada.materialId || "",
+        };
 
-      let csrfToken =
-        document
-          .querySelector('meta[name="csrf-token"]')
-          ?.getAttribute("content") || "";
-      fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify(datosEliminar),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success || data.ok || !data.error) {
-            alert("Entrada eliminada correctamente");
-            location.reload();
-          } else {
-            alert(
-              "Error al eliminar: " + (data.mensaje || "Error desconocido"),
-            );
-          }
-        });
+        let csrfToken =
+          document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") || "";
+        fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(datosEliminar),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success || data.ok || !data.error) {
+              mostrarSwalMensajeMovimiento({
+                icon: "success",
+                title: "Entrada eliminada",
+                text: "Entrada eliminada correctamente",
+                onClose: () => location.reload(),
+              });
+            } else {
+              mostrarSwalMensajeMovimiento({
+                icon: "error",
+                title: "Error al eliminar",
+                text:
+                  "Error al eliminar: " +
+                  (data.mensaje || "Error desconocido"),
+              });
+            }
+          });
+      });
     });
   }
 
@@ -2911,10 +3020,18 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((data) => {
           // Back-end returns { error: false, mensaje: '...' } on success
           if (data && (data.error === false || data.ok || data.success || data.status === 200 || data.status === 201)) {
-            alert(data.mensaje || data.message || "Compra actualizada");
-            location.reload();
+            mostrarSwalMensajeMovimiento({
+              icon: "success",
+              title: "Compra actualizada",
+              text: data.mensaje || data.message || "Compra actualizada",
+              onClose: () => location.reload(),
+            });
           } else {
-            alert(data.mensaje || data.message || "Error al actualizar");
+            mostrarSwalMensajeMovimiento({
+              icon: "error",
+              title: "Error al actualizar",
+              text: data.mensaje || data.message || "Error al actualizar",
+            });
           }
         });
      });
@@ -2960,10 +3077,18 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((data) => {
           // Back-end returns { error: false, mensaje: '...' } on success
           if (data && (data.error === false || data.ok || data.success || data.status === 200 || data.status === 201)) {
-            alert(data.mensaje || data.message || "Venta actualizada");
-            location.reload();
+            mostrarSwalMensajeMovimiento({
+              icon: "success",
+              title: "Venta actualizada",
+              text: data.mensaje || data.message || "Venta actualizada",
+              onClose: () => location.reload(),
+            });
           } else {
-            alert(data.mensaje || data.message || "Error al actualizar");
+            mostrarSwalMensajeMovimiento({
+              icon: "error",
+              title: "Error al actualizar",
+              text: data.mensaje || data.message || "Error al actualizar",
+            });
           }
         });
      });
@@ -3142,7 +3267,11 @@ document.addEventListener("click", function (e) {
     (s) => s.ventaId === ventaId,
   );
   if (!salida) {
-    alert("No se encontraron los detalles de esta venta");
+    mostrarSwalMensajeMovimiento({
+      icon: "info",
+      title: "Sin detalles",
+      text: "No se encontraron los detalles de esta venta",
+    });
     return;
   }
 
@@ -3206,7 +3335,11 @@ document.addEventListener("click", function (e) {
   }
 
   if (!movimiento) {
-    alert("No se encontraron los detalles de este movimiento");
+    mostrarSwalMensajeMovimiento({
+      icon: "info",
+      title: "Sin detalles",
+      text: "No se encontraron los detalles de este movimiento",
+    });
     return;
   }
 
