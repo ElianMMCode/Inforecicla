@@ -135,7 +135,12 @@ function prepararCamposMaterial(material) {
     capacidadMaxima: normalizarNumero(material.capacidadMaxima),
     precioCompra: normalizarNumero(material.precioCompra),
     precioVenta: normalizarNumero(material.precioVenta),
-    inventarioId: material.inventarioId || "",
+    inventarioId:
+      material.inventarioId ||
+      material.inventario_id ||
+      material.inventarioID ||
+      material.inventario ||
+      "",
   };
 }
 
@@ -558,6 +563,38 @@ function construirUrlExport(baseUrl, params = {}) {
   return query ? `${baseUrl}?${query}` : baseUrl;
 }
 
+async function descargarArchivoExportacion(url, filename) {
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "same-origin",
+    headers: {
+      Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.includes("spreadsheetml.sheet")) {
+    const text = await response.text();
+    throw new Error(
+      `Respuesta inesperada: ${contentType || "sin content-type"}. ${text.slice(0, 120)}`,
+    );
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = objectUrl;
+  enlace.download = filename;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 function obtenerParamsExportCompras() {
   return {
     punto_eca_id: obtenerPuntoEcaIdActual(),
@@ -596,21 +633,60 @@ function obtenerParamsExportHistorial() {
 
 function sincronizarEnlacesExportacion() {
   const exportaciones = [
-    ["btnExportComprasExcel", "/punto-eca/movimientos/exportar-compras-excel/", obtenerParamsExportCompras],
+    [
+      "btnExportComprasExcel",
+      "/punto-eca/movimientos/exportar-compras-excel/",
+      obtenerParamsExportCompras,
+      "compras.xlsx",
+    ],
     ["btnExportComprasPdf", "/punto-eca/movimientos/exportar-compras-pdf/", obtenerParamsExportCompras],
-    ["btnExportVentasExcel", "/punto-eca/movimientos/exportar-ventas-excel/", obtenerParamsExportVentas],
+    [
+      "btnExportVentasExcel",
+      "/punto-eca/movimientos/exportar-ventas-excel/",
+      obtenerParamsExportVentas,
+      "ventas.xlsx",
+    ],
     ["btnExportVentasPdf", "/punto-eca/movimientos/exportar-ventas-pdf/", obtenerParamsExportVentas],
-    ["btnExportHistorialExcel", "/punto-eca/movimientos/exportar-historial-excel/", obtenerParamsExportHistorial],
+    [
+      "btnExportHistorialExcel",
+      "/punto-eca/movimientos/exportar-historial-excel/",
+      obtenerParamsExportHistorial,
+      "historial_movimientos.xlsx",
+    ],
     ["btnExportHistorialPdf", "/punto-eca/movimientos/exportar-historial-pdf/", obtenerParamsExportHistorial],
   ];
 
-  exportaciones.forEach(([botonId, baseUrl, obtenerParams]) => {
+  exportaciones.forEach(([botonId, baseUrl, obtenerParams, filename]) => {
     const boton = document.getElementById(botonId);
     if (!boton) return;
+    if (boton.dataset.exportBound === "1") return;
+    boton.dataset.exportBound = "1";
     const actualizarHref = () => {
       boton.href = construirUrlExport(baseUrl, obtenerParams());
     };
     actualizarHref();
+    if (filename) {
+      boton.addEventListener("click", async (event) => {
+        event.preventDefault();
+        try {
+          actualizarHref();
+          await descargarArchivoExportacion(boton.href, filename);
+        } catch (error) {
+          console.error("Error descargando exportación:", error);
+          if (typeof globalThis.mostrarSwalMensajeMovimiento === "function") {
+            globalThis.mostrarSwalMensajeMovimiento({
+              icon: "error",
+              title: "No se pudo descargar el archivo",
+              text: "El servidor no devolvió un Excel válido.",
+            });
+          } else {
+            alert("No se pudo descargar el archivo. Revisa la sesión o intenta de nuevo.");
+          }
+        }
+      });
+      return;
+    }
+
     boton.addEventListener("click", actualizarHref);
   });
 }
@@ -618,14 +694,21 @@ function sincronizarEnlacesExportacion() {
 document.addEventListener("DOMContentLoaded", sincronizarEnlacesExportacion);
 sincronizarEnlacesExportacion();
 
-function eliminarCompraPorId(compraId, opciones = {}) {
+function eliminarMovimientoPorId(tipo, id, opciones = {}) {
+  const esCompra = tipo === "compra";
   const {
-    confirmTitle = "Eliminar compra",
-    confirmText = "¿Estás seguro de que deseas eliminar esta compra?",
-    successTitle = "Compra eliminada",
-    successText = "Compra eliminada correctamente",
+    confirmTitle = esCompra ? "Eliminar compra" : "Eliminar venta",
+    confirmText = esCompra
+      ? "¿Estás seguro de que deseas eliminar esta compra?"
+      : "¿Estás seguro de que deseas eliminar esta venta?",
+    successTitle = esCompra ? "Compra eliminada" : "Venta eliminada",
+    successText = esCompra
+      ? "Compra eliminada correctamente"
+      : "Venta eliminada correctamente",
     sinDatosTitle = "Sin datos",
-    sinDatosText = "No se encontraron los datos de esta compra",
+    sinDatosText = esCompra
+      ? "No se encontraron los datos de esta compra"
+      : "No se encontraron los datos de esta venta",
   } = opciones;
 
   globalThis
@@ -636,13 +719,11 @@ function eliminarCompraPorId(compraId, opciones = {}) {
     .then((confirmado) => {
       if (!confirmado) return;
 
-      const entrada =
-        (globalThis.HISTORIAL_COMPRAS || []).find(
-          (e) => String(e.compraId) === String(compraId),
-        ) ||
-        (globalThis.ENTRADAS_INICIALES || []).find(
-          (e) => String(e.compraId) === String(compraId),
-        );
+      const listado = esCompra
+        ? [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.ENTRADAS_INICIALES || [])]
+        : [...(globalThis.HISTORIAL_VENTAS || []), ...(globalThis.SALIDAS_INICIALES || [])];
+      const campoId = esCompra ? "compraId" : "ventaId";
+      const entrada = listado.find((item) => String(item[campoId]) === String(id));
 
       if (!entrada) {
         globalThis.mostrarSwalMensajeMovimiento({
@@ -654,13 +735,13 @@ function eliminarCompraPorId(compraId, opciones = {}) {
       }
 
       const datosEliminar = {
-        compraId,
+        [campoId]: id,
         inventarioId: entrada.inventarioId || "",
         puntoId: obtenerPuntoEcaIdActual(),
         materialId: entrada.materialId || "",
       };
 
-      fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
+      fetch(`/punto-eca/movimientos/borrar-${esCompra ? "compra" : "venta"}/${id}/`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -699,252 +780,51 @@ function eliminarCompraPorId(compraId, opciones = {}) {
     });
 }
 
+function eliminarCompraPorId(compraId, opciones = {}) {
+  return eliminarMovimientoPorId("compra", compraId, opciones);
+}
+
 function eliminarVentaPorId(ventaId, opciones = {}) {
-  const {
-    confirmTitle = "Eliminar venta",
-    confirmText = "¿Estás seguro de que deseas eliminar esta venta?",
-    successTitle = "Venta eliminada",
-    successText = "Venta eliminada correctamente",
-    sinDatosTitle = "Sin datos",
-    sinDatosText = "No se encontraron los datos de esta venta",
-  } = opciones;
-
-  globalThis
-    .confirmarSwalMovimiento({
-      title: confirmTitle,
-      text: confirmText,
-    })
-    .then((confirmado) => {
-      if (!confirmado) return;
-
-      const salida =
-        (globalThis.HISTORIAL_VENTAS || []).find(
-          (s) => String(s.ventaId) === String(ventaId),
-        ) ||
-        (globalThis.SALIDAS_INICIALES || []).find(
-          (s) => String(s.ventaId) === String(ventaId),
-        );
-
-      if (!salida) {
-        globalThis.mostrarSwalMensajeMovimiento({
-          icon: "info",
-          title: sinDatosTitle,
-          text: sinDatosText,
-        });
-        return;
-      }
-
-      const datosEliminar = {
-        ventaId,
-        inventarioId: salida.inventarioId || "",
-        puntoId: obtenerPuntoEcaIdActual(),
-        materialId: salida.materialId || "",
-      };
-
-      fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": obtenerCsrfTokenMovimiento(),
-        },
-        body: JSON.stringify(datosEliminar),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success || data.ok || !data.error) {
-            globalThis.mostrarSwalMensajeMovimiento({
-              icon: "success",
-              title: successTitle,
-              text: successText,
-              onClose: recargarPagina,
-            });
-          } else {
-            globalThis.mostrarSwalMensajeMovimiento({
-              icon: "error",
-              title: "Error al eliminar",
-              text:
-                "Error al eliminar: " +
-                (data.mensaje || data.message || "Error desconocido"),
-            });
-          }
-        })
-        .catch((error) => {
-          globalThis.mostrarSwalMensajeMovimiento({
-            icon: "error",
-            title: "Error de red",
-            text:
-              "Error al procesar la solicitud: " +
-              (error?.message ?? error),
-          });
-        });
-    });
+  return eliminarMovimientoPorId("venta", ventaId, opciones);
 }
 
 // Eliminar compra desde historial
 document.addEventListener("click", function (e) {
   const btn = e.target.closest(".btn-eliminar-historial-compra");
   if (!btn) return;
-  const compraId = btn.dataset.compraId;
-  globalThis
-    .confirmarSwalMovimiento({
-      title: "Eliminar compra",
-      text: "¿Estás seguro de que deseas eliminar esta compra?",
-    })
-    .then((confirmado) => {
-      if (!confirmado) return;
-      const entrada =
-        (globalThis.HISTORIAL_COMPRAS || []).find(
-          (e) => String(e.compraId) === String(compraId),
-        ) ||
-        (globalThis.ENTRADAS_INICIALES || []).find(
-          (e) => String(e.compraId) === String(compraId),
-        );
-      if (!entrada) {
-        globalThis.mostrarSwalMensajeMovimiento({
-          icon: "info",
-          title: "Sin datos",
-          text: "No se encontraron los datos de esta compra",
-        });
-        return;
-      }
-      const puntoId = document.querySelector("section[data-punto-eca-id]")
-        ?.dataset.puntoEcaId;
-      const inventarioId = entrada.inventarioId || "";
-      const materialId = entrada.materialId || "";
-      const datosEliminar = { compraId, inventarioId, puntoId, materialId };
-      let csrfToken =
-        document
-          .querySelector('meta[name="csrf-token"]')
-          ?.getAttribute("content") || "";
-      fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify(datosEliminar),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success || data.ok || !data.error) {
-            globalThis.mostrarSwalMensajeMovimiento({
-              icon: "success",
-              title: "Compra eliminada",
-              text: "Compra eliminada correctamente",
-              onClose: function () {
-                location.reload();
-              },
-            });
-          } else {
-            globalThis.mostrarSwalMensajeMovimiento({
-              icon: "error",
-              title: "Error al eliminar",
-              text:
-                "Error al eliminar: " +
-                (data.mensaje || data.message || "Error desconocido"),
-            });
-          }
-        })
-        .catch((error) => {
-          globalThis.mostrarSwalMensajeMovimiento({
-            icon: "error",
-            title: "Error de red",
-            text:
-              "Error al procesar la solicitud: " +
-              (error?.message ?? error),
-          });
-        });
-    });
+  eliminarCompraPorId(btn.dataset.compraId, {
+    confirmTitle: "Eliminar compra",
+    confirmText: "¿Estás seguro de que deseas eliminar esta compra?",
+    successTitle: "Compra eliminada",
+    successText: "Compra eliminada correctamente",
+    sinDatosText: "No se encontraron los datos de esta compra",
+  });
 });
 
-  // Eliminar compra desde tabla de entradas
-  document.addEventListener("click", function (e) {
-    const btn = e.target.closest(".btn-eliminar-entrada");
-    if (!btn) return;
-    eliminarCompraPorId(btn.dataset.compraId, {
-      confirmTitle: "Eliminar entrada",
-      confirmText: "¿Estás seguro de que deseas eliminar esta entrada?",
-      successTitle: "Entrada eliminada",
-      successText: "Entrada eliminada correctamente",
-      sinDatosText: "No se encontraron los datos de esta entrada",
-    });
+// Eliminar compra desde tabla de entradas
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".btn-eliminar-entrada");
+  if (!btn) return;
+  eliminarCompraPorId(btn.dataset.compraId, {
+    confirmTitle: "Eliminar entrada",
+    confirmText: "¿Estás seguro de que deseas eliminar esta entrada?",
+    successTitle: "Entrada eliminada",
+    successText: "Entrada eliminada correctamente",
+    sinDatosText: "No se encontraron los datos de esta entrada",
   });
+});
 
 // Eliminar venta desde historial
 document.addEventListener("click", function (e) {
   const btn = e.target.closest(".btn-eliminar-historial-venta");
   if (!btn) return;
-  const ventaId = btn.dataset.ventaId;
-  globalThis
-    .confirmarSwalMovimiento({
-      title: "Eliminar venta",
-      text: "¿Estás seguro de que deseas eliminar esta venta?",
-    })
-    .then((confirmado) => {
-      if (!confirmado) return;
-      const salida =
-        (globalThis.HISTORIAL_VENTAS || []).find(
-          (s) => String(s.ventaId) === String(ventaId),
-        ) ||
-        (globalThis.SALIDAS_INICIALES || []).find(
-          (s) => String(s.ventaId) === String(ventaId),
-        );
-      if (!salida) {
-        globalThis.mostrarSwalMensajeMovimiento({
-          icon: "info",
-          title: "Sin datos",
-          text: "No se encontraron los datos de esta venta",
-        });
-        return;
-      }
-      const puntoId = document.querySelector("section[data-punto-eca-id]")
-        ?.dataset.puntoEcaId;
-      const inventarioId = salida.inventarioId || "";
-      const materialId = salida.materialId || "";
-      const datosEliminar = { ventaId, inventarioId, puntoId, materialId };
-      let csrfToken =
-        document
-          .querySelector('meta[name="csrf-token"]')
-          ?.getAttribute("content") || "";
-      fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify(datosEliminar),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success || data.ok || !data.error) {
-            globalThis.mostrarSwalMensajeMovimiento({
-              icon: "success",
-              title: "Venta eliminada",
-              text: "Venta eliminada correctamente",
-              onClose: function () {
-                location.reload();
-              },
-            });
-          } else {
-            globalThis.mostrarSwalMensajeMovimiento({
-              icon: "error",
-              title: "Error al eliminar",
-              text:
-                "Error al eliminar: " +
-                (data.mensaje || data.message || "Error desconocido"),
-            });
-          }
-        })
-        .catch((error) => {
-          globalThis.mostrarSwalMensajeMovimiento({
-            icon: "error",
-            title: "Error de red",
-            text:
-              "Error al procesar la solicitud: " +
-              (error?.message ?? error),
-          });
-        });
-    });
+  eliminarVentaPorId(btn.dataset.ventaId, {
+    confirmTitle: "Eliminar venta",
+    confirmText: "¿Estás seguro de que deseas eliminar esta venta?",
+    successTitle: "Venta eliminada",
+    successText: "Venta eliminada correctamente",
+    sinDatosText: "No se encontraron los datos de esta venta",
+  });
 });
 
 // Captura clicks en elementos con data-action (migración de handlers inline)
@@ -1063,6 +943,21 @@ document.addEventListener("click", function (e) {
     onClose,
   ) {
     if (typeof Swal === "undefined") {
+      const resumen = [
+        `${tipo} registrada correctamente`,
+        `Material: ${data.material || "-"}`,
+        `Cantidad: ${data.cantidad || "-"}`,
+        `Fecha: ${formatearFechaHora(data.fecha)}`,
+        `${tipo === "Compra" ? "Precio compra" : "Precio venta"}: $${formatearMoneda(data.precio)}`,
+        `Total: $${formatearMoneda(data.total)}`,
+        `Observaciones: ${data.observaciones || "-"}`,
+        ...(tipo === "Compra"
+          ? []
+          : [`Centro de acopio: ${data.centroAcopio || "-"}`]),
+        `ID registro: ${data.idRegistro || "-"}`,
+      ].join("\n");
+
+      alert(resumen);
       if (typeof onClose === "function") onClose();
       return;
     }
@@ -1251,6 +1146,12 @@ document.addEventListener("click", function (e) {
     function construirDtoMaterialSeleccionado(dataset) {
       return {
         materialId: dataset.materialId || "",
+        inventarioId:
+          dataset.inventarioId ||
+          dataset.inventario_id ||
+          dataset.inventarioID ||
+          dataset.inventario ||
+          "",
         nmbMaterial: dataset.nombre || "",
         nmbTipo: dataset.tipo || "",
         nmbCategoria: dataset.categoria || "",
@@ -1579,6 +1480,8 @@ document.addEventListener("click", function (e) {
         }
 
         item.dataset.materialId = material.materialId || "";
+        item.dataset.inventarioId =
+          material.inventarioId || material.inventario_id || material.inventarioID || "";
         item.dataset.nombre = material.nmbMaterial || "";
         item.dataset.descripcion = material.dscMaterial || "";
         item.dataset.tipo = material.nmbTipo || "";
@@ -2450,6 +2353,25 @@ document.addEventListener("DOMContentLoaded", function () {
             ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>`;
   };
 
+  globalThis.mostrarErrorMovimientos = function (
+    mensaje,
+    onClose,
+    titulo = "Error",
+  ) {
+    if (typeof globalThis.mostrarSwalMensajeMovimiento === "function") {
+      globalThis.mostrarSwalMensajeMovimiento({
+        icon: "error",
+        title: titulo,
+        text: mensaje,
+        onClose,
+      });
+      return;
+    }
+
+    globalThis.mostrarFeedbackMovimientos(mensaje, "danger");
+    if (typeof onClose === "function") onClose();
+  };
+
   globalThis.mostrarErrorCampo = function (input, mensaje) {
     limpiarErrorCampo(input);
     input.classList.add("is-invalid");
@@ -2583,7 +2505,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const data = {
-      inventarioId: document.getElementById("entradaInventarioId")?.value,
+      inventarioId:
+        document.getElementById("entradaInventarioId")?.value ||
+        globalThis.lastMaterialSeleccionado?.inventarioId ||
+        globalThis.lastMaterialSeleccionado?.inventario_id ||
+        "",
       materialId: document.getElementById("entradaMaterialId")?.value,
       cantidad: document.getElementById("entradaCantidad")?.value,
       fechaCompra: document.getElementById("entradaFecha")?.value,
@@ -2609,9 +2535,16 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((res) => res.json())
       .then((resp) => {
         if (resp.error) {
-          mostrarFeedbackMovimientos(
+          globalThis.mostrarErrorMovimientos(
             resp.mensaje || "Error: operación no realizada",
-            "danger",
+            () => {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML =
+                  '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
+              }
+            },
+            "No se pudo registrar la compra",
           );
         } else {
           globalThis.mostrarSwalExitoMovimiento(
@@ -2643,9 +2576,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       })
       .catch((err) => {
-        mostrarFeedbackMovimientos(
+        globalThis.mostrarErrorMovimientos(
           "Error al conectar con el backend: " + err,
-          "danger",
+          () => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML =
+                '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
+            }
+          },
+          "Error de conexión",
         );
       })
       .finally(() => {
@@ -2707,7 +2647,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const data = {
-      inventarioId: document.getElementById("salidaInventarioId")?.value,
+      inventarioId:
+        document.getElementById("salidaInventarioId")?.value ||
+        globalThis.lastMaterialSeleccionado?.inventarioId ||
+        globalThis.lastMaterialSeleccionado?.inventario_id ||
+        "",
       materialId: document.getElementById("salidaMaterialId")?.value,
       cantidad: document.getElementById("salidaCantidad")?.value,
       fechaVenta: document.getElementById("salidaFecha")?.value,
@@ -2735,9 +2679,16 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((resp) => {
         if (resp.error) {
           formSalida.dataset.enviando = "0";
-          mostrarFeedbackMovimientos(
+          globalThis.mostrarErrorMovimientos(
             resp.mensaje || "Error: operación no realizada",
-            "danger",
+            () => {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML =
+                  '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
+              }
+            },
+            "No se pudo registrar la venta",
           );
         } else {
           const datosExitoVenta = {
@@ -2792,9 +2743,17 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((err) => {
         formSalida.dataset.enviando = "0";
-        mostrarFeedbackMovimientos(
+        globalThis.mostrarErrorMovimientos(
           "Error al conectar con el backend: " + err,
-          "danger",
+          () => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML =
+                '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
+            }
+            formSalida.dataset.enviando = "0";
+          },
+          "Error de conexión",
         );
       })
       .finally(() => {
@@ -3063,64 +3022,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const btnEliminarEntradaModal = document.getElementById("btnEliminarEntrada");
   if (btnEliminarEntradaModal) {
     btnEliminarEntradaModal.addEventListener("click", function () {
-      const compraId = this.dataset.compraId;
-      confirmarSwalMovimiento({
-        title: "Eliminar entrada",
-        text: "¿Estás seguro de que deseas eliminar esta entrada?",
-      }).then((confirmado) => {
-        if (!confirmado) return;
-
-        const entrada = globalThis.ENTRADAS_INICIALES.find(
-          (e) => e.compraId === compraId,
-        );
-        if (!entrada) {
-          mostrarSwalMensajeMovimiento({
-            icon: "info",
-            title: "Sin datos",
-            text: "No se encontraron los datos de esta entrada",
-          });
-          return;
-        }
-
-        const puntoId = document.querySelector("section[data-punto-eca-id]")
-          ?.dataset.puntoEcaId;
-        const datosEliminar = {
-          compraId: compraId,
-          inventarioId: entrada.inventarioId || "",
-          puntoId: puntoId,
-          materialId: entrada.materialId || "",
-        };
-
-        let csrfToken =
-          document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content") || "";
-        fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken,
-          },
-          body: JSON.stringify(datosEliminar),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success || data.ok || !data.error) {
-              mostrarSwalMensajeMovimiento({
-                icon: "success",
-                title: "Entrada eliminada",
-                text: "Entrada eliminada correctamente",
-                onClose: recargarPagina,
-              });
-            } else {
-              mostrarSwalMensajeMovimiento({
-                icon: "error",
-                title: "Error al eliminar",
-                text:
-                  "Error al eliminar: " + (data.mensaje || "Error desconocido"),
-              });
-            }
-          });
+      eliminarCompraPorId(this.dataset.compraId, {
+        confirmTitle: "Eliminar entrada",
+        confirmText: "¿Estás seguro de que deseas eliminar esta entrada?",
+        successTitle: "Entrada eliminada",
+        successText: "Entrada eliminada correctamente",
+        sinDatosText: "No se encontraron los datos de esta entrada",
       });
     });
   }
@@ -3328,95 +3235,82 @@ function bloquearTeclasNoNumericas(e) {
 }
 
 function bloquearTeclasNoNumericasVenta(e) {
-  if (["e", "E", "-", "+"].includes(e.key)) e.preventDefault();
+  bloquearTeclasNoNumericas(e);
 }
 
-// Calcular total de compra
+function inicializarCalculoMovimiento({
+  precioInputId,
+  cantidadInputId,
+  totalInputId,
+  stockInputId,
+  stockResultadoId,
+  esCompra,
+  bloquearTeclas,
+}) {
+  const precioInput = document.getElementById(precioInputId);
+  const cantidadInput = document.getElementById(cantidadInputId);
+  const totalInput = document.getElementById(totalInputId);
+  const stockInput = document.getElementById(stockInputId);
+  const stockResultado = document.getElementById(stockResultadoId);
+
+  const calcularTotal = () => {
+    const precio = Number.parseFloat(precioInput?.value) || 0;
+    const cantidad = Number.parseFloat(cantidadInput?.value) || 0;
+    const total = precio * cantidad;
+    if (totalInput) totalInput.value = Number.isFinite(total) ? total.toFixed(2) : "";
+
+    const stockActual = Number.parseFloat(stockInput?.value) || 0;
+    const stockCalculado = esCompra ? stockActual + cantidad : stockActual - cantidad;
+    if (stockResultado) {
+      stockResultado.textContent = Number.isFinite(stockCalculado)
+        ? stockCalculado.toFixed(2)
+        : "-";
+    }
+  };
+
+  if (precioInput) {
+    precioInput.addEventListener("input", calcularTotal);
+    precioInput.addEventListener("keydown", bloquearTeclas);
+    precioInput.addEventListener("input", function () {
+      if (this.value && this.value.length > 12) this.value = this.value.slice(0, 12);
+      calcularTotal();
+    });
+  }
+
+  if (cantidadInput) {
+    cantidadInput.addEventListener("input", calcularTotal);
+    cantidadInput.addEventListener("keydown", bloquearTeclas);
+    cantidadInput.addEventListener("input", function () {
+      if (this.value && this.value.length > 10) this.value = this.value.slice(0, 10);
+      calcularTotal();
+    });
+  }
+
+  calcularTotal();
+}
+
 function inicializarCalculoCompra() {
-  const precioCompraInput = document.getElementById("entradaPrecioCompra");
-  const cantidadInput = document.getElementById("entradaCantidad");
-  const totalCompraInput = document.getElementById("entradaTotalCompra");
-  const stockResultanteSpan = document.getElementById("entradaStockResultante");
-  const stockActualInput = document.getElementById("entradaStockActual");
-
-  function calcularTotalCompra() {
-    const precio = Number.parseFloat(precioCompraInput.value) || 0;
-    const cantidad = Number.parseFloat(cantidadInput.value) || 0;
-    const total = precio * cantidad;
-    totalCompraInput.value = total.toFixed(2);
-
-    const stockActual = Number.parseFloat(stockActualInput.value) || 0;
-    const stockResultante = stockActual + cantidad;
-    stockResultanteSpan.textContent = stockResultante.toFixed(2);
-  }
-
-  if (precioCompraInput) {
-    precioCompraInput.addEventListener("input", calcularTotalCompra);
-  }
-  if (cantidadInput) {
-    cantidadInput.addEventListener("input", calcularTotalCompra);
-  }
-
-  if (precioCompraInput) {
-    precioCompraInput.addEventListener("keydown", bloquearTeclasNoNumericas);
-    precioCompraInput.addEventListener("input", function () {
-      if (this.value && this.value.length > 12) this.value = this.value.slice(0, 12);
-      calcularTotalCompra();
-    });
-  }
-
-  if (cantidadInput) {
-    cantidadInput.addEventListener("keydown", bloquearTeclasNoNumericas);
-    cantidadInput.addEventListener("input", function () {
-      if (this.value && this.value.length > 10) this.value = this.value.slice(0, 10);
-      calcularTotalCompra();
-    });
-  }
-  calcularTotalCompra();
+  inicializarCalculoMovimiento({
+    precioInputId: "entradaPrecioCompra",
+    cantidadInputId: "entradaCantidad",
+    totalInputId: "entradaTotalCompra",
+    stockInputId: "entradaStockActual",
+    stockResultadoId: "entradaStockResultante",
+    esCompra: true,
+    bloquearTeclas: bloquearTeclasNoNumericas,
+  });
 }
 
-// Calcular total de venta
 function inicializarCalculoVenta() {
-  const precioVentaInput = document.getElementById("salidaPrecioVenta");
-  const cantidadInput = document.getElementById("salidaCantidad");
-  const totalVentaInput = document.getElementById("salidaTotalVenta");
-  const stockRestanteSpan = document.getElementById("salidaStockRestante");
-  const stockActualInput = document.getElementById("salidaStockActual");
-
-  function calcularTotalVenta() {
-    const precio = Number.parseFloat(precioVentaInput.value) || 0;
-    const cantidad = Number.parseFloat(cantidadInput.value) || 0;
-    const total = precio * cantidad;
-    totalVentaInput.value = total.toFixed(2);
-
-    const stockActual = Number.parseFloat(stockActualInput.value) || 0;
-    const stockRestante = stockActual - cantidad;
-    stockRestanteSpan.textContent = stockRestante.toFixed(2);
-  }
-
-  if (precioVentaInput) {
-    precioVentaInput.addEventListener("input", calcularTotalVenta);
-  }
-  if (cantidadInput) {
-    cantidadInput.addEventListener("input", calcularTotalVenta);
-  }
-
-  if (precioVentaInput) {
-    precioVentaInput.addEventListener("keydown", bloquearTeclasNoNumericasVenta);
-    precioVentaInput.addEventListener("input", function () {
-      if (this.value && this.value.length > 12) this.value = this.value.slice(0, 12);
-      calcularTotalVenta();
-    });
-  }
-
-  if (cantidadInput) {
-    cantidadInput.addEventListener("keydown", bloquearTeclasNoNumericasVenta);
-    cantidadInput.addEventListener("input", function () {
-      if (this.value && this.value.length > 10) this.value = this.value.slice(0, 10);
-      calcularTotalVenta();
-    });
-  }
-  calcularTotalVenta();
+  inicializarCalculoMovimiento({
+    precioInputId: "salidaPrecioVenta",
+    cantidadInputId: "salidaCantidad",
+    totalInputId: "salidaTotalVenta",
+    stockInputId: "salidaStockActual",
+    stockResultadoId: "salidaStockRestante",
+    esCompra: false,
+    bloquearTeclas: bloquearTeclasNoNumericasVenta,
+  });
 }
 
 // Inicializar cálculos y fechas

@@ -33,6 +33,36 @@ def _responder_error_json(mensaje, status=400):
     return JsonResponse({"status": "error", "mensaje": mensaje}, status=status)
 
 
+def _responder_servicio_json(servicio_callable, *args, **kwargs):
+    try:
+        response = servicio_callable(*args, **kwargs)
+        return JsonResponse(response, safe=False)
+    except Exception as exc:
+        return JsonResponse(
+            {"mensaje": f"Error técnico: {str(exc)}", "error": True}, status=400
+        )
+
+
+def _responder_borrado_json(request, servicio_callable, identificador, mensaje_exito):
+    if request.method != "DELETE":
+        return JsonResponse(
+            {"success": False, "mensaje": ERROR_METODO_NO_PERMITIDO}, status=405
+        )
+
+    try:
+        resp = servicio_callable(request, identificador)
+        if isinstance(resp, dict):
+            resp.setdefault("success", True)
+        else:
+            resp = {"success": True, "mensaje": mensaje_exito, "resp": resp}
+        return JsonResponse(resp)
+    except Exception as exc:
+        return JsonResponse(
+            {"success": False, "mensaje": f"Error técnico: {str(exc)}"},
+            status=500,
+        )
+
+
 def _obtener_body_json(request):
     if not request.body:
         return {}
@@ -641,13 +671,9 @@ def registros_compras(request):
         data = _obtener_body_json(request)
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
-    try:
-        response = CompraInventarioService.registro_compra(request, data)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+    return _responder_servicio_json(
+        CompraInventarioService.registro_compra, request, data
+    )
 
 
 @gestor_eca_or_admin_required
@@ -656,13 +682,7 @@ def registros_ventas(request):
         data = _obtener_body_json(request)
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
-    try:
-        response = VentaInventarioService.registrar_venta(request, data)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+    return _responder_servicio_json(VentaInventarioService.registrar_venta, request, data)
 
 
 @gestor_eca_or_admin_required
@@ -671,13 +691,9 @@ def editar_compra(request, compra_id):
         data = _obtener_body_json(request)
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
-    try:
-        response = CompraInventarioService.editar_compra(request, data, compra_id)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+    return _responder_servicio_json(
+        CompraInventarioService.editar_compra, request, data, compra_id
+    )
 
 
 @gestor_eca_or_admin_required
@@ -686,55 +702,23 @@ def editar_venta(request, venta_id):
         data = _obtener_body_json(request)
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
-    try:
-        response = VentaInventarioService.editar_venta(request, data, venta_id)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+    return _responder_servicio_json(VentaInventarioService.editar_venta, request, data, venta_id)
 
 
 @csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_compra(request, compra_id):
-    if request.method != "DELETE":
-        return JsonResponse(
-            {"success": False, "mensaje": ERROR_METODO_NO_PERMITIDO}, status=405
-        )
-    try:
-        resp = CompraInventarioService.borrar_compra(request, compra_id)
-        # Garantizamos formato estándar de respuesta
-        if isinstance(resp, dict):
-            resp.setdefault("success", True)
-        else:
-            resp = {"success": True, "mensaje": "Compra eliminada", "resp": resp}
-        return JsonResponse(resp)
-    except Exception as e:
-        return JsonResponse(
-            {"success": False, "mensaje": f"Error técnico: {str(e)}"}, status=500
-        )
+    return _responder_borrado_json(
+        request, CompraInventarioService.borrar_compra, compra_id, "Compra eliminada"
+    )
 
 
 @csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_venta(request, venta_id):
-    if request.method != "DELETE":
-        return JsonResponse(
-            {"success": False, "mensaje": ERROR_METODO_NO_PERMITIDO}, status=405
-        )
-    try:
-        resp = VentaInventarioService.borrar_venta(request, venta_id)
-        # Garantizamos formato estándar de respuesta
-        if isinstance(resp, dict):
-            resp.setdefault("success", True)
-        else:
-            resp = {"success": True, "mensaje": "Venta eliminada", "resp": resp}
-        return JsonResponse(resp)
-    except Exception as e:
-        return JsonResponse(
-            {"success": False, "mensaje": f"Error técnico: {str(e)}"}, status=500
-        )
+    return _responder_borrado_json(
+        request, VentaInventarioService.borrar_venta, venta_id, "Venta eliminada"
+    )
 
 
 # ============== EXPORT EXCEL =============
@@ -745,7 +729,7 @@ def exportar_compras_excel(request):
     )
     queryset = _filtrar_compras_export(request, queryset)
     dataset = CompraInventarioResource().export(queryset)
-    export_data = dataset.xlsx
+    export_data = dataset.export("xlsx")
     response = HttpResponse(export_data, content_type=MIME_XLSX)
     response["Content-Disposition"] = 'attachment; filename="compras.xlsx"'
     return response
@@ -814,7 +798,7 @@ def exportar_ventas_excel(request):
     )
     queryset = _filtrar_ventas_export(request, queryset)
     dataset = VentaInventarioResource().export(queryset)
-    export_data = dataset.xlsx
+    export_data = dataset.export("xlsx")
     response = HttpResponse(export_data, content_type=MIME_XLSX)
     response["Content-Disposition"] = 'attachment; filename="ventas.xlsx"'
     return response
