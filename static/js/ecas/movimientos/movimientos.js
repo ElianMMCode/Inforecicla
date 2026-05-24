@@ -2,77 +2,125 @@
 // LISTENERS ELIMINAR DESDE TABLA HISTORIAL
 // =============================
 
+// Funciones de apoyo extraídas (SonarQube)
+function toISO(fecha) {
+  if (!fecha) return 0;
+  return new Date(fecha.replace(" ", "T")).getTime();
+}
+
+function escaparHtml(valor) {
+  const map = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return String(valor ?? "").replaceAll(/[&<>"']/g, (m) => map[m]);
+}
+
+function formatearMoneda(valor) {
+  const numero = Number(valor || 0);
+  return numero.toLocaleString("es-CO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatearFechaHora(valor) {
+  if (!valor) return "-";
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return String(valor);
+  return fecha.toLocaleString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function obtenerFechaHoraActual() {
+  const ahora = new Date();
+  const ahoraLocal = new Date(
+    ahora.getTime() - ahora.getTimezoneOffset() * 60000,
+  );
+  return ahoraLocal.toISOString().slice(0, 16);
+}
+
 // Eliminar compra desde historial
 document.addEventListener("click", function (e) {
   const btn = e.target.closest(".btn-eliminar-historial-compra");
   if (!btn) return;
   const compraId = btn.dataset.compraId;
-  globalThis.confirmarSwalMovimiento({
-    title: "Eliminar compra",
-    text: "¿Estás seguro de que deseas eliminar esta compra?",
-  }).then((confirmado) => {
-    if (!confirmado) return;
-    const entrada =
-      (globalThis.HISTORIAL_COMPRAS || []).find(
-        (e) => String(e.compraId) === String(compraId),
-      ) ||
-      (globalThis.ENTRADAS_INICIALES || []).find(
-        (e) => String(e.compraId) === String(compraId),
-      );
-    if (!entrada) {
-      globalThis.mostrarSwalMensajeMovimiento({
-        icon: "info",
-        title: "Sin datos",
-        text: "No se encontraron los datos de esta compra",
-      });
-      return;
-    }
-    const puntoId = document.querySelector("section[data-punto-eca-id]")?.dataset
-      .puntoEcaId;
-    const inventarioId = entrada.inventarioId || "";
-    const materialId = entrada.materialId || "";
-    const datosEliminar = { compraId, inventarioId, puntoId, materialId };
-    let csrfToken =
-      document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute("content") || "";
-    fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken,
-      },
-      body: JSON.stringify(datosEliminar),
+  globalThis
+    .confirmarSwalMovimiento({
+      title: "Eliminar compra",
+      text: "¿Estás seguro de que deseas eliminar esta compra?",
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success || data.ok || !data.error) {
-          globalThis.mostrarSwalMensajeMovimiento({
-            icon: "success",
-            title: "Compra eliminada",
-            text: "Compra eliminada correctamente",
-            onClose: () => location.reload(),
-          });
-        } else {
+    .then((confirmado) => {
+      if (!confirmado) return;
+      const entrada =
+        (globalThis.HISTORIAL_COMPRAS || []).find(
+          (e) => String(e.compraId) === String(compraId),
+        ) ||
+        (globalThis.ENTRADAS_INICIALES || []).find(
+          (e) => String(e.compraId) === String(compraId),
+        );
+      if (!entrada) {
+        globalThis.mostrarSwalMensajeMovimiento({
+          icon: "info",
+          title: "Sin datos",
+          text: "No se encontraron los datos de esta compra",
+        });
+        return;
+      }
+      const puntoId = document.querySelector("section[data-punto-eca-id]")
+        ?.dataset.puntoEcaId;
+      const inventarioId = entrada.inventarioId || "";
+      const materialId = entrada.materialId || "";
+      const datosEliminar = { compraId, inventarioId, puntoId, materialId };
+      let csrfToken =
+        document
+          .querySelector('meta[name="csrf-token"]')
+          ?.getAttribute("content") || "";
+      fetch(`/punto-eca/movimientos/borrar-compra/${compraId}/`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify(datosEliminar),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success || data.ok || !data.error) {
+            globalThis.mostrarSwalMensajeMovimiento({
+              icon: "success",
+              title: "Compra eliminada",
+              text: "Compra eliminada correctamente",
+              onClose: () => location.reload(),
+            });
+          } else {
+            globalThis.mostrarSwalMensajeMovimiento({
+              icon: "error",
+              title: "Error al eliminar",
+              text:
+                "Error al eliminar: " +
+                (data.mensaje || data.message || "Error desconocido"),
+            });
+          }
+        })
+        .catch((error) => {
           globalThis.mostrarSwalMensajeMovimiento({
             icon: "error",
-            title: "Error al eliminar",
+            title: "Error de red",
             text:
-              "Error al eliminar: " +
-              (data.mensaje || data.message || "Error desconocido"),
+              "Error al procesar la solicitud: " +
+              (error && error.message ? error.message : error),
           });
-        }
-      })
-      .catch((error) => {
-        globalThis.mostrarSwalMensajeMovimiento({
-          icon: "error",
-          title: "Error de red",
-          text:
-            "Error al procesar la solicitud: " +
-            (error && error.message ? error.message : error),
         });
-      });
-  });
+    });
 });
 
 // Eliminar venta desde historial
@@ -80,78 +128,79 @@ document.addEventListener("click", function (e) {
   const btn = e.target.closest(".btn-eliminar-historial-venta");
   if (!btn) return;
   const ventaId = btn.dataset.ventaId;
-  globalThis.confirmarSwalMovimiento({
-    title: "Eliminar venta",
-    text: "¿Estás seguro de que deseas eliminar esta venta?",
-  }).then((confirmado) => {
-    if (!confirmado) return;
-    const salida =
-      (globalThis.HISTORIAL_VENTAS || []).find(
-        (s) => String(s.ventaId) === String(ventaId),
-      ) ||
-      (globalThis.SALIDAS_INICIALES || []).find(
-        (s) => String(s.ventaId) === String(ventaId),
-      );
-    if (!salida) {
-      globalThis.mostrarSwalMensajeMovimiento({
-        icon: "info",
-        title: "Sin datos",
-        text: "No se encontraron los datos de esta venta",
-      });
-      return;
-    }
-    const puntoId = document.querySelector("section[data-punto-eca-id]")?.dataset
-      .puntoEcaId;
-    const inventarioId = salida.inventarioId || "";
-    const materialId = salida.materialId || "";
-    const datosEliminar = { ventaId, inventarioId, puntoId, materialId };
-    let csrfToken =
-      document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute("content") || "";
-    fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken,
-      },
-      body: JSON.stringify(datosEliminar),
+  globalThis
+    .confirmarSwalMovimiento({
+      title: "Eliminar venta",
+      text: "¿Estás seguro de que deseas eliminar esta venta?",
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success || data.ok || !data.error) {
-          globalThis.mostrarSwalMensajeMovimiento({
-            icon: "success",
-            title: "Venta eliminada",
-            text: "Venta eliminada correctamente",
-            onClose: () => location.reload(),
-          });
-        } else {
+    .then((confirmado) => {
+      if (!confirmado) return;
+      const salida =
+        (globalThis.HISTORIAL_VENTAS || []).find(
+          (s) => String(s.ventaId) === String(ventaId),
+        ) ||
+        (globalThis.SALIDAS_INICIALES || []).find(
+          (s) => String(s.ventaId) === String(ventaId),
+        );
+      if (!salida) {
+        globalThis.mostrarSwalMensajeMovimiento({
+          icon: "info",
+          title: "Sin datos",
+          text: "No se encontraron los datos de esta venta",
+        });
+        return;
+      }
+      const puntoId = document.querySelector("section[data-punto-eca-id]")
+        ?.dataset.puntoEcaId;
+      const inventarioId = salida.inventarioId || "";
+      const materialId = salida.materialId || "";
+      const datosEliminar = { ventaId, inventarioId, puntoId, materialId };
+      let csrfToken =
+        document
+          .querySelector('meta[name="csrf-token"]')
+          ?.getAttribute("content") || "";
+      fetch(`/punto-eca/movimientos/borrar-venta/${ventaId}/`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify(datosEliminar),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success || data.ok || !data.error) {
+            globalThis.mostrarSwalMensajeMovimiento({
+              icon: "success",
+              title: "Venta eliminada",
+              text: "Venta eliminada correctamente",
+              onClose: () => location.reload(),
+            });
+          } else {
+            globalThis.mostrarSwalMensajeMovimiento({
+              icon: "error",
+              title: "Error al eliminar",
+              text:
+                "Error al eliminar: " +
+                (data.mensaje || data.message || "Error desconocido"),
+            });
+          }
+        })
+        .catch((error) => {
           globalThis.mostrarSwalMensajeMovimiento({
             icon: "error",
-            title: "Error al eliminar",
+            title: "Error de red",
             text:
-              "Error al eliminar: " +
-              (data.mensaje || data.message || "Error desconocido"),
+              "Error al procesar la solicitud: " +
+              (error && error.message ? error.message : error),
           });
-        }
-      })
-      .catch((error) => {
-        globalThis.mostrarSwalMensajeMovimiento({
-          icon: "error",
-          title: "Error de red",
-          text:
-            "Error al procesar la solicitud: " +
-            (error && error.message ? error.message : error),
         });
-      });
-  });
+    });
 });
 
 (function () {
   console.log("Script inline de movimientos ejecutándose...");
 
-  // Función helper para mostrar estado de búsqueda
   function mostrarEstadoBusquedaMov(state) {
     try {
       let estadoEl = document.getElementById("estadoBusquedaMov");
@@ -172,36 +221,6 @@ document.addEventListener("click", function (e) {
         estadoEl.style.display = "none";
       }
     } catch (e) {}
-  }
-
-  function escaparHtml(valor) {
-    return String(valor ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  function formatearMoneda(valor) {
-    const numero = Number(valor || 0);
-    return numero.toLocaleString("es-CO", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
-
-  function formatearFechaHora(valor) {
-    if (!valor) return "-";
-    const fecha = new Date(valor);
-    if (Number.isNaN(fecha.getTime())) return String(valor);
-    return fecha.toLocaleString("es-CO", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   }
 
   function construirHtmlExitoMovimiento(titulo, campos) {
@@ -226,32 +245,33 @@ document.addEventListener("click", function (e) {
       </div>`;
   }
 
-  globalThis.mostrarSwalMensajeMovimiento = function mostrarSwalMensajeMovimiento({
-    icon = "info",
-    title = "Aviso",
-    text = "",
-    html = "",
-    confirmButtonText = "Cerrar",
-    onClose,
-  } = {}) {
-    if (typeof Swal === "undefined") {
-      alert(text ? `${title}\n\n${text}` : title);
-      if (typeof onClose === "function") onClose();
-      return;
-    }
+  globalThis.mostrarSwalMensajeMovimiento =
+    function mostrarSwalMensajeMovimiento({
+      icon = "info",
+      title = "Aviso",
+      text = "",
+      html = "",
+      confirmButtonText = "Cerrar",
+      onClose,
+    } = {}) {
+      if (typeof Swal === "undefined") {
+        alert(text ? `${title}\n\n${text}` : title);
+        if (typeof onClose === "function") onClose();
+        return;
+      }
 
-    Swal.fire({
-      icon,
-      title,
-      text: html ? undefined : text,
-      html: html || undefined,
-      confirmButtonText,
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-    }).then(() => {
-      if (typeof onClose === "function") onClose();
-    });
-  };
+      Swal.fire({
+        icon,
+        title,
+        text: html ? undefined : text,
+        html: html || undefined,
+        confirmButtonText,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      }).then(() => {
+        if (typeof onClose === "function") onClose();
+      });
+    };
 
   globalThis.confirmarSwalMovimiento = function confirmarSwalMovimiento({
     title = "Confirmar acción",
@@ -371,31 +391,19 @@ document.addEventListener("click", function (e) {
       });
     }
     if (typeof $ === "undefined" || typeof $.fn.select2 === "undefined") {
-      console.warn("Select2 o jQuery no disponibles, reintentando...");
       setTimeout(inicializarSelect2, 100);
       return;
     }
 
-    console.log("jQuery y Select2 disponibles");
-
     const puntoEcaSection = document.querySelector("section[data-usuario-id]");
-    const usuarioId = puntoEcaSection?.dataset.usuarioId;
     const puntoEcaId = puntoEcaSection?.dataset.puntoEcaId;
-    const gestor = puntoEcaSection?.dataset.gestor;
 
     const inputBusqueda = document.getElementById("buscarMaterialMovimientos");
-    const btnLimpiar = document.getElementById("btnLimpiarBusquedaMov");
-    const modalBusqueda = document.getElementById(
-      "buscarMaterialMovimientosModal",
-    );
-    const resultadosDiv = document.getElementById("resultadosBusquedaMov");
-    const estadoDiv = document.getElementById("estadoBusquedaMov");
 
     // INICIALIZAR SELECT2 EN BUSCAR MATERIAL (AJAX)
     let $buscarMaterial = $(inputBusqueda);
     if ($buscarMaterial.length) {
       let endpoint = "/punto-eca/materiales/inventario";
-      let puntoId = puntoEcaId;
 
       $buscarMaterial.select2({
         theme: "bootstrap4",
@@ -411,12 +419,12 @@ document.addEventListener("click", function (e) {
             let searchTerm = params.term || "";
             let categoria = $("#selectCategoriaMov").val() || "";
             let tipo = $("#selectTipoMov").val() || "";
-            let requestData = { texto: searchTerm, puntoId: puntoId };
+            let requestData = { texto: searchTerm, puntoId: puntoEcaId };
             if (categoria) requestData.categoria = categoria;
             if (tipo) requestData.tipo = tipo;
             return requestData;
           },
-          processResults: function (data, params) {
+          processResults: function (data) {
             if (data.error) return { results: [] };
             if (!Array.isArray(data)) data = [];
             data = data.slice().reverse();
@@ -426,11 +434,11 @@ document.addEventListener("click", function (e) {
                 text: m.nmbMaterial || m.nombre || "Material sin nombre",
                 element: $("<option>")
                   .attr(
-                  "data-imagen",
+                    "data-imagen",
                     m.imagenUrl || "/imagenes/materiales.png",
                   )
                   .attr("data-tipo", m.nmbTipo || "")
-                  .attr("data-categoria", m.nmbCategoria || "") [0],
+                  .attr("data-categoria", m.nmbCategoria || "")[0],
                 data: m,
               };
             });
@@ -469,16 +477,6 @@ document.addEventListener("click", function (e) {
         },
       });
 
-      function obtenerFechaHoraActual() {
-        const ahora = new Date();
-        // Ajustamos por la zona horaria local de Colombia (o del cliente)
-        const ahoraLocal = new Date(
-          ahora.getTime() - ahora.getTimezoneOffset() * 60000,
-        );
-        // Cortamos la cadena para que coincida exactamente con lo que pide el input HTML
-        return ahoraLocal.toISOString().slice(0, 16);
-      }
-
       function applyMaterialToForms(m) {
         try {
           globalThis.lastMaterialSeleccionado = m;
@@ -490,7 +488,7 @@ document.addEventListener("click", function (e) {
         let materialTipo = m.nmbTipo || m.tipo || "";
         let materialCategoria = m.nmbCategoria || m.categoria || "";
         let materialDescripcion = m.dscMaterial || m.descripcion || "";
-        // Ejemplo dentro de la función donde preparas el formulario:
+
         let inputFechaCompra = document.getElementById("entradaFecha");
         if (inputFechaCompra) {
           inputFechaCompra.value = obtenerFechaHoraActual();
@@ -515,25 +513,25 @@ document.addEventListener("click", function (e) {
           m.stockActual !== undefined &&
           m.stockActual !== null &&
           m.stockActual !== ""
-            ? parseFloat(m.stockActual)
+            ? Number.parseFloat(m.stockActual)
             : null;
         let capacidadMax =
           m.capacidadMaxima !== undefined &&
           m.capacidadMaxima !== null &&
           m.capacidadMaxima !== ""
-            ? parseFloat(m.capacidadMaxima)
+            ? Number.parseFloat(m.capacidadMaxima)
             : null;
         let precioCompra =
           m.precioCompra !== undefined &&
           m.precioCompra !== null &&
           m.precioCompra !== ""
-            ? parseFloat(m.precioCompra)
+            ? Number.parseFloat(m.precioCompra)
             : null;
         let precioVenta =
           m.precioVenta !== undefined &&
           m.precioVenta !== null &&
           m.precioVenta !== ""
-            ? parseFloat(m.precioVenta)
+            ? Number.parseFloat(m.precioVenta)
             : null;
 
         function setFields(res) {
@@ -639,7 +637,7 @@ document.addEventListener("click", function (e) {
             }
             let finalStock =
               res && res.stockActual !== undefined && res.stockActual !== null
-                ? parseFloat(res.stockActual)
+                ? Number.parseFloat(res.stockActual)
                 : stockActual !== null
                   ? stockActual
                   : null;
@@ -647,7 +645,7 @@ document.addEventListener("click", function (e) {
               res &&
               res.capacidadMaxima !== undefined &&
               res.capacidadMaxima !== null
-                ? parseFloat(res.capacidadMaxima)
+                ? Number.parseFloat(res.capacidadMaxima)
                 : capacidadMax !== null
                   ? capacidadMax
                   : null;
@@ -656,7 +654,7 @@ document.addEventListener("click", function (e) {
               res.precioCompra !== undefined &&
               res.precioCompra !== null &&
               res.precioCompra !== ""
-                ? parseFloat(res.precioCompra)
+                ? Number.parseFloat(res.precioCompra)
                 : precioCompra !== null
                   ? precioCompra
                   : null;
@@ -665,7 +663,7 @@ document.addEventListener("click", function (e) {
               res.precioVenta !== undefined &&
               res.precioVenta !== null &&
               res.precioVenta !== ""
-                ? parseFloat(res.precioVenta)
+                ? Number.parseFloat(res.precioVenta)
                 : precioVenta !== null
                   ? precioVenta
                   : null;
@@ -718,13 +716,13 @@ document.addEventListener("click", function (e) {
             }
             if (stockActualEntrada) {
               stockActualEntrada.value =
-                finalStock !== null && !isNaN(finalStock)
+                finalStock !== null && !Number.isNaN(finalStock)
                   ? finalStock.toFixed(2)
                   : "";
               try {
                 $(stockActualEntrada)
                   .val(
-                    finalStock !== null && !isNaN(finalStock)
+                    finalStock !== null && !Number.isNaN(finalStock)
                       ? finalStock.toFixed(2)
                       : "",
                   )
@@ -733,13 +731,13 @@ document.addEventListener("click", function (e) {
             }
             if (capacidadMaxEntrada) {
               capacidadMaxEntrada.value =
-                finalCapacidad !== null && !isNaN(finalCapacidad)
+                finalCapacidad !== null && !Number.isNaN(finalCapacidad)
                   ? finalCapacidad.toFixed(2)
                   : "";
               try {
                 $(capacidadMaxEntrada)
                   .val(
-                    finalCapacidad !== null && !isNaN(finalCapacidad)
+                    finalCapacidad !== null && !Number.isNaN(finalCapacidad)
                       ? finalCapacidad.toFixed(2)
                       : "",
                   )
@@ -748,16 +746,13 @@ document.addEventListener("click", function (e) {
             }
             if (precioCompraEntrada) {
               precioCompraEntrada.value =
-                finalPrecioCompra !== null && !isNaN(finalPrecioCompra)
+                finalPrecioCompra !== null && !Number.isNaN(finalPrecioCompra)
                   ? finalPrecioCompra.toFixed(2)
                   : "";
               try {
-                // 1. Actualiza para frameworks como Select2 o jQuery si lo tienes
                 $(precioCompraEntrada)
                   .val(precioCompraEntrada.value)
                   .trigger("change");
-
-                // 2. CORRECCIÓN CRÍTICA: Despacha el evento nativo en lugar de llamar a triggerEvents
                 precioCompraEntrada.dispatchEvent(
                   new Event("input", { bubbles: true }),
                 );
@@ -810,13 +805,13 @@ document.addEventListener("click", function (e) {
             }
             if (stockActualSalida) {
               stockActualSalida.value =
-                finalStock !== null && !isNaN(finalStock)
+                finalStock !== null && !Number.isNaN(finalStock)
                   ? finalStock.toFixed(2)
                   : "";
               try {
                 $(stockActualSalida)
                   .val(
-                    finalStock !== null && !isNaN(finalStock)
+                    finalStock !== null && !Number.isNaN(finalStock)
                       ? finalStock.toFixed(2)
                       : "",
                   )
@@ -825,13 +820,13 @@ document.addEventListener("click", function (e) {
             }
             if (capacidadMaxSalida) {
               capacidadMaxSalida.value =
-                finalCapacidad !== null && !isNaN(finalCapacidad)
+                finalCapacidad !== null && !Number.isNaN(finalCapacidad)
                   ? finalCapacidad.toFixed(2)
                   : "";
               try {
                 $(capacidadMaxSalida)
                   .val(
-                    finalCapacidad !== null && !isNaN(finalCapacidad)
+                    finalCapacidad !== null && !Number.isNaN(finalCapacidad)
                       ? finalCapacidad.toFixed(2)
                       : "",
                   )
@@ -840,16 +835,13 @@ document.addEventListener("click", function (e) {
             }
             if (precioVentaSalida) {
               precioVentaSalida.value =
-                finalPrecioVenta !== null && !isNaN(finalPrecioVenta)
+                finalPrecioVenta !== null && !Number.isNaN(finalPrecioVenta)
                   ? finalPrecioVenta.toFixed(2)
                   : "";
               try {
-                // 1. Actualiza para frameworks si es necesario
                 $(precioVentaSalida)
                   .val(precioVentaSalida.value)
                   .trigger("change");
-
-                // 2. CORRECCIÓN CRÍTICA: Despacha el evento nativo para activar el cálculo del "Total"
                 precioVentaSalida.dispatchEvent(
                   new Event("input", { bubbles: true }),
                 );
@@ -904,24 +896,30 @@ document.addEventListener("click", function (e) {
                         merged.stockActual !== undefined &&
                         merged.stockActual !== null
                       )
-                        merged.stockActual = parseFloat(merged.stockActual);
+                        merged.stockActual = Number.parseFloat(
+                          merged.stockActual,
+                        );
                       if (
                         merged.capacidadMaxima !== undefined &&
                         merged.capacidadMaxima !== null
                       )
-                        merged.capacidadMaxima = parseFloat(
+                        merged.capacidadMaxima = Number.parseFloat(
                           merged.capacidadMaxima,
                         );
                       if (
                         merged.precioCompra !== undefined &&
                         merged.precioCompra !== null
                       )
-                        merged.precioCompra = parseFloat(merged.precioCompra);
+                        merged.precioCompra = Number.parseFloat(
+                          merged.precioCompra,
+                        );
                       if (
                         merged.precioVenta !== undefined &&
                         merged.precioVenta !== null
                       )
-                        merged.precioVenta = parseFloat(merged.precioVenta);
+                        merged.precioVenta = Number.parseFloat(
+                          merged.precioVenta,
+                        );
                     } catch (e) {}
                     setFields(merged);
                   } else {
@@ -1028,10 +1026,9 @@ document.addEventListener("click", function (e) {
         placeholder: "Selecciona una categoría...",
         minimumInputLength: 0,
       });
-      $selectCategoria.on("select2:select", function (e) {
+      $selectCategoria.on("select2:select", function () {
         buscarMateriales();
       });
-      $selectCategoria.on("select2:unselect", function (e) {});
     }
 
     // INICIALIZAR SELECT2 EN TIPO
@@ -1044,10 +1041,9 @@ document.addEventListener("click", function (e) {
         placeholder: "Selecciona un tipo...",
         minimumInputLength: 0,
       });
-      $selectTipo.on("select2:select", function (e) {
+      $selectTipo.on("select2:select", function () {
         buscarMateriales();
       });
-      $selectTipo.on("select2:unselect", function (e) {});
     }
 
     // INICIALIZAR SELECT2 EN CENTRO DE ACOPIO
@@ -1100,7 +1096,7 @@ document.addEventListener("click", function (e) {
             .json()
             .then((data) => ({ status: res.status, ok: res.ok, data: data })),
         )
-        .then(({ status, ok, data }) => {
+        .then(({ ok, data }) => {
           if (!ok) {
             let mensajeError =
               data?.mensaje || data?.message || "Error desconocido";
@@ -1115,7 +1111,7 @@ document.addEventListener("click", function (e) {
           if (!Array.isArray(data)) data = [];
           renderResultadosBusquedaMov(data);
         })
-        .catch((error) => {
+        .catch(() => {
           if (estadoBusquedaEl) {
             estadoBusquedaEl.innerHTML =
               '<div class="alert alert-danger mb-0" role="alert"><i class="bi bi-exclamation-octagon me-2"></i>Error de conexión</div>';
@@ -1164,7 +1160,7 @@ document.addEventListener("click", function (e) {
         function numToString(v) {
           if (v === undefined || v === null || v === "") return "";
           let n = Number(v);
-          return isNaN(n) ? "" : String(n);
+          return Number.isNaN(n) ? "" : String(n);
         }
 
         item.dataset.materialId = material.materialId || "";
@@ -1240,22 +1236,22 @@ document.addEventListener("click", function (e) {
             stockActual:
               this.dataset.stockActual !== undefined &&
               this.dataset.stockActual !== ""
-                ? parseFloat(this.dataset.stockActual)
+                ? Number.parseFloat(this.dataset.stockActual)
                 : null,
             capacidadMaxima:
               this.dataset.capacidadMaxima !== undefined &&
               this.dataset.capacidadMaxima !== ""
-                ? parseFloat(this.dataset.capacidadMaxima)
+                ? Number.parseFloat(this.dataset.capacidadMaxima)
                 : null,
             precioCompra:
               this.dataset.precioCompra !== undefined &&
               this.dataset.precioCompra !== ""
-                ? parseFloat(this.dataset.precioCompra)
+                ? Number.parseFloat(this.dataset.precioCompra)
                 : null,
             precioVenta:
               this.dataset.precioVenta !== undefined &&
               this.dataset.precioVenta !== ""
-                ? parseFloat(this.dataset.precioVenta)
+                ? Number.parseFloat(this.dataset.precioVenta)
                 : null,
           };
 
@@ -1353,7 +1349,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (entrada.nombreMaterial) materiales.add(entrada.nombreMaterial);
       });
       Array.from(materiales)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((m) => {
           $filtroMaterialCompra.append($("<option>").val(m).text(m));
         });
@@ -1373,7 +1369,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (entrada.nombreCategoria) categorias.add(entrada.nombreCategoria);
       });
       Array.from(categorias)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((c) => {
           $filtroCategoriaCompra.append($("<option>").val(c).text(c));
         });
@@ -1392,7 +1388,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (entrada.nombreTipo) tipos.add(entrada.nombreTipo);
       });
       Array.from(tipos)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((t) => {
           $filtroTipoCompra.append($("<option>").val(t).text(t));
         });
@@ -1418,7 +1414,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (salida.nombreMaterial) materiales.add(salida.nombreMaterial);
       });
       Array.from(materiales)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((m) => {
           $filtroMaterialVenta.append($("<option>").val(m).text(m));
         });
@@ -1437,7 +1433,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (salida.nombreCategoria) categorias.add(salida.nombreCategoria);
       });
       Array.from(categorias)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((c) => {
           $filtroCategoriaVenta.append($("<option>").val(c).text(c));
         });
@@ -1456,7 +1452,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (salida.nombreTipo) tipos.add(salida.nombreTipo);
       });
       Array.from(tipos)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((t) => {
           $filtroTipoVenta.append($("<option>").val(t).text(t));
         });
@@ -1481,7 +1477,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (nombre) nombreCentros.add(nombre);
       });
       Array.from(nombreCentros)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((n) => {
           $filtroCentroVenta.append($("<option>").val(n).text(n));
         });
@@ -1508,7 +1504,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (mov.nombreMaterial) materiales.add(mov.nombreMaterial);
       });
       Array.from(materiales)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((m) => {
           $filtroHistorialMaterial.append($("<option>").val(m).text(m));
         });
@@ -1529,7 +1525,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (mov.nombreCategoria) categorias.add(mov.nombreCategoria);
       });
       Array.from(categorias)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((c) => {
           $filtroHistorialCategoria.append($("<option>").val(c).text(c));
         });
@@ -1549,7 +1545,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (mov.nombreTipo) tipos.add(mov.nombreTipo);
       });
       Array.from(tipos)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((t) => {
           $filtroHistorialTipo.append($("<option>").val(t).text(t));
         });
@@ -1571,7 +1567,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (nombre) nombreCentros.add(nombre);
       });
       Array.from(nombreCentros)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .forEach((n) => {
           $filtroHistorialCentroAcopio.append($("<option>").val(n).text(n));
         });
@@ -1721,6 +1717,40 @@ document.addEventListener("DOMContentLoaded", function () {
     inputMaterial.addEventListener("change", renderizarHistorial);
   }
 
+  function generarFilaEntrada(entrada) {
+    const fecha = entrada.fechaCompra
+      ? new Date(entrada.fechaCompra).toLocaleString("es-CO", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "-";
+    const cantidad = Number.parseFloat(entrada.cantidad || 0);
+    const precio = Number.parseFloat(entrada.precioCompra || 0);
+    const total = cantidad * precio;
+    return `
+            <tr data-categoria="${entrada.nombreCategoria || ""}" data-tipo="${entrada.nombreTipo || ""}">
+                <td class="small">${fecha}</td>
+                <td class="small">${entrada.nombreMaterial || "-"}</td>
+                <td class="text-end small">${cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-end small">$${precio.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-end small fw-semibold text-danger">$${total.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-center">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-sm btn-danger text-white btn-detalles-entrada" data-compra-id="${entrada.compraId}" title="Ver detalles">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-entrada" data-compra-id="${entrada.compraId}" title="Eliminar">
+                            <i class="bi bi-trash3-fill"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+  }
+
   // Función para renderizar entradas
   function renderizarEntradas() {
     const tbody = document.getElementById("tablasEntradasBody");
@@ -1734,13 +1764,9 @@ document.addEventListener("DOMContentLoaded", function () {
       entradasData = Object.values(entradasData);
     }
     if (!Array.isArray(entradasData) || !entradasData) entradasData = [];
-    entradasData = entradasData.slice().sort((a, b) => {
-      function toISO(fecha) {
-        if (!fecha) return 0;
-        return new Date(fecha.replace(" ", "T")).getTime();
-      }
-      return toISO(b.fechaCompra) - toISO(a.fechaCompra);
-    });
+    entradasData = entradasData
+      .slice()
+      .sort((a, b) => toISO(b.fechaCompra) - toISO(a.fechaCompra));
 
     if (entradasData.length === 0) {
       tbody.innerHTML =
@@ -1753,52 +1779,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const registrosPorPagina = globalThis.REGISTROS_POR_PAGINA || 5;
     const totalPaginas = Math.ceil(entradasData.length / registrosPorPagina);
-    const paginaActual = globalThis.PAGINA_ACTUAL_ENTRADAS || 1;
 
     if (globalThis.PAGINA_ACTUAL_ENTRADAS > totalPaginas)
       globalThis.PAGINA_ACTUAL_ENTRADAS = totalPaginas;
     if (globalThis.PAGINA_ACTUAL_ENTRADAS < 1)
-      window.PAGINA_ACTUAL_ENTRADAS = 1;
+      globalThis.PAGINA_ACTUAL_ENTRADAS = 1;
 
     const inicio = (globalThis.PAGINA_ACTUAL_ENTRADAS - 1) * registrosPorPagina;
     const fin = inicio + registrosPorPagina;
     const registrosPagina = entradasData.slice(inicio, fin);
 
-    tbody.innerHTML = registrosPagina
-      .map((entrada) => {
-        const fecha = entrada.fechaCompra
-          ? new Date(entrada.fechaCompra).toLocaleString("es-CO", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "-";
-        const cantidad = parseFloat(entrada.cantidad || 0);
-        const precio = parseFloat(entrada.precioCompra || 0);
-        const total = cantidad * precio;
-        return `
-                <tr data-categoria="${entrada.nombreCategoria || ""}" data-tipo="${entrada.nombreTipo || ""}">
-                    <td class="small">${fecha}</td>
-                    <td class="small">${entrada.nombreMaterial || "-"}</td>
-                    <td class="text-end small">${cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="text-end small">$${precio.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="text-end small fw-semibold text-danger">$${total.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="text-center">
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-sm btn-danger text-white btn-detalles-entrada" data-compra-id="${entrada.compraId}" title="Ver detalles">
-                                <i class="bi bi-eye-fill"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-entrada" data-compra-id="${entrada.compraId}" title="Eliminar">
-                                <i class="bi bi-trash3-fill"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-      })
-      .join("");
+    tbody.innerHTML = registrosPagina.map(generarFilaEntrada).join("");
 
     const badge = document.getElementById("badgeEntradasCount");
     if (badge) badge.textContent = entradasData.length + " registros";
@@ -1842,6 +1833,41 @@ document.addEventListener("DOMContentLoaded", function () {
     renderizarEntradas();
   };
 
+  function generarFilaSalida(salida) {
+    const fecha = salida.fechaVenta
+      ? new Date(salida.fechaVenta).toLocaleString("es-CO", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "-";
+    const cantidad = Number.parseFloat(salida.cantidad || 0);
+    const precio = Number.parseFloat(salida.precioVenta || 0);
+    const total = cantidad * precio;
+    return `
+            <tr data-categoria="${salida.nombreCategoria || ""}" data-tipo="${salida.nombreTipo || ""}">
+                <td class="small">${fecha}</td>
+                <td class="small">${salida.nombreMaterial || "-"}</td>
+                <td class="text-end small">${cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-end small">$${precio.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-end small fw-semibold text-success">$${total.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="small">${salida.nombreCentroAcopio || "-"}</td>
+                <td class="text-center">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-sm btn-success text-white btn-detalles-salida" data-venta-id="${salida.ventaId}" title="Ver detalles">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success btn-eliminar-salida" data-venta-id="${salida.ventaId}" title="Eliminar">
+                            <i class="bi bi-trash3-fill"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+  }
+
   // Función para renderizar salidas
   function renderizarSalidas() {
     const tbody = document.getElementById("tablasSalidasBody");
@@ -1866,48 +1892,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const totalPaginas = Math.ceil(salidasData.length / registrosPorPagina);
     if (globalThis.PAGINA_ACTUAL_SALIDAS > totalPaginas)
       globalThis.PAGINA_ACTUAL_SALIDAS = totalPaginas;
-    if (globalThis.PAGINA_ACTUAL_SALIDAS < 1) window.PAGINA_ACTUAL_SALIDAS = 1;
+    if (globalThis.PAGINA_ACTUAL_SALIDAS < 1)
+      globalThis.PAGINA_ACTUAL_SALIDAS = 1;
 
     const inicio = (globalThis.PAGINA_ACTUAL_SALIDAS - 1) * registrosPorPagina;
     const fin = inicio + registrosPorPagina;
     const registrosPagina = salidasData.slice(inicio, fin);
 
-    tbody.innerHTML = registrosPagina
-      .map((salida) => {
-        const fecha = salida.fechaVenta
-          ? new Date(salida.fechaVenta).toLocaleString("es-CO", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "-";
-        const cantidad = parseFloat(salida.cantidad || 0);
-        const precio = parseFloat(salida.precioVenta || 0);
-        const total = cantidad * precio;
-        return `
-                <tr data-categoria="${salida.nombreCategoria || ""}" data-tipo="${salida.nombreTipo || ""}">
-                    <td class="small">${fecha}</td>
-                    <td class="small">${salida.nombreMaterial || "-"}</td>
-                    <td class="text-end small">${cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="text-end small">$${precio.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="text-end small fw-semibold text-success">$${total.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="small">${salida.nombreCentroAcopio || "-"}</td>
-                    <td class="text-center">
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-sm btn-success text-white btn-detalles-salida" data-venta-id="${salida.ventaId}" title="Ver detalles">
-                                <i class="bi bi-eye-fill"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-success btn-eliminar-salida" data-venta-id="${salida.ventaId}" title="Eliminar">
-                                <i class="bi bi-trash3-fill"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-      })
-      .join("");
+    tbody.innerHTML = registrosPagina.map(generarFilaSalida).join("");
 
     const badge = document.getElementById("badgeSalidasCount");
     if (badge) badge.textContent = salidasData.length + " registros";
@@ -1950,6 +1942,55 @@ document.addEventListener("DOMContentLoaded", function () {
     globalThis.PAGINA_ACTUAL_SALIDAS = pagina;
     renderizarSalidas();
   };
+
+  function generarFilaHistorial(mov) {
+    const fecha = new Date(mov.fecha).toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const cantidadNumber = Number.parseFloat(mov.cantidad || 0);
+    const cantidad = cantidadNumber.toLocaleString("es-CO", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const precioNumber = Number.parseFloat(mov.precio || 0);
+    const precio = precioNumber.toLocaleString("es-CO", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const tipoBadge =
+      mov.tipo === "Compra"
+        ? '<span class="badge bg-danger">Compra</span>'
+        : '<span class="badge bg-success">Venta</span>';
+    const total = (cantidadNumber * precioNumber).toLocaleString("es-CO", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    const editBtn =
+      mov.tipo === "Compra"
+        ? `<button type="button" class="btn btn-sm btn-danger text-white btn-editar-historial-compra" data-compra-id="${mov.compraId}" title="Ver detalles"><i class="bi bi-eye"></i></button>`
+        : `<button type="button" class="btn btn-sm btn-success text-white btn-editar-historial-venta" data-venta-id="${mov.ventaId}" title="Ver detalles"><i class="bi bi-eye"></i></button>`;
+    const delBtn =
+      mov.tipo === "Compra"
+        ? `<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-historial-compra" data-compra-id="${mov.compraId}" title="Eliminar compra"><i class="bi bi-trash3-fill"></i></button>`
+        : `<button type="button" class="btn btn-sm btn-outline-success btn-eliminar-historial-venta" data-venta-id="${mov.ventaId}" title="Eliminar venta"><i class="bi bi-trash3-fill"></i></button>`;
+
+    return `
+            <tr>
+                <td class="small">${fecha}</td>
+                <td class="small">${tipoBadge}</td>
+                <td class="small fw-bold">${mov.nombreMaterial || "-"}</td>
+                <td class="text-end small">${cantidad}</td>
+                <td class="text-end small">$${precio}</td>
+                <td class="text-end small fw-semibold">$${total}</td>
+                <td class="text-center">${editBtn} ${delBtn}</td>
+            </tr>
+        `;
+  }
 
   function renderizarHistorial() {
     const tbody = document.getElementById("tablasHistorialBody");
@@ -2028,7 +2069,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (globalThis.PAGINA_ACTUAL_HISTORIAL > totalPaginas)
       globalThis.PAGINA_ACTUAL_HISTORIAL = totalPaginas;
     if (globalThis.PAGINA_ACTUAL_HISTORIAL < 1)
-      window.PAGINA_ACTUAL_HISTORIAL = 1;
+      globalThis.PAGINA_ACTUAL_HISTORIAL = 1;
 
     const inicio =
       (globalThis.PAGINA_ACTUAL_HISTORIAL - 1) * registrosPorPagina;
@@ -2044,56 +2085,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    tbody.innerHTML = paginaMovimientos
-      .map((mov) => {
-        const fecha = new Date(mov.fecha).toLocaleString("es-CO", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        const cantidadNumber = parseFloat(mov.cantidad || 0);
-        const cantidad = cantidadNumber.toLocaleString("es-CO", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-        const precioNumber = parseFloat(mov.precio || 0);
-        const precio = precioNumber.toLocaleString("es-CO", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-        const tipoBadge =
-          mov.tipo === "Compra"
-            ? '<span class="badge bg-danger">Compra</span>'
-            : '<span class="badge bg-success">Venta</span>';
-        const total = (cantidadNumber * precioNumber).toLocaleString("es-CO", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-
-        const editBtn =
-          mov.tipo === "Compra"
-            ? `<button type="button" class="btn btn-sm btn-danger text-white btn-editar-historial-compra" data-compra-id="${mov.compraId}" title="Ver detalles"><i class="bi bi-eye"></i></button>`
-            : `<button type="button" class="btn btn-sm btn-success text-white btn-editar-historial-venta" data-venta-id="${mov.ventaId}" title="Ver detalles"><i class="bi bi-eye"></i></button>`;
-        const delBtn =
-          mov.tipo === "Compra"
-            ? `<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-historial-compra" data-compra-id="${mov.compraId}" title="Eliminar compra"><i class="bi bi-trash3-fill"></i></button>`
-            : `<button type="button" class="btn btn-sm btn-outline-success btn-eliminar-historial-venta" data-venta-id="${mov.ventaId}" title="Eliminar venta"><i class="bi bi-trash3-fill"></i></button>`;
-
-        return `
-                <tr>
-                    <td class="small">${fecha}</td>
-                    <td class="small">${tipoBadge}</td>
-                    <td class="small fw-bold">${mov.nombreMaterial || "-"}</td>
-                    <td class="text-end small">${cantidad}</td>
-                    <td class="text-end small">$${precio}</td>
-                    <td class="text-end small fw-semibold">$${total}</td>
-                    <td class="text-center">${editBtn} ${delBtn}</td>
-                </tr>
-            `;
-      })
-      .join("");
+    tbody.innerHTML = paginaMovimientos.map(generarFilaHistorial).join("");
 
     const badge = document.getElementById("badgeHistorialCount");
     if (badge) badge.textContent = movimientosFiltrados.length + " registros";
@@ -2138,7 +2130,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   globalThis.cambiarMaterial = function () {
-    // Limpiar campos...
     ["entrada", "salida"].forEach((prefix) => {
       [
         "MaterialSeleccionado",
@@ -2170,10 +2161,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Actualizar stocks
   function actualizarStock(prefix, op) {
-    const stock = parseFloat(
+    const stock = Number.parseFloat(
       document.getElementById(prefix + "StockActual")?.value || 0,
     );
-    const cantidad = parseFloat(
+    const cantidad = Number.parseFloat(
       document.getElementById(prefix + "Cantidad")?.value || 0,
     );
     const resultante = op === "+" ? stock + cantidad : stock - cantidad;
@@ -2181,7 +2172,9 @@ document.addEventListener("DOMContentLoaded", function () {
       prefix + (op === "+" ? "StockResultante" : "StockRestante"),
     );
     if (resEl)
-      resEl.textContent = isNaN(resultante) ? "-" : resultante.toFixed(2);
+      resEl.textContent = Number.isNaN(resultante)
+        ? "-"
+        : resultante.toFixed(2);
   }
   const entCant = document.getElementById("entradaCantidad"),
     entPrecio = document.getElementById("entradaPrecioCompra"),
@@ -2189,10 +2182,10 @@ document.addEventListener("DOMContentLoaded", function () {
     entStock = document.getElementById("entradaStockActual");
 
   function actualizarTotalEntrada() {
-    const cantidad = parseFloat(entCant?.value || 0);
-    const precio = parseFloat(entPrecio?.value || 0);
+    const cantidad = Number.parseFloat(entCant?.value || 0);
+    const precio = Number.parseFloat(entPrecio?.value || 0);
     const total = cantidad * precio;
-    if (entTotal) entTotal.value = !isNaN(total) ? total.toFixed(2) : "";
+    if (entTotal) entTotal.value = Number.isNaN(total) ? "" : total.toFixed(2);
   }
 
   if (entCant) {
@@ -2216,10 +2209,10 @@ document.addEventListener("DOMContentLoaded", function () {
     salStock = document.getElementById("salidaStockActual");
 
   function actualizarTotalSalida() {
-    const cantidad = parseFloat(salCant?.value || 0);
-    const precio = parseFloat(salPrecio?.value || 0);
+    const cantidad = Number.parseFloat(salCant?.value || 0);
+    const precio = Number.parseFloat(salPrecio?.value || 0);
     const total = cantidad * precio;
-    if (salTotal) salTotal.value = !isNaN(total) ? total.toFixed(2) : "";
+    if (salTotal) salTotal.value = Number.isNaN(total) ? "" : total.toFixed(2);
   }
 
   if (salCant) {
@@ -2244,36 +2237,23 @@ document.addEventListener("DOMContentLoaded", function () {
             ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>`;
   };
 
-  // Función para mostrar error de campo usando Bootstrap validation
   globalThis.mostrarErrorCampo = function (input, mensaje) {
-    // Limpiar cualquier error existente
     limpiarErrorCampo(input);
-
-    // Añadir clase is-invalid al input
     input.classList.add("is-invalid");
-
-    // Crear y insertar el div de feedback
     const feedbackDiv = document.createElement("div");
     feedbackDiv.className = "invalid-feedback";
     feedbackDiv.textContent = mensaje;
-
-    // Insertar después del input
     input.parentNode.insertBefore(feedbackDiv, input.nextSibling);
   };
 
-  // Función para limpiar error de campo
   globalThis.limpiarErrorCampo = function (input) {
-    // Remover clase is-invalid
     input.classList.remove("is-invalid");
-
-    // Remover div de feedback si existe
     const feedbackDiv = input.parentNode.querySelector(".invalid-feedback");
     if (feedbackDiv) {
       feedbackDiv.remove();
     }
   };
 
-  // Función para validar un campo requerido
   globalThis.validarCampoRequerido = function (
     input,
     mensajeError = "Este campo es requerido",
@@ -2283,7 +2263,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let esValido = true;
     const valor = input.value.trim();
 
-    // Para inputs tipo number, también verificamos que no esté vacío o sea 0 cuando es requerido
     if (input.type === "number") {
       if (valor === "" || Number.parseFloat(valor) <= 0) {
         esValido = false;
@@ -2302,34 +2281,28 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   };
 
-  // Función especializada para validar cantidades
   globalThis.validarCantidad = function (input) {
     limpiarErrorCampo(input);
 
     const valor = input.value.trim();
 
-    // Verificar si está vacío
     if (valor === "") {
       mostrarErrorCampo(input, "Ingrese la cantidad");
       return false;
     }
 
-    // Convertir a número
     const cantidad = Number.parseFloat(valor);
 
-    // Verificar si es negativo
     if (cantidad < 0) {
       mostrarErrorCampo(input, "No se permiten valores negativos");
       return false;
     }
 
-    // Verificar si es cero
     if (cantidad === 0) {
       mostrarErrorCampo(input, "La cantidad debe ser mayor a 0");
       return false;
     }
 
-    // Verificar si es un número válido
     if (Number.isNaN(cantidad)) {
       mostrarErrorCampo(input, "Ingrese una cantidad válida");
       return false;
@@ -2338,7 +2311,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   };
 
-  // Función para validar campos de fecha
   globalThis.validarCampoFecha = function (
     input,
     mensajeError = "Fecha requerida",
@@ -2360,350 +2332,274 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   };
 
-  // Agregar validación en tiempo real (blur) a los campos de entrada
-  function agregarValidacionEnTiempoRealEntrada() {
-    const campos = [
-      {
-        id: "entradaCantidad",
-        tipo: "cantidad",
-        mensaje: "Ingrese la cantidad",
+  function procesarSubmitEntrada(ev) {
+    ev.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
+    }
+
+    const materialSeleccionado = document.getElementById(
+      "entradaMaterialSeleccionado",
+    );
+    const cantidad = document.getElementById("entradaCantidad");
+    const fecha = document.getElementById("entradaFecha");
+    const precioCompra = document.getElementById("entradaPrecioCompra");
+
+    let esValido = true;
+
+    if (materialSeleccionado && materialSeleccionado.value.trim() === "") {
+      mostrarErrorCampo(materialSeleccionado, "Seleccione un material");
+      esValido = false;
+    }
+
+    if (!validarCantidad(cantidad)) esValido = false;
+    if (!validarCampoFecha(fecha, "Seleccione una fecha")) esValido = false;
+    if (!validarCampoRequerido(precioCompra, "Ingrese un precio de compra"))
+      esValido = false;
+
+    if (!esValido) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML =
+          '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
+      }
+      return;
+    }
+
+    const data = {
+      inventarioId: document.getElementById("entradaInventarioId")?.value,
+      materialId: document.getElementById("entradaMaterialId")?.value,
+      cantidad: document.getElementById("entradaCantidad")?.value,
+      fechaCompra: document.getElementById("entradaFecha")?.value,
+      precioCompra: document.getElementById("entradaPrecioCompra")?.value,
+      observaciones: document.getElementById("entradaObservaciones")?.value,
+      puntoEcaId: document.querySelector("section[data-punto-eca-id]")?.dataset
+        .puntoEcaId,
+    };
+
+    let csrfToken =
+      document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") || "";
+
+    fetch(`/punto-eca/movimientos/registrar-compra/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
       },
-      { id: "entradaFecha", tipo: "fecha", mensaje: "Seleccione una fecha" },
-      {
-        id: "entradaPrecioCompra",
-        tipo: "requerido",
-        mensaje: "Ingrese un precio de compra",
-      },
-    ];
-
-    campos.forEach((campo) => {
-      const input = document.getElementById(campo.id);
-      if (input) {
-        input.addEventListener("blur", function () {
-          if (campo.tipo === "requerido") {
-            validarCampoRequerido(input, campo.mensaje);
-          } else if (campo.tipo === "fecha") {
-            validarCampoFecha(input, campo.mensaje);
-          } else if (campo.tipo === "cantidad") {
-            validarCantidad(input);
-          }
-        });
-
-        // También validar al escribir para quitar errores si el usuario corrige
-        input.addEventListener("input", function () {
-          limpiarErrorCampo(input);
-        });
-      }
-    });
-  }
-
-  // Agregar validación en tiempo real (blur) a los campos de salida
-  //
-
-  function agregarValidacionEnTiempoRealSalida() {
-    const campos = [
-      {
-        id: "salidaCantidad",
-        tipo: "cantidad",
-        mensaje: "Ingrese la cantidad",
-      },
-      { id: "salidaFecha", tipo: "fecha", mensaje: "Seleccione una fecha" },
-      {
-        id: "salidaPrecioVenta",
-        tipo: "requerido",
-        mensaje: "Ingrese un precio de venta",
-      },
-    ];
-
-    campos.forEach((campo) => {
-      const input = document.getElementById(campo.id);
-      if (input) {
-        input.addEventListener("blur", function () {
-          if (campo.tipo === "requerido") {
-            validarCampoRequerido(input, campo.mensaje);
-          } else if (campo.tipo === "fecha") {
-            validarCampoFecha(input, campo.mensaje);
-          } else if (campo.tipo === "cantidad") {
-            validarCantidad(input);
-          }
-        });
-
-        // También validar al escribir para quitar errores si el usuario corrige
-        input.addEventListener("input", function () {
-          limpiarErrorCampo(input);
-        });
-      }
-    });
-  }
-
-    const formEntrada = document.getElementById("formEntrada");
-    if (formEntrada) {
-      formEntrada.addEventListener("submit", function (ev) {
-        console.log("Validando formulario de entrada");
-        ev.preventDefault();
-
-        // Disable submit button to prevent duplicate submissions
-        const submitBtn = this.querySelector('button[type="submit"]');
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
-        }
-
-        // Validar campos requeridos
-        const materialSeleccionado = document.getElementById(
-          "entradaMaterialSeleccionado",
-        );
-        const cantidad = document.getElementById("entradaCantidad");
-        const fecha = document.getElementById("entradaFecha");
-        const precioCompra = document.getElementById("entradaPrecioCompra");
-
-      let esValido = true;
-
-      if (materialSeleccionado && materialSeleccionado.value.trim() === "") {
-        console.log("Material no seleccionado");
-        mostrarErrorCampo(materialSeleccionado, "Seleccione un material");
-        esValido = false;
-      }
-
-      if (!validarCantidad(cantidad)) {
-        console.log("Cantidad inválida");
-        esValido = false;
-      }
-
-      if (!validarCampoFecha(fecha, "Seleccione una fecha")) {
-        console.log("Fecha inválida");
-        esValido = false;
-      }
-
-      if (!validarCampoRequerido(precioCompra, "Ingrese un precio de compra")) {
-        console.log("Precio de compra inválido");
-        esValido = false;
-      }
-
-      if (!esValido) {
-        console.log("Formulario no válido, deteniendo envío");
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
-        }
-        return; // Detener el envío si hay errores de validación
-      }
-
-      console.log("Formulario válido, enviando...");
-
-      const data = {
-        inventarioId: document.getElementById("entradaInventarioId")?.value,
-        materialId: document.getElementById("entradaMaterialId")?.value,
-        cantidad: document.getElementById("entradaCantidad")?.value,
-        fechaCompra: document.getElementById("entradaFecha")?.value,
-        precioCompra: document.getElementById("entradaPrecioCompra")?.value,
-        observaciones: document.getElementById("entradaObservaciones")?.value,
-        puntoEcaId: document.querySelector("section[data-punto-eca-id]")
-          ?.dataset.puntoEcaId,
-      };
-      let csrfToken =
-        document
-          .querySelector('meta[name="csrf-token"]')
-          ?.getAttribute("content") || "";
-      fetch(`/punto-eca/movimientos/registrar-compra/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify(data),
-      })
-        .then((res) => res.json())
-        .then((resp) => {
-          if (!resp.error) {
-            globalThis.mostrarSwalExitoMovimiento(
-              "Compra",
-              {
-                material: document.getElementById("entradaMaterialSeleccionado")?.value,
-                cantidad: document.getElementById("entradaCantidad")?.value,
-                fecha: document.getElementById("entradaFecha")?.value,
-                precio: document.getElementById("entradaPrecioCompra")?.value,
-                total:
-                  (parseFloat(document.getElementById("entradaCantidad")?.value || 0) || 0) *
-                  (parseFloat(document.getElementById("entradaPrecioCompra")?.value || 0) || 0),
-                observaciones: document.getElementById("entradaObservaciones")?.value,
-                idRegistro:
-                  resp.compra_id || resp.compraId || resp.id || resp.registroId || "-",
-              },
-              () => window.location.reload(),
-            );
-            return;
-          } else {
-            mostrarFeedbackMovimientos(
-              resp.mensaje || "Error: operación no realizada",
-              "danger",
-            );
-          }
-        })
-        .catch((err) => {
+      body: JSON.stringify(data),
+    })
+      .then((res) => res.json())
+      .then((resp) => {
+        if (resp.error) {
           mostrarFeedbackMovimientos(
-            "Error al conectar con el backend: " + err,
+            resp.mensaje || "Error: operación no realizada",
             "danger",
           );
-        })
-        .finally(() => {
-          if (submitBtn && document.querySelectorAll(".swal2-container").length === 0) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
-          }
-        });
-    });
+        } else {
+          globalThis.mostrarSwalExitoMovimiento(
+            "Compra",
+            {
+              material: document.getElementById("entradaMaterialSeleccionado")
+                ?.value,
+              cantidad: document.getElementById("entradaCantidad")?.value,
+              fecha: document.getElementById("entradaFecha")?.value,
+              precio: document.getElementById("entradaPrecioCompra")?.value,
+              total:
+                (Number.parseFloat(
+                  document.getElementById("entradaCantidad")?.value || 0,
+                ) || 0) *
+                (Number.parseFloat(
+                  document.getElementById("entradaPrecioCompra")?.value || 0,
+                ) || 0),
+              observaciones: document.getElementById("entradaObservaciones")
+                ?.value,
+              idRegistro:
+                resp.compra_id ||
+                resp.compraId ||
+                resp.id ||
+                resp.registroId ||
+                "-",
+            },
+            () => globalThis.location.reload(),
+          );
+        }
+      })
+      .catch((err) => {
+        mostrarFeedbackMovimientos(
+          "Error al conectar con el backend: " + err,
+          "danger",
+        );
+      })
+      .finally(() => {
+        if (
+          submitBtn &&
+          document.querySelectorAll(".swal2-container").length === 0
+        ) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML =
+            '<i class="bi bi-check-circle me-2"></i>Guardar Entrada';
+        }
+      });
   }
 
-    const formSalida = document.getElementById("formSalida");
-    if (formSalida) {
-      formSalida.addEventListener("submit", function (ev) {
-        console.log("Validando formulario de salida");
-        ev.preventDefault();
+  const formEntrada = document.getElementById("formEntrada");
+  if (formEntrada) {
+    formEntrada.addEventListener("submit", procesarSubmitEntrada);
+  }
 
-        if (formSalida.dataset.enviando === "1") {
-          return;
-        }
-        formSalida.dataset.enviando = "1";
+  function procesarSubmitSalida(ev) {
+    ev.preventDefault();
+    if (formSalida.dataset.enviando === "1") return;
+    formSalida.dataset.enviando = "1";
 
-        // Disable submit button to prevent duplicate submissions
-        const submitBtn = this.querySelector('button[type="submit"]');
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
-        }
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
+    }
 
-        // Validar campos requeridos
-      const materialSeleccionado = document.getElementById(
-        "salidaMaterialSeleccionado",
-      );
-      const cantidad = document.getElementById("salidaCantidad");
-      const fecha = document.getElementById("salidaFecha");
-      const precioVenta = document.getElementById("salidaPrecioVenta");
+    const materialSeleccionado = document.getElementById(
+      "salidaMaterialSeleccionado",
+    );
+    const cantidad = document.getElementById("salidaCantidad");
+    const fecha = document.getElementById("salidaFecha");
+    const precioVenta = document.getElementById("salidaPrecioVenta");
 
-      let esValido = true;
+    let esValido = true;
 
-      if (materialSeleccionado && materialSeleccionado.value.trim() === "") {
-        console.log("Material no seleccionado");
-        mostrarErrorCampo(materialSeleccionado, "Seleccione un material");
-        esValido = false;
+    if (materialSeleccionado && materialSeleccionado.value.trim() === "") {
+      mostrarErrorCampo(materialSeleccionado, "Seleccione un material");
+      esValido = false;
+    }
+
+    if (!validarCantidad(cantidad)) esValido = false;
+    if (!validarCampoFecha(fecha, "Seleccione una fecha")) esValido = false;
+    if (!validarCampoRequerido(precioVenta, "Ingrese un precio de venta"))
+      esValido = false;
+
+    if (!esValido) {
+      formSalida.dataset.enviando = "0";
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML =
+          '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
       }
+      return;
+    }
 
-      if (!validarCantidad(cantidad)) {
-        console.log("Cantidad inválida");
-        esValido = false;
-      }
+    const data = {
+      inventarioId: document.getElementById("salidaInventarioId")?.value,
+      materialId: document.getElementById("salidaMaterialId")?.value,
+      cantidad: document.getElementById("salidaCantidad")?.value,
+      fechaVenta: document.getElementById("salidaFecha")?.value,
+      precioVenta: document.getElementById("salidaPrecioVenta")?.value,
+      observaciones: document.getElementById("salidaObservaciones")?.value,
+      centroAcopioId: document.getElementById("salidaCentroAcopio")?.value,
+      puntoEcaId: document.querySelector("section[data-punto-eca-id]")?.dataset
+        .puntoEcaId,
+    };
 
-      if (!validarCampoFecha(fecha, "Seleccione una fecha")) {
-        console.log("Fecha inválida");
-        esValido = false;
-      }
+    let csrfToken =
+      document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") || "";
 
-      if (!validarCampoRequerido(precioVenta, "Ingrese un precio de venta")) {
-        console.log("Precio de venta inválido");
-        esValido = false;
-      }
-
-      if (!esValido) {
-        console.log("Formulario no válido, deteniendo envío");
-        formSalida.dataset.enviando = "0";
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
-        }
-        return; // Detener el envío si hay errores de validación
-      }
-
-      const data = {
-        inventarioId: document.getElementById("salidaInventarioId")?.value,
-        materialId: document.getElementById("salidaMaterialId")?.value,
-        cantidad: document.getElementById("salidaCantidad")?.value,
-        fechaVenta: document.getElementById("salidaFecha")?.value,
-        precioVenta: document.getElementById("salidaPrecioVenta")?.value,
-        observaciones: document.getElementById("salidaObservaciones")?.value,
-        centroAcopioId: document.getElementById("salidaCentroAcopio")?.value,
-        puntoEcaId: document.querySelector("section[data-punto-eca-id]")
-          ?.dataset.puntoEcaId,
-      };
-      let csrfToken =
-        document
-          .querySelector('meta[name="csrf-token"]')
-          ?.getAttribute("content") || "";
-      fetch(`/punto-eca/movimientos/registrar-venta/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify(data),
-      })
-        .then((res) => res.json())
-        .then((resp) => {
-          if (!resp.error) {
-            const datosExitoVenta = {
-              material: document.getElementById("salidaMaterialSeleccionado")?.value,
-              cantidad: document.getElementById("salidaCantidad")?.value,
-              fecha: document.getElementById("salidaFecha")?.value,
-              precio: document.getElementById("salidaPrecioVenta")?.value,
-              total:
-                (parseFloat(document.getElementById("salidaCantidad")?.value || 0) || 0) *
-                (parseFloat(document.getElementById("salidaPrecioVenta")?.value || 0) || 0),
-              observaciones: document.getElementById("salidaObservaciones")?.value,
-              centroAcopio:
-                document.getElementById("salidaCentroAcopio")?.selectedOptions?.[0]?.textContent ||
-                document.getElementById("salidaCentroAcopio")?.value ||
-                "-",
-              idRegistro:
-                resp.venta_id || resp.ventaId || resp.id || resp.registroId || "-",
-            };
-
-            try {
-              if (typeof globalThis.mostrarSwalExitoMovimiento === "function") {
-                globalThis.mostrarSwalExitoMovimiento(
-                  "Venta",
-                  datosExitoVenta,
-                  () => window.location.reload(),
-                );
-                return;
-              }
-            } catch (errorSwal) {
-              console.error("Error mostrando Swal de venta:", errorSwal);
-            }
-
-            mostrarFeedbackMovimientos(
-              "Venta registrada correctamente",
-              "success",
-            );
-            window.setTimeout(() => {
-              window.location.reload();
-            }, 100);
-            return;
-          } else {
-            formSalida.dataset.enviando = "0";
-            mostrarFeedbackMovimientos(
-              resp.mensaje || "Error: operación no realizada",
-              "danger",
-            );
-          }
-        })
-        .catch((err) => {
+    fetch(`/punto-eca/movimientos/registrar-venta/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify(data),
+    })
+      .then((res) => res.json())
+      .then((resp) => {
+        if (resp.error) {
           formSalida.dataset.enviando = "0";
           mostrarFeedbackMovimientos(
-            "Error al conectar con el backend: " + err,
+            resp.mensaje || "Error: operación no realizada",
             "danger",
           );
-        })
-        .finally(() => {
-          if (
-            submitBtn &&
-            formSalida.dataset.enviando !== "1" &&
-            document.querySelectorAll(".swal2-container").length === 0
-          ) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
+        } else {
+          const datosExitoVenta = {
+            material: document.getElementById("salidaMaterialSeleccionado")
+              ?.value,
+            cantidad: document.getElementById("salidaCantidad")?.value,
+            fecha: document.getElementById("salidaFecha")?.value,
+            precio: document.getElementById("salidaPrecioVenta")?.value,
+            total:
+              (Number.parseFloat(
+                document.getElementById("salidaCantidad")?.value || 0,
+              ) || 0) *
+              (Number.parseFloat(
+                document.getElementById("salidaPrecioVenta")?.value || 0,
+              ) || 0),
+            observaciones: document.getElementById("salidaObservaciones")
+              ?.value,
+            centroAcopio:
+              document.getElementById("salidaCentroAcopio")
+                ?.selectedOptions?.[0]?.textContent ||
+              document.getElementById("salidaCentroAcopio")?.value ||
+              "-",
+            idRegistro:
+              resp.venta_id ||
+              resp.ventaId ||
+              resp.id ||
+              resp.registroId ||
+              "-",
+          };
+
+          try {
+            if (typeof globalThis.mostrarSwalExitoMovimiento === "function") {
+              globalThis.mostrarSwalExitoMovimiento(
+                "Venta",
+                datosExitoVenta,
+                () => globalThis.location.reload(),
+              );
+              return;
+            }
+          } catch (error_) {
+            console.error("Error mostrando Swal de venta:", error_);
           }
-        });
-    });
+
+          mostrarFeedbackMovimientos(
+            "Venta registrada correctamente",
+            "success",
+          );
+          globalThis.setTimeout(() => {
+            globalThis.location.reload();
+          }, 100);
+        }
+      })
+      .catch((err) => {
+        formSalida.dataset.enviando = "0";
+        mostrarFeedbackMovimientos(
+          "Error al conectar con el backend: " + err,
+          "danger",
+        );
+      })
+      .finally(() => {
+        if (
+          submitBtn &&
+          formSalida.dataset.enviando !== "1" &&
+          document.querySelectorAll(".swal2-container").length === 0
+        ) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML =
+            '<i class="bi bi-check-circle me-2"></i>Guardar Salida';
+        }
+      });
+  }
+
+  const formSalida = document.getElementById("formSalida");
+  if (formSalida) {
+    formSalida.addEventListener("submit", procesarSubmitSalida);
   }
 });
 
@@ -2763,11 +2659,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function abrirModalCargaMasiva(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    let mode = "compras";
-    if (e && e.target && e.target.id === "btnBulkImportCompras")
-      mode = "compras";
-    if (e && e.target && e.target.id === "btnBulkImportVentas") mode = "ventas";
+    if (e?.preventDefault) e.preventDefault();
+    let mode = e?.target?.id === "btnBulkImportVentas" ? "ventas" : "compras";
     setModoCargaMasiva(mode);
     const modal = new bootstrap.Modal(
       document.getElementById("modalCargaMasiva"),
@@ -2789,8 +2682,7 @@ document.addEventListener("DOMContentLoaded", function () {
         feedback.innerHTML =
           '<span class="text-info">Subiendo archivo, por favor espera...</span>';
         let archivoInput = document.getElementById("inputArchivoCargaMasiva");
-        let archivo =
-          archivoInput && archivoInput.files && archivoInput.files[0];
+        let archivo = archivoInput?.files?.[0];
         if (!archivo) {
           feedback.innerHTML =
             '<span class="text-danger">Debe seleccionar un archivo</span>';
@@ -2855,13 +2747,20 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
   function limpiarEstadoModales() {
     if (document.querySelectorAll(".modal.show").length > 0) return;
-    document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
+    document
+      .querySelectorAll(".modal-backdrop")
+      .forEach((backdrop) => backdrop.remove());
     document.body.classList.remove("modal-open");
     document.body.style.removeProperty("overflow");
     document.body.style.removeProperty("padding-right");
   }
 
-  ["detallesEntradaModal", "detallesSalidaModal", "editarCompraModal", "editarVentaModal"].forEach((modalId) => {
+  [
+    "detallesEntradaModal",
+    "detallesSalidaModal",
+    "editarCompraModal",
+    "editarVentaModal",
+  ].forEach((modalId) => {
     const modalElement = document.getElementById(modalId);
     if (!modalElement) return;
     modalElement.addEventListener("hidden.bs.modal", limpiarEstadoModales);
@@ -2887,8 +2786,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const fecha = entrada.fechaCompra
       ? new Date(entrada.fechaCompra).toLocaleDateString("es-CO")
       : "-";
-    const cantidad = parseFloat(entrada.cantidad || 0);
-    const precio = parseFloat(entrada.precioCompra || 0);
+    const cantidad = Number.parseFloat(entrada.cantidad || 0);
+    const precio = Number.parseFloat(entrada.precioCompra || 0);
     const total = cantidad * precio;
 
     document.getElementById("detEntradaMaterial").textContent =
@@ -2914,7 +2813,7 @@ document.addEventListener("DOMContentLoaded", function () {
     modal.show();
   });
 
-  // Eliminar entrada desde tabla (ya está arriba, pero el de modal está aquí)
+  // Eliminar entrada desde modal
   const btnEliminarEntradaModal = document.getElementById("btnEliminarEntrada");
   if (btnEliminarEntradaModal) {
     btnEliminarEntradaModal.addEventListener("click", function () {
@@ -2972,8 +2871,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 icon: "error",
                 title: "Error al eliminar",
                 text:
-                  "Error al eliminar: " +
-                  (data.mensaje || "Error desconocido"),
+                  "Error al eliminar: " + (data.mensaje || "Error desconocido"),
               });
             }
           });
@@ -2981,45 +2879,51 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-   // Guardar Edición Compra
-   const btnGuardarCompra = document.getElementById("btnGuardarCompra");
-   if (btnGuardarCompra) {
-     btnGuardarCompra.addEventListener("click", function () {
-       const datosActualizacion = {
-         puntoId: document.querySelector("section[data-punto-eca-id]")?.dataset
-           .puntoEcaId,
-         materialId: document.getElementById("editCompraMaterialId").value,
-         compraId: document.getElementById("editCompraId").value,
-         inventarioId: document.getElementById("editInventarioId").value,
-         cantidad: parseFloat(
-           document.getElementById("editCompraCantidad").value,
-         ),
-         fechaCompra: document.getElementById("editCompraFecha").value,
-         precioCompra: parseFloat(
-           document.getElementById("editCompraPrecio").value,
-         ),
-         observaciones: document.getElementById("editCompraObservaciones").value,
-       };
+  // Guardar Edición Compra
+  const btnGuardarCompra = document.getElementById("btnGuardarCompra");
+  if (btnGuardarCompra) {
+    btnGuardarCompra.addEventListener("click", function () {
+      const datosActualizacion = {
+        puntoId: document.querySelector("section[data-punto-eca-id]")?.dataset
+          .puntoEcaId,
+        materialId: document.getElementById("editCompraMaterialId").value,
+        compraId: document.getElementById("editCompraId").value,
+        inventarioId: document.getElementById("editInventarioId").value,
+        cantidad: Number.parseFloat(
+          document.getElementById("editCompraCantidad").value,
+        ),
+        fechaCompra: document.getElementById("editCompraFecha").value,
+        precioCompra: Number.parseFloat(
+          document.getElementById("editCompraPrecio").value,
+        ),
+        observaciones: document.getElementById("editCompraObservaciones").value,
+      };
 
-       let csrfToken =
-         document
-           .querySelector('meta[name="csrf-token"]')
-           ?.getAttribute("content") || "";
-       fetch(
-         `/punto-eca/movimientos/editar-compra/${datosActualizacion.compraId}/`,
-         {
-           method: "PUT",
-           headers: {
-             "Content-Type": "application/json",
-             "X-CSRFToken": csrfToken,
-           },
-           body: JSON.stringify(datosActualizacion),
-         },
-       )
-         .then((res) => res.json())
+      let csrfToken =
+        document
+          .querySelector('meta[name="csrf-token"]')
+          ?.getAttribute("content") || "";
+      fetch(
+        `/punto-eca/movimientos/editar-compra/${datosActualizacion.compraId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(datosActualizacion),
+        },
+      )
+        .then((res) => res.json())
         .then((data) => {
-          // Back-end returns { error: false, mensaje: '...' } on success
-          if (data && (data.error === false || data.ok || data.success || data.status === 200 || data.status === 201)) {
+          if (
+            data &&
+            (data.error === false ||
+              data.ok ||
+              data.success ||
+              data.status === 200 ||
+              data.status === 201)
+          ) {
             mostrarSwalMensajeMovimiento({
               icon: "success",
               title: "Compra actualizada",
@@ -3034,49 +2938,55 @@ document.addEventListener("DOMContentLoaded", function () {
             });
           }
         });
-     });
-   }
+    });
+  }
 
-   // Guardar Edición Venta
-   const btnGuardarVenta = document.getElementById("btnGuardarVenta");
-   if (btnGuardarVenta) {
-     btnGuardarVenta.addEventListener("click", function () {
-       const datosActualizacion = {
-         puntoId: document.querySelector("section[data-punto-eca-id]")?.dataset
-           .puntoEcaId,
-         ventaId: document.getElementById("editVentaId").value,
-         materialId: document.getElementById("editVentaMaterialId").value,
-         inventarioId: document.getElementById("editInventarioIdVenta").value,
-         cantidad: parseFloat(
-           document.getElementById("editVentaCantidad").value,
-         ),
-         fechaVenta: document.getElementById("editVentaFecha").value,
-         precioVenta: parseFloat(
-           document.getElementById("editVentaPrecio").value,
-         ),
-         centroAcopioId: document.getElementById("editVentaCentro").value,
-         observaciones: document.getElementById("editVentaObservaciones").value,
-       };
+  // Guardar Edición Venta
+  const btnGuardarVenta = document.getElementById("btnGuardarVenta");
+  if (btnGuardarVenta) {
+    btnGuardarVenta.addEventListener("click", function () {
+      const datosActualizacion = {
+        puntoId: document.querySelector("section[data-punto-eca-id]")?.dataset
+          .puntoEcaId,
+        ventaId: document.getElementById("editVentaId").value,
+        materialId: document.getElementById("editVentaMaterialId").value,
+        inventarioId: document.getElementById("editInventarioIdVenta").value,
+        cantidad: Number.parseFloat(
+          document.getElementById("editVentaCantidad").value,
+        ),
+        fechaVenta: document.getElementById("editVentaFecha").value,
+        precioVenta: Number.parseFloat(
+          document.getElementById("editVentaPrecio").value,
+        ),
+        centroAcopioId: document.getElementById("editVentaCentro").value,
+        observaciones: document.getElementById("editVentaObservaciones").value,
+      };
 
-       let csrfToken =
-         document
-           .querySelector('meta[name="csrf-token"]')
-           ?.getAttribute("content") || "";
-       fetch(
-         `/punto-eca/movimientos/editar-venta/${datosActualizacion.ventaId}/`,
-         {
-           method: "PUT",
-           headers: {
-             "Content-Type": "application/json",
-             "X-CSRFToken": csrfToken,
-           },
-           body: JSON.stringify(datosActualizacion),
-         },
-       )
-         .then((res) => res.json())
+      let csrfToken =
+        document
+          .querySelector('meta[name="csrf-token"]')
+          ?.getAttribute("content") || "";
+      fetch(
+        `/punto-eca/movimientos/editar-venta/${datosActualizacion.ventaId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify(datosActualizacion),
+        },
+      )
+        .then((res) => res.json())
         .then((data) => {
-          // Back-end returns { error: false, mensaje: '...' } on success
-          if (data && (data.error === false || data.ok || data.success || data.status === 200 || data.status === 201)) {
+          if (
+            data &&
+            (data.error === false ||
+              data.ok ||
+              data.success ||
+              data.status === 200 ||
+              data.status === 201)
+          ) {
             mostrarSwalMensajeMovimiento({
               icon: "success",
               title: "Venta actualizada",
@@ -3091,172 +3001,157 @@ document.addEventListener("DOMContentLoaded", function () {
             });
           }
         });
-     });
-   }
-
-   // Editar desde modal de detalles (entradas y salidas regulares e historial)
-   document.addEventListener("click", function (e) {
-     const btn = e.target.closest("#btnEditarEntrada, #btnEditarSalida");
-     if (!btn) return;
-
-     // Determine which button was clicked and get the appropriate ID
-     let movimientoId = null;
-     let esCompra = false;
-     let esHistorial = false;
-
-     if (btn.id === "btnEditarEntrada") {
-       movimientoId = btn.dataset.compraId;
-       // Check if this is from historial
-       const historialBtn = document.querySelector(`.btn-editar-historial-compra[data-compra-id="${movimientoId}"]`);
-       esHistorial = !!historialBtn;
-       esCompra = true;
-     } else if (btn.id === "btnEditarSalida") {
-       movimientoId = btn.dataset.ventaId;
-       // Check if this is from historial
-       const historialBtn = document.querySelector(`.btn-editar-historial-venta[data-venta-id="${movimientoId}"]`);
-       esHistorial = !!historialBtn;
-       esCompra = false;
-     }
-
-     if (!movimientoId) return;
-
-     // Hide the details modal
-     const modalId = esCompra ? "detallesEntradaModal" : "detallesSalidaModal";
-     const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
-     if (modal) modal.hide();
-
-     if (esHistorial) {
-       // Handle history items
-       if (esCompra) {
-         const entrada = globalThis.HISTORIAL_COMPRAS.find(
-           (e) => e.compraId === movimientoId,
-         );
-         if (!entrada) return;
-
-         document.getElementById("editCompraId").value = entrada.compraId || "";
-         document.getElementById("editInventarioId").value =
-           entrada.inventarioId || "";
-         document.getElementById("editCompraMaterialId").value =
-           entrada.materialId || "";
-         document.getElementById("editCompraMaterial").value =
-           entrada.nombreMaterial || "";
-         document.getElementById("editCompraFecha").value = entrada.fechaCompra
-           ? new Date(entrada.fechaCompra).toISOString().slice(0, 16)
-           : "";
-         document.getElementById("editCompraCantidad").value =
-           entrada.cantidad || "";
-         document.getElementById("editCompraPrecio").value =
-           entrada.precioCompra || "";
-         document.getElementById("editCompraObservaciones").value =
-           entrada.observaciones || "";
-
-         const modalEditar = new bootstrap.Modal(
-           document.getElementById("editarCompraModal"),
-         );
-         modalEditar.show();
-       } else {
-         const venta = globalThis.HISTORIAL_VENTAS.find(
-           (v) => v.ventaId === movimientoId,
-         );
-         if (!venta) return;
-
-         document.getElementById("editVentaId").value = venta.ventaId || "";
-         document.getElementById("editInventarioIdVenta").value =
-           venta.inventarioId || "";
-         document.getElementById("editVentaMaterialId").value =
-           venta.materialId || "";
-         document.getElementById("editVentaMaterial").value =
-           venta.nombreMaterial || "";
-         document.getElementById("editVentaFecha").value = venta.fechaVenta
-           ? new Date(venta.fechaVenta).toISOString().slice(0, 16)
-           : "";
-         document.getElementById("editVentaCantidad").value =
-           venta.cantidad || "";
-          document.getElementById("editVentaPrecio").value =
-            venta.precioVenta || "";
-          document.getElementById("editVentaCentro").value =
-            venta.centroAcopioId || "";
-          document.getElementById("editVentaObservaciones").value =
-            venta.observaciones || "";
-
-         const modalEditar = new bootstrap.Modal(
-           document.getElementById("editarVentaModal"),
-         );
-         modalEditar.show();
-       }
-     } else {
-       // Handle regular items (from entradas/salidas tables)
-       if (esCompra) {
-         const entrada = globalThis.ENTRADAS_INICIALES.find(
-           (e) => e.compraId === movimientoId,
-         );
-         if (!entrada) return;
-
-         document.getElementById("editCompraId").value = entrada.compraId || "";
-         document.getElementById("editInventarioId").value =
-           entrada.inventarioId || "";
-         document.getElementById("editCompraMaterialId").value =
-           entrada.materialId || "";
-         document.getElementById("editCompraMaterial").value =
-           entrada.nombreMaterial || "";
-          document.getElementById("editCompraFecha").value = entrada.fechaCompra
-            ? new Date(entrada.fechaCompra).toISOString().slice(0, 16)
-            : "";
-          document.getElementById("editCompraCantidad").value =
-            entrada.cantidad || "";
-          document.getElementById("editCompraPrecio").value =
-            entrada.precioCompra || "";
-          document.getElementById("editCompraObservaciones").value =
-            entrada.observaciones || "";
-
-         const modalEditar = new bootstrap.Modal(
-           document.getElementById("editarCompraModal"),
-         );
-         modalEditar.show();
-       } else {
-         const salida = globalThis.SALIDAS_INICIALES.find(
-           (s) => s.ventaId === movimientoId,
-         );
-         if (!salida) return;
-
-          document.getElementById("editVentaId").value = salida.ventaId || "";
-          document.getElementById("editInventarioIdVenta").value =
-            salida.inventarioId || "";
-          document.getElementById("editVentaMaterialId").value =
-            salida.materialId || "";
-          document.getElementById("editVentaMaterial").value =
-            salida.nombreMaterial || "";
-          document.getElementById("editVentaFecha").value = salida.fechaVenta
-            ? new Date(salida.fechaVenta).toISOString().slice(0, 16)
-            : "";
-          document.getElementById("editVentaCantidad").value =
-            salida.cantidad || "";
-          document.getElementById("editVentaPrecio").value =
-            salida.precioVenta || "";
-          document.getElementById("editVentaCentro").value =
-            salida.centroAcopioId || "";
-          document.getElementById("editVentaObservaciones").value =
-            salida.observaciones || "";
-
-         const modalEditar = new bootstrap.Modal(
-           document.getElementById("editarVentaModal"),
-         );
-         modalEditar.show();
-       }
-     }
-   });
- });
-
-// Manejadores Ligeros Adicionales (Reparación de la función huérfana del final)
-(function () {
-  function safeParseFloat(v) {
-    const n = parseFloat(v);
-    return isNaN(n) ? null : n;
+    });
   }
-  // Tu función original estaba redundante aquí, ya que formSalida y formEntrada ya
-  // están manejados correctamente en los bloques superiores dentro de DOMContentLoaded.
-  // Lo dejamos como un wrapper seguro para cualquier lógica extra que necesites agregar.
-})();
+
+  // Editar desde modal de detalles (entradas y salidas regulares e historial)
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("#btnEditarEntrada, #btnEditarSalida");
+    if (!btn) return;
+
+    let movimientoId = null;
+    const esCompra = btn.id === "btnEditarEntrada";
+    let esHistorial = false;
+
+    if (esCompra) {
+      movimientoId = btn.dataset.compraId;
+      const historialBtn = document.querySelector(
+        `.btn-editar-historial-compra[data-compra-id="${movimientoId}"]`,
+      );
+      esHistorial = !!historialBtn;
+    } else {
+      movimientoId = btn.dataset.ventaId;
+      const historialBtn = document.querySelector(
+        `.btn-editar-historial-venta[data-venta-id="${movimientoId}"]`,
+      );
+      esHistorial = !!historialBtn;
+    }
+
+    if (!movimientoId) return;
+
+    const modalId = esCompra ? "detallesEntradaModal" : "detallesSalidaModal";
+    const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+    if (modal) modal.hide();
+
+    if (esHistorial) {
+      if (esCompra) {
+        const entrada = globalThis.HISTORIAL_COMPRAS.find(
+          (e) => e.compraId === movimientoId,
+        );
+        if (!entrada) return;
+
+        document.getElementById("editCompraId").value = entrada.compraId || "";
+        document.getElementById("editInventarioId").value =
+          entrada.inventarioId || "";
+        document.getElementById("editCompraMaterialId").value =
+          entrada.materialId || "";
+        document.getElementById("editCompraMaterial").value =
+          entrada.nombreMaterial || "";
+        document.getElementById("editCompraFecha").value = entrada.fechaCompra
+          ? new Date(entrada.fechaCompra).toISOString().slice(0, 16)
+          : "";
+        document.getElementById("editCompraCantidad").value =
+          entrada.cantidad || "";
+        document.getElementById("editCompraPrecio").value =
+          entrada.precioCompra || "";
+        document.getElementById("editCompraObservaciones").value =
+          entrada.observaciones || "";
+
+        const modalEditar = new bootstrap.Modal(
+          document.getElementById("editarCompraModal"),
+        );
+        modalEditar.show();
+      } else {
+        const venta = globalThis.HISTORIAL_VENTAS.find(
+          (v) => v.ventaId === movimientoId,
+        );
+        if (!venta) return;
+
+        document.getElementById("editVentaId").value = venta.ventaId || "";
+        document.getElementById("editInventarioIdVenta").value =
+          venta.inventarioId || "";
+        document.getElementById("editVentaMaterialId").value =
+          venta.materialId || "";
+        document.getElementById("editVentaMaterial").value =
+          venta.nombreMaterial || "";
+        document.getElementById("editVentaFecha").value = venta.fechaVenta
+          ? new Date(venta.fechaVenta).toISOString().slice(0, 16)
+          : "";
+        document.getElementById("editVentaCantidad").value =
+          venta.cantidad || "";
+        document.getElementById("editVentaPrecio").value =
+          venta.precioVenta || "";
+        document.getElementById("editVentaCentro").value =
+          venta.centroAcopioId || "";
+        document.getElementById("editVentaObservaciones").value =
+          venta.observaciones || "";
+
+        const modalEditar = new bootstrap.Modal(
+          document.getElementById("editarVentaModal"),
+        );
+        modalEditar.show();
+      }
+    } else {
+      if (esCompra) {
+        const entrada = globalThis.ENTRADAS_INICIALES.find(
+          (e) => e.compraId === movimientoId,
+        );
+        if (!entrada) return;
+
+        document.getElementById("editCompraId").value = entrada.compraId || "";
+        document.getElementById("editInventarioId").value =
+          entrada.inventarioId || "";
+        document.getElementById("editCompraMaterialId").value =
+          entrada.materialId || "";
+        document.getElementById("editCompraMaterial").value =
+          entrada.nombreMaterial || "";
+        document.getElementById("editCompraFecha").value = entrada.fechaCompra
+          ? new Date(entrada.fechaCompra).toISOString().slice(0, 16)
+          : "";
+        document.getElementById("editCompraCantidad").value =
+          entrada.cantidad || "";
+        document.getElementById("editCompraPrecio").value =
+          entrada.precioCompra || "";
+        document.getElementById("editCompraObservaciones").value =
+          entrada.observaciones || "";
+
+        const modalEditar = new bootstrap.Modal(
+          document.getElementById("editarCompraModal"),
+        );
+        modalEditar.show();
+      } else {
+        const salida = globalThis.SALIDAS_INICIALES.find(
+          (s) => s.ventaId === movimientoId,
+        );
+        if (!salida) return;
+
+        document.getElementById("editVentaId").value = salida.ventaId || "";
+        document.getElementById("editInventarioIdVenta").value =
+          salida.inventarioId || "";
+        document.getElementById("editVentaMaterialId").value =
+          salida.materialId || "";
+        document.getElementById("editVentaMaterial").value =
+          salida.nombreMaterial || "";
+        document.getElementById("editVentaFecha").value = salida.fechaVenta
+          ? new Date(salida.fechaVenta).toISOString().slice(0, 16)
+          : "";
+        document.getElementById("editVentaCantidad").value =
+          salida.cantidad || "";
+        document.getElementById("editVentaPrecio").value =
+          salida.precioVenta || "";
+        document.getElementById("editVentaCentro").value =
+          salida.centroAcopioId || "";
+        document.getElementById("editVentaObservaciones").value =
+          salida.observaciones || "";
+
+        const modalEditar = new bootstrap.Modal(
+          document.getElementById("editarVentaModal"),
+        );
+        modalEditar.show();
+      }
+    }
+  });
+});
 
 // Ver Detalles de Salida
 document.addEventListener("click", function (e) {
@@ -3278,8 +3173,8 @@ document.addEventListener("click", function (e) {
   const fecha = salida.fechaVenta
     ? new Date(salida.fechaVenta).toLocaleDateString("es-CO")
     : "-";
-  const cantidad = parseFloat(salida.cantidad || 0);
-  const precio = parseFloat(salida.precioVenta || 0);
+  const cantidad = Number.parseFloat(salida.cantidad || 0);
+  const precio = Number.parseFloat(salida.precioVenta || 0);
   const total = cantidad * precio;
 
   document.getElementById("detSalidaMaterial").textContent =
@@ -3307,20 +3202,22 @@ document.addEventListener("click", function (e) {
   modal.show();
 });
 
-// Ver Detalles de Historial (usa modales existentes)
+// Ver Detalles de Historial
 document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".btn-editar-historial-compra, .btn-editar-historial-venta");
+  const btn = e.target.closest(
+    ".btn-editar-historial-compra, .btn-editar-historial-venta",
+  );
   if (!btn) return;
   let movimientoId, tipoMovimiento, modalId;
 
   if (btn.classList.contains("btn-editar-historial-compra")) {
     movimientoId = btn.dataset.compraId;
     tipoMovimiento = "Compra";
-    modalId = "detallesEntradaModal"; // Usar modal de entrada para compras
+    modalId = "detallesEntradaModal";
   } else if (btn.classList.contains("btn-editar-historial-venta")) {
     movimientoId = btn.dataset.ventaId;
     tipoMovimiento = "Venta";
-    modalId = "detallesSalidaModal"; // Usar modal de salida para ventas
+    modalId = "detallesSalidaModal";
   }
 
   let movimiento;
@@ -3346,13 +3243,11 @@ document.addEventListener("click", function (e) {
   const fecha = movimiento.fecha
     ? new Date(movimiento.fecha).toLocaleDateString("es-CO")
     : "-";
-  const cantidad = parseFloat(movimiento.cantidad || 0);
-  const precio = parseFloat(movimiento.precio || 0);
+  const cantidad = Number.parseFloat(movimiento.cantidad || 0);
+  const precio = Number.parseFloat(movimiento.precio || 0);
   const total = cantidad * precio;
 
-  // Actualizar elementos en el modal apropiado
   if (modalId === "detallesEntradaModal") {
-    // Para compras, usar elementos del modal de entrada
     document.getElementById("detEntradaMaterial").textContent =
       movimiento.nombreMaterial || "-";
     document.getElementById("detEntradaFecha").textContent = fecha;
@@ -3365,7 +3260,6 @@ document.addEventListener("click", function (e) {
     document.getElementById("detEntradaObservaciones").textContent =
       movimiento.observaciones || "Sin observaciones";
   } else if (modalId === "detallesSalidaModal") {
-    // Para ventas, usar elementos del modal de salida
     document.getElementById("detSalidaMaterial").textContent =
       movimiento.nombreMaterial || "-";
     document.getElementById("detSalidaFecha").textContent = fecha;
@@ -3381,13 +3275,11 @@ document.addEventListener("click", function (e) {
       movimiento.nombreCentroAcopio || "-";
   }
 
-   const modal = new bootstrap.Modal(
-     document.getElementById(modalId),
-   );
-   // Mark this as a history item for edit/delete button handlers
-   document.getElementById(modalId).dataset.isHistoryItem = "true";
-   document.getElementById(modalId).dataset.historyItemType = tipoMovimiento.toLowerCase();
-  // Asegurar que los botones internos del modal tienen el dataset correcto
+  const modal = new bootstrap.Modal(document.getElementById(modalId));
+  document.getElementById(modalId).dataset.isHistoryItem = "true";
+  document.getElementById(modalId).dataset.historyItemType =
+    tipoMovimiento.toLowerCase();
+
   try {
     if (modalId === "detallesEntradaModal") {
       const btnEditEntrada = document.getElementById("btnEditarEntrada");
@@ -3403,10 +3295,10 @@ document.addEventListener("click", function (e) {
   } catch (e) {
     console.error("Error asignando data-* en modal de historial:", e);
   }
-   modal.show();
+  modal.show();
 });
 
-// Calcular total de compra cuando cambie precio o cantidad
+// Calcular total de compra
 function inicializarCalculoCompra() {
   const precioCompraInput = document.getElementById("entradaPrecioCompra");
   const cantidadInput = document.getElementById("entradaCantidad");
@@ -3415,30 +3307,26 @@ function inicializarCalculoCompra() {
   const stockActualInput = document.getElementById("entradaStockActual");
 
   function calcularTotalCompra() {
-    const precio = parseFloat(precioCompraInput.value) || 0;
-    const cantidad = parseFloat(cantidadInput.value) || 0;
+    const precio = Number.parseFloat(precioCompraInput.value) || 0;
+    const cantidad = Number.parseFloat(cantidadInput.value) || 0;
     const total = precio * cantidad;
     totalCompraInput.value = total.toFixed(2);
 
-    // Calcular stock resultante
-    const stockActual = parseFloat(stockActualInput.value) || 0;
+    const stockActual = Number.parseFloat(stockActualInput.value) || 0;
     const stockResultante = stockActual + cantidad;
     stockResultanteSpan.textContent = stockResultante.toFixed(2);
   }
 
-  // Agregar listeners
   if (precioCompraInput) {
     precioCompraInput.addEventListener("input", calcularTotalCompra);
   }
   if (cantidadInput) {
     cantidadInput.addEventListener("input", calcularTotalCompra);
   }
-
-  // También calcular al inicializar
   calcularTotalCompra();
 }
 
-// Calcular total de venta cuando cambie precio o cantidad
+// Calcular total de venta
 function inicializarCalculoVenta() {
   const precioVentaInput = document.getElementById("salidaPrecioVenta");
   const cantidadInput = document.getElementById("salidaCantidad");
@@ -3447,45 +3335,39 @@ function inicializarCalculoVenta() {
   const stockActualInput = document.getElementById("salidaStockActual");
 
   function calcularTotalVenta() {
-    const precio = parseFloat(precioVentaInput.value) || 0;
-    const cantidad = parseFloat(cantidadInput.value) || 0;
+    const precio = Number.parseFloat(precioVentaInput.value) || 0;
+    const cantidad = Number.parseFloat(cantidadInput.value) || 0;
     const total = precio * cantidad;
     totalVentaInput.value = total.toFixed(2);
 
-    // Calcular stock resultante (para venta es resta)
-    const stockActual = parseFloat(stockActualInput.value) || 0;
+    const stockActual = Number.parseFloat(stockActualInput.value) || 0;
     const stockRestante = stockActual - cantidad;
     stockRestanteSpan.textContent = stockRestante.toFixed(2);
   }
 
-  // Agregar listeners
   if (precioVentaInput) {
     precioVentaInput.addEventListener("input", calcularTotalVenta);
   }
   if (cantidadInput) {
     cantidadInput.addEventListener("input", calcularTotalVenta);
   }
-
-  // También calcular al inicializar
   calcularTotalVenta();
 }
 
-// Inicializar validación en tiempo real cuando el DOM esté listo
+// Inicializar cálculos y fechas
 document.addEventListener("DOMContentLoaded", function () {
-  // agregarValidacionEnTiempoRealEntrada();
-  // agregarValidacionEnTiempoRealSalida();
   inicializarCalculoCompra();
   inicializarCalculoVenta();
-  // Llenar select de edición de venta con centros disponibles
+
   try {
     const editVentaSelect = document.getElementById("editVentaCentro");
     if (editVentaSelect) {
-      let centros = globalThis.CENTROS || window.CENTROS || [];
+      let centros = globalThis.CENTROS || [];
       if (!Array.isArray(centros) && typeof centros === "object") {
         centros = Object.values(centros || {});
       }
-      // Clear and add default
-      editVentaSelect.innerHTML = "<option value=''>Selecciona un centro...</option>";
+      editVentaSelect.innerHTML =
+        "<option value=''>Selecciona un centro...</option>";
       centros.forEach((c) => {
         const opt = document.createElement("option");
         opt.value = c.id || c.id === 0 ? String(c.id) : "";
@@ -3496,28 +3378,9 @@ document.addEventListener("DOMContentLoaded", function () {
   } catch (e) {
     console.error("Error populating editVentaCentro on DOMContentLoaded", e);
   }
-});
 
-// --- FUNCIONES AUXILIARES (Pégala al final o junto a otras funciones) ---
-function obtenerFechaHoraActual() {
-  const ahora = new Date();
-  // Ajuste de zona horaria local
-  const ahoraLocal = new Date(
-    ahora.getTime() - ahora.getTimezoneOffset() * 60000,
-  );
-  return ahoraLocal.toISOString().slice(0, 16);
-}
-
-// --- BLOQUE PRINCIPAL (Actualiza el que ya tienes) ---
-document.addEventListener("DOMContentLoaded", function () {
-  // Tus inicializaciones actuales
-  inicializarCalculoCompra();
-  inicializarCalculoVenta();
-
-  // --- NUEVA LÓGICA DE FECHAS ---
   const fechaHoraExacta = obtenerFechaHoraActual();
   const limitePasado = "2025-01-01T00:00";
-
   const inputFechaCompra = document.getElementById("entradaFecha");
   const inputFechaVenta = document.getElementById("salidaFecha");
 
