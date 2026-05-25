@@ -280,7 +280,13 @@ def _obtener_filtro_export(request, nombre):
     return (request.GET.get(nombre) or "").strip()
 
 
-def _filtrar_historial_compras_export(request, queryset):
+def _aplicar_filtros_export(
+    request,
+    queryset,
+    fecha_campo,
+    incluir_centro_acopio=False,
+    tipo_movimiento_bloqueado=None,
+):
     punto_eca_id = _obtener_punto_eca_id_export(request)
     if punto_eca_id:
         queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
@@ -288,6 +294,7 @@ def _filtrar_historial_compras_export(request, queryset):
     material = _obtener_filtro_export(request, "material")
     categoria = _obtener_filtro_export(request, "categoria")
     tipo = _obtener_filtro_export(request, "tipo")
+    centro_acopio = _obtener_filtro_export(request, "centro_acopio")
     tipo_movimiento = _obtener_filtro_export(request, "tipo_movimiento").lower()
     fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
     fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
@@ -300,100 +307,51 @@ def _filtrar_historial_compras_export(request, queryset):
         )
     if tipo:
         queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
+    if incluir_centro_acopio and centro_acopio:
+        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
     if fecha_desde:
-        queryset = queryset.filter(fecha_compra__date__gte=fecha_desde)
+        queryset = queryset.filter(**{f"{fecha_campo}__date__gte": fecha_desde})
     if fecha_hasta:
-        queryset = queryset.filter(fecha_compra__date__lte=fecha_hasta)
-    if tipo_movimiento == "venta":
+        queryset = queryset.filter(**{f"{fecha_campo}__date__lte": fecha_hasta})
+    if tipo_movimiento_bloqueado and tipo_movimiento == tipo_movimiento_bloqueado:
         return queryset.none()
     return queryset
+
+
+def _filtrar_historial_compras_export(request, queryset):
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_compra",
+        tipo_movimiento_bloqueado="venta",
+    )
 
 
 def _filtrar_historial_ventas_export(request, queryset):
-    punto_eca_id = _obtener_punto_eca_id_export(request)
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
-
-    material = _obtener_filtro_export(request, "material")
-    categoria = _obtener_filtro_export(request, "categoria")
-    tipo = _obtener_filtro_export(request, "tipo")
-    centro_acopio = _obtener_filtro_export(request, "centro_acopio")
-    tipo_movimiento = _obtener_filtro_export(request, "tipo_movimiento").lower()
-    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
-    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
-
-    if material:
-        queryset = queryset.filter(inventario__material__nombre__iexact=material)
-    if categoria:
-        queryset = queryset.filter(
-            inventario__material__categoria__nombre__iexact=categoria
-        )
-    if tipo:
-        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
-    if centro_acopio:
-        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
-    if fecha_desde:
-        queryset = queryset.filter(fecha_venta__date__gte=fecha_desde)
-    if fecha_hasta:
-        queryset = queryset.filter(fecha_venta__date__lte=fecha_hasta)
-    if tipo_movimiento == "compra":
-        return queryset.none()
-    return queryset
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_venta",
+        incluir_centro_acopio=True,
+        tipo_movimiento_bloqueado="compra",
+    )
 
 
 def _filtrar_compras_export(request, queryset):
-    punto_eca_id = _obtener_punto_eca_id_export(request)
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
-
-    material = _obtener_filtro_export(request, "material")
-    categoria = _obtener_filtro_export(request, "categoria")
-    tipo = _obtener_filtro_export(request, "tipo")
-    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
-    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
-
-    if material:
-        queryset = queryset.filter(inventario__material__nombre__iexact=material)
-    if categoria:
-        queryset = queryset.filter(
-            inventario__material__categoria__nombre__iexact=categoria
-        )
-    if tipo:
-        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
-    if fecha_desde:
-        queryset = queryset.filter(fecha_compra__date__gte=fecha_desde)
-    if fecha_hasta:
-        queryset = queryset.filter(fecha_compra__date__lte=fecha_hasta)
-    return queryset
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_compra",
+    )
 
 
 def _filtrar_ventas_export(request, queryset):
-    punto_eca_id = _obtener_punto_eca_id_export(request)
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
-
-    material = _obtener_filtro_export(request, "material")
-    categoria = _obtener_filtro_export(request, "categoria")
-    tipo = _obtener_filtro_export(request, "tipo")
-    centro_acopio = _obtener_filtro_export(request, "centro_acopio")
-    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
-    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
-
-    if material:
-        queryset = queryset.filter(inventario__material__nombre__iexact=material)
-    if categoria:
-        queryset = queryset.filter(
-            inventario__material__categoria__nombre__iexact=categoria
-        )
-    if tipo:
-        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
-    if centro_acopio:
-        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
-    if fecha_desde:
-        queryset = queryset.filter(fecha_venta__date__gte=fecha_desde)
-    if fecha_hasta:
-        queryset = queryset.filter(fecha_venta__date__lte=fecha_hasta)
-    return queryset
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_venta",
+        incluir_centro_acopio=True,
+    )
 
 
 def _normalizar_historial_compra(compra):
