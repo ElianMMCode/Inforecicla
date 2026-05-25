@@ -563,6 +563,32 @@ function construirUrlExport(baseUrl, params = {}) {
   return query ? `${baseUrl}?${query}` : baseUrl;
 }
 
+function obtenerValoresUnicos(items, selector) {
+  const valores = new Set();
+  (items || []).forEach((item) => {
+    const valor = selector(item);
+    if (valor) valores.add(valor);
+  });
+  return Array.from(valores).sort((a, b) => a.localeCompare(b));
+}
+
+function poblarSelectConValores($select, valores, placeholder, opciones = {}) {
+  if (!$select || !$select.length) return;
+
+  $select.find('option:not([value=""])').remove();
+  valores.forEach((valor) => {
+    $select.append($("<option>").val(valor).text(valor));
+  });
+
+  $select.select2({
+    theme: "bootstrap4",
+    width: "100%",
+    allowClear: true,
+    placeholder,
+    minimumInputLength: opciones.minimumInputLength ?? 0,
+  });
+}
+
 async function descargarArchivoExportacion(url, filename) {
   const response = await fetch(url, {
     method: "GET",
@@ -1566,61 +1592,34 @@ document.addEventListener("DOMContentLoaded", function () {
     const $filtroTipoCompra = $("#filtroCompraTipo");
 
     if ($filtroMaterialCompra.length) {
-      $filtroMaterialCompra.find('option:not([value=""])').remove();
-      const materiales = new Set();
-      (globalThis.ENTRADAS_INICIALES || []).forEach((entrada) => {
-        if (entrada.nombreMaterial) materiales.add(entrada.nombreMaterial);
-      });
-      Array.from(materiales)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((m) => {
-          $filtroMaterialCompra.append($("<option>").val(m).text(m));
-        });
-      $filtroMaterialCompra.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona material...",
-        minimumInputLength: 0,
-      });
+      poblarSelectConValores(
+        $filtroMaterialCompra,
+        obtenerValoresUnicos(globalThis.ENTRADAS_INICIALES, (entrada) =>
+          entrada.nombreMaterial,
+        ),
+        "Selecciona material...",
+        { minimumInputLength: 0 },
+      );
     }
 
     if ($filtroCategoriaCompra.length) {
-      $filtroCategoriaCompra.find('option:not([value=""])').remove();
-      const categorias = new Set();
-      (globalThis.ENTRADAS_INICIALES || []).forEach((entrada) => {
-        if (entrada.nombreCategoria) categorias.add(entrada.nombreCategoria);
-      });
-      Array.from(categorias)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((c) => {
-          $filtroCategoriaCompra.append($("<option>").val(c).text(c));
-        });
-      $filtroCategoriaCompra.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona categoría...",
-      });
+      poblarSelectConValores(
+        $filtroCategoriaCompra,
+        obtenerValoresUnicos(globalThis.ENTRADAS_INICIALES, (entrada) =>
+          entrada.nombreCategoria,
+        ),
+        "Selecciona categoría...",
+      );
     }
 
     if ($filtroTipoCompra.length) {
-      $filtroTipoCompra.find('option:not([value=""])').remove();
-      const tipos = new Set();
-      (globalThis.ENTRADAS_INICIALES || []).forEach((entrada) => {
-        if (entrada.nombreTipo) tipos.add(entrada.nombreTipo);
-      });
-      Array.from(tipos)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((t) => {
-          $filtroTipoCompra.append($("<option>").val(t).text(t));
-        });
-      $filtroTipoCompra.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona tipo...",
-      });
+      poblarSelectConValores(
+        $filtroTipoCompra,
+        obtenerValoresUnicos(globalThis.ENTRADAS_INICIALES, (entrada) =>
+          entrada.nombreTipo,
+        ),
+        "Selecciona tipo...",
+      );
     }
   }, 300);
 
@@ -1631,85 +1630,46 @@ document.addEventListener("DOMContentLoaded", function () {
     const $filtroCentroVenta = $("#filtroVentaCentro");
 
     if ($filtroMaterialVenta.length) {
-      $filtroMaterialVenta.find('option:not([value=""])').remove();
-      const materiales = new Set();
-      (globalThis.SALIDAS_INICIALES || []).forEach((salida) => {
-        if (salida.nombreMaterial) materiales.add(salida.nombreMaterial);
-      });
-      Array.from(materiales)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((m) => {
-          $filtroMaterialVenta.append($("<option>").val(m).text(m));
-        });
-      $filtroMaterialVenta.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona material...",
-      });
+      poblarSelectConValores(
+        $filtroMaterialVenta,
+        obtenerValoresUnicos(globalThis.SALIDAS_INICIALES, (salida) =>
+          salida.nombreMaterial,
+        ),
+        "Selecciona material...",
+      );
     }
 
     if ($filtroCategoriaVenta.length) {
-      $filtroCategoriaVenta.find('option:not([value=""])').remove();
-      const categorias = new Set();
-      (globalThis.SALIDAS_INICIALES || []).forEach((salida) => {
-        if (salida.nombreCategoria) categorias.add(salida.nombreCategoria);
-      });
-      Array.from(categorias)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((c) => {
-          $filtroCategoriaVenta.append($("<option>").val(c).text(c));
-        });
-      $filtroCategoriaVenta.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona categoría...",
-      });
+      poblarSelectConValores(
+        $filtroCategoriaVenta,
+        obtenerValoresUnicos(globalThis.SALIDAS_INICIALES, (salida) =>
+          salida.nombreCategoria,
+        ),
+        "Selecciona categoría...",
+      );
     }
 
     if ($filtroTipoVenta.length) {
-      $filtroTipoVenta.find('option:not([value=""])').remove();
-      const tipos = new Set();
-      (globalThis.SALIDAS_INICIALES || []).forEach((salida) => {
-        if (salida.nombreTipo) tipos.add(salida.nombreTipo);
-      });
-      Array.from(tipos)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((t) => {
-          $filtroTipoVenta.append($("<option>").val(t).text(t));
-        });
-      $filtroTipoVenta.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona tipo...",
-      });
+      poblarSelectConValores(
+        $filtroTipoVenta,
+        obtenerValoresUnicos(globalThis.SALIDAS_INICIALES, (salida) =>
+          salida.nombreTipo,
+        ),
+        "Selecciona tipo...",
+      );
     }
 
     if ($filtroCentroVenta.length) {
-      $filtroCentroVenta.find('option:not([value=""])').remove();
-      const centros = globalThis.CENTROS || [];
-      let centrosArray = Array.isArray(centros)
-        ? centros
-        : Object.values(centros);
-      const nombreCentros = new Set();
-      centrosArray.forEach((centro) => {
-        const nombre =
-          centro.nombre || centro.nmbCentro || centro.nmbCentroAcopio || "";
-        if (nombre) nombreCentros.add(nombre);
-      });
-      Array.from(nombreCentros)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((n) => {
-          $filtroCentroVenta.append($("<option>").val(n).text(n));
-        });
-      $filtroCentroVenta.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona centro de acopio...",
-      });
+      const centros = Array.isArray(globalThis.CENTROS)
+        ? globalThis.CENTROS
+        : Object.values(globalThis.CENTROS || {});
+      poblarSelectConValores(
+        $filtroCentroVenta,
+        obtenerValoresUnicos(centros, (centro) =>
+          centro.nombre || centro.nmbCentro || centro.nmbCentroAcopio || "",
+        ),
+        "Selecciona centro de acopio...",
+      );
     }
   }, 300);
 
@@ -1720,86 +1680,50 @@ document.addEventListener("DOMContentLoaded", function () {
     const $filtroHistorialCentroAcopio = $("#filtroHistorialCentroAcopio");
 
     if ($filtroHistorialMaterial.length) {
-      const materiales = new Set();
-      const comprasData = globalThis.HISTORIAL_COMPRAS || [];
-      const ventasData = globalThis.HISTORIAL_VENTAS || [];
-      [...comprasData, ...ventasData].forEach((mov) => {
-        if (mov.nombreMaterial) materiales.add(mov.nombreMaterial);
-      });
-      Array.from(materiales)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((m) => {
-          $filtroHistorialMaterial.append($("<option>").val(m).text(m));
-        });
-      $filtroHistorialMaterial.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona material...",
-        minimumInputLength: 0,
-      });
+      poblarSelectConValores(
+        $filtroHistorialMaterial,
+        obtenerValoresUnicos(
+          [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.HISTORIAL_VENTAS || [])],
+          (mov) => mov.nombreMaterial,
+        ),
+        "Selecciona material...",
+        { minimumInputLength: 0 },
+      );
     }
 
     if ($filtroHistorialCategoria.length) {
-      const categorias = new Set();
-      const comprasData = globalThis.HISTORIAL_COMPRAS || [];
-      const ventasData = globalThis.HISTORIAL_VENTAS || [];
-      [...comprasData, ...ventasData].forEach((mov) => {
-        if (mov.nombreCategoria) categorias.add(mov.nombreCategoria);
-      });
-      Array.from(categorias)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((c) => {
-          $filtroHistorialCategoria.append($("<option>").val(c).text(c));
-        });
-      $filtroHistorialCategoria.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona categoría...",
-      });
+      poblarSelectConValores(
+        $filtroHistorialCategoria,
+        obtenerValoresUnicos(
+          [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.HISTORIAL_VENTAS || [])],
+          (mov) => mov.nombreCategoria,
+        ),
+        "Selecciona categoría...",
+      );
     }
 
     if ($filtroHistorialTipo.length) {
-      const tipos = new Set();
-      const comprasData = globalThis.HISTORIAL_COMPRAS || [];
-      const ventasData = globalThis.HISTORIAL_VENTAS || [];
-      [...comprasData, ...ventasData].forEach((mov) => {
-        if (mov.nombreTipo) tipos.add(mov.nombreTipo);
-      });
-      Array.from(tipos)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((t) => {
-          $filtroHistorialTipo.append($("<option>").val(t).text(t));
-        });
-      $filtroHistorialTipo.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona tipo...",
-      });
+      poblarSelectConValores(
+        $filtroHistorialTipo,
+        obtenerValoresUnicos(
+          [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.HISTORIAL_VENTAS || [])],
+          (mov) => mov.nombreTipo,
+        ),
+        "Selecciona tipo...",
+      );
     }
 
     if ($filtroHistorialCentroAcopio.length) {
-      $filtroHistorialCentroAcopio.find('option:not([value=""])').remove();
-      let centros = globalThis.CENTROS || [];
-      if (!Array.isArray(centros)) centros = Object.values(centros || {});
-      const nombreCentros = new Set();
-      centros.forEach((c) => {
-        const nombre = c.nombre || c.nmbCentro || c.nmbCentroAcopio || "";
-        if (nombre) nombreCentros.add(nombre);
-      });
-      Array.from(nombreCentros)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((n) => {
-          $filtroHistorialCentroAcopio.append($("<option>").val(n).text(n));
-        });
-      $filtroHistorialCentroAcopio.select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: "Selecciona centro de acopio...",
-      });
+      const centros = Array.isArray(globalThis.CENTROS)
+        ? globalThis.CENTROS
+        : Object.values(globalThis.CENTROS || {});
+      poblarSelectConValores(
+        $filtroHistorialCentroAcopio,
+        obtenerValoresUnicos(centros, (c) =>
+          c.nombre || c.nmbCentro || c.nmbCentroAcopio || "",
+        ),
+        "Selecciona centro de acopio...",
+      );
     }
   }, 300);
 
