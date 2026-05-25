@@ -215,6 +215,42 @@ function cerrarModalRelacionado(modalId) {
   if (modal) modal.hide();
 }
 
+function poblarDetalleMovimiento({
+  prefijo,
+  material,
+  fecha,
+  cantidad,
+  precio,
+  total,
+  observaciones,
+  centroAcopio = null,
+  botonIds = [],
+  botonAtributo = null,
+  botonValor = null,
+}) {
+  document.getElementById(`det${prefijo}Material`).textContent = material || "-";
+  document.getElementById(`det${prefijo}Fecha`).textContent = fecha;
+  document.getElementById(`det${prefijo}Cantidad`).textContent =
+    cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2 });
+  document.getElementById(`det${prefijo}Precio`).textContent =
+    "$" + precio.toLocaleString("es-CO", { minimumFractionDigits: 2 });
+  document.getElementById(`det${prefijo}Total`).textContent =
+    "$" + total.toLocaleString("es-CO", { minimumFractionDigits: 2 });
+  document.getElementById(`det${prefijo}Observaciones`).textContent =
+    observaciones || "Sin observaciones";
+
+  if (centroAcopio !== null) {
+    const centroEl = document.getElementById(`det${prefijo}Centro`);
+    if (centroEl) {
+      centroEl.textContent = centroAcopio || "-";
+    }
+  }
+
+  if (botonIds.length && botonAtributo) {
+    asignarDataEnBotones(botonIds, botonAtributo, botonValor);
+  }
+}
+
 function obtenerHistorialMovimiento(movimientoId, esCompra) {
   const listado = esCompra ? globalThis.HISTORIAL_COMPRAS : globalThis.HISTORIAL_VENTAS;
   const campoId = esCompra ? "compraId" : "ventaId";
@@ -245,23 +281,19 @@ function mostrarDetallesSalidaPorId(ventaId) {
   const precio = Number.parseFloat(salida.precioVenta || 0);
   const total = cantidad * precio;
 
-  document.getElementById("detSalidaMaterial").textContent = salida.nombreMaterial || "-";
-  document.getElementById("detSalidaFecha").textContent = fecha;
-  document.getElementById("detSalidaCantidad").textContent =
-    cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaPrecio").textContent =
-    "$" + precio.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaTotal").textContent =
-    "$" + total.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaObservaciones").textContent =
-    salida.observaciones || "Sin observaciones";
-  document.getElementById("detSalidaCentro").textContent =
-    salida.nombreCentroAcopio || "-";
-
-  const btnDel = document.getElementById("btnEliminarSalida");
-  const btnEdit = document.getElementById("btnEditarSalida");
-  if (btnDel) btnDel.dataset.ventaId = ventaId;
-  if (btnEdit) btnEdit.dataset.ventaId = ventaId;
+  poblarDetalleMovimiento({
+    prefijo: "Salida",
+    material: salida.nombreMaterial,
+    fecha,
+    cantidad,
+    precio,
+    total,
+    observaciones: salida.observaciones,
+    centroAcopio: salida.nombreCentroAcopio,
+    botonIds: ["btnEliminarSalida", "btnEditarSalida"],
+    botonAtributo: "ventaId",
+    botonValor: ventaId,
+  });
 
   const modal = new bootstrap.Modal(
     document.getElementById("detallesSalidaModal"),
@@ -277,45 +309,34 @@ function asignarDataEnBotones(ids, atributo, valor) {
 }
 
 function poblarDetallesHistorialCompra(movimiento, fecha, cantidad, precio, total, movimientoId) {
-  document.getElementById("detEntradaMaterial").textContent =
-    movimiento.nombreMaterial || "-";
-  document.getElementById("detEntradaFecha").textContent = fecha;
-  document.getElementById("detEntradaCantidad").textContent =
-    cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detEntradaPrecio").textContent =
-    "$" + precio.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detEntradaTotal").textContent =
-    "$" + total.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detEntradaObservaciones").textContent =
-    movimiento.observaciones || "Sin observaciones";
-
-  asignarDataEnBotones(["btnEditarEntrada", "btnEliminarEntrada"], "compraId", movimientoId);
+  poblarDetalleMovimiento({
+    prefijo: "Entrada",
+    material: movimiento.nombreMaterial,
+    fecha,
+    cantidad,
+    precio,
+    total,
+    observaciones: movimiento.observaciones,
+    botonIds: ["btnEditarEntrada", "btnEliminarEntrada"],
+    botonAtributo: "compraId",
+    botonValor: movimientoId,
+  });
 }
 
 function poblarDetallesHistorialVenta(movimiento, fecha, cantidad, precio, total, movimientoId) {
-  document.getElementById("detSalidaMaterial").textContent =
-    movimiento.nombreMaterial || "-";
-  document.getElementById("detSalidaFecha").textContent = fecha;
-  document.getElementById("detSalidaCantidad").textContent =
-    cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaPrecio").textContent =
-    "$" + precio.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaTotal").textContent =
-    "$" + total.toLocaleString("es-CO", { minimumFractionDigits: 2 });
-  document.getElementById("detSalidaObservaciones").textContent =
-    movimiento.observaciones || "Sin observaciones";
-  document.getElementById("detSalidaCentro").textContent =
-    movimiento.nombreCentroAcopio || "-";
-
-  asignarDataEnBotones(["btnEditarSalida", "btnEliminarSalida"], "ventaId", movimientoId);
-}
-
-function configurarBotonesDetalleHistorial(esCompra, movimientoId) {
-  const ids = esCompra
-    ? ["btnEditarEntrada", "btnEliminarEntrada"]
-    : ["btnEditarSalida", "btnEliminarSalida"];
-  const atributo = esCompra ? "compraId" : "ventaId";
-  asignarDataEnBotones(ids, atributo, movimientoId);
+  poblarDetalleMovimiento({
+    prefijo: "Salida",
+    material: movimiento.nombreMaterial,
+    fecha,
+    cantidad,
+    precio,
+    total,
+    observaciones: movimiento.observaciones,
+    centroAcopio: movimiento.nombreCentroAcopio,
+    botonIds: ["btnEditarSalida", "btnEliminarSalida"],
+    botonAtributo: "ventaId",
+    botonValor: movimientoId,
+  });
 }
 
 function mostrarDetallesHistorialPorBoton(btn) {
@@ -350,8 +371,6 @@ function mostrarDetallesHistorialPorBoton(btn) {
   document.getElementById(modalId).dataset.isHistoryItem = "true";
   document.getElementById(modalId).dataset.historyItemType =
     tipoMovimiento.toLowerCase();
-
-  configurarBotonesDetalleHistorial(esCompra, movimientoId);
 
   modal.show();
 }

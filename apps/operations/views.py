@@ -272,6 +272,36 @@ def _procesar_bulk_import_csv(
         )
 
 
+def _procesar_bulk_import_endpoint(
+    request,
+    headers_esperados,
+    campo_precio,
+    campo_fecha,
+    service_callable,
+    response_id_key,
+    etiqueta_movimiento,
+):
+    if request.method != "POST":
+        return _responder_error_json(ERROR_METODO_NO_PERMITIDO, status=405)
+
+    archivo_csv = request.FILES.get("file")
+    if not archivo_csv:
+        return _responder_error_json("No se encontró el archivo CSV", status=400)
+    if not archivo_csv.name.endswith(".csv"):
+        return _responder_error_json("El archivo debe ser de formato CSV", status=400)
+
+    return _procesar_bulk_import_csv(
+        request=request,
+        archivo_csv=archivo_csv,
+        headers_esperados=headers_esperados,
+        campo_precio=campo_precio,
+        campo_fecha=campo_fecha,
+        service_callable=service_callable,
+        response_id_key=response_id_key,
+        etiqueta_movimiento=etiqueta_movimiento,
+    )
+
+
 def _obtener_punto_eca_id_export(request):
     return (request.GET.get("punto_eca_id") or request.GET.get("puntoId") or "").strip()
 
@@ -354,31 +384,46 @@ def _filtrar_ventas_export(request, queryset):
     )
 
 
-def _normalizar_historial_compra(compra):
+def _normalizar_historial_movimiento(
+    registro,
+    tipo_movimiento,
+    fecha_attr,
+    precio_attr,
+    centro_acopio_resolver,
+):
+    cantidad = getattr(registro, "cantidad", None)
+    precio_unitario = getattr(registro, precio_attr, None)
     return {
-        "tipo_movimiento": "Compra",
-        "material": compra.inventario.material.nombre,
-        "fecha": compra.fecha_compra,
-        "cantidad": compra.cantidad,
-        "precio_unitario": compra.precio_compra,
-        "total": (compra.cantidad or 0) * (compra.precio_compra or 0),
-        "centro_acopio": getattr(compra.inventario.punto_eca, "nombre", ""),
-        "observaciones": compra.observaciones or "",
+        "tipo_movimiento": tipo_movimiento,
+        "material": registro.inventario.material.nombre,
+        "fecha": getattr(registro, fecha_attr),
+        "cantidad": cantidad,
+        "precio_unitario": precio_unitario,
+        "total": (cantidad or 0) * (precio_unitario or 0),
+        "centro_acopio": centro_acopio_resolver(registro),
+        "observaciones": registro.observaciones or "",
     }
+
+
+def _normalizar_historial_compra(compra):
+    return _normalizar_historial_movimiento(
+        compra,
+        "Compra",
+        "fecha_compra",
+        "precio_compra",
+        lambda registro: getattr(registro.inventario.punto_eca, "nombre", ""),
+    )
 
 
 def _normalizar_historial_venta(venta):
-    return {
-        "tipo_movimiento": "Venta",
-        "material": venta.inventario.material.nombre,
-        "fecha": venta.fecha_venta,
-        "cantidad": venta.cantidad,
-        "precio_unitario": venta.precio_venta,
-        "total": (venta.cantidad or 0) * (venta.precio_venta or 0),
-        "centro_acopio": getattr(venta.centro_acopio, "nombre", "")
-        or getattr(venta.inventario.punto_eca, "nombre", ""),
-        "observaciones": venta.observaciones or "",
-    }
+    return _normalizar_historial_movimiento(
+        venta,
+        "Venta",
+        "fecha_venta",
+        "precio_venta",
+        lambda registro: getattr(registro.centro_acopio, "nombre", "")
+        or getattr(registro.inventario.punto_eca, "nombre", ""),
+    )
 
 
 def _ordenar_historial_export(registros):
@@ -439,6 +484,30 @@ def _crear_dataset_historial(registros):
             ]
         )
     return dataset
+
+
+def _generar_pdf_desde_template(
+    request, template_name, contexto, content_disposition, logger_message
+):
+    try:
+        html_string = render_to_string(template_name, contexto)
+        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
+        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
+        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
+        response["Content-Disposition"] = content_disposition
+        return response
+    except Exception as exc:
+        logging.exception(logger_message)
+        return HttpResponse(
+            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
+        )
+
+
+def _generar_respuesta_xlsx(dataset, filename):
+    export_data = dataset.export("xlsx")
+    response = HttpResponse(export_data, content_type=MIME_XLSX)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 def normalizar_palabra(w):
@@ -687,10 +756,7 @@ def exportar_compras_excel(request):
     )
     queryset = _filtrar_compras_export(request, queryset)
     dataset = CompraInventarioResource().export(queryset)
-    export_data = dataset.export("xlsx")
-    response = HttpResponse(export_data, content_type=MIME_XLSX)
-    response["Content-Disposition"] = 'attachment; filename="compras.xlsx"'
-    return response
+    return _generar_respuesta_xlsx(dataset, "compras.xlsx")
 
 
 # ============== EXPORT PDF =============
@@ -701,20 +767,13 @@ def exportar_compras_pdf(request):
     )
     queryset = _filtrar_compras_export(request, queryset)
     compras = list(queryset)
-    # Renderizar el HTML como string
-    html_string = render_to_string("operations/compras_pdf.html", {"compras": compras})
-    # Generar PDF desde el HTML — usar base_url para resolver static y capturar errores
-    try:
-        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
-        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
-        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
-        response["Content-Disposition"] = 'inline; filename="compras.pdf"'
-        return response
-    except Exception as exc:
-        logging.exception("Error generando PDF de compras")
-        return HttpResponse(
-            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
-        )
+    return _generar_pdf_desde_template(
+        request,
+        "operations/compras_pdf.html",
+        {"compras": compras},
+        'inline; filename="compras.pdf"',
+        "Error generando PDF de compras",
+    )
 
 
 @gestor_eca_or_admin_required
@@ -724,29 +783,14 @@ def exportar_ventas_pdf(request):
     )
     queryset = _filtrar_ventas_export(request, queryset)
     ventas = list(queryset)
-    # Calcular total_venta por cada venta, si no viene en el modelo
-    ventas_out = []
-    total_ventas = 0
-    for v in ventas:
-        total = (v.cantidad or 0) * (v.precio_venta or 0)
-        total_ventas += total
-        # Enriquecer objeto para el template, sin tocar el modelo
-        ventas_out.append(v)
-    html_string = render_to_string(
+    total_ventas = sum((v.cantidad or 0) * (v.precio_venta or 0) for v in ventas)
+    return _generar_pdf_desde_template(
+        request,
         "operations/ventas_pdf.html",
-        {"ventas": ventas_out, "total_ventas": total_ventas},
+        {"ventas": ventas, "total_ventas": total_ventas},
+        'inline; filename="ventas.pdf"',
+        "Error generando PDF de ventas",
     )
-    try:
-        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
-        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
-        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
-        response["Content-Disposition"] = 'inline; filename="ventas.pdf"'
-        return response
-    except Exception as exc:
-        logging.exception("Error generando PDF de ventas")
-        return HttpResponse(
-            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
-        )
 
 
 @gestor_eca_or_admin_required
@@ -756,10 +800,7 @@ def exportar_ventas_excel(request):
     )
     queryset = _filtrar_ventas_export(request, queryset)
     dataset = VentaInventarioResource().export(queryset)
-    export_data = dataset.export("xlsx")
-    response = HttpResponse(export_data, content_type=MIME_XLSX)
-    response["Content-Disposition"] = 'attachment; filename="ventas.xlsx"'
-    return response
+    return _generar_respuesta_xlsx(dataset, "ventas.xlsx")
 
 
 @csrf_exempt
@@ -775,18 +816,8 @@ def bulk_import_compras(request):
 
     Nota: Si el material no existe en el inventario, se creará automáticamente
     """
-    if request.method != "POST":
-        return _responder_error_json(ERROR_METODO_NO_PERMITIDO, status=405)
-
-    archivo_csv = request.FILES.get("file")
-    if not archivo_csv:
-        return _responder_error_json("No se encontró el archivo CSV", status=400)
-    if not archivo_csv.name.endswith(".csv"):
-        return _responder_error_json("El archivo debe ser de formato CSV", status=400)
-
-    return _procesar_bulk_import_csv(
+    return _procesar_bulk_import_endpoint(
         request=request,
-        archivo_csv=archivo_csv,
         headers_esperados={
             "nombreMaterial",
             "cantidad",
@@ -815,18 +846,8 @@ def bulk_import_ventas(request):
 
     Nota: Si el material no existe en el inventario, se creará automáticamente
     """
-    if request.method != "POST":
-        return _responder_error_json(ERROR_METODO_NO_PERMITIDO, status=405)
-
-    archivo_csv = request.FILES.get("file")
-    if not archivo_csv:
-        return _responder_error_json("No se encontró el archivo CSV", status=400)
-    if not archivo_csv.name.endswith(".csv"):
-        return _responder_error_json("El archivo debe ser de formato CSV", status=400)
-
-    return _procesar_bulk_import_csv(
+    return _procesar_bulk_import_endpoint(
         request=request,
-        archivo_csv=archivo_csv,
         headers_esperados={
             "nombreMaterial",
             "cantidad",
@@ -855,13 +876,7 @@ def exportar_historial_excel(request):
             status=404,
         )
     dataset = _crear_dataset_historial(rows)
-
-    export_data = dataset.export("xlsx")
-    response = HttpResponse(export_data, content_type=MIME_XLSX)
-    response["Content-Disposition"] = (
-        'attachment; filename="historial_movimientos.xlsx"'
-    )
-    return response
+    return _generar_respuesta_xlsx(dataset, "historial_movimientos.xlsx")
 
 
 @gestor_eca_or_admin_required
@@ -872,17 +887,10 @@ def exportar_historial_pdf(request):
             "No hay movimientos para exportar con los filtros actuales.",
             status=404,
         )
-    html_string = render_to_string(
-        "operations/historial_pdf.html", {"historial": historial}
+    return _generar_pdf_desde_template(
+        request,
+        "operations/historial_pdf.html",
+        {"historial": historial},
+        'inline; filename="historial.pdf"',
+        "Error generando PDF de historial",
     )
-    try:
-        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
-        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
-        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
-        response["Content-Disposition"] = 'inline; filename="historial.pdf"'
-        return response
-    except Exception as exc:
-        logging.exception("Error generando PDF de historial")
-        return HttpResponse(
-            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
-        )
