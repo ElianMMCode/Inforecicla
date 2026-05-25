@@ -175,26 +175,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Definición del modelo de usuario personalizado
 AUTH_USER_MODEL = "users.Usuario"
 
-# =========================================================================
-# CONFIGURACIÓN DE EMAIL
-# =========================================================================
-EMAIL_BACKEND = env(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.smtp.EmailBackend"
-)
-
-# Configuración SMTP para Gmail u otro servidor de correo
-EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
-EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
-
-# URL base del sitio para enlaces en emails
-SITE_URL = env("SITE_URL", default="http://localhost:8000")
-SITE_NAME = "InfoRecicla"
-
-# Configuración de tokens de validación
-TOKEN_EXPIRATION_MINUTES = env.int("TOKEN_EXPIRATION_MINUTES", default=15)
-MAX_TOKEN_ATTEMPTS = env.int("MAX_TOKEN_ATTEMPTS", default=5)
+# Mapeo de niveles de mensaje Django a clases Bootstrap
+from django.contrib.messages import constants as message_constants
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}

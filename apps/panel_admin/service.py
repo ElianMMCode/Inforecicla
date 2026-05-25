@@ -411,8 +411,11 @@ class AdminCatalogService:
             if not categoria:
                 return {"ok": False, "message": "Categoria de publicacion invalida."}
 
+        contenido = (data.get("contenido") or "").strip()
+
         try:
             publicacion.titulo = titulo
+            publicacion.contenido = contenido
             publicacion.estado = estado
             publicacion.categoria = categoria
             publicacion.full_clean()
