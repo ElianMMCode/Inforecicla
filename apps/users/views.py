@@ -23,6 +23,7 @@ MSG_PW_MISMATCH = "Las contraseñas no coinciden."
 DEFAULT_CITY = "Bogotá"
 TEMPLATE_REGISTRO_ECA = "users/registro_eca.html"
 TEMPLATE_REGISTRO_CIUDADANO = "users/registro_ciudadano.html"
+APELLIDOS_MIN_LEN_MSG = "Los apellidos deben tener al menos 3 caracteres."
 
 
 def _handle_activate_get(request, email, token):
@@ -397,10 +398,7 @@ def _collect_registro_ciudadano_fields(data):
 
 def _validate_registro_ciudadano_basic(fields):
     errores = []
-    if not fields["nombres"] or len(fields["nombres"]) < 3:
-        errores.append("El nombre debe tener al menos 3 caracteres.")
-    if not fields["apellidos"] or len(fields["apellidos"]) < 3:
-        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+    errores.extend(_validate_nombre_apellidos(fields["nombres"], fields["apellidos"]))
     if not fields["email"]:
         errores.append("Debe ingresar un email válido.")
     if not fields["celular"] or not fields["celular"].startswith("3") or len(fields["celular"]) != 10:
@@ -535,19 +533,20 @@ def actualizar_datos_ciudadano(request):
 def _validate_actualizar_datos_ciudadano(request):
     fields = _collect_actualizar_fields(request)
     errores = _validate_actualizar_basic(fields)
-    if fields.get("localidad_id"):
-        try:
-            fields["localidad_inst"] = Localidad.objects.get(localidad_id=fields.get("localidad_id"))
-        except (Localidad.DoesNotExist, ValueError):
-            errores.append("La localidad seleccionada no es válida.")
+
+    fecha_nacimiento, fecha_errores = _parse_fecha_nacimiento(fields.get("fecha_str"))
+    errores.extend(fecha_errores)
+
+    localidad_inst, localidad_errores = _resolve_localidad(fields.get("localidad_id"))
+    errores.extend(localidad_errores)
 
     updates = {
         "nombres": fields.get("nombres"),
         "apellidos": fields.get("apellidos"),
         "celular": fields.get("celular") if fields.get("celular") else None,
         "ciudad": fields.get("ciudad"),
-        "localidad_inst": fields.get("localidad_inst"),
-        "fecha_nacimiento": fields.get("fecha_nacimiento"),
+        "localidad_inst": localidad_inst,
+        "fecha_nacimiento": fecha_nacimiento,
     }
     return errores, updates
 
@@ -566,18 +565,23 @@ def _collect_actualizar_fields(request):
 def _validate_actualizar_basic(fields):
     errores = []
     errores.extend(_validate_nombre_apellidos(fields.get("nombres"), fields.get("apellidos")))
+
     celular = fields.get("celular")
     ciudad = fields.get("ciudad")
-    fecha_str = fields.get("fecha_str")
 
-    nombres = request.POST.get("nombres", "").strip()
-    apellidos = request.POST.get("apellidos", "").strip()
-    celular = request.POST.get("celular", "").strip()
-    ciudad = request.POST.get("ciudad", "").strip()
-    localidad_id = request.POST.get("localidad", "").strip()
-    fecha_str = request.POST.get("fechaNacimiento", "").strip()
+    if celular and not _CELULAR.match(celular):
+        errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
 
-    # --- Validar nombres ---
+    if ciudad and len(ciudad) > 15:
+        errores.append("La ciudad no puede superar los 15 caracteres.")
+    elif ciudad and not _SOLO_CIUDAD.match(ciudad):
+        errores.append("La ciudad solo puede contener letras.")
+
+    return errores
+
+
+def _validate_nombre_apellidos(nombres, apellidos):
+    errores = []
     if not nombres or len(nombres) < 3:
         errores.append("El nombre debe tener al menos 3 caracteres.")
     elif len(nombres) > 30:
@@ -585,65 +589,38 @@ def _validate_actualizar_basic(fields):
     elif not _SOLO_LETRAS.match(nombres):
         errores.append("El nombre solo puede contener letras.")
 
-    # --- Validar apellidos ---
     if not apellidos or len(apellidos) < 3:
-        errores.append("Los apellidos deben tener al menos 3 caracteres.")
-    elif len(apellidos) > 40:
-        errores.append("Los apellidos no pueden superar los 40 caracteres.")
-    elif not _SOLO_LETRAS.match(apellidos):
-        errores.append("Los apellidos solo pueden contener letras.")
-
-    # --- Validar celular (opcional) ---
-    if celular and not _CELULAR.match(celular):
-        errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
-
-    # --- Validar ciudad ---
-    if ciudad and len(ciudad) > 15:
-        errores.append("La ciudad no puede superar los 15 caracteres.")
-    elif ciudad and not _SOLO_CIUDAD.match(ciudad):
-        errores.append("La ciudad solo puede contener letras.")
-
-    # --- Validar fecha de nacimiento ---
-    fecha_nacimiento = None
-    if fecha_str:
-        try:
-            fecha_nacimiento = date_type.fromisoformat(fecha_str)
-            if fecha_nacimiento > date_type.today():
-                errores.append("La fecha de nacimiento no puede ser futura.")
-        except ValueError:
-            errores.append("Formato de fecha inválido.")
-
-    # --- Validar localidad (UUID) ---
-    localidad_inst = user.localidad
-    if localidad_id:
-        try:
-            localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
-        except (Localidad.DoesNotExist, ValueError):
-            errores.append("La localidad seleccionada no es válida.")
-
-
-    try:
-        user.nombres = nombres
-        user.apellidos = apellidos
-        user.celular = celular if celular else None
-        user.ciudad = ciudad if ciudad else "Bogotá"
-        user.localidad = localidad_inst
-        user.fecha_nacimiento = fecha_nacimiento
-        user.save()
-        messages.success(request, "Datos actualizados correctamente.")
-    except (IntegrityError, ValidationError):
-        messages.error(
-            request,
-            "No se pudieron guardar los cambios. Verifica los datos ingresados.",
-        )
-
-    if not apellidos or len(apellidos) < 3:
-        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+        errores.append(APELLIDOS_MIN_LEN_MSG)
     elif len(apellidos) > 40:
         errores.append("Los apellidos no pueden superar los 40 caracteres.")
     elif not _SOLO_LETRAS.match(apellidos):
         errores.append("Los apellidos solo pueden contener letras.")
     return errores
+
+
+def _parse_fecha_nacimiento(fecha_str):
+    if not fecha_str:
+        return None, []
+
+    try:
+        fecha_nacimiento = date_type.fromisoformat(fecha_str)
+    except ValueError:
+        return None, ["Formato de fecha inválido."]
+
+    if fecha_nacimiento > date_type.today():
+        return None, ["La fecha de nacimiento no puede ser futura."]
+
+    return fecha_nacimiento, []
+
+
+def _resolve_localidad(localidad_id):
+    if not localidad_id:
+        return None, []
+
+    try:
+        return Localidad.objects.get(localidad_id=localidad_id), []
+    except (Localidad.DoesNotExist, ValueError):
+        return None, ["La localidad seleccionada no es válida."]
 
 
 @login_required(login_url="/login/")
