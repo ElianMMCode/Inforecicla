@@ -5,9 +5,10 @@ from apps.inventory.service import InventoryService
 from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse
 from apps.core.decorators import gestor_eca_or_admin_required
+import json
+
 
 INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
-import json
 
 
 def _build_materiales_context(punto):
