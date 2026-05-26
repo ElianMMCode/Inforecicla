@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil Ciudadano - InfoRecicla</title>
     <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -47,16 +47,16 @@
         }
 
         .form-control:focus {
-            border-color: #198754;
-            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+            border-color: #145c3a;
+            box-shadow: 0 0 0 0.2rem rgba(20, 92, 58, 0.15);
         }
 
         .bg-success {
-            background-color: #198754 !important;
+            background-color: #145c3a !important;
         }
 
         .text-success {
-            color: #198754 !important;
+            color: #145c3a !important;
         }
 
         main {
@@ -101,19 +101,19 @@
             background-color: #f0faf5 !important;
         }
         .chat-sidebar-item.active {
-            background-color: #eafff2 !important;
-            color: #198754 !important;
+            background-color: #e6f6ee !important;
+            color: #145c3a !important;
             font-weight: 600;
-            border-left: 4px solid #198754 !important;
+            border-left: 4px solid #145c3a !important;
         }
         #chat-mensajes::-webkit-scrollbar { width: 5px; }
         #chat-mensajes::-webkit-scrollbar-thumb { background: #d0ead8; border-radius: 10px; }
 
     </style>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ" crossorigin="anonymous">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet" integrity="sha384-IrMr0LFnIMa9H6HhC5VVqVuWNEIwspnRLKQc0SUyPj4Cy4s02DiWDZEoJOo5WNK6" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3" crossorigin="anonymous"></script>
 </head>
 <body class="bg-light">
 <div class="d-flex">
@@ -250,51 +250,51 @@
                                     </h5>
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-person-badge me-1 text-success"></i>NOMBRES
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.nombres }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-person me-1 text-success"></i>APELLIDOS
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.apellidos }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-envelope me-1 text-success"></i>CORREO ELECTRÓNICO
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.email }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-telephone me-1 text-success"></i>CELULAR
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.celular|default:"No registrado" }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-geo-alt me-1 text-success"></i>CIUDAD
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.ciudad|default:"Bogotá" }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-map me-1 text-success"></i>LOCALIDAD
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.localidad.nombre|default:"No registrada" }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-card-text me-1 text-success"></i>TIPO DE DOCUMENTO
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.get_tipo_documento_display }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-hash me-1 text-success"></i>NÚMERO DE DOCUMENTO
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">
                                                 {% if user.numero_documento and not user.numero_documento|slice:":4" == "CIU_" %}
                                                     {{ user.numero_documento }}
@@ -304,15 +304,15 @@
                                             </p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-calendar me-1 text-success"></i>FECHA DE NACIMIENTO
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-semibold text-muted small">
+                                            <div class="form-label fw-semibold text-muted small mb-1">
                                                 <i class="bi bi-calendar-check me-1 text-success"></i>MIEMBRO DESDE
-                                            </label>
+                                            </div>
                                             <p class="mb-0 fs-6 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
                                         </div>
                                     </div>
@@ -332,40 +332,40 @@
                                         {% csrf_token %}
                                         <div class="row g-3">
                                             <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Nombres</label>
-                                                <input type="text" name="nombres" class="form-control"
+                                                <label for="nombres" class="form-label fw-semibold">Nombres</label>
+                                                <input id="nombres" type="text" name="nombres" class="form-control"
                                                        value="{{ user.nombres }}"
                                                        required minlength="3" maxlength="30"
                                                        pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
                                                 <div class="invalid-feedback">Mínimo 3 letras, máximo 30, sin números ni símbolos.</div>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Apellidos</label>
-                                                <input type="text" name="apellidos" class="form-control"
+                                                <label for="apellidos" class="form-label fw-semibold">Apellidos</label>
+                                                <input id="apellidos" type="text" name="apellidos" class="form-control"
                                                        value="{{ user.apellidos }}"
                                                        required minlength="3" maxlength="40"
                                                        pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
                                                 <div class="invalid-feedback">Mínimo 3 letras, máximo 40, sin números ni símbolos.</div>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
-                                                <input type="text" name="celular" class="form-control"
+                                                <label for="celular" class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
+                                                <input id="celular" type="text" name="celular" class="form-control"
                                                        value="{{ user.celular|default:'' }}"
                                                        placeholder="3001234567"
                                                        pattern="3[0-9]{9}" maxlength="10">
                                                 <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Ciudad</label>
-                                                <input type="text" name="ciudad" class="form-control"
+                                                <label for="ciudad" class="form-label fw-semibold">Ciudad</label>
+                                                <input id="ciudad" type="text" name="ciudad" class="form-control"
                                                        value="{{ user.ciudad|default:'Bogotá' }}"
                                                        maxlength="15"
                                                        pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+">
                                                 <div class="invalid-feedback">Solo letras, máximo 15 caracteres.</div>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Localidad</label>
-                                                <select name="localidad" class="form-select">
+                                                <label for="localidad" class="form-label fw-semibold">Localidad</label>
+                                                <select id="localidad" name="localidad" class="form-select">
                                                     <option value="">Sin localidad</option>
                                                     {% for loc in localidades %}
                                                         <option value="{{ loc.localidad_id }}"
@@ -376,10 +376,9 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Fecha de Nacimiento <span class="text-muted fw-normal">(opcional)</span></label>
-                                                <input type="date" name="fechaNacimiento" class="form-control"
-                                                       value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}"
-                                                       id="fechaNac">
+                                                <label for="fechaNac" class="form-label fw-semibold">Fecha de Nacimiento <span class="text-muted fw-normal">(opcional)</span></label>
+                                                  <input id="fechaNac" type="date" name="fechaNacimiento" class="form-control"
+                                                      value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
                                                 <div class="invalid-feedback">La fecha no puede ser futura.</div>
                                             </div>
                                             <div class="col-12 mt-2">
@@ -409,9 +408,9 @@
                                         {% csrf_token %}
                                         <div class="row g-3">
                                             <div class="col-md-4">
-                                                <label class="form-label fw-semibold">Contraseña Actual</label>
+                                                <label for="contrasenaActual" class="form-label fw-semibold">Contraseña Actual</label>
                                                 <div class="input-group">
-                                                    <input type="password" name="contrasenaActual" class="form-control"
+                                                    <input id="contrasenaActual" type="password" name="contrasenaActual" class="form-control"
                                                            required maxlength="128"
                                                            autocomplete="current-password"
                                                            placeholder="Tu contraseña actual">
@@ -422,10 +421,10 @@
                                                 <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label fw-semibold">Nueva Contraseña</label>
+                                                <label for="nuevaPass" class="form-label fw-semibold">Nueva Contraseña</label>
                                                 <div class="input-group">
-                                                    <input type="password" name="contrasenaNueva" class="form-control"
-                                                           required minlength="8" maxlength="128" id="nuevaPass"
+                                                    <input id="nuevaPass" type="password" name="contrasenaNueva" class="form-control"
+                                                           required minlength="8" maxlength="128"
                                                            autocomplete="new-password"
                                                            pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}"
                                                            placeholder="Nueva contraseña">
@@ -436,10 +435,10 @@
                                                 <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
                                             </div>
                                             <div class="col-md-4">
-                                                <label class="form-label fw-semibold">Confirmar Nueva</label>
+                                                <label for="confirmarPass" class="form-label fw-semibold">Confirmar Nueva</label>
                                                 <div class="input-group">
-                                                    <input type="password" name="confirmarContrasena" class="form-control"
-                                                           required maxlength="128" id="confirmarPass"
+                                                    <input id="confirmarPass" type="password" name="confirmarContrasena" class="form-control"
+                                                           required maxlength="128"
                                                            autocomplete="new-password"
                                                            placeholder="Repite la nueva contraseña">
                                                     <button class="btn btn-outline-secondary" type="button" tabindex="-1">
@@ -481,7 +480,7 @@
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex align-items-start justify-content-between mb-2">
                                         {% if guardado.publicacion.categoria %}
-                                        <span class="badge rounded-pill px-3 py-2" style="background-color: rgba(25,135,84,.12); color: #198754; font-size: .75rem;">
+                                        <span class="badge rounded-pill px-3 py-2" style="background-color: #145c3a; color: #ffffff; font-size: .75rem;">
                                             {{ guardado.publicacion.categoria.get_tipo_display }}
                                         </span>
                                         {% endif %}
@@ -551,7 +550,7 @@
                                             </a>
                                         </div>
                                         <p class="mb-2 small lh-lg" style="color:#444;">{{ comentario.texto }}</p>
-                                        <div class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style="background:#f0f8f4; font-size:.75rem; color:#198754;">
+                                        <div class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style="background:#f0f8f4; font-size:.75rem; color:#145c3a;">
                                             <i class="bi bi-file-text"></i>
                                             <span>{{ comentario.publicacion.titulo }}</span>
                                         </div>
@@ -587,7 +586,7 @@
                     <!-- Buscador para nuevo chat -->
                     <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
                         <div class="card-body p-4">
-                            <label class="form-label fw-semibold text-success mb-2">
+                            <label for="buscador-puntos-select2" class="form-label fw-semibold text-success mb-2">
                                 <i class="bi bi-geo-alt-fill me-1"></i>Buscar Punto ECA para chatear
                             </label>
                             <select id="buscador-puntos-select2" class="form-select" style="width: 100%;"></select>
@@ -660,7 +659,9 @@
     </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
 <script>
     // Resaltar pestaña activa en el sidebar
     document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(tab) {
@@ -734,7 +735,7 @@
         `).join('');
         // Marca el chat activo si corresponde
         sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
-            if (item.getAttribute('data-chat-id') === String(currentChatId)) {
+            if (item.dataset.chatId === String(currentChatId)) {
                 item.classList.add('active');
             } else {
                 item.classList.remove('active');
@@ -742,7 +743,7 @@
             item.onclick = function() {
                 sidebar.querySelectorAll('[data-chat-id]').forEach(b => b.classList.remove('active'));
                 item.classList.add('active');
-                cargarMensajesDePunto(item.getAttribute('data-punto-id'));
+                cargarMensajesDePunto(item.dataset.puntoId);
             };
         });
     }
@@ -786,62 +787,12 @@
                     return "No se encontraron puntos";
                 }
             },
-            minimumInputLength: 2,
-            width: '100%'
+            minimumInputLength: 2
         });
 
         // Manejar selección de Punto ECA para cargar mensajes
         $('#buscador-puntos-select2').on('select2:select', async function (e) {
-            const puntoId = e.params.data.id;
-            const puntoNombre = e.params.data.text;
-            if (!puntoId) {
-                chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Seleccioná un punto ECA para ver el chat.</div>';
-                return;
-            }
-            const titulo = document.getElementById('chat-titulo-punto');
-            if (titulo) titulo.textContent = puntoNombre || 'Punto ECA';
-            await cargarChatsCiudadano();
-            let chat = chatsCiudadano.find(c => String(c.punto) === String(puntoId));
-            if (!chat) {
-                // Si no hay chat, creá uno nuevo (POST)
-                try {
-                    const resp = await fetch('/mensajes/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
-                        },
-                        credentials: 'same-origin',
-                        body: JSON.stringify({ punto: puntoId })
-                    });
-                    if (resp.ok) {
-                        await cargarChatsCiudadano(); // Refrescar lista
-                        chat = chatsCiudadano.find(c => String(c.punto) === String(puntoId));
-                        if (chat) {
-                            await cargarMensajesDePunto(puntoId);
-                        }
-                    } else {
-                        let errorMsg = `Error al crear chat. Intentá de nuevo.`;
-                        try {
-                            const data = await resp.json();
-                            if (data && data.punto) {
-                                errorMsg += `<br><code>${data.punto}</code>`;
-                            } else if (data && data.detail) {
-                                errorMsg += `<br><code>${data.detail}</code>`;
-                            } else {
-                                errorMsg += `<br><code>${JSON.stringify(data)}</code>`;
-                            }
-                        } catch (e) {
-                            // probablemente no es json
-                        }
-                        chatMensajes.innerHTML = `<div class=\"text-danger small\">${errorMsg}</div>`;
-                    }
-                } catch (err) {
-                    chatMensajes.innerHTML = '<div class="text-danger small">Error al conectar con el servidor.</div>';
-                }
-            } else {
-                await cargarMensajesDePunto(puntoId);
-            }
+            await manejarSeleccionPuntoEca(e.params.data.id, e.params.data.text);
         });
     }
 
@@ -890,8 +841,8 @@
     function iniciarWS(chatId) {
         cerrarWS();
         // Notar: ws:// si no está usando https, wss:// si el sitio es seguro
-        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${protocol}://${window.location.host}/ws/chat/${chatId}/`;
+        const protocol = globalThis.location.protocol === 'https:' ? 'wss' : 'ws';
+        const url = `${protocol}://${globalThis.location.host}/ws/chat/${chatId}/`;
         currentWS = new WebSocket(url);
 
         currentWS.onmessage = function(event) {
@@ -913,20 +864,24 @@
 
     function cerrarWS() {
         if (currentWS) {
-            try { currentWS.close(); } catch(e){}
+            try {
+                currentWS.close();
+            } catch (error) {
+                console.debug(error);
+            }
             currentWS = null;
         }
     }
 
     // Variable para identificar si el usuario actual es el remitente
-    window.CIUDADANO_USER_ID = '{{ user.id|default:"" }}';
+    globalThis.CIUDADANO_USER_ID = '{{ user.id|default:"" }}';
     function anadirMensajeRealtime(mensaje) {
         // Si la lista está vacía o muestra el cartel de "no hay", reemplazar
         if (chatMensajes.innerHTML.includes('no hay mensajes')) {
             chatMensajes.innerHTML = '';
         }
         const remitenteStr = mensaje.remitente !== undefined && mensaje.remitente !== null ? String(mensaje.remitente) : '';
-        const usuarioIdStr = String(window.CIUDADANO_USER_ID);
+        const usuarioIdStr = String(globalThis.CIUDADANO_USER_ID);
         const esCiudadano = remitenteStr !== '' && remitenteStr === usuarioIdStr;
         const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
         const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
@@ -947,42 +902,37 @@
         chatMensajes.scrollTop = chatMensajes.scrollHeight;
     }
 
-    function renderMensajes(mensajes) {
-        if (!mensajes.length) {
-            chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
-            return;
-        }
-        chatMensajes.innerHTML = '';
-        mensajes.forEach(m => {
-            const esCiudadano = String(m.remitente) === String(window.CIUDADANO_USER_ID);
-            const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
-            const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
-            const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
-            const fecha = m.enviado_en ? new Date(m.enviado_en).toLocaleString('es-ES') : '';
-            const editadoBadge = m.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+    function crearElementoMensaje(mensaje) {
+        const esCiudadano = String(mensaje.remitente) === String(globalThis.CIUDADANO_USER_ID);
+        const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
+        const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
+        const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
+        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
+        const editadoBadge = mensaje.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
 
-            const wrapper = document.createElement('div');
-            wrapper.className = `d-flex ${justify} mb-1`;
-            wrapper.innerHTML = `
-                <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${m.id}">
-                    <div class="mensaje-texto">${m.texto}</div>
-                    <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-                        <span class="fw-semibold">${nombreLabel}</span>
-                        <span class="text-muted">${fecha}</span>
-                        ${editadoBadge}
-                        ${esCiudadano ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${m.id}" title="Editar" style="font-size:.75rem;color:#198754;line-height:1;">
-                            <i class="bi bi-pencil-fill"></i>
-                        </button>` : ''}
+        const wrapper = document.createElement('div');
+        wrapper.className = `d-flex ${justify} mb-1`;
+        wrapper.innerHTML = `
+            <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${mensaje.id}">
+                <div class="mensaje-texto">${mensaje.texto}</div>
+                <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+                    <span class="fw-semibold">${nombreLabel}</span>
+                    <span class="text-muted">${fecha}</span>
+                    ${editadoBadge}
+                    ${esCiudadano ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${mensaje.id}" title="Editar" style="font-size:.75rem;color:#145c3a;line-height:1;">
+                        <i class="bi bi-pencil-fill"></i>
+                    </button>` : ''}
+                </div>
+                <div class="form-editar-msg d-none mt-2">
+                    <div class="d-flex gap-1">
+                        <input type="text" class="form-control form-control-sm input-editar" value="${mensaje.texto.replaceAll('"','&quot;')}" maxlength="500" style="border-radius:12px;">
+                        <button class="btn btn-success btn-sm btn-confirmar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-check-lg"></i></button>
+                        <button class="btn btn-secondary btn-sm btn-cancelar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-x-lg"></i></button>
                     </div>
-                    <div class="form-editar-msg d-none mt-2">
-                        <div class="d-flex gap-1">
-                            <input type="text" class="form-control form-control-sm input-editar" value="${m.texto.replace(/"/g,'&quot;')}" maxlength="500" style="border-radius:12px;">
-                            <button class="btn btn-success btn-sm btn-confirmar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-check-lg"></i></button>
-                            <button class="btn btn-secondary btn-sm btn-cancelar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-x-lg"></i></button>
-                        </div>
-                    </div>
-                </div>`;
+                </div>
+            </div>`;
 
+        if (esCiudadano) {
             const bubble = wrapper.querySelector('.chat-bubble');
             const btnEditar = wrapper.querySelector('.btn-editar-msg');
             const formEditar = wrapper.querySelector('.form-editar-msg');
@@ -990,16 +940,26 @@
             const btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
             const btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
 
-            if (btnEditar) {
-                btnEditar.addEventListener('click', () => { formEditar.classList.remove('d-none'); inputEditar.focus(); });
-                btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
-                btnConfirmar.addEventListener('click', () => editarMensajeCiudadano(m.id, inputEditar, bubble, formEditar));
-                inputEditar.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') editarMensajeCiudadano(m.id, inputEditar, bubble, formEditar);
-                    if (e.key === 'Escape') formEditar.classList.add('d-none');
-                });
-            }
-            chatMensajes.appendChild(wrapper);
+            btnEditar.addEventListener('click', () => { formEditar.classList.remove('d-none'); inputEditar.focus(); });
+            btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
+            btnConfirmar.addEventListener('click', () => editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar));
+            inputEditar.addEventListener('keydown', e => {
+                if (e.key === 'Enter') editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar);
+                if (e.key === 'Escape') formEditar.classList.add('d-none');
+            });
+        }
+
+        return wrapper;
+    }
+
+    function renderMensajes(mensajes) {
+        if (mensajes.length === 0) {
+            chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
+            return;
+        }
+        chatMensajes.innerHTML = '';
+        mensajes.forEach(m => {
+            chatMensajes.appendChild(crearElementoMensaje(m));
         });
         chatMensajes.scrollTop = chatMensajes.scrollHeight;
     }
@@ -1032,7 +992,7 @@
             }
         }).catch(() => alert('Error de conexión.'));
     }
-    
+
 
     if(chatSelect) {
         chatSelect.addEventListener('change', function() {
@@ -1066,7 +1026,8 @@
                     input.value = '';
                     input.disabled = false;
                     // El mensaje se mostrará cuando lo recibas vía onmessage (evita duplicidad)
-                } catch (err) {
+                } catch (error) {
+                    console.error(error);
                     errorMsg = 'Error al enviar por WebSocket';
                     input.disabled = false;
                 }
@@ -1089,11 +1050,13 @@
                         try {
                             const data = await resp.json();
                             errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
-                        } catch {
+                        } catch (error) {
+                            console.debug(error);
                             errorMsg = 'Error al enviar mensaje';
                         }
                     }
-                } catch (err) {
+                } catch (error) {
+                    console.error(error);
                     errorMsg = 'Error al conectar con el servidor';
                 }
                 input.disabled = false;
@@ -1123,7 +1086,7 @@
     }
 
     // Auto-abrir chat con un punto ECA si viene ?chat_punto=<UUID> desde el mapa
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(globalThis.location.search);
     const chatPuntoId = urlParams.get('chat_punto');
     if (chatPuntoId) {
         // Tab ya activo por el servidor — solo iniciar el chat
@@ -1146,7 +1109,9 @@
                     if (resp.ok) {
                         await cargarChatsCiudadano();
                     }
-                } catch (e) { /* silencioso */ }
+                } catch (error) {
+                    console.debug(error);
+                }
             }
             await cargarMensajesDePunto(chatPuntoId);
         }, 300);
@@ -1156,7 +1121,7 @@
 // Inicializar toggles de mostrar/ocultar contraseña en perfil
 document.querySelectorAll('.toggle-password').forEach(function(icon){
     icon.addEventListener('click', function(){
-        const targetSelector = icon.getAttribute('data-target');
+        const targetSelector = icon.dataset.target;
         const input = document.querySelector(targetSelector);
         if (!input) return;
         if (input.type === 'password'){
