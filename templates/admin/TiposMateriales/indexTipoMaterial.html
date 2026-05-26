@@ -8,45 +8,9 @@
 {% block content %}
 
         <main class="col offset-md-2 p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-        <div>
-            <h1 class="h2 fw-bold text-warning mb-1"><i class="fas fa-tags me-2"></i>Inicio de Tipos de Material</h1>
-            <p class="text-muted mb-0">Resumen y métricas de las subclasificaciones</p>
-        </div>
-        <a href="crear.html" class="btn btn-warning fw-bold text-dark d-none d-sm-block shadow-sm">
-            <i class="fas fa-plus-circle me-1"></i> Nuevo Tipo
-        </a>
-    </div>
+    {% include "admin/partials/index_header.html" with title="Inicio de Tipos de Material" subtitle="Resumen y métricas de las subclasificaciones" icon_class="fas fa-tags me-2" color="warning" cta2_url="crear.html" cta2_label="Nuevo Tipo" cta2_icon="fas fa-plus-circle" cta2_class="btn btn-warning fw-bold text-dark d-none d-sm-block shadow-sm" %}
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-warning h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-tags text-warning fa-2x mb-2"></i>
-                    <div class="text-warning fw-bold text-uppercase small">Total Tipos</div>
-                    <div class="display-6 text-warning fw-bold">15</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-success h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
-                    <div class="text-success fw-bold text-uppercase small">Tipos Activos</div>
-                    <div class="display-6 text-success fw-bold">12</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-secondary h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-minus-circle text-secondary fa-2x mb-2"></i>
-                    <div class="text-secondary fw-bold text-uppercase small">Tipos Inactivos</div>
-                    <div class="display-6 text-secondary fw-bold">3</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include "admin/partials/kpi_cards_three.html" with card1_icon="fas fa-tags" card1_color="warning" card1_label="Total Tipos" card1_value="15" card2_icon="fas fa-check-circle" card2_color="success" card2_label="Tipos Activos" card2_value="12" card3_icon="fas fa-minus-circle" card3_color="secondary" card3_label="Tipos Inactivos" card3_value="3" %}
 
     <div class="row g-4">
         <div class="col-lg-7">

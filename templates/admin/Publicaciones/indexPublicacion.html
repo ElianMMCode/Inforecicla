@@ -6,61 +6,11 @@
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
 {% block content %}
 
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-        <div>
-            <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-chart-pie me-2"></i>Inicio de Publicaciones</h1>
-            <p class="text-muted mb-0">Métricas y resumen general del contenido</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="lista.html" class="btn btn-outline-success d-none d-sm-block">
-                <i class="fas fa-list me-1"></i> Ver Listado
-            </a>
-            <a href="crear.html" class="btn btn-success d-none d-sm-block">
-                <i class="fas fa-plus-circle me-1"></i> Nueva
-            </a>
-        </div>
-    </div>
+    {% include "admin/partials/index_header.html" with title="Inicio de Publicaciones" subtitle="Métricas y resumen general del contenido" icon_class="fas fa-chart-pie me-2" color="success" cta1_url="lista.html" cta1_label="Ver Listado" cta1_icon="fas fa-list" cta2_url="crear.html" cta2_label="Nueva" cta2_icon="fas fa-plus-circle" %}
 
     {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3 col-6">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-success h-100">
-                <div class="card-body text-center p-3">
-                    <i class="fas fa-newspaper text-success fs-2 mb-2"></i>
-                    <div class="text-muted fw-bold text-uppercase small">Total</div>
-                    <div class="display-6 text-success fw-bold">42</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-info h-100">
-                <div class="card-body text-center p-3">
-                    <i class="fas fa-eye text-info fs-2 mb-2"></i>
-                    <div class="text-muted fw-bold text-uppercase small">Publicadas</div>
-                    <div class="display-6 text-info fw-bold">35</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-warning h-100">
-                <div class="card-body text-center p-3">
-                    <i class="fas fa-edit text-warning fs-2 mb-2"></i>
-                    <div class="text-muted fw-bold text-uppercase small">Borradores</div>
-                    <div class="display-6 text-warning fw-bold">5</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="card border-0 shadow-sm border-bottom border-3 border-secondary h-100">
-                <div class="card-body text-center p-3">
-                    <i class="fas fa-archive text-secondary fs-2 mb-2"></i>
-                    <div class="text-muted fw-bold text-uppercase small">Archivadas</div>
-                    <div class="display-6 text-secondary fw-bold">2</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include "admin/partials/kpi_cards_four.html" with card1_icon="fas fa-newspaper" card1_color="success" card1_label="Total" card1_value="42" card2_icon="fas fa-eye" card2_color="info" card2_label="Publicadas" card2_value="35" card3_icon="fas fa-edit" card3_color="warning" card3_label="Borradores" card3_value="5" card4_icon="fas fa-archive" card4_color="secondary" card4_label="Archivadas" card4_value="2" %}
 
     <div class="row g-4">
         <div class="col-lg-8">

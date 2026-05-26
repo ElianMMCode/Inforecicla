@@ -62,16 +62,7 @@
                     <h4 class="card-title mb-4" style="color:#145c3a; font-weight:700;">Datos del Punto ECA</h4>
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="nombres" class="form-label">
-                                    Nombre de la Institución/ECA <span style="color:#dc3545;">*</span>
-                                </label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="nombres"
-                                       name="nombres"
-                                       placeholder="Ej: Centro Ambiental San Felipe"
-                                       required
+                    {% include "users/partials/password_requirements.html" %}
                                        value="{{ nombres|default:'' }}">
                                 <small class="form-text text-muted">Obligatorio. Ingresa el nombre completo de la institución o punto ECA.</small>
                                 <div class="invalid-feedback"></div>

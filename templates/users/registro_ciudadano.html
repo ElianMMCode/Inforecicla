@@ -103,16 +103,7 @@
             </div>
 
             <!-- Información de Contraseña -->
-            <div class="password-info">
-                <strong>Requisitos de contraseña:</strong>
-                <ul>
-                    <li id="reqMinusculas">❌ Mínimo una letra minúscula (a-z)</li>
-                    <li id="reqMayusculas">❌ Mínimo una letra mayúscula (A-Z)</li>
-                    <li id="reqNumeros">❌ Mínimo un número (0-9)</li>
-                    <li id="reqEspeciales">❌ Mínimo un carácter especial (@$!%*?&)</li>
-                    <li id="reqLongitud">❌ Mínimo 8 caracteres</li>
-                </ul>
-            </div>
+            {% include "users/partials/password_requirements.html" %}
 
             <!-- Contraseña y Confirmación -->
             <div class="row-cols">
