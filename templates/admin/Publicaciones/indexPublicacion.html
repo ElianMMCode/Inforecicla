@@ -1,53 +1,10 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Inicio Publicaciones - InfoRecicla</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-</head>
-<body class="bg-light m-0 pt-5 pt-md-0">
-
-<div class="container-fluid px-0">
-    <div class="row g-0">
-
-        <aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-            <a class="navbar-brand d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="../admin.html">
-                <img src="../../resources/static/imagenes/logo.png" alt="Logo" width="48" height="48" class="rounded bg-white p-1">
-                <div class="d-flex flex-column lh-sm">
-                    <span class="fw-semibold">InfoRecicla</span>
-                    <small class="text-white-50">Administración</small>
-                </div>
-            </a>
-            <nav class="w-100" role="navigation">
-                <ul class="nav nav-pills flex-column gap-2 w-100 m-0 p-0 list-unstyled">
-                    <li class="nav-item"><a href="index.html" class="nav-link text-white"><i class="fas fa-home me-2"></i>Inicio</a></li>
-                    <li class="nav-item"><a href="lista.html" class="nav-link bg-white text-success fw-semibold border-start border-4 border-success rounded-start"><i class="fas fa-list me-2"></i>Listado</a></li>
-                    <li class="nav-item"><a href="crear.html" class="nav-link text-white"><i class="fas fa-plus-circle me-2"></i>Crear</a></li>
-                    <li class="nav-item mt-2 border-top border-white-50 pt-3"><a href="../admin.html" class="nav-link text-white"><i class="fas fa-arrow-left me-2"></i>Volver al Panel</a></li>
-                </ul>
-            </nav>
-            <div class="mt-auto small text-white-50">&copy; 2025 InfoRecicla</div>
-        </aside>
-
-        <div class="d-md-none w-100 bg-success py-2 fixed-top z-3 shadow-sm">
-            <div class="d-flex align-items-center justify-content-between px-3">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" href="../admin.html">
-                    <i class="fas fa-recycle fs-3"></i>
-                    <span class="fw-semibold">InfoRecicla</span>
-                </a>
-            </div>
-            <nav class="mt-2">
-                <ul class="nav nav-pills flex-row gap-2 overflow-auto px-3 pb-2 flex-nowrap">
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="index.html">Inicio</a></li>
-                    <li class="nav-item"><a class="nav-link bg-white text-success fw-semibold border-bottom border-3 border-success rounded-bottom text-nowrap" href="lista.html">Listado</a></li>
-                    <li class="nav-item"><a class="nav-link text-white text-nowrap" href="crear.html">Crear</a></li>
-                </ul>
-            </nav>
-        </div>
-
-        <main class="col offset-md-2 p-4">
+{% extends "admin/base.html" %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="" crossorigin="anonymous">
+{% endblock %}
+{% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
+{% block content %}
 
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
         <div>
@@ -162,7 +119,7 @@
                             <span>83%</span>
                         </div>
                         <div class="progress">
-                            <div class="progress-bar bg-success" role="progressbar" data-progress-width="83" aria-valuemin="0" aria-valuemax="100"></div>
+                            <progress class="w-100" data-progress-width="83" value="83" max="100" aria-label="Publicado"></progress>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -171,7 +128,7 @@
                             <span>12%</span>
                         </div>
                         <div class="progress">
-                            <div class="progress-bar bg-warning" role="progressbar" data-progress-width="12" aria-valuemin="0" aria-valuemax="100"></div>
+                            <progress class="w-100" data-progress-width="12" value="12" max="100" aria-label="Borrador"></progress>
                         </div>
                     </div>
                     <div>
@@ -180,7 +137,7 @@
                             <span>5%</span>
                         </div>
                         <div class="progress">
-                            <div class="progress-bar bg-secondary" role="progressbar" data-progress-width="5" aria-valuemin="0" aria-valuemax="100"></div>
+                            <progress class="w-100" data-progress-width="5" value="5" max="100" aria-label="Archivado"></progress>
                         </div>
                     </div>
                 </div>
@@ -196,21 +153,23 @@
             </div>
         </div>
     </div>
-</main>
-</div>
-</div>
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('[data-progress-width]').forEach(function(el){
-            var w = el.getAttribute('data-progress-width');
-            if (w) {
-                el.style.width = w + '%';
-                el.setAttribute('aria-valuenow', w);
+            var w = el.dataset.progressWidth;
+            if (w !== undefined) {
+                if ('value' in el) {
+                    el.value = Number(w);
+                    el.setAttribute('aria-valuenow', w);
+                } else {
+                    el.style.width = w + '%';
+                    el.setAttribute('aria-valuenow', w);
+                }
             }
         });
     });
 </script>
-</body>
-</html>
+{% endblock %}

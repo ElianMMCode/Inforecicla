@@ -1,77 +1,17 @@
-{% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Publicaciones - InfoRecicla</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+{% extends "publicacion/base.html" %}
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-success">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla" width="70" height="70" class="rounded">
-            <span class="fs-1 fw-semibold">InfoRecicla</span>
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                aria-controls="mainNav" aria-expanded="false" aria-label="Alternar navegación">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="mainNav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                <li class="nav-item"><a class="nav-link active" href="/publicaciones">Publicaciones</a></li>
-                <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
-
-                {% if user.is_authenticated %}
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="#"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        <span>{{ user.get_short_name|default:"Usuario" }}</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        {% if user.is_staff or user.is_superuser or user.tipo_usuario == "ADM" %}
-                            <li><a class="dropdown-item" href="/panel_admin/">Panel Admin</a></li>
-                        {% elif user.tipo_usuario == "GECA" %}
-                            <li><a class="dropdown-item" href="/punto-eca/">Inicio</a></li>
-                        {% else %}
-                            <li><a class="dropdown-item" href="/perfil/">Mi Perfil</a></li>
-                        {% endif %}
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="POST" action="/logout/" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                            </form>
-                        </li>
-                    </ul>
-                </li>
-                {% else %}
-                <li class="nav-item dropdown">
-                    <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle" href="/login"
-                       data-bs-toggle="dropdown" aria-expanded="false">Acceder</a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/login">Iniciar sesión</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a></li>
-                        <li><a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a></li>
-                    </ul>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-    </div>
-</nav>
-
-<section class="bg-success text-white py-4">
+{% block page_title %}Publicaciones - InfoRecicla{% endblock %}
+{% block main_class %}py-0{% endblock %}
+{% block hero %}
+<section class="page-hero py-4">
     <div class="container">
         <h1 class="fw-bold mb-1">Publicaciones</h1>
         <p class="mb-0 opacity-75">Explora consejos, noticias y buenas prácticas de reciclaje compartidas por la comunidad.</p>
     </div>
 </section>
+{% endblock %}
 
+{% block content %}
 <section class="py-4">
     <div class="container">
         <div class="bg-white rounded border p-3">
@@ -175,7 +115,4 @@
         {% endif %}
     </div>
 </section>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

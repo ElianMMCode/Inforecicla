@@ -1,16 +1,9 @@
+{% extends "admin/base.html" %}
 {% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar Publicación - InfoRecicla Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-</head>
-<body class="bg-light">
-
-{% include "admin/partials/sidebar.html" with active="publicaciones" %}
+{% block page_title %}Editar Publicación - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
+{% block content %}
 
 <main class="col offset-md-2 p-4">
   {% if messages %}
@@ -40,12 +33,12 @@
         {% csrf_token %}
         <div class="row g-3">
           <div class="col-12">
-            <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
-            <input type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required maxlength="200">
+            <label for="pub_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+            <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required maxlength="200">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Categoría</label>
-            <select name="categoria_id" class="form-select">
+            <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
+            <select id="pub_categoria_id" name="categoria_id" class="form-select">
               <option value="">Sin categoría</option>
               {% for cat in categorias %}
                 <option value="{{ cat.id }}" {% if publicacion.categoria and publicacion.categoria.id == cat.id %}selected{% endif %}>{{ cat.tipo }}</option>
@@ -53,15 +46,15 @@
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Estado</label>
-            <select name="estado" class="form-select">
+            <label for="pub_estado" class="form-label fw-semibold">Estado</label>
+            <select id="pub_estado" name="estado" class="form-select">
               {% for val, label in estados %}
                 <option value="{{ val }}" {% if publicacion.estado == val %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="col-12">
-            <label class="form-label fw-semibold text-muted small">Autor: {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }} &bull; Creada: {{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</label>
+            <p class="form-text text-muted small">Autor: {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }} &bull; Creada: {{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</p>
           </div>
           <div class="col-12 pt-2">
             <button type="submit" class="btn btn-success me-2">
@@ -73,8 +66,6 @@
       </form>
     </div>
   </div>
-</main>
+  </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

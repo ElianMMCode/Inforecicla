@@ -1,16 +1,12 @@
+{% extends "admin/base.html" %}
 {% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nueva Publicación - InfoRecicla Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-</head>
-<body class="bg-light">
-
-{% include "admin/partials/sidebar.html" with active="publicaciones" %}
+{% block page_title %}Nueva Publicación - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="" crossorigin="anonymous">
+{% endblock %}
+{% block content %}
 
 <main class="col offset-md-2 p-4">
   {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
@@ -46,20 +42,20 @@
 
           <!-- Título -->
           <div class="col-12">
-            <label class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
-            <input type="text" name="titulo" class="form-control" value="{{ form_data.titulo|default:'' }}" required maxlength="255">
+            <label for="pub_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+            <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ form_data.titulo|default:'' }}" required maxlength="255">
           </div>
 
           <!-- Contenido -->
           <div class="col-12">
-            <label class="form-label fw-semibold">Contenido</label>
-            <textarea name="contenido" class="form-control" rows="8">{{ form_data.contenido|default:'' }}</textarea>
+            <label for="pub_contenido" class="form-label fw-semibold">Contenido</label>
+            <textarea id="pub_contenido" name="contenido" class="form-control" rows="8">{{ form_data.contenido|default:'' }}</textarea>
           </div>
 
           <!-- Categoría -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Categoría</label>
-            <select name="categoria_id" class="form-select">
+            <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
+            <select id="pub_categoria_id" name="categoria_id" class="form-select">
               <option value="">Sin categoría</option>
               {% for cat in categorias %}
                 <option value="{{ cat.id }}" {% if form_data.categoria_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nombre }} ({{ cat.get_tipo_display }})</option>
@@ -76,24 +72,24 @@
 
           <!-- Imágenes -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Imágenes</label>
-            <input type="file" name="imagenes" id="inputImagenes" class="form-control" accept="image/*" multiple>
+            <label for="inputImagenes" class="form-label fw-semibold">Imágenes</label>
+            <input id="inputImagenes" type="file" name="imagenes" class="form-control" accept="image/*" multiple>
             <div class="form-text">Formatos: JPG, PNG, WEBP. Puedes seleccionar varias.</div>
             <div id="previewImagenes" class="d-flex flex-wrap gap-2 mt-2"></div>
           </div>
 
           <!-- Video -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Video <span class="text-muted fw-normal">(reemplaza las imágenes)</span></label>
-            <input type="file" name="video" id="inputVideo" class="form-control" accept="video/mp4,video/webm,video/ogg">
+            <label for="inputVideo" class="form-label fw-semibold">Video <span class="text-muted fw-normal">(reemplaza las imágenes)</span></label>
+            <input id="inputVideo" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
             <div class="form-text">Formatos: MP4, WEBM, OGG. Máximo recomendado: 100 MB.</div>
             <div id="previewVideo" class="mt-2"></div>
           </div>
 
           <!-- Miniatura del video -->
           <div class="col-md-6" id="wrapperThumbnail" style="display:none;">
-            <label class="form-label fw-semibold">Miniatura del video <span class="text-muted fw-normal">(opcional)</span></label>
-            <input type="file" name="video_thumbnail" id="inputThumbnail" class="form-control" accept="image/*">
+            <label for="inputThumbnail" class="form-label fw-semibold">Miniatura del video <span class="text-muted fw-normal">(opcional)</span></label>
+            <input id="inputThumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/*">
             <div class="form-text">Imagen de portada que se muestra antes de reproducir el video.</div>
             <div id="previewThumbnail" class="mt-2"></div>
           </div>
@@ -111,62 +107,75 @@
     </div>
   </div>
   {% endif %}
-</main>
+    </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
-  // Preview imágenes
-  document.getElementById('inputImagenes').addEventListener('change', function () {
-    const container = document.getElementById('previewImagenes');
-    container.innerHTML = '';
-    Array.from(this.files).forEach(function (file) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:relative;width:80px;height:80px;';
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #198754;';
-        wrapper.appendChild(img);
-        container.appendChild(wrapper);
-      };
-      reader.readAsDataURL(file);
-    });
-  });
-
-  // Preview video
-  document.getElementById('inputVideo').addEventListener('change', function () {
-    const container = document.getElementById('previewVideo');
-    const thumbnail = document.getElementById('wrapperThumbnail');
-    container.innerHTML = '';
-    if (this.files[0]) {
-      const url = URL.createObjectURL(this.files[0]);
-      const video = document.createElement('video');
-      video.src = url;
-      video.controls = true;
-      video.style.cssText = 'width:100%;max-height:200px;border-radius:8px;border:2px solid #198754;';
-      container.appendChild(video);
-      thumbnail.style.display = '';
-    } else {
-      thumbnail.style.display = 'none';
+  // Guarded preview listeners
+  (function () {
+    const inputImagenes = document.getElementById('inputImagenes');
+    if (inputImagenes) {
+      inputImagenes.addEventListener('change', function () {
+        const container = document.getElementById('previewImagenes');
+        if (!container) return;
+        container.innerHTML = '';
+        Array.from(this.files).forEach(function (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position:relative;width:80px;height:80px;';
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #198754;';
+            wrapper.appendChild(img);
+            container.appendChild(wrapper);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
     }
-  });
 
-  // Preview miniatura
-  document.getElementById('inputThumbnail').addEventListener('change', function () {
-    const container = document.getElementById('previewThumbnail');
-    container.innerHTML = '';
-    if (this.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.style.cssText = 'height:80px;border-radius:8px;border:2px solid #198754;';
-        container.appendChild(img);
-      };
-      reader.readAsDataURL(this.files[0]);
+    const inputVideo = document.getElementById('inputVideo');
+    if (inputVideo) {
+      inputVideo.addEventListener('change', function () {
+        const container = document.getElementById('previewVideo');
+        const thumbnail = document.getElementById('wrapperThumbnail');
+        if (!container || !thumbnail) return;
+        container.innerHTML = '';
+        if (this.files && this.files[0]) {
+          const url = URL.createObjectURL(this.files[0]);
+          const video = document.createElement('video');
+          video.src = url;
+          video.controls = true;
+          video.style.cssText = 'width:100%;max-height:200px;border-radius:8px;border:2px solid #198754;';
+          container.appendChild(video);
+          thumbnail.style.display = '';
+        } else {
+          thumbnail.style.display = 'none';
+        }
+      });
     }
-  });
+
+    const inputThumbnail = document.getElementById('inputThumbnail');
+    if (inputThumbnail) {
+      inputThumbnail.addEventListener('change', function () {
+        const container = document.getElementById('previewThumbnail');
+        if (!container) return;
+        container.innerHTML = '';
+        if (this.files && this.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'height:80px;border-radius:8px;border:2px solid #198754;';
+            container.appendChild(img);
+          };
+          reader.readAsDataURL(this.files[0]);
+        }
+      });
+    }
+  })();
 </script>
-</body>
-</html>
+{% endblock %}
