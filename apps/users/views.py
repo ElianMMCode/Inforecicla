@@ -79,6 +79,33 @@ def _handle_login_post(request):
     return None, errores, None, None
 
 
+def _handle_reenviar_post(request):
+    errores = []
+    email = request.POST.get("email", "").strip().lower()
+
+    if not email:
+        errores.append("Debes ingresar un correo.")
+        return None, errores, None, None
+
+    usuario = Usuario.objects.filter(email=email).first()
+    if usuario is None:
+        errores.append("No existe una cuenta registrada con ese correo.")
+        return None, errores, None, None
+
+    if usuario.is_active:
+        errores.append("La cuenta ya está activada. Puedes iniciar sesión normalmente.")
+        return None, errores, None, None
+
+    try:
+        token_obj = crear_token_validacion(email=email, tipo="verificacion", usuario=usuario)
+        enviar_email_verificacion(email, token_obj.token)
+        messages.info(request, "Reenviamos el enlace de activación a tu correo.")
+        return None, [], email, None
+    except Exception:
+        errores.append("No fue posible reenviar el enlace de activación. Intenta más tarde.")
+        return None, errores, None, None
+
+
 def _handle_login_request(request):
     errores = []
     email = request.GET.get("email", "").strip().lower()

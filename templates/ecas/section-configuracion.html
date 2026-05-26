@@ -12,7 +12,7 @@
 // Inicializar toggles de mostrar/ocultar contraseña en sección configuración ECA
 document.querySelectorAll('.toggle-password').forEach(function(icon){
     icon.addEventListener('click', function(){
-        const targetSelector = icon.getAttribute('data-target');
+        const targetSelector = icon.dataset.target;
         const input = document.querySelector(targetSelector);
         if (!input) return;
         if (input.type === 'password'){
@@ -127,7 +127,7 @@ if (nuevaPassInput) {
                 <div class="card-body">
                     <form id="formPreferencias" method="post">
                         <div class="mb-3">
-                            <label class="form-label">Visibilidad en el mapa</label>
+                            <p class="form-label mb-2">Visibilidad en el mapa</p>
                             <div class="form-check form-switch">
                                 <input class="form-check-input" id="cfgMapa" name="visibleEnMapa" type="checkbox">
                                 <label class="form-check-label" for="cfgMapa">
@@ -140,7 +140,7 @@ if (nuevaPassInput) {
                         <hr>
 
                         <div class="mb-3">
-                            <label class="form-label">Notificaciones</label>
+                            <p class="form-label mb-2">Notificaciones</p>
                             <div class="form-check form-switch">
                                 <input class="form-check-input" id="cfgNotiAprobacion" name="notificacionesAprobacion" type="checkbox" checked>
                                 <label class="form-check-label" for="cfgNotiAprobacion">
