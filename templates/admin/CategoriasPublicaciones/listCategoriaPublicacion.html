@@ -41,6 +41,8 @@
     </div>
   </div>
 
+  {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'categorias_publicacion' %}
+
   {% if not publicaciones_habilitadas %}
   <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
   {% else %}

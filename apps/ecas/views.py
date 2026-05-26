@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.db.models import Q
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
@@ -443,13 +444,24 @@ def eliminar_centro(request, id):
 
 
 @login_required
-def puntos_eca_json():
+def puntos_eca_json(request):
     """
     API endpoint que devuelve un listado de puntos ECA simplificado para autocompletado y mapas en el perfil ciudadano.
     Retorna los primeros 50 puntos, serializados como lista de diccionarios.
     """
+    term = request.GET.get("term", "").strip()
+    puntos_qs = PuntoECA.objects.all()
+
+    if term:
+        puntos_qs = puntos_qs.filter(
+            Q(nombre__icontains=term)
+            | Q(direccion__icontains=term)
+            | Q(ciudad__icontains=term)
+            | Q(localidad__nombre__icontains=term)
+        ).distinct()
+
     lista_puntos = list(
-        PuntoECA.objects.values(
+        puntos_qs.values(
             "id", "nombre", "direccion", "ciudad", "localidad_id", "localidad__nombre"
         )[:50]
     )

@@ -1,0 +1,18 @@
+<div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+    <div>
+        <h1 class="h2 fw-bold text-{{ color|default:'success' }} mb-1"><i class="{{ icon_class }}"></i>{{ title }}</h1>
+        <p class="text-muted mb-0">{{ subtitle }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if cta1_url %}
+            <a href="{{ cta1_url }}" class="{{ cta1_class|default:'btn btn-outline-success d-none d-sm-block' }}">
+                {% if cta1_icon %}<i class="{{ cta1_icon }} me-1"></i>{% endif %}{{ cta1_label }}
+            </a>
+        {% endif %}
+        {% if cta2_url %}
+            <a href="{{ cta2_url }}" class="{{ cta2_class|default:'btn btn-success d-none d-sm-block' }}">
+                {% if cta2_icon %}<i class="{{ cta2_icon }} me-1"></i>{% endif %}{{ cta2_label }}
+            </a>
+        {% endif %}
+    </div>
+</div>

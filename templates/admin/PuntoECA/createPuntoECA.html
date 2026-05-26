@@ -1,19 +1,9 @@
-{% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nuevo Punto ECA - InfoRecicla Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-</head>
-<body class="bg-light">
+{% extends "admin/base.html" %}
+{% block page_title %}Nuevo Punto ECA - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="ecas" %}{% endblock %}
 
-{% include "admin/partials/sidebar.html" with active="ecas" %}
-
-<main class="col offset-md-2 p-4">
+{% block content %}
   {% if messages %}
   <div class="mb-3">
     {% for message in messages %}
@@ -56,68 +46,68 @@
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Nombre del Punto ECA <span class="text-danger">*</span></label>
-            <input type="text" name="nombre_punto" class="form-control" required
+            <label for="eca_nombre_punto" class="form-label fw-semibold">Nombre del Punto ECA <span class="text-danger">*</span></label>
+            <input id="eca_nombre_punto" type="text" name="nombre_punto" class="form-control" required
                    value="{{ form_data.nombre_punto|default:'' }}" placeholder="Ej: Centro Ambiental San Felipe">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
-            <input type="text" name="direccion" class="form-control" required
+            <label for="eca_direccion" class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
+            <input id="eca_direccion" type="text" name="direccion" class="form-control" required
                    value="{{ form_data.direccion|default:'' }}" placeholder="Calle 10 # 20 - 30">
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Teléfono Fijo <span class="text-danger">*</span></label>
-            <input type="text" name="telefono_punto" class="form-control" required
+            <label for="eca_telefono_punto" class="form-label fw-semibold">Teléfono Fijo <span class="text-danger">*</span></label>
+            <input id="eca_telefono_punto" type="text" name="telefono_punto" class="form-control" required
                    pattern="60[0-9]{8}" maxlength="10"
                    value="{{ form_data.telefono_punto|default:'' }}" placeholder="6012345678">
             <div class="form-text">Debe comenzar con 60 y tener 10 dígitos.</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Email del Punto ECA <span class="text-danger">*</span></label>
-            <input type="email" name="email" class="form-control" required
+            <label for="eca_email" class="form-label fw-semibold">Email del Punto ECA <span class="text-danger">*</span></label>
+            <input id="eca_email" type="email" name="email" class="form-control" required
                    value="{{ form_data.email|default:'' }}" placeholder="punto@eca.com">
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
-            <input type="text" name="celular" class="form-control" required
+            <label for="eca_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
+            <input id="eca_celular" type="text" name="celular" class="form-control" required
                    pattern="3[0-9]{9}" maxlength="10"
                    value="{{ form_data.celular|default:'' }}" placeholder="3101234567">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Horario de Atención</label>
-            <input type="text" name="horario_atencion" class="form-control"
+            <label for="eca_horario_atencion" class="form-label fw-semibold">Horario de Atención</label>
+            <input id="eca_horario_atencion" type="text" name="horario_atencion" class="form-control"
                    value="{{ form_data.horario_atencion|default:'' }}" placeholder="Lunes a Viernes 8:00-16:00">
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Sitio Web</label>
-            <input type="url" name="sitio_web" class="form-control"
+            <label for="eca_sitio_web" class="form-label fw-semibold">Sitio Web</label>
+            <input id="eca_sitio_web" type="url" name="sitio_web" class="form-control"
                    value="{{ form_data.sitio_web|default:'' }}" placeholder="https://tupunto.com">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Logo (URL)</label>
-            <input type="url" name="logo_url_punto" class="form-control"
+            <label for="eca_logo_url_punto" class="form-label fw-semibold">Logo (URL)</label>
+            <input id="eca_logo_url_punto" type="url" name="logo_url_punto" class="form-control"
                    value="{{ form_data.logo_url_punto|default:'' }}" placeholder="https://...logo.png">
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Foto del Punto (URL)</label>
-            <input type="url" name="foto_url_punto" class="form-control"
+            <label for="eca_foto_url_punto" class="form-label fw-semibold">Foto del Punto (URL)</label>
+            <input id="eca_foto_url_punto" type="url" name="foto_url_punto" class="form-control"
                    value="{{ form_data.foto_url_punto|default:'' }}" placeholder="https://...foto.jpg">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Descripción</label>
-            <textarea name="descripcion" class="form-control" rows="2"
+            <label for="eca_descripcion" class="form-label fw-semibold">Descripción</label>
+            <textarea id="eca_descripcion" name="descripcion" class="form-control" rows="2"
                       placeholder="Describe el punto ECA...">{{ form_data.descripcion|default:'' }}</textarea>
           </div>
         </div>
@@ -127,13 +117,13 @@
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
-            <input type="text" name="ciudad" class="form-control" required
+            <label for="eca_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
+            <input id="eca_ciudad" type="text" name="ciudad" class="form-control" required
                    value="{{ form_data.ciudad|default:'Bogotá' }}" placeholder="Bogotá">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
-            <select name="localidad" class="form-select" required>
+            <label for="eca_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
+            <select id="eca_localidad" name="localidad" class="form-select" required>
               <option value="">Seleccionar localidad...</option>
               {% for loc in localidades %}
                 <option value="{{ loc.localidad_id }}"
@@ -150,12 +140,12 @@
 
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Latitud <span class="text-danger">*</span></label>
+            <label for="latitud" class="form-label fw-semibold">Latitud <span class="text-danger">*</span></label>
             <input type="number" name="latitud" id="latitud" class="form-control" required
                    step="0.0001" value="{{ form_data.latitud|default:'' }}" placeholder="4.7110">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Longitud <span class="text-danger">*</span></label>
+            <label for="longitud" class="form-label fw-semibold">Longitud <span class="text-danger">*</span></label>
             <input type="number" name="longitud" id="longitud" class="form-control" required
                    step="0.0001" value="{{ form_data.longitud|default:'' }}" placeholder="-74.0721">
           </div>
@@ -171,21 +161,21 @@
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span></label>
-            <input type="text" name="nombres" class="form-control" required
+            <label for="eca_nombres" class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span></label>
+            <input id="eca_nombres" type="text" name="nombres" class="form-control" required
                    value="{{ form_data.nombres|default:'' }}" placeholder="Ej: Juan Carlos">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span></label>
-            <input type="text" name="apellidos" class="form-control" required
+            <label for="eca_apellidos" class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span></label>
+            <input id="eca_apellidos" type="text" name="apellidos" class="form-control" required
                    value="{{ form_data.apellidos|default:'' }}" placeholder="Ej: Pérez García">
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span></label>
-            <input type="email" name="email_gestor" class="form-control" required
+            <label for="eca_email_gestor" class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span></label>
+            <input id="eca_email_gestor" type="email" name="email_gestor" class="form-control" required
                    value="{{ form_data.email_gestor|default:'' }}" placeholder="gestor@mail.com">
             <div class="form-text">Este correo será el usuario de acceso al sistema.</div>
           </div>
@@ -193,8 +183,8 @@
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Tipo de Documento</label>
-            <select name="tipoDocumento" class="form-select">
+            <label for="eca_tipoDocumento" class="form-label fw-semibold">Tipo de Documento</label>
+            <select id="eca_tipoDocumento" name="tipoDocumento" class="form-select">
               <option value="">Seleccionar...</option>
               {% for val, label in tipos_documento %}
                 <option value="{{ val }}" {% if form_data.tipoDocumento == val %}selected{% endif %}>{{ label }}</option>
@@ -202,8 +192,8 @@
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Número de Documento</label>
-            <input type="text" name="numeroDocumento" class="form-control"
+            <label for="eca_numeroDocumento" class="form-label fw-semibold">Número de Documento</label>
+            <input id="eca_numeroDocumento" type="text" name="numeroDocumento" class="form-control"
                    value="{{ form_data.numeroDocumento|default:'' }}" placeholder="123456789">
           </div>
         </div>
@@ -213,12 +203,12 @@
 
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+            <label for="password" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
             <input type="password" name="password" id="password" class="form-control" required minlength="8"
                    placeholder="Mínimo 8 caracteres">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
+            <label for="passwordConfirm" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
             <input type="password" name="passwordConfirm" id="passwordConfirm" class="form-control" required minlength="8"
                    placeholder="Repite la contraseña">
           </div>
@@ -237,39 +227,59 @@
   </form>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
-  const latInput = document.getElementById('latitud');
-  const lngInput = document.getElementById('longitud');
-  const initLat = parseFloat(latInput.value) || 4.7110;
-  const initLng = parseFloat(lngInput.value) || -74.0721;
+  (function loadLeafletAndInit() {
+    var cssHref = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
+    var jsSrc = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
 
-  const mapa = L.map('mapa').setView([initLat, initLng], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(mapa);
-
-  let marcador = null;
-  if (latInput.value && lngInput.value) {
-    marcador = L.marker([initLat, initLng]).addTo(mapa);
-  }
-
-  mapa.on('click', function(e) {
-    if (marcador) mapa.removeLayer(marcador);
-    marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
-    latInput.value = e.latlng.lat.toFixed(4);
-    lngInput.value = e.latlng.lng.toFixed(4);
-  });
-
-  document.getElementById('ecaForm').addEventListener('submit', function(e) {
-    const p = document.getElementById('password').value;
-    const pc = document.getElementById('passwordConfirm').value;
-    if (p !== pc) {
-      e.preventDefault();
-      alert('Las contraseñas no coinciden.');
+    function insertCss(href) {
+      if (document.querySelector('link[href="' + href + '"]')) return;
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      document.head.appendChild(link);
     }
-  });
+
+    function loadScript(src, cb) {
+      if (globalThis.L) return cb();
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = cb;
+      document.body.appendChild(s);
+    }
+
+    insertCss(cssHref);
+    loadScript(jsSrc, function() {
+      var latInput = document.getElementById('latitud');
+      var lngInput = document.getElementById('longitud');
+      var initLat = Number.parseFloat(latInput && latInput.value) || 4.711;
+      var initLng = Number.parseFloat(lngInput && lngInput.value) || -74.072;
+
+      var mapa = L.map('mapa').setView([initLat, initLng], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(mapa);
+
+      var marcador = null;
+      if (latInput && latInput.value && lngInput && lngInput.value) {
+        marcador = L.marker([initLat, initLng]).addTo(mapa);
+      }
+
+      mapa.on('click', function(e) {
+        if (marcador) mapa.removeLayer(marcador);
+        marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
+        if (latInput) latInput.value = e.latlng.lat.toFixed(4);
+        if (lngInput) lngInput.value = e.latlng.lng.toFixed(4);
+      });
+    });
+
+    var ecaForm = document.getElementById('ecaForm');
+    if (ecaForm) ecaForm.addEventListener('submit', function(e) {
+      var p = document.getElementById('password') && document.getElementById('password').value;
+      var pc = document.getElementById('passwordConfirm') && document.getElementById('passwordConfirm').value;
+      if (p !== pc) { e.preventDefault(); alert('Las contraseñas no coinciden.'); }
+    });
+  })();
 </script>
-</body>
-</html>
+{% endblock %}

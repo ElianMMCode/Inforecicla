@@ -342,7 +342,7 @@ def crear_publicacion_admin(request):
     try:
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
 
-        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+        categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
 
         if request.method == "POST":
             from apps.publicaciones.models import ImagenPublicacion
@@ -365,6 +365,7 @@ def crear_publicacion_admin(request):
                                 "publicaciones_habilitadas": publicaciones_habilitadas,
                                 "categorias": categorias,
                                 "form_data": request.POST,
+                                "active_tab": "publicaciones",
                             },
                         )
 
@@ -397,6 +398,7 @@ def crear_publicacion_admin(request):
         {
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "categorias": categorias,
+            "active_tab": "publicaciones",
         },
     )
 
@@ -829,6 +831,7 @@ def listar_categorias_publicacion_admin(request):
             "categorias": categorias,
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "search_query": q,
+            "active_tab": "categorias_publicacion",
         },
     )
 
@@ -1127,6 +1130,7 @@ def editar_categoria_publicacion_admin(request, categoria_id):
             "form_data": form_data,
             "tipos_publicacion": tipos_publicacion,
             "estados": cons.Estado.choices,
+            "active_tab": "categorias_publicacion",
         },
     )
 
@@ -1243,6 +1247,7 @@ def crear_categoria_publicacion(request):
             "tipo_otro": "",
             "estado": "ACTIVO",
         },
+        "active_tab": "categorias_publicacion",
     }
     if request.method == "POST":
         resultado = AdminCatalogService.crear_categoria_publicacion(request.POST)

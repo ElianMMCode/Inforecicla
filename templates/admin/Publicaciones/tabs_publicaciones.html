@@ -1,0 +1,45 @@
+{% load static %}
+
+<style>
+  .admin-section-tabs .nav-link {
+    color: #198754;
+    font-weight: 600;
+  }
+
+  .admin-section-tabs .nav-link.active {
+    color: #fff;
+    background-color: #198754;
+    border-color: #198754;
+  }
+
+  .admin-section-tabs .nav-link:hover:not(.active) {
+    background-color: rgba(25, 135, 84, 0.08);
+  }
+</style>
+
+<ul class="nav nav-tabs mb-4 admin-section-tabs">
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'publicaciones' %}active{% endif %}"
+       href="{% url 'panel_admin:listar_publicaciones_admin' %}">
+      <img src="{% static 'img/bootstrap-icons-1.13.1/newspaper.svg' %}"
+           alt=""
+           aria-hidden="true"
+           class="me-1"
+           width="16"
+           height="16">
+      Publicaciones
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'categorias_publicacion' %}active{% endif %}"
+       href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}">
+      <img src="{% static 'img/bootstrap-icons-1.13.1/folder-fill.svg' %}"
+           alt=""
+           aria-hidden="true"
+           class="me-1"
+           width="16"
+           height="16">
+      Categorías de publicaciones
+    </a>
+  </li>
+</ul>
