@@ -5,10 +5,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Registro Punto ECA - InfoRecicla</title>
           <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-              rel="stylesheet">
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+              rel="stylesheet"
+              integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+              crossorigin="anonymous">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+                integrity="sha384-Ay26V7L8bsJTsX9Sxclnvsn+hkdiwRnrjZJXqKmkIDobPgIIWBOVguEcQQLDuhfN"
+                crossorigin="anonymous">
         <link rel="stylesheet"
-              href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+              href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"
+              integrity="sha384-b8ANgTJvdlAnWM5YGMpKn7Kodm+1k7NYNG9zdjTCcZcKatzYHwZ0RLdWarbJJVzU"
+              crossorigin="anonymous">
         <style>
         body {
             background: #198754;
@@ -34,18 +40,13 @@
         }
 
         .register-header h2 {
-            color: #28a745;
+            color: #145c3a;
             font-weight: bold;
             font-size: 1.8rem;
             margin: 0;
         }
-                <div style="text-align:left; margin-bottom:12px;">
-                    <span style="color:#dc3545; font-weight:bold;">*</span>
-                    <span style="color:#666; font-size:.97em;">Campos obligatorios</span>
-                </div>
-
         .register-header p {
-            color: #666;
+            color: #4d4d4d;
             font-size: 0.9rem;
             margin-top: 0.5rem;
         }
@@ -86,7 +87,7 @@
             font-weight: 600;
             border: none;
             border-radius: 8px;
-            background: #28a745;
+            background: #145c3a;
             color: white;
             cursor: pointer;
             transition: background 0.3s, transform 0.2s, box-shadow 0.12s;
@@ -97,7 +98,7 @@
         }
 
         .btn-login:hover {
-            background: #218838;
+            background: #0f4d31;
             transform: translateY(-2px);
         }
 
@@ -118,17 +119,17 @@
 
         .btn-login.btn-ghost {
             background: transparent;
-            color: #28a745;
-            border: 2px solid #28a745;
+            color: #145c3a;
+            border: 2px solid #145c3a;
             height: 48px;
         }
 
         .btn-login.btn-ghost .btn-icon {
-            color: #28a745;
+            color: #145c3a;
         }
 
         .btn-login.btn-ghost:hover {
-            background: #28a745;
+            background: #145c3a;
             color: white;
             transform: translateY(-2px);
         }
@@ -158,13 +159,13 @@
         }
 
         .register-footer p {
-            color: #666;
+            color: #4d4d4d;
             margin: 0;
             font-size: 0.9rem;
         }
 
         .register-footer a {
-            color: #28a745;
+            color: #145c3a;
             text-decoration: none;
             font-weight: 600;
         }
@@ -182,21 +183,21 @@
 
         .map-info {
             background-color: #f8f9fa;
-            border-left: 4px solid #28a745;
+            border-left: 4px solid #145c3a;
             padding: 1rem;
             border-radius: 4px;
             font-size: 0.85rem;
-            color: #666;
+            color: #4d4d4d;
             margin-bottom: 1rem;
         }
 
         .password-info {
             background-color: #f8f9fa;
-            border-left: 4px solid #28a745;
+            border-left: 4px solid #145c3a;
             padding: 1rem;
             border-radius: 4px;
             font-size: 0.85rem;
-            color: #666;
+            color: #4d4d4d;
             margin-bottom: 1rem;
         }
 
@@ -220,8 +221,8 @@
         }
 
         .form-check-input:checked {
-            background-color: #28a745;
-            border-color: #28a745;
+            background-color: #145c3a;
+            border-color: #145c3a;
         }
         </style>
     </head>
@@ -642,11 +643,15 @@
                 </div>
             </div>
         </form>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+            crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
+            integrity="sha384-u5N8qJeJOO2iqNjIKTdl6KeKsEikMAmCUBPc6sC6uGpgL34aPJ4VgNhuhumedpEk"
+            crossorigin="anonymous"></script>
         <script>
     // Inicializar mapa
-    const mapa = L.map('mapa').setView([4.7110, -74.0721], 12);
+    const mapa = L.map('mapa').setView([4.711, -74.0721], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(mapa);
@@ -675,8 +680,8 @@
                 form.addEventListener('submit', function(event) {
                     const password = document.getElementById('password').value;
                     const passwordConfirm = document.getElementById('passwordConfirm').value;
-                    const latitud = parseFloat(document.getElementById('latitud').value);
-                    const longitud = parseFloat(document.getElementById('longitud').value);
+                    const latitud = Number.parseFloat(document.getElementById('latitud').value);
+                    const longitud = Number.parseFloat(document.getElementById('longitud').value);
 
                     if (password !== passwordConfirm) {
                         event.preventDefault();
@@ -685,7 +690,7 @@
                         return;
                     }
 
-                    if (isNaN(latitud) || isNaN(longitud)) {
+                    if (Number.isNaN(latitud) || Number.isNaN(longitud)) {
                         event.preventDefault();
                         event.stopPropagation();
                         alert('Por favor, selecciona una ubicación en el mapa');
@@ -707,7 +712,7 @@
         // Inicializar toggles de mostrar/ocultar contraseña
         document.querySelectorAll('.toggle-password').forEach(function(icon){
             icon.addEventListener('click', function(){
-                const targetSelector = icon.getAttribute('data-target');
+                const targetSelector = icon.dataset.target;
                 const input = document.querySelector(targetSelector);
                 if (!input) return;
                 if (input.type === 'password'){
