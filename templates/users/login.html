@@ -5,9 +5,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Iniciar Sesión - InfoRecicla</title>
-          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-              rel="stylesheet">
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+                rel="stylesheet"
+                integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+                crossorigin="anonymous">
+          <link rel="stylesheet" href="{% static 'img/bootstrap-icons-1.13.1/bootstrap-icons.css' %}">
         <style>
         .login-container {
             display: flex;
@@ -38,7 +40,7 @@
 
         .login-header h1 {
             font-size: 1.8rem;
-            color: #28a745;
+            color: #1f7a42;
             font-weight: bold;
             margin: 0;
         }
@@ -58,8 +60,8 @@
         }
 
         .form-control:focus {
-            border-color: #28a745;
-            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+            border-color: #1f7a42;
+            box-shadow: 0 0 0 0.2rem rgba(31, 122, 66, 0.25);
         }
 
         .form-group {
@@ -80,7 +82,7 @@
             font-weight: 600;
             border: none;
             border-radius: 8px;
-            background: #28a745;
+            background: #1f7a42;
             color: white;
             cursor: pointer;
             transition: background 0.3s, transform 0.2s, box-shadow 0.12s;
@@ -91,7 +93,7 @@
         }
 
         .btn-login:hover {
-            background: #218838;
+            background: #176336;
             transform: translateY(-2px);
         }
 
@@ -118,17 +120,17 @@
         /* Ghost variant: transparent by default, filled on hover */
         .btn-login.btn-ghost {
             background: transparent;
-            color: #28a745;
-            border: 2px solid #28a745;
+            color: #1f7a42;
+            border: 2px solid #1f7a42;
             height: 48px;
         }
 
         .btn-login.btn-ghost .btn-icon {
-            color: #28a745;
+            color: #1f7a42;
         }
 
         .btn-login.btn-ghost:hover {
-            background: #28a745;
+            background: #1f7a42;
             color: white;
             transform: translateY(-2px);
         }
@@ -172,7 +174,7 @@
         }
 
         .login-footer a {
-            color: #28a745;
+            color: #1f7a42;
             text-decoration: none;
             font-weight: 600;
         }
@@ -205,9 +207,9 @@
         .register-links a:not(.btn-login) {
             display: block;
             padding: 0.75rem;
-            border: 2px solid #28a745;
+            border: 2px solid #1f7a42;
             border-radius: 8px;
-            color: #28a745;
+            color: #1f7a42;
             text-decoration: none;
             text-align: center;
             font-weight: 600;
@@ -216,7 +218,7 @@
         }
 
         .register-links a:not(.btn-login):hover {
-            background-color: #28a745;
+            background-color: #1f7a42;
             color: white;
         }
 
@@ -250,8 +252,8 @@
         }
 
         .form-check-input:checked {
-            background-color: #28a745;
-            border-color: #28a745;
+            background-color: #1f7a42;
+            border-color: #1f7a42;
         }
 
         .form-check-label {
@@ -267,7 +269,7 @@
         }
 
         .inline-action-btn {
-            color: #28a745;
+            color: #1f7a42;
             text-decoration: none;
             font-size: 0.85rem;
             font-weight: 500;
@@ -316,10 +318,7 @@
                     {% endfor %}
                 {% endif %}
                 <div id="js-error-container"></div>
-                    <form method="POST"
-                        id="loginForm"
-                        data-current-action="{{ action|default:''|escapejs }}"
-                        data-recovery-step="{{ recovery_step|default:'enviar'|escapejs }}">
+                <form method="POST" id="loginForm">
                     {% csrf_token %}
                     <input type="hidden" id="loginAction" name="action" value="login">
                     <div class="form-group">
@@ -362,10 +361,9 @@
                             Olvidé mi contraseña
                         </button>
                         <br>
-                        <button type="submit"
+                        <button type="button"
                                 class="btn btn-link p-0 inline-action-btn"
-                                formnovalidate
-                                onclick="document.getElementById('loginAction').value='reenviar';">
+                                onclick="document.getElementById('loginAction').value='reenviar'; document.getElementById('loginForm').submit();">
                             Reenviar enlace para activar cuenta
                         </button>
                     </div>
@@ -479,7 +477,8 @@
             </div>
         </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="{% static 'js/Registro/login.js' %}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"></script>
     </body>
 </html>
