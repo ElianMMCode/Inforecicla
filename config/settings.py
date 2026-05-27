@@ -48,9 +48,20 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ["127.0.0.1", "localhost", "10.26.42.166"]
-
 GROQ_API_KEY = env("GROQ_API_KEY")
+SITE_URL = env("SITE_URL", default="http://127.0.0.1:8000")
+
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=25)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@inforecicla.local")
 
 # Application definition
 
@@ -108,7 +119,6 @@ TEMPLATES = [
     },
 ]
 
-# WSGI_APPLICATION = "config.wsgi.application"
 WSGI_APPLICATION = "config.asgi.application"
 
 
