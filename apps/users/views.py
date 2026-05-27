@@ -5,6 +5,7 @@ from django.db import transaction, IntegrityError
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from apps.users.models import Usuario, TokenValidacion
 from apps.ecas.models import PuntoECA, Localidad
 import apps.ecas.models as ecas_models
@@ -788,7 +789,7 @@ def actualizar_datos_ciudadano(request):
         return JsonResponse({"ok": True, "message": msg})
     messages.success(request, msg)
 
-    return redirect(request.POST.get("return_to") or "perfil_ciudadano")
+    return redirect(_safe_return_to_or_default(request, "perfil_ciudadano"))
 
 
 def _build_actualizar_validation_error_response(request, is_ajax, errores):
@@ -827,6 +828,17 @@ def _build_actualizar_success_message(user):
     if perfil_incompleto(user):
         return "Se guardaron algunos datos de tu perfil."
     return "¡Perfil completado correctamente!"
+
+
+def _safe_return_to_or_default(request, default_name):
+    target = (request.POST.get("return_to") or "").strip()
+    if target and url_has_allowed_host_and_scheme(
+        url=target,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return target
+    return reverse(default_name)
 
 
 def _validate_actualizar_datos_ciudadano(request):
