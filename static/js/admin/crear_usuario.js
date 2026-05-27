@@ -1,3 +1,35 @@
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function actualizarEstadoCampo(campo) {
+  if (!campo) {
+    return;
+  }
+
+  const valido = campo.checkValidity();
+  const tieneValor = campo.value !== "";
+
+  campo.classList.toggle("is-valid", valido && tieneValor);
+  campo.classList.toggle("is-invalid", !valido && (tieneValor || campo.required));
+}
+
+function actualizarRequisito(elemento, cumple, texto) {
+  if (!elemento) {
+    return;
+  }
+
+  elemento.classList.toggle("text-success", cumple);
+  elemento.classList.toggle("text-danger", !cumple);
+  elemento.classList.toggle("fw-semibold", cumple);
+  elemento.innerHTML = cumple
+    ? `✅ <span class="text-success">${texto}</span>`
+    : `❌ <span class="text-danger">${texto}</span>`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("createUserForm");
 
@@ -17,61 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const mensajeCoincidencia = document.getElementById("mensajeCoincidencia");
   const passwordRequirementsBox = document.getElementById("passwordRequirementsBox");
   const camposObligatorios = Array.from(form.querySelectorAll("[required]"));
-
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
   const today = new Date();
   const fechaMaximaMenorEdad = new Date(today);
+
   fechaMaximaMenorEdad.setFullYear(fechaMaximaMenorEdad.getFullYear() - 18);
   fechaMaximaMenorEdad.setDate(fechaMaximaMenorEdad.getDate() - 1);
-
-  if (fechaNacimientoInput) {
-    fechaNacimientoInput.max = formatDate(fechaMaximaMenorEdad);
-    fechaNacimientoInput.addEventListener("input", validarFechaNacimiento);
-    fechaNacimientoInput.addEventListener("blur", validarFechaNacimiento);
-  }
-
-  if (celularInput) {
-    celularInput.addEventListener("input", () => {
-      celularInput.value = celularInput.value.replace(/\D/g, "").slice(0, 10);
-      validarCelular();
-      actualizarEstadoCampo(celularInput);
-    });
-    celularInput.addEventListener("blur", () => {
-      validarCelular();
-      actualizarEstadoCampo(celularInput);
-    });
-  }
-
-  function actualizarEstadoCampo(campo) {
-    if (!campo) {
-      return;
-    }
-
-    const valido = campo.checkValidity();
-    const tieneValor = campo.value !== "";
-
-    campo.classList.toggle("is-valid", valido && tieneValor);
-    campo.classList.toggle("is-invalid", !valido && (tieneValor || campo.required));
-  }
-
-  function actualizarRequisito(elemento, cumple, texto) {
-    if (!elemento) {
-      return;
-    }
-
-    elemento.classList.toggle("text-success", cumple);
-    elemento.classList.toggle("text-danger", !cumple);
-    elemento.classList.toggle("fw-semibold", cumple);
-    elemento.innerHTML = cumple
-      ? `✅ <span class="text-success">${texto}</span>`
-      : `❌ <span class="text-danger">${texto}</span>`;
-  }
 
   function actualizarEstadoCajaContrasena(cumpleTodo) {
     if (!passwordRequirementsBox) {
@@ -141,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarRequisito(reqMayusculas, tieneMay, "Mínimo una letra mayúscula (A-Z)");
     actualizarRequisito(reqNumeros, tieneNum, "Mínimo un número (0-9)");
     actualizarRequisito(reqEspeciales, tieneEsp, "Mínimo un carácter especial (@$!%*?&)");
-    actualizarRequisito(reqLongitud, tieneLongitud, `Mínimo 8 caracteres${password.length > 0 ? ` (${password.length}/8)` : ""}`);
+    actualizarRequisito(reqLongitud, tieneLongitud, "Mínimo 8 caracteres" + (password.length > 0 ? " (" + password.length + "/8)" : ""));
     actualizarEstadoCajaContrasena(cumpleTodo);
 
     if (passwordConfirm.length === 0) {

@@ -89,8 +89,8 @@
             <div class="invalid-feedback">La ciudad es obligatoria.</div>
           </div>
           <div class="col-md-6">
-            <label id="createUserLocalidadLabel" for="createUserLocalidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
-            <select id="createUserLocalidad" name="localidad" class="form-select" required aria-label="Localidad" aria-labelledby="createUserLocalidadLabel">
+            <label for="createUserLocalidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
+            <select id="createUserLocalidad" name="localidad" class="form-select" required>
               <option value="">Seleccionar localidad...</option>
               {% for loc in localidades %}
                 <option value="{{ loc.localidad_id }}"
