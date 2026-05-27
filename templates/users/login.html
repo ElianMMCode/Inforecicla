@@ -192,11 +192,6 @@
             color: #999;
             gap: 0.75em;
         }
-        .divider-line {
-            flex: 1;
-            height: 1px;
-            background-color: #ddd;
-        }
 
         .register-links {
             display: flex;
@@ -204,7 +199,7 @@
             gap: 0.75rem;
         }
 
-        .register-links a:not(.btn-login) {
+        .register-links a.btn-ghost {
             display: block;
             padding: 0.75rem;
             border: 2px solid #1f7a42;
@@ -213,78 +208,60 @@
             text-decoration: none;
             text-align: center;
             font-weight: 600;
-            transition: all 0.3s;
+            transition: background-color 0.2s, color 0.2s, transform 0.12s;
             font-size: 0.9rem;
+            overflow: hidden;
         }
 
-        .register-links a:not(.btn-login):hover {
+        .register-links a.btn-ghost, .register-links a.btn-ghost .btn-icon {
+            text-decoration: none !important;
+        }
+
+        .register-links a.btn-ghost .btn-icon {
+            color: #1f7a42;
+            transition: color 0.2s;
+        }
+
+        .register-links a.btn-ghost:hover,
+        .register-links a.btn-ghost:focus {
             background-color: #1f7a42;
-            color: white;
+            color: #ffffff;
+            text-decoration: none;
+            transform: translateY(-2px);
         }
 
-        .activation-box {
-            margin-top: 1.5rem;
-            padding: 1.25rem;
-            border: 1px solid #d8eadf;
-            border-radius: 12px;
-            background: #f8fff9;
-        }
-
-        .activation-box h2 {
-            font-size: 1rem;
-            color: #1d7a3a;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .activation-box p {
-            font-size: 0.9rem;
-            color: #5f6b66;
-            margin-bottom: 1rem;
-        }
-
-        .form-check {
-            margin-bottom: 1rem;
-        }
-
-        .form-check-input {
-            border-color: #ddd;
-        }
-
-        .form-check-input:checked {
-            background-color: #1f7a42;
-            border-color: #1f7a42;
-        }
-
-        .form-check-label {
-            color: #666;
-            font-size: 0.9rem;
-            margin-left: 0.5rem;
+        .register-links a.btn-ghost:hover .btn-icon,
+        .register-links a.btn-ghost:focus .btn-icon {
+            color: #ffffff;
         }
 
         .forgot-password {
-            text-align: right;
-            margin-top: -0.5rem;
-            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .inline-action-btn {
             color: #1f7a42;
             text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: background-color 0.15s, color 0.15s, transform 0.12s;
         }
 
         .inline-action-btn:hover {
-            text-decoration: underline;
+            text-decoration: none;
+            background-color: rgba(31,122,66,0.06);
+            color: #155d2b;
+            transform: translateY(-1px);
         }
 
-        .auth-helper-btn {
-            width: 100%;
-            margin-top: 1rem;
-            border-radius: 8px;
-            font-weight: 600;
-        }
         </style>
     </head>
     <body>
@@ -357,13 +334,10 @@
                         </div>
                         <div class="invalid-feedback">La contraseña es obligatoria.</div>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               id="rememberMe"
-                               name="rememberMe">
-                        <label class="form-check-label" for="rememberMe">Recuérdame</label>
-                    </div>
+                    <button type="submit" class="btn-login">
+                        <i class="bi bi-box-arrow-in-right btn-icon" aria-hidden="true"></i>
+                        Iniciar Sesión
+                    </button>
                     <div class="forgot-password">
                         <button type="button"
                                 class="btn btn-link p-0 inline-action-btn"
@@ -371,17 +345,12 @@
                                 data-bs-target="#recoveryModal">
                             Olvidé mi contraseña
                         </button>
-                        <br>
                         <button type="button"
                                 class="btn btn-link p-0 inline-action-btn"
                                 id="resendActivationButton">
                             Reenviar enlace para activar cuenta
                         </button>
                     </div>
-                    <button type="submit" class="btn-login">
-                        <i class="bi bi-box-arrow-in-right btn-icon" aria-hidden="true"></i>
-                        Iniciar Sesión
-                    </button>
                 </form>
                 <div class="divider">O registrarse</div>
                 <div class="register-links">
