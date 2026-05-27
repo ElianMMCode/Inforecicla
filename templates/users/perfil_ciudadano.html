@@ -213,10 +213,10 @@
                     </div>
                     <div class="col-auto">
                         <div class="d-flex align-items-center gap-3">
-                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            <span class="badge bg-success bg-opacity-10 text-light px-3 py-2 rounded-pill">
                                 <i class="bi bi-geo-alt-fill me-1"></i>{{ user.ciudad|default:"Bogotá" }}
                             </span>
-                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            <span class="badge bg-success bg-opacity-10 text-light px-3 py-2 rounded-pill">
                                 <i class="bi bi-envelope-fill me-1"></i>{{ user.email }}
                             </span>
                         </div>
@@ -238,15 +238,261 @@
             {% endif %}
 
             {% if perfil_incompleto or request.GET.completar == '1' %}
-            <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
-                <div>
-                    <i class="bi bi-exclamation-circle me-2"></i>
-                    Completa tu perfil para acceder a todas las funciones de InfoRecicla.
+            <div class="text-center">
+                <div class="alert alert-warning mx-auto" role="alert" style="max-width:1100px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-exclamation-circle me-2"></i>
+                            Completa tu perfil para acceder a todas las funciones de InfoRecicla.
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-success px-3 py-2" data-bs-toggle="modal" data-bs-target="#completarPerfilModal">Completar ahora</button>
+                            <a href="/perfil/" class="btn btn-sm btn-outline-secondary px-3 py-2">Recordarme después</a>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <a href="/perfil/completar/" class="btn btn-sm btn-success">Completar ahora</a>
-                    <a href="/perfil/" class="btn btn-sm btn-outline-secondary ms-2">Recordarme después</a>
+            </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function getCookie(name) {
+                const cookie = document.cookie.split('; ').find((row) => row.startsWith(name + '='));
+                return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
+            }
+
+            const form = document.getElementById('completarPerfilForm');
+            if (!form) return;
+
+            // Document length rules per document type and enforcement
+            const DOC_RULES = {
+                'CC': { min: 6, max: 10 },
+                'CE': { min: 6, max: 12 },
+                'PA': { min: 6, max: 9 },
+                'NIT': { min: 6, max: 15 },
+                'TI': { min: 6, max: 11 },
+                '': { min: 3, max: 32 } // default when no type selected
+            };
+
+            function getDocRules(tipo) {
+                return DOC_RULES[tipo] || DOC_RULES[''];
+            }
+
+            const modalNumeroEl = document.getElementById('modal_numeroDocumento');
+            const modalTipoEl = document.getElementById('modal_tipoDocumento');
+
+            function applyModalMax() {
+                if (!modalNumeroEl) return;
+                const tipo = (modalTipoEl && modalTipoEl.value) ? modalTipoEl.value : '';
+                const rules = getDocRules(tipo);
+                modalNumeroEl.value = modalNumeroEl.value.replace(/\D/g, '').substring(0, rules.max);
+                modalNumeroEl.maxLength = rules.max;
+                modalNumeroEl.setAttribute('inputmode', 'numeric');
+                modalNumeroEl.setAttribute('pattern', String.raw`\d*`);
+            }
+
+            if (modalNumeroEl) {
+                modalNumeroEl.addEventListener('input', function() {
+                    // allow only digits and enforce max for the selected type
+                    const tipo = (modalTipoEl && modalTipoEl.value) ? modalTipoEl.value : '';
+                    const rules = getDocRules(tipo);
+                    this.value = this.value.replace(/\D/g, '').substring(0, rules.max);
+                });
+            }
+
+            if (modalTipoEl) {
+                modalTipoEl.addEventListener('change', applyModalMax);
+                // apply initial max on load
+                applyModalMax();
+            }
+
+            const submitBtn = document.getElementById('modalSubmitBtn');
+
+            function clearFeedback() {
+                ['tipoDocumento','numeroDocumento','localidad','fechaNacimiento'].forEach(id => {
+                    const fb = document.getElementById('modal_' + id + '_feedback');
+                    const el = document.getElementById('modal_' + id);
+                    if (fb) fb.textContent = '';
+                    if (el) el.classList.remove('is-invalid');
+                });
+            }
+
+            function showErrorFor(id, msg) {
+                const fb = document.getElementById('modal_' + id + '_feedback');
+                const el = document.getElementById('modal_' + id);
+                if (fb) fb.textContent = msg;
+                if (el) el.classList.add('is-invalid');
+            }
+
+            form.addEventListener('submit', function(ev) {
+                ev.preventDefault();
+                clearFeedback();
+
+                const numero = (document.getElementById('modal_numeroDocumento') || {}).value || '';
+                const tipo = (document.getElementById('modal_tipoDocumento') || {}).value || '';
+                const fecha = (document.getElementById('modal_fechaNacimiento') || {}).value || '';
+                const localidad = (document.getElementById('modal_localidad') || {}).value || '';
+
+                let hasError = false;
+
+                // numeroDocumento: validate length according to tipoDocumento rules when provided
+                        if (numero) {
+                            const tipoForValid = (document.getElementById('modal_tipoDocumento') || {}).value || '';
+                            const rules = getDocRules(tipoForValid);
+                            if (numero.length < rules.min || numero.length > rules.max) {
+                                showErrorFor('numeroDocumento', `Número de documento inválido (solo dígitos, entre ${rules.min} y ${rules.max} caracteres)`);
+                                hasError = true;
+                            }
+                        }
+
+                        // Mutual requirement: if tipo provided, numero is required; if numero provided, tipo is required
+                        if (tipo && !numero) {
+                            showErrorFor('numeroDocumento', 'Debes ingresar el número de documento cuando seleccionas un tipo');
+                            hasError = true;
+                        }
+                        if (numero && !tipo) {
+                            showErrorFor('tipoDocumento', 'Debes seleccionar el tipo de documento cuando ingresas un número');
+                            hasError = true;
+                        }
+
+                // fechaNacimiento: not future, age >= 18 if provided
+                if (fecha) {
+                    const d = new Date(fecha);
+                    const today = new Date();
+                    if (d > today) {
+                        showErrorFor('fechaNacimiento', 'La fecha no puede ser futura');
+                        hasError = true;
+                    } else {
+                        const age = new Date(today - d).getUTCFullYear() - 1970;
+                        if (age < 18) {
+                            showErrorFor('fechaNacimiento', 'Debes tener al menos 18 años');
+                            hasError = true;
+                        }
+                    }
+                }
+
+                if (hasError) return;
+
+                submitBtn.disabled = true;
+
+                const fd = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: fd
+                }).then(async (res) => {
+                    submitBtn.disabled = false;
+                    if (res.ok) {
+                        // success - close modal and show toast
+                        const modalEl = document.getElementById('completarPerfilModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modal.hide();
+                        Swal.fire({icon: 'success', title: 'Guardado', text: 'Perfil actualizado correctamente', confirmButtonColor: '#145c3a'}).then(() => location.reload());
+                        return;
+                    }
+
+                    let data;
+                    try { data = await res.json(); } catch(e) { data = null; }
+                    if (data && data.errors) {
+                        // server-side field errors
+                        for (const [field, msgs] of Object.entries(data.errors)) {
+                            showErrorFor(field, Array.isArray(msgs) ? msgs.join(' ') : String(msgs));
+                        }
+                        return;
+                    }
+
+                    // fallback: show message
+                    const text = data && data.message ? data.message : await res.text();
+                    Swal.fire({icon: 'error', title: 'Error', html: text, confirmButtonColor: '#145c3a'});
+                }).catch((err) => {
+                    submitBtn.disabled = false;
+                    Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo conectarse al servidor', confirmButtonColor: '#145c3a'});
+                    console.error(err);
+                });
+            });
+
+            // Auto-open behavior:
+            // - always open if ?completar=1
+            // - open once per browser session if perfil_incompleto is true
+            const openOnParam = {% if request.GET.completar == '1' %}true{% else %}false{% endif %};
+            const openOnIncomplete = {% if perfil_incompleto %}true{% else %}false{% endif %};
+            if (openOnParam) {
+                const modalEl = document.getElementById('completarPerfilModal');
+                if (modalEl) new bootstrap.Modal(modalEl).show();
+            } else if (openOnIncomplete) {
+                try {
+                    const key = 'completarPerfilShown';
+                    if (!sessionStorage.getItem(key)) {
+                        const modalEl = document.getElementById('completarPerfilModal');
+                        if (modalEl) {
+                            new bootstrap.Modal(modalEl).show();
+                            sessionStorage.setItem(key, '1');
+                        }
+                    }
+                } catch (e) {
+                    // sessionStorage may be unavailable in some contexts; fallback: do nothing
+                    console.warn('sessionStorage unavailable for modal show control', e);
+                }
+            }
+        });
+        </script>
+
+            <!-- Modal: Completar Perfil -->
+            <div class="modal fade" id="completarPerfilModal" tabindex="-1" aria-labelledby="completarPerfilLabel" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="completarPerfilLabel">Completa tu perfil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                  </div>
+                  <form id="completarPerfilForm" method="POST" action="/perfil/actualizar/">
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="modal_tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
+                            <select class="form-select" id="modal_tipoDocumento" name="tipoDocumento">
+                                <option value="">Seleccionar...</option>
+                                <option value="CC">Cédula de Ciudadanía</option>
+                                <option value="CE">Cédula de Extranjería</option>
+                                <option value="PA">Pasaporte</option>
+                                <option value="NIT">NIT</option>
+                                <option value="TI">Tarjeta de Identidad</option>
+                            </select>
+                            <div class="invalid-feedback" id="modal_tipoDocumento_feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_numeroDocumento" class="form-label">Número de Documento</label>
+                            <input type="text" inputmode="numeric" pattern="\d*" class="form-control" id="modal_numeroDocumento" name="numeroDocumento" placeholder="1234567890" value="{{ user.numero_documento|default:'' }}">
+                            <div class="invalid-feedback" id="modal_numeroDocumento_feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_localidad" class="form-label">Localidad</label>
+                            <select class="form-select" id="modal_localidad" name="localidad">
+                                <option value="">Seleccionar localidad...</option>
+                                {% for loc in localidades %}
+                                    <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="modal_localidad_feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" id="modal_fechaNacimiento" name="fechaNacimiento" value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+                            <div class="invalid-feedback" id="modal_fechaNacimiento_feedback"></div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                      <button type="submit" class="btn btn-success" id="modalSubmitBtn">Guardar</button>
+                    </div>
+                  </form>
                 </div>
+              </div>
             </div>
             {% endif %}
 
