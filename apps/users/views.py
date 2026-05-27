@@ -12,6 +12,7 @@ from config import constants as cons
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate, login, update_session_auth_hash
 from apps.users.decorators import ciudadano_required
+from django.http import JsonResponse
 from apps.users.utils import (
     crear_token_validacion,
     desactivar_tokens_previos,
@@ -53,6 +54,25 @@ def _build_login_context(
         "recovery_step": recovery_step,
         "show_activation_resend": show_activation_resend,
     }
+
+
+def perfil_incompleto(user):
+    """Return True if the ciudadano user is missing key profile fields.
+
+    Fields considered for completeness: fecha_nacimiento and localidad.
+    """
+    if not user:
+        return False
+    try:
+        if user.tipo_usuario != cons.TipoUsuario.CIUDADANO:
+            return False
+        if not getattr(user, "fecha_nacimiento", None):
+            return True
+        if not getattr(user, "localidad", None):
+            return True
+    except Exception:
+        return False
+    return False
 
 
 def _obtener_token_recuperacion_valido(request, email):
@@ -104,44 +124,51 @@ def _handle_activate_get(request, email, token):
     return redirect(f"{reverse('login')}?email={email}"), []
 
 
+def _redirect_after_login(user):
+    if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
+        return redirect("/panel_admin/"), [], None, None, False
+    if user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
+        return redirect("/punto-eca/"), [], None, None, False
+    if user.tipo_usuario == cons.TipoUsuario.CIUDADANO and perfil_incompleto(user):
+        return redirect("/perfil/?completar=1"), [], None, None, False
+    return redirect("/perfil/"), [], None, None, False
+
+
+def _handle_inactive_login(request, email, usuario_inactivo):
+    try:
+        token_obj = crear_token_validacion(
+            email=email,
+            tipo="verificacion",
+            usuario=usuario_inactivo,
+            desactivar_previos=False,
+        )
+        resultado = enviar_email_verificacion(email, token_obj.token)
+        if not resultado:
+            token_obj.delete()
+            return None, ["No fue posible enviar el enlace de activación. Revisa la configuración de correo."], None, None, True
+
+        desactivar_tokens_previos(email, "verificacion", excluir_token_id=token_obj.id)
+        messages.info(request, "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo.")
+        return None, ["Cuenta no activada. Revisa tu correo y usa el enlace de activación."], None, None, True
+    except Exception:
+        return None, [MSG_REENVIAR_ACTIVACION_FALLO], None, None, True
+
+
 def _handle_login_post(request):
-    errores = []
     email = request.POST.get("email", "").strip().lower()
     password = request.POST.get("password", "")
 
     if not email or not password:
-        errores.append("Debes ingresar email y contraseña.")
-        return None, errores, None, None, False
+        return None, ["Debes ingresar email y contraseña."], None, None, False
 
     usuario_inactivo = Usuario.objects.filter(email=email, is_active=False).first()
     if usuario_inactivo is not None:
-        try:
-            token_obj = crear_token_validacion(
-                email=email,
-                tipo="verificacion",
-                usuario=usuario_inactivo,
-                desactivar_previos=False,
-            )
-            resultado = enviar_email_verificacion(email, token_obj.token)
-            if not resultado:
-                token_obj.delete()
-                errores.append("No fue posible enviar el enlace de activación. Revisa la configuración de correo.")
-                return None, errores, None, None, True
-            desactivar_tokens_previos(email, "verificacion", excluir_token_id=token_obj.id)
-            messages.info(request, "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo.")
-            errores.append("Cuenta no activada. Revisa tu correo y usa el enlace de activación.")
-        except Exception:
-            errores.append(MSG_REENVIAR_ACTIVACION_FALLO)
-        return None, errores, None, None, True
+        return _handle_inactive_login(request, email, usuario_inactivo)
 
     user = authenticate(request, username=email, password=password)
     if user is not None:
         login(request, user)
-        if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
-            return redirect("/panel_admin/"), [], None, None, False
-        if user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
-            return redirect("/punto-eca/"), [], None, None, False
-        return redirect("/perfil/"), [], None, None, False
+        return _redirect_after_login(user)
 
     messages.error(request, "Credenciales inválidas. Verifica tu email y contraseña.")
     return redirect(f"{reverse('login')}?email={email}"), [], None, None, False
@@ -485,7 +512,7 @@ def _create_registro_eca(fields):
     with transaction.atomic():
         usuario = Usuario(
             email=fields["email"],
-            numero_documento=fields["numero_documento"] or f"GESTORECA_{fields['email']}",
+            numero_documento=fields["numero_documento"] or None,
             celular=fields["celular"],
             nombres=fields["nombres"],
             apellidos=fields["apellidos"],
@@ -586,8 +613,6 @@ def _validate_registro_ciudadano_basic(fields):
         errores.append("Debe ingresar un email válido.")
     if not fields["celular"] or not fields["celular"].startswith("3") or len(fields["celular"]) != 10:
         errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
-    if not fields["ciudad"]:
-        errores.append("Debe especificar la ciudad.")
     if not fields["password"] or not fields["password_confirm"]:
         errores.append("Se requiere una contraseña.")
     elif fields["password"] != fields["password_confirm"]:
@@ -603,14 +628,14 @@ def _create_registro_ciudadano(fields):
     with transaction.atomic():
         usuario = Usuario(
             email=fields["email"],
-            numero_documento=fields["numero_documento"] or f"CIU_{fields['email']}",
+            numero_documento=fields["numero_documento"] or None,
             nombres=fields["nombres"],
             apellidos=fields["apellidos"],
             celular=fields["celular"],
             tipo_documento=fields["tipo_documento"],
             tipo_usuario=cons.TipoUsuario.CIUDADANO,
-            ciudad=fields["ciudad"],
-            localidad=fields["localidad_inst"],
+            ciudad=fields.get("ciudad") or DEFAULT_CITY,
+            localidad=fields.get("localidad_inst"),
             fecha_nacimiento=fields["fecha_nacimiento"] if fields["fecha_nacimiento"] else None,
             is_active=False,
         )
@@ -655,8 +680,35 @@ def perfil_ciudadano(request, tab="datos"):
             "mis_comentarios": mis_comentarios,
             "mis_guardados": mis_guardados,
             "tab_activo": tab,
+            "perfil_incompleto": perfil_incompleto(request.user),
         },
     )
+
+
+@ciudadano_required
+def completar_perfil_ciudadano(request):
+    # Muestra un formulario reducido para completar datos faltantes después del login
+    localidades = Localidad.objects.all()
+    return render(request, "users/completar_perfil_ciudadano.html", {"localidades": localidades})
+
+
+@ciudadano_required
+def check_numero_documento(request):
+    """AJAX endpoint: comprueba si un numero_documento ya existe para otro usuario.
+
+    Expects POST with 'numeroDocumento'. Returns JSON {available: bool, message: str}.
+    """
+    if request.method != "POST":
+        return JsonResponse({"available": False, "message": "Método no permitido"}, status=405)
+
+    numero = (request.POST.get("numeroDocumento") or "").strip()
+    if not numero:
+        return JsonResponse({"available": False, "message": "Número vacío"})
+
+    exists = Usuario.objects.filter(numero_documento=numero).exclude(pk=request.user.pk).exists()
+    if exists:
+        return JsonResponse({"available": False, "message": "Número de documento ya registrado"})
+    return JsonResponse({"available": True, "message": "Número disponible"})
 
 
 @ciudadano_required
@@ -713,6 +765,11 @@ def actualizar_datos_ciudadano(request):
         user.celular = updates.get("celular")
         user.ciudad = updates.get("ciudad") or DEFAULT_CITY
         user.localidad = updates.get("localidad_inst")
+        # Allow updating document fields from completar perfil flow
+        if updates.get("numero_documento"):
+            user.numero_documento = updates.get("numero_documento")
+        if updates.get("tipo_documento"):
+            user.tipo_documento = updates.get("tipo_documento")
         user.fecha_nacimiento = updates.get("fecha_nacimiento")
         user.save()
         messages.success(request, "Datos actualizados correctamente.")
@@ -738,6 +795,8 @@ def _validate_actualizar_datos_ciudadano(request):
         "celular": fields.get("celular") if fields.get("celular") else None,
         "ciudad": fields.get("ciudad"),
         "localidad_inst": localidad_inst,
+        "numero_documento": fields.get("numero_documento") or None,
+        "tipo_documento": fields.get("tipo_documento"),
         "fecha_nacimiento": fecha_nacimiento,
     }
     return errores, updates
@@ -750,6 +809,8 @@ def _collect_actualizar_fields(request):
         "celular": request.POST.get("celular", "").strip(),
         "ciudad": request.POST.get("ciudad", "").strip(),
         "localidad_id": request.POST.get("localidad", "").strip(),
+        "numero_documento": request.POST.get("numeroDocumento", "").strip(),
+        "tipo_documento": request.POST.get("tipoDocumento", "").strip(),
         "fecha_str": request.POST.get("fechaNacimiento", "").strip(),
     }
 

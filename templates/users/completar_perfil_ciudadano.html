@@ -1,0 +1,134 @@
+{% extends "users/registro_base.html" %}
+
+{% block page_title %}Completar Perfil - InfoRecicla{% endblock %}
+
+{% block header_title %}Completa tu perfil{% endblock %}
+{% block header_subtitle %}Nos faltan unos datos para personalizar tu experiencia{% endblock %}
+
+{% block form_content %}
+<form method="POST" action="/perfil/actualizar/">
+    {% csrf_token %}
+    <div class="row-cols">
+        <div class="form-group">
+            <label for="tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
+            <select class="form-select" id="tipoDocumento" name="tipoDocumento">
+                <option value="">Seleccionar...</option>
+                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="CE">Cédula de Extranjería</option>
+                <option value="PA">Pasaporte</option>
+                <option value="NIT">NIT</option>
+                <option value="TI">Tarjeta de Identidad</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="numeroDocumento" class="form-label">Número de Documento</label>
+            <input type="text" class="form-control" id="numeroDocumento" name="numeroDocumento"
+                   placeholder="1234567890" value="{{ user.numero_documento|default:'' }}">
+            <div id="docFeedback" class="form-text text-danger" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div class="row-cols">
+        <div class="form-group">
+            <label for="localidad" class="form-label">Localidad</label>
+            <select class="form-select" id="localidad" name="localidad">
+                <option value="">Seleccionar localidad...</option>
+                {% for loc in localidades %}
+                    <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+            <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento"
+                   value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+        </div>
+    </div>
+
+    <div class="form-group mt-3">
+        <button type="submit" class="btn-login">
+            Guardar datos
+        </button>
+        <a href="/perfil/" class="btn btn-link ms-2">Recordarme después</a>
+    </div>
+</form>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const numero = document.getElementById('numeroDocumento');
+    const fecha = document.getElementById('fechaNacimiento');
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const docFeedback = document.getElementById('docFeedback');
+
+    function getCookie(name) {
+        const cookie = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith(name + '='));
+        return cookie ? cookie.split('=')[1] : '';
+    }
+
+    if (numero) {
+        let checkTimeout = null;
+        numero.addEventListener('input', function() {
+            // allow only numbers and letters, limit length
+            this.value = this.value.replace(/[^A-Za-z0-9]/g, '').substring(0, 32);
+            docFeedback.style.display = 'none';
+        });
+
+        numero.addEventListener('blur', function() {
+            const val = this.value.trim();
+            if (val) {
+            // debounce
+                if (checkTimeout) clearTimeout(checkTimeout);
+                checkTimeout = setTimeout(() => {
+                    fetch('/perfil/check-documento/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'numeroDocumento=' + encodeURIComponent(val)
+                    }).then(r => r.json()).then(data => {
+                        if (data.available) {
+                            docFeedback.style.display = 'none';
+                            submitBtn.disabled = false;
+                        } else {
+                            docFeedback.innerText = data.message || 'Documento en uso';
+                            docFeedback.style.display = 'block';
+                            submitBtn.disabled = true;
+                        }
+                    }).catch(err => {
+                        console.error('Error comprobando documento', err);
+                    });
+                }, 300);
+            } else {
+                        docFeedback.style.display = 'none';
+                        submitBtn.disabled = false;
+            }
+        });
+    }
+
+    if (fecha) {
+        fecha.addEventListener('change', function() {
+            const val = this.value;
+            if (val) {
+                const d = new Date(val);
+                const today = new Date();
+                if (d > today) {
+                    alert('La fecha no puede ser futura');
+                    this.value = '';
+                } else {
+                    // age >= 18
+                    const age = new Date(today - d).getUTCFullYear() - 1970;
+                    if (age < 18) {
+                        alert('Debes tener al menos 18 años');
+                        this.value = '';
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

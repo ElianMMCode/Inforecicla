@@ -51,6 +51,8 @@ urlpatterns = [
         views.cambiar_contrasena_ciudadano,
         name="cambiar_contrasena_ciudadano",
     ),
+    path("perfil/completar/", views.completar_perfil_ciudadano, name="perfil_completar"),
+    path("perfil/check-documento/", views.check_numero_documento, name="perfil_check_documento"),
     path("registro/", include("apps.users.urls")),
     path("mapa/", include("apps.map.urls")),
     path("publicaciones/", include("apps.publicaciones.urls", namespace="publicacion")),

@@ -1,6 +1,7 @@
 import secrets
 import string
 import unittest
+from unittest.mock import patch
 
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.contrib.sessions.models import Session
@@ -492,6 +493,46 @@ class RecuperarContrasenaTests(TestCase):
             response.context["errores"],
         )
         self.assertNotIn("recovery_user_id", self.client.session)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# CU-00.4 — Registro Ciudadano
+# Módulo: apps/users/views.py → render_registro_ciudadano
+# ═════════════════════════════════════════════════════════════════════════════
+
+class RegistroCiudadanoTests(TestCase):
+    """CU-00.4: Verifica que el registro ciudadano funciona con el alta mínima
+    y que el documento sintético no excede el límite del modelo."""
+
+    @patch("apps.users.views.enviar_email_verificacion", return_value=True)
+    def test_tc_cu004_01_registro_minimo_crea_usuario_sin_numero_documento_obligatorio(self, mock_enviar_email):
+        response = self.client.post(
+            "/registro/ciudadano/",
+            {
+                "nombres": "Ana",
+                "apellidos": "Pérez",
+                "email": "ana.registro.largo@test.com",
+                "celular": "3001234567",
+                "password": _PASSWORD_VALIDA,
+                "passwordConfirm": _PASSWORD_VALIDA,
+                "terminos": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        usuario = Usuario.objects.get(email="ana.registro.largo@test.com")
+        self.assertIsNone(usuario.numero_documento)
+        self.assertTrue(mock_enviar_email.called)
+
+    def test_tc_cu004_02_manager_crea_usuario_sin_numero_documento_explicito(self):
+        usuario = Usuario.objects.create_user(
+            email="sin.documento@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Luis",
+            apellidos="Gómez",
+        )
+
+        self.assertIsNone(usuario.numero_documento)
 
     def test_tc_ext43_03_flujo_completo_cambia_contrasena_y_redirige(self):
         """TC-EXT43-03: El flujo buscar → reset actualiza la contraseña, elimina

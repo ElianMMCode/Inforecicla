@@ -237,6 +237,19 @@
                 {% endfor %}
             {% endif %}
 
+            {% if perfil_incompleto or request.GET.completar == '1' %}
+            <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    Completa tu perfil para acceder a todas las funciones de InfoRecicla.
+                </div>
+                <div>
+                    <a href="/perfil/completar/" class="btn btn-sm btn-success">Completar ahora</a>
+                    <a href="/perfil/" class="btn btn-sm btn-outline-secondary ms-2">Recordarme después</a>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="tab-content">
                 <div class="tab-pane fade {% if tab_activo == 'datos' or not tab_activo %}show active{% endif %}" id="datos">
                     <div class="row g-4">
@@ -426,7 +439,7 @@
                                                     <input id="nuevaPass" type="password" name="contrasenaNueva" class="form-control"
                                                            required minlength="8" maxlength="128"
                                                            autocomplete="new-password"
-                                                           pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}"
+                                                           pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}"
                                                            placeholder="Nueva contraseña">
                                                     <button class="btn btn-outline-secondary" type="button" tabindex="-1">
                                                         <i class="bi bi-eye toggle-password" data-target="#nuevaPass" aria-hidden="true"></i>
