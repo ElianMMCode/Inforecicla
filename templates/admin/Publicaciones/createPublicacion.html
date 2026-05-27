@@ -72,8 +72,8 @@
 
           <!-- Imágenes -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Imágenes</label>
-            <input type="file" name="imagenes" id="inputImagenes" class="form-control" accept="image/*" multiple>
+            <label for="inputImagenes" class="form-label fw-semibold">Imágenes</label>
+            <input type="file" name="imagenes" id="inputImagenes" class="form-control" accept="image/*" multiple aria-describedby="imagenesHelp">
             <div class="form-text">Formatos: JPG, PNG, WEBP. Puedes seleccionar varias. <strong>Máximo 6 MB por imagen.</strong></div>
             <div id="alertImagenes" class="alert alert-danger py-2 small mt-2 d-none" role="alert"></div>
             <div id="previewImagenes" class="d-flex flex-wrap gap-2 mt-2"></div>

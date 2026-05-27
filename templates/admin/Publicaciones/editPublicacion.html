@@ -54,11 +54,11 @@
             </select>
           </div>
           <div class="col-12">
-            <label class="form-label fw-semibold">Contenido</label>
-            <textarea name="contenido" class="form-control" rows="8">{{ publicacion.contenido }}</textarea>
+            <label for="pub_contenido" class="form-label fw-semibold">Contenido</label>
+            <textarea id="pub_contenido" name="contenido" class="form-control" rows="8">{{ publicacion.contenido }}</textarea>
           </div>
           <div class="col-12">
-            <label class="form-label fw-semibold text-muted small">Autor: {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }} &bull; Creada: {{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</label>
+            <p class="form-label fw-semibold text-muted small mb-0">Autor: {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }} &bull; Creada: {{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</p>
           </div>
           <div class="col-12 pt-2">
             <button type="submit" class="btn btn-success me-2">
