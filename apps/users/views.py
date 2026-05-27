@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from apps.users.models import Usuario
 from apps.ecas.models import PuntoECA, Localidad
+import apps.ecas.models as ecas_models
 from config import constants as cons
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate, login, update_session_auth_hash
@@ -507,9 +508,11 @@ def toggle_eca_favorita(request, punto_id):
     except PuntoECA.DoesNotExist:
         return JsonResponse({"error": "No encontrado"}, status=404)
 
-    fav, created = PuntoECAFavorito.objects.get_or_create(
-        usuario=request.user, punto_eca=punto
-    )
+    punto_eca_favorito_model = getattr(ecas_models, "PuntoECAFavorito", None)
+    if punto_eca_favorito_model is None:
+        return JsonResponse({"error": "Favoritos no disponible"}, status=501)
+
+    fav, created = punto_eca_favorito_model.objects.get_or_create(usuario=request.user, punto_eca=punto)
     if not created:
         fav.delete()
         guardado = False
@@ -593,8 +596,8 @@ def _validate_actualizar_basic(fields):
     errores = []
     errores.extend(_validate_nombre_apellidos(fields.get("nombres"), fields.get("apellidos")))
 
-    celular = fields.get("celular")
-    ciudad = fields.get("ciudad")
+    celular = fields.get("celular", "")
+    ciudad = fields.get("ciudad", "")
 
     if celular and not _CELULAR.match(celular):
         errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
@@ -609,35 +612,53 @@ def _validate_actualizar_basic(fields):
 
 def _validate_nombre_apellidos(nombres, apellidos):
     errores = []
-    if not nombres or len(nombres) < 3:
-        errores.append("El nombre debe tener al menos 3 caracteres.")
-    elif len(nombres) > 30:
-        errores.append("El nombre no puede superar los 30 caracteres.")
-    elif not _SOLO_LETRAS.match(nombres):
-        errores.append("El nombre solo puede contener letras.")
-
-    if not apellidos or len(apellidos) < 3:
-        errores.append(APELLIDOS_MIN_LEN_MSG)
-    elif len(apellidos) > 40:
-        errores.append("Los apellidos no pueden superar los 40 caracteres.")
-    elif not _SOLO_LETRAS.match(apellidos):
-        errores.append("Los apellidos solo pueden contener letras.")
+    errores.extend(_validate_nombre_field(nombres))
+    errores.extend(_validate_apellidos_field(apellidos))
     return errores
+
+
+def _validate_nombre_field(nombres):
+    if not nombres or len(nombres) < 3:
+        return ["El nombre debe tener al menos 3 caracteres."]
+    if len(nombres) > 30:
+        return ["El nombre no puede superar los 30 caracteres."]
+    if not _SOLO_LETRAS.match(nombres):
+        return ["El nombre solo puede contener letras."]
+    return []
+
+
+def _validate_apellidos_field(apellidos):
+    if not apellidos or len(apellidos) < 3:
+        return [APELLIDOS_MIN_LEN_MSG]
+    if len(apellidos) > 40:
+        return ["Los apellidos no pueden superar los 40 caracteres."]
+    if not _SOLO_LETRAS.match(apellidos):
+        return ["Los apellidos solo pueden contener letras."]
+    return []
 
 
 def _parse_fecha_nacimiento(fecha_str):
     if not fecha_str:
         return None, []
 
+    errores = []
     try:
         fecha_nacimiento = date_type.fromisoformat(fecha_str)
     except ValueError:
         return None, ["Formato de fecha inválido."]
 
-    if fecha_nacimiento > date_type.today():
-        return None, ["La fecha de nacimiento no puede ser futura."]
+    today = date_type.today()
+    if fecha_nacimiento > today:
+        errores.append("La fecha de nacimiento no puede ser futura.")
+    else:
+        try:
+            limite = today.replace(year=today.year - 5)
+        except ValueError:
+            limite = today.replace(year=today.year - 5, day=28)
+        if fecha_nacimiento > limite:
+            errores.append("La fecha de nacimiento debe corresponder a una edad mínima de 5 años.")
 
-    return fecha_nacimiento, []
+    return fecha_nacimiento, errores
 
 
 def _resolve_localidad(localidad_id):

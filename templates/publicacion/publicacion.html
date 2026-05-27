@@ -1,4 +1,5 @@
 {% extends "publicacion/base.html" %}
+{% load static publicaciones_extras %}
 
 {% block page_title %}{{ publicacion.titulo }} - InfoRecicla{% endblock %}
 {% block main_class %}py-5{% endblock %}
@@ -15,7 +16,7 @@
 {% block content %}
 <section class="py-5">
     <div class="container">
-        <div class="row g-4 justify-content-center">
+        <div class="row g-4">
 
             <div class="col-lg-8">
 
@@ -63,7 +64,6 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
-
                             <div class="carousel-inner">
                                 {% for img in publicacion.imagenes.all %}
                                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
@@ -146,9 +146,117 @@
                     </div>
                 </div>
 
+                <section class="pb-5">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white py-3 d-flex align-items-center justify-content-between">
+                            <span class="fw-semibold">
+                                <i class="fas fa-comments me-2"></i>Comentarios
+                            </span>
+                            <span class="badge bg-white text-success">{{ publicacion.comentarios.count }}</span>
+                        </div>
+
+                        {% if messages %}
+                        <div class="px-4 pt-3" id="mensajesComentario">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2 small" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="card-body px-4 py-4">
+                            {% if user.is_authenticated %}
+                            <form method="POST" action="{% url 'publicacion:comentar_publicacion' publicacion.id %}" class="mb-4">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <textarea name="contenido" class="form-control" rows="3" placeholder="Escribe tu comentario..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success">Comentar</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="card-body border-bottom px-4 py-3 text-center text-muted small">
+                            <a href="/login" class="text-success fw-semibold">Inicia sesión</a> para dejar un comentario.
+                        </div>
+                        {% endif %}
+
+                        <div class="list-group list-group-flush">
+                            {% for comentario in publicacion.comentarios.all %}
+                            <div class="list-group-item px-4 py-3">
+                                <div class="d-flex gap-3 align-items-start">
+                                    <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;">{{ comentario.usuario.nombres|first }}</div>
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-semibold small">{{ comentario.usuario.nombres }} {{ comentario.usuario.apellidos }}</span>
+                                                <span class="text-muted" style="font-size:.75rem;">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                            {% if user.is_authenticated and comentario.usuario == user %}
+                                            <div class="d-flex gap-1">
+                                                <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditar{{ comentario.id|slugify }}">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </button>
+                                                <form method="POST" action="{% url 'publicacion:eliminar_comentario' comentario.id %}"
+                                                      onsubmit="return confirm('¿Eliminar este comentario?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-0 small" style="white-space: pre-wrap; overflow-wrap: break-word;">{{ comentario.texto|urlize_blank }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if user.is_authenticated and comentario.usuario == user %}
+                            <div class="modal fade" id="modalEditar{{ comentario.id|slugify }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-success text-white">
+                                            <h6 class="modal-title mb-0">Editar comentario</h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{% url 'publicacion:editar_comentario' comentario.id %}"
+                                              novalidate class="form-editar">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <textarea name="texto" class="form-control" rows="3"
+                                                          minlength="1" maxlength="1000"
+                                                          required>{{ comentario.texto }}</textarea>
+                                                <div class="d-flex justify-content-end mt-1">
+                                                    <span class="text-muted cnt-editar" style="font-size:.75rem;">{{ comentario.texto|length }}/1000</span>
+                                                </div>
+                                                <div class="invalid-feedback">El comentario no puede estar vacío ni superar 1000 caracteres.</div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-success btn-sm">Guardar</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% empty %}
+                            <div class="list-group-item px-4 py-4 text-center text-muted small">
+                                <i class="fas fa-comment-slash me-1"></i>Sé el primero en comentar.
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
             </div>
 
-            <div class="col-lg-3">
+            <div class="col-lg-4">
 
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-success text-white py-2">
@@ -186,63 +294,5 @@
     </div>
 </section>
 
-<section class="pb-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-
-                <div class="card shadow-sm">
-                    <div class="card-header bg-success text-white py-3 d-flex align-items-center justify-content-between">
-                        <span class="fw-semibold">
-                            <i class="fas fa-comments me-2"></i>Comentarios
-                        </span>
-                        <span class="badge bg-white text-success">{{ publicacion.comentarios.count }}</span>
-                    </div>
-
-                    {% if messages %}
-                    <div class="px-4 pt-3">
-                        {% for message in messages %}
-                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mb-0" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <div class="card-body px-4 py-4">
-                        {% if user.is_authenticated %}
-                        <form method="POST" action="{% url 'publicacion:comentar_publicacion' publicacion.id %}" class="mb-4">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <textarea name="contenido" class="form-control" rows="3" placeholder="Escribe tu comentario..." required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-success">Comentar</button>
-                        </form>
-                        {% else %}
-                        <div class="alert alert-light border mb-4">
-                            <a href="/login">Inicia sesión</a> para participar en los comentarios.
-                        </div>
-                        {% endif %}
-
-                        <div class="comments-list">
-                            {% for comentario in publicacion.comentarios.all %}
-                            <div class="border rounded p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div class="fw-semibold">{{ comentario.usuario.get_short_name|default:comentario.usuario }}</div>
-                                    <small class="text-muted">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</small>
-                                </div>
-                                <p class="mb-0">{{ comentario.contenido|linebreaksbr }}</p>
-                            </div>
-                            {% empty %}
-                            <div class="text-muted">Aún no hay comentarios.</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</section>
 {% endblock %}
+
