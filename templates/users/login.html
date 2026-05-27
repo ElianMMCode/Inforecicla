@@ -257,8 +257,8 @@
 
         .inline-action-btn:hover {
             text-decoration: none;
-            background-color: rgba(31,122,66,0.06);
-            color: #155d2b;
+            background-color: #1f7a42;
+            color: #ffffff;
             transform: translateY(-1px);
         }
 
@@ -273,34 +273,19 @@
                     <p>Plataforma de Reciclaje y Gestión ECA</p>
                 </div>
                 {% if errores %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <ul style="margin-bottom: 0;">
-                            {% for err in errores %}<li>{{ err }}</li>{% endfor %}
-                        </ul>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="alert"
-                                aria-label="Cerrar"></button>
-                    </div>
+                    <div class="serverSwal"
+                         data-swal-icon="error"
+                         data-swal-title="Errores"
+                         data-swal-text="{{ errores|join:"\\n"|escape }}"
+                         style="display:none;"></div>
                 {% endif %}
                 {% if messages %}
                     {% for message in messages %}
-                        {% if 'Credenciales inválidas' in message %}
-                            <!-- Server-driven credential error: render hidden placeholder for SweetAlert2 -->
-                            <div id="serverSwal"
-                                 data-swal-icon="error"
-                                 data-swal-title="Credenciales inválidas"
-                                 data-swal-text="Verifica tu email y contraseña."
-                                 style="display:none;"></div>
-                        {% else %}
-                            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="alert"
-                                        aria-label="Cerrar"></button>
-                            </div>
-                        {% endif %}
+                        <div class="serverSwal"
+                             data-swal-icon="{{ message.tags|default:'info' }}"
+                             data-swal-title="{{ message.tags|capfirst }}"
+                             data-swal-text="{{ message|escape }}"
+                             style="display:none;"></div>
                     {% endfor %}
                 {% endif %}
                 <div id="js-error-container"></div>
@@ -381,9 +366,9 @@
                     <div class="modal-body">
                         {% if recovery_step == 'cambiar' %}
                             <p class="text-muted">Crea una nueva contraseña para <strong>{{ recovery_email }}</strong>.</p>
-                            <form method="POST">
+                            {% include "users/partials/password_requirements.html" %}
+                            <form method="POST" action="{% url 'recuperar_contrasena_cambiar' %}">
                                 {% csrf_token %}
-                                <input type="hidden" name="action" value="recuperar_cambiar">
                                 <input type="hidden" name="recovery_email" value="{{ recovery_email }}">
                                 <div class="form-group">
                                     <label for="recoveryPassword" class="form-label">Nueva contraseña</label>
@@ -410,9 +395,8 @@
                             </form>
                         {% elif recovery_step == 'codigo' %}
                             <p class="text-muted">Ingresa el código enviado a <strong>{{ recovery_email }}</strong>.</p>
-                            <form method="POST">
+                            <form method="POST" action="{% url 'recuperar_contrasena_validar' %}">
                                 {% csrf_token %}
-                                <input type="hidden" name="action" value="recuperar_validar">
                                 <input type="hidden" name="recovery_email" value="{{ recovery_email }}">
                                 <div class="form-group">
                                     <label for="recoveryCode" class="form-label">Código de verificación</label>
@@ -433,9 +417,8 @@
                             </form>
                         {% else %}
                             <p class="text-muted">Te enviaremos un código de verificación por correo.</p>
-                            <form method="POST">
+                            <form method="POST" action="{% url 'recuperar_contrasena_enviar' %}">
                                 {% csrf_token %}
-                                <input type="hidden" name="action" value="recuperar_enviar">
                                 <div class="form-group">
                                     <label for="recoveryEmail" class="form-label">Correo electrónico</label>
                                     <input type="email"
@@ -464,5 +447,16 @@
             integrity="sha384-nLoOnA/BDh8A/jxqtckg4DumuCGOBYUnNJLZdQz/zfYNp3wcjGSoWTAzgko06G/2"
             crossorigin="anonymous"></script>
         <script src="{% static 'js/formularios/login.js' %}"></script>
+        {% if recovery_step != 'enviar' %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var modalElement = document.getElementById('recoveryModal');
+                    if (modalElement && globalThis.bootstrap) {
+                        var modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                    }
+                });
+            </script>
+        {% endif %}
     </body>
 </html>

@@ -17,7 +17,7 @@ const PASSWORD_RULES = [
         invalidLabel: 'Mínimo un número',
     },
     {
-        test: (value) => /[@$!%*?&]/.test(value),
+        test: (value) => /[@$!%*?&_]/.test(value),
         validLabel: 'Mínimo un carácter especial',
         invalidLabel: 'Mínimo un carácter especial',
     },
@@ -35,7 +35,11 @@ function getPasswordFields() {
 
     if (!actual || !nueva || !confirmar) {
         console.error('❌ Elementos no encontrados');
-        alert('Error: No se encontraron los campos');
+        if (globalThis.Swal?.fire) {
+            globalThis.Swal.fire({ icon: 'error', title: 'Error', text: 'No se encontraron los campos' });
+        } else {
+            alert('Error: No se encontraron los campos');
+        }
         return null;
     }
 
@@ -151,10 +155,18 @@ async function sendPasswordChange(values) {
             return;
         }
 
-        alert('Error al cambiar la contraseña');
+        if (globalThis.Swal?.fire) {
+            globalThis.Swal.fire({ icon: 'error', title: 'Error', text: 'Error al cambiar la contraseña' });
+        } else {
+            alert('Error al cambiar la contraseña');
+        }
     } catch (error) {
         console.error('❌ Error en fetch:', error);
-        alert(`Error: ${error}`);
+        if (globalThis.Swal?.fire) {
+            globalThis.Swal.fire({ icon: 'error', title: 'Error', text: String(error) });
+        } else {
+            alert(`Error: ${error}`);
+        }
     }
 }
 
@@ -178,7 +190,11 @@ function cambiarContrasena() {
 
     const validationMessage = getPasswordValidationMessage(values);
     if (validationMessage) {
-        alert(validationMessage);
+        if (globalThis.Swal?.fire) {
+            globalThis.Swal.fire({ icon: 'error', title: 'Error', text: validationMessage });
+        } else {
+            alert(validationMessage);
+        }
         return;
     }
 
