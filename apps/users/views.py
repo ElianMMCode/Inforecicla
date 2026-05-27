@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.db import transaction, IntegrityError
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from apps.users.models import Usuario, TokenValidacion
@@ -346,6 +347,7 @@ def _render_login_with_context(request, errores=None, email="", recovery_email="
     return render(request, "users/login.html", context)
 
 
+@require_POST
 def recuperar_contrasena_enviar(request):
     if request.method != "POST":
         return redirect("login")
@@ -364,6 +366,7 @@ def recuperar_contrasena_enviar(request):
     return redirect(f"{reverse('login')}?email={recovery_email}&recovery_step={recovery_step}")
 
 
+@require_POST
 def recuperar_contrasena_validar(request):
     if request.method != "POST":
         return redirect("login")
@@ -382,6 +385,7 @@ def recuperar_contrasena_validar(request):
     return redirect(f"{reverse('login')}?email={recovery_email}&recovery_step={recovery_step}")
 
 
+@require_POST
 def recuperar_contrasena_cambiar(request):
     if request.method != "POST":
         return redirect("login")
@@ -710,6 +714,7 @@ def completar_perfil_ciudadano(request):
 
 
 @ciudadano_required
+@require_POST
 def check_numero_documento(request):
     """AJAX endpoint: comprueba si un numero_documento ya existe para otro usuario.
 
@@ -729,6 +734,7 @@ def check_numero_documento(request):
 
 
 @ciudadano_required
+@require_POST
 def toggle_eca_favorita(request, punto_id):
     from django.http import JsonResponse
 
@@ -765,6 +771,7 @@ _PASSWORD_COMPLEJA = re.compile(
 
 
 @ciudadano_required
+@require_POST
 def actualizar_datos_ciudadano(request):
     if request.method != "POST":
         return redirect("perfil_ciudadano")
@@ -969,6 +976,7 @@ def _resolve_localidad(localidad_id):
 
 
 @login_required(login_url="/login/")
+@require_POST
 def cambiar_contrasena_ciudadano(request):
     if request.method != "POST":
         return redirect("perfil_ciudadano")
