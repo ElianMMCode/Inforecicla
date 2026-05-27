@@ -28,6 +28,7 @@ DEFAULT_CITY = "Bogotá"
 TEMPLATE_REGISTRO_ECA = "users/registro_eca.html"
 TEMPLATE_REGISTRO_CIUDADANO = "users/registro_ciudadano.html"
 APELLIDOS_MIN_LEN_MSG = "Los apellidos deben tener al menos 3 caracteres."
+_UNSET = object()
 
 
 def _build_login_context(
@@ -66,13 +67,19 @@ def perfil_incompleto(user):
     try:
         if user.tipo_usuario != cons.TipoUsuario.CIUDADANO:
             return False
-        if not getattr(user, "fecha_nacimiento", None):
-            return True
-        if not getattr(user, "localidad", None):
-            return True
+        return any(_get_perfil_pendientes(user).values())
     except Exception:
         return False
-    return False
+
+
+def _get_perfil_pendientes(user):
+    return {
+        "documento": not bool(getattr(user, "tipo_documento", None)) or not bool(getattr(user, "numero_documento", None)),
+        "numero_documento": not bool(getattr(user, "numero_documento", None)),
+        "tipo_documento": not bool(getattr(user, "tipo_documento", None)),
+        "localidad": not bool(getattr(user, "localidad", None)),
+        "fecha_nacimiento": not bool(getattr(user, "fecha_nacimiento", None)),
+    }
 
 
 def _obtener_token_recuperacion_valido(request, email):
@@ -130,7 +137,7 @@ def _redirect_after_login(user):
     if user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
         return redirect("/punto-eca/"), [], None, None, False
     if user.tipo_usuario == cons.TipoUsuario.CIUDADANO and perfil_incompleto(user):
-        return redirect("/perfil/?completar=1"), [], None, None, False
+        return redirect("/perfil/"), [], None, None, False
     return redirect("/perfil/"), [], None, None, False
 
 
@@ -453,7 +460,7 @@ def _collect_registro_eca_fields(data):
         "nombres": data.get("nombres", "").strip(),
         "apellidos": data.get("apellidos", "").strip(),
         "email": data.get("email", "").strip().lower(),
-        "tipo_documento": data.get("tipoDocumento") or cons.TipoDocumento.CC,
+        "tipo_documento": data.get("tipoDocumento") or None,
         "numero_documento": data.get("numeroDocumento", "").strip(),
         "celular": data.get("celular", "").strip(),
         "telefono_punto": data.get("telefono_punto", "").strip(),
@@ -595,7 +602,7 @@ def _collect_registro_ciudadano_fields(data):
         "apellidos": data.get("apellidos", "").strip(),
         "email": data.get("email", "").strip().lower(),
         "celular": data.get("celular", "").strip(),
-        "tipo_documento": data.get("tipoDocumento", "").strip() or cons.TipoDocumento.CC,
+        "tipo_documento": data.get("tipoDocumento", "").strip() or None,
         "numero_documento": data.get("numeroDocumento", "").strip(),
         "ciudad": data.get("ciudad", DEFAULT_CITY).strip(),
         "localidad_id": data.get("localidad", "").strip(),
@@ -662,6 +669,7 @@ def perfil_ciudadano(request, tab="datos"):
     from apps.publicaciones.models import Comentario, Guardados
 
     localidades = Localidad.objects.all()
+    perfil_pendientes = _get_perfil_pendientes(request.user)
     mis_comentarios = (
         Comentario.objects.filter(usuario=request.user)
         .select_related("publicacion")
@@ -681,6 +689,7 @@ def perfil_ciudadano(request, tab="datos"):
             "mis_guardados": mis_guardados,
             "tab_activo": tab,
             "perfil_incompleto": perfil_incompleto(request.user),
+            "perfil_pendientes": perfil_pendientes,
         },
     )
 
@@ -689,7 +698,14 @@ def perfil_ciudadano(request, tab="datos"):
 def completar_perfil_ciudadano(request):
     # Muestra un formulario reducido para completar datos faltantes después del login
     localidades = Localidad.objects.all()
-    return render(request, "users/completar_perfil_ciudadano.html", {"localidades": localidades})
+    return render(
+        request,
+        "users/completar_perfil_ciudadano.html",
+        {
+            "localidades": localidades,
+            "perfil_pendientes": _get_perfil_pendientes(request.user),
+        },
+    )
 
 
 @ciudadano_required
@@ -751,51 +767,75 @@ _PASSWORD_COMPLEJA = re.compile(
 def actualizar_datos_ciudadano(request):
     if request.method != "POST":
         return redirect("perfil_ciudadano")
-
     errores, updates = _validate_actualizar_datos_ciudadano(request)
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if errores:
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": errores}, status=400)
         for e in errores:
             messages.error(request, e)
         return redirect("perfil_ciudadano")
 
     user = request.user
     try:
-        user.nombres = updates.get("nombres")
-        user.apellidos = updates.get("apellidos")
-        user.celular = updates.get("celular")
-        user.ciudad = updates.get("ciudad") or DEFAULT_CITY
-        user.localidad = updates.get("localidad_inst")
+        if updates.get("nombres") is not _UNSET:
+            user.nombres = updates.get("nombres")
+        if updates.get("apellidos") is not _UNSET:
+            user.apellidos = updates.get("apellidos")
+        if updates.get("celular") is not _UNSET:
+            user.celular = updates.get("celular")
+        if updates.get("ciudad") is not _UNSET:
+            user.ciudad = updates.get("ciudad") or DEFAULT_CITY
+        else:
+            user.ciudad = DEFAULT_CITY
+        if updates.get("localidad_inst") is not _UNSET:
+            user.localidad = updates.get("localidad_inst")
         # Allow updating document fields from completar perfil flow
-        if updates.get("numero_documento"):
+        if updates.get("numero_documento") is not _UNSET:
             user.numero_documento = updates.get("numero_documento")
-        if updates.get("tipo_documento"):
+        if updates.get("tipo_documento") is not _UNSET:
             user.tipo_documento = updates.get("tipo_documento")
-        user.fecha_nacimiento = updates.get("fecha_nacimiento")
+        if updates.get("fecha_nacimiento") is not _UNSET:
+            user.fecha_nacimiento = updates.get("fecha_nacimiento")
         user.save()
-        messages.success(request, "Datos actualizados correctamente.")
-    except (IntegrityError, ValidationError):
-        messages.error(request, "No se pudieron guardar los cambios. Verifica los datos ingresados.")
+        if perfil_incompleto(user):
+            msg = "Se guardaron algunos datos de tu perfil."
+        else:
+            msg = "¡Perfil completado correctamente!"
 
-    return redirect("perfil_ciudadano")
+        if is_ajax:
+            return JsonResponse({"ok": True, "message": msg})
+        messages.success(request, msg)
+    except (IntegrityError, ValidationError):
+        err_msg = "No se pudieron guardar los cambios. Verifica los datos ingresados."
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": err_msg}, status=500)
+        messages.error(request, err_msg)
+
+    return redirect(request.POST.get("return_to") or "perfil_ciudadano")
 
 
 def _validate_actualizar_datos_ciudadano(request):
     fields = _collect_actualizar_fields(request)
     errores = _validate_actualizar_basic(fields)
 
-    fecha_nacimiento, fecha_errores = _parse_fecha_nacimiento(fields.get("fecha_str"))
-    errores.extend(fecha_errores)
+    fecha_nacimiento = _UNSET
+    if fields.get("fecha_str") is not _UNSET:
+        fecha_nacimiento, fecha_errores = _parse_fecha_nacimiento(fields.get("fecha_str"))
+        errores.extend(fecha_errores)
 
-    localidad_inst, localidad_errores = _resolve_localidad(fields.get("localidad_id"))
-    errores.extend(localidad_errores)
+    localidad_inst = _UNSET
+    if fields.get("localidad_id") is not _UNSET:
+        localidad_inst, localidad_errores = _resolve_localidad(fields.get("localidad_id"))
+        errores.extend(localidad_errores)
 
     updates = {
         "nombres": fields.get("nombres"),
         "apellidos": fields.get("apellidos"),
-        "celular": fields.get("celular") if fields.get("celular") else None,
+        "celular": fields.get("celular") if fields.get("celular") is not _UNSET else _UNSET,
         "ciudad": fields.get("ciudad"),
         "localidad_inst": localidad_inst,
-        "numero_documento": fields.get("numero_documento") or None,
+        "numero_documento": fields.get("numero_documento") if fields.get("numero_documento") is not _UNSET else _UNSET,
         "tipo_documento": fields.get("tipo_documento"),
         "fecha_nacimiento": fecha_nacimiento,
     }
@@ -803,31 +843,39 @@ def _validate_actualizar_datos_ciudadano(request):
 
 
 def _collect_actualizar_fields(request):
+    def _value(name):
+        if name not in request.POST:
+            return _UNSET
+        return request.POST.get(name, "").strip()
+
     return {
-        "nombres": request.POST.get("nombres", "").strip(),
-        "apellidos": request.POST.get("apellidos", "").strip(),
-        "celular": request.POST.get("celular", "").strip(),
-        "ciudad": request.POST.get("ciudad", "").strip(),
-        "localidad_id": request.POST.get("localidad", "").strip(),
-        "numero_documento": request.POST.get("numeroDocumento", "").strip(),
-        "tipo_documento": request.POST.get("tipoDocumento", "").strip(),
-        "fecha_str": request.POST.get("fechaNacimiento", "").strip(),
+        "nombres": _value("nombres"),
+        "apellidos": _value("apellidos"),
+        "celular": _value("celular"),
+        "ciudad": _value("ciudad"),
+        "localidad_id": _value("localidad"),
+        "numero_documento": _value("numeroDocumento"),
+        "tipo_documento": _value("tipoDocumento"),
+        "fecha_str": _value("fechaNacimiento"),
     }
 
 
 def _validate_actualizar_basic(fields):
     errores = []
-    errores.extend(_validate_nombre_apellidos(fields.get("nombres"), fields.get("apellidos")))
+    if fields.get("nombres") is not _UNSET:
+        errores.extend(_validate_nombre_field(fields.get("nombres")))
+    if fields.get("apellidos") is not _UNSET:
+        errores.extend(_validate_apellidos_field(fields.get("apellidos")))
 
-    celular = fields.get("celular", "")
-    ciudad = fields.get("ciudad", "")
+    celular = fields.get("celular")
+    ciudad = fields.get("ciudad")
 
-    if celular and not _CELULAR.match(celular):
+    if celular is not _UNSET and celular and not _CELULAR.match(celular):
         errores.append("El celular debe iniciar con 3 y contener exactamente 10 dígitos.")
 
-    if ciudad and len(ciudad) > 15:
+    if ciudad is not _UNSET and ciudad and len(ciudad) > 15:
         errores.append("La ciudad no puede superar los 15 caracteres.")
-    elif ciudad and not _SOLO_CIUDAD.match(ciudad):
+    elif ciudad is not _UNSET and ciudad and not _SOLO_CIUDAD.match(ciudad):
         errores.append("La ciudad solo puede contener letras.")
 
     return errores

@@ -8,6 +8,7 @@
 {% block form_content %}
 <form method="POST" action="/perfil/actualizar/">
     {% csrf_token %}
+    <input type="hidden" name="return_to" value="{{ request.path }}">
     <div class="row-cols">
         <div class="form-group">
             <label for="tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
@@ -19,12 +20,11 @@
                 <option value="NIT">NIT</option>
                 <option value="TI">Tarjeta de Identidad</option>
             </select>
-            <div id="tipoFeedback" class="form-text text-danger" style="display:none;"></div>
         </div>
 
         <div class="form-group">
             <label for="numeroDocumento" class="form-label">Número de Documento</label>
-            <input type="text" inputmode="numeric" pattern="\d*" class="form-control" id="numeroDocumento" name="numeroDocumento"
+            <input type="text" class="form-control" id="numeroDocumento" name="numeroDocumento"
                    placeholder="1234567890" value="{{ user.numero_documento|default:'' }}">
             <div id="docFeedback" class="form-text text-danger" style="display:none;"></div>
         </div>
@@ -52,15 +52,64 @@
         <button type="submit" class="btn-login">
             Guardar datos
         </button>
-        <a href="/perfil/" class="btn btn-link ms-2">Recordarme después</a>
+        <a id="recordarmeLink" data-recordarme="1" href="/perfil/" class="btn btn-link ms-2">Recordarme después</a>
     </div>
 </form>
+
+{% if messages %}
+<div class="mt-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'success' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const msgs = [
+        {% for message in messages %}
+        {tag: '{{ message.tags }}', text: '{{ message|escapejs }}'}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    msgs.forEach(m => {
+        try {
+            const isError = m.tag && m.tag.indexOf('error') !== -1;
+            const isWarning = m.tag && m.tag.indexOf('warning') !== -1;
+            const isInfo = m.tag && m.tag.indexOf('info') !== -1;
+            Swal.fire({
+                icon: isError ? 'error' : (isWarning ? 'warning' : (isInfo ? 'info' : 'success')),
+                title: isError ? 'Error' : (isWarning ? 'Atención' : (isInfo ? 'Información' : 'Guardado')),
+                text: m.text,
+                confirmButtonColor: '#145c3a'
+            });
+        } catch (e) {
+            console.warn('Swal unavailable', e);
+        }
+    });
+});
+</script>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalPersistKey = 'completarPerfilDismissed_{{ user.pk }}';
+
+    function storageSet(key, value) {
+        try {
+            window.localStorage.setItem(key, value);
+        } catch (e) {
+            try { window.sessionStorage.setItem(key, value); } catch (err) {}
+        }
+    }
+
     const numero = document.getElementById('numeroDocumento');
     const fecha = document.getElementById('fechaNacimiento');
+    const form = document.querySelector('form[action="/perfil/actualizar/"]');
     const submitBtn = document.querySelector('button[type="submit"]');
     const docFeedback = document.getElementById('docFeedback');
+    let docDisponible = null;
+    let docVerificado = '';
 
     function getCookie(name) {
         const cookie = document.cookie
@@ -69,137 +118,130 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookie ? cookie.split('=')[1] : '';
     }
 
-    if (numero) {
-            // document rules per type
-            const DOC_RULES = {
-                'CC': { min: 6, max: 10 },
-                'CE': { min: 6, max: 12 },
-                'PA': { min: 6, max: 9 },
-                'NIT': { min: 6, max: 15 },
-                'TI': { min: 6, max: 11 },
-                '': { min: 3, max: 32 }
-            };
-
-            function getDocRules(tipo) { return DOC_RULES[tipo] || DOC_RULES['']; }
-
-            const tipoElTop = document.getElementById('tipoDocumento');
-            let checkTimeout = null;
-
-            function sanitizeNumber(raw, max) {
-                return raw.replace(/\D/g, '').substring(0, max);
-            }
-
-            function applyMaxTop() {
-                const tipo = (tipoElTop && tipoElTop.value) ? tipoElTop.value : '';
-                const rules = getDocRules(tipo);
-                numero.value = sanitizeNumber(numero.value, rules.max);
-                numero.maxLength = rules.max;
-                numero.setAttribute('inputmode', 'numeric');
-                numero.setAttribute('pattern', String.raw`\d*`);
-            }
-
-            function onNumeroInput(e) {
-                const tipo = (tipoElTop && tipoElTop.value) ? tipoElTop.value : '';
-                const rules = getDocRules(tipo);
-                this.value = sanitizeNumber(this.value, rules.max);
-                docFeedback.style.display = 'none';
-                const tipoFb = document.getElementById('tipoFeedback');
-                if (this.value && tipoElTop && tipoFb) {
-                    tipoFb.style.display = 'none';
-                }
-            }
-
-            function checkDocumentoAvailability(val) {
-                if (!val) return;
-                if (checkTimeout) clearTimeout(checkTimeout);
-                checkTimeout = setTimeout(() => {
-                    fetch('/perfil/check-documento/', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': getCookie('csrftoken'),
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: 'numeroDocumento=' + encodeURIComponent(val)
-                    }).then(r => r.json()).then(data => {
-                        if (data.available) {
-                            docFeedback.style.display = 'none';
-                            submitBtn.disabled = false;
-                        } else {
-                            docFeedback.innerText = data.message || 'Documento en uso';
-                            docFeedback.style.display = 'block';
-                            submitBtn.disabled = true;
-                        }
-                    }).catch(err => {
-                        console.error('Error comprobando documento', err);
-                    });
-                }, 300);
-            }
-
-            numero.addEventListener('input', onNumeroInput);
-            if (tipoElTop) {
-                tipoElTop.addEventListener('change', applyMaxTop);
-                applyMaxTop();
-            }
-            numero.addEventListener('blur', function() {
-                const val = this.value.trim();
-                if (val) checkDocumentoAvailability(val);
-                else { docFeedback.style.display = 'none'; submitBtn.disabled = false; }
+    function mostrarSwalDocumentoEnUso(mensaje) {
+        try {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Documento en uso',
+                text: mensaje || 'Ya existe un usuario con ese número de documento',
+                confirmButtonColor: '#145c3a'
             });
-    }
-
-    // mutual requirement check on submit - extracted to helper to reduce complexity
-    const formEl = document.querySelector('form[method="POST"][action="/perfil/actualizar/"]');
-    function clearFeedback() {
-        const tipoFb = document.getElementById('tipoFeedback');
-        if (tipoFb) { tipoFb.style.display = 'none'; tipoFb.textContent = ''; }
-        if (docFeedback) { docFeedback.style.display = 'none'; docFeedback.innerText = ''; }
-    }
-
-    function tipoRequiereNumero(tipoVal, numeroVal) {
-        if (tipoVal && !numeroVal) {
-            const tipoFb = document.getElementById('tipoFeedback');
-            if (tipoFb) { tipoFb.textContent = 'El número es obligatorio si seleccionas tipo de documento'; tipoFb.style.display = 'block'; }
-            return true;
+        } catch (e) {
+            console.warn('Swal unavailable', e);
         }
-        return false;
     }
 
-    function numeroRequiereTipo(tipoVal, numeroVal) {
-        if (numeroVal && !tipoVal) {
-            if (docFeedback) { docFeedback.innerText = 'El tipo de documento es obligatorio si ingresas un número'; docFeedback.style.display = 'block'; }
-            return true;
+    function verificarDocumento(valor) {
+        const val = (valor || '').trim();
+        if (!val) {
+            docDisponible = null;
+            docVerificado = '';
+            return Promise.resolve(true);
         }
-        return false;
-    }
 
-    function numeroLengthInvalid(tipoVal, numeroVal) {
-        if (!numeroVal) return false;
-        const tipoForValid = tipoVal || '';
-        const rules = (typeof getDocRules === 'function') ? getDocRules(tipoForValid) : { min: 3, max: 32 };
-        if (numeroVal.length < rules.min || numeroVal.length > rules.max) {
-            if (docFeedback) { docFeedback.innerText = `Número de documento inválido (entre ${rules.min} y ${rules.max} dígitos)`; docFeedback.style.display = 'block'; }
-            return true;
+        if (docVerificado === val && docDisponible !== null) {
+            return Promise.resolve(docDisponible);
         }
-        return false;
+
+        return fetch('/perfil/check-documento/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'numeroDocumento=' + encodeURIComponent(val)
+        }).then(r => r.json()).then(data => {
+            docVerificado = val;
+            docDisponible = !!data.available;
+            if (data.available) {
+                docFeedback.style.display = 'none';
+                submitBtn.disabled = false;
+                return true;
+            }
+
+            const mensaje = data.message || 'Documento en uso';
+            docFeedback.innerText = mensaje;
+            docFeedback.style.display = 'block';
+            submitBtn.disabled = true;
+            mostrarSwalDocumentoEnUso(mensaje);
+            return false;
+        }).catch(err => {
+            console.error('Error comprobando documento', err);
+            docDisponible = null;
+            docVerificado = '';
+            try {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo verificar el documento',
+                    confirmButtonColor: '#145c3a'
+                });
+            } catch (e) {
+                console.warn('Swal unavailable', e);
+            }
+            return false;
+        });
     }
 
-    function checkFormBlocking() {
-        const tipoEl = document.getElementById('tipoDocumento');
-        const numeroEl = document.getElementById('numeroDocumento');
-        const numeroVal = numeroEl ? numeroEl.value.trim() : '';
-        const tipoVal = tipoEl ? tipoEl.value.trim() : '';
+    if (numero) {
+        let checkTimeout = null;
+        numero.addEventListener('input', function() {
+            // allow only numbers and letters, limit length
+            this.value = this.value.replace(/[^A-Za-z0-9]/g, '').substring(0, 32);
+            docFeedback.style.display = 'none';
+            docDisponible = null;
+            docVerificado = '';
+        });
 
-        clearFeedback();
-        if (tipoRequiereNumero(tipoVal, numeroVal)) return true;
-        if (numeroRequiereTipo(tipoVal, numeroVal)) return true;
-        if (numeroLengthInvalid(tipoVal, numeroVal)) return true;
+        numero.addEventListener('blur', function() {
+            const val = this.value.trim();
+            if (!val) {
+                docFeedback.style.display = 'none';
+                submitBtn.disabled = false;
+                docDisponible = null;
+                docVerificado = '';
+                return;
+            }
 
-        return false;
+            if (checkTimeout) clearTimeout(checkTimeout);
+            checkTimeout = setTimeout(() => {
+                verificarDocumento(val);
+            }, 300);
+        });
     }
 
-    if (formEl) {
-        formEl.addEventListener('submit', function(ev) {
-            if (checkFormBlocking()) ev.preventDefault();
+    if (form) {
+        form.addEventListener('submit', function(ev) {
+            const val = numero ? numero.value.trim() : '';
+            if (!val) return;
+
+            if (docVerificado === val && docDisponible === false) {
+                ev.preventDefault();
+                mostrarSwalDocumentoEnUso(docFeedback.innerText || 'Ya existe un usuario con ese número de documento');
+                return;
+            }
+
+            if (docVerificado === val && docDisponible === true) {
+                return;
+            }
+
+            ev.preventDefault();
+            submitBtn.disabled = true;
+            verificarDocumento(val).then((isAvailable) => {
+                submitBtn.disabled = false;
+                if (isAvailable) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Guardado',
+                        text: 'Validando y guardando tus datos...',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+                    setTimeout(() => form.submit(), 250);
+                }
+            });
         });
     }
 
@@ -210,17 +252,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 const d = new Date(val);
                 const today = new Date();
                 if (d > today) {
-                    alert('La fecha no puede ser futura');
+                    Swal.fire({icon: 'error', title: 'Fecha inválida', text: 'La fecha no puede ser futura', confirmButtonColor: '#145c3a'});
                     this.value = '';
                 } else {
                     // age >= 18
                     const age = new Date(today - d).getUTCFullYear() - 1970;
                     if (age < 18) {
-                        alert('Debes tener al menos 18 años');
+                        Swal.fire({icon: 'error', title: 'Fecha inválida', text: 'Debes tener al menos 18 años', confirmButtonColor: '#145c3a'});
                         this.value = '';
                     }
                 }
             }
+        });
+    }
+
+    const recordarmeLink = document.getElementById('recordarmeLink');
+    if (recordarmeLink) {
+        recordarmeLink.addEventListener('click', function(ev) {
+            ev.preventDefault();
+            try {
+                storageSet(modalPersistKey, '1');
+            } catch (e) {}
+
+            try {
+                const url = new URL(window.location);
+                url.searchParams.delete('completar');
+                history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+            } catch (e) {}
+
+            window.location.href = '/perfil/';
+        });
+    }
+
+    const recordarmeDelegado = document.querySelector('a[data-recordarme]');
+    if (recordarmeDelegado) {
+        recordarmeDelegado.addEventListener('click', function() {
+            try {
+                storageSet(modalPersistKey, '1');
+            } catch (e) {}
         });
     }
 });

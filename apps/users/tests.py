@@ -1,12 +1,16 @@
 import secrets
 import string
 import unittest
+import uuid
+from datetime import date
 from unittest.mock import patch
 
+from django.contrib.messages import get_messages
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.contrib.sessions.models import Session
 from django.test import TestCase
 
+from apps.ecas.models import Localidad
 from config import constants as cons
 
 Usuario = get_user_model()
@@ -133,6 +137,26 @@ class ValidarCredencialesTests(TestCase):
             _LOGIN,
             {"email": "USUARIO@TEST.COM", "password": _PASSWORD_VALIDA},
         )
+        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+
+    def test_tc_cu001_05_login_incompleto_redirige_sin_parametro_forzado(self):
+        """TC-CU00.1-05: Un ciudadano con perfil incompleto redirige a /perfil/
+        sin `completar=1`, para no reabrir el modal al recargar."""
+        usuario = _crear_usuario(
+            email="incompleto@test.com",
+            numero_documento="7654321",
+        )
+        usuario.numero_documento = None
+        usuario.tipo_documento = None
+        usuario.fecha_nacimiento = None
+        usuario.localidad = None
+        usuario.save(update_fields=["numero_documento", "tipo_documento", "fecha_nacimiento", "localidad"])
+
+        response = self.client.post(
+            _LOGIN,
+            {"email": "incompleto@test.com", "password": _PASSWORD_VALIDA},
+        )
+
         self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
 
     def test_tc_cu001_05_email_con_espacios_extra_es_saneado(self):
@@ -533,6 +557,134 @@ class RegistroCiudadanoTests(TestCase):
         )
 
         self.assertIsNone(usuario.numero_documento)
+
+    def test_tc_cu004_03_perfil_ciudadano_envia_pendientes_al_modal(self):
+        usuario = Usuario.objects.create_user(
+            email="pendientes@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="María",
+            apellidos="López",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
+        )
+
+        self.client.force_login(usuario)
+        response = self.client.get(_PERFIL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("perfil_pendientes", response.context)
+        self.assertTrue(response.context["perfil_pendientes"]["numero_documento"])
+        self.assertTrue(response.context["perfil_pendientes"]["tipo_documento"])
+        self.assertTrue(response.context["perfil_pendientes"]["localidad"])
+        self.assertTrue(response.context["perfil_pendientes"]["fecha_nacimiento"])
+
+    def test_tc_cu004_04_actualizacion_parcial_no_borra_datos_existentes(self):
+        localidad = Localidad.objects.create(localidad_id=uuid.uuid4(), nombre="Centro")
+        usuario = Usuario.objects.create_user(
+            email="parcial@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Carlos",
+            apellidos="Rojas",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
+        )
+
+        self.client.force_login(usuario)
+
+        response = self.client.post(
+            "/perfil/actualizar/",
+            {
+                "localidad": str(localidad.localidad_id),
+            },
+            follow=True,
+        )
+
+        usuario.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(usuario.numero_documento)
+        self.assertIsNone(usuario.tipo_documento)
+        self.assertIsNone(usuario.fecha_nacimiento)
+        self.assertEqual(usuario.localidad_id, localidad.localidad_id)
+        self.assertFalse(response.context["perfil_pendientes"]["localidad"])
+
+        mensajes = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("Se guardaron algunos datos de tu perfil.", mensajes)
+
+    def test_tc_cu004_05_actualizacion_total_muestra_perfil_completado(self):
+        localidad = Localidad.objects.create(localidad_id=uuid.uuid4(), nombre="Norte")
+        usuario = Usuario.objects.create_user(
+            email="completo@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Laura",
+            apellidos="Torres",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
+        )
+
+        self.client.force_login(usuario)
+
+        response = self.client.post(
+            "/perfil/actualizar/",
+            {
+                "tipoDocumento": "CC",
+                "numeroDocumento": "987654321",
+                "localidad": str(localidad.localidad_id),
+                "fechaNacimiento": "1995-05-10",
+            },
+            follow=True,
+        )
+
+        usuario.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(usuario.numero_documento, "987654321")
+        self.assertEqual(usuario.tipo_documento, "CC")
+        self.assertEqual(usuario.localidad_id, localidad.localidad_id)
+        self.assertEqual(usuario.fecha_nacimiento.isoformat(), "1995-05-10")
+        self.assertFalse(response.context["perfil_pendientes"]["numero_documento"])
+        self.assertFalse(response.context["perfil_pendientes"]["tipo_documento"])
+        self.assertFalse(response.context["perfil_pendientes"]["localidad"])
+        self.assertFalse(response.context["perfil_pendientes"]["fecha_nacimiento"])
+
+        mensajes = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("¡Perfil completado correctamente!", mensajes)
+
+    def test_tc_cu004_06_completar_perfil_vuelve_a_su_pagina_y_muestra_swal(self):
+        localidad = Localidad.objects.create(localidad_id=uuid.uuid4(), nombre="Sur")
+        usuario = Usuario.objects.create_user(
+            email="retorno@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Pedro",
+            apellidos="Vega",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
+        )
+
+        self.client.force_login(usuario)
+
+        response = self.client.post(
+            "/perfil/actualizar/",
+            {
+                "return_to": "/perfil/completar/",
+                "numeroDocumento": "123456789",
+                "tipoDocumento": "CC",
+                "localidad": str(localidad.localidad_id),
+                "fechaNacimiento": "1992-07-15",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.redirect_chain[0][0], "/perfil/completar/")
+        self.assertEqual(response.status_code, 200)
+        mensajes = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("¡Perfil completado correctamente!", mensajes)
 
     def test_tc_ext43_03_flujo_completo_cambia_contrasena_y_redirige(self):
         """TC-EXT43-03: El flujo buscar → reset actualiza la contraseña, elimina

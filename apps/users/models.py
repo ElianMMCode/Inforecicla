@@ -153,11 +153,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
     tipo_documento = models.CharField(
         verbose_name="Tipo de documento",
         max_length=3,
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
         choices=cons.TipoDocumento.choices,
-        default=cons.TipoDocumento.CC,
-        help_text="Tipo de documento de identidad",
+        default=None,
+        help_text="Tipo de documento de identidad (opcional)",
     )
 
     numero_documento = models.CharField(
