@@ -29,7 +29,14 @@ TEMPLATE_REGISTRO_CIUDADANO = "users/registro_ciudadano.html"
 APELLIDOS_MIN_LEN_MSG = "Los apellidos deben tener al menos 3 caracteres."
 
 
-def _build_login_context(request, errores=None, email="", recovery_email="", recovery_step="enviar"):
+def _build_login_context(
+    request,
+    errores=None,
+    email="",
+    recovery_email="",
+    recovery_step="enviar",
+    show_activation_resend=False,
+):
     request_email = ""
     action = ""
     if request is not None:
@@ -44,6 +51,7 @@ def _build_login_context(request, errores=None, email="", recovery_email="", rec
         "action": action,
         "recovery_email": recovery_email,
         "recovery_step": recovery_step,
+        "show_activation_resend": show_activation_resend,
     }
 
 
@@ -103,7 +111,7 @@ def _handle_login_post(request):
 
     if not email or not password:
         errores.append("Debes ingresar email y contraseña.")
-        return None, errores, None, None
+        return None, errores, None, None, False
 
     usuario_inactivo = Usuario.objects.filter(email=email, is_active=False).first()
     if usuario_inactivo is not None:
@@ -118,25 +126,25 @@ def _handle_login_post(request):
             if not resultado:
                 token_obj.delete()
                 errores.append("No fue posible enviar el enlace de activación. Revisa la configuración de correo.")
-                return None, errores, None, None
+                return None, errores, None, None, True
             desactivar_tokens_previos(email, "verificacion", excluir_token_id=token_obj.id)
             messages.info(request, "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo.")
             errores.append("Cuenta no activada. Revisa tu correo y usa el enlace de activación.")
         except Exception:
             errores.append(MSG_REENVIAR_ACTIVACION_FALLO)
-        return None, errores, None, None
+        return None, errores, None, None, True
 
     user = authenticate(request, username=email, password=password)
     if user is not None:
         login(request, user)
         if user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN:
-            return redirect("/panel_admin/"), [], None, None
+            return redirect("/panel_admin/"), [], None, None, False
         if user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
-            return redirect("/punto-eca/"), [], None, None
-        return redirect("/perfil/"), [], None, None
+            return redirect("/punto-eca/"), [], None, None, False
+        return redirect("/perfil/"), [], None, None, False
 
     messages.error(request, "Credenciales inválidas. Verifica tu email y contraseña.")
-    return redirect(f"{reverse('login')}?email={email}"), [], None, None
+    return redirect(f"{reverse('login')}?email={email}"), [], None, None, False
 
 
 def _handle_reenviar_post(request):
@@ -145,16 +153,16 @@ def _handle_reenviar_post(request):
 
     if not email:
         errores.append("Debes ingresar un correo.")
-        return None, errores, None, None
+        return None, errores, None, None, False
 
     usuario = Usuario.objects.filter(email=email).first()
     if usuario is None:
         errores.append("No existe una cuenta registrada con ese correo.")
-        return None, errores, None, None
+        return None, errores, None, None, False
 
     if usuario.is_active:
         errores.append("La cuenta ya está activada. Puedes iniciar sesión normalmente.")
-        return None, errores, None, None
+        return None, errores, None, None, False
 
     try:
         token_obj = crear_token_validacion(
@@ -167,13 +175,13 @@ def _handle_reenviar_post(request):
         if not resultado:
             token_obj.delete()
             errores.append("No fue posible reenviar el enlace de activación. Intenta más tarde.")
-            return None, errores, None, None
+            return None, errores, None, None, True
         desactivar_tokens_previos(email, "verificacion", excluir_token_id=token_obj.id)
         messages.info(request, "Reenviamos el enlace de activación a tu correo.")
-        return None, [], email, None
+        return None, [], email, None, True
     except Exception:
         errores.append(MSG_REENVIAR_ACTIVACION_FALLO)
-        return None, errores, None, None
+        return None, errores, None, None, True
 
 
 def _handle_login_request(request):
@@ -182,6 +190,7 @@ def _handle_login_request(request):
     action = request.POST.get("action") if request.method == "POST" else request.GET.get("action", "")
     recovery_email = email
     recovery_step = request.GET.get("recovery_step", "enviar")
+    show_activation_resend = request.GET.get("show_activation_resend", "") == "1"
 
     resp, errs = _process_activate_get(request, email, action)
     if errs:
@@ -190,13 +199,15 @@ def _handle_login_request(request):
         return resp, {}
 
     if request.method == "POST":
-        resp, new_errores, new_recovery_email, new_recovery_step = _dispatch_login_post(request)
+        resp, new_errores, new_recovery_email, new_recovery_step, new_show_activation_resend = _dispatch_login_post(request)
         if new_errores:
             errores.extend(new_errores)
         if new_recovery_email:
             recovery_email = new_recovery_email
         if new_recovery_step:
             recovery_step = new_recovery_step
+        if new_show_activation_resend is not None:
+            show_activation_resend = new_show_activation_resend
         if resp:
             return resp, {}
 
@@ -207,6 +218,7 @@ def _handle_login_request(request):
         "action": action,
         "recovery_email": recovery_email,
         "recovery_step": recovery_step,
+        "show_activation_resend": show_activation_resend,
     }
     return None, context
 
@@ -367,7 +379,7 @@ def _dispatch_login_post(request):
         return _handle_login_post(request)
     if action == "reenviar":
         return _handle_reenviar_post(request)
-    return None, ["Acción inválida."], None, None
+    return None, ["Acción inválida."], None, None, False
 
 
 

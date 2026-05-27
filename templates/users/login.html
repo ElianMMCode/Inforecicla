@@ -11,11 +11,20 @@
                 crossorigin="anonymous">
           <link rel="stylesheet" href="{% static 'img/bootstrap-icons-1.13.1/bootstrap-icons.css' %}">
         <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
         .login-container {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 2rem 1rem 3rem;
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
 
@@ -239,7 +248,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
@@ -248,7 +257,7 @@
         .inline-action-btn {
             color: #1f7a42;
             text-decoration: none;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-weight: 600;
             padding: 0.25rem 0.5rem;
             border-radius: 6px;
@@ -262,16 +271,100 @@
             transform: translateY(-1px);
         }
 
+        .activation-hint {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin: 0;
+            padding-left: 0.25rem;
+        }
+
         </style>
     </head>
     <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                    <img src="{% static 'img/logo.png' %}"
+                         alt="Logo InfoRecicla"
+                         width="70"
+                         height="70"
+                         class="rounded" />
+                    <span class="fs-1 fw-semibold">InfoRecicla</span>
+                </a>
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#mainNav"
+                        aria-controls="mainNav"
+                        aria-expanded="false"
+                        aria-label="Alternar navegación">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div id="mainNav" class="collapse navbar-collapse">
+                    <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+                        <li class="nav-item"><a class="nav-link" href="/publicaciones">Publicaciones</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
+                        {% if user.is_authenticated %}
+                            <li class="nav-item dropdown">
+                                <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
+                                   href="#"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">
+                                    <span>{{ user.get_short_name|default:"Usuario" }}</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% if user.is_staff or user.is_superuser or user.tipo_usuario == "ADM" %}
+                                        <li>
+                                            <a class="dropdown-item" href="/panel_admin/">Panel Admin</a>
+                                        </li>
+                                    {% elif user.tipo_usuario == "GECA" %}
+                                        <li>
+                                            <a class="dropdown-item" href="/punto-eca/">Dashboard</a>
+                                        </li>
+                                    {% else %}
+                                        <li>
+                                            <a class="dropdown-item" href="/perfil/">Mi Perfil</a>
+                                        </li>
+                                    {% endif %}
+                                    <li>
+                                        <hr class="dropdown-divider" />
+                                    </li>
+                                    <li>
+                                        <form method="POST" action="/logout/" style="display: inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item dropdown">
+                                <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
+                                   href="/login"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">Acceder</a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="/login">Iniciar sesión</a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider" />
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
         <div class="login-container">
             <div class="login-card">
-                <div class="login-header">
-                    <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla">
-                    <h1>InfoRecicla</h1>
-                    <p>Plataforma de Reciclaje y Gestión ECA</p>
-                </div>
                 {% if errores %}
                     <div class="serverSwal"
                          data-swal-icon="error"
@@ -330,11 +423,14 @@
                                 data-bs-target="#recoveryModal">
                             Olvidé mi contraseña
                         </button>
-                        <button type="button"
-                                class="btn btn-link p-0 inline-action-btn"
-                                id="resendActivationButton">
-                            Reenviar enlace para activar cuenta
-                        </button>
+                        {% if show_activation_resend %}
+                            <p class="activation-hint">¿Tu cuenta sigue sin activarse?</p>
+                            <button type="button"
+                                    class="btn btn-link p-0 inline-action-btn"
+                                    id="resendActivationButton">
+                                Reenviar enlace de activación
+                            </button>
+                        {% endif %}
                     </div>
                 </form>
                 <div class="divider">O registrarse</div>
@@ -348,10 +444,6 @@
                         Registrar Punto ECA
                     </a>
                 </div>
-                <div class="login-footer">
-                    <p>
-                        <a href="/" style="margin-top:1rem;display:inline-block;font-size:0.95rem;">&larr; Volver al inicio</a>
-                    </p>
                 </div>
             </div>
         </div>
