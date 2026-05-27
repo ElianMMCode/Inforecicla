@@ -767,52 +767,66 @@ _PASSWORD_COMPLEJA = re.compile(
 def actualizar_datos_ciudadano(request):
     if request.method != "POST":
         return redirect("perfil_ciudadano")
+
     errores, updates = _validate_actualizar_datos_ciudadano(request)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
-    if errores:
-        if is_ajax:
-            return JsonResponse({"ok": False, "errors": errores}, status=400)
-        for e in errores:
-            messages.error(request, e)
-        return redirect("perfil_ciudadano")
+    validation_response = _build_actualizar_validation_error_response(request, is_ajax, errores)
+    if validation_response is not None:
+        return validation_response
 
-    user = request.user
     try:
-        if updates.get("nombres") is not _UNSET:
-            user.nombres = updates.get("nombres")
-        if updates.get("apellidos") is not _UNSET:
-            user.apellidos = updates.get("apellidos")
-        if updates.get("celular") is not _UNSET:
-            user.celular = updates.get("celular")
-        if updates.get("ciudad") is not _UNSET:
-            user.ciudad = updates.get("ciudad") or DEFAULT_CITY
-        else:
-            user.ciudad = DEFAULT_CITY
-        if updates.get("localidad_inst") is not _UNSET:
-            user.localidad = updates.get("localidad_inst")
-        # Allow updating document fields from completar perfil flow
-        if updates.get("numero_documento") is not _UNSET:
-            user.numero_documento = updates.get("numero_documento")
-        if updates.get("tipo_documento") is not _UNSET:
-            user.tipo_documento = updates.get("tipo_documento")
-        if updates.get("fecha_nacimiento") is not _UNSET:
-            user.fecha_nacimiento = updates.get("fecha_nacimiento")
-        user.save()
-        if perfil_incompleto(user):
-            msg = "Se guardaron algunos datos de tu perfil."
-        else:
-            msg = "¡Perfil completado correctamente!"
-
-        if is_ajax:
-            return JsonResponse({"ok": True, "message": msg})
-        messages.success(request, msg)
+        _apply_actualizar_datos_ciudadano_updates(request.user, updates)
+        request.user.save()
     except (IntegrityError, ValidationError):
         err_msg = "No se pudieron guardar los cambios. Verifica los datos ingresados."
         if is_ajax:
             return JsonResponse({"ok": False, "message": err_msg}, status=500)
         messages.error(request, err_msg)
 
+    msg = _build_actualizar_success_message(request.user)
+    if is_ajax:
+        return JsonResponse({"ok": True, "message": msg})
+    messages.success(request, msg)
+
     return redirect(request.POST.get("return_to") or "perfil_ciudadano")
+
+
+def _build_actualizar_validation_error_response(request, is_ajax, errores):
+    if not errores:
+        return None
+    if is_ajax:
+        return JsonResponse({"ok": False, "errors": errores}, status=400)
+    for error in errores:
+        messages.error(request, error)
+    return redirect("perfil_ciudadano")
+
+
+def _apply_actualizar_datos_ciudadano_updates(user, updates):
+    if updates.get("nombres") is not _UNSET:
+        user.nombres = updates.get("nombres")
+    if updates.get("apellidos") is not _UNSET:
+        user.apellidos = updates.get("apellidos")
+    if updates.get("celular") is not _UNSET:
+        user.celular = updates.get("celular")
+    if updates.get("ciudad") is not _UNSET:
+        user.ciudad = updates.get("ciudad") or DEFAULT_CITY
+    else:
+        user.ciudad = DEFAULT_CITY
+    if updates.get("localidad_inst") is not _UNSET:
+        user.localidad = updates.get("localidad_inst")
+    # Allow updating document fields from completar perfil flow
+    if updates.get("numero_documento") is not _UNSET:
+        user.numero_documento = updates.get("numero_documento")
+    if updates.get("tipo_documento") is not _UNSET:
+        user.tipo_documento = updates.get("tipo_documento")
+    if updates.get("fecha_nacimiento") is not _UNSET:
+        user.fecha_nacimiento = updates.get("fecha_nacimiento")
+
+
+def _build_actualizar_success_message(user):
+    if perfil_incompleto(user):
+        return "Se guardaron algunos datos de tu perfil."
+    return "¡Perfil completado correctamente!"
 
 
 def _validate_actualizar_datos_ciudadano(request):
