@@ -308,13 +308,22 @@
                 {% endif %}
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="alert"
-                                    aria-label="Cerrar"></button>
-                        </div>
+                        {% if 'Credenciales inválidas' in message %}
+                            <!-- Server-driven credential error: render hidden placeholder for SweetAlert2 -->
+                            <div id="serverSwal"
+                                 data-swal-icon="error"
+                                 data-swal-title="Credenciales inválidas"
+                                 data-swal-text="Verifica tu email y contraseña."
+                                 style="display:none;"></div>
+                        {% else %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="alert"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 {% endif %}
                 <div id="js-error-container"></div>

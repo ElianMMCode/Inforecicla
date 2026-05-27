@@ -76,8 +76,8 @@ def _handle_login_post(request):
             return redirect("/punto-eca/"), [], None, None
         return redirect("/perfil/"), [], None, None
 
-    errores.append("Credenciales inválidas. Verifica tu email y contraseña.")
-    return None, errores, None, None
+    messages.error(request, "Credenciales inválidas. Verifica tu email y contraseña.")
+    return redirect(f"{reverse('login')}?email={email}"), [], None, None
 
 
 def _handle_reenviar_post(request):
