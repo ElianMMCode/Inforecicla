@@ -24,6 +24,72 @@ CONSTANTE_NO_ENCONTRADO = "Centro no encontrado"
 TEMPLATE_SECTION_PERFIL = "ecas/section-perfil.html"
 
 
+def _campo_pendiente(valor, valores_default=()):
+    if valor is None:
+        return True
+    if isinstance(valor, str):
+        valor_normalizado = valor.strip()
+        if not valor_normalizado:
+            return True
+        return valor_normalizado in valores_default
+    return False
+
+
+def _collect_pendientes(objeto, campos, valores_default_por_campo=None):
+    valores_default_por_campo = valores_default_por_campo or {}
+    pendientes = []
+    for campo, etiqueta in campos:
+        valor = getattr(objeto, campo, None)
+        valores_default = valores_default_por_campo.get(campo, ())
+        if _campo_pendiente(valor, valores_default=valores_default):
+            pendientes.append(etiqueta)
+    return pendientes
+
+
+def _build_perfil_pendientes(usuario, punto):
+    encargado_pendientes = _collect_pendientes(
+        usuario,
+        [
+            ("nombres", "Nombres"),
+            ("apellidos", "Apellidos"),
+            ("email", "Email"),
+            ("celular", "Celular"),
+            ("tipo_documento", "Tipo de documento"),
+            ("numero_documento", "Número de documento"),
+            ("fecha_nacimiento", "Fecha de nacimiento"),
+            ("localidad", "Localidad"),
+            ("biografia", "Biografía"),
+        ],
+    )
+
+    punto_pendientes = _collect_pendientes(
+        punto,
+        [
+            ("nombre", "Nombre del punto"),
+            ("descripcion", "Descripción"),
+            ("direccion", "Dirección"),
+            ("telefono_punto", "Teléfono del punto"),
+            ("email", "Email del punto"),
+            ("celular", "Celular del punto"),
+            ("localidad", "Localidad del punto"),
+            ("sitio_web", "Sitio web"),
+            ("horario_atencion", "Horario de atención"),
+            ("latitud", "Latitud"),
+            ("longitud", "Longitud"),
+            ("logo_url_punto", "Logo"),
+            ("foto_url_punto", "Foto"),
+        ],
+        valores_default_por_campo={"nombre": ("Punto ECA Sin Nombre",)},
+    )
+
+    return {
+        "encargado": encargado_pendientes,
+        "punto": punto_pendientes,
+        "hay_pendientes": bool(encargado_pendientes or punto_pendientes),
+        "total": len(encargado_pendientes) + len(punto_pendientes),
+    }
+
+
 @gestor_eca_or_admin_required
 def render_seccion(request, seccion="resumen"):
     """
@@ -64,13 +130,17 @@ def _build_perfil_context(punto):
     Incluye información del gestor (usuario), el punto, catálogo de localidades y tipos de documento.
     Centraliza todo lo necesario para renderizar la UI de perfil.
     """
+    usuario = punto.gestor_eca
+    perfil_pendientes = _build_perfil_pendientes(usuario, punto)
+
     return {
         "seccion": "perfil",
         "section_template": SECTION_TEMPLATES["perfil"],
-        "usuario": punto.gestor_eca,
+        "usuario": usuario,
         "punto": punto,
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
+        "perfil_pendientes": perfil_pendientes,
     }
 
 
@@ -225,6 +295,7 @@ def editar_perfil_gestor(request, id):
         return redirect(CONSTANTE_PERFIL)
 
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
+    perfil_pendientes = _build_perfil_pendientes(usuario, punto)
     context = {
         "seccion": "perfil",
         "section_template": SECTION_TEMPLATES["perfil"],
@@ -232,6 +303,7 @@ def editar_perfil_gestor(request, id):
         "punto": punto,
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
+        "perfil_pendientes": perfil_pendientes,
     }
 
     return render(request, TEMPLATE_SECTION_PERFIL, context)
@@ -267,6 +339,7 @@ def editar_punto(request, id):
         return redirect(CONSTANTE_PERFIL)
 
     usuario = punto.gestor_eca
+    perfil_pendientes = _build_perfil_pendientes(usuario, punto)
     context = {
         "seccion": "perfil",
         "section_template": SECTION_TEMPLATES["perfil"],
@@ -274,6 +347,7 @@ def editar_punto(request, id):
         "punto": punto,
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
+        "perfil_pendientes": perfil_pendientes,
     }
 
     return render(request, TEMPLATE_SECTION_PERFIL, context)

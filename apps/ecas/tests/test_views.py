@@ -73,6 +73,8 @@ class TestRegistroPuntoECA(TestCase):
             raise RuntimeError(f"🚨 ERROR REAL DESCUBIERTO:\n\n{html_error[:1500]}")
 
         self.assertEqual(response.status_code, 200)
+        self.assertIn("Datos pendientes", response.content.decode("utf-8"))
+        self.assertIn("Editar encargado", response.content.decode("utf-8"))
 
     def test_registro_punto_eca_post_valid(self):
         """Prueba que la vista de registro de PuntoECA procesa un POST válido"""
@@ -101,3 +103,51 @@ class TestRegistroPuntoECA(TestCase):
             reverse("login") + "?email=newuser2@example.com",
             fetch_redirect_response=False,
         )
+
+    def test_completar_pendientes_elimina_aviso(self):
+        """Completar los campos pendientes del gestor y punto debe ocultar el aviso."""
+        login_exitoso = self.client.login(
+            email="testuser@example.com", password=self.password_aleatorio
+        )
+        self.assertTrue(login_exitoso, "El login falló")
+
+        # 1) Completar datos del usuario (POST a editar_perfil)
+        perfil_url = reverse("punto-eca:editar_perfil", args=[str(self.user.id)])
+        perfil_data = {
+            "nombre": "Test",
+            "apellido": "User",
+            "email": "testuser@example.com",
+            "telefono": "3005550000",
+            "biografia": "Gestor de prueba",
+            "fechaNacimiento": "1990-01-01",
+            "localidad": str(self.localidad.localidad_id),
+            "tipo_documento": "CC",
+            "numero_documento": "1234567890",
+        }
+        response = self.client.post(perfil_url, perfil_data, follow=True)
+        # Debe redirigir al perfil
+        self.assertEqual(response.status_code, 200)
+
+        # 2) Completar datos del punto (POST a editar_punto)
+        punto_url = reverse("punto-eca:editar_punto", args=[str(self.user.id)])
+        punto_data = {
+            "nombrePunto": "Punto ECA Test",
+            "direccionPunto": "Calle Falsa 123",
+            "celularPunto": "3001234567",
+            "emailPunto": "testuser@example.com",
+            "telefonoPunto": "6012345678",
+            "logoUrlPunto": "https://example.com/logo.png",
+            "descripcionPunto": "Descripción completada",
+            "sitioWebPunto": "https://example.com",
+            "horarioAtencionPunto": "L-V 8:00-17:00",
+            "latitud": "4.6097",
+            "longitud": "-74.0817",
+            "fotoUrlPunto": "https://example.com/foto.png",
+        }
+        response = self.client.post(punto_url, punto_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Finalmente, acceder a la página de edición y verificar que no aparece el aviso
+        response = self.client.get(perfil_url)
+        html = response.content.decode("utf-8")
+        self.assertNotIn("Datos pendientes", html)
