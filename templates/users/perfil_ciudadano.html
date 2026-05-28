@@ -434,7 +434,7 @@
                     await submitCompletarPerfilForm();
                 });
 
-                const openOnIncomplete = {% if perfil_incompleto %}true{% else %}false{% endif %};
+                const openOnIncomplete = {% if perfil_incompleto and not request.GET.skip_modal == '1' %}true{% else %}false{% endif %};
                 if (openOnIncomplete) {
                     try {
                         if (!storageGet(modalPersistKey)) {

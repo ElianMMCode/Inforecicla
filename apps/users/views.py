@@ -153,7 +153,9 @@ def _redirect_after_login(user):
     if user.tipo_usuario == cons.TipoUsuario.GESTOR_ECA:
         return redirect("/punto-eca/"), [], None, None, False
     if user.tipo_usuario == cons.TipoUsuario.CIUDADANO and perfil_incompleto(user):
-        return redirect("/perfil/"), [], None, None, False
+        # When redirecting users with incomplete profiles right after login,
+        # avoid auto-opening the "completar perfil" modal on the first landing.
+        return redirect("/perfil/?skip_modal=1"), [], None, None, False
     return redirect("/perfil/"), [], None, None, False
 
 
