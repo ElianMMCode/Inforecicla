@@ -4,7 +4,8 @@ from django.shortcuts import render, redirect
 from django.db import transaction, IntegrityError
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST, require_safe, require_http_methods
+from django.views.decorators.http import require_POST, require_safe
+from django.views import View
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from apps.users.models import Usuario, TokenValidacion
@@ -26,11 +27,13 @@ from apps.users.utils import (
 # Mensajes reutilizables
 MSG_PW_MISMATCH = "Las contraseñas no coinciden."
 MSG_REENVIAR_ACTIVACION_FALLO = "No fue posible reenviar el enlace de activación. Intenta más tarde."
+MSG_CRED_INVALIDAS = "Credenciales inválidas. Verifica tu email y contraseña."
 DEFAULT_CITY = "Bogotá"
 TEMPLATE_REGISTRO_ECA = "users/registro_eca.html"
 TEMPLATE_REGISTRO_CIUDADANO = "users/registro_ciudadano.html"
 APELLIDOS_MIN_LEN_MSG = "Los apellidos deben tener al menos 3 caracteres."
 _UNSET = object()
+LOGIN_TEMPLATE = "users/login.html"
 
 
 def _build_login_context(
@@ -179,8 +182,10 @@ def _handle_login_post(request):
         login(request, user)
         return _redirect_after_login(user)
 
-    messages.error(request, "Credenciales inválidas. Verifica tu email y contraseña.")
-    return redirect(f"{reverse('login')}?email={email}"), [], None, None, False
+    # Return the canonical error in the login context (do not redirect) so the
+    # template can display a uniform error message without leaking existence of
+    # users or redirecting the client. Tests expect a 200 with context['errores'].
+    return None, [MSG_CRED_INVALIDAS], None, None, False
 
 
 def _handle_reenviar_post(request):
@@ -336,6 +341,46 @@ def _handle_recuperar_cambiar(request):
     return None, errores, None, None
 
 
+@require_POST
+def recuperar_contrasena(request):
+    """Unified endpoint for recovery flow used by tests at /recuperar-contrasena/.
+
+    Expects POST with action in {buscar, reset, validar} and delegates to
+    helpers. Returns rendered login page with context on errors or redirects on
+    success (matching legacy behavior expected by tests).
+    """
+    action = request.POST.get("action", "").strip()
+    email = (request.POST.get("email") or request.POST.get("recovery_email") or "").strip().lower()
+
+    # map of handlers for each action
+
+    handlers = {
+        "buscar": _handle_recuperar_enviar,
+        "validar": _handle_recuperar_validar,
+        "reset": _handle_recuperar_cambiar,
+        "cambiar": _handle_recuperar_cambiar,
+    }
+
+    if action not in handlers:
+        return redirect("login")
+
+    # special behavior: store recovery_user_id when searching
+    if action == "buscar":
+        usuario = Usuario.objects.filter(email=email).first()
+        if usuario is not None:
+            request.session["recovery_user_id"] = str(usuario.pk)
+
+    resp, errores, recovery_email, recovery_step = handlers[action](request)
+    default_steps = {
+        "buscar": "enviar",
+        "validar": "codigo",
+        "reset": "cambiar",
+        "cambiar": "cambiar",
+    }
+    default_step = default_steps.get(action, "enviar")
+    return _process_recovery_result(request, resp, errores, recovery_email, recovery_step, default_step)
+
+
 def _render_login_with_context(request, errores=None, email="", recovery_email="", recovery_step="enviar"):
     context = _build_login_context(
         request,
@@ -345,6 +390,27 @@ def _render_login_with_context(request, errores=None, email="", recovery_email="
         recovery_step=recovery_step,
     )
     return render(request, "users/login.html", context)
+
+
+def _process_recovery_result(request, resp, errores, recovery_email, recovery_step, default_step):
+    """Helper to render or redirect after recovery handlers.
+
+    Kept as top-level function to reduce cognitive complexity of the caller.
+    """
+    if resp:
+        return resp
+    if errores:
+        return _render_login_with_context(
+            request,
+            errores=errores,
+            email=recovery_email or "",
+            recovery_email=recovery_email or "",
+            recovery_step=recovery_step or default_step,
+        )
+    # successful flow: redirect to login with proper step
+    if default_step == "cambiar":
+        return redirect(f"{reverse('login')}?recovery_step={recovery_step}")
+    return redirect(f"{reverse('login')}?email={recovery_email}&recovery_step={recovery_step}")
 
 
 @require_POST
@@ -405,15 +471,38 @@ def recuperar_contrasena_cambiar(request):
 
 
 
-@require_http_methods(["GET", "POST"])
-def render_login(request):
-    # This view intentionally accepts GET (render form) and POST (submit login).
-    # CSRF protection is provided by Django's middleware and templates must include
-    # {% csrf_token %} for POST forms. Keep review in mind when changing behavior.
-    resp, context = _handle_login_request(request)
-    if resp:
-        return resp
-    return render(request, "users/login.html", context)
+class LoginView(View):
+    """Class-based view for login: explicit get/post handlers reduce ambiguity
+
+    Using a CBV makes it explicit which HTTP methods are handled and avoids
+    mixing safe/unsafe logic in a single function context, addressing the
+    security hotspot that warns about allowing both safe and unsafe methods.
+    CSRF protection remains enforced by middleware; templates must include
+    {% csrf_token %} for POST forms.
+    """
+
+    def get(self, request, *args, **kwargs):
+        resp, context = _handle_login_request(request)
+        if resp:
+            return resp
+        return render(request, LOGIN_TEMPLATE, context)
+
+    def post(self, request, *args, **kwargs):
+        # Handle POST explicitly: dispatch POST action and respond accordingly.
+        resp, new_errores, _, _, _ = _dispatch_login_post(request)
+        if resp:
+            return resp
+
+        # If the dispatch returned errors or state changes, build context and render
+        # the login template so the user sees messages without redirect loops.
+        _, context = _handle_login_request(request)
+        # Merge any new_errores into context['errores'] if present
+        if new_errores:
+            context.setdefault("errores", []).extend(new_errores)
+        return render(request, LOGIN_TEMPLATE, context)
+
+# Note: URLs use LoginView.as_view() directly. The old function wrapper was removed
+# to avoid mixing safe/unsafe HTTP methods in a single function (Sonar S3752).
 
 
 def _dispatch_login_post(request):
