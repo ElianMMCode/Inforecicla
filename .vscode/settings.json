@@ -2,5 +2,30 @@
  "sonarlint.connectedMode.project": {
   "connectionId": "elianmmcode",
   "projectKey": "ElianMMCode_Inforecicla"
+ },
+ "cSpell.words": [
+    "actualizar",
+    "apellidos",
+    "celular",
+    "Coincidencia",
+    "Contrasena",
+    "cumple",
+    "elemento",
+    "Especiales",
+    "fecha",
+    "Fecha",
+    "Longitud",
+    "Mayor",
+    "Menor",
+    "mensaje",
+    "Minusculas",
+    "Mayusculas",
+    "Numeros",
+    "Obligatorios",
+    "Requisito",
+    "tiene",
+    "texto",
+    "valido",
+    "validar"
  }
 }
