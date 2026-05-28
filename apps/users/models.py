@@ -9,7 +9,7 @@ from django.core.validators import MinLengthValidator
 from django.utils.translation import gettext_lazy as _
 from config import constants as cons
 from django.core.exceptions import ValidationError as ValidationError
-from datetime import date, timedelta
+from datetime import date
 import uuid
 
 
@@ -36,7 +36,7 @@ class UsuarioManager(BaseUserManager):
     Proporciona métodos para crear usuarios normales, superusuarios y gestores ECA.
     """
 
-    def create_user(self, email, numero_documento, password=None, **extra_fields):
+    def create_user(self, email, numero_documento=None, password=None, **extra_fields):
         """
         Crea y guarda un usuario normal.
         Este método es requerido por Django para la creación de usuarios estándar.
@@ -44,9 +44,6 @@ class UsuarioManager(BaseUserManager):
         # Validaciones de campos obligatorios
         if not email:
             raise ValueError("El email es obligatorio")
-        if not numero_documento:
-            raise ValueError("El número de documento es obligatorio")
-
         # Valores por defecto para usuarios normales
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_staff", False)
@@ -57,9 +54,7 @@ class UsuarioManager(BaseUserManager):
         email = self.normalize_email(email)
 
         # Crear la instancia del usuario
-        user = self.model(
-            email=email, numero_documento=numero_documento, **extra_fields
-        )
+        user = self.model(email=email, numero_documento=numero_documento, **extra_fields)
 
         # Establecer la contraseña (hasheada)
         user.set_password(password)
@@ -68,7 +63,7 @@ class UsuarioManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, numero_documento, password=None, **extra_fields):
+    def create_superuser(self, email, numero_documento=None, password=None, **extra_fields):
         """
         Crea y guarda un superusuario.
         Este método es requerido por Django para el comando 'createsuperuser'.
@@ -88,7 +83,7 @@ class UsuarioManager(BaseUserManager):
         # Crear el usuario utilizando el método base create_user
         return self.create_user(email, numero_documento, password, **extra_fields)
 
-    def create_gestor_eca(self, email, numero_documento, password=None, **extra_fields):
+    def create_gestor_eca(self, email, numero_documento=None, password=None, **extra_fields):
         """
         Crea y guarda un gestor ECA (usuario con permisos específicos).
         Método adicional para necesidades específicas del negocio.
@@ -158,17 +153,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
     tipo_documento = models.CharField(
         verbose_name="Tipo de documento",
         max_length=3,
-        null=False,
-        blank=False,
+        blank=True,
         choices=cons.TipoDocumento.choices,
-        default=cons.TipoDocumento.CC,
-        help_text="Tipo de documento de identidad",
+        default="",
+        help_text="Tipo de documento de identidad (opcional)",
     )
 
     numero_documento = models.CharField(
         verbose_name="Número de documento",
         max_length=20,
         unique=True,
+        null=True,
+        blank=True,
         validators=[
             MinLengthValidator(
                 6,
@@ -272,11 +268,8 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
     # =========================================================================
     USERNAME_FIELD = "email"  # Campo utilizado para autenticación (login)
     REQUIRED_FIELDS = [
-        "numero_documento",
         "nombres",
         "apellidos",
-        "fecha_nacimiento",
-        # "celular" está comentado porque es opcional
     ]
 
     # Instancia del manager personalizado
@@ -335,19 +328,19 @@ class TokenValidacion(models.Model):
     Modelo para almacenar tokens de validación para:
     - Recuperación de contraseña
     - Verificación de email en registro
-    
+
     Los tokens tienen expiración y límite de intentos fallidos.
     """
-    
+
     TIPO_CHOICES = (
         ('recuperacion', 'Recuperación de Contraseña'),
         ('verificacion', 'Verificación de Email'),
     )
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     usuario = models.ForeignKey(
-        Usuario, 
-        on_delete=models.CASCADE, 
+        Usuario,
+        on_delete=models.CASCADE,
         related_name='tokens_validacion',
         null=True,
         blank=True,
@@ -395,7 +388,7 @@ class TokenValidacion(models.Model):
         blank=True,
         help_text="Fecha y hora en que el token fue validado exitosamente"
     )
-    
+
     class Meta:
         verbose_name = "Token de Validación"
         verbose_name_plural = "Tokens de Validación"
@@ -406,26 +399,26 @@ class TokenValidacion(models.Model):
             models.Index(fields=["usuario", "tipo"]),
             models.Index(fields=["activo", "fecha_expiracion"]),
         ]
-    
+
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.email} ({self.token})"
-    
+
     def esta_expirado(self):
         """Verifica si el token ha expirado"""
         from django.utils import timezone
         return timezone.now() > self.fecha_expiracion
-    
+
     def puede_validarse(self):
         """Verifica si el token puede validarse (no expirado, activo, intentos disponibles)"""
         return self.activo and not self.esta_expirado() and self.intentos_fallidos < 5
-    
+
     def incrementar_intentos(self):
         """Incrementa el contador de intentos fallidos"""
         # Método eliminado del flujo actual: la verificación de intentos se gestiona
         # consultando `intentos_fallidos` y `activo` desde los utilitarios cuando es necesario.
         # Se mantiene el campo `intentos_fallidos` en el modelo para trazabilidad.
         pass
-    
+
     def marcar_como_validado(self):
         """Marca el token como validado"""
         from django.utils import timezone

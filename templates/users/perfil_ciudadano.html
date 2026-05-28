@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil Ciudadano - InfoRecicla</title>
-    <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
     <style>
@@ -114,92 +114,11 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet" integrity="sha384-IrMr0LFnIMa9H6HhC5VVqVuWNEIwspnRLKQc0SUyPj4Cy4s02DiWDZEoJOo5WNK6" crossorigin="anonymous">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" integrity="sha256-Tobw4i5HcbW4qsJMYTxmGAameLGvooTQPPatA9PiGgo=" crossorigin="anonymous"></script>
 </head>
 <body class="bg-light">
 <div class="d-flex">
-    <!-- Sidebar -->
-    <nav class="bg-success text-white vh-100 position-fixed" style="width: 280px; z-index: 1000;">
-        <div class="p-4">
-            <div class="text-center mb-4">
-                <img src="{% static 'img/logo.png' %}" alt="Logo" class="rounded-circle mb-3" width="80" height="80">
-                <h4 class="fw-bold">InfoRecicla</h4>
-            </div>
-
-            <hr class="border-white opacity-25">
-
-            <div class="text-center mb-4">
-                <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px;">
-                    <i class="bi bi-person-fill fs-1 text-white"></i>
-                </div>
-                <h6 class="fw-bold mb-1">{{ user.get_short_name }}</h6>
-                <small class="opacity-75">{{ user.get_full_name }}</small>
-                <br>
-                <span class="badge bg-white text-success mt-1">Ciudadano</span>
-            </div>
-
-            <hr class="border-white opacity-25">
-
-            <ul class="nav flex-column gap-2">
-                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'datos' or not tab_activo %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_ciudadano' %}">
-                        <i class="bi bi-person-fill fs-5 me-3"></i>
-                        <span class="fw-semibold">Mis Datos</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'comentarios' %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_comentarios' %}">
-                        <i class="bi bi-chat-left-text-fill fs-5 me-3"></i>
-                        <span class="fw-semibold">Mis Comentarios</span>
-                        {% if mis_comentarios %}
-                        <span class="badge bg-white text-success ms-auto">{{ mis_comentarios|length }}</span>
-                        {% endif %}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'chat' %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_mensajes' %}">
-                        <i class="bi bi-chat-dots-fill fs-5 me-3"></i>
-                        <span class="fw-semibold">Mensajes</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded {% if tab_activo == 'guardados' %}active bg-white bg-opacity-25{% endif %}" href="{% url 'perfil_guardados' %}">
-                        <i class="bi bi-bookmark-fill fs-5 me-3"></i>
-                        <span class="fw-semibold">Guardados</span>
-                        {% if mis_guardados %}
-                        <span class="badge bg-white text-success ms-auto">{{ mis_guardados|length }}</span>
-                        {% endif %}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="/" >
-                        <i class="bi bi-house-fill fs-5 me-3"></i>
-                        <span class="fw-semibold">Inicio</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="/mapa/">
-                        <i class="bi bi-map-fill fs-5 me-3"></i>
-                        <span class="fw-semibold">Mapa ECA</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white d-flex align-items-center py-3 px-3 rounded" href="/publicaciones/">
-                        <i class="bi bi-newspaper fs-5 me-3"></i>
-                        <span class="fw-semibold">Publicaciones</span>
-                    </a>
-                </li>
-            </ul>
-
-            <hr class="border-white opacity-25 mt-4">
-
-            <form method="POST" action="/logout/" class="w-100">
-                {% csrf_token %}
-                <button class="btn btn-outline-light w-100 fw-semibold" type="submit">
-                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
-                </button>
-            </form>
-        </div>
-    </nav>
+    {% include 'users/_sidebar.html' %}
 
     <!-- Main Content -->
     <main class="flex-grow-1" style="margin-left: 280px;">
@@ -213,10 +132,10 @@
                     </div>
                     <div class="col-auto">
                         <div class="d-flex align-items-center gap-3">
-                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            <span class="badge bg-success bg-opacity-10 text-light px-3 py-2 rounded-pill">
                                 <i class="bi bi-geo-alt-fill me-1"></i>{{ user.ciudad|default:"Bogotá" }}
                             </span>
-                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            <span class="badge bg-success bg-opacity-10 text-light px-3 py-2 rounded-pill">
                                 <i class="bi bi-envelope-fill me-1"></i>{{ user.email }}
                             </span>
                         </div>
@@ -235,6 +154,330 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 {% endfor %}
+            {% endif %}
+
+            {% if perfil_incompleto or request.GET.completar == '1' %}
+            <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    Completa tu perfil para acceder a todas las funciones de InfoRecicla.
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-success px-3 py-2" data-bs-toggle="modal" data-bs-target="#completarPerfilModal">Completar ahora</button>
+                    <a id="recordarmeAlertLink" data-recordarme="1" href="/perfil/" class="btn btn-sm btn-outline-secondary ms-2">Recordarme después</a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if perfil_incompleto or request.GET.completar == '1' %}
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                function getCookie(name) {
+                    const cookie = document.cookie.split('; ').find((row) => row.startsWith(name + '='));
+                    return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
+                }
+
+                const modalPersistKey = 'completarPerfilDismissed_{{ user.pk }}';
+
+                function storageGet(key) {
+                    try {
+                        return window.localStorage.getItem(key) || window.sessionStorage.getItem(key) || '';
+                    } catch (e) {
+                        return '';
+                    }
+                }
+
+                function storageSet(key, value) {
+                    try {
+                        window.localStorage.setItem(key, value);
+                    } catch (e) {
+                        try { window.sessionStorage.setItem(key, value); } catch (err) {}
+                    }
+                }
+
+                const currentTipoDocumento = '{{ user.tipo_documento|default:"" }}';
+                const currentNumeroDocumento = '{{ user.numero_documento|default:"" }}';
+
+                const form = document.getElementById('completarPerfilForm');
+                if (!form) return;
+
+                const DOC_RULES = {
+                    'CC': { min: 6, max: 10 },
+                    'CE': { min: 6, max: 12 },
+                    'PA': { min: 6, max: 9 },
+                    'NIT': { min: 6, max: 15 },
+                    'TI': { min: 6, max: 11 },
+                    '': { min: 3, max: 32 }
+                };
+
+                function getDocRules(tipo) {
+                    return DOC_RULES[tipo] || DOC_RULES[''];
+                }
+
+                const modalNumeroEl = document.getElementById('modal_numeroDocumento');
+                const modalTipoEl = document.getElementById('modal_tipoDocumento');
+                let modalDocDisponible = null;
+                let modalDocVerificado = '';
+
+                function mostrarSwalDocumentoEnUso(mensaje) {
+                    try {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Documento en uso',
+                            text: mensaje || 'Ya existe un usuario con ese número de documento',
+                            confirmButtonColor: '#145c3a'
+                        });
+                    } catch (e) {
+                        console.warn('Swal unavailable', e);
+                    }
+                }
+
+                function verificarDocumentoModal(valor) {
+                    const val = (valor || '').trim();
+                    if (!val) {
+                        modalDocDisponible = null;
+                        modalDocVerificado = '';
+                        return Promise.resolve(true);
+                    }
+
+                    if (modalDocVerificado === val && modalDocDisponible !== null) {
+                        return Promise.resolve(modalDocDisponible);
+                    }
+
+                    return fetch('/perfil/check-documento/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'numeroDocumento=' + encodeURIComponent(val)
+                    }).then(r => r.json()).then(data => {
+                        modalDocVerificado = val;
+                        modalDocDisponible = !!data.available;
+                        if (data.available) {
+                            return true;
+                        }
+
+                        const mensaje = data.message || 'Documento en uso';
+                        showErrorFor('numeroDocumento', mensaje);
+                        mostrarSwalDocumentoEnUso(mensaje);
+                        return false;
+                    }).catch(err => {
+                        console.error('Error comprobando documento', err);
+                        modalDocDisponible = null;
+                        modalDocVerificado = '';
+                        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo verificar el documento', confirmButtonColor: '#145c3a'});
+                        return false;
+                    });
+                }
+
+                function applyModalMax() {
+                    if (!modalNumeroEl) return;
+                    const tipo = (modalTipoEl && modalTipoEl.value) ? modalTipoEl.value : '';
+                    const rules = getDocRules(tipo);
+                    modalNumeroEl.value = modalNumeroEl.value.replace(/\D/g, '').substring(0, rules.max);
+                    modalNumeroEl.maxLength = rules.max;
+                    modalNumeroEl.setAttribute('inputmode', 'numeric');
+                    modalNumeroEl.setAttribute('pattern', String.raw`\d*`);
+                }
+
+                if (modalNumeroEl) {
+                    modalNumeroEl.addEventListener('input', function() {
+                        const tipo = (modalTipoEl && modalTipoEl.value) ? modalTipoEl.value : '';
+                        const rules = getDocRules(tipo);
+                        this.value = this.value.replace(/\D/g, '').substring(0, rules.max);
+                        modalDocDisponible = null;
+                        modalDocVerificado = '';
+                    });
+
+                    modalNumeroEl.addEventListener('blur', function() {
+                        const val = this.value.trim();
+                        if (!val) return;
+                        verificarDocumentoModal(val);
+                    });
+                }
+
+                if (modalTipoEl) {
+                    modalTipoEl.addEventListener('change', applyModalMax);
+                    applyModalMax();
+                }
+
+                const submitBtn = document.getElementById('modalSubmitBtn');
+                const modalEl = document.getElementById('completarPerfilModal');
+
+                if (modalEl) {
+                    modalEl.addEventListener('hide.bs.modal', function() {
+                        storageSet(modalPersistKey, '1');
+                        try {
+                            const url = new URL(window.location);
+                            if (url.searchParams.has('completar')) {
+                                url.searchParams.delete('completar');
+                                history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                            }
+                        } catch (e) {}
+                    });
+                }
+
+                function clearFeedback() {
+                    ['tipoDocumento','numeroDocumento','localidad','fechaNacimiento'].forEach(id => {
+                        const fb = document.getElementById('modal_' + id + '_feedback');
+                        const el = document.getElementById('modal_' + id);
+                        if (fb) fb.textContent = '';
+                        if (el) el.classList.remove('is-invalid');
+                    });
+                }
+
+                function showErrorFor(id, msg) {
+                    const fb = document.getElementById('modal_' + id + '_feedback');
+                    const el = document.getElementById('modal_' + id);
+                    if (fb) fb.textContent = msg;
+                    if (el) el.classList.add('is-invalid');
+                }
+
+                async function handleModalSubmitResponse(res) {
+                    let data = null;
+                    try { data = await res.json(); } catch (e) { data = null; }
+
+                    if (res.ok && data && data.ok) {
+                        const text = data.message || 'Perfil actualizado correctamente';
+                        storageSet(modalPersistKey, '1');
+                        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modal.hide();
+                        Swal.fire({icon: 'success', title: 'Guardado', text: text, confirmButtonColor: '#145c3a'}).then(() => location.reload());
+                        return;
+                    }
+
+                    if (data && data.errors) {
+                        for (const [field, msgs] of Object.entries(data.errors)) {
+                            showErrorFor(field, Array.isArray(msgs) ? msgs.join(' ') : String(msgs));
+                        }
+                        return;
+                    }
+
+                    const msg = data && data.message ? data.message : (await res.text());
+                    Swal.fire({icon: 'error', title: 'Error', html: msg, confirmButtonColor: '#145c3a'});
+                }
+
+                async function submitCompletarPerfilForm() {
+                    submitBtn.disabled = true;
+                    try {
+                        const fd = new FormData(form);
+                        const res = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken'),
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: fd
+                        });
+                        await handleModalSubmitResponse(res);
+                    } catch (err) {
+                        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo conectarse al servidor', confirmButtonColor: '#145c3a'});
+                        console.error(err);
+                    } finally {
+                        submitBtn.disabled = false;
+                    }
+                }
+
+                form.addEventListener('submit', async function(ev) {
+                    ev.preventDefault();
+                    clearFeedback();
+
+                    const numero = (document.getElementById('modal_numeroDocumento') || {}).value || '';
+                    const tipo = (document.getElementById('modal_tipoDocumento') || {}).value || '';
+                    const fecha = (document.getElementById('modal_fechaNacimiento') || {}).value || '';
+                    const effectiveNumero = numero || currentNumeroDocumento;
+                    const effectiveTipo = tipo || currentTipoDocumento;
+
+                    let hasError = false;
+
+                    if (numero) {
+                        const tipoForValid = effectiveTipo || '';
+                        const rules = getDocRules(tipoForValid);
+                        if (numero.length < rules.min || numero.length > rules.max) {
+                            showErrorFor('numeroDocumento', `Número de documento inválido (solo dígitos, entre ${rules.min} y ${rules.max} caracteres)`);
+                            hasError = true;
+                        }
+                    }
+
+                    if (tipo && !effectiveNumero) {
+                        showErrorFor('numeroDocumento', 'Debes ingresar el número de documento cuando seleccionas un tipo');
+                        hasError = true;
+                    }
+                    if (numero && !effectiveTipo) {
+                        showErrorFor('tipoDocumento', 'Debes seleccionar el tipo de documento cuando ingresas un número');
+                        hasError = true;
+                    }
+
+                    if (fecha) {
+                        const d = new Date(fecha);
+                        const today = new Date();
+                        if (d > today) {
+                            showErrorFor('fechaNacimiento', 'La fecha no puede ser futura');
+                            hasError = true;
+                        } else {
+                            const age = new Date(today - d).getUTCFullYear() - 1970;
+                            if (age < 14) {
+                                showErrorFor('fechaNacimiento', 'Debes tener al menos 14 años');
+                                hasError = true;
+                            }
+                        }
+                    }
+
+                    if (hasError) return;
+
+                    if (numero) {
+                        const isAvailable = await verificarDocumentoModal(numero);
+                        if (!isAvailable) return;
+                    }
+
+                    await submitCompletarPerfilForm();
+                });
+
+                const openOnIncomplete = {% if perfil_incompleto %}true{% else %}false{% endif %};
+                if (openOnIncomplete) {
+                    try {
+                        if (!storageGet(modalPersistKey)) {
+                            if (modalEl) {
+                                new bootstrap.Modal(modalEl).show();
+                                storageSet(modalPersistKey, '1');
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('sessionStorage unavailable for modal show control', e);
+                    }
+                }
+
+                document.addEventListener('click', function(ev) {
+                    try {
+                        const a = ev.target.closest && ev.target.closest('a[data-recordarme]');
+                        if (!a) return;
+                        ev.preventDefault();
+                        storageSet(modalPersistKey, '1');
+
+                        if (modalEl) {
+                            const modalInst = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInst) modalInst.hide();
+                        }
+
+                        const alerta = a.closest('.alert');
+                        if (alerta) {
+                            try { bootstrap.Alert.getOrCreateInstance(alerta).close(); } catch (e) { alerta.remove(); }
+                        }
+
+                        try {
+                            const u = new URL(window.location);
+                            u.searchParams.delete('completar');
+                            history.replaceState({}, document.title, u.pathname + u.search + u.hash);
+                        } catch (e) {}
+                    } catch (e) {
+                        console.warn('recordarme handler error', e);
+                    }
+                });
+            });
+            </script>
+
+                        {% include 'users/_completar_perfil_modal.html' %}
             {% endif %}
 
             <div class="tab-content">
@@ -426,7 +669,7 @@
                                                     <input id="nuevaPass" type="password" name="contrasenaNueva" class="form-control"
                                                            required minlength="8" maxlength="128"
                                                            autocomplete="new-password"
-                                                           pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}"
+                                                           pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}"
                                                            placeholder="Nueva contraseña">
                                                     <button class="btn btn-outline-secondary" type="button" tabindex="-1">
                                                         <i class="bi bi-eye toggle-password" data-target="#nuevaPass" aria-hidden="true"></i>

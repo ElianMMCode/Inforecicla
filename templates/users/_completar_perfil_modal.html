@@ -1,0 +1,76 @@
+{% comment %} Modal partial for completar perfil {% endcomment %}
+{% if perfil_incompleto or request.GET.completar == '1' %}
+<script>
+/* Modal-related JS moved inline in main template where needed; keep modal markup here */
+</script>
+
+<!-- Modal: Completar Perfil -->
+<div class="modal fade" id="completarPerfilModal" tabindex="-1" aria-labelledby="completarPerfilLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="completarPerfilLabel">Completa tu perfil</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="completarPerfilForm" method="POST" action="/perfil/actualizar/">
+        <div class="modal-body">
+            {% csrf_token %}
+            {% if perfil_pendientes.tipo_documento or perfil_pendientes.numero_documento %}
+            <div class="mb-3">
+                <label for="modal_tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
+                {% if perfil_pendientes.tipo_documento %}
+                <select class="form-select" id="modal_tipoDocumento" name="tipoDocumento">
+                    <option value="">Seleccionar...</option>
+                    <option value="CC">Cédula de Ciudadanía</option>
+                    <option value="CE">Cédula de Extranjería</option>
+                    <option value="PA">Pasaporte</option>
+                    <option value="NIT">NIT</option>
+                    <option value="TI">Tarjeta de Identidad</option>
+                </select>
+                {% else %}
+                <input type="hidden" name="tipoDocumento" value="{{ user.tipo_documento }}">
+                <p class="form-control-plaintext mb-0">{{ user.get_tipo_documento_display }}</p>
+                {% endif %}
+                <div class="invalid-feedback" id="modal_tipoDocumento_feedback"></div>
+            </div>
+
+            {% if perfil_pendientes.numero_documento %}
+            <div class="mb-3">
+                <label for="modal_numeroDocumento" class="form-label">Número de Documento</label>
+                <input type="text" inputmode="numeric" pattern="\d*" class="form-control" id="modal_numeroDocumento" name="numeroDocumento" placeholder="1234567890" value="{{ user.numero_documento|default:'' }}">
+                <div class="invalid-feedback" id="modal_numeroDocumento_feedback"></div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% if perfil_pendientes.localidad %}
+            <div class="mb-3">
+                <label for="modal_localidad" class="form-label">Localidad</label>
+                <select class="form-select" id="modal_localidad" name="localidad">
+                    <option value="">Seleccionar localidad...</option>
+                    {% for loc in localidades %}
+                        <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
+                    {% endfor %}
+                </select>
+                <div class="invalid-feedback" id="modal_localidad_feedback"></div>
+            </div>
+            {% endif %}
+
+            {% if perfil_pendientes.fecha_nacimiento %}
+            <div class="mb-3">
+                <label for="modal_fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                <input type="date" class="form-control" id="modal_fechaNacimiento" name="fechaNacimiento" value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+                <div class="invalid-feedback" id="modal_fechaNacimiento_feedback"></div>
+            </div>
+            {% endif %}
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="modalSubmitBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}

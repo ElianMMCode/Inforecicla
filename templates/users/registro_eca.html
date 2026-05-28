@@ -515,7 +515,7 @@
                 const hasLower = /[a-z]/.test(val);
                 const hasUpper = /[A-Z]/.test(val);
                 const hasNum = /\d/.test(val);
-                const hasSpecial = /[@$!%*?&]/.test(val);
+                const hasSpecial = /[@$!%*?&_]/.test(val);
                 const longEnough = val.length >= 8;
                 reqs.lower.classList.toggle('text-success', hasLower);
                 reqs.upper.classList.toggle('text-success', hasUpper);
@@ -525,7 +525,7 @@
                 reqs.lower.innerText = (hasLower ? '✅ ' : '❌ ') + 'Mínimo una letra minúscula (a-z)';
                 reqs.upper.innerText = (hasUpper ? '✅ ' : '❌ ') + 'Mínimo una letra mayúscula (A-Z)';
                 reqs.num.innerText = (hasNum ? '✅ ' : '❌ ') + 'Mínimo un número (0-9)';
-                reqs.special.innerText = (hasSpecial ? '✅ ' : '❌ ') + 'Mínimo un carácter especial (@$!%*?&)';
+                reqs.special.innerText = (hasSpecial ? '✅ ' : '❌ ') + 'Mínimo un carácter especial (@$!%*?&_)';
                 reqs.len.innerText = (longEnough ? '✅ ' : '❌ ') + 'Mínimo 8 caracteres';
             }
             pwdInputEca.addEventListener('input', function(e){ checkPwdEca(e.target.value); });
