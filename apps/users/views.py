@@ -557,21 +557,25 @@ def _collect_registro_eca_fields(data):
     return {
         "nombres": data.get("nombres", "").strip(),
         "apellidos": data.get("apellidos", "").strip(),
+        # gestor email (login)
         "email": data.get("email", "").strip().lower(),
         "tipo_documento": data.get("tipoDocumento") or None,
         "numero_documento": data.get("numeroDocumento", "").strip(),
         "celular": data.get("celular", "").strip(),
-        "telefono_punto": data.get("telefono_punto", "").strip(),
-        "direccion": data.get("direccion", "").strip(),
-        "ciudad": data.get("ciudad", DEFAULT_CITY),
-        "localidad_id": data.get("localidad"),
-        "latitud": data.get("latitud"),
-        "longitud": data.get("longitud"),
-        "descripcion": data.get("descripcion", ""),
-        "sitio_web": data.get("sitio_web", "").strip(),
-        "logo_url_punto": data.get("logo_url_punto", "").strip(),
-        "foto_url_punto": data.get("foto_url_punto", "").strip(),
-        "horario_atencion": data.get("horario_atencion", "").strip(),
+        # Punto fields: most moved to step 2 (optional). Keep placeholders here
+        "telefono_punto": data.get("telefono_punto", "").strip(),  # optional (step2)
+        "direccion": data.get("direccion", "").strip(),  # optional (step2)
+        # City is fixed to DEFAULT_CITY for step1 (hidden from user)
+        "ciudad": DEFAULT_CITY,
+        "localidad_id": data.get("localidad"),  # optional (step2)
+        # Lat/Lon must be taken from the map UI (step1). Accept None if absent.
+        "latitud": data.get("latitud") or None,
+        "longitud": data.get("longitud") or None,
+        "descripcion": data.get("descripcion", ""),  # step2
+        "sitio_web": data.get("sitio_web", "").strip(),  # step2
+        "logo_url_punto": data.get("logo_url_punto", "").strip(),  # step2
+        "foto_url_punto": data.get("foto_url_punto", "").strip(),  # step2
+        "horario_atencion": data.get("horario_atencion", "").strip(),  # step2
         "password": data.get("password", ""),
         "password_confirm": data.get("passwordConfirm", ""),
         "terminos": data.get("terminos"),
@@ -602,14 +606,21 @@ def _validate_registro_eca_contact(fields):
     errores = []
     if not fields["celular"] or not fields["celular"].startswith("3") or len(fields["celular"]) != 10:
         errores.append("El celular debe ser válido, iniciar con 3 y tener 10 dígitos.")
-    if not fields["direccion"]:
-        errores.append("Debe ingresar la dirección.")
-    if not fields["telefono_punto"] or not fields["telefono_punto"].startswith("60") or len(fields["telefono_punto"]) != 10:
-        errores.append("El teléfono del punto debe ser válido, iniciar con 60 y tener 10 dígitos.")
-    if not fields["latitud"] or not fields["longitud"]:
-        errores.append("Debe seleccionar una ubicación en el mapa.")
-    if not fields["ciudad"]:
-        errores.append("Debe especificar la ciudad.")
+    # For the simplified flow, several point fields are optional and moved to step2.
+    # Validate telefono_punto/direccion/ciudad/latlon only if provided in the POST.
+    if fields.get("direccion") and len(fields.get("direccion")) < 3:
+        errores.append("La dirección ingresada es demasiado corta.")
+    if fields.get("telefono_punto"):
+        tp = fields.get("telefono_punto")
+        if not tp.startswith("60") or len(tp) != 10:
+            errores.append("El teléfono del punto debe ser válido, iniciar con 60 y tener 10 dígitos.")
+    # Lat/Lon are optional in step1 only when provided via the map; if provided, validate format
+    if fields.get("latitud") is not None and fields.get("longitud") is not None:
+        try:
+            float(fields.get("latitud"))
+            float(fields.get("longitud"))
+        except (TypeError, ValueError):
+            errores.append("Coordenadas inválidas.")
     return errores
 
 
@@ -635,15 +646,16 @@ def _create_registro_eca(fields):
             telefono_punto=fields["telefono_punto"],
             direccion=fields["direccion"],
             ciudad=fields["ciudad"],
+            # Use gestor email as default contact email for the punto; can be changed in step2
             email=fields["email"],
             celular=fields["celular"],
             logo_url_punto=fields["logo_url_punto"],
             foto_url_punto=fields["foto_url_punto"],
             sitio_web=fields["sitio_web"],
             horario_atencion=fields["horario_atencion"],
-            localidad=fields["localidad_inst"],
-            latitud=float(fields["latitud"]),
-            longitud=float(fields["longitud"]),
+            localidad=fields.get("localidad_inst"),
+            latitud=float(fields["latitud"]) if fields.get("latitud") is not None else None,
+            longitud=float(fields["longitud"]) if fields.get("longitud") is not None else None,
         )
 
         token_obj = crear_token_validacion(
