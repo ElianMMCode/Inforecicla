@@ -51,31 +51,6 @@ class TestRegistroPuntoECA(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "users/registro_eca.html")
 
-    def test_registro_punto_eca_post_valid(self):
-        """Prueba que la vista de registro de PuntoECA procesa un POST válido"""
-        self.client.login(
-            email="testuser@example.com", password=self.password_aleatorio
-        )
-        data = {
-            "nombres": "Test User",
-            "apellidos": "Test Lastname",
-            "email": "newuser@example.com",
-            "tipoDocumento": "CC",
-            "numeroDocumento": "0987654321",
-            "celular": "3001234567",
-            "telefono_punto": "6012345678",
-            "direccion": "Calle Falsa 123",
-            "ciudad": "Bogotá",
-            "localidad": str(self.localidad.localidad_id),
-            "latitud": "4.6097",
-            "longitud": "-74.0817",
-            "password": self.password_aleatorio,
-            "passwordConfirm": self.password_aleatorio,
-            "terminos": "on",
-        }
-        response = self.client.post(self.url, data)
-        self.assertEqual(response.status_code, 302)
-
     @override_settings(DEBUG=True)
     def test_editar_perfil_gestor_get(self):
         """Prueba que la vista de edición de perfil del gestor responde a GET"""
@@ -120,14 +95,9 @@ class TestRegistroPuntoECA(TestCase):
         }
 
         response = self.client.post(self.url, data)
-
-        # EL IF DEBE IR AQUÍ, ANTES DEL ASSERT_EQUAL
-        if response.status_code != 302:
-            errores = (
-                response.context.get("errores")
-                if response.context
-                else "No hay contexto de errores"
-            )
-            raise ValueError(f"🚨 EL FORMULARIO REBOTÓ. ERRORES: {errores}")
-
         self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse("login") + "?email=newuser2@example.com",
+            fetch_redirect_response=False,
+        )
