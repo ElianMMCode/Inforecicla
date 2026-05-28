@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.db import transaction, IntegrityError
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_safe, require_http_methods
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from apps.users.models import Usuario, TokenValidacion
@@ -405,7 +405,11 @@ def recuperar_contrasena_cambiar(request):
 
 
 
+@require_http_methods(["GET", "POST"])
 def render_login(request):
+    # This view intentionally accepts GET (render form) and POST (submit login).
+    # CSRF protection is provided by Django's middleware and templates must include
+    # {% csrf_token %} for POST forms. Keep review in mind when changing behavior.
     resp, context = _handle_login_request(request)
     if resp:
         return resp
@@ -668,6 +672,7 @@ def _create_registro_ciudadano(fields):
 
 
 @ciudadano_required
+@require_safe
 def perfil_ciudadano(request, tab="datos"):
     if request.user.is_staff or request.user.is_superuser:
         return redirect("/panel_admin/perfil/")
@@ -700,8 +705,11 @@ def perfil_ciudadano(request, tab="datos"):
 
 
 @ciudadano_required
+@require_safe
 def completar_perfil_ciudadano(request):
     # Muestra un formulario reducido para completar datos faltantes después del login
+    # This view only serves the modal/form (GET). Mutating updates should be handled
+    # by a dedicated POST endpoint which is protected with CSRF and require_POST.
     localidades = Localidad.objects.all()
     return render(
         request,
