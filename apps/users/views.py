@@ -608,9 +608,8 @@ def _validate_registro_eca_contact(fields):
         errores.append("El celular debe ser válido, iniciar con 3 y tener 10 dígitos.")
     # For the simplified flow, several point fields are optional and moved to step2.
     # Validate telefono_punto/direccion/ciudad/latlon only if provided in the POST.
-    if fields.get("direccion"):
-        if len(fields.get("direccion")) < 3:
-            errores.append("La dirección ingresada es demasiado corta.")
+    if fields.get("direccion") and len(fields.get("direccion")) < 3:
+        errores.append("La dirección ingresada es demasiado corta.")
     if fields.get("telefono_punto"):
         tp = fields.get("telefono_punto")
         if not tp.startswith("60") or len(tp) != 10:

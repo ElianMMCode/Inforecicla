@@ -111,11 +111,12 @@
                                         height: 120px;
                                         object-fit: cover"
                                  src="{% static 'img/perfil_default.png' %}" />
-                            <div class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2"
-                                 style="cursor: pointer"
-                                 onclick="document.getElementById('inputFotoPerfil').click()">
+                            <button type="button"
+                                    class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2 border-0"
+                                    aria-label="Cambiar foto del perfil"
+                                    onclick="document.getElementById('inputFotoPerfil').click()">
                                 <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
-                            </div>
+                            </button>
                         </div>
                         <div class="mt-3">
                             <p class="text-muted small mb-2">Haz clic en la cámara para cambiar la foto</p>
@@ -133,7 +134,7 @@
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Nombres *</label>
+                                <label class="form-label fw-bold" for="nombres">Nombres *</label>
                                 <input type="text"
                                        class="form-control"
                                        id="nombres"
@@ -143,7 +144,7 @@
                                 <small class="text-muted">3-30 caracteres</small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Apellidos *</label>
+                                <label class="form-label fw-bold" for="apellidos">Apellidos *</label>
                                 <input type="text"
                                        class="form-control"
                                        id="apellidos"
@@ -155,7 +156,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Email *</label>
+                                <label class="form-label fw-bold" for="email">Email *</label>
                                 <input type="email"
                                        class="form-control"
                                        id="email"
@@ -164,7 +165,7 @@
                                        required />
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Celular *</label>
+                                <label class="form-label fw-bold" for="celular">Celular *</label>
                                 <input type="text"
                                        class="form-control"
                                        id="celular"
@@ -178,7 +179,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label fw-bold">Tipo Documento *</label>
+                                <label class="form-label fw-bold" for="tipoDocumento">Tipo Documento *</label>
                                 <select class="form-select" id="tipoDocumento" name="tipo_documento" required>
                                     <option value="">Selecciona un tipo...</option>
                                     {% for tipo, nombre in tipos_documento %}
@@ -190,7 +191,7 @@
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label fw-bold">Número Documento</label>
+                                <label class="form-label fw-bold" for="numeroDocumento">Número Documento</label>
                                 <input type="text"
                                        class="form-control"
                                        id="numeroDocumento"
@@ -200,7 +201,7 @@
                                 <small class="text-muted">6-20 caracteres (opcional)</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label fw-bold">Fecha Nacimiento</label>
+                                <label class="form-label fw-bold" for="fechaNacimiento">Fecha Nacimiento</label>
                                 <input type="date"
                                        class="form-control"
                                        id="fechaNacimiento"
@@ -211,7 +212,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label class="form-label fw-bold">Localidad</label>
+                                <label class="form-label fw-bold" for="localidad">Localidad</label>
                                 <select class="form-select" id="localidad" name="localidad">
                                     <option value="">Seleccionar localidad</option>
                                     {% for localidad in localidades %}
@@ -224,7 +225,7 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Biografía</label>
+                            <label class="form-label fw-bold" for="biografia">Biografía</label>
                             <textarea class="form-control"
                                       id="biografia"
                                       name="biografia"
@@ -256,15 +257,16 @@
                                 {% csrf_token %}
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold">Contraseña Actual</label>
+                                             <label class="form-label fw-semibold" for="passwordActual">Contraseña Actual</label>
                                         <input type="password" name="contrasenaActual" class="form-control"
+                                                 id="passwordActual"
                                                required maxlength="128"
                                                autocomplete="current-password"
                                                placeholder="Tu contraseña actual">
                                         <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold">Nueva Contraseña</label>
+                                             <label class="form-label fw-semibold" for="nuevaPass">Nueva Contraseña</label>
                                         <input type="password" name="contrasenaNueva" class="form-control"
                                                required minlength="8" maxlength="128" id="nuevaPass"
                                                autocomplete="new-password"
@@ -273,7 +275,7 @@
                                         <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold">Confirmar Nueva</label>
+                                             <label class="form-label fw-semibold" for="confirmarPass">Confirmar Nueva</label>
                                         <input type="password" name="confirmarContrasena" class="form-control"
                                                required maxlength="128" id="confirmarPass"
                                                autocomplete="new-password"
@@ -326,11 +328,12 @@
                                  style="max-height: 150px;
                                         object-fit: cover"
                                  src="{% static 'img/eca-default.png' %}" />
-                            <div class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2"
-                                 style="cursor: pointer"
-                                 onclick="document.getElementById('inputFotoPunto').click()">
+                            <button type="button"
+                                    class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0"
+                                    aria-label="Cambiar foto del punto"
+                                    onclick="document.getElementById('inputFotoPunto').click()">
                                 <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
-                            </div>
+                            </button>
                         </div>
                         <div class="mt-3">
                             <p class="text-muted small mb-2">Haz clic en la cámara para cambiar la foto</p>
@@ -349,7 +352,7 @@
                         <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label class="form-label fw-bold">Nombre Punto *</label>
+                                <label class="form-label fw-bold" for="nombrePunto">Nombre Punto *</label>
                                 <input type="text"
                                        class="form-control"
                                        id="nombrePunto"
@@ -361,7 +364,7 @@
                         </div>
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label class="form-label fw-bold">Dirección *</label>
+                                <label class="form-label fw-bold" for="direccionPunto">Dirección *</label>
                                 <input type="text"
                                        class="form-control"
                                        id="direccionPunto"
@@ -374,7 +377,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Localidad *</label>
+                                <label class="form-label fw-bold" for="localidadPunto">Localidad *</label>
                                 <select class="form-select"
                                         id="localidadPunto"
                                         name="localidadPunto"
@@ -389,14 +392,14 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Ciudad</label>
-                                <input type="text" class="form-control" value="{{ punto.ciudad }}" disabled />
+                                <label class="form-label fw-bold" for="ciudadPunto">Ciudad</label>
+                                <input type="text" class="form-control" id="ciudadPunto" value="{{ punto.ciudad }}" disabled />
                                 <small class="text-muted">No editable</small>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Celular *</label>
+                                <label class="form-label fw-bold" for="celularPunto">Celular *</label>
                                 <input type="text"
                                        class="form-control"
                                        id="celularPunto"
@@ -408,7 +411,7 @@
                                 <small class="text-muted">Exactamente 10 dígitos</small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Email *</label>
+                                <label class="form-label fw-bold" for="emailPunto">Email *</label>
                                 <input type="email"
                                        class="form-control"
                                        id="emailPunto"
@@ -419,7 +422,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Teléfono Fijo</label>
+                                <label class="form-label fw-bold" for="telefonoPunto">Teléfono Fijo</label>
                                 <input type="text"
                                        class="form-control"
                                        id="telefonoPunto"
@@ -430,7 +433,7 @@
                                 <small class="text-muted">Formato: 60 + 8 dígitos (opcional)</small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Sitio Web</label>
+                                <label class="form-label fw-bold" for="sitioWebPunto">Sitio Web</label>
                                 <input type="text"
                                        class="form-control"
                                        id="sitioWebPunto"
@@ -442,7 +445,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Latitud</label>
+                                <label class="form-label fw-bold" for="latitud">Latitud</label>
                                 <input type="number"
                                        step="0.000001"
                                        class="form-control"
@@ -454,7 +457,7 @@
                                 <small class="text-muted">-90 a 90 (opcional)</small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Longitud</label>
+                                <label class="form-label fw-bold" for="longitud">Longitud</label>
                                 <input type="number"
                                        step="0.000001"
                                        class="form-control"
@@ -468,7 +471,7 @@
                         </div>
                         <!-- Mapa para ubicar el Punto ECA -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Ubicación en el mapa</label>
+                            <span class="form-label fw-bold d-block">Ubicación en el mapa</span>
                             <div id="mapaPuntoPerfil"
                                  style="height:270px;
                                         border:2px solid #49bedc;
@@ -476,7 +479,7 @@
                             <small class="text-muted">Haz clic en el mapa para seleccionar la ubicación exacta del punto. Los campos de latitud/longitud se llenan automáticamente.</small>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción</label>
+                            <label class="form-label fw-bold" for="descripcionPunto">Descripción</label>
                             <textarea class="form-control"
                                       id="descripcionPunto"
                                       name="descripcionPunto"
@@ -487,7 +490,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">URL Logo</label>
+                                <label class="form-label fw-bold" for="logoUrlPunto">URL Logo</label>
                                 <input type="url"
                                        class="form-control"
                                        id="logoUrlPunto"
@@ -497,7 +500,7 @@
                                 <small class="text-muted">URL del logo (opcional)</small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Horario Atención</label>
+                                <label class="form-label fw-bold" for="horarioAtencionPunto">Horario Atención</label>
                                 <input type="text"
                                        class="form-control"
                                        id="horarioAtencionPunto"
@@ -526,9 +529,19 @@
     </div>
     <!-- Leaflet Scripts (incluye solo si no están ya incluidos globalmente en el layout) -->
     <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+          href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"
+          integrity="sha384-b8ANgTJvdlAnWM5YGMpKn7Kodm+1k7NYNG9zdjTCcZcKatzYHwZ0RLdWarbJJVzU"
+            crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
+            integrity="sha384-u5N8qJeJOO2iqNjIKTdl6KeKsEikMAmCUBPc6sC6uGpgL34aPJ4VgNhuhumedpEk"
+            crossorigin="anonymous"></script>
     <script>
+    function parseCoord(value, min, max, fallback) {
+        var val = value ? Number.parseFloat(value) : null;
+        if (val !== null && !Number.isNaN(val) && val >= min && val <= max) return val;
+        return fallback;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Inputs de latitud/longitud
         var inputLat = document.getElementById('latitud');
@@ -536,16 +549,9 @@
         console.log('Valor inputLat:', inputLat ? inputLat.value : null);
         console.log('Valor inputLng:', inputLng ? inputLng.value : null);
 
-        // Función para validar y obtener valor float o null
-        function parseCoord(input, min, max, fallback) {
-            var val = input && input.value ? parseFloat(input.value) : null;
-            if (val !== null && !isNaN(val) && val >= min && val <= max) return val;
-            return fallback;
-        }
-
         // Inicialización robusta: usa lo que venga de los inputs o Bogotá si está mal
-        var latVal = parseCoord(inputLat, -90, 90, 4.7110);
-        var lngVal = parseCoord(inputLng, -180, 180, -74.0721);
+        var latVal = parseCoord(inputLat ? inputLat.value : null, -90, 90, 4.711);
+        var lngVal = parseCoord(inputLng ? inputLng.value : null, -180, 180, -74.0721);
 
         if (inputLat) inputLat.value = latVal.toFixed(6);
         if (inputLng) inputLng.value = lngVal.toFixed(6);
@@ -559,8 +565,8 @@
 
         // Sincroniza marcador y campos (inputs <-> marcador)
         function syncMarkerWithInputs() {
-            var lat = parseCoord(inputLat, -90, 90, marcador.getLatLng().lat);
-            var lng = parseCoord(inputLng, -180, 180, marcador.getLatLng().lng);
+            var lat = parseCoord(inputLat ? inputLat.value : null, -90, 90, marcador.getLatLng().lat);
+            var lng = parseCoord(inputLng ? inputLng.value : null, -180, 180, marcador.getLatLng().lng);
             marcador.setLatLng([lat, lng]);
             mapa.setView([lat, lng]);
             if (inputLat) inputLat.value = lat.toFixed(6);
