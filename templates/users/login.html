@@ -278,6 +278,12 @@
             padding-left: 0.25rem;
         }
 
+        .activation-modal-note {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+
         </style>
     </head>
     <body>
@@ -382,7 +388,7 @@
                     {% endfor %}
                 {% endif %}
                 <div id="js-error-container"></div>
-                <form method="POST" id="loginForm">
+                <form method="POST" id="loginForm" data-login-url="{% url 'login' %}">
                     {% csrf_token %}
                     <input type="hidden" id="loginAction" name="action" value="login">
                     <div class="form-group">
@@ -424,12 +430,14 @@
                             Olvidé mi contraseña
                         </button>
                         {% if show_activation_resend %}
-                            <p class="activation-hint">¿Tu cuenta sigue sin activarse?</p>
-                            <button type="button"
-                                    class="btn btn-link p-0 inline-action-btn"
-                                    id="resendActivationButton">
-                                Reenviar enlace de activación
-                            </button>
+                            <div class="activation-inline" style="width:100%; margin-top:.5rem" data-activation-email="{{ email|default:'' }}">
+                                <p class="activation-hint">Tu cuenta no está activada. Reenviamos un enlace a <strong>{{ email }}</strong>. Si tienes el código, introdúcelo aquí:</p>
+                                <div id="activationInlineForm" class="d-flex gap-2 align-items-center">
+                                    <input type="text" name="token" id="activationInlineCode" class="form-control" placeholder="Código de verificación" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
+                                    <button type="button" id="activationInlineSubmit" class="btn btn-login">Validar cuenta</button>
+                                </div>
+                                <button type="button" class="btn btn-link p-0 inline-action-btn" id="resendActivationButton">Reenviar enlace de activación</button>
+                            </div>
                         {% endif %}
                     </div>
                 </form>
@@ -444,6 +452,41 @@
                         Registrar Punto ECA
                     </a>
                 </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="activationModal" tabindex="-1" aria-labelledby="activationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="activationModalLabel">Validar cuenta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="activation-modal-note">Ingresa el código que te enviamos por correo para activar tu cuenta.</p>
+                        <form method="GET" action="{% url 'login' %}" id="activationForm">
+                            <input type="hidden" name="action" value="activar">
+                            <input type="hidden" id="activationEmail" name="email" value="{{ email|default:'' }}">
+                            <div class="form-group">
+                                <label for="activationCode" class="form-label">Código de verificación</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="activationCode"
+                                       name="token"
+                                       placeholder="123456"
+                                       maxlength="6"
+                                       pattern="[0-9]{6}"
+                                       inputmode="numeric"
+                                       autocomplete="one-time-code"
+                                       required>
+                            </div>
+                            <button type="submit" class="btn-login">
+                                <i class="bi bi-shield-check btn-icon" aria-hidden="true"></i>
+                                Validar cuenta
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -538,7 +581,7 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"
             integrity="sha384-nLoOnA/BDh8A/jxqtckg4DumuCGOBYUnNJLZdQz/zfYNp3wcjGSoWTAzgko06G/2"
             crossorigin="anonymous"></script>
-        <script src="{% static 'js/formularios/login.js' %}"></script>
+        <script src="{% static 'js/formularios/login.js' %}?v=20260528"></script>
         {% if recovery_step != 'enviar' %}
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
@@ -550,5 +593,6 @@
                 });
             </script>
         {% endif %}
+
     </body>
 </html>

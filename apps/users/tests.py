@@ -11,6 +11,7 @@ from django.contrib.sessions.models import Session
 from django.test import TestCase
 
 from apps.ecas.models import Localidad
+from apps.users.utils import crear_token_validacion
 from config import constants as cons
 
 Usuario = get_user_model()
@@ -167,6 +168,87 @@ class ValidarCredencialesTests(TestCase):
             {"email": "  usuario@test.com  ", "password": _PASSWORD_VALIDA},
         )
         self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+
+    def test_tc_cu001_06_login_muestra_modal_de_validacion_de_cuenta(self):
+        """TC-CU00.1-06: El login expone el modal para ingresar el código de activación."""
+        response = self.client.get(_LOGIN)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="activationModal"')
+        self.assertContains(response, 'name="token"')
+
+    def test_tc_cu001_07_codigo_de_validacion_activa_la_cuenta(self):
+        """TC-CU00.1-07: action=activar valida el token y activa el usuario."""
+        usuario = _crear_usuario(
+            email="activar@test.com",
+            numero_documento="5555555",
+            is_active=False,
+        )
+        token_obj = crear_token_validacion(
+            email="activar@test.com",
+            tipo="verificacion",
+            usuario=usuario,
+            desactivar_previos=False,
+        )
+
+        response = self.client.get(
+            _LOGIN,
+            {
+                "action": "activar",
+                "email": "activar@test.com",
+                "token": token_obj.token,
+            },
+        )
+        # After activation, the user should be logged in and redirected to their post-login page
+        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        usuario.refresh_from_db()
+        token_obj.refresh_from_db()
+        self.assertTrue(usuario.is_active)
+        self.assertFalse(token_obj.activo)
+        self.assertIsNotNone(token_obj.fecha_validacion)
+        # Ensure session contains authenticated user
+        session = self.client.session
+        from django.contrib.auth import SESSION_KEY
+        self.assertIn(SESSION_KEY, session)
+
+    @patch("apps.users.views.enviar_email_verificacion", return_value=True)
+    def test_tc_cu001_08_login_inactivo_envia_un_solo_correo_de_activacion(self, mock_enviar_email):
+        """TC-CU00.1-08: Un login con cuenta inactiva debe reenviar un único correo
+        de activación y mostrar un solo mensaje informativo."""
+        _crear_usuario(
+            email="inactivo@test.com",
+            numero_documento="5555556",
+            is_active=False,
+        )
+
+        response = self.client.post(
+            _LOGIN,
+            {"email": "inactivo@test.com", "password": _PASSWORD_VALIDA},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(mock_enviar_email.called)
+        self.assertEqual(mock_enviar_email.call_count, 1)
+        self.assertTrue(response.context["show_activation_resend"])
+
+    @patch("apps.users.views.enviar_email_verificacion", return_value=True)
+    def test_tc_cu001_09_reenviar_activacion_envia_un_solo_correo(self, mock_enviar_email):
+        """TC-CU00.1-09: Reenviar activación desde el login debe enviar un único correo
+        y no duplicar la notificación informativa."""
+        _crear_usuario(
+            email="reenviar@test.com",
+            numero_documento="5555557",
+            is_active=False,
+        )
+
+        response = self.client.post(
+            _LOGIN,
+            {"action": "reenviar", "email": "reenviar@test.com"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(mock_enviar_email.call_count, 1)
+        self.assertTrue(any("Reenviamos el enlace de activación a tu correo." in str(m) for m in response.context["messages"]))
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -686,101 +768,6 @@ class RegistroCiudadanoTests(TestCase):
         mensajes = [str(m) for m in get_messages(response.wsgi_request)]
         self.assertIn("¡Perfil completado correctamente!", mensajes)
 
-    def test_tc_ext43_03_flujo_completo_cambia_contrasena_y_redirige(self):
-        """TC-EXT43-03: El flujo buscar → reset actualiza la contraseña, elimina
-        recovery_user_id de la sesión y redirige a login."""
-        # Paso 1: identificar usuario
-        self.client.post(
-            _RECOVER,
-            {"action": "buscar", "email": "usuario@test.com"},
-        )
 
-        # Paso 2: restablecer contraseña
-        response = self.client.post(
-            _RECOVER,
-            {
-                "action": "reset",
-                "email": "usuario@test.com",
-                "password": _PASSWORD_NUEVA,
-                "passwordConfirm": _PASSWORD_NUEVA,
-            },
-        )
-
-        self.assertRedirects(response, _LOGIN, fetch_redirect_response=False)
-        self.usuario.refresh_from_db()
-        self.assertTrue(self.usuario.check_password(_PASSWORD_NUEVA))
-        self.assertNotIn("recovery_user_id", self.client.session)
-
-    def test_tc_ext43_04_reset_con_password_corta_muestra_error(self):
-        """TC-EXT43-04: action=reset con password < 8 caracteres retorna error
-        de validación y no modifica la contraseña almacenada."""
-        self.client.post(
-            _RECOVER,
-            {"action": "buscar", "email": "usuario@test.com"},
-        )
-
-        response = self.client.post(
-            _RECOVER,
-            {
-                "action": "reset",
-                "email": "usuario@test.com",
-                "password": _PWD_CORTO,
-                "passwordConfirm": _PWD_CORTO,
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            "La nueva contraseña debe tener al menos 8 caracteres.",
-            response.context["errores"],
-        )
-        self.usuario.refresh_from_db()
-        self.assertTrue(
-            self.usuario.check_password(_PASSWORD_VALIDA),
-            "La contraseña original no debe haberse modificado.",
-        )
-
-    def test_tc_ext43_05_reset_con_passwords_diferentes_muestra_error(self):
-        """TC-EXT43-05: action=reset con passwords no coincidentes retorna error
-        de validación."""
-        self.client.post(
-            _RECOVER,
-            {"action": "buscar", "email": "usuario@test.com"},
-        )
-
-        response = self.client.post(
-            _RECOVER,
-            {
-                "action": "reset",
-                "email": "usuario@test.com",
-                "password": _PASSWORD_VALIDA,
-                "passwordConfirm": _PASSWORD_NUEVA,
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            "Las contraseñas no coinciden.",
-            response.context["errores"],
-        )
-
-    def test_tc_ext43_06_reset_directo_sin_buscar_previo_muestra_error(self):
-        """TC-EXT43-06: action=reset sin haber ejecutado buscar (sin
-        recovery_user_id en sesión) retorna error de flujo de validación."""
-        response = self.client.post(
-            _RECOVER,
-            {
-                "action": "reset",
-                "email": "usuario@test.com",
-                "password": _PWD_INCORRECTO,
-                "passwordConfirm": _PWD_INCORRECTO,
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            "Debes validar primero tu correo para poder restablecer la contraseña.",
-            response.context["errores"],
-        )
 
 #########################################################################

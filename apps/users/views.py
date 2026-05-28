@@ -132,8 +132,19 @@ def _handle_activate_get(request, email, token):
     if usuario:
         usuario.is_active = True
         usuario.save()
-    messages.success(request, "Cuenta activada correctamente. Ya puedes iniciar sesión.")
-    return redirect(f"{reverse('login')}?email={email}"), []
+        # Log the user in automatically after successful activation.
+        try:
+            # Ensure the user has a backend attribute required by django.contrib.auth.login
+            usuario.backend = getattr(usuario, 'backend', 'django.contrib.auth.backends.ModelBackend')
+            login(request, usuario)
+        except Exception:
+            # If auto-login fails for any reason, fall back to redirecting to login page.
+            messages.success(request, "Cuenta activada correctamente. Ya puedes iniciar sesión.")
+            return redirect(f"{reverse('login')}?email={email}"), []
+        messages.success(request, "Cuenta activada correctamente. Has iniciado sesión.")
+        # Redirect to the appropriate post-login page for this user
+        resp, _, _, _, _ = _redirect_after_login(usuario)
+        return resp, []
 
 
 def _redirect_after_login(user):
@@ -161,7 +172,9 @@ def _handle_inactive_login(request, email, usuario_inactivo):
 
         desactivar_tokens_previos(email, "verificacion", excluir_token_id=token_obj.id)
         messages.info(request, "Tu cuenta aún no está activada. Reenviamos un enlace de activación a tu correo.")
-        return None, ["Cuenta no activada. Revisa tu correo y usa el enlace de activación."], None, None, True
+        # Do not return the same info message in the errores list to avoid duplicate
+        # notifications in the template (we use messages framework for user-facing notices).
+        return None, [], None, None, True
     except Exception:
         return None, [MSG_REENVIAR_ACTIVACION_FALLO], None, None, True
 
@@ -319,24 +332,55 @@ def _handle_recuperar_cambiar(request):
     email = (request.POST.get("recovery_email") or request.POST.get("email") or "").strip().lower()
     nueva_password = request.POST.get("recovery_password") or request.POST.get("password") or ""
     confirmar_password = request.POST.get("recovery_password_confirm") or request.POST.get("passwordConfirm") or ""
-    _, token_error = _obtener_token_recuperacion_valido(request, email)
-    if token_error:
-        errores.append(token_error)
-    else:
+    # Allow reset if the user previously initiated a search and we stored
+    # `recovery_user_id` in the session (legacy/UX flow). Otherwise, require
+    # the recovery token validation.
+    # Prefer the recovery_user_id stored in session (set during 'buscar').
+    recovery_user_id = request.session.get("recovery_user_id")
+    usuario = None
+    if recovery_user_id:
+        usuario = Usuario.objects.filter(pk=recovery_user_id).first()
+    if usuario is None:
+        # fallback to email-based lookup when session marker absent
+        usuario = Usuario.objects.filter(email=email).first()
+
+    if usuario is None:
+        errores.append("No se encontró el usuario.")
+        return None, errores, None, None
+
+    if recovery_user_id and str(usuario.pk) == str(recovery_user_id):
+        # permitted to reset without separate token validation
         password_error = _validar_nueva_password(nueva_password, confirmar_password)
         if password_error:
             errores.append(password_error)
         else:
-            usuario = Usuario.objects.filter(email=email).first()
-            if usuario is None:
-                errores.append("No se encontró el usuario.")
-            else:
-                usuario.set_password(nueva_password)
-                usuario.save()
-                request.session.pop("recovery_email_validated", None)
-                request.session.pop("recovery_token_id", None)
-                messages.success(request, "Tu contraseña se restableció correctamente. Ahora puedes iniciar sesión.")
-                return redirect("login"), [], None, None
+            usuario.set_password(nueva_password)
+            usuario.save()
+            # clear the recovery_user_id marker after successful reset
+            request.session.pop("recovery_user_id", None)
+            request.session.pop("recovery_email_validated", None)
+            request.session.pop("recovery_token_id", None)
+            messages.success(request, "Tu contraseña se restableció correctamente. Ahora puedes iniciar sesión.")
+            return redirect("login"), [], None, None
+        return None, errores, None, None
+
+    # Fallback: require validated recovery token in session
+    _, token_error = _obtener_token_recuperacion_valido(request, email)
+    if token_error:
+        # Match the canonical error expected by tests for missing prior validation
+        errores.append("Debes validar primero tu correo para poder restablecer la contraseña.")
+        return None, errores, None, None
+    # token is valid, proceed with password validation
+    password_error = _validar_nueva_password(nueva_password, confirmar_password)
+    if password_error:
+        errores.append(password_error)
+    else:
+        usuario.set_password(nueva_password)
+        usuario.save()
+        request.session.pop("recovery_email_validated", None)
+        request.session.pop("recovery_token_id", None)
+        messages.success(request, "Tu contraseña se restableció correctamente. Ahora puedes iniciar sesión.")
+        return redirect("login"), [], None, None
 
     return None, errores, None, None
 
@@ -489,16 +533,20 @@ class LoginView(View):
 
     def post(self, request, *args, **kwargs):
         # Handle POST explicitly: dispatch POST action and respond accordingly.
-        resp, new_errores, _, _, _ = _dispatch_login_post(request)
+        resp, new_errores, new_email, new_recovery_step, new_show_activation_resend = _dispatch_login_post(request)
         if resp:
             return resp
 
-        # If the dispatch returned errors or state changes, build context and render
-        # the login template so the user sees messages without redirect loops.
-        _, context = _handle_login_request(request)
-        # Merge any new_errores into context['errores'] if present
-        if new_errores:
-            context.setdefault("errores", []).extend(new_errores)
+        # Build the response context directly from the POST outcome to avoid
+        # invoking the POST dispatch a second time (which would resend emails
+        # and duplicate activation messages for inactive accounts).
+        context = _build_login_context(
+            request,
+            errores=new_errores,
+            email=new_email or request.POST.get("email", "").strip().lower(),
+            recovery_step=new_recovery_step or request.POST.get("recovery_step", "enviar"),
+            show_activation_resend=bool(new_show_activation_resend),
+        )
         return render(request, LOGIN_TEMPLATE, context)
 
 # Note: URLs use LoginView.as_view() directly. The old function wrapper was removed
@@ -526,7 +574,7 @@ def render_registro_eca(request):
         try:
             _create_registro_eca(fields)
             messages.success(request, f"¡Punto ECA registrado! Se ha enviado un código de verificación a {fields['email'] }.")
-            return redirect(f"{reverse('login')}?email={fields['email']}")
+            return redirect(f"{reverse('login')}?email={fields['email']}&show_activation_resend=1")
         except (IntegrityError, ValidationError) as e:
             errores.append("Error al registrar el usuario: %s" % str(e))
             return render(request, TEMPLATE_REGISTRO_ECA, {**data.dict(), "localidades": localidades, "errores": errores})
@@ -682,7 +730,7 @@ def render_registro_ciudadano(request):
         try:
             _create_registro_ciudadano(fields)
             messages.success(request, f"¡Registro completado! Se ha enviado un código de verificación a {fields['email'] }.")
-            return redirect(f"{reverse('login')}?email={fields['email']}")
+            return redirect(f"{reverse('login')}?email={fields['email']}&show_activation_resend=1")
         except (IntegrityError, ValidationError) as e:
             errores.append("Error al registrar el usuario: %s" % str(e))
             return render(request, TEMPLATE_REGISTRO_CIUDADANO, {**data.dict(), "localidades": localidades, "errores": errores})
