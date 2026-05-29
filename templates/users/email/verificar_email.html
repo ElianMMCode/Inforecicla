@@ -1,19 +1,37 @@
 {% extends "users/email/base.html" %}
+{% load static %}
 
 {% block page_title %}Confirma tu Email - InfoRecicla{% endblock %}
 {% block brand_color %}#1f7a42{% endblock %}
 {% block brand_color_dark %}#176336{% endblock %}
+
+{% block logo_text %}
+    {% if logo_cid %}
+        <img src="cid:{{ logo_cid }}" alt="InfoRecicla" width="90" height="90" style="border-radius:8px; display:block; margin:0 auto;">
+    {% elif logo_url %}
+        <img src="{{ logo_url }}" alt="InfoRecicla" width="90" height="90" style="border-radius:8px; display:block; margin:0 auto;">
+    {% else %}
+        <img src="{% static 'img/logo.png' %}" alt="InfoRecicla" width="90" height="90" style="border-radius:8px; display:block; margin:0 auto;">
+    {% endif %}
+{% endblock %}
+
 {% block email_title %}Confirma tu Email{% endblock %}
 
 {% block content %}
-<p>¡Bienvenido a InfoRecicla!</p>
+<!-- Banner inspirado en el landing: usar colores en línea para compatibilidad con clientes de correo -->
+<div style="background:#1f7a42; color:#ffffff; padding:16px; border-radius:6px; text-align:center; margin-bottom:18px;">
+    <h2 style="margin:0; font-size:20px; line-height:1.1;">InfoRecicla</h2>
+    <p style="margin:6px 0 0; color:#f7fff8; font-size:14px;">Conecta con puntos de reciclaje y participa en la comunidad.</p>
+</div>
+
+<p style="margin-top:0;">¡Bienvenido a InfoRecicla!</p>
 
 <p>Para completar tu registro, necesitamos confirmar que eres el propietario de este correo electrónico.</p>
 
 <p><strong>Activa tu cuenta con este enlace:</strong></p>
 
-<p style="text-align: center;">
-    <a class="button" href="{{ enlace_activacion }}">Activar cuenta</a>
+<p style="text-align: center; margin: 18px 0;">
+        <a href="{{ enlace_activacion }}" style="display:inline-block; background:#218838; color:#ffffff; padding:12px 28px; text-decoration:none; font-weight:700; font-family:Arial, sans-serif; font-size:16px; line-height:1; border-radius:8px;">Activar cuenta</a>
 </p>
 
 <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>

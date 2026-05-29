@@ -4,9 +4,12 @@ Utilidades para manejo de validación de usuarios, tokens y envío de emails.
 import secrets
 import string
 from urllib.parse import urlencode
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.contrib.staticfiles import finders
+from email.mime.image import MIMEImage
+import os
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
@@ -141,6 +144,7 @@ def enviar_email_verificacion(email, token):
     })
     enlace_activacion = f"{_get_site_url()}{reverse('login')}?{query}"
 
+    # Preparar contexto base
     contexto = {
         'email': email,
         'token': token,
@@ -148,20 +152,55 @@ def enviar_email_verificacion(email, token):
         'enlace_activacion': enlace_activacion,
     }
 
-    # Renderizar template HTML
+    # Intentar localizar el archivo del logo para adjuntarlo inline
+    logo_path = None
+    try:
+        logo_path = finders.find('img/logo.png')
+    except Exception:
+        logo_path = None
+
+    # Fallback a ruta estática en proyecto si no lo encuentra con finders
+    if not logo_path:
+        possible = os.path.join(getattr(settings, 'BASE_DIR', ''), 'static', 'img', 'logo.png')
+        if os.path.exists(possible):
+            logo_path = possible
+
+    # Si encontramos el logo local, usaremos CID inline
+    logo_cid = None
+    if logo_path:
+        logo_cid = 'logo_activacion'
+        contexto['logo_cid'] = logo_cid
+    else:
+        # Si no hay archivo local, enviar URL absoluta para clientes que permitan fetch
+        static_url = getattr(settings, 'STATIC_URL', '/static/')
+        contexto['logo_url'] = f"{_get_site_url()}{static_url.rstrip('/')}/img/logo.png"
+
+    # Renderizar template HTML ahora que sabemos si usaremos CID
     html_mensaje = render_to_string('users/email/verificar_email.html', contexto)
     texto_plano = strip_tags(html_mensaje)
 
     try:
-        resultado = send_mail(
-            asunto,
-            texto_plano,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            html_message=html_mensaje,
-            fail_silently=False,
-        )
-        return resultado == 1
+        # Construir email multipart con alternativa HTML
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to = [email]
+        msg = EmailMultiAlternatives(asunto, texto_plano, from_email, to)
+        msg.attach_alternative(html_mensaje, "text/html")
+
+        # Adjuntar imagen inline si existe
+        if logo_path:
+            try:
+                with open(logo_path, 'rb') as f:
+                    img_data = f.read()
+                mime_img = MIMEImage(img_data)
+                mime_img.add_header('Content-ID', f'<{logo_cid}>')
+                mime_img.add_header('Content-Disposition', 'inline', filename='logo.png')
+                msg.attach(mime_img)
+            except Exception:
+                # no bloquear el envío si la imagen falla
+                pass
+
+        msg.send(fail_silently=False)
+        return True
     except Exception as e:
         print(f"Error enviando email a {email}: {str(e)}")
         return False
