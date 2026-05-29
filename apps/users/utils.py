@@ -20,6 +20,45 @@ from apps.users.models import TokenValidacion
 LOGO_FILENAME = 'logo.png'
 
 
+def _find_logo(preferred_cid: str):
+    """Localiza el logo en static y devuelve información útil.
+
+    Devuelve un dict con keys: logo_path, logo_cid, logo_url
+    """
+    logo_path = None
+    try:
+        logo_path = finders.find(f'img/{LOGO_FILENAME}')
+    except Exception:
+        logo_path = None
+
+    if not logo_path:
+        possible = os.path.join(getattr(settings, 'BASE_DIR', ''), 'static', 'img', LOGO_FILENAME)
+        if os.path.exists(possible):
+            logo_path = possible
+
+    if logo_path:
+        return {'logo_path': logo_path, 'logo_cid': preferred_cid, 'logo_url': None}
+
+    static_url = getattr(settings, 'STATIC_URL', '/static/')
+    return {'logo_path': None, 'logo_cid': None, 'logo_url': f"{_get_site_url()}{static_url.rstrip('/')}/img/{LOGO_FILENAME}"}
+
+
+def _attach_logo_to_msg(msg: EmailMultiAlternatives, logo_path: str, logo_cid: str):
+    """Adjunta el logo al mensaje `msg` como imagen inline si `logo_path` existe."""
+    if not logo_path or not logo_cid:
+        return
+    try:
+        with open(logo_path, 'rb') as f:
+            img_data = f.read()
+        mime_img = MIMEImage(img_data)
+        mime_img.add_header('Content-ID', f'<{logo_cid}>')
+        mime_img.add_header('Content-Disposition', 'inline', filename=LOGO_FILENAME)
+        msg.attach(mime_img)
+    except Exception:
+        # No bloquear el envío si la imagen falla
+        pass
+
+
 def _get_site_url():
     base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
     return base_url.rstrip("/")
@@ -109,25 +148,12 @@ def enviar_email_recuperacion(email, token):
         'enlace_validacion': enlace,
     }
 
-    # Intentar localizar logo para adjuntarlo inline
-    logo_path = None
-    try:
-        logo_path = finders.find(f'img/{LOGO_FILENAME}')
-    except Exception:
-        logo_path = None
-
-    if not logo_path:
-        possible = os.path.join(getattr(settings, 'BASE_DIR', ''), 'static', 'img', LOGO_FILENAME)
-        if os.path.exists(possible):
-            logo_path = possible
-
-    logo_cid = None
-    if logo_path:
-        logo_cid = 'logo_recuperacion'
-        contexto['logo_cid'] = logo_cid
+    # Obtener información del logo (ruta, cid o url)
+    logo_info = _find_logo('logo_recuperacion')
+    if logo_info.get('logo_path'):
+        contexto['logo_cid'] = logo_info.get('logo_cid')
     else:
-        static_url = getattr(settings, 'STATIC_URL', '/static/')
-        contexto['logo_url'] = f"{_get_site_url()}{static_url.rstrip('/')}/img/{LOGO_FILENAME}"
+        contexto['logo_url'] = logo_info.get('logo_url')
 
     # Renderizar HTML
     html_mensaje = render_to_string('users/email/recuperar_contrasena.html', contexto)
@@ -139,16 +165,8 @@ def enviar_email_recuperacion(email, token):
         msg = EmailMultiAlternatives(asunto, texto_plano, from_email, to)
         msg.attach_alternative(html_mensaje, "text/html")
 
-        if logo_path:
-            try:
-                with open(logo_path, 'rb') as f:
-                    img_data = f.read()
-                mime_img = MIMEImage(img_data)
-                mime_img.add_header('Content-ID', f'<{logo_cid}>')
-                mime_img.add_header('Content-Disposition', 'inline', filename=LOGO_FILENAME)
-                msg.attach(mime_img)
-            except Exception:
-                pass
+        # Adjuntar logo inline si lo hay
+        _attach_logo_to_msg(msg, logo_info.get('logo_path'), logo_info.get('logo_cid'))
 
         msg.send(fail_silently=False)
         return True
@@ -185,28 +203,12 @@ def enviar_email_verificacion(email, token):
         'enlace_activacion': enlace_activacion,
     }
 
-    # Intentar localizar el archivo del logo para adjuntarlo inline
-    logo_path = None
-    try:
-        logo_path = finders.find(f'img/{LOGO_FILENAME}')
-    except Exception:
-        logo_path = None
-
-    # Fallback a ruta estática en proyecto si no lo encuentra con finders
-    if not logo_path:
-        possible = os.path.join(getattr(settings, 'BASE_DIR', ''), 'static', 'img', LOGO_FILENAME)
-        if os.path.exists(possible):
-            logo_path = possible
-
-    # Si encontramos el logo local, usaremos CID inline
-    logo_cid = None
-    if logo_path:
-        logo_cid = 'logo_activacion'
-        contexto['logo_cid'] = logo_cid
+    # Obtener información del logo (ruta, cid o url)
+    logo_info = _find_logo('logo_activacion')
+    if logo_info.get('logo_path'):
+        contexto['logo_cid'] = logo_info.get('logo_cid')
     else:
-        # Si no hay archivo local, enviar URL absoluta para clientes que permitan fetch
-        static_url = getattr(settings, 'STATIC_URL', '/static/')
-        contexto['logo_url'] = f"{_get_site_url()}{static_url.rstrip('/')}/img/{LOGO_FILENAME}"
+        contexto['logo_url'] = logo_info.get('logo_url')
 
     # Renderizar template HTML ahora que sabemos si usaremos CID
     html_mensaje = render_to_string('users/email/verificar_email.html', contexto)
@@ -220,17 +222,7 @@ def enviar_email_verificacion(email, token):
         msg.attach_alternative(html_mensaje, "text/html")
 
         # Adjuntar imagen inline si existe
-        if logo_path:
-            try:
-                with open(logo_path, 'rb') as f:
-                    img_data = f.read()
-                mime_img = MIMEImage(img_data)
-                mime_img.add_header('Content-ID', f'<{logo_cid}>')
-                mime_img.add_header('Content-Disposition', 'inline', filename=LOGO_FILENAME)
-                msg.attach(mime_img)
-            except Exception:
-                # no bloquear el envío si la imagen falla
-                pass
+        _attach_logo_to_msg(msg, logo_info.get('logo_path'), logo_info.get('logo_cid'))
 
         msg.send(fail_silently=False)
         return True
