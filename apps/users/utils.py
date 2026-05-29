@@ -97,28 +97,58 @@ def enviar_email_recuperacion(email, token):
     """
     asunto = "Recuperación de Contraseña - InfoRecicla"
 
+    # Preparar contexto base
+    enlace = f"{_get_site_url()}{reverse('login')}?email={email}&recovery_step=codigo"
     contexto = {
         'email': email,
         'token': token,
         'minutos': 15,
-        # Enlace actualizado para abrir el modal de recuperación en la página de login
-        'enlace_validacion': f"{_get_site_url()}{reverse('login')}?email={email}&recovery_step=codigo"
+        'enlace_validacion': enlace,
     }
 
-    # Renderizar template HTML
+    # Intentar localizar logo para adjuntarlo inline
+    logo_path = None
+    try:
+        logo_path = finders.find('img/logo.png')
+    except Exception:
+        logo_path = None
+
+    if not logo_path:
+        possible = os.path.join(getattr(settings, 'BASE_DIR', ''), 'static', 'img', 'logo.png')
+        if os.path.exists(possible):
+            logo_path = possible
+
+    logo_cid = None
+    if logo_path:
+        logo_cid = 'logo_recuperacion'
+        contexto['logo_cid'] = logo_cid
+    else:
+        static_url = getattr(settings, 'STATIC_URL', '/static/')
+        contexto['logo_url'] = f"{_get_site_url()}{static_url.rstrip('/')}/img/logo.png"
+
+    # Renderizar HTML
     html_mensaje = render_to_string('users/email/recuperar_contrasena.html', contexto)
     texto_plano = strip_tags(html_mensaje)
 
     try:
-        resultado = send_mail(
-            asunto,
-            texto_plano,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            html_message=html_mensaje,
-            fail_silently=False,
-        )
-        return resultado == 1
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to = [email]
+        msg = EmailMultiAlternatives(asunto, texto_plano, from_email, to)
+        msg.attach_alternative(html_mensaje, "text/html")
+
+        if logo_path:
+            try:
+                with open(logo_path, 'rb') as f:
+                    img_data = f.read()
+                mime_img = MIMEImage(img_data)
+                mime_img.add_header('Content-ID', f'<{logo_cid}>')
+                mime_img.add_header('Content-Disposition', 'inline', filename='logo.png')
+                msg.attach(mime_img)
+            except Exception:
+                pass
+
+        msg.send(fail_silently=False)
+        return True
     except Exception as e:
         print(f"Error enviando email a {email}: {str(e)}")
         return False
