@@ -1,0 +1,8 @@
+{% load static %}
+{% if logo_cid %}
+    <img src="cid:{{ logo_cid }}" alt="InfoRecicla" width="90" height="90" style="border-radius:8px; display:block; margin:0 auto;">
+{% elif logo_url %}
+    <img src="{{ logo_url }}" alt="InfoRecicla" width="90" height="90" style="border-radius:8px; display:block; margin:0 auto;">
+{% else %}
+    <img src="{% static 'img/logo.png' %}" alt="InfoRecicla" width="90" height="90" style="border-radius:8px; display:block; margin:0 auto;">
+{% endif %}
