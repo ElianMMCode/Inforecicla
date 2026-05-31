@@ -233,6 +233,25 @@ def api_puntos_eca_detalle(request, punto_id):
             }
         )
 
+    # Normalizar URL de logo/foto: preferir archivo subido, fallback a URL manual
+    logo_url = ""
+    if getattr(punto, "logo_imagen_punto", None):
+        try:
+            logo_url = request.build_absolute_uri(punto.logo_imagen_punto.url)
+        except Exception:
+            logo_url = punto.logo_url_punto or ""
+    else:
+        logo_url = punto.logo_url_punto or ""
+
+    foto_url = ""
+    if getattr(punto, "foto_imagen_punto", None):
+        try:
+            foto_url = request.build_absolute_uri(punto.foto_imagen_punto.url)
+        except Exception:
+            foto_url = punto.foto_url_punto or ""
+    else:
+        foto_url = punto.foto_url_punto or ""
+
     resp = {
         "puntoEcaID": str(punto.pk),
         "nombrePunto": punto.nombre,
@@ -246,6 +265,8 @@ def api_puntos_eca_detalle(request, punto_id):
         "email": getattr(getattr(punto, "gestor_eca", None), "email", ""),
         "horarioAtencion": getattr(punto, "horario", ""),
         "materiales": materiales,
+        "logoUrl": logo_url,
+        "fotoUrl": foto_url,
     }
     return JsonResponse(resp, safe=False)
 

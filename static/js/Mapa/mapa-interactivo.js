@@ -328,7 +328,7 @@ class MapaInteractivo {
                             : ""
                         }
                     </div>
-                    
+
                     <div class="tarjeta-detalles">
                         ${
                           punto.direccion
@@ -339,18 +339,18 @@ class MapaInteractivo {
                         `
                             : ""
                         }
-                        
+
                         ${
                           punto.celular
                             ? `
                             <small>
-                                <i class="fas fa-phone"></i> 
+                                <i class="fas fa-phone"></i>
                                 <a href="tel:${punto.celular}">${punto.celular}</a>
                             </small>
                         `
                             : ""
                         }
-                        
+
                         ${
                           punto.email
                             ? `
@@ -361,7 +361,7 @@ class MapaInteractivo {
                         `
                             : ""
                         }
-                        
+
                         ${
                           punto.horarioAtencion
                             ? `
@@ -519,6 +519,39 @@ class MapaInteractivo {
     // Horario
     document.getElementById("detalleHorario").textContent =
       detalles.horarioAtencion || "No especificado";
+
+    // Imágenes: logo y foto
+    try {
+      const imgsContainer = document.getElementById("detalleImagenes");
+      const logoImg = document.getElementById("detalleLogo");
+      const fotoImg = document.getElementById("detalleFoto");
+      const hasLogo = detalles.logoUrl && detalles.logoUrl.toString().trim() !== "";
+      const hasFoto = detalles.fotoUrl && detalles.fotoUrl.toString().trim() !== "";
+
+      if (hasLogo) {
+        logoImg.src = detalles.logoUrl;
+        logoImg.style.display = "inline-block";
+      } else {
+        logoImg.src = "";
+        logoImg.style.display = "none";
+      }
+
+      if (hasFoto) {
+        fotoImg.src = detalles.fotoUrl;
+        fotoImg.style.display = "block";
+      } else {
+        fotoImg.src = "";
+        fotoImg.style.display = "none";
+      }
+
+      if (hasLogo || hasFoto) {
+        imgsContainer.style.display = "block";
+      } else {
+        imgsContainer.style.display = "none";
+      }
+    } catch (e) {
+      console.warn("No se pudieron renderizar las imágenes del detalle:", e);
+    }
 
     // Llenar tabla de materiales
     this.llenarTablaMateriales(detalles.materiales);
@@ -679,7 +712,7 @@ class MapaInteractivo {
                           punto.celular
                             ? `
                             <small>
-                                <i class="fas fa-phone"></i> 
+                                <i class="fas fa-phone"></i>
                                 <a href="tel:${punto.celular}">${punto.celular}</a>
                             </small>
                         `
@@ -965,7 +998,7 @@ class MapaInteractivo {
                           punto.celular
                             ? `
                             <small>
-                                <i class="fas fa-phone"></i> 
+                                <i class="fas fa-phone"></i>
                                 <a href="tel:${punto.celular}">${punto.celular}</a>
                             </small>
                         `

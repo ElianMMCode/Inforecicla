@@ -6,22 +6,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Mapa Interactivo de Puntos ECA - InfoRecicla</title>
         <!-- Bootstrap 5 CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-              rel="stylesheet">
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+              rel="stylesheet" crossorigin="anonymous">
         <!-- Leaflet CSS -->
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+          <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" />
         <!-- Leaflet MarkerCluster CSS -->
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.min.css" />
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.min.css" />
+          <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.min.css" crossorigin="anonymous" />
+          <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.min.css" crossorigin="anonymous" />
         <!-- Font Awesome para iconos -->
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+          <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
         <!-- Select2 CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-              rel="stylesheet" />
+          <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+              rel="stylesheet" crossorigin="anonymous" />
         <style>
         body, html {
             height: 100%;
@@ -277,6 +277,7 @@
             .sidebar-lista {
                 width: 100%;
                 right: -100%;
+                height: 50vh;
             }
 
             .mapa-wrapper {
@@ -285,10 +286,6 @@
             }
 
             .mapa-container {
-                height: 50vh;
-            }
-
-            .sidebar-lista {
                 height: 50vh;
             }
         }
@@ -406,8 +403,8 @@
                         </button>
                     </div>
                     <!-- Indicador de carga -->
-                    <div id="indicadorCarga" class="indicador-carga d-none">
-                        <div class="spinner-border spinner-border-sm text-success" role="status">
+                        <div id="indicadorCarga" class="indicador-carga d-none">
+                        <div class="spinner-border spinner-border-sm text-success" aria-live="polite" aria-atomic="true">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
                         <p class="mb-0 mt-2">Cargando puntos ECA...</p>
@@ -428,7 +425,7 @@
                     <div class="sidebar-busqueda">
                         <!-- Filtro por Nombre -->
                         <div class="mb-2">
-                            <label class="form-label small mb-1">
+                            <label for="inputBusquedaNombre" class="form-label small mb-1">
                                 <i class="fas fa-search text-success"></i> Buscar por Nombre
                             </label>
                             <input type="text"
@@ -439,7 +436,7 @@
                         </div>
                         <!-- Filtro por Material con Select2 -->
                         <div class="mb-2">
-                            <label class="form-label small mb-1">
+                            <label for="selectMaterial" class="form-label small mb-1">
                                 <i class="fas fa-box text-success"></i> Filtrar por Material
                             </label>
                             <select id="selectMaterial"
@@ -465,7 +462,7 @@
                     <!-- Lista de puntos -->
                     <div class="sidebar-contenido" id="listaPuntos">
                         <div class="text-center py-5">
-                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                            <div class="spinner-border spinner-border-sm text-success" aria-live="polite" aria-atomic="true">
                                 <span class="visually-hidden">Cargando...</span>
                             </div>
                             <p class="mt-2 text-muted small">Cargando puntos ECA...</p>
@@ -501,6 +498,15 @@
                     </div>
                     <!-- Cuerpo Modal -->
                     <div class="modal-body">
+                                        <!-- Bloque visual: logo y foto del punto (se muestra sólo si existen) -->
+                                        <div id="detalleImagenes" class="row mb-3" style="display: none;">
+                                            <div class="col-md-4 text-center d-flex align-items-center justify-content-center">
+                                                <img id="detalleLogo" src="" alt="Logo del punto" class="img-fluid rounded" style="max-height:120px;">
+                                            </div>
+                                            <div class="col-md-8 text-center">
+                                                <img id="detalleFoto" src="" alt="Foto del punto" class="img-fluid rounded" style="max-height:180px; width:100%; object-fit:cover;">
+                                            </div>
+                                        </div>
                         <!-- Información General -->
                         <div class="card mb-3">
                             <div class="card-header bg-light">
@@ -585,15 +591,15 @@
             </div>
         </div>
         <!-- Leaflet JS -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous"></script>
         <!-- Leaflet MarkerCluster JS -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.min.js" crossorigin="anonymous"></script>
         <!-- Bootstrap JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <!-- jQuery (necesario para Select2) -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
         <!-- Select2 JS -->
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" crossorigin="anonymous"></script>
         <!-- JavaScript personalizado del mapa -->
         <script src="/static/js/Mapa/mapa-interactivo.js"></script>
     </body>
