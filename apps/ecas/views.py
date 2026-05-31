@@ -2,10 +2,10 @@ from django.http import JsonResponse
 from django.db.models import Q
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_GET
 from django.views.decorators.http import require_GET, require_http_methods
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
+from django.urls import reverse
 from apps.ecas.models import Localidad, CentroAcopio
 from apps.users.models import Usuario
 from config import constants as cons
@@ -96,8 +96,7 @@ def _build_perfil_pendientes(usuario, punto):
 
 
 @gestor_eca_or_admin_required
-@require_GET
-@gestor_eca_or_admin_required
+@require_http_methods(["GET", "POST"])
 def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     """
     Vista principal que renderiza una sección del panel Punto ECA según el parámetro 'seccion'.
@@ -112,6 +111,20 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     if not request.user.is_authenticated:
         return redirect("login")
     punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
+
+    if request.method == "POST":
+        punto.visible_en_mapa = request.POST.get("visible_en_mapa") in (
+            "on",
+            "1",
+            "true",
+            "True",
+        )
+        punto.save(update_fields=["visible_en_mapa", "fecha_modificacion"])
+        messages.success(request, "Preferencias actualizadas correctamente.")
+        return redirect(
+            reverse(CONSTANTE_RENDER, kwargs={"seccion": "perfil"})
+            + "?tab=configuracion"
+        )
 
     if seccion == "perfil":
         perfil_tab = request.GET.get("tab", perfil_tab)

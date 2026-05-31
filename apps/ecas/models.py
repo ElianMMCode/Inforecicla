@@ -89,6 +89,11 @@ class PuntoECA(LocalizacionWebHorarioModel):
         help_text="Foto principal del punto cargada como archivo (opcional)",
     )
 
+    visible_en_mapa = models.BooleanField(
+        default=True,
+        help_text="Indica si el punto ECA puede mostrarse en el mapa público",
+    )
+
     inventarios = models.ManyToManyField(
         "inventory.Inventario",
         blank=True,
