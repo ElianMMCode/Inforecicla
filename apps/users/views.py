@@ -946,7 +946,7 @@ _SOLO_LETRAS = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")
 _SOLO_CIUDAD = re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$")
 _CELULAR = re.compile(r"^3\d{9}$")
 _PASSWORD_COMPLEJA = re.compile(
-    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$"
+    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}$"
 )
 
 
@@ -1161,6 +1161,18 @@ def cambiar_contrasena_ciudadano(request):
     if request.method != "POST":
         return redirect("perfil_ciudadano")
 
+    is_ajax_request = request.headers.get("x-requested-with") == "XMLHttpRequest" or "application/json" in request.headers.get("accept", "")
+
+    def _finish(ok, message, status_code=200):
+        if is_ajax_request:
+            return JsonResponse({"ok": ok, "message": message}, status=status_code)
+
+        if ok:
+            messages.success(request, message)
+        else:
+            messages.error(request, message)
+        return redirect("perfil_ciudadano")
+
     user = request.user
     actual = request.POST.get("contrasenaActual", "")
     nueva = request.POST.get("contrasenaNueva", "")
@@ -1168,27 +1180,24 @@ def cambiar_contrasena_ciudadano(request):
 
     # Límite de longitud para evitar ataques de payload grande
     if len(actual) > 128 or len(nueva) > 128 or len(confirmar) > 128:
-        messages.error(request, "La contraseña no puede superar los 128 caracteres.")
-        return redirect("perfil_ciudadano")
+        return _finish(False, "La contraseña no puede superar los 128 caracteres.", status_code=400)
 
     if not actual or not nueva or not confirmar:
-        messages.error(request, "Todos los campos de contraseña son obligatorios.")
+        return _finish(False, "Todos los campos de contraseña son obligatorios.", status_code=400)
     elif not user.check_password(actual):
-        messages.error(request, "La contraseña actual es incorrecta.")
+        return _finish(False, "La contraseña actual es incorrecta.", status_code=400)
     elif not _PASSWORD_COMPLEJA.match(nueva):
-        messages.error(
-            request,
-            "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula, "
-            "una minúscula, un número y un símbolo (@$!%*?&).",
+        return _finish(
+            False,
+            "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo (@$!%*?&).",
+            status_code=400,
         )
     elif nueva != confirmar:
-        messages.error(request, "Las contraseñas nuevas no coinciden.")
+        return _finish(False, "Las contraseñas nuevas no coinciden.", status_code=400)
     else:
         user.set_password(nueva)
         user.save()
         update_session_auth_hash(request, user)
-        messages.success(request, "Contraseña actualizada correctamente.")
-
-    return redirect("perfil_ciudadano")
+        return _finish(True, "Contraseña actualizada correctamente.")
 
 

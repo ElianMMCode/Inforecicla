@@ -59,6 +59,25 @@
             color: #145c3a !important;
         }
 
+        .password-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #145c3a;
+            padding: 1rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #4d4d4d;
+            margin-bottom: 1rem;
+        }
+
+        .password-info ul {
+            margin-bottom: 0;
+            padding-left: 1.5rem;
+        }
+
+        .password-info li {
+            margin-bottom: 0.25rem;
+        }
+
         main {
             background-color: #f8f9fa;
             min-height: 100vh;
@@ -148,12 +167,59 @@
         <div class="container-fluid p-4">
 
             {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'success' }} alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle me-2"></i>{{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div id="perfil-messages" class="mb-3">
+                    {% for message in messages %}
+                        {% if 'error' in message.tags %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% elif 'warning' in message.tags %}
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-circle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% elif 'info' in message.tags %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var messages = [
+                            {% for message in messages %}
+                            {
+                                icon: '{% if "error" in message.tags %}error{% elif "warning" in message.tags %}warning{% elif "info" in message.tags %}info{% else %}success{% endif %}',
+                                title: '{% if "error" in message.tags %}Error{% elif "warning" in message.tags %}Atención{% elif "info" in message.tags %}Información{% else %}Éxito{% endif %}',
+                                text: '{{ message|escapejs }}'
+                            }{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ];
+
+                        (async function () {
+                            for (var i = 0; i < messages.length; i++) {
+                                var item = messages[i];
+                                if (globalThis.Swal && globalThis.Swal.fire) {
+                                    await globalThis.Swal.fire({
+                                        icon: item.icon,
+                                        title: item.title,
+                                        text: item.text,
+                                        confirmButtonText: 'Entendido',
+                                        confirmButtonColor: '#145c3a'
+                                    });
+                                }
+                            }
+                        })();
+                    });
+                </script>
             {% endif %}
 
             {% if perfil_incompleto or request.GET.completar == '1' %}
@@ -643,49 +709,47 @@
                                         <i class="bi bi-shield-lock-fill me-2"></i>
                                         Cambiar Contraseña
                                     </h5>
-                                    <div class="alert alert-light border-start border-success border-4 py-2 mb-3 small">
-                                        <strong>Requisitos:</strong> mínimo 8 caracteres &bull; una mayúscula &bull; una minúscula &bull; un número &bull; un símbolo <code>@$!%*?&</code>
-                                    </div>
+                                    {% include "users/partials/password_requirements.html" %}
                                     <form method="POST" action="/perfil/cambiar-contrasena/" novalidate id="formPass">
                                         <input type="text" name="username" autocomplete="username" hidden>
                                         {% csrf_token %}
                                         <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <label for="contrasenaActual" class="form-label fw-semibold">Contraseña Actual</label>
+                                            <div class="col-12">
+                                                <label for="passwordActual" class="form-label fw-semibold">Contraseña Actual</label>
                                                 <div class="input-group">
-                                                    <input id="contrasenaActual" type="password" name="contrasenaActual" class="form-control"
+                                                    <input id="passwordActual" type="password" name="contrasenaActual" class="form-control"
                                                            required maxlength="128"
                                                            autocomplete="current-password"
                                                            placeholder="Tu contraseña actual">
                                                     <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="input[name=contrasenaActual]" aria-hidden="true"></i>
+                                                        <i class="bi bi-eye toggle-password" data-target="#passwordActual" aria-hidden="true"></i>
                                                     </button>
                                                 </div>
                                                 <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
                                             </div>
-                                            <div class="col-md-4">
-                                                <label for="nuevaPass" class="form-label fw-semibold">Nueva Contraseña</label>
+                                            <div class="col-lg-6">
+                                                <label for="password" class="form-label fw-semibold">Nueva Contraseña</label>
                                                 <div class="input-group">
-                                                    <input id="nuevaPass" type="password" name="contrasenaNueva" class="form-control"
+                                                       <input id="password" type="password" name="contrasenaNueva" class="form-control"
                                                            required minlength="8" maxlength="128"
                                                            autocomplete="new-password"
                                                            pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}"
                                                            placeholder="Nueva contraseña">
                                                     <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="#nuevaPass" aria-hidden="true"></i>
+                                                        <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
                                                     </button>
                                                 </div>
                                                 <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
                                             </div>
-                                            <div class="col-md-4">
-                                                <label for="confirmarPass" class="form-label fw-semibold">Confirmar Nueva</label>
+                                            <div class="col-lg-6">
+                                                <label for="passwordConfirm" class="form-label fw-semibold">Confirmar Nueva</label>
                                                 <div class="input-group">
-                                                    <input id="confirmarPass" type="password" name="confirmarContrasena" class="form-control"
+                                                    <input id="passwordConfirm" type="password" name="confirmarContrasena" class="form-control"
                                                            required maxlength="128"
                                                            autocomplete="new-password"
                                                            placeholder="Repite la nueva contraseña">
                                                     <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="#confirmarPass" aria-hidden="true"></i>
+                                                        <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
                                                     </button>
                                                 </div>
                                                 <div class="invalid-feedback">Las contraseñas no coinciden.</div>
@@ -905,6 +969,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
+<script type="module" src="{% static 'js/formularios/perfil-cambio-contrasena.js' %}"></script>
 <script>
     // Resaltar pestaña activa en el sidebar
     document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(tab) {
@@ -924,21 +989,6 @@
         fechaNac.setAttribute('max', maxFecha.toISOString().split('T')[0]);
     }
 
-    // Validación de coincidencia de contraseñas
-    const nuevaPass = document.getElementById('nuevaPass');
-    const confirmarPass = document.getElementById('confirmarPass');
-    function validarCoincidencia() {
-        if (confirmarPass.value && confirmarPass.value !== nuevaPass.value) {
-            confirmarPass.setCustomValidity('Las contraseñas no coinciden.');
-        } else {
-            confirmarPass.setCustomValidity('');
-        }
-    }
-    if (nuevaPass && confirmarPass) {
-        nuevaPass.addEventListener('input', validarCoincidencia);
-        confirmarPass.addEventListener('input', validarCoincidencia);
-    }
-
     // Activar validación visual de Bootstrap al enviar
     ['formDatos', 'formPass'].forEach(function(id) {
         const form = document.getElementById(id);
@@ -952,6 +1002,11 @@
             });
         }
     });
+
+    const perfilMessages = document.getElementById('perfil-messages');
+    if (perfilMessages) {
+        perfilMessages.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
 
     // --- Chat Frontend Integración REST ---
     const chatSelect = document.getElementById('buscador-puntos-select2');

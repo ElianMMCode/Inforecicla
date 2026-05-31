@@ -1458,7 +1458,7 @@ _SOLO_LETRAS   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")
 _SOLO_CIUDAD   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$")
 _CELULAR       = _re.compile(r"^3\d{9}$")
 _PASSWORD_COMP = _re.compile(
-    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$"
+    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}$"
 )
 
 

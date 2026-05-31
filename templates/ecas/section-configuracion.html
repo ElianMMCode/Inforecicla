@@ -33,7 +33,7 @@ if (nuevaPassInput) {
         const hasLower = /[a-z]/.test(val);
         const hasUpper = /[A-Z]/.test(val);
         const hasNum = /\d/.test(val);
-        const hasSpecial = /[@$!%*?&]/.test(val);
+        const hasSpecial = /[@$!%*?&_]/.test(val);
         const longEnough = val.length >= 8;
         document.getElementById('reqMinusculas').innerText = (hasLower ? '✅ ' : '❌ ') + 'Mínimo una letra minúscula (a-z)';
         document.getElementById('reqMayusculas').innerText = (hasUpper ? '✅ ' : '❌ ') + 'Mínimo una letra mayúscula (A-Z)';
@@ -81,7 +81,7 @@ if (nuevaPassInput) {
                             <label class="form-label" for="contrasenaNueva">Contraseña Nueva</label>
                             <div class="input-group">
                                 <input class="form-control" id="contrasenaNueva" name="contrasenaNueva" type="password" required
-                                       minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                                       minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,}$">
                                 <button class="btn btn-outline-secondary" type="button" tabindex="-1">
                                     <i class="bi bi-eye toggle-password" data-target="#contrasenaNueva" aria-hidden="true"></i>
                                 </button>
