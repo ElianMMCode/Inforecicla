@@ -2,153 +2,243 @@
 <!-- Sección de Perfil - Nuevo y Limpio -->
 <section class="py-4">
 {% if messages %}
-  <div class="mb-4">
-    {% for message in messages %}
-      {% if 'error' in message.tags %}
-      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      {% else %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-      {% endif %}
-        <i class="bi bi-check-circle me-2"></i>{{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
-    <!-- Título principal -->
     <div class="mb-4">
-        <h2 class="h4 fw-bold text-dark mb-1">
-            <i class="bi bi-person-check me-2"></i>Gestión de Perfil
-        </h2>
-        <p class="text-muted small mb-0">Administra la información del gestor y del centro de acopio</p>
+        {% for message in messages %}
+            {% if 'error' in message.tags %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {% else %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {% endif %}
+                <i class="bi bi-check-circle me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
     </div>
-    {% if perfil_pendientes.hay_pendientes %}
-        <div class="alert alert-warning border-0 shadow-sm mb-4">
-            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-                <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <h3 class="h6 fw-bold mb-0">Datos pendientes</h3>
-                        <span class="badge text-bg-dark">{{ perfil_pendientes.total }}</span>
-                    </div>
-                    <p class="mb-0 small text-dark">Completa la información del gestor y del punto ECA para dejar el perfil listo.</p>
+{% endif %}
+<div class="mb-4">
+    <h2 class="h4 fw-bold text-dark mb-1">
+        <i class="bi bi-person-check me-2"></i>Gestión de Perfil
+    </h2>
+    <p class="text-muted small mb-0">Administra la información del gestor y del centro de acopio</p>
+</div>
+{% if perfil_pendientes.hay_pendientes %}
+    <div class="alert alert-warning border-0 shadow-sm mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <h3 class="h6 fw-bold mb-0">Datos pendientes</h3>
+                    <span class="badge text-bg-dark">{{ perfil_pendientes.total }}</span>
                 </div>
-                <div class="d-flex flex-wrap gap-2 align-items-start">
-                    <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="collapse" data-bs-target="#encargadoPanel" aria-controls="encargadoPanel">
-                        <i class="bi bi-person-circle me-1"></i>Editar encargado
-                    </button>
-                    <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="collapse" data-bs-target="#puntoPanel" aria-controls="puntoPanel">
-                        <i class="bi bi-building me-1"></i>Editar punto
-                    </button>
+                <p class="mb-0 small text-dark">Completa la información del gestor y del punto ECA para dejar el perfil listo.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-start">
+                <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="tab" data-bs-target="#encargadoPanel" aria-controls="encargadoPanel">
+                    <i class="bi bi-person-circle me-1"></i>Editar encargado
+                </button>
+                <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="tab" data-bs-target="#puntoPanel" aria-controls="puntoPanel">
+                    <i class="bi bi-building me-1"></i>Editar punto
+                </button>
+            </div>
+        </div>
+        <div class="row g-3 mt-3">
+            <div class="col-lg-6">
+                <div class="bg-white rounded-3 border p-3 h-100">
+                    <h4 class="h6 fw-bold mb-2">Punto ECA</h4>
+                    {% if perfil_pendientes.punto %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for campo in perfil_pendientes.punto %}
+                                <span class="badge rounded-pill text-bg-light border">{{ campo }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="small text-success mb-0">Sin datos pendientes.</p>
+                    {% endif %}
                 </div>
             </div>
-            <div class="row g-3 mt-3">
-                <div class="col-lg-6">
-                    <div class="bg-white rounded-3 border p-3 h-100">
-                        <h4 class="h6 fw-bold mb-2">Encargado</h4>
-                        {% if perfil_pendientes.encargado %}
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for campo in perfil_pendientes.encargado %}
-                                    <span class="badge rounded-pill text-bg-light border">{{ campo }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <p class="small text-success mb-0">Sin datos pendientes.</p>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="bg-white rounded-3 border p-3 h-100">
-                        <h4 class="h6 fw-bold mb-2">Punto ECA</h4>
-                        {% if perfil_pendientes.punto %}
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for campo in perfil_pendientes.punto %}
-                                    <span class="badge rounded-pill text-bg-light border">{{ campo }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <p class="small text-success mb-0">Sin datos pendientes.</p>
-                        {% endif %}
-                    </div>
+            <div class="col-lg-6">
+                <div class="bg-white rounded-3 border p-3 h-100">
+                    <h4 class="h6 fw-bold mb-2">Encargado</h4>
+                    {% if perfil_pendientes.encargado %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for campo in perfil_pendientes.encargado %}
+                                <span class="badge rounded-pill text-bg-light border">{{ campo }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="small text-success mb-0">Sin datos pendientes.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
-    {% endif %}
-    <!-- Acordeones -->
-    <div class="accordion accordion-flush shadow-sm" id="perfilAccordion">
-        <!-- ACORDEÓN 1: INFORMACIÓN DEL ENCARGADO -->
-        <div class="accordion-item border-start border-5 border-primary">
-            <h2 class="accordion-header">
-                <button class="accordion-button fw-bold"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#encargadoPanel">
-                    <span class="bg-primary p-2 rounded-circle me-3"
-                          style="width: 40px;
-                                 height: 40px;
-                                 display: flex;
-                                 align-items: center;
-                                 justify-content: center">
+    </div>
+{% endif %}
+    <!-- Pestañas -->
+    <div class="shadow-sm rounded-4 bg-white overflow-hidden">
+        <ul class="nav nav-tabs nav-fill border-bottom bg-transparent px-3 pt-3" id="perfilTabs">
+            <li class="nav-item">
+                <a class="nav-link active fw-semibold text-dark bg-white border border-bottom-0 rounded-top-3 px-3 py-2 mx-1" id="punto-tab" data-bs-toggle="tab" href="#puntoPanel" role="tab" aria-controls="puntoPanel" aria-selected="true">
+                    <span class="bg-info p-2 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px">
+                        <i class="bi bi-building text-white"></i>
+                    </span>
+                    <span class="d-inline-flex flex-column text-start">
+                        <span class="d-block">Información del Punto ECA</span>
+                        <small class="text-muted fw-normal">Datos del centro de acopio</small>
+                    </span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link fw-semibold text-dark bg-light border border-bottom-0 rounded-top-3 px-3 py-2 mx-1" id="encargado-tab" data-bs-toggle="tab" href="#encargadoPanel" role="tab" aria-controls="encargadoPanel" aria-selected="false">
+                    <span class="bg-primary p-2 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px">
                         <i class="bi bi-person-circle text-white"></i>
                     </span>
-                    <span>
-                        <span class="fw-bold text-dark d-block">Información del Encargado</span>
+                    <span class="d-inline-flex flex-column text-start">
+                        <span class="d-block">Información del Encargado</span>
                         <small class="text-muted fw-normal">Datos personales y de contacto</small>
                     </span>
-                </button>
-            </h2>
-            <div id="encargadoPanel"
-                 class="accordion-collapse collapse show"
-                 data-bs-parent="#perfilAccordion">
-                <div class="accordion-body p-4 bg-light">
-                    <!-- Formulario del Encargado -->
-                    <form id="formEncargado"
-                          method="POST"
-                          action="{% url 'punto-eca:editar_perfil' id=usuario.id %}">
+                </a>
+            </li>
+        </ul>
+        <div class="tab-content bg-light" id="perfilTabsContent">
+            <div id="puntoPanel" class="tab-pane fade show active" role="tabpanel" aria-labelledby="punto-tab">
+                <div class="p-4">
+                    <div class="row g-3 text-center mb-4 pb-3 border-bottom">
+                        <div class="col-md-6">
+                            <div class="position-relative d-inline-block">
+                                <img id="previewLogoPunto" alt="Logo del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow bg-white" style="max-height: 150px; object-fit: contain" src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" />
+                                <button type="button" class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0" aria-label="Cambiar logo del punto" onclick="document.getElementById('inputLogoPunto').click()">
+                                    <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
+                                </button>
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-muted small mb-1">Haz clic en la cámara para cambiar el logo</p>
+                                <small class="text-muted d-block">Máximo 2 MB. JPG, PNG o WEBP.</small>
+                                <input type="file" id="inputLogoPunto" name="logoPunto" form="formPunto" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="position-relative d-inline-block">
+                                <img id="previewFotoPunto" alt="Foto del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow" style="max-height: 150px; object-fit: cover" src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" />
+                                <button type="button" class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0" aria-label="Cambiar foto del punto" onclick="document.getElementById('inputFotoPunto').click()">
+                                    <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
+                                </button>
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-muted small mb-1">Haz clic en la cámara para cambiar la foto</p>
+                                <small class="text-muted d-block">Máximo 5 MB. JPG, PNG o WEBP.</small>
+                                <input type="file" id="inputFotoPunto" name="fotoPunto" form="formPunto" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none" />
+                            </div>
+                        </div>
+                    </div>
+                    <form id="formPunto" method="POST" enctype="multipart/form-data" action="{% url 'punto-eca:editar_punto' id=usuario.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
+                        <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold" for="nombrePunto">Nombre Punto *</label>
+                                <input type="text" class="form-control" id="nombrePunto" name="nombrePunto" value="{{ punto.nombre }}" required />
+                                <small class="text-muted">3-30 caracteres</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold" for="direccionPunto">Dirección *</label>
+                                <input type="text" class="form-control" id="direccionPunto" name="direccionPunto" maxlength="150" value="{{ punto.direccion }}" required />
+                                <small class="text-muted">Máximo 150 caracteres</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" for="localidadPunto">Localidad *</label>
+                                <select class="form-select" id="localidadPunto" name="localidadPunto" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    {% for localidad in localidades %}
+                                        <option value="{{ localidad.localidad_id }}" {% if punto.localidad and punto.localidad.localidad_id == localidad.localidad_id %}selected{% endif %}>{{ localidad.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" for="ciudadPunto">Ciudad</label>
+                                <input type="text" class="form-control" id="ciudadPunto" value="{{ punto.ciudad }}" disabled />
+                                <small class="text-muted">No editable</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" for="celularPunto">Celular *</label>
+                                <input type="text" class="form-control" id="celularPunto" name="celularPunto" maxlength="10" placeholder="10 dígitos" value="{{ punto.celular }}" required />
+                                <small class="text-muted">Exactamente 10 dígitos</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" for="emailPunto">Email *</label>
+                                <input type="email" class="form-control" id="emailPunto" name="emailPunto" value="{{ punto.email }}" required />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" for="telefonoPunto">Teléfono Fijo</label>
+                                <input type="text" class="form-control" id="telefonoPunto" name="telefonoPunto" maxlength="10" placeholder="60XXXXXXXX" value="{{ punto.telefono_punto }}" />
+                                <small class="text-muted">Formato: 60 + 8 dígitos (opcional)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" for="sitioWebPunto">Sitio Web</label>
+                                <input type="text" class="form-control" id="sitioWebPunto" name="sitioWebPunto" placeholder="https://ejemplo.com" value="{{ punto.sitio_web|default_if_none:'' }}" />
+                                <small class="text-muted">URL del sitio web (opcional)</small>
+                            </div>
+                        </div>
+                        <input type="hidden" id="latitud" name="latitud" value="{% if punto.latitud != None %}{{ punto.latitud|floatformat:'6u' }}{% endif %}" />
+                        <input type="hidden" id="longitud" name="longitud" value="{% if punto.longitud != None %}{{ punto.longitud|floatformat:'6u' }}{% endif %}" />
+                        <div class="mb-3">
+                            <span class="form-label fw-bold d-block">Ubicación en el mapa</span>
+                            <div id="mapaPuntoPerfil" style="height:270px; border:2px solid #49bedc; border-radius:10px"></div>
+                            <small class="text-muted">Haz clic en el mapa para seleccionar la ubicación exacta del punto.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="descripcionPunto">Descripción</label>
+                            <textarea class="form-control" id="descripcionPunto" name="descripcionPunto" rows="3" maxlength="500" placeholder="Máximo 500 caracteres">{{ punto.descripcion }}</textarea>
+                            <small class="text-muted">Máximo 500 caracteres (opcional)</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" for="horarioAtencionPunto">Horario Atención</label>
+                                <input type="text" class="form-control" id="horarioAtencionPunto" name="horarioAtencionPunto" maxlength="150" placeholder="Ej: Lunes-Viernes 8am-5pm" value="{{ punto.horario_atencion }}" />
+                                <small class="text-muted">Máximo 150 caracteres (opcional)</small>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-info" id="btnGuardarPunto"><i class="bi bi-check-circle me-1"></i>Guardar Punto</button>
+                            <button type="reset" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar</button>
+                            <button type="button" class="btn btn-outline-info" id="btnGPS"><i class="bi bi-crosshair2 me-1"></i>Obtener GPS</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div id="encargadoPanel" class="tab-pane fade" role="tabpanel" aria-labelledby="encargado-tab">
+                <div class="p-4">
+                    <form id="formEncargado" method="POST" action="{% url 'punto-eca:editar_perfil' id=usuario.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold" for="nombres">Nombres *</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="nombres"
-                                       name="nombre"
-                                       value="{{ usuario.nombres }}"
-                                       required />
+                                <input type="text" class="form-control" id="nombres" name="nombre" value="{{ usuario.nombres }}" required />
                                 <small class="text-muted">3-30 caracteres</small>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold" for="apellidos">Apellidos *</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="apellidos"
-                                       name="apellido"
-                                       value="{{ usuario.apellidos }}"
-                                       required />
+                                <input type="text" class="form-control" id="apellidos" name="apellido" value="{{ usuario.apellidos }}" required />
                                 <small class="text-muted">3-40 caracteres</small>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold" for="email">Email *</label>
-                                <input type="email"
-                                       class="form-control"
-                                       id="email"
-                                       name="email"
-                                       value="{{ usuario.email }}"
-                                       required />
+                                <input type="email" class="form-control" id="email" name="email" value="{{ usuario.email }}" required />
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold" for="celular">Celular *</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="celular"
-                                       name="telefono"
-                                       maxlength="10"
-                                       placeholder="10 dígitos"
-                                       value="{{ usuario.celular }}"
-                                       required />
+                                <input type="text" class="form-control" id="celular" name="telefono" maxlength="10" placeholder="10 dígitos" value="{{ usuario.celular }}" required />
                                 <small class="text-muted">Exactamente 10 dígitos</small>
                             </div>
                         </div>
@@ -158,30 +248,18 @@
                                 <select class="form-select" id="tipoDocumento" name="tipo_documento" required>
                                     <option value="">Selecciona un tipo...</option>
                                     {% for tipo, nombre in tipos_documento %}
-                                        <option value="{{ tipo }}"
-                                                {% if usuario.tipo_documento == tipo %}selected{% endif %}>
-                                            {{ nombre }}
-                                        </option>
+                                        <option value="{{ tipo }}" {% if usuario.tipo_documento == tipo %}selected{% endif %}>{{ nombre }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold" for="numeroDocumento">Número Documento</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="numeroDocumento"
-                                       name="numero_documento"
-                                       placeholder="6-20 caracteres"
-                                       value="{{ usuario.numero_documento }}" />
+                                <input type="text" class="form-control" id="numeroDocumento" name="numero_documento" placeholder="6-20 caracteres" value="{{ usuario.numero_documento }}" />
                                 <small class="text-muted">6-20 caracteres (opcional)</small>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold" for="fechaNacimiento">Fecha Nacimiento</label>
-                                <input type="date"
-                                       class="form-control"
-                                       id="fechaNacimiento"
-                                       name="fechaNacimiento"
-                                       value="{{ usuario.fecha_nacimiento|date:'Y-m-d' }}" />
+                                <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento" value="{{ usuario.fecha_nacimiento|date:'Y-m-d' }}" />
                                 <small class="text-muted">Formato YYYY-MM-DD (opcional)</small>
                             </div>
                         </div>
@@ -191,33 +269,21 @@
                                 <select class="form-select" id="localidad" name="localidad">
                                     <option value="">Seleccionar localidad</option>
                                     {% for localidad in localidades %}
-                                        <option value="{{ localidad.localidad_id }}"
-                                                {% if usuario.localidad and usuario.localidad.localidad_id == localidad.localidad_id %}selected{% endif %}>
-                                            {{ localidad.nombre }}
-                                        </option>
+                                        <option value="{{ localidad.localidad_id }}" {% if usuario.localidad and usuario.localidad.localidad_id == localidad.localidad_id %}selected{% endif %}>{{ localidad.nombre }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold" for="biografia">Biografía</label>
-                            <textarea class="form-control"
-                                      id="biografia"
-                                      name="biografia"
-                                      rows="3"
-                                      placeholder="Máximo 500 caracteres">{{ usuario.biografia }}</textarea>
+                            <textarea class="form-control" id="biografia" name="biografia" rows="3" placeholder="Máximo 500 caracteres">{{ usuario.biografia }}</textarea>
                             <small class="text-muted">Máximo 500 caracteres (opcional)</small>
                         </div>
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-circle me-1"></i>Guardar Perfil
-                            </button>
-                            <button type="reset" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
-                            </button>
+                            <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Guardar Perfil</button>
+                            <button type="reset" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar</button>
                         </div>
                     </form>
-                    <!-- Cambiar contraseña -->
                     <div class="card border-0 shadow-sm mt-4">
                         <div class="card-body p-4">
                             <h5 class="fw-bold text-success mb-4">
@@ -232,29 +298,18 @@
                                 {% csrf_token %}
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                             <label class="form-label fw-semibold" for="passwordActual">Contraseña Actual</label>
-                                        <input type="password" name="contrasenaActual" class="form-control"
-                                                 id="passwordActual"
-                                               required maxlength="128"
-                                               autocomplete="current-password"
-                                               placeholder="Tu contraseña actual">
+                                        <label class="form-label fw-semibold" for="passwordActual">Contraseña Actual</label>
+                                        <input type="password" name="contrasenaActual" class="form-control" id="passwordActual" required maxlength="128" autocomplete="current-password" placeholder="Tu contraseña actual">
                                         <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
                                     </div>
                                     <div class="col-md-4">
-                                             <label class="form-label fw-semibold" for="nuevaPass">Nueva Contraseña</label>
-                                        <input type="password" name="contrasenaNueva" class="form-control"
-                                               required minlength="8" maxlength="128" id="nuevaPass"
-                                               autocomplete="new-password"
-                                               pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}"
-                                               placeholder="Nueva contraseña">
+                                        <label class="form-label fw-semibold" for="nuevaPass">Nueva Contraseña</label>
+                                        <input type="password" name="contrasenaNueva" class="form-control" required minlength="8" maxlength="128" id="nuevaPass" autocomplete="new-password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}" placeholder="Nueva contraseña">
                                         <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
                                     </div>
                                     <div class="col-md-4">
-                                             <label class="form-label fw-semibold" for="confirmarPass">Confirmar Nueva</label>
-                                        <input type="password" name="confirmarContrasena" class="form-control"
-                                               required maxlength="128" id="confirmarPass"
-                                               autocomplete="new-password"
-                                               placeholder="Repite la nueva contraseña">
+                                        <label class="form-label fw-semibold" for="confirmarPass">Confirmar Nueva</label>
+                                        <input type="password" name="confirmarContrasena" class="form-control" required maxlength="128" id="confirmarPass" autocomplete="new-password" placeholder="Repite la nueva contraseña">
                                         <div class="invalid-feedback">Las contraseñas no coinciden.</div>
                                     </div>
                                     <div class="col-12 mt-2">
@@ -266,258 +321,6 @@
                             </form>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <!-- ACORDEÓN 2: INFORMACIÓN DEL PUNTO ECA -->
-        <div class="accordion-item border-start border-5 border-info">
-            <h2 class="accordion-header">
-                <button class="accordion-button fw-bold collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#puntoPanel">
-                    <span class="bg-info p-2 rounded-circle me-3"
-                          style="width: 40px;
-                                 height: 40px;
-                                 display: flex;
-                                 align-items: center;
-                                 justify-content: center">
-                        <i class="bi bi-building text-white"></i>
-                    </span>
-                    <span>
-                        <span class="fw-bold text-dark d-block">Información del Punto ECA</span>
-                        <small class="text-muted fw-normal">Datos del centro de acopio</small>
-                    </span>
-                </button>
-            </h2>
-            <div id="puntoPanel"
-                 class="accordion-collapse collapse"
-                 data-bs-parent="#perfilAccordion">
-                <div class="accordion-body p-4 bg-light">
-                    <!-- Imágenes del Punto ECA - Al Inicio -->
-                    <div class="row g-3 text-center mb-4 pb-3 border-bottom">
-                        <div class="col-md-6">
-                            <div class="position-relative d-inline-block">
-                                <img id="previewLogoPunto"
-                                     alt="Logo del punto"
-                                     class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow bg-white"
-                                     style="max-height: 150px;
-                                            object-fit: contain"
-                                     src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" />
-                                <button type="button"
-                                        class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0"
-                                        aria-label="Cambiar logo del punto"
-                                        onclick="document.getElementById('inputLogoPunto').click()">
-                                    <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
-                                </button>
-                            </div>
-                            <div class="mt-3">
-                                <p class="text-muted small mb-1">Haz clic en la cámara para cambiar el logo</p>
-                                <small class="text-muted d-block">Máximo 2 MB. JPG, PNG o WEBP.</small>
-                                <input type="file"
-                                       id="inputLogoPunto"
-                                       name="logoPunto"
-                                       form="formPunto"
-                                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                       style="display: none" />
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="position-relative d-inline-block">
-                                <img id="previewFotoPunto"
-                                     alt="Foto del punto"
-                                     class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow"
-                                     style="max-height: 150px;
-                                            object-fit: cover"
-                                     src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" />
-                                <button type="button"
-                                        class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0"
-                                        aria-label="Cambiar foto del punto"
-                                        onclick="document.getElementById('inputFotoPunto').click()">
-                                    <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
-                                </button>
-                            </div>
-                            <div class="mt-3">
-                                <p class="text-muted small mb-1">Haz clic en la cámara para cambiar la foto</p>
-                                <small class="text-muted d-block">Máximo 5 MB. JPG, PNG o WEBP.</small>
-                                <input type="file"
-                                       id="inputFotoPunto"
-                                       name="fotoPunto"
-                                       form="formPunto"
-                                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                       style="display: none" />
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Formulario del Punto ECA -->
-                    <form id="formPunto"
-                          method="POST"
-                          enctype="multipart/form-data"
-                          action="{% url 'punto-eca:editar_punto' id=usuario.id %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
-                        <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <label class="form-label fw-bold" for="nombrePunto">Nombre Punto *</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="nombrePunto"
-                                       name="nombrePunto"
-                                       value="{{ punto.nombre }}"
-                                       required />
-                                <small class="text-muted">3-30 caracteres</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <label class="form-label fw-bold" for="direccionPunto">Dirección *</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="direccionPunto"
-                                       name="direccionPunto"
-                                       maxlength="150"
-                                       value="{{ punto.direccion }}"
-                                       required />
-                                <small class="text-muted">Máximo 150 caracteres</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="localidadPunto">Localidad *</label>
-                                <select class="form-select"
-                                        id="localidadPunto"
-                                        name="localidadPunto"
-                                        required>
-                                    <option value="">-- Seleccionar --</option>
-                                    {% for localidad in localidades %}
-                                        <option value="{{ localidad.localidad_id }}"
-                                                {% if punto.localidad and punto.localidad.localidad_id == localidad.localidad_id %}selected{% endif %}>
-                                            {{ localidad.nombre }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="ciudadPunto">Ciudad</label>
-                                <input type="text" class="form-control" id="ciudadPunto" value="{{ punto.ciudad }}" disabled />
-                                <small class="text-muted">No editable</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="celularPunto">Celular *</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="celularPunto"
-                                       name="celularPunto"
-                                       maxlength="10"
-                                       placeholder="10 dígitos"
-                                       value="{{ punto.celular }}"
-                                       required />
-                                <small class="text-muted">Exactamente 10 dígitos</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="emailPunto">Email *</label>
-                                <input type="email"
-                                       class="form-control"
-                                       id="emailPunto"
-                                       name="emailPunto"
-                                       value="{{ punto.email }}"
-                                       required />
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="telefonoPunto">Teléfono Fijo</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="telefonoPunto"
-                                       name="telefonoPunto"
-                                       maxlength="10"
-                                       placeholder="60XXXXXXXX"
-                                       value="{{ punto.telefono_punto }}" />
-                                <small class="text-muted">Formato: 60 + 8 dígitos (opcional)</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="sitioWebPunto">Sitio Web</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="sitioWebPunto"
-                                       name="sitioWebPunto"
-                                       placeholder="https://ejemplo.com"
-                                       value="{{ punto.sitio_web|default_if_none:'' }}" />
-                                <small class="text-muted">URL del sitio web (opcional)</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="latitud">Latitud</label>
-                                <input type="number"
-                                       step="0.000001"
-                                       class="form-control"
-                                       id="latitud"
-                                       name="latitud"
-                                       placeholder="-90 a 90"
-                                       value="{% if punto.latitud != None %}{{ punto.latitud|floatformat:'6u' }}{% else %}{% endif %}" />
-                                <small class="text-muted">-90 a 90 (opcional)</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="longitud">Longitud</label>
-                                <input type="number"
-                                       step="0.000001"
-                                       class="form-control"
-                                       id="longitud"
-                                       name="longitud"
-                                       placeholder="-180 a 180"
-                                       value="{% if punto.longitud != None %}{{ punto.longitud|floatformat:'6u' }}{% else %}{% endif %}" />
-                                <small class="text-muted">-180 a 180 (opcional)</small>
-                            </div>
-                        </div>
-                        <!-- Mapa para ubicar el Punto ECA -->
-                        <div class="mb-3">
-                            <span class="form-label fw-bold d-block">Ubicación en el mapa</span>
-                            <div id="mapaPuntoPerfil"
-                                 style="height:270px;
-                                        border:2px solid #49bedc;
-                                        border-radius:10px"></div>
-                            <small class="text-muted">Haz clic en el mapa para seleccionar la ubicación exacta del punto. Los campos de latitud/longitud se llenan automáticamente.</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="descripcionPunto">Descripción</label>
-                            <textarea class="form-control"
-                                      id="descripcionPunto"
-                                      name="descripcionPunto"
-                                      rows="3"
-                                      maxlength="500"
-                                      placeholder="Máximo 500 caracteres">{{punto.descripcion}}</textarea>
-                            <small class="text-muted">Máximo 500 caracteres (opcional)</small>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold" for="horarioAtencionPunto">Horario Atención</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="horarioAtencionPunto"
-                                       name="horarioAtencionPunto"
-                                       maxlength="150"
-                                       placeholder="Ej: Lunes-Viernes 8am-5pm"
-                                       value="{{ punto.horario_atencion }}" />
-                                <small class="text-muted">Máximo 150 caracteres (opcional)</small>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-info" id="btnGuardarPunto">
-                                <i class="bi bi-check-circle me-1"></i>Guardar Punto
-                            </button>
-                            <button type="reset" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
-                            </button>
-                            <button type="button" class="btn btn-outline-info" id="btnGPS">
-                                <i class="bi bi-crosshair2 me-1"></i>Obtener GPS
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
@@ -556,12 +359,31 @@
         setupImagePreview('inputLogoPunto', 'previewLogoPunto');
         setupImagePreview('inputFotoPunto', 'previewFotoPunto');
 
+        var tabLinks = document.querySelectorAll('#perfilTabs .nav-link');
+
+        function refreshTabStyles(activeId) {
+            tabLinks.forEach(function (tab) {
+                var isActive = tab.id === activeId;
+                tab.classList.toggle('active', isActive);
+                tab.classList.toggle('bg-white', isActive);
+                tab.classList.toggle('bg-light', !isActive);
+                tab.classList.toggle('border-primary', isActive);
+                tab.classList.toggle('border-transparent', !isActive);
+                tab.classList.toggle('shadow-sm', isActive);
+            });
+        }
+
+        refreshTabStyles('punto-tab');
+
+        tabLinks.forEach(function (tab) {
+            tab.addEventListener('shown.bs.tab', function (event) {
+                refreshTabStyles(event.target.id);
+            });
+        });
+
         // Inputs de latitud/longitud
         var inputLat = document.getElementById('latitud');
         var inputLng = document.getElementById('longitud');
-        console.log('Valor inputLat:', inputLat ? inputLat.value : null);
-        console.log('Valor inputLng:', inputLng ? inputLng.value : null);
-
         // Inicialización robusta: usa lo que venga de los inputs o Bogotá si está mal
         var latVal = parseCoord(inputLat ? inputLat.value : null, -90, 90, 4.711);
         var lngVal = parseCoord(inputLng ? inputLng.value : null, -180, 180, -74.0721);
@@ -615,10 +437,10 @@
             syncMarkerWithInputs();
         });
 
-        // Al mostrar el accordion, refrescar el mapa
-        var puntoPanel = document.getElementById('puntoPanel');
-        if (puntoPanel) {
-            puntoPanel.addEventListener('shown.bs.collapse', function () {
+        // Al mostrar la pestaña del punto, refrescar el mapa
+        var puntoTab = document.getElementById('punto-tab');
+        if (puntoTab) {
+            puntoTab.addEventListener('shown.bs.tab', function () {
                 setTimeout(function () {
                     mapa.invalidateSize();
                     syncMarkerWithInputs();
