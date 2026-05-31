@@ -10,7 +10,6 @@ from apps.core.decorators import gestor_eca_or_admin_required
 from .resources import CompraInventarioResource, VentaInventarioResource
 from weasyprint import HTML
 from django.template.loader import render_to_string
-from django.views.decorators.csrf import csrf_exempt
 import logging
 import csv
 import io
@@ -732,7 +731,6 @@ def editar_venta(request, venta_id):
     return _responder_servicio_json(VentaInventarioService.editar_venta, request, data, venta_id)
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_compra(request, compra_id):
     return _responder_borrado_json(
@@ -740,7 +738,6 @@ def borrar_compra(request, compra_id):
     )
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_venta(request, venta_id):
     return _responder_borrado_json(
@@ -803,7 +800,6 @@ def exportar_ventas_excel(request):
     return _generar_respuesta_xlsx(dataset, "ventas.xlsx")
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def bulk_import_compras(request):
     """
@@ -833,7 +829,6 @@ def bulk_import_compras(request):
     )
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def bulk_import_ventas(request):
     """

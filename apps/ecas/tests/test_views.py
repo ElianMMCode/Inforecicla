@@ -3,6 +3,7 @@ from django.test import override_settings
 from django.urls import reverse
 from apps.users.models import Usuario
 from apps.ecas.models import Localidad
+from config import constants as cons
 import uuid
 
 
@@ -50,6 +51,22 @@ class TestRegistroPuntoECA(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "users/registro_eca.html")
+
+    def test_registro_punto_eca_get_usuario_logueado_redirige_a_dashboard(self):
+        """Un gestor autenticado no debe acceder al registro y se redirige a su dashboard."""
+        usuario = Usuario.objects.create_user(
+            email="gestor.logueado@example.com",
+            numero_documento="9876543210",
+            password=self.password_aleatorio,
+            nombres="Gestor",
+            apellidos="Logueado",
+            tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+        )
+        self.client.force_login(usuario)
+
+        response = self.client.get(self.url)
+
+        self.assertRedirects(response, reverse("punto-eca:render_seccion"), fetch_redirect_response=False)
 
     @override_settings(DEBUG=True)
     def test_editar_perfil_gestor_get(self):
@@ -100,7 +117,7 @@ class TestRegistroPuntoECA(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(
             response,
-            reverse("login") + "?email=newuser2@example.com",
+            reverse("login") + "?email=newuser2@example.com&show_activation_resend=1",
             fetch_redirect_response=False,
         )
 

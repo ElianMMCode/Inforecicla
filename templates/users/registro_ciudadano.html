@@ -5,14 +5,15 @@
 {% block body_class %}bg-light{% endblock %}
 {% block container_class %}register-container--citizen{% endblock %}
 {% block extra_styles %}
-        body {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            padding: 2rem 0;
-        }
+    {% include "users/partials/register_common_styles.html" %}
 
         .register-container {
             max-width: 600px;
         }
+{% endblock %}
+
+{% block navbar %}
+    {% include "users/partials/navbar.html" with navbar_container_class="px-4" %}
 {% endblock %}
 
 {% block header_title %}Registro de Ciudadano{% endblock %}
@@ -60,59 +61,11 @@
             <!-- Documento (opcional) -->
             <!-- Nota: campos opcionales movidos a completar perfil posterior -->
 
-            <!-- Información de Contraseña -->
-            {% include "users/partials/password_requirements.html" %}
-
-            <!-- Contraseña y Confirmación -->
-            <div class="row-cols">
-                <div class="form-group">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <div class="input-group">
-                        <input type="password" class="form-control" id="password" name="password" autocomplete="new-password"
-                               placeholder="Contraseña segura" required>
-                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                            <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                    <div class="invalid-feedback">La contraseña debe cumplir los requisitos mínimos.</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
-                    <div class="input-group">
-                        <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm" autocomplete="new-password"
-                               placeholder="Repite tu contraseña" required>
-                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                            <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                    <div class="invalid-feedback">Las contraseñas no coinciden.</div>
-                </div>
-            </div>
-
-            <!-- Términos y condiciones -->
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
-                <label class="form-check-label" for="terminos">
-                    Acepto los <a href="#" target="_blank">términos y condiciones</a> de InfoRecicla
-                </label>
-                <div class="invalid-feedback">Debes aceptar los términos y condiciones.</div>
-            </div>
-
-            <!-- Botón de registro -->
-            <button type="submit" class="btn-login">
-                <i class="bi bi-person-plus btn-icon" aria-hidden="true"></i>
-                Registrarse como Ciudadano
-            </button>
+            {% include "users/partials/registro_auth_section.html" with submit_icon="bi-person-plus" submit_label="Registrarse como Ciudadano" footer_primary_text="¿Ya tienes cuenta?" footer_primary_url="/login/" footer_primary_link_text="Inicia sesión aquí" footer_secondary_text="¿Eres un Punto ECA?" footer_secondary_url="/registro/eca/" footer_secondary_link_text="Regístrate como Punto ECA" %}
         </form>
 {% endblock %}
 
-{% block footer %}
-        <div class="register-footer">
-            <p>¿Ya tienes cuenta? <a href="/login/">Inicia sesión aquí</a></p>
-            <p class="mt-3">¿Eres un Punto ECA? <a href="/registro/eca/">Regístrate como Punto ECA</a></p>
-        </div>
-{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block extra_scripts %}
     <!-- Modular JS: registro_ciudadano module (ES6) -->
