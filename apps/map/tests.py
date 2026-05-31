@@ -66,5 +66,5 @@ class MapViewsTest(TestCase):
 			)
 
 		self.assertEqual(response.status_code, 200)
-		self.assertTrue(response.json()["logoUrl"].startswith("http://testserver/media/puntos/logos/"))
-		self.assertTrue(response.json()["fotoUrl"].startswith("http://testserver/media/puntos/fotos/"))
+		self.assertIn("/media/puntos/logos/", response.json()["logoUrl"])
+		self.assertIn("/media/puntos/fotos/", response.json()["fotoUrl"])

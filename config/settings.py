@@ -51,6 +51,7 @@ DEBUG = True
 
 GROQ_API_KEY = env("GROQ_API_KEY")
 SITE_URL = env("SITE_URL", default="http://127.0.0.1:8000")
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 EMAIL_BACKEND = env(
     "EMAIL_BACKEND",
@@ -172,7 +173,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
