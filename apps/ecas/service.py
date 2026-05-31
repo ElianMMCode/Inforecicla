@@ -1,7 +1,10 @@
 from django.shortcuts import redirect
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from apps.ecas.models import Localidad
 from apps.ecas.models import PuntoECA
+from apps.core.upload_validators import validate_image_upload
+from config import constants as cons
 
 
 class PuntoService:
@@ -31,9 +34,7 @@ class PuntoService:
         try:
             punto = PuntoECA.objects.get(gestor_eca_id=id)
         except PuntoECA.DoesNotExist:
-            return Helper.redireccionar_con_error(
-                "base:inicio", "Punto ECA no encontrado."
-            )
+            return {"ok": False, "message": "Punto ECA no encontrado."}
 
         # Actualización campo a campo (si el dato no viene, deja el valor actual)
         punto.nombre = request.POST.get("nombrePunto", punto.nombre)
@@ -55,6 +56,23 @@ class PuntoService:
             "horarioAtencionPunto", punto.horario_atencion
         )
 
+        logo_punto = request.FILES.get("logoPunto")
+        foto_punto = request.FILES.get("fotoPunto")
+        if logo_punto:
+            validate_image_upload(
+                logo_punto,
+                cons.POINT_LOGO_IMAGE_MAX_SIZE,
+                "El logo del punto",
+            )
+            punto.logo_imagen_punto = logo_punto
+        if foto_punto:
+            validate_image_upload(
+                foto_punto,
+                cons.POINT_PHOTO_IMAGE_MAX_SIZE,
+                "La foto del punto",
+            )
+            punto.foto_imagen_punto = foto_punto
+
         # Si la localidad efectivamente cambió, la busca y actualiza. No la borra si no existe el id
         localidad_id = request.POST.get("localidadPunto")
         if localidad_id != str(punto.localidad.localidad_id if punto.localidad else ""):
@@ -65,12 +83,16 @@ class PuntoService:
 
         try:
             punto.save()
+        except ValidationError as e:
+            return {
+                "ok": False,
+                "message": getattr(e, "message", str(e)),
+            }
         except Exception as e:
-            # Loguea error y levanta para debug
             print(f"--- ERROR AL GUARDAR PUNTO ECA: {e}")
-            raise
+            return {"ok": False, "message": str(e)}
 
-        return punto
+        return {"ok": True, "punto": punto}
 
 
 class Helper:

@@ -76,11 +76,14 @@ def _build_perfil_pendientes(usuario, punto):
             ("horario_atencion", "Horario de atención"),
             ("latitud", "Latitud"),
             ("longitud", "Longitud"),
-            ("logo_url_punto", "Logo"),
-            ("foto_url_punto", "Foto"),
         ],
         valores_default_por_campo={"nombre": ("Punto ECA Sin Nombre",)},
     )
+
+    if not (getattr(punto, "logo_imagen_punto", None) or getattr(punto, "logo_url_punto", None)):
+        punto_pendientes.append("Logo")
+    if not (getattr(punto, "foto_imagen_punto", None) or getattr(punto, "foto_url_punto", None)):
+        punto_pendientes.append("Foto")
 
     return {
         "encargado": encargado_pendientes,
@@ -334,7 +337,10 @@ def editar_punto(request, id):
         return redirect(CONSTANTE_RENDER, seccion="perfil")
 
     if request.method == "POST":
-        punto = PuntoService.editar_punto(request, id)
+        resultado = PuntoService.editar_punto(request, id)
+        if not resultado.get("ok"):
+            messages.error(request, resultado.get("message", "No se pudo actualizar el punto ECA."))
+            return redirect(CONSTANTE_RENDER)
         messages.success(request, "Punto ECA actualizado correctamente.")
         return redirect(CONSTANTE_PERFIL)
 

@@ -1,3 +1,7 @@
+import base64
+import tempfile
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.test import override_settings
 from django.urls import reverse
@@ -5,6 +9,11 @@ from apps.users.models import Usuario
 from apps.ecas.models import Localidad
 from config import constants as cons
 import uuid
+
+
+PNG_1X1 = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5Xo/8AAAAASUVORK5CYII="
+)
 
 
 class TestRegistroPuntoECA(TestCase):
@@ -168,3 +177,45 @@ class TestRegistroPuntoECA(TestCase):
         response = self.client.get(perfil_url)
         html = response.content.decode("utf-8")
         self.assertNotIn("Datos pendientes", html)
+
+    def test_editar_punto_con_imagenes_reales(self):
+        """El punto debe aceptar logo y foto como archivos reales."""
+        login_exitoso = self.client.login(
+            email="testuser@example.com", password=self.password_aleatorio
+        )
+        self.assertTrue(login_exitoso, "El login falló")
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            punto_url = reverse("punto-eca:editar_punto", args=[str(self.user.id)])
+            punto_data = {
+                "nombrePunto": "Punto ECA Test",
+                "direccionPunto": "Calle Falsa 123",
+                "celularPunto": "3001234567",
+                "emailPunto": "testuser@example.com",
+                "telefonoPunto": "6012345678",
+                "logoPunto": SimpleUploadedFile(
+                    "logo.png",
+                    PNG_1X1,
+                    content_type="image/png",
+                ),
+                "fotoPunto": SimpleUploadedFile(
+                    "foto.png",
+                    PNG_1X1,
+                    content_type="image/png",
+                ),
+                "descripcionPunto": "Descripción completada",
+                "sitioWebPunto": "https://example.com",
+                "horarioAtencionPunto": "L-V 8:00-17:00",
+                "latitud": "4.6097",
+                "longitud": "-74.0817",
+                "localidadPunto": str(self.localidad.localidad_id),
+            }
+
+            response = self.client.post(punto_url, punto_data, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.punto_eca.refresh_from_db()
+        self.assertTrue(self.punto_eca.logo_imagen_punto)
+        self.assertTrue(self.punto_eca.foto_imagen_punto)
+        self.assertIn("puntos/logos/", self.punto_eca.logo_imagen_punto.name)
+        self.assertIn("puntos/fotos/", self.punto_eca.foto_imagen_punto.name)
