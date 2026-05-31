@@ -100,7 +100,7 @@ class TestRegistroPuntoECA(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Datos pendientes", response.content.decode("utf-8"))
-        self.assertIn("Editar encargado", response.content.decode("utf-8"))
+        self.assertIn("Gestión de Perfil", response.content.decode("utf-8"))
 
     def test_registro_punto_eca_post_valid(self):
         """Prueba que la vista de registro de PuntoECA procesa un POST válido"""
@@ -138,7 +138,7 @@ class TestRegistroPuntoECA(TestCase):
         self.assertTrue(login_exitoso, "El login falló")
 
         # 1) Completar datos del usuario (POST a editar_perfil)
-        perfil_url = reverse("punto-eca:editar_perfil", args=[str(self.user.id)])
+        perfil_url = reverse("punto-eca:actualizar_perfil", args=[str(self.user.id)])
         perfil_data = {
             "nombre": "Test",
             "apellido": "User",
@@ -155,7 +155,7 @@ class TestRegistroPuntoECA(TestCase):
         self.assertEqual(response.status_code, 200)
 
         # 2) Completar datos del punto (POST a editar_punto)
-        punto_url = reverse("punto-eca:editar_punto", args=[str(self.user.id)])
+        punto_url = reverse("punto-eca:actualizar_punto", args=[str(self.user.id)])
         punto_data = {
             "nombrePunto": "Punto ECA Test",
             "direccionPunto": "Calle Falsa 123",
@@ -186,7 +186,7 @@ class TestRegistroPuntoECA(TestCase):
         self.assertTrue(login_exitoso, "El login falló")
 
         with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
-            punto_url = reverse("punto-eca:editar_punto", args=[str(self.user.id)])
+            punto_url = reverse("punto-eca:actualizar_punto", args=[str(self.user.id)])
             punto_data = {
                 "nombrePunto": "Punto ECA Test",
                 "direccionPunto": "Calle Falsa 123",
