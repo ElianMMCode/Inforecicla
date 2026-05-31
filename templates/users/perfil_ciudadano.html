@@ -174,34 +174,7 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        var messages = [
-                            {% for message in messages %}
-                            {
-                                icon: '{% if "error" in message.tags %}error{% elif "warning" in message.tags %}warning{% elif "info" in message.tags %}info{% else %}success{% endif %}',
-                                title: '{% if "error" in message.tags %}Error{% elif "warning" in message.tags %}Atención{% elif "info" in message.tags %}Información{% else %}Éxito{% endif %}',
-                                text: '{{ message|escapejs }}'
-                            }{% if not forloop.last %},{% endif %}
-                            {% endfor %}
-                        ];
-
-                        (async function () {
-                            for (var i = 0; i < messages.length; i++) {
-                                var item = messages[i];
-                                if (globalThis.Swal && globalThis.Swal.fire) {
-                                    await globalThis.Swal.fire({
-                                        icon: item.icon,
-                                        title: item.title,
-                                        text: item.text,
-                                        confirmButtonText: 'Entendido',
-                                        confirmButtonColor: '#145c3a'
-                                    });
-                                }
-                            }
-                        })();
-                    });
-                </script>
+                {% include 'partials/swal_messages_script.html' with swal_confirm_button_color='#145c3a' %}
             {% endif %}
 
             {% if perfil_incompleto or request.GET.completar == '1' %}
