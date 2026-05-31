@@ -95,6 +95,19 @@ def _arcgis_feature_to_punto(feature):
     }
 
 
+def _get_punto_image_url(punto, request, image_field_name, url_field_name):
+    """Normaliza la URL de una imagen de `punto`.
+    Prefiere la imagen subida (ImageField) y construye una URL absoluta; si falla, usa el campo URL manual.
+    """
+    img = getattr(punto, image_field_name, None)
+    if img:
+        try:
+            return request.build_absolute_uri(img.url)
+        except Exception:
+            return getattr(punto, url_field_name, "") or ""
+    return getattr(punto, url_field_name, "") or ""
+
+
 @require_GET
 def api_arcgis_puntos(request):
     """
@@ -233,31 +246,13 @@ def api_puntos_eca_detalle(request, punto_id):
             }
         )
 
-    # Normalizar URL de logo/foto: preferir archivo subido, fallback a URL manual
-    logo_url = ""
-    if getattr(punto, "logo_imagen_punto", None):
-        try:
-            logo_url = request.build_absolute_uri(punto.logo_imagen_punto.url)
-        except Exception:
-            logo_url = punto.logo_url_punto or ""
-    else:
-        logo_url = punto.logo_url_punto or ""
-
-    foto_url = ""
-    if getattr(punto, "foto_imagen_punto", None):
-        try:
-            foto_url = request.build_absolute_uri(punto.foto_imagen_punto.url)
-        except Exception:
-            foto_url = punto.foto_url_punto or ""
-    else:
-        foto_url = punto.foto_url_punto or ""
+    logo_url = _get_punto_image_url(punto, request, "logo_imagen_punto", "logo_url_punto")
+    foto_url = _get_punto_image_url(punto, request, "foto_imagen_punto", "foto_url_punto")
 
     resp = {
         "puntoEcaID": str(punto.pk),
         "nombrePunto": punto.nombre,
-        "localidadNombre": getattr(getattr(punto, "localidad", None), "nombre", "")
-        if getattr(punto, "localidad", None)
-        else "",
+        "localidadNombre": getattr(getattr(punto, "localidad", None), "nombre", ""),
         "direccion": punto.direccion,
         "descripcion": punto.descripcion,
         "telefonoPunto": punto.telefono_punto,
