@@ -203,10 +203,9 @@
             margin-bottom: 0.5rem;
         }
 
-        {% include 'partials/password_styles.html' %}
-
         {% block extra_styles %}{% endblock %}
     </style>
+    {% include 'partials/password_styles.html' %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
     {% block navbar %}{% endblock %}
