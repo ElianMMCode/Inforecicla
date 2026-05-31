@@ -95,7 +95,7 @@ def _build_perfil_pendientes(usuario, punto):
 
 
 @gestor_eca_or_admin_required
-def render_seccion(request, seccion="resumen"):
+def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     """
     Vista principal que renderiza una sección del panel Punto ECA según el parámetro 'seccion'.
     - Selecciona la plantilla y los datos correctos para mostrar la sección indicada (perfil, materiales, movimientos, centros, calendario, resumen, etc).
@@ -111,7 +111,10 @@ def render_seccion(request, seccion="resumen"):
     punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
 
     if seccion == "perfil":
-        context = _build_perfil_context(punto)
+        perfil_tab = request.GET.get("tab", perfil_tab)
+
+    if seccion == "perfil":
+        context = _build_perfil_context(punto, perfil_tab=perfil_tab)
     elif seccion == "materiales":
         context = _build_materiales_context(punto)
     elif seccion == "movimientos":
@@ -128,7 +131,7 @@ def render_seccion(request, seccion="resumen"):
     return render(request, "ecas/puntoECA-layout.html", context)
 
 
-def _build_perfil_context(punto):
+def _build_perfil_context(punto, perfil_tab="punto"):
     """
     Construye el contexto para la sección 'perfil' del Punto ECA.
     Incluye información del gestor (usuario), el punto, catálogo de localidades y tipos de documento.
@@ -145,6 +148,7 @@ def _build_perfil_context(punto):
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
         "perfil_pendientes": perfil_pendientes,
+        "perfil_tab": perfil_tab,
     }
 
 

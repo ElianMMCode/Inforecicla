@@ -15,7 +15,7 @@ urlpatterns = [
     path(
         "configuracion/",
         render_seccion,
-        {"seccion": "configuracion"},
+        {"seccion": "perfil", "perfil_tab": "configuracion"},
         name="configuracion",
     ),
     path("materiales/", render_seccion, {"seccion": "materiales"}, name="materiales"),

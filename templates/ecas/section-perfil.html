@@ -73,10 +73,13 @@
             </div>
             <div class="d-flex flex-wrap gap-2 align-items-start">
                 <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="tab" data-bs-target="#encargadoPanel" aria-controls="encargadoPanel">
-                    <i class="bi bi-person-circle me-1"></i>Editar encargado
+                    <i class="bi bi-person-circle me-1"></i>Encargado
                 </button>
                 <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="tab" data-bs-target="#puntoPanel" aria-controls="puntoPanel">
-                    <i class="bi bi-building me-1"></i>Editar punto
+                    <i class="bi bi-building me-1"></i>Punto ECA
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tab" data-bs-target="#configuracionPanel" aria-controls="configuracionPanel">
+                    <i class="bi bi-gear me-1"></i>Configuración
                 </button>
             </div>
         </div>
@@ -121,7 +124,7 @@
                         <i class="bi bi-building text-white"></i>
                     </span>
                     <span class="d-inline-flex flex-column text-start">
-                        <span class="d-block">Información del Punto ECA</span>
+                        <span class="d-block">Punto ECA</span>
                         <small class="text-muted fw-normal">Datos del centro de acopio</small>
                     </span>
                 </a>
@@ -132,8 +135,19 @@
                         <i class="bi bi-person-circle text-white"></i>
                     </span>
                     <span class="d-inline-flex flex-column text-start">
-                        <span class="d-block">Información del Encargado</span>
+                        <span class="d-block">Encargado</span>
                         <small class="text-muted fw-normal">Datos personales y de contacto</small>
+                    </span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link fw-semibold text-dark bg-light border border-bottom-0 rounded-top-3 px-3 py-2 mx-1" id="configuracion-tab" data-bs-toggle="tab" href="#configuracionPanel" role="tab" aria-controls="configuracionPanel" aria-selected="false">
+                    <span class="bg-secondary p-2 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px">
+                        <i class="bi bi-gear text-white"></i>
+                    </span>
+                    <span class="d-inline-flex flex-column text-start">
+                        <span class="d-block">Configuración</span>
+                        <small class="text-muted fw-normal">Contraseña y preferencias</small>
                     </span>
                 </a>
             </li>
@@ -341,68 +355,133 @@
                             <button type="reset" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar</button>
                         </div>
                     </form>
-                    <div class="card border-0 shadow-sm mt-4">
-                        <div class="card-body p-4">
-                            <div class="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2 mb-3">
-                                <div>
-                                    <h5 class="fw-bold text-success mb-1">
-                                        <i class="bi bi-shield-lock-fill me-2"></i>
-                                        Cambiar Contraseña
-                                    </h5>
-                                    <p class="text-muted small mb-0">Actualiza tu clave con el mismo flujo de validación usado en los formularios de registro.</p>
+                </div>
+            </div>
+            <div id="configuracionPanel" class="tab-pane fade" role="tabpanel" aria-labelledby="configuracion-tab">
+                <div class="p-4">
+                    <div class="d-grid gap-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2 mb-3">
+                                    <div>
+                                        <h5 class="fw-bold text-success mb-1">
+                                            <i class="bi bi-sliders me-2"></i>
+                                            Preferencias
+                                        </h5>
+                                        <p class="text-muted small mb-0">Administra las notificaciones y la visibilidad del punto ECA.</p>
+                                    </div>
                                 </div>
-                                <span class="badge text-bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">Acceso seguro</span>
+
+                                <form id="formPreferencias" method="post">
+                                    <div class="mb-3">
+                                        <p class="form-label mb-2">Visibilidad en el mapa</p>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" id="cfgMapa" name="visibleEnMapa" type="checkbox">
+                                            <label class="form-check-label" for="cfgMapa">
+                                                Mostrar punto ECA en el mapa público
+                                            </label>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">Solo será visible cuando tu punto esté aprobado</small>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="mb-3">
+                                        <p class="form-label mb-2">Notificaciones</p>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" id="cfgNotiAprobacion" name="notificacionesAprobacion" type="checkbox" checked>
+                                            <label class="form-check-label" for="cfgNotiAprobacion">
+                                                Aprobaciones y cambios de estado
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" id="cfgNotiMensajes" name="notificacionesMensajes" type="checkbox" checked>
+                                            <label class="form-check-label" for="cfgNotiMensajes">
+                                                Mensajes y comentarios
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" id="cfgNotiInventario" name="notificacionesInventario" type="checkbox" checked>
+                                            <label class="form-check-label" for="cfgNotiInventario">
+                                                Alertas de inventario
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-success" type="submit">
+                                            <i class="bi bi-save me-2"></i>Guardar Preferencias
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
+                        </div>
 
-                            <form method="POST" action="/perfil/cambiar-contrasena/" novalidate id="formPass" class="needs-validation">
-                                <input type="text" name="username" autocomplete="username" hidden>
-                                {% csrf_token %}
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold" for="passwordActual">Contraseña actual</label>
-                                        <div class="input-group">
-                                            <input type="password" name="contrasenaActual" class="form-control" id="passwordActual" required maxlength="128" autocomplete="current-password" placeholder="Tu contraseña actual" aria-describedby="passwordActualFeedback">
-                                            <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                <i class="bi bi-eye toggle-password" data-target="#passwordActual" aria-hidden="true"></i>
-                                            </button>
-                                        </div>
-                                        <div class="invalid-feedback" id="passwordActualFeedback">Ingresa tu contraseña actual para continuar.</div>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2 mb-3">
+                                    <div>
+                                        <h5 class="fw-bold text-success mb-1">
+                                            <i class="bi bi-shield-lock-fill me-2"></i>
+                                            Cambiar Contraseña
+                                        </h5>
+                                        <p class="text-muted small mb-0">Actualiza tu clave con el mismo flujo de validación usado en los formularios de registro.</p>
                                     </div>
-
-                                    <div class="col-lg-6">
-                                        <label class="form-label fw-semibold" for="password">Nueva contraseña</label>
-                                        <div class="input-group">
-                                            <input type="password" name="contrasenaNueva" class="form-control" required minlength="8" maxlength="128" id="password" autocomplete="new-password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}" placeholder="Nueva contraseña" aria-describedby="passwordFeedback">
-                                            <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
-                                            </button>
-                                        </div>
-                                        <div class="invalid-feedback" id="passwordFeedback">Debe cumplir los requisitos indicados.</div>
-                                        <div class="mt-3">
-                                            {% include "users/partials/password_requirements.html" %}
-                                        </div>
-                                    </div>
-
-                                    <div class="col-lg-6">
-                                        <label class="form-label fw-semibold" for="passwordConfirm">Confirmar nueva contraseña</label>
-                                        <div class="input-group">
-                                            <input type="password" name="confirmarContrasena" class="form-control" required maxlength="128" id="passwordConfirm" autocomplete="new-password" placeholder="Repite la nueva contraseña" aria-describedby="passwordConfirmFeedback">
-                                            <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
-                                            </button>
-                                        </div>
-                                        <div class="invalid-feedback" id="passwordConfirmFeedback">Confirma la nueva contraseña. Debe coincidir exactamente.</div>
-                                    </div>
-
-                                    <div class="col-12 mt-2">
-                                        <div class="d-grid d-sm-flex gap-2">
-                                            <button type="submit" class="btn btn-success px-4">
-                                                <i class="bi bi-lock-fill me-2"></i>Actualizar contraseña
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <span class="badge text-bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">Acceso seguro</span>
                                 </div>
-                            </form>
+
+                                <form method="POST" action="/perfil/cambiar-contrasena/" novalidate id="formPass" class="needs-validation">
+                                    <input type="text" name="username" autocomplete="username" hidden>
+                                    {% csrf_token %}
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold" for="passwordActual">Contraseña actual</label>
+                                            <div class="input-group">
+                                                <input type="password" name="contrasenaActual" class="form-control" id="passwordActual" required maxlength="128" autocomplete="current-password" placeholder="Tu contraseña actual" aria-describedby="passwordActualFeedback">
+                                                <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                                    <i class="bi bi-eye toggle-password" data-target="#passwordActual" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
+                                            <div class="invalid-feedback" id="passwordActualFeedback">Ingresa tu contraseña actual para continuar.</div>
+                                        </div>
+
+                                        <div class="col-lg-6">
+                                            <label class="form-label fw-semibold" for="password">Nueva contraseña</label>
+                                            <div class="input-group">
+                                                <input type="password" name="contrasenaNueva" class="form-control" required minlength="8" maxlength="128" id="password" autocomplete="new-password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}" placeholder="Nueva contraseña" aria-describedby="passwordFeedback">
+                                                <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                                    <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
+                                            <div class="invalid-feedback" id="passwordFeedback">Debe cumplir los requisitos indicados.</div>
+                                            <div class="mt-3">
+                                                {% include "users/partials/password_requirements.html" %}
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-6">
+                                            <label class="form-label fw-semibold" for="passwordConfirm">Confirmar nueva contraseña</label>
+                                            <div class="input-group">
+                                                <input type="password" name="confirmarContrasena" class="form-control" required maxlength="128" id="passwordConfirm" autocomplete="new-password" placeholder="Repite la nueva contraseña" aria-describedby="passwordConfirmFeedback">
+                                                <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                                    <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
+                                            <div class="invalid-feedback" id="passwordConfirmFeedback">Confirma la nueva contraseña. Debe coincidir exactamente.</div>
+                                        </div>
+
+                                        <div class="col-12 mt-2">
+                                            <div class="d-grid d-sm-flex gap-2">
+                                                <button type="submit" class="btn btn-success px-4">
+                                                    <i class="bi bi-lock-fill me-2"></i>Actualizar contraseña
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -462,7 +541,15 @@
             });
         }
 
-        refreshTabStyles('punto-tab');
+        var initialTabId = {% if perfil_tab == 'encargado' %}'encargado-tab'{% elif perfil_tab == 'configuracion' %}'configuracion-tab'{% else %}'punto-tab'{% endif %};
+
+        var initialTab = document.getElementById(initialTabId);
+        if (initialTab) {
+            bootstrap.Tab.getOrCreateInstance(initialTab).show();
+            refreshTabStyles(initialTabId);
+        } else {
+            refreshTabStyles('punto-tab');
+        }
 
         tabLinks.forEach(function (tab) {
             tab.addEventListener('shown.bs.tab', function (event) {
