@@ -132,7 +132,7 @@
                             </div>
                         </div>
                     </div>
-                    <form id="formPunto" method="POST" enctype="multipart/form-data" action="{% url 'punto-eca:editar_punto' id=usuario.id %}" novalidate>
+                    <form id="formPunto" method="POST" enctype="multipart/form-data" action="{% url 'punto-eca:actualizar_punto' id=usuario.id %}" novalidate>
                         {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <input type="hidden" name="puntoEcaId" value="{{ punto.id }}" />
@@ -227,7 +227,7 @@
             </div>
             <div id="encargadoPanel" class="tab-pane fade" role="tabpanel" aria-labelledby="encargado-tab">
                 <div class="p-4">
-                    <form id="formEncargado" method="POST" action="{% url 'punto-eca:editar_perfil' id=usuario.id %}" novalidate>
+                    <form id="formEncargado" method="POST" action="{% url 'punto-eca:actualizar_perfil' id=usuario.id %}" novalidate>
                         {% csrf_token %}
                         <input type="hidden" name="usuarioId" value="{{ usuario.id }}" />
                         <div class="row">
@@ -321,7 +321,7 @@
                                     </div>
                                 </div>
 
-                                <form id="formPreferencias" method="post">
+                                <form id="formPreferencias" method="post" action="{% url 'punto-eca:toggle_visible' %}">
                                     {% csrf_token %}
                                     <div class="mb-3">
                                         <p class="form-label mb-2">Visibilidad en el mapa</p>

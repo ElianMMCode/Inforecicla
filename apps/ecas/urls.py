@@ -1,5 +1,14 @@
 from django.urls import path, include
-from apps.ecas.views import render_seccion, editar_perfil_gestor, editar_punto
+from apps.ecas.views import (
+    render_seccion,
+    editar_perfil_gestor,
+    actualizar_perfil_gestor,
+    editar_punto,
+    actualizar_punto,
+    toggle_visible,
+    crear_centro,
+    actualizar_centro,
+)
 from . import views
 from apps.chat.views import PuntoChatListView
 
@@ -26,8 +35,11 @@ urlpatterns = [
     path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
     path("<str:seccion>/", render_seccion, name="render_seccion"),
     path("editar-perfil/<str:id>/", editar_perfil_gestor, name="editar_perfil"),
+    path("editar-perfil/<str:id>/guardar/", actualizar_perfil_gestor, name="actualizar_perfil"),
     path("editar-punto/<str:id>/", editar_punto, name="editar_punto"),
+    path("editar-punto/<str:id>/guardar/", actualizar_punto, name="actualizar_punto"),
     path("centros/editar-centro/<str:id>/", views.editar_centro, name="editar_centro"),
+    path("centros/editar-centro/<str:id>/guardar/", actualizar_centro, name="actualizar_centro"),
     # CRUD de materiales bajo punto-eca/materiales/
     path(
         "materiales/",
@@ -42,6 +54,8 @@ urlpatterns = [
         include("apps.operations.urls", namespace="movimientos"),
     ),
     path("centros/registrar-centro/", views.registrar_centro, name="registrar_centro"),
+    path("centros/registrar-centro/guardar/", crear_centro, name="crear_centro"),
+    path("pref/toggle-visible/", toggle_visible, name="toggle_visible"),
     path(
         "centros/eliminar-centro/<str:id>/",
         views.eliminar_centro,

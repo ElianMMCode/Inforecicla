@@ -233,12 +233,13 @@ def api_puntos_eca_detalle(request, punto_id):
             }
         )
 
+    logo_url = _get_punto_image_url(punto, request, "logo_imagen_punto", "logo_url_punto")
+    foto_url = _get_punto_image_url(punto, request, "foto_imagen_punto", "foto_url_punto")
+
     resp = {
         "puntoEcaID": str(punto.pk),
         "nombrePunto": punto.nombre,
-        "localidadNombre": getattr(getattr(punto, "localidad", None), "nombre", "")
-        if getattr(punto, "localidad", None)
-        else "",
+        "localidadNombre": getattr(getattr(punto, "localidad", None), "nombre", ""),
         "direccion": punto.direccion,
         "descripcion": punto.descripcion,
         "telefonoPunto": punto.telefono_punto,
@@ -246,6 +247,8 @@ def api_puntos_eca_detalle(request, punto_id):
         "email": getattr(getattr(punto, "gestor_eca", None), "email", ""),
         "horarioAtencion": getattr(punto, "horario", ""),
         "materiales": materiales,
+        "logoUrl": logo_url,
+        "fotoUrl": foto_url,
     }
     return JsonResponse(resp, safe=False)
 
