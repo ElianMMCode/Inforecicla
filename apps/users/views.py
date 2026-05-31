@@ -159,6 +159,13 @@ def _redirect_after_login(user):
     return redirect("/perfil/"), [], None, None, False
 
 
+def _redirect_authenticated_user(request):
+    user = getattr(request, "user", None)
+    if user and user.is_authenticated:
+        return _redirect_after_login(user)[0]
+    return None
+
+
 def _handle_inactive_login(request, email, usuario_inactivo):
     try:
         token_obj = crear_token_validacion(
@@ -528,12 +535,18 @@ class LoginView(View):
     """
 
     def get(self, request, *args, **kwargs):
+        resp = _redirect_authenticated_user(request)
+        if resp:
+            return resp
         resp, context = _handle_login_request(request)
         if resp:
             return resp
         return render(request, LOGIN_TEMPLATE, context)
 
     def post(self, request, *args, **kwargs):
+        resp = _redirect_authenticated_user(request)
+        if resp:
+            return resp
         # Handle POST explicitly: dispatch POST action and respond accordingly.
         resp, new_errores, new_email, new_recovery_step, new_show_activation_resend = _dispatch_login_post(request)
         if resp:
@@ -566,6 +579,10 @@ def _dispatch_login_post(request):
 
 
 def render_registro_eca(request):
+    resp = _redirect_authenticated_user(request)
+    if resp:
+        return resp
+
     if request.method == "POST":
         data = request.POST
         errores, fields = _validate_registro_eca(data)
@@ -722,6 +739,10 @@ def _create_registro_eca(fields):
 
 
 def render_registro_ciudadano(request):
+    resp = _redirect_authenticated_user(request)
+    if resp:
+        return resp
+
     if request.method == "POST":
         data = request.POST
         errores, fields = _validate_registro_ciudadano(data)

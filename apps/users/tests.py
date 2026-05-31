@@ -21,6 +21,7 @@ _LOGIN = "/login/"
 _LOGOUT = "/logout/"
 _RECOVER = "/recuperar-contrasena/"
 _PERFIL = "/perfil/"
+_PERFIL_SKIP_MODAL = "/perfil/?skip_modal=1"
 _PANEL_ADMIN = "/panel_admin/"
 _PUNTO_ECA = "/punto-eca/"
 
@@ -111,7 +112,7 @@ class ValidarCredencialesTests(TestCase):
             _LOGIN,
             {"email": "usuario@test.com", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu001_02_fallo_email_inexistente(self):
         """TC-CU00.1-02: Email no registrado → mensaje de error genérico."""
@@ -138,7 +139,7 @@ class ValidarCredencialesTests(TestCase):
             _LOGIN,
             {"email": "USUARIO@TEST.COM", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu001_05_login_incompleto_redirige_sin_parametro_forzado(self):
         """TC-CU00.1-05: Un ciudadano con perfil incompleto redirige a /perfil/
@@ -158,7 +159,7 @@ class ValidarCredencialesTests(TestCase):
             {"email": "incompleto@test.com", "password": _PASSWORD_VALIDA},
         )
 
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu001_05_email_con_espacios_extra_es_saneado(self):
         """TC-CU00.1-05: Espacios al inicio/final del email son eliminados antes
@@ -167,7 +168,7 @@ class ValidarCredencialesTests(TestCase):
             _LOGIN,
             {"email": "  usuario@test.com  ", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu001_06_login_muestra_modal_de_validacion_de_cuenta(self):
         """TC-CU00.1-06: El login expone el modal para ingresar el código de activación."""
@@ -176,6 +177,20 @@ class ValidarCredencialesTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="activationModal"')
         self.assertContains(response, 'name="token"')
+
+    def test_tc_cu001_06b_login_anonimo_autenticado_redirige_a_su_destino(self):
+        """TC-CU00.1-06B: Un usuario autenticado no debe ver el login y debe ir a su dashboard."""
+        usuario = _crear_usuario(
+            email="redirigido@test.com",
+            numero_documento="900009",
+            tipo_usuario=cons.TipoUsuario.ADMIN,
+            is_staff=True,
+        )
+        self.client.force_login(usuario)
+
+        response = self.client.get(_LOGIN)
+
+        self.assertRedirects(response, _PANEL_ADMIN, fetch_redirect_response=False)
 
     def test_tc_cu001_07_codigo_de_validacion_activa_la_cuenta(self):
         """TC-CU00.1-07: action=activar valida el token y activa el usuario."""
@@ -200,7 +215,7 @@ class ValidarCredencialesTests(TestCase):
             },
         )
         # After activation, the user should be logged in and redirected to their post-login page
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
         usuario.refresh_from_db()
         token_obj.refresh_from_db()
         self.assertTrue(usuario.is_active)
@@ -629,6 +644,14 @@ class RegistroCiudadanoTests(TestCase):
         usuario = Usuario.objects.get(email="ana.registro.largo@test.com")
         self.assertIsNone(usuario.numero_documento)
         self.assertTrue(mock_enviar_email.called)
+
+    def test_tc_cu004_01b_ciudadano_logueado_redirige_a_perfil(self):
+        usuario = _crear_usuario(email="logueado.ciudadano@test.com")
+        self.client.force_login(usuario)
+
+        response = self.client.get("/registro/ciudadano/")
+
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu004_02_manager_crea_usuario_sin_numero_documento_explicito(self):
         usuario = Usuario.objects.create_user(
