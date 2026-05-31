@@ -203,24 +203,7 @@
             margin-bottom: 0.5rem;
         }
 
-        .password-info {
-            background-color: #f8f9fa;
-            border-left: 4px solid #145c3a;
-            padding: 1rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            color: #4d4d4d;
-            margin-bottom: 1rem;
-        }
-
-        .password-info ul {
-            margin-bottom: 0;
-            padding-left: 1.5rem;
-        }
-
-        .password-info li {
-            margin-bottom: 0.25rem;
-        }
+        {% include 'partials/password_styles.html' %}
 
         {% block extra_styles %}{% endblock %}
     </style>
