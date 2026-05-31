@@ -502,13 +502,16 @@ class MapaInteractivo {
     document.getElementById("detalleHorario").textContent =
       detalles.horarioAtencion || "No especificado";
 
-    // Imágenes: logo y foto
+    // Imágenes: logo y foto — sólo para puntos de la plataforma (o cuando el API explicita 'eca')
     try {
       const imgsContainer = document.getElementById("detalleImagenes");
       const logoImg = document.getElementById("detalleLogo");
       const fotoImg = document.getElementById("detalleFoto");
-      const hasLogo = detalles.logoUrl?.toString().trim() !== "";
-      const hasFoto = detalles.fotoUrl?.toString().trim() !== "";
+
+      const esPuntoPlataforma = (puntoId && !String(puntoId).startsWith("arcgis_")) || detalles?.source === "eca";
+
+      const hasLogo = esPuntoPlataforma && detalles.logoUrl?.toString().trim() !== "";
+      const hasFoto = esPuntoPlataforma && detalles.fotoUrl?.toString().trim() !== "";
 
       if (hasLogo) {
         logoImg.src = detalles.logoUrl;
