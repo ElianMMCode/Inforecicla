@@ -322,15 +322,16 @@
                                 </div>
 
                                 <form id="formPreferencias" method="post">
+                                    {% csrf_token %}
                                     <div class="mb-3">
                                         <p class="form-label mb-2">Visibilidad en el mapa</p>
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" id="cfgMapa" name="visibleEnMapa" type="checkbox">
+                                            <input class="form-check-input" id="cfgMapa" name="visible_en_mapa" type="checkbox" {% if punto.visible_en_mapa %}checked{% endif %}>
                                             <label class="form-check-label" for="cfgMapa">
                                                 Mostrar punto ECA en el mapa público
                                             </label>
                                         </div>
-                                        <small class="text-muted d-block mt-2">Solo será visible cuando tu punto esté aprobado</small>
+                                        <small class="text-muted d-block mt-2">Solo será visible cuando esta opción esté activa</small>
                                     </div>
 
                                     <hr>
