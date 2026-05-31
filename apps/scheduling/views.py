@@ -174,7 +174,56 @@ def _parse_fecha_aware(fecha_texto, formato):
     return timezone.make_aware(datetime.strptime(fecha_texto, formato))
 
 
-def _crear_instancias_repeticion(
+def _obtener_delta_repeticion(tipo_repeticion):
+    from datetime import timedelta
+
+    rep_tipo = (tipo_repeticion or "").upper()
+    if rep_tipo == "DIARIA":
+        return timedelta(days=1)
+    if rep_tipo == "SEMANAL":
+        return timedelta(weeks=1)
+    if rep_tipo == "QUINCENAL":
+        return timedelta(days=14)
+    if rep_tipo == "MENSUAL":
+        try:
+            from dateutil.relativedelta import relativedelta
+
+            return relativedelta(months=1)
+        except ImportError:
+            return timedelta(days=30)
+    return timedelta(days=1)
+
+
+def _obtener_fin_repeticion(fecha_inicio_dt, fecha_fin_repeticion):
+    from datetime import timedelta
+
+    if fecha_fin_repeticion:
+        return _parse_fecha_aware(fecha_fin_repeticion, "%Y-%m-%d")
+    return fecha_inicio_dt + timedelta(days=365)
+
+
+def _crear_instancia_repeticion(
+    *,
+    evento,
+    punto_eca_id,
+    usuario_id,
+    fecha_inicio,
+    fecha_fin,
+    numero_repeticion,
+    observaciones,
+):
+    EventoInstancia.objects.create(
+        evento_base=evento,
+        punto_eca_id=punto_eca_id,
+        usuario_id=usuario_id,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        numero_repeticion=numero_repeticion,
+        observaciones=observaciones,
+    )
+
+
+def _sincronizar_instancias_repeticion(
     *,
     evento,
     punto_eca_id,
@@ -184,12 +233,14 @@ def _crear_instancias_repeticion(
     tipo_repeticion,
     fecha_fin_repeticion,
     observaciones,
+    borrar_existentes=False,
 ):
-    from datetime import timedelta
+    if borrar_existentes:
+        EventoInstancia.objects.filter(evento_base=evento).delete()
 
     if tipo_repeticion == "NINGUNA":
-        EventoInstancia.objects.create(
-            evento_base=evento,
+        _crear_instancia_repeticion(
+            evento=evento,
             punto_eca_id=punto_eca_id,
             usuario_id=usuario_id,
             fecha_inicio=fecha_inicio_dt,
@@ -199,31 +250,15 @@ def _crear_instancias_repeticion(
         )
         return
 
-    rep_end = _parse_fecha_aware(fecha_fin_repeticion, "%Y-%m-%d") if fecha_fin_repeticion else fecha_inicio_dt + timedelta(days=365)
-
-    rep_tipo = tipo_repeticion.upper()
-    if rep_tipo == "DIARIA":
-        delta = timedelta(days=1)
-    elif rep_tipo == "SEMANAL":
-        delta = timedelta(weeks=1)
-    elif rep_tipo == "QUINCENAL":
-        delta = timedelta(days=14)
-    elif rep_tipo == "MENSUAL":
-        try:
-            from dateutil.relativedelta import relativedelta
-
-            delta = relativedelta(months=1)
-        except ImportError:
-            delta = timedelta(days=30)
-    else:
-        delta = timedelta(days=1)
+    rep_end = _obtener_fin_repeticion(fecha_inicio_dt, fecha_fin_repeticion)
+    delta = _obtener_delta_repeticion(tipo_repeticion)
 
     fecha_actual_inicio = fecha_inicio_dt
     fecha_actual_fin = fecha_fin_dt
     rep_numero = 1
     while fecha_actual_inicio <= rep_end:
-        EventoInstancia.objects.create(
-            evento_base=evento,
+        _crear_instancia_repeticion(
+            evento=evento,
             punto_eca_id=punto_eca_id,
             usuario_id=usuario_id,
             fecha_inicio=fecha_actual_inicio,
@@ -294,59 +329,17 @@ def _aplicar_fecha_fin_repeticion(evento, fecha_fin_repeticion, tipo_repeticion)
 
 
 def _recrear_instancias_evento(evento, tipo_repeticion, fecha_fin_repeticion, observaciones):
-    from datetime import timedelta
-
-    EventoInstancia.objects.filter(evento_base=evento).delete()
-
-    if tipo_repeticion == "NINGUNA":
-        EventoInstancia.objects.create(
-            evento_base=evento,
-            punto_eca_id=evento.punto_eca.id,
-            usuario_id=evento.usuario.id,
-            fecha_inicio=evento.fecha_inicio,
-            fecha_fin=evento.fecha_fin,
-            numero_repeticion=1,
-            observaciones=observaciones,
-        )
-        return
-
-    fecha_inicio_dt = evento.fecha_inicio
-    fecha_fin_dt = evento.fecha_fin
-    rep_end = _parse_fecha_aware(fecha_fin_repeticion, "%Y-%m-%d") if fecha_fin_repeticion else fecha_inicio_dt + timedelta(days=365)
-
-    rep_tipo = tipo_repeticion.upper()
-    if rep_tipo == "DIARIA":
-        delta = timedelta(days=1)
-    elif rep_tipo == "SEMANAL":
-        delta = timedelta(weeks=1)
-    elif rep_tipo == "QUINCENAL":
-        delta = timedelta(days=14)
-    elif rep_tipo == "MENSUAL":
-        try:
-            from dateutil.relativedelta import relativedelta
-
-            delta = relativedelta(months=1)
-        except ImportError:
-            delta = timedelta(days=30)
-    else:
-        delta = timedelta(days=1)
-
-    fecha_actual_inicio = fecha_inicio_dt
-    fecha_actual_fin = fecha_fin_dt
-    rep_numero = 1
-    while fecha_actual_inicio <= rep_end:
-        EventoInstancia.objects.create(
-            evento_base=evento,
-            punto_eca_id=evento.punto_eca.id,
-            usuario_id=evento.usuario.id,
-            fecha_inicio=fecha_actual_inicio,
-            fecha_fin=fecha_actual_fin,
-            numero_repeticion=rep_numero,
-            observaciones=observaciones,
-        )
-        fecha_actual_inicio += delta
-        fecha_actual_fin += delta
-        rep_numero += 1
+    _sincronizar_instancias_repeticion(
+        evento=evento,
+        punto_eca_id=evento.punto_eca.id,
+        usuario_id=evento.usuario.id,
+        fecha_inicio_dt=evento.fecha_inicio,
+        fecha_fin_dt=evento.fecha_fin,
+        tipo_repeticion=tipo_repeticion,
+        fecha_fin_repeticion=fecha_fin_repeticion,
+        observaciones=observaciones,
+        borrar_existentes=True,
+    )
 
 
 def _eliminar_instancia(evento_id, evento_uuid):
