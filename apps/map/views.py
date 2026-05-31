@@ -148,7 +148,9 @@ def api_puntos_eca(request):
     - El frontend consume esta lista para renderizar marcadores, preparar filtros rápidos y construir popups básicos.
     """
     puntos = []
-    for punto in PuntoECA.objects.filter(visible_en_mapa=True):
+    for punto in PuntoECA.objects.select_related(
+        "localidad", "gestor_eca"
+    ).filter(visible_en_mapa=True):
         try:
             localidad_nombre = punto.localidad.nombre
         except Exception:
@@ -266,7 +268,9 @@ def api_puntos_eca_por_material(request, material_id):
     """
     inventarios = Inventario.objects.filter(material_id=material_id)
     puntos_ids = inventarios.values_list("punto_eca_id", flat=True)
-    puntos = PuntoECA.objects.filter(pk__in=puntos_ids, visible_en_mapa=True).distinct()
+    puntos = PuntoECA.objects.select_related(
+        "localidad", "gestor_eca"
+    ).filter(pk__in=puntos_ids, visible_en_mapa=True).distinct()
     lista = []
     for punto in puntos:
         try:

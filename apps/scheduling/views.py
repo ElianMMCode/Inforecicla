@@ -406,13 +406,17 @@ def _build_calendario_context(punto):
         {"id": str(centro.id), "nombre": centro.nombre} for centro in centros
     ]
 
-    instancias = EventoInstancia.objects.filter(punto_eca=punto)
+    instancias = EventoInstancia.objects.filter(punto_eca=punto).select_related(
+        "evento_base__material", "evento_base__centro_acopio"
+    )
     # Construyo un set con clave (evento_base.id, fecha_inicio.date()) para identificar qué fechas tienen instancias
     instancias_key = {
         (inst.evento_base.id, inst.fecha_inicio.date()) for inst in instancias
     }
 
-    eventos_calendario = Evento.objects.filter(punto_eca=punto)
+    eventos_calendario = Evento.objects.filter(punto_eca=punto).select_related(
+        "material", "centro_acopio"
+    )
     for evento in eventos_calendario:
         evt_fecha = evento.fecha_inicio.date()
         if (evento.id, evt_fecha) not in instancias_key:
