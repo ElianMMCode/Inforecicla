@@ -95,19 +95,6 @@ def _arcgis_feature_to_punto(feature):
     }
 
 
-def _get_punto_image_url(punto, request, image_field_name, url_field_name):
-    """Normaliza la URL de una imagen de `punto`.
-    Prefiere la imagen subida (ImageField) y construye una URL absoluta; si falla, usa el campo URL manual.
-    """
-    img = getattr(punto, image_field_name, None)
-    if img:
-        try:
-            return request.build_absolute_uri(img.url)
-        except Exception:
-            return getattr(punto, url_field_name, "") or ""
-    return getattr(punto, url_field_name, "") or ""
-
-
 @require_GET
 def api_arcgis_puntos(request):
     """
