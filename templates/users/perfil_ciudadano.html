@@ -701,68 +701,9 @@
                             </div>
                         </div>
 
-                        <!-- Cambiar contraseña -->
+                        <!-- Cambiar contraseña (partial) -->
                         <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold text-success mb-4">
-                                        <i class="bi bi-shield-lock-fill me-2"></i>
-                                        Cambiar Contraseña
-                                    </h5>
-                                    {% include "users/partials/password_requirements.html" %}
-                                    <form method="POST" action="/perfil/cambiar-contrasena/" novalidate id="formPass">
-                                        <input type="text" name="username" autocomplete="username" hidden>
-                                        {% csrf_token %}
-                                        <div class="row g-3">
-                                            <div class="col-12">
-                                                <label for="passwordActual" class="form-label fw-semibold">Contraseña Actual</label>
-                                                <div class="input-group">
-                                                    <input id="passwordActual" type="password" name="contrasenaActual" class="form-control"
-                                                           required maxlength="128"
-                                                           autocomplete="current-password"
-                                                           placeholder="Tu contraseña actual">
-                                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="#passwordActual" aria-hidden="true"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <label for="password" class="form-label fw-semibold">Nueva Contraseña</label>
-                                                <div class="input-group">
-                                                       <input id="password" type="password" name="contrasenaNueva" class="form-control"
-                                                           required minlength="8" maxlength="128"
-                                                           autocomplete="new-password"
-                                                           pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}"
-                                                           placeholder="Nueva contraseña">
-                                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <label for="passwordConfirm" class="form-label fw-semibold">Confirmar Nueva</label>
-                                                <div class="input-group">
-                                                    <input id="passwordConfirm" type="password" name="confirmarContrasena" class="form-control"
-                                                           required maxlength="128"
-                                                           autocomplete="new-password"
-                                                           placeholder="Repite la nueva contraseña">
-                                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="invalid-feedback">Las contraseñas no coinciden.</div>
-                                            </div>
-                                            <div class="col-12 mt-2">
-                                                <button type="submit" class="btn btn-success px-4">
-                                                    <i class="bi bi-lock-fill me-2"></i>Actualizar Contraseña
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                            {% include 'partials/password_change_card.html' %}
                         </div>
 
                     </div>

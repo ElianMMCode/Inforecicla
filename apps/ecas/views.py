@@ -3,6 +3,7 @@ from django.db.models import Q
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from apps.ecas.models import Localidad, CentroAcopio
@@ -94,6 +95,8 @@ def _build_perfil_pendientes(usuario, punto):
     }
 
 
+@gestor_eca_or_admin_required
+@require_GET
 @gestor_eca_or_admin_required
 def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     """
@@ -498,6 +501,8 @@ def registrar_centro(request):
 
 
 @gestor_eca_or_admin_required
+@gestor_eca_or_admin_required
+@require_http_methods(["DELETE"])
 def eliminar_centro(request, id):
     """
     Elimina un centro de acopio (visibilidad ECA) identificado por id, únicamente mediante peticiones DELETE.
