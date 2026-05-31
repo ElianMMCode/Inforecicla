@@ -249,6 +249,42 @@
             background-color: transparent;
         }
 
+        .detalle-logo-box,
+        .detalle-foto-box {
+            width: 100%;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+
+        .detalle-logo-box {
+            aspect-ratio: 1 / 1;
+            max-width: 160px;
+            margin: 0 auto;
+            border-radius: 0.5rem;
+        }
+
+        .detalle-foto-box {
+            aspect-ratio: 16 / 9;
+            border-radius: 0.5rem;
+        }
+
+        .detalle-logo-img,
+        .detalle-foto-img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .detalle-logo-img {
+            object-fit: contain;
+            padding: 0.5rem;
+        }
+
+        .detalle-foto-img {
+            object-fit: cover;
+        }
+
         @media (max-width: 1199.98px) {
             .sidebar-lista {
                 position: absolute;
@@ -500,11 +536,15 @@
                     <div class="modal-body">
                                         <!-- Bloque visual: logo y foto del punto (se muestra sólo si existen) -->
                                         <div id="detalleImagenes" class="row mb-3" style="display: none;">
-                                            <div class="col-md-4 text-center d-flex align-items-center justify-content-center">
-                                                <img id="detalleLogo" src="" alt="Logo del punto" class="img-fluid rounded" style="max-height:120px;">
+                                            <div class="col-md-4 text-center d-flex align-items-center justify-content-center mb-3 mb-md-0">
+                                                <div class="detalle-logo-box shadow-sm">
+                                                    <img id="detalleLogo" src="" alt="Logo del punto" class="detalle-logo-img rounded">
+                                                </div>
                                             </div>
                                             <div class="col-md-8 text-center">
-                                                <img id="detalleFoto" src="" alt="Foto del punto" class="img-fluid rounded" style="max-height:180px; width:100%; object-fit:cover;">
+                                                <div class="detalle-foto-box shadow-sm">
+                                                    <img id="detalleFoto" src="" alt="Foto del punto" class="detalle-foto-img rounded">
+                                                </div>
                                             </div>
                                         </div>
                         <!-- Información General -->

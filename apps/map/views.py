@@ -37,6 +37,27 @@ def mercator_to_latlon(x, y):
     return lat, lon
 
 
+def _get_punto_image_url(punto, request, image_field_name, url_field_name):
+    """
+    Resuelve la URL pública de una imagen de PuntoECA priorizando el archivo subido.
+    """
+    image_field = getattr(punto, image_field_name, None)
+    if image_field:
+        try:
+            image_url = image_field.url
+        except Exception:
+            image_url = ""
+        if image_url:
+            if request is not None:
+                return request.build_absolute_uri(image_url)
+            return image_url
+
+    url_value = getattr(punto, url_field_name, "") or ""
+    if url_value and request is not None:
+        return request.build_absolute_uri(url_value)
+    return url_value
+
+
 def _arcgis_collect_features(data):
     features = []
     if "features" in data:
