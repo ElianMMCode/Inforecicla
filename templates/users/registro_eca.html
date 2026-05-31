@@ -7,10 +7,7 @@
 {% endblock %}
 {% block body_class %}bg-light{% endblock %}
 {% block extra_styles %}
-        body {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            padding: 0 0 2rem 0;
-        }
+    {% include "users/partials/register_common_styles.html" %}
 
         .register-container {
             max-width: 1100px;
@@ -46,88 +43,7 @@
 {% endblock %}
 
 {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <img src="/static/img/logo.png"
-                     alt="Logo InfoRecicla"
-                     width="70"
-                     height="70"
-                     class="rounded" />
-                <span class="fs-1 fw-semibold">InfoRecicla</span>
-            </a>
-            <button class="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#mainNav"
-                    aria-controls="mainNav"
-                    aria-expanded="false"
-                    aria-label="Alternar navegación">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div id="mainNav" class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                    <li class="nav-item"><a class="nav-link" href="/publicaciones">Publicaciones</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/mapa">Mapa ECA</a></li>
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
-                               href="#"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">
-                                <span>{{ user.get_short_name|default:"Usuario" }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                {% if user.is_staff or user.is_superuser or user.tipo_usuario == "ADM" %}
-                                    <li>
-                                        <a class="dropdown-item" href="/panel_admin/">Panel Admin</a>
-                                    </li>
-                                {% elif user.tipo_usuario == "GECA" %}
-                                    <li>
-                                        <a class="dropdown-item" href="/punto-eca/">Dashboard</a>
-                                    </li>
-                                {% else %}
-                                    <li>
-                                        <a class="dropdown-item" href="/perfil/">Mi Perfil</a>
-                                    </li>
-                                {% endif %}
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
-                                <li>
-                                    <form method="POST" action="/logout/" style="display: inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item">Cerrar sesión</button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item dropdown">
-                            <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
-                               href="/login"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false">Acceder</a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="/login">Iniciar sesión</a>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider" />
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="/registro/ciudadano">Registrarse (Ciudadano)</a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="/registro/eca">Registrar Punto ECA</a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
+    {% include "users/partials/navbar.html" with navbar_container_class="px-4" %}
 {% endblock %}
 
 {% block header_title %}Registro de Punto ECA{% endblock %}
@@ -228,69 +144,7 @@
                 <input type="hidden" id="longitud" name="longitud" value="{{ longitud|default:'' }}">
             </div>
 
-            {% include "users/partials/password_requirements.html" %}
-
-            <div class="row-cols">
-                <div class="form-group">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <div class="input-group">
-                        <input type="password"
-                               class="form-control"
-                               id="password"
-                               name="password"
-                               autocomplete="new-password"
-                               placeholder="Contraseña segura"
-                               required>
-                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                            <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                    <div class="invalid-feedback">La contraseña debe cumplir los requisitos mínimos.</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
-                    <div class="input-group">
-                        <input type="password"
-                               class="form-control"
-                               id="passwordConfirm"
-                               name="passwordConfirm"
-                               autocomplete="new-password"
-                               placeholder="Repite tu contraseña"
-                               required>
-                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                            <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                    <div class="invalid-feedback">Las contraseñas no coinciden.</div>
-                </div>
-            </div>
-
-            <div class="form-check">
-                <input class="form-check-input"
-                       type="checkbox"
-                       id="terminos"
-                       name="terminos"
-                       required>
-                <label class="form-check-label" for="terminos">
-                    Acepto los <a href="#" target="_blank">términos y condiciones</a> de InfoRecicla
-                </label>
-                <div class="invalid-feedback">Debes aceptar los términos y condiciones.</div>
-            </div>
-
-            <button type="submit" class="btn-login">
-                <i class="bi bi-geo-alt-fill btn-icon" aria-hidden="true"></i>
-                Registrar Punto ECA
-            </button>
-
-            <div class="register-footer bg-white">
-                <p>
-                    ¿Ya tienes cuenta? <a href="/login/">Inicia sesión aquí</a>
-                </p>
-                <p class="mt-3">
-                    ¿Eres Ciudadano? <a href="/registro/ciudadano/">Regístrate aquí</a>
-                </p>
-            </div>
+            {% include "users/partials/registro_auth_section.html" with submit_icon="bi-geo-alt-fill" submit_label="Registrar Punto ECA" footer_class="bg-white" footer_primary_text="¿Ya tienes cuenta?" footer_primary_url="/login/" footer_primary_link_text="Inicia sesión aquí" footer_secondary_text="¿Eres Ciudadano?" footer_secondary_url="/registro/ciudadano/" footer_secondary_link_text="Regístrate aquí" %}
         </form>
 {% endblock %}
 
