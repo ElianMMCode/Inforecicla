@@ -43,9 +43,12 @@
       <div class="card-body p-4">
         <!-- Contenedor para FullCalendar -->
         <div id="calendar"></div>
-          <script>        
-            window.EVENTOS = {{ EVENTOS|safe }};
-          </script>        
+          {{ EVENTOS|json_script:"eventos-data" }}
+          <script>
+            globalThis.EVENTOS = JSON.parse(
+              document.getElementById("eventos-data").textContent,
+            );
+          </script>
       </div>
     </div>
   </div>
