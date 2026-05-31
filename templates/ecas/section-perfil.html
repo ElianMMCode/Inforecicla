@@ -321,7 +321,7 @@
                                     </div>
                                 </div>
 
-                                <form id="formPreferencias" method="post">
+                                <form id="formPreferencias" method="post" action="{% url 'punto-eca:toggle_visible' %}">
                                     {% csrf_token %}
                                     <div class="mb-3">
                                         <p class="form-label mb-2">Visibilidad en el mapa</p>
