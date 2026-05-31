@@ -204,7 +204,6 @@ class MapaInteractivo {
     let color = this.colores.defecto;
     let iconoHtml = '<i class="fas fa-leaf"></i>';
     if (punto.source === "arcgis") {
-      color = "#0d6efd"; // Azul Bootstrap para ArcGIS
       iconoHtml = '<i class="fas fa-map-marker-alt"></i>';
     }
     const icono = L.divIcon({
