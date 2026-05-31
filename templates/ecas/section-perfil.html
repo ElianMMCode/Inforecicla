@@ -460,7 +460,6 @@
                                        name="latitud"
                                        placeholder="-90 a 90"
                                        value="{% if punto.latitud != None %}{{ punto.latitud|floatformat:'6u' }}{% else %}{% endif %}" />
-                                <script>console.log('Latitud original:', '{{ punto.latitud }}');</script>
                                 <small class="text-muted">-90 a 90 (opcional)</small>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -472,7 +471,6 @@
                                        name="longitud"
                                        placeholder="-180 a 180"
                                        value="{% if punto.longitud != None %}{{ punto.longitud|floatformat:'6u' }}{% else %}{% endif %}" />
-                                <script>console.log('Longitud original:', '{{ punto.longitud }}');</script>
                                 <small class="text-muted">-180 a 180 (opcional)</small>
                             </div>
                         </div>
