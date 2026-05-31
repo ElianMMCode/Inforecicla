@@ -3,10 +3,10 @@
 <style>
 .sidebar-menu .nav-link.active {
     background: #fff !important;
-    color: #28a745 !important;
+  color: #0f5132 !important;
 }
 .sidebar-menu .nav-link.active i {
-    color: #28a745 !important;
+  color: #0f5132 !important;
 }
 /* Dropdown on hover sólo en desktop */
 @media (min-width: 768px) {
@@ -41,7 +41,7 @@
   .sidebar-dropdown:hover > .nav-link.sidebar-dropdown-toggle,
   .sidebar-dropdown:focus-within > .nav-link.sidebar-dropdown-toggle {
     background: #fff !important;
-    color: #28a745 !important;
+    color: #0f5132 !important;
     border-radius: .375rem .375rem 0 0;
   }
   /* Dropdown items: texto blanco por defecto, verde en hover/active */
@@ -53,7 +53,7 @@
   .sidebar-dropdown > .dropdown-menu .dropdown-item:hover,
   .sidebar-dropdown > .dropdown-menu .dropdown-item:focus,
   .sidebar-dropdown > .dropdown-menu .dropdown-item.active {
-    color: #28a745 !important;
+    color: #0f5132 !important;
     background: #fff !important;
   }
   /* Evitar espacio vacío arriba, abajo y entre ítems del sidebar */
@@ -148,14 +148,15 @@
             </a>
         </li>
         <li class="nav-item dropdown sidebar-dropdown">
-            <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'perfil' %}active{% endif %} sidebar-dropdown-toggle"
+          <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'perfil' or request.resolver_match.url_name == 'configuracion' %}active{% endif %} sidebar-dropdown-toggle"
                href="{% url 'punto-eca:perfil' %}">
-                <i class="bi bi-person me-2"></i>Perfil y Configuración
+                <i class="bi bi-person me-2"></i>Perfil
                 <i class="bi bi-chevron-down ms-auto small"></i>
             </a>
             <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2" style="min-width: 180px;">
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:perfil' %}#encargadoPanel" data-anchor="#encargadoPanel">Perfil de Usuario</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:perfil' %}#puntoPanel" data-anchor="#puntoPanel">Datos del Punto</a></li>
+              <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:perfil' %}?tab=encargado">Encargado</a></li>
+              <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:perfil' %}?tab=punto">Punto ECA</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:perfil' %}?tab=configuracion">Configuración</a></li>
             </ul>
         </li>
                 <li class="nav-item">

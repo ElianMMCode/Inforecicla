@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tieneMin = /[a-z]/.test(password);
     const tieneMay = /[A-Z]/.test(password);
     const tieneNum = /\d/.test(password);
-    const tieneEsp = /[@$!%*?&]/.test(password);
+    const tieneEsp = /[@$!%*?&_]/.test(password);
     const tieneLongitud = password.length >= 8;
     const cumpleTodo = tieneMin && tieneMay && tieneNum && tieneEsp && tieneLongitud;
 

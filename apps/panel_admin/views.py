@@ -1,3 +1,4 @@
+from django.views.decorators.http import require_GET, require_POST
 import io
 import re as _re
 
@@ -1458,7 +1459,7 @@ _SOLO_LETRAS   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")
 _SOLO_CIUDAD   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$")
 _CELULAR       = _re.compile(r"^3\d{9}$")
 _PASSWORD_COMP = _re.compile(
-    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$"
+    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}$"
 )
 
 
@@ -1514,9 +1515,8 @@ def actualizar_datos_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_POST
 def cambiar_contrasena_admin(request):
-    if request.method != "POST":
-        return redirect(ADMIN_PERFIL_URL)
 
     user      = request.user
     actual    = request.POST.get("contrasenaActual", "")

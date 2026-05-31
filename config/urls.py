@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from apps.core.views import inicio, error_400, error_403, error_404, error_500
+from apps.core.views import inicio, error_400, error_403, error_404, error_500, favicon
 from apps.users import views
 from apps.ecas import views as ecas_views
 
@@ -28,6 +28,7 @@ from django.contrib.auth.views import LogoutView
 urlpatterns = [
     path("", inicio),  # Ruta raiz
     path("inicio/", inicio),  # Ruta landing page
+    path("favicon.ico", favicon, name="favicon"),
     path("admin/", admin.site.urls),
     # Urls Panel Administracion
     path("panel_admin/", include("apps.panel_admin.urls", namespace="panel_admin")),

@@ -110,6 +110,7 @@
         #chat-mensajes::-webkit-scrollbar-thumb { background: #d0ead8; border-radius: 10px; }
 
     </style>
+    {% include 'partials/password_styles.html' %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ" crossorigin="anonymous">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-5-theme/1.3.0/select2-bootstrap-5-theme.min.css" rel="stylesheet" integrity="sha384-IrMr0LFnIMa9H6HhC5VVqVuWNEIwspnRLKQc0SUyPj4Cy4s02DiWDZEoJOo5WNK6" crossorigin="anonymous">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
@@ -148,12 +149,32 @@
         <div class="container-fluid p-4">
 
             {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'success' }} alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle me-2"></i>{{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div id="perfil-messages" class="mb-3">
+                    {% for message in messages %}
+                        {% if 'error' in message.tags %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% elif 'warning' in message.tags %}
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-circle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% elif 'info' in message.tags %}
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% include 'partials/swal_messages_script.html' with swal_confirm_button_color='#145c3a' %}
             {% endif %}
 
             {% if perfil_incompleto or request.GET.completar == '1' %}
@@ -635,70 +656,9 @@
                             </div>
                         </div>
 
-                        <!-- Cambiar contraseña -->
+                        <!-- Cambiar contraseña (partial) -->
                         <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold text-success mb-4">
-                                        <i class="bi bi-shield-lock-fill me-2"></i>
-                                        Cambiar Contraseña
-                                    </h5>
-                                    <div class="alert alert-light border-start border-success border-4 py-2 mb-3 small">
-                                        <strong>Requisitos:</strong> mínimo 8 caracteres &bull; una mayúscula &bull; una minúscula &bull; un número &bull; un símbolo <code>@$!%*?&</code>
-                                    </div>
-                                    <form method="POST" action="/perfil/cambiar-contrasena/" novalidate id="formPass">
-                                        <input type="text" name="username" autocomplete="username" hidden>
-                                        {% csrf_token %}
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <label for="contrasenaActual" class="form-label fw-semibold">Contraseña Actual</label>
-                                                <div class="input-group">
-                                                    <input id="contrasenaActual" type="password" name="contrasenaActual" class="form-control"
-                                                           required maxlength="128"
-                                                           autocomplete="current-password"
-                                                           placeholder="Tu contraseña actual">
-                                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="input[name=contrasenaActual]" aria-hidden="true"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label for="nuevaPass" class="form-label fw-semibold">Nueva Contraseña</label>
-                                                <div class="input-group">
-                                                    <input id="nuevaPass" type="password" name="contrasenaNueva" class="form-control"
-                                                           required minlength="8" maxlength="128"
-                                                           autocomplete="new-password"
-                                                           pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}"
-                                                           placeholder="Nueva contraseña">
-                                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="#nuevaPass" aria-hidden="true"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label for="confirmarPass" class="form-label fw-semibold">Confirmar Nueva</label>
-                                                <div class="input-group">
-                                                    <input id="confirmarPass" type="password" name="confirmarContrasena" class="form-control"
-                                                           required maxlength="128"
-                                                           autocomplete="new-password"
-                                                           placeholder="Repite la nueva contraseña">
-                                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                                        <i class="bi bi-eye toggle-password" data-target="#confirmarPass" aria-hidden="true"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="invalid-feedback">Las contraseñas no coinciden.</div>
-                                            </div>
-                                            <div class="col-12 mt-2">
-                                                <button type="submit" class="btn btn-success px-4">
-                                                    <i class="bi bi-lock-fill me-2"></i>Actualizar Contraseña
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                            {% include 'partials/password_change_card.html' %}
                         </div>
 
                     </div>
@@ -905,6 +865,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
+<script type="module" src="{% static 'js/formularios/perfil-cambio-contrasena.js' %}"></script>
 <script>
     // Resaltar pestaña activa en el sidebar
     document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(tab) {
@@ -924,21 +885,6 @@
         fechaNac.setAttribute('max', maxFecha.toISOString().split('T')[0]);
     }
 
-    // Validación de coincidencia de contraseñas
-    const nuevaPass = document.getElementById('nuevaPass');
-    const confirmarPass = document.getElementById('confirmarPass');
-    function validarCoincidencia() {
-        if (confirmarPass.value && confirmarPass.value !== nuevaPass.value) {
-            confirmarPass.setCustomValidity('Las contraseñas no coinciden.');
-        } else {
-            confirmarPass.setCustomValidity('');
-        }
-    }
-    if (nuevaPass && confirmarPass) {
-        nuevaPass.addEventListener('input', validarCoincidencia);
-        confirmarPass.addEventListener('input', validarCoincidencia);
-    }
-
     // Activar validación visual de Bootstrap al enviar
     ['formDatos', 'formPass'].forEach(function(id) {
         const form = document.getElementById(id);
@@ -952,6 +898,11 @@
             });
         }
     });
+
+    const perfilMessages = document.getElementById('perfil-messages');
+    if (perfilMessages) {
+        perfilMessages.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
 
     // --- Chat Frontend Integración REST ---
     const chatSelect = document.getElementById('buscador-puntos-select2');

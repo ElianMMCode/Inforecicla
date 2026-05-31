@@ -15,6 +15,7 @@ from pathlib import Path
 
 import sys
 import os
+from django.contrib.messages import constants as message_constants
 
 # Opción A: Usar una variable de entorno (.env)
 # Si en Windows no configuran USE_REDIS=True, usará la memoria.
@@ -182,11 +183,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Límites razonables para cargas de imágenes ECA
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+
 # Definición del modelo de usuario personalizado
 AUTH_USER_MODEL = "users.Usuario"
 
 # Mapeo de niveles de mensaje Django a clases Bootstrap
-from django.contrib.messages import constants as message_constants
 MESSAGE_TAGS = {
     message_constants.ERROR: "danger",
 }

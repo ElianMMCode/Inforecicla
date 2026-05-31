@@ -114,14 +114,21 @@ class Calificacion(models.TextChoices):
 class Visibilidad(models.TextChoices):
     GLOBAL = "GLOBAL", _("Global")
     ECA = "ECA", _("ECA")
-    
+
 class TipoPublicacion(models.TextChoices):
     PUNTO_ECA = "Punto Eca", _("Punto Eca")
     NOTICIA = "Noticia", _("Noticia")
     EVENTO = "Evento", _("Evento"),
     EDUCACION = "Educativo", _("Educacion")
-    
+
 class Votos(models.TextChoices):
     LIKE = "Like", _("Like")
     DISLIKE = "Dislike", _("Dislike")
-    
+
+
+# Límites y formatos permitidos para cargas de imagen
+IMAGE_UPLOAD_ALLOWED_EXTENSIONS = ("jpg", "jpeg", "png", "webp")
+USER_PROFILE_IMAGE_MAX_SIZE = 2 * 1024 * 1024
+POINT_LOGO_IMAGE_MAX_SIZE = 2 * 1024 * 1024
+POINT_PHOTO_IMAGE_MAX_SIZE = 5 * 1024 * 1024
+

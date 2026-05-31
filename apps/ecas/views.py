@@ -2,6 +2,8 @@ from django.http import JsonResponse
 from django.db.models import Q
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from apps.ecas.models import Localidad, CentroAcopio
@@ -76,11 +78,14 @@ def _build_perfil_pendientes(usuario, punto):
             ("horario_atencion", "Horario de atención"),
             ("latitud", "Latitud"),
             ("longitud", "Longitud"),
-            ("logo_url_punto", "Logo"),
-            ("foto_url_punto", "Foto"),
         ],
         valores_default_por_campo={"nombre": ("Punto ECA Sin Nombre",)},
     )
+
+    if not (getattr(punto, "logo_imagen_punto", None) or getattr(punto, "logo_url_punto", None)):
+        punto_pendientes.append("Logo")
+    if not (getattr(punto, "foto_imagen_punto", None) or getattr(punto, "foto_url_punto", None)):
+        punto_pendientes.append("Foto")
 
     return {
         "encargado": encargado_pendientes,
@@ -91,7 +96,9 @@ def _build_perfil_pendientes(usuario, punto):
 
 
 @gestor_eca_or_admin_required
-def render_seccion(request, seccion="resumen"):
+@require_GET
+@gestor_eca_or_admin_required
+def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     """
     Vista principal que renderiza una sección del panel Punto ECA según el parámetro 'seccion'.
     - Selecciona la plantilla y los datos correctos para mostrar la sección indicada (perfil, materiales, movimientos, centros, calendario, resumen, etc).
@@ -107,7 +114,10 @@ def render_seccion(request, seccion="resumen"):
     punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
 
     if seccion == "perfil":
-        context = _build_perfil_context(punto)
+        perfil_tab = request.GET.get("tab", perfil_tab)
+
+    if seccion == "perfil":
+        context = _build_perfil_context(punto, perfil_tab=perfil_tab)
     elif seccion == "materiales":
         context = _build_materiales_context(punto)
     elif seccion == "movimientos":
@@ -124,7 +134,7 @@ def render_seccion(request, seccion="resumen"):
     return render(request, "ecas/puntoECA-layout.html", context)
 
 
-def _build_perfil_context(punto):
+def _build_perfil_context(punto, perfil_tab="punto"):
     """
     Construye el contexto para la sección 'perfil' del Punto ECA.
     Incluye información del gestor (usuario), el punto, catálogo de localidades y tipos de documento.
@@ -141,6 +151,7 @@ def _build_perfil_context(punto):
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
         "perfil_pendientes": perfil_pendientes,
+        "perfil_tab": perfil_tab,
     }
 
 
@@ -334,7 +345,10 @@ def editar_punto(request, id):
         return redirect(CONSTANTE_RENDER, seccion="perfil")
 
     if request.method == "POST":
-        punto = PuntoService.editar_punto(request, id)
+        resultado = PuntoService.editar_punto(request, id)
+        if not resultado.get("ok"):
+            messages.error(request, resultado.get("message", "No se pudo actualizar el punto ECA."))
+            return redirect(CONSTANTE_RENDER)
         messages.success(request, "Punto ECA actualizado correctamente.")
         return redirect(CONSTANTE_PERFIL)
 
@@ -487,6 +501,8 @@ def registrar_centro(request):
 
 
 @gestor_eca_or_admin_required
+@gestor_eca_or_admin_required
+@require_http_methods(["DELETE"])
 def eliminar_centro(request, id):
     """
     Elimina un centro de acopio (visibilidad ECA) identificado por id, únicamente mediante peticiones DELETE.
@@ -518,6 +534,7 @@ def eliminar_centro(request, id):
 
 
 @login_required
+@require_GET
 def puntos_eca_json(request):
     """
     API endpoint que devuelve un listado de puntos ECA simplificado para autocompletado y mapas en el perfil ciudadano.

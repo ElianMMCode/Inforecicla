@@ -6,9 +6,11 @@ from django.contrib.auth.models import (
 )
 from config.base_models import LocalizacionModel
 from django.core.validators import MinLengthValidator
+from django.core.validators import FileExtensionValidator
 from django.utils.translation import gettext_lazy as _
 from config import constants as cons
 from django.core.exceptions import ValidationError as ValidationError
+from apps.core.upload_validators import MaxFileSizeValidator
 from datetime import date
 import uuid
 
@@ -194,6 +196,10 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         upload_to="perfiles/",
         null=True,
         blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=cons.IMAGE_UPLOAD_ALLOWED_EXTENSIONS),
+            MaxFileSizeValidator(cons.USER_PROFILE_IMAGE_MAX_SIZE, "La foto de perfil"),
+        ],
         help_text="Foto de perfil del usuario (opcional)",
     )
 
