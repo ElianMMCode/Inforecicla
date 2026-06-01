@@ -1,5 +1,16 @@
 // --- Archivo de JavaScript para Eventos del Calendario (Refactorizado) ---
 
+function validarRangoFechas(fechaInicio, horaInicio, fechaFin, horaFin) {
+  const inicio = `${fechaInicio}T${horaInicio}`;
+  const fin = `${fechaFin || fechaInicio}T${horaFin}`;
+
+  if (fin <= inicio) {
+    return "La fecha de fin debe ser posterior a la de inicio.";
+  }
+
+  return "";
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // Helper para obtener cookies (simplificado con .startsWith)
   function getCookie(name) {
@@ -39,17 +50,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!modalCrearEvento || typeof bootstrap === "undefined") return;
 
     bootstrap.Modal.getInstance(modalCrearEvento)?.hide();
-  }
-
-  function validarRangoFechas(fechaInicio, horaInicio, fechaFin, horaFin) {
-    const inicio = `${fechaInicio}T${horaInicio}`;
-    const fin = `${fechaFin || fechaInicio}T${horaFin}`;
-
-    if (fin <= inicio) {
-      return "La fecha de fin debe ser posterior a la de inicio.";
-    }
-
-    return "";
   }
 
   // Inicio de lógica principal

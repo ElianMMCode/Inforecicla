@@ -89,7 +89,7 @@ async function showSwal(options) {
   if (globalThis.console?.warn) {
     console.warn("SweetAlert2 no está disponible:", config.title, config.text);
   }
-  return Promise.resolve({ isConfirmed: true });
+  return { isConfirmed: true };
 }
 
 async function showValidationSwal(message) {
