@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 from django.test import TestCase, override_settings
 
@@ -6,6 +7,7 @@ from config import constants as cons
 from apps.ecas.models import PuntoECA
 from apps.inventory.models import Material
 from apps.scheduling.models import Evento
+from apps.scheduling.models import EventoInstancia
 from apps.users.models import Usuario
 
 
@@ -151,4 +153,44 @@ class CrearEventoVentaTests(TestCase):
 				"success": False,
 				"error": "La fecha de fin debe ser posterior a la de inicio.",
 			},
+		)
+
+	def test_evento_diario_genera_instancias_hasta_fecha_fin_inclusive(self):
+		usuario = _crear_usuario_gestor(email="gestor5@test.com")
+		material = Material.objects.create(nombre="Cartón", descripcion="Cartón")
+		PuntoECA.objects.create(
+			gestor_eca=usuario,
+			email="punto5@test.com",
+			celular="3000000005",
+			nombre="Punto ECA 5",
+		)
+		self.client.force_login(usuario)
+
+		response = self.client.post(
+			_URL_CREAR_EVENTO,
+			data=json.dumps(
+				{
+					"materialId": str(material.id),
+					"titulo": "Evento diario",
+					"fechaInicio": "2026-06-01",
+					"horaInicio": "10:00",
+					"horaFin": "11:00",
+					"tipoRepeticion": "DIARIA",
+					"fechaFinRepeticion": "2026-06-03",
+				}
+			),
+			content_type="application/json",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		payload = json.loads(response.content)
+		self.assertTrue(payload["success"])
+		self.assertTrue(payload["eventoId"])
+
+		evento = Evento.objects.get()
+		instancias = EventoInstancia.objects.filter(evento_base=evento).order_by("fecha_inicio")
+		self.assertEqual(instancias.count(), 3)
+		self.assertEqual(
+			[inst.fecha_inicio.date() for inst in instancias],
+			[date(2026, 6, 1), date(2026, 6, 2), date(2026, 6, 3)],
 		)

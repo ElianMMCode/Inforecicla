@@ -277,7 +277,8 @@ def _sincronizar_instancias_repeticion(
     fecha_actual_inicio = fecha_inicio_dt
     fecha_actual_fin = fecha_fin_dt
     rep_numero = 1
-    while fecha_actual_inicio <= rep_end:
+    rep_end_date = rep_end.date()
+    while fecha_actual_inicio.date() <= rep_end_date:
         _crear_instancia_repeticion(
             evento=evento,
             punto_eca_id=punto_eca_id,
@@ -346,7 +347,9 @@ def _aplicar_fecha_fin_repeticion(evento, fecha_fin_repeticion, tipo_repeticion)
     if not fecha_fin_repeticion or tipo_repeticion == "NINGUNA":
         evento.fecha_fin_repeticion = None
     else:
-        evento.fecha_fin_repeticion = fecha_fin_repeticion
+        evento.fecha_fin_repeticion = _parse_fecha_aware(
+            fecha_fin_repeticion, "%Y-%m-%d"
+        )
 
 
 def _recrear_instancias_evento(evento, tipo_repeticion, fecha_fin_repeticion, observaciones):
@@ -509,7 +512,10 @@ def crear_evento_venta(request):
             fecha_fin=fecha_fin_dt,
             color=color,
             tipo_repeticion=tipo_repeticion,
-            fecha_fin_repeticion=fecha_fin_repeticion if fecha_fin_repeticion else None,
+            fecha_fin_repeticion=
+            _parse_fecha_aware(fecha_fin_repeticion, "%Y-%m-%d")
+            if fecha_fin_repeticion
+            else None,
         )
 
         _sincronizar_instancias_repeticion(
