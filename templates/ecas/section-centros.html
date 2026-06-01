@@ -15,15 +15,25 @@
     {{ localidades_catalogo|json_script:"localidadesCatalogo" }}
     {{ tipos_catalogo|json_script:"tiposCentroCatalogo" }}
         <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+                integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+                crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-            rel="stylesheet" crossorigin="anonymous" />
+            rel="stylesheet"
+            integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ"
+            crossorigin="anonymous" />
     <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
-            rel="stylesheet" crossorigin="anonymous" />
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" crossorigin="anonymous"></script>
+            rel="stylesheet"
+            integrity="sha384-dZ/kdA+7jiSms5Z+NkfRPANv1sHvWqS7e51A6ywK9wsJztsDG2q4gA4Ltui+/1yW"
+            crossorigin="anonymous" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
+                integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3"
+                crossorigin="anonymous"></script>
     <!-- Bootstrap Bundle JS necesario para instanciar modales -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="{% static 'js/ecas/section-centros.js' %}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+                crossorigin="anonymous"></script>
+    <script type="module" src="{% static 'js/ecas/section-centros.js' %}"></script>
     <div class="accordion accordion-flush shadow-sm" id="acordeonCentros">
         <!-- ACORDEÓN 1: CENTROS GLOBALES -->
         <div class="accordion-item border-start border-5 border-info">
@@ -61,7 +71,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <form class="row g-3 align-items-end" id="filtrosFormCentrosGlobales">
+                            <form class="row g-3 align-items-end" id="filtrosFormCentrosGlobales" novalidate>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold text-muted mb-1"
                                            for="filtroNombreGlobal">Nombre</label>
@@ -98,10 +108,12 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold text-muted mb-1"
                                            for="filtroEmailGlobal">Correo</label>
-                                    <input type="text"
+                                    <input type="email"
                                            class="form-control"
                                            placeholder="Correo..."
-                                           id="filtroEmailGlobal">
+                                           id="filtroEmailGlobal"
+                                           maxlength="320">
+                                    <div class="invalid-feedback">El formato del correo no es válido.</div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold text-muted mb-1"
@@ -109,7 +121,11 @@
                                     <input type="text"
                                            class="form-control"
                                            placeholder="Teléfono..."
-                                           id="filtroTelefonoGlobal">
+                                           id="filtroTelefonoGlobal"
+                                           pattern="^[0-9]{10}$"
+                                           maxlength="10"
+                                           inputmode="numeric">
+                                    <div class="invalid-feedback">Solo dígitos, 10 caracteres.</div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex gap-2">
@@ -213,7 +229,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <form class="row g-3 align-items-end" id="filtrosFormCentrosPropios">
+                            <form class="row g-3 align-items-end" id="filtrosFormCentrosPropios" novalidate>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold text-muted mb-1"
                                            for="filtroNombrePropio">Nombre</label>
@@ -250,10 +266,12 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold text-muted mb-1"
                                            for="filtroEmailPropio">Correo</label>
-                                    <input type="text"
+                                    <input type="email"
                                            class="form-control"
                                            placeholder="Correo..."
-                                           id="filtroEmailPropio">
+                                           id="filtroEmailPropio"
+                                           maxlength="320">
+                                    <div class="invalid-feedback">El formato del correo no es válido.</div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold text-muted mb-1"
@@ -261,7 +279,11 @@
                                     <input type="text"
                                            class="form-control"
                                            placeholder="Teléfono..."
-                                           id="filtroTelefonoPropio">
+                                           id="filtroTelefonoPropio"
+                                           pattern="^[0-9]{10}$"
+                                           maxlength="10"
+                                           inputmode="numeric">
+                                    <div class="invalid-feedback">Solo dígitos, 10 caracteres.</div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex gap-2">
@@ -490,7 +512,8 @@
         <div class="modal-dialog modal-lg">
             <form id="formEditarCentro"
                   method="POST"
-                  class="modal-content border-0 shadow-lg rounded-4">
+                  class="modal-content border-0 shadow-lg rounded-4"
+                  novalidate>
                 {% csrf_token %}
                 <input type="hidden" name="centroId" id="editCentroInputId">
                 <div class="modal-header bg-success text-white rounded-top-4">
@@ -510,11 +533,15 @@
                                    class="form-control"
                                    id="editCentroNombre"
                                    name="nombreCentro"
-                                   required>
+                                   required
+                                   minlength="2"
+                                   maxlength="100">
+                            <div class="invalid-feedback">El nombre es obligatorio (mínimo 2 caracteres).</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="editCentroTipo">Tipo</label>
                             <select class="form-select" id="editCentroTipo" name="tipoCentro" required></select>
+                            <div class="invalid-feedback">Selecciona un tipo de centro.</div>
                             <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
                         </div>
                         <div class="col-md-6">
@@ -523,6 +550,7 @@
                                     id="editCentroLocalidad"
                                     name="localidadCentro"
                                     required></select>
+                            <div class="invalid-feedback">Selecciona una localidad.</div>
                             <!-- Este select será poblado dinámicamente con las opciones válidas y convertido a Select2 -->
                             <!-- Si hay select de localidades, reemplazar por select -->
                         </div>
@@ -531,14 +559,20 @@
                             <input type="text"
                                    class="form-control"
                                    id="editCentroCelular"
-                                   name="celularCentro">
+                                   name="celularCentro"
+                                   pattern="^3[0-9]{9}$"
+                                   maxlength="10"
+                                   inputmode="numeric">
+                            <div class="invalid-feedback">El celular debe tener 10 dígitos y comenzar por 3.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="editCentroEmail">Email</label>
                             <input type="email"
                                    class="form-control"
                                    id="editCentroEmail"
-                                   name="emailCentro">
+                                   name="emailCentro"
+                                   maxlength="320">
+                            <div class="invalid-feedback">El formato del correo no es válido.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="editCentroContacto">Nombre de Contacto</label>
