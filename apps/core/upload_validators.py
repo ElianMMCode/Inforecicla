@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
+from django.utils.deconstruct import deconstructible
 
 
+@deconstructible
 class MaxFileSizeValidator:
     def __init__(self, max_size_bytes, field_label):
         self.max_size_bytes = max_size_bytes
