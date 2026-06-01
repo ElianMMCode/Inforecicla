@@ -791,36 +791,6 @@ class RegistroCiudadanoTests(TestCase):
         mensajes = [str(m) for m in get_messages(response.wsgi_request)]
         self.assertIn("¡Perfil completado correctamente!", mensajes)
 
-    def test_tc_cu004_07_actualizar_perfil_con_su_mismo_documento_no_da_error(self):
-        localidad = Localidad.objects.create(localidad_id=uuid.uuid4(), nombre="Centro")
-        usuario = Usuario.objects.create_user(
-            email="mismo.doc@test.com",
-            password=_PASSWORD_VALIDA,
-            nombres="Sofía",
-            apellidos="Mora",
-            numero_documento="987654321",
-            tipo_documento="CC",
-            fecha_nacimiento=None,
-            localidad=None,
-        )
-
-        self.client.force_login(usuario)
-
-        response = self.client.post(
-            "/perfil/actualizar/",
-            {
-                "numeroDocumento": "987654321",
-                "localidad": str(localidad.localidad_id),
-            },
-            follow=True,
-        )
-
-        self.assertEqual(response.status_code, 200)
-        mensajes = [str(m) for m in get_messages(response.wsgi_request)]
-        self.assertNotIn("Ya existe un usuario con ese número de documento.", mensajes)
-        usuario.refresh_from_db()
-        self.assertEqual(usuario.numero_documento, "987654321")
-
 
 
 #########################################################################

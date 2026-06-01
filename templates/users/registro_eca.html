@@ -101,9 +101,7 @@
                            placeholder="3001234567"
                            value="{{ celular|default:'' }}"
                            required
-                           pattern="3[0-9]{9}"
-                           inputmode="numeric"
-                           maxlength="10">
+                           pattern="3[0-9]{9}">
                     <div class="invalid-feedback">El celular debe iniciar con 3 y tener 10 dígitos.</div>
                 </div>
             </div>
@@ -128,10 +126,7 @@
                            id="numeroDocumento"
                            name="numeroDocumento"
                            placeholder="123456789"
-                           value="{{ numeroDocumento|default:'' }}"
-                           inputmode="numeric"
-                           maxlength="15"
-                           pattern="[0-9]+">
+                           value="{{ numeroDocumento|default:'' }}">
                     <div class="invalid-feedback"></div>
                 </div>
             </div>
@@ -144,9 +139,6 @@
                     Haz clic en el mapa para seleccionar coordenadas. Estas se guardan automáticamente y no se editan manualmente.
                 </div>
                 <div id="mapa"></div>
-                <div class="invalid-feedback" id="mapa-feedback" style="display: none;">
-                    Selecciona una ubicación en el mapa para continuar.
-                </div>
 
                 <input type="hidden" id="latitud" name="latitud" value="{{ latitud|default:'' }}">
                 <input type="hidden" id="longitud" name="longitud" value="{{ longitud|default:'' }}">
@@ -158,119 +150,11 @@
 
 {% block extra_scripts %}
     <script>
-        function getRegistroEcaFeedback(control) {
-            const container = control ? control.closest('.form-group, .form-check') : null;
-            return container ? container.querySelector('.invalid-feedback') : null;
-        }
-
-        function setRegistroEcaControlState(control, isValid) {
-            if (!control) {
-                return;
-            }
-
-            control.classList.toggle('is-valid', isValid);
-            control.classList.toggle('is-invalid', !isValid);
-
-            const feedback = getRegistroEcaFeedback(control);
-            if (feedback) {
-                feedback.style.display = isValid ? 'none' : 'block';
-            }
-        }
-
-        function setRegistroEcaMapState(mapaFeedback, isValid) {
-            if (!mapaFeedback) {
-                return;
-            }
-
-            mapaFeedback.style.display = isValid ? 'none' : 'block';
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
             const mapaElement = document.getElementById('mapa');
             const latInput = document.getElementById('latitud');
             const lngInput = document.getElementById('longitud');
-            const mapaFeedback = document.getElementById('mapa-feedback');
             let marcador = null;
-
-            const validateCoordinates = function () {
-                const latitud = latInput && latInput.value ? Number.parseFloat(latInput.value) : Number.NaN;
-                const longitud = lngInput && lngInput.value ? Number.parseFloat(lngInput.value) : Number.NaN;
-                const hasLat = !Number.isNaN(latitud);
-                const hasLng = !Number.isNaN(longitud);
-
-                setRegistroEcaMapState(mapaFeedback, hasLat && hasLng);
-                return hasLat && hasLng;
-            };
-
-            const passwordState = {
-                lower: document.getElementById('reqMinusculas'),
-                upper: document.getElementById('reqMayusculas'),
-                num: document.getElementById('reqNumeros'),
-                special: document.getElementById('reqEspeciales'),
-                len: document.getElementById('reqLongitud'),
-            };
-
-            const validatePasswordStrength = function () {
-                const password = document.getElementById('password');
-                if (!password) {
-                    return true;
-                }
-
-                const value = password.value || '';
-                const passwordChecks = [
-                    ['lower', /[a-z]/.test(value), 'Mínimo una letra minúscula (a-z)'],
-                    ['upper', /[A-Z]/.test(value), 'Mínimo una letra mayúscula (A-Z)'],
-                    ['num', /\d/.test(value), 'Mínimo un número (0-9)'],
-                    ['special', /[@$!%*?&_]/.test(value), 'Mínimo un carácter especial (@$!%*?&)'],
-                    ['len', value.length >= 8, 'Mínimo 8 caracteres'],
-                ];
-
-                passwordChecks.forEach(function (check) {
-                    const [key, isValid, label] = check;
-                    const element = passwordState[key];
-                    if (!element) {
-                        return;
-                    }
-
-                    element.classList.toggle('text-success', isValid);
-                    element.innerText = (isValid ? '✅ ' : '❌ ') + label;
-                });
-
-                const passwordOk = passwordChecks.every(function (check) {
-                    return check[1];
-                });
-                password.setCustomValidity(passwordOk ? '' : 'La contraseña no cumple los requisitos de seguridad.');
-                setRegistroEcaControlState(password, passwordOk && password.checkValidity());
-                return passwordOk;
-            };
-
-            const validatePasswords = function () {
-                const password = document.getElementById('password');
-                const passwordConfirm = document.getElementById('passwordConfirm');
-                if (!password || !passwordConfirm) {
-                    return true;
-                }
-
-                const strengthOk = validatePasswordStrength();
-                const passwordsMatch = (password.value || '') === (passwordConfirm.value || '');
-                passwordConfirm.setCustomValidity(passwordsMatch ? '' : 'Las contraseñas no coinciden.');
-                setRegistroEcaControlState(passwordConfirm, passwordsMatch && passwordConfirm.checkValidity());
-                return strengthOk && passwordsMatch;
-            };
-
-            const validateControl = function (control) {
-                if (!control || control.type === 'hidden') {
-                    return true;
-                }
-
-                if (control.id === 'password' || control.id === 'passwordConfirm') {
-                    return validatePasswords();
-                }
-
-                const valid = control.checkValidity();
-                setRegistroEcaControlState(control, valid);
-                return valid;
-            };
 
             if (mapaElement && typeof L !== 'undefined') {
                 const mapa = L.map('mapa').setView([4.711, -74.0721], 12);
@@ -284,7 +168,6 @@
                 if (!Number.isNaN(latInicial) && !Number.isNaN(lngInicial)) {
                     marcador = L.marker([latInicial, lngInicial]).addTo(mapa);
                     mapa.setView([latInicial, lngInicial], 14);
-                    setRegistroEcaMapState(mapaFeedback, true);
                 }
 
                 mapa.on('click', function (e) {
@@ -302,72 +185,79 @@
                     if (lngInput) {
                         lngInput.value = lng.toFixed(4);
                     }
-
-                    validateCoordinates();
                 });
             }
 
             const form = document.getElementById('form-registro-eca');
             if (form) {
-                Array.from(form.querySelectorAll('input, select, textarea')).forEach(function (control) {
-                    control.addEventListener('input', function () {
-                        if (control.id === 'passwordConfirm') {
-                            control.setCustomValidity('');
-                        }
-
-                        validateControl(control);
-
-                        if (control.id === 'password' || control.id === 'passwordConfirm') {
-                            validatePasswords();
-                        }
-                    });
-
-                    control.addEventListener('blur', function () {
-                        validateControl(control);
-                    });
-                });
-
                 form.addEventListener('submit', function (event) {
-                    const controls = Array.from(form.querySelectorAll('input, select, textarea')).filter(function (control) {
-                        return typeof control.checkValidity === 'function' && control.type !== 'hidden';
-                    });
-                    const controlsValid = controls.every(function (control) {
-                        return validateControl(control);
-                    });
-                    const passwordsValid = validatePasswords();
-                    const coordinatesValid = validateCoordinates();
+                    const password = document.getElementById('password');
+                    const passwordConfirm = document.getElementById('passwordConfirm');
+                    const passwordValue = password ? password.value : '';
+                    const passwordConfirmValue = passwordConfirm ? passwordConfirm.value : '';
+                    const latitud = latInput && latInput.value ? Number.parseFloat(latInput.value) : Number.NaN;
+                    const longitud = lngInput && lngInput.value ? Number.parseFloat(lngInput.value) : Number.NaN;
+                    const hasLat = !Number.isNaN(latitud);
+                    const hasLng = !Number.isNaN(longitud);
 
-                    if (!controlsValid || !passwordsValid || !coordinatesValid || !form.checkValidity()) {
+                    if (passwordValue !== passwordConfirmValue) {
                         event.preventDefault();
                         event.stopPropagation();
-
-                        const firstInvalid = controls.find(function (control) {
-                            return !control.checkValidity();
-                        });
-                        if (firstInvalid && typeof firstInvalid.focus === 'function') {
-                            firstInvalid.focus();
-                        } else if (!coordinatesValid && mapaElement && typeof mapaElement.scrollIntoView === 'function') {
-                            mapaElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
+                        alert('Las contraseñas no coinciden');
                         return;
                     }
 
-                    setRegistroEcaMapState(mapaFeedback, true);
+                    if (!hasLat || !hasLng) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        alert('Selecciona una ubicación en el mapa para continuar');
+                        return;
+                    }
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
                 }, false);
             }
 
             const pwdInputEca = document.getElementById('password');
             if (pwdInputEca) {
-                pwdInputEca.addEventListener('input', function () {
-                    validatePasswords();
-                });
-                pwdInputEca.addEventListener('blur', function () {
-                    validatePasswords();
-                });
-                validatePasswords();
-            }
+                const reqs = {
+                    lower: document.getElementById('reqMinusculas'),
+                    upper: document.getElementById('reqMayusculas'),
+                    num: document.getElementById('reqNumeros'),
+                    special: document.getElementById('reqEspeciales'),
+                    len: document.getElementById('reqLongitud'),
+                };
 
-            validateCoordinates();
+                function checkPwdEca(val) {
+                    if (!reqs.lower) return;
+
+                    const hasLower = /[a-z]/.test(val);
+                    const hasUpper = /[A-Z]/.test(val);
+                    const hasNum = /\d/.test(val);
+                    const hasSpecial = /[@$!%*?&_]/.test(val);
+                    const longEnough = val.length >= 8;
+
+                    reqs.lower.classList.toggle('text-success', hasLower);
+                    reqs.upper.classList.toggle('text-success', hasUpper);
+                    reqs.num.classList.toggle('text-success', hasNum);
+                    reqs.special.classList.toggle('text-success', hasSpecial);
+                    reqs.len.classList.toggle('text-success', longEnough);
+
+                    reqs.lower.innerText = (hasLower ? '✅ ' : '❌ ') + 'Mínimo una letra minúscula (a-z)';
+                    reqs.upper.innerText = (hasUpper ? '✅ ' : '❌ ') + 'Mínimo una letra mayúscula (A-Z)';
+                    reqs.num.innerText = (hasNum ? '✅ ' : '❌ ') + 'Mínimo un número (0-9)';
+                    reqs.special.innerText = (hasSpecial ? '✅ ' : '❌ ') + 'Mínimo un carácter especial (@$!%*?&)';
+                    reqs.len.innerText = (longEnough ? '✅ ' : '❌ ') + 'Mínimo 8 caracteres';
+                }
+
+                pwdInputEca.addEventListener('input', function (e) {
+                    checkPwdEca(e.target.value);
+                });
+                checkPwdEca(pwdInputEca.value || '');
+            }
         });
     </script>
 {% endblock %}

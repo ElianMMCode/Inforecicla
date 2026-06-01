@@ -1032,16 +1032,6 @@ def _validate_actualizar_datos_ciudadano(request):
     fields = _collect_actualizar_fields(request)
     errores = _validate_actualizar_basic(fields)
 
-    numero_documento = fields.get("numero_documento")
-    if numero_documento is not _UNSET and numero_documento:
-        documento_en_uso = (
-            Usuario.objects.filter(numero_documento=numero_documento)
-            .exclude(pk=request.user.pk)
-            .exists()
-        )
-        if documento_en_uso:
-            errores.append("Ya existe un usuario con ese número de documento.")
-
     fecha_nacimiento = _UNSET
     if fields.get("fecha_str") is not _UNSET:
         fecha_nacimiento, fecha_errores = _parse_fecha_nacimiento(fields.get("fecha_str"))
