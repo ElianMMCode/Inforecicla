@@ -389,6 +389,28 @@ def editar_punto(request, id):
 
 def _actualizar_punto(request, id):
     resultado = PuntoService.editar_punto(request, id)
+    es_peticion_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    if es_peticion_ajax:
+        if not resultado.get("ok"):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": resultado.get(
+                        "message", "No se pudo actualizar el punto ECA."
+                    ),
+                },
+                status=400,
+            )
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "message": "Punto ECA actualizado correctamente.",
+                "redirect_url": reverse(CONSTANTE_PERFIL),
+            }
+        )
+
     if not resultado.get("ok"):
         messages.error(request, resultado.get("message", "No se pudo actualizar el punto ECA."))
         return redirect(CONSTANTE_RENDER)

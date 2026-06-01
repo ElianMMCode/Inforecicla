@@ -59,20 +59,26 @@ class PuntoService:
 
         logo_punto = request.FILES.get("logoPunto")
         foto_punto = request.FILES.get("fotoPunto")
-        if logo_punto:
-            validate_image_upload(
-                logo_punto,
-                cons.POINT_LOGO_IMAGE_MAX_SIZE,
-                "El logo del punto",
-            )
-            punto.logo_imagen_punto = logo_punto
-        if foto_punto:
-            validate_image_upload(
-                foto_punto,
-                cons.POINT_PHOTO_IMAGE_MAX_SIZE,
-                "La foto del punto",
-            )
-            punto.foto_imagen_punto = foto_punto
+        try:
+            if logo_punto:
+                validate_image_upload(
+                    logo_punto,
+                    cons.POINT_LOGO_IMAGE_MAX_SIZE,
+                    "El logo del punto",
+                )
+                punto.logo_imagen_punto = logo_punto
+            if foto_punto:
+                validate_image_upload(
+                    foto_punto,
+                    cons.POINT_PHOTO_IMAGE_MAX_SIZE,
+                    "La foto del punto",
+                )
+                punto.foto_imagen_punto = foto_punto
+        except ValidationError as exc:
+            return {
+                "ok": False,
+                "message": getattr(exc, "message", str(exc)),
+            }
 
         # Si la localidad efectivamente cambió, la busca y actualiza. No la borra si no existe el id
         localidad_id = request.POST.get("localidadPunto")
