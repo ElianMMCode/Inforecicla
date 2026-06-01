@@ -64,8 +64,6 @@ const CalendarioEventoForm = (() => {
         if (globalThis.console?.warn) {
             globalThis.console.warn('SweetAlert2 no está disponible:', title, text);
         }
-
-        return;
     }
 
     function bindNativeValidationSuppression(form) {
