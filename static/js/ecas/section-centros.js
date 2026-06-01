@@ -260,34 +260,43 @@
         }
     }
 
+    function matchesNombre(centro, filtro) {
+        return !filtro || normalizeString(centro.nombre || '').includes(normalizeString(filtro));
+    }
+
+    function matchesTipo(centro, filtro) {
+        if (!filtro) return true;
+        const tipoCentro = centro.get_tipo_centro_display || centro.tipo || '';
+        return !tipoCentro || normalizeString(tipoCentro).includes(normalizeString(filtro));
+    }
+
+    function matchesLocalidad(centro, filtro) {
+        if (!filtro) return true;
+        const localidad = getLocalidadNombre(centro, '');
+        return !localidad || normalizeString(localidad).includes(normalizeString(filtro));
+    }
+
+    function matchesContacto(centro, filtro) {
+        return !filtro || normalizeString(centro.nombre_contacto || '').includes(normalizeString(filtro));
+    }
+
+    function matchesEmail(centro, filtro) {
+        return !filtro || normalizeString(centro.email || '').includes(normalizeString(filtro));
+    }
+
+    function matchesTelefono(centro, filtro) {
+        return !filtro || normalizeString(centro.celular || '').includes(normalizeString(filtro));
+    }
+
     function filterCentros(centros, filtros) {
-        return centros.filter((centro) => {
-            if (filtros.nombre && !normalizeString(centro.nombre || '').includes(normalizeString(filtros.nombre))) {
-                return false;
-            }
-            if (filtros.tipo) {
-                const tipoCentro = centro.get_tipo_centro_display || centro.tipo || '';
-                if (tipoCentro && !normalizeString(tipoCentro).includes(normalizeString(filtros.tipo))) {
-                    return false;
-                }
-            }
-            if (filtros.localidad) {
-                const localidad = getLocalidadNombre(centro, '');
-                if (localidad && !normalizeString(localidad).includes(normalizeString(filtros.localidad))) {
-                    return false;
-                }
-            }
-            if (filtros.contacto && !normalizeString(centro.nombre_contacto || '').includes(normalizeString(filtros.contacto))) {
-                return false;
-            }
-            if (filtros.email && !normalizeString(centro.email || '').includes(normalizeString(filtros.email))) {
-                return false;
-            }
-            if (filtros.telefono && !normalizeString(centro.celular || '').includes(normalizeString(filtros.telefono))) {
-                return false;
-            }
-            return true;
-        });
+        return centros.filter((centro) =>
+            matchesNombre(centro, filtros.nombre) &&
+            matchesTipo(centro, filtros.tipo) &&
+            matchesLocalidad(centro, filtros.localidad) &&
+            matchesContacto(centro, filtros.contacto) &&
+            matchesEmail(centro, filtros.email) &&
+            matchesTelefono(centro, filtros.telefono)
+        );
     }
 
     function syncSelectValue(selectId, value) {
