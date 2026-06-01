@@ -1,4 +1,5 @@
 import { showResultAlert, showValidationAlert } from './formulario-alertas.js';
+import { submitFormJson } from './formulario-submit-json.js';
 
 const PerfilFormulariosValidacionModule = (() => {
     const FORM_IDS = ['formPunto', 'formEncargado'];
@@ -86,22 +87,7 @@ const PerfilFormulariosValidacionModule = (() => {
     }
 
     async function submitPointForm(form) {
-        const response = await globalThis.fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            credentials: 'same-origin',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                Accept: 'application/json',
-            },
-        });
-
-        const payload = await response.json().catch((error) => {
-            if (globalThis.console?.debug) {
-                globalThis.console.debug('No se pudo leer la respuesta JSON:', error);
-            }
-            return null;
-        });
+        const { response, payload } = await submitFormJson(form);
 
         if (!response.ok || !payload?.ok) {
             const errorMessage = payload?.message || 'No fue posible actualizar el punto ECA.';
