@@ -41,6 +41,24 @@ const escapeHtml = (value) =>
     }
   });
 
+const getInitialEvents = () => {
+  const eventsScript = document.getElementById("eventos-data");
+
+  if (eventsScript?.textContent) {
+    try {
+      return JSON.parse(eventsScript.textContent);
+    } catch (error) {
+      console.error("No fue posible leer los eventos iniciales:", error);
+    }
+  }
+
+  if (Array.isArray(globalThis.EVENTOS)) {
+    return globalThis.EVENTOS;
+  }
+
+  return [];
+};
+
 // Instancia única y cacheada para mejor rendimiento (Intl API)
 const copFormatter = new Intl.NumberFormat("es-CO", {
   minimumFractionDigits: 2,
@@ -56,15 +74,38 @@ function getCsrfToken() {
   return match ? match[1] : "";
 }
 
-function manejarAlertas(mostrarId, ocultarId, textId = null, text = null) {
-  if (ocultarId) $el(ocultarId)?.classList.add("d-none");
-  if (mostrarId) $el(mostrarId)?.classList.remove("d-none");
-  if (textId && text) $el(textId).textContent = text;
+async function showSwal(options) {
+  const swal = globalThis.Swal;
+  const config = {
+    confirmButtonColor: "#198754",
+    confirmButtonText: "Entendido",
+    ...options,
+  };
+
+  if (swal?.fire) {
+    return swal.fire(config);
+  }
+
+  if (globalThis.console?.warn) {
+    console.warn("SweetAlert2 no está disponible:", config.title, config.text);
+  }
+  return Promise.resolve({ isConfirmed: true });
 }
 
-function ocultarAlertas() {
-  manejarAlertas(null, "alertError");
-  manejarAlertas(null, "alertSuccess");
+async function showValidationSwal(message) {
+  return showSwal({
+    icon: "warning",
+    title: "Campos obligatorios pendientes",
+    text: message,
+  });
+}
+
+async function showResultSwal(icon, title, text) {
+  return showSwal({
+    icon,
+    title,
+    text,
+  });
 }
 
 /** * ==========================================
@@ -258,11 +299,28 @@ async function eliminarEvento(deleteMode) {
     });
     const result = await res.json();
 
-    if (result.success) globalThis.location.reload();
-    else alert(result.error || "Error eliminando el evento");
+    if (result.success) {
+      await showResultSwal(
+        "success",
+        "Evento eliminado",
+        "El evento se eliminó correctamente.",
+      );
+      globalThis.location.reload();
+      return;
+    }
+
+    await showResultSwal(
+      "error",
+      "Error",
+      result.error || "Error eliminando el evento",
+    );
   } catch (e) {
     console.error("Excepción en eliminarEvento:", e);
-    alert("Error de red al intentar eliminar.");
+    await showResultSwal(
+      "error",
+      "Error de red",
+      "Error de red al intentar eliminar.",
+    );
   } finally {
     bootstrap.Modal.getInstance($el("modalEliminarEvento"))?.hide();
   }
@@ -274,14 +332,16 @@ async function eliminarEvento(deleteMode) {
  */
 document.addEventListener("DOMContentLoaded", function () {
   // Delegación de eventos globales para clics
-  document.addEventListener("click", function (event) {
+  document.addEventListener("click", async function (event) {
     const targetId = event.target?.id;
     if (!targetId || !globalThis.eventoActual) return;
 
     if (targetId === "btnEliminarEvento") {
       const ev = globalThis.eventoActual;
       if (ev.tipo === "venta" || ev.tipo === "compra") {
-        return alert(
+        return showResultSwal(
+          "warning",
+          "Acción no permitida",
           "No se puede eliminar eventos de tipo Venta o Compra desde aquí.",
         );
       }
@@ -296,11 +356,20 @@ document.addEventListener("DOMContentLoaded", function () {
           eliminarEvento("instancia");
         $el("btnEliminarSerieCompleta").onclick = () => eliminarEvento("serie");
         bootstrap.Modal.getInstance($el("modalDetalleEvento"))?.hide();
-      } else if (
-        globalThis.confirm("¿Estás seguro de que querés eliminar este evento?")
-      ) {
-        // Corrección SonarQube S6660: Fusión de 'else' e 'if' en un 'else if'
-        eliminarEvento("serie");
+      } else {
+        const confirmation = await showSwal({
+          icon: "question",
+          title: "Eliminar evento",
+          text: "¿Estás seguro de que querés eliminar este evento?",
+          showCancelButton: true,
+          confirmButtonText: "Sí, eliminar",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: "#dc3545",
+        });
+
+        if (confirmation.isConfirmed) {
+          await eliminarEvento("serie");
+        }
       }
     }
 
@@ -335,7 +404,7 @@ document.addEventListener("DOMContentLoaded", function () {
       right: "dayGridMonth,timeGridWeek,timeGridDay",
     },
     eventTimeFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
-    events: typeof EVENTOS === "undefined" ? [] : EVENTOS,
+    events: getInitialEvents(),
 
     eventContent: (arg) => {
       const e = arg.event;
@@ -412,7 +481,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Manejo de Formulario Crear
   const formCrear = $el("formCrearEvento");
-  const usarFlujoApiCrear = formCrear?.dataset.useApiCreate === "true";
+  const usarFlujoApiCrear = true;
   const agregarEvento = () => {
     const data = {
       title: getVal("inputTitulo"),
@@ -422,12 +491,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     if (!data.title || !data.fecha || !data.horaInicio || !data.horaFin) {
-      return manejarAlertas(
-        "alertError",
-        "alertSuccess",
-        "alertErrorText",
-        "Faltan datos obligatorios",
-      );
+      return showValidationSwal("Faltan datos obligatorios.");
     }
 
     calendar.addEvent({
@@ -447,13 +511,15 @@ document.addEventListener("DOMContentLoaded", function () {
       observaciones: getVal("inputObservaciones"),
     });
 
-    manejarAlertas("alertSuccess", "alertError");
-    setTimeout(() => {
+    showResultSwal(
+      "success",
+      "Evento creado",
+      "El evento se creó correctamente.",
+    ).then(() => {
       bootstrap.Modal.getInstance($el("modalCrearEvento"))?.hide();
       formCrear?.reset();
-      ocultarAlertas();
       globalThis.location.reload();
-    }, 800);
+    });
   };
 
   if (!usarFlujoApiCrear) {
@@ -500,10 +566,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .map((key) => requiredKeys[key]);
 
     if (faltan.length > 0) {
-      return manejarAlertas(
-        "alertEditarError",
-        "alertEditarSuccess",
-        "alertEditarErrorText",
+      return showValidationSwal(
         `Faltan campos obligatorios: ${faltan.join(", ")}`,
       );
     }
@@ -516,12 +579,7 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     if (errorRangoEditar) {
-      return manejarAlertas(
-        "alertEditarError",
-        "alertEditarSuccess",
-        "alertEditarErrorText",
-        errorRangoEditar,
-      );
+      return showValidationSwal(errorRangoEditar);
     }
 
     try {
@@ -536,25 +594,27 @@ document.addEventListener("DOMContentLoaded", function () {
       const result = await response.json();
 
       if (result.success) {
-        manejarAlertas("alertEditarSuccess", "alertEditarError");
+        await showResultSwal(
+          "success",
+          "Evento actualizado",
+          "El evento se actualizó correctamente.",
+        );
         setTimeout(() => {
           bootstrap.Modal.getInstance($el("modalEditarEvento"))?.hide();
           globalThis.location.reload();
         }, 1200);
       } else {
-        manejarAlertas(
-          "alertEditarError",
-          "alertEditarSuccess",
-          "alertEditarErrorText",
+        await showResultSwal(
+          "error",
+          "Error",
           result.error || "Error al actualizar",
         );
       }
     } catch (e) {
       console.error("Excepción en edición:", e);
-      manejarAlertas(
-        "alertEditarError",
-        "alertEditarSuccess",
-        "alertEditarErrorText",
+      await showResultSwal(
+        "error",
+        "Error de red",
         "Error de red o servidor",
       );
     }

@@ -42,13 +42,8 @@
     <div class="card shadow-sm mb-4">
       <div class="card-body p-4">
         <!-- Contenedor para FullCalendar -->
-        <div id="calendar"></div>
+          <div id="calendar"></div>
           {{ EVENTOS|json_script:"eventos-data" }}
-          <script>
-            globalThis.EVENTOS = JSON.parse(
-              document.getElementById("eventos-data").textContent,
-            );
-          </script>
       </div>
     </div>
   </div>
@@ -74,7 +69,7 @@
           ></button>
         </div>
         <div class="modal-body">
-          <form id="formCrearEvento" data-use-api-create="true">
+          <form id="formCrearEvento" class="needs-validation" novalidate>
             <!-- Input hidden con datos -->
             <input
               type="hidden"
@@ -108,6 +103,9 @@
                   </option>
                   {% endfor %}
                 </select>
+                <div class="invalid-feedback">
+                  Selecciona el material que vas a asociar al evento.
+                </div>
                 <small class="text-muted d-block mt-1"
                   >Selecciona el material a vender</small
                 >
@@ -147,6 +145,9 @@
                   placeholder="Ej: Venta Semanal de Plástico"
                   required
                 />
+                <div class="invalid-feedback">
+                  Escribe un título para identificar el evento.
+                </div>
               </div>
             </div>
             <!-- Fila 3: Descripción -->
@@ -175,6 +176,9 @@
                   id="inputFechaInicio"
                   required
                 />
+                <div class="invalid-feedback">
+                  Selecciona la fecha del evento.
+                </div>
               </div>
               <div class="col-md-4">
                 <label for="inputHoraInicio" class="form-label">
@@ -187,6 +191,9 @@
                   value="10:00"
                   required
                 />
+                <div class="invalid-feedback">
+                  Selecciona la hora de inicio.
+                </div>
               </div>
               <div class="col-md-4">
                 <label for="inputHoraFin" class="form-label">
@@ -199,21 +206,23 @@
                   value="11:00"
                   required
                 />
+                <div class="invalid-feedback">
+                  Selecciona la hora de finalización.
+                </div>
               </div>
             </div>
             <!-- Fila 5: Repetición -->
             <div class="row mb-3">
               <div class="col-md-6">
                 <label for="selectTipoRepeticion" class="form-label">
-                  Tipo de Repetición <span class="text-danger">*</span>
+                  Tipo de Repetición
                 </label>
                 <select
                   class="form-select form-select-sm border-2 js-select-centros"
                   id="selectTipoRepeticion"
-                  required
                   style="width: 100%; min-height: 38px"
                 >
-                  <option value="NINGUNA">Sin Repetición</option>
+                  <option value="NINGUNA" selected>Sin Repetición</option>
                   <option value="SEMANAL">Semanal (cada 7 días)</option>
                   <option value="QUINCENAL">Quincenal (cada 14 días)</option>
                   <option value="MENSUAL">Mensual (cada 30 días)</option>
@@ -266,19 +275,6 @@
                 ></textarea>
               </div>
             </div>
-            <!-- Alert para errores -->
-            <div id="alertError" class="alert alert-danger d-none" role="alert">
-              <i class="bi bi-exclamation-circle"></i>
-              <span id="alertErrorText"></span>
-            </div>
-            <!-- Alert para éxito -->
-            <div
-              id="alertSuccess"
-              class="alert alert-success d-none"
-              role="alert"
-            >
-              <i class="bi bi-check-circle"></i> Evento creado correctamente
-            </div>
           </form>
         </div>
         <div class="modal-footer">
@@ -290,9 +286,10 @@
             Cancelar
           </button>
           <button
-            type="button"
+            type="submit"
             class="btn btn-success btn-sm"
             id="btnGuardarEvento"
+            form="formCrearEvento"
           >
             <i class="bi bi-save"></i> Guardar Evento
           </button>
@@ -815,22 +812,6 @@
                 ></textarea>
               </div>
             </div>
-            <div
-              id="alertEditarError"
-              class="alert alert-danger d-none"
-              role="alert"
-            >
-              <i class="bi bi-exclamation-circle"></i>
-              <span id="alertEditarErrorText"></span>
-            </div>
-            <div
-              id="alertEditarSuccess"
-              class="alert alert-success d-none"
-              role="alert"
-            >
-              <i class="bi bi-check-circle"></i> Evento actualizado
-              correctamente
-            </div>
           </form>
         </div>
         <div class="modal-footer">
@@ -906,5 +887,5 @@
       </div>
     </div>
   </div>
-<script src="{% static 'js/ecas/calendario/eventos-calendario-cleaned.js' %}"></script>
+<script type="module" src="{% static 'js/formularios/calendario-evento.js' %}"></script>
 </section>
