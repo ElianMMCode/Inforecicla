@@ -262,25 +262,28 @@
 
     function filterCentros(centros, filtros) {
         return centros.filter((centro) => {
-            if (filtros.nombre && !normalizeString(centro.nombre).includes(normalizeString(filtros.nombre))) {
+            if (filtros.nombre && !normalizeString(centro.nombre || '').includes(normalizeString(filtros.nombre))) {
                 return false;
             }
-            if (filtros.tipo && centro.get_tipo_centro_display && centro.get_tipo_centro_display !== filtros.tipo && centro.tipo !== filtros.tipo) {
-                return false;
-            }
-            if (filtros.localidad) {
-                const localidad = getLocalidadNombre(centro, '');
-                if (localidad && normalizeString(localidad) !== normalizeString(filtros.localidad)) {
+            if (filtros.tipo) {
+                const tipoCentro = centro.get_tipo_centro_display || centro.tipo || '';
+                if (tipoCentro && !normalizeString(tipoCentro).includes(normalizeString(filtros.tipo))) {
                     return false;
                 }
             }
-            if (filtros.contacto && centro.nombre_contacto && !normalizeString(centro.nombre_contacto).includes(normalizeString(filtros.contacto))) {
+            if (filtros.localidad) {
+                const localidad = getLocalidadNombre(centro, '');
+                if (localidad && !normalizeString(localidad).includes(normalizeString(filtros.localidad))) {
+                    return false;
+                }
+            }
+            if (filtros.contacto && !normalizeString(centro.nombre_contacto || '').includes(normalizeString(filtros.contacto))) {
                 return false;
             }
-            if (filtros.email && centro.email && !normalizeString(centro.email).includes(normalizeString(filtros.email))) {
+            if (filtros.email && !normalizeString(centro.email || '').includes(normalizeString(filtros.email))) {
                 return false;
             }
-            if (filtros.telefono && centro.celular && !normalizeString(centro.celular).includes(normalizeString(filtros.telefono))) {
+            if (filtros.telefono && !normalizeString(centro.celular || '').includes(normalizeString(filtros.telefono))) {
                 return false;
             }
             return true;
@@ -304,6 +307,19 @@
         if (node) {
             node.textContent = value;
         }
+    }
+
+    function limpiarCampos(form) {
+        if (!form) return;
+        form.querySelectorAll('input[type="text"], input[type="email"]').forEach(input => {
+            input.value = '';
+        });
+        form.querySelectorAll('select').forEach(select => {
+            select.value = '';
+            if (root.jQuery?.fn?.select2) {
+                root.jQuery(select).val('').trigger('change');
+            }
+        });
     }
 
     function syncLocalidadSelectWithDelay(locId) {
@@ -542,51 +558,6 @@
         }
     }
 
-    function bindFilterForm(scope) {
-        const form = el('filtrosFormCentros' + scope);
-        const data = scope === 'Global' ? (root.CENTROS_GLOBALES || []) : (root.CENTROS_PROPIOS || []);
-        if (!form) {
-            return;
-        }
-        initSelect2Filters(data, scope);
-
-        const filterButton = el(scope === 'Global' ? 'btnFiltrarGlobales' : 'btnFiltrarPropios');
-        const clearButton = el(scope === 'Global' ? 'btnLimpiarGlobales' : 'btnLimpiarPropios');
-        if (filterButton) {
-            filterButton.addEventListener('click', () => {
-                initSelect2Filters(data, scope);
-                const filtros = {
-                    nombre: el('filtroNombre' + scope).value,
-                    tipo: el('filtroTipo' + scope).value,
-                    localidad: el('filtroLocalidad' + scope).value,
-                    contacto: el('filtroContacto' + scope).value,
-                    email: el('filtroEmail' + scope).value,
-                    telefono: el('filtroTelefono' + scope).value,
-                };
-                const filtrados = filterCentros(data, filtros);
-                renderTablaCentros(filtrados, scope === 'Global' ? 'tablaCentrosGlobalesBody' : 'tablaCentrosPropiosBody');
-                updateBadge(filtrados.length, scope === 'Global' ? 'badgeGlobalesCount' : 'badgePropiosCount');
-            });
-        }
-        if (clearButton) {
-            clearButton.addEventListener('click', () => {
-                limpiarCampos(form);
-                initSelect2Filters(data, scope);
-                const filtros = {
-                    nombre: el('filtroNombre' + scope).value,
-                    tipo: el('filtroTipo' + scope).value,
-                    localidad: el('filtroLocalidad' + scope).value,
-                    contacto: el('filtroContacto' + scope).value,
-                    email: el('filtroEmail' + scope).value,
-                    telefono: el('filtroTelefono' + scope).value,
-                };
-                const filtrados = filterCentros(data, filtros);
-                renderTablaCentros(filtrados, scope === 'Global' ? 'tablaCentrosGlobalesBody' : 'tablaCentrosPropiosBody');
-                updateBadge(filtrados.length, scope === 'Global' ? 'badgeGlobalesCount' : 'badgePropiosCount');
-            });
-        }
-    }
-
     function bindDetailButtons() {
         document.addEventListener('click', (event) => {
             const btn = event.target.closest('.btn-ver-detalles-centro');
@@ -647,8 +618,84 @@
         updateBadge((root.CENTROS_GLOBALES || []).length, 'badgeGlobalesCount');
         updateBadge((root.CENTROS_PROPIOS || []).length, 'badgePropiosCount');
 
-        bindFilterForm('Global');
-        bindFilterForm('Propio');
+        // Filtros para Centros Globales
+        const formGlobales = el('filtrosFormCentrosGlobales');
+        const dataGlobales = root.CENTROS_GLOBALES || [];
+        if (formGlobales) {
+            const filterButtonGlobales = el('btnFiltrarGlobales');
+            const clearButtonGlobales = el('btnLimpiarGlobales');
+            if (filterButtonGlobales) {
+                filterButtonGlobales.addEventListener('click', () => {
+                    const filtros = {
+                        nombre: el('filtroNombreGlobal').value,
+                        tipo: el('filtroTipoGlobal').value,
+                        localidad: el('filtroLocalidadGlobal').value,
+                        contacto: el('filtroContactoGlobal').value,
+                        email: el('filtroEmailGlobal').value,
+                        telefono: el('filtroTelefonoGlobal').value,
+                    };
+                    const filtrados = filterCentros(dataGlobales, filtros);
+                    renderTablaCentros(filtrados, 'tablaCentrosGlobalesBody');
+                    updateBadge(filtrados.length, 'badgeGlobalesCount');
+                });
+            }
+            if (clearButtonGlobales) {
+                clearButtonGlobales.addEventListener('click', () => {
+                    limpiarCampos(formGlobales);
+                    const filtros = {
+                        nombre: el('filtroNombreGlobal').value,
+                        tipo: el('filtroTipoGlobal').value,
+                        localidad: el('filtroLocalidadGlobal').value,
+                        contacto: el('filtroContactoGlobal').value,
+                        email: el('filtroEmailGlobal').value,
+                        telefono: el('filtroTelefonoGlobal').value,
+                    };
+                    const filtrados = filterCentros(dataGlobales, filtros);
+                    renderTablaCentros(filtrados, 'tablaCentrosGlobalesBody');
+                    updateBadge(filtrados.length, 'badgeGlobalesCount');
+                });
+            }
+        }
+
+        // Filtros para Centros Propios
+        const formPropios = el('filtrosFormCentrosPropios');
+        const dataPropios = root.CENTROS_PROPIOS || [];
+        if (formPropios) {
+            const filterButtonPropios = el('btnFiltrarPropios');
+            const clearButtonPropios = el('btnLimpiarPropios');
+            if (filterButtonPropios) {
+                filterButtonPropios.addEventListener('click', () => {
+                    const filtros = {
+                        nombre: el('filtroNombrePropio').value,
+                        tipo: el('filtroTipoPropio').value,
+                        localidad: el('filtroLocalidadPropio').value,
+                        contacto: el('filtroContactoPropio').value,
+                        email: el('filtroEmailPropio').value,
+                        telefono: el('filtroTelefonoPropio').value,
+                    };
+                    const filtrados = filterCentros(dataPropios, filtros);
+                    renderTablaCentros(filtrados, 'tablaCentrosPropiosBody');
+                    updateBadge(filtrados.length, 'badgePropiosCount');
+                });
+            }
+            if (clearButtonPropios) {
+                clearButtonPropios.addEventListener('click', () => {
+                    limpiarCampos(formPropios);
+                    const filtros = {
+                        nombre: el('filtroNombrePropio').value,
+                        tipo: el('filtroTipoPropio').value,
+                        localidad: el('filtroLocalidadPropio').value,
+                        contacto: el('filtroContactoPropio').value,
+                        email: el('filtroEmailPropio').value,
+                        telefono: el('filtroTelefonoPropio').value,
+                    };
+                    const filtrados = filterCentros(dataPropios, filtros);
+                    renderTablaCentros(filtrados, 'tablaCentrosPropiosBody');
+                    updateBadge(filtrados.length, 'badgePropiosCount');
+                });
+            }
+        }
+
         bindDetailButtons();
         bindDeleteButtons();
         bindEditSubmit();
