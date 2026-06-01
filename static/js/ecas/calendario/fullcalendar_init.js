@@ -13,6 +13,23 @@ const setVal = (id, val) => {
 const setText = (id, text) => {
   if ($el(id)) $el(id).textContent = text || "-";
 };
+const escapeHtml = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return character;
+    }
+  });
 
 // Instancia única y cacheada para mejor rendimiento (Intl API)
 const copFormatter = new Intl.NumberFormat("es-CO", {
@@ -321,15 +338,15 @@ document.addEventListener("DOMContentLoaded", function () {
           props.cantidad,
           props.precioUnitario,
         );
-        html = `<b>${tipo.charAt(0).toUpperCase() + tipo.slice(1)}:</b> ${props.nombreMaterial || e.title || "-"}`;
+        html = `<b>${escapeHtml(tipo.charAt(0).toUpperCase() + tipo.slice(1))}:</b> ${escapeHtml(props.nombreMaterial || e.title || "-")}`;
         if (cantidad !== "") html += ` (${cantidad})`;
         if (total !== "") html += ` - $${total}`;
       } else {
-        html = `<b>${e.title}</b>`;
+        html = `<b>${escapeHtml(e.title)}</b>`;
         if (props.descripcion)
-          html += `<br><span style='font-size:0.90em;'>${props.descripcion}</span>`;
+          html += `<br><span style='font-size:0.90em;'>${escapeHtml(props.descripcion)}</span>`;
         if (props.material)
-          html += `<br><span style='font-size:0.88em;color:#555;'>${props.material}</span>`;
+          html += `<br><span style='font-size:0.88em;color:#555;'>${escapeHtml(props.material)}</span>`;
       }
       return {
         html: `<span style="font-size:0.95em;white-space:normal;word-break:break-word;">${html}</span>`,
@@ -352,13 +369,13 @@ document.addEventListener("DOMContentLoaded", function () {
           props.cantidad,
           props.precioUnitario,
         );
-        tituloTooltip = `<b>${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</b><br>Material: ${props.nombreMaterial || e.title || "-"}<br>`;
+        tituloTooltip = `<b>${escapeHtml(tipo.charAt(0).toUpperCase() + tipo.slice(1))}</b><br>Material: ${escapeHtml(props.nombreMaterial || e.title || "-")}<br>`;
         if (cantidad !== "") tituloTooltip += `Cantidad: ${cantidad}<br>`;
         if (precio !== "") tituloTooltip += `Precio unitario: $${precio}<br>`;
         if (total !== "") tituloTooltip += `Total: $${total}<br>`;
-        tituloTooltip += `Centro: ${props.nombreCentroAcopio || props.centro || "-"}<br>${props.descripcion || ""}`;
+        tituloTooltip += `Centro: ${escapeHtml(props.nombreCentroAcopio || props.centro || "-")}<br>${escapeHtml(props.descripcion || "")}`;
       } else {
-        tituloTooltip = `<b>${e.title}</b><br>${props.descripcion || ""}`;
+        tituloTooltip = `<b>${escapeHtml(e.title)}</b><br>${escapeHtml(props.descripcion || "")}`;
       }
 
       el.setAttribute("title", tituloTooltip);
@@ -385,6 +402,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Manejo de Formulario Crear
   const formCrear = $el("formCrearEvento");
+  const usarFlujoApiCrear = formCrear?.dataset.useApiCreate === "true";
   const agregarEvento = () => {
     const data = {
       title: getVal("inputTitulo"),
@@ -428,14 +446,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 800);
   };
 
-  formCrear?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    agregarEvento();
-  });
-  $el("btnGuardarEvento")?.addEventListener("click", agregarEvento);
-  $el("modalCrearEvento")?.addEventListener("hidden.bs.modal", () =>
-    globalThis.location.reload(),
-  );
+  if (!usarFlujoApiCrear) {
+    formCrear?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      agregarEvento();
+    });
+    $el("btnGuardarEvento")?.addEventListener("click", agregarEvento);
+    $el("modalCrearEvento")?.addEventListener("hidden.bs.modal", () =>
+      globalThis.location.reload(),
+    );
+  }
 
   // Manejo de Edición API
   $el("btnGuardarEditarEvento")?.addEventListener("click", async () => {

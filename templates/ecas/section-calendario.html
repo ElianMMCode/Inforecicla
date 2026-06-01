@@ -74,7 +74,7 @@
           ></button>
         </div>
         <div class="modal-body">
-          <form id="formCrearEvento">
+          <form id="formCrearEvento" data-use-api-create="true">
             <!-- Input hidden con datos -->
             <input
               type="hidden"
@@ -142,6 +142,8 @@
                   type="text"
                   class="form-control form-control-sm"
                   id="inputTitulo"
+                  name="titulo"
+                  maxlength="100"
                   placeholder="Ej: Venta Semanal de Plástico"
                   required
                 />

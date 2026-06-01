@@ -22,7 +22,7 @@ class Evento(CreacionModificacionModel):
         "users.Usuario", on_delete=models.PROTECT, related_name="eventos"
     )
     # Información de calendario
-    titulo = models.CharField(max_length=255)
+    titulo = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
     fecha_inicio = models.DateTimeField()
     fecha_fin = models.DateTimeField()

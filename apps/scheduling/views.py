@@ -15,6 +15,7 @@ JSON_CONTENT_TYPE = "application/json"
 ERROR_INSTANCIA_NO_ENCONTRADA = "Instancia no encontrada."
 ERROR_EVENTO_NO_ENCONTRADO = "Evento no encontrado."
 ERROR_NO_ES_INSTANCIA = "No es una instancia."
+MAX_TITULO_EVENTO = 100
 
 
 def _build_event_payload(payload, extra=None):
@@ -166,6 +167,17 @@ def _obtener_punto_usuario(request):
 
 def _error_json(mensaje, status):
     return JsonResponse({"success": False, "error": mensaje}, status=status)
+
+
+def _validar_titulo_evento(titulo):
+    titulo_normalizado = (titulo or "").strip()
+    if not titulo_normalizado:
+        return None, _error_json("El título es obligatorio.", 400)
+    if len(titulo_normalizado) > MAX_TITULO_EVENTO:
+        return None, _error_json(
+            f"El título no puede superar {MAX_TITULO_EVENTO} caracteres.", 400
+        )
+    return titulo_normalizado, None
 
 
 def _parse_fecha_aware(fecha_texto, formato):
@@ -443,7 +455,9 @@ def crear_evento_venta(request):
         data = _parse_request_data(request)
         material_id = data.get("materialId")
         centro_acopio_id = data.get("centroAcopioId")
-        titulo = data.get("titulo")
+        titulo, error_response = _validar_titulo_evento(data.get("titulo"))
+        if error_response:
+            return error_response
         descripcion = data.get("descripcion", "")
         fecha_inicio = data.get("fechaInicio")
         hora_inicio = data.get("horaInicio")
@@ -459,7 +473,7 @@ def crear_evento_venta(request):
         usuario_id = request.user.id
         punto_eca_id = punto_eca.id
 
-        if not (material_id and titulo and fecha_inicio and hora_inicio and hora_fin):
+        if not (material_id and fecha_inicio and hora_inicio and hora_fin):
             return JsonResponse(
                 {"success": False, "error": "Faltan campos obligatorios."}, status=400
             )
@@ -485,7 +499,7 @@ def crear_evento_venta(request):
             fecha_fin_repeticion=fecha_fin_repeticion if fecha_fin_repeticion else None,
         )
 
-        _crear_instancias_repeticion(
+        _sincronizar_instancias_repeticion(
             evento=evento,
             punto_eca_id=punto_eca_id,
             usuario_id=usuario_id,
