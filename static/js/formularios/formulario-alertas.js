@@ -9,8 +9,9 @@ export function showAlert(icon, title, text, confirmButtonColor = '#198754') {
         });
     }
 
-    globalThis.alert(text);
-    return Promise.resolve();
+    // If SweetAlert2 is not available, avoid native alerts — log and return a resolved Promise
+    console.warn('SweetAlert2 no disponible. Mensaje:', title, text);
+    return Promise.resolve({ isConfirmed: true });
 }
 
 export function showValidationAlert(message) {

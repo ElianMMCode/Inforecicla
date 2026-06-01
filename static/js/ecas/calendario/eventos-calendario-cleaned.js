@@ -1,5 +1,16 @@
 // --- Archivo de JavaScript para Eventos del Calendario (Refactorizado) ---
 
+function validarRangoFechas(fechaInicio, horaInicio, fechaFin, horaFin) {
+  const inicio = `${fechaInicio}T${horaInicio}`;
+  const fin = `${fechaFin || fechaInicio}T${horaFin}`;
+
+  if (fin <= inicio) {
+    return "La fecha de fin debe ser posterior a la de inicio.";
+  }
+
+  return "";
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // Helper para obtener cookies (simplificado con .startsWith)
   function getCookie(name) {
@@ -18,6 +29,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const alertError = document.getElementById("alertError");
   const alertErrorText = document.getElementById("alertErrorText");
   const alertSuccess = document.getElementById("alertSuccess");
+  const modalCrearEvento = document.getElementById("modalCrearEvento");
+  const formCrearEvento = document.getElementById("formCrearEvento");
 
   // Helpers para manejo de alertas
   function mostrarError(msg, debugData = null) {
@@ -33,12 +46,20 @@ document.addEventListener("DOMContentLoaded", function () {
     if (alertSuccess) alertSuccess.classList.remove("d-none");
   }
 
+  function cerrarModalCrearEvento() {
+    if (!modalCrearEvento || typeof bootstrap === "undefined") return;
+
+    bootstrap.Modal.getInstance(modalCrearEvento)?.hide();
+  }
+
   // Inicio de lógica principal
   const btnGuardar = document.getElementById("btnGuardarEvento");
   if (!btnGuardar) {
     console.warn("No se encontró el botón Guardar Evento");
     return;
   }
+
+  const MAX_TITULO_EVENTO = 100;
 
   btnGuardar.addEventListener("click", async function () {
     // 1. Extracción de datos súper limpia
@@ -57,6 +78,19 @@ document.addEventListener("DOMContentLoaded", function () {
       fechaFinRepeticion: getVal("inputFechaFinRepeticion"),
       observaciones: getVal("inputObservaciones"),
     };
+
+    if (data.titulo.length === 0) {
+      mostrarError("El título es obligatorio.", data);
+      return;
+    }
+
+    if (data.titulo.length > MAX_TITULO_EVENTO) {
+      mostrarError(
+        `El título no puede superar ${MAX_TITULO_EVENTO} caracteres.`,
+        data,
+      );
+      return;
+    }
 
     // 2. Validación dinámica y automatizada
     const requeridos = {
@@ -78,6 +112,18 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+    const errorRango = validarRangoFechas(
+      data.fechaInicio,
+      data.horaInicio,
+      data.fechaInicio,
+      data.horaFin,
+    );
+
+    if (errorRango) {
+      mostrarError(errorRango, data);
+      return;
+    }
+
     // 3. Envío al backend
     try {
       const response = await fetch("/punto-eca/calendario/evento/nuevo/", {
@@ -93,6 +139,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (result.success) {
         mostrarExito();
+        cerrarModalCrearEvento();
+        formCrearEvento?.reset();
+        setTimeout(() => {
+          globalThis.location.reload();
+        }, 300);
       } else {
         mostrarError(result.error || "Error desconocido al crear el evento");
       }
