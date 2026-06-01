@@ -509,8 +509,8 @@ class MapaInteractivo {
 
       const esPuntoPlataforma = (puntoId && !String(puntoId).startsWith("arcgis_")) || detalles?.source === "eca";
 
-      const hasLogo = esPuntoPlataforma && detalles.logoUrl?.toString().trim() !== "";
-      const hasFoto = esPuntoPlataforma && detalles.fotoUrl?.toString().trim() !== "";
+      const hasLogo = esPuntoPlataforma && this._tieneImagenReal(detalles.logoUrl);
+      const hasFoto = esPuntoPlataforma && this._tieneImagenReal(detalles.fotoUrl);
 
       if (hasLogo) {
         logoImg.src = detalles.logoUrl;
@@ -568,6 +568,49 @@ class MapaInteractivo {
     } else {
       emailLink.textContent = "No disponible";
     }
+  }
+
+  /**
+   * Determina si una URL apunta a una imagen real y no al placeholder del sistema.
+   */
+  _tieneImagenReal(url) {
+    if (!url) {
+      return false;
+    }
+
+    const valor = String(url).trim();
+    if (!valor) {
+      return false;
+    }
+
+    if (this._esImagenSistemaPorDefecto(valor)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Detecta las imágenes genéricas usadas como placeholder en el sistema.
+   */
+  _esImagenSistemaPorDefecto(url) {
+    const rutasSistema = [
+      "/static/img/logo.png",
+      "/static/img/eca-default.png",
+      "/images/eca-default.png",
+    ];
+
+    const normalizado = String(url).trim().split("?")[0].split("#")[0].replace(/\/+$/, "");
+    if (!normalizado) {
+      return false;
+    }
+
+    const origen = globalThis.location?.origin ? globalThis.location.origin.replace(/\/+$/, "") : "";
+
+    return rutasSistema.some((ruta) => {
+      const rutaNormalizada = ruta.replace(/\/+$/, "");
+      return normalizado.endsWith(rutaNormalizada) || (origen && normalizado === `${origen}${rutaNormalizada}`);
+    });
   }
 
   /**
