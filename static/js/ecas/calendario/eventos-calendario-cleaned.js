@@ -41,6 +41,17 @@ document.addEventListener("DOMContentLoaded", function () {
     bootstrap.Modal.getInstance(modalCrearEvento)?.hide();
   }
 
+  function validarRangoFechas(fechaInicio, horaInicio, fechaFin, horaFin) {
+    const inicio = `${fechaInicio}T${horaInicio}`;
+    const fin = `${fechaFin || fechaInicio}T${horaFin}`;
+
+    if (fin <= inicio) {
+      return "La fecha de fin debe ser posterior a la de inicio.";
+    }
+
+    return "";
+  }
+
   // Inicio de lógica principal
   const btnGuardar = document.getElementById("btnGuardarEvento");
   if (!btnGuardar) {
@@ -98,6 +109,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (faltan.length > 0) {
       mostrarError("Faltan campos obligatorios: " + faltan.join(", "), data);
+      return;
+    }
+
+    const errorRango = validarRangoFechas(
+      data.fechaInicio,
+      data.horaInicio,
+      data.fechaInicio,
+      data.horaFin,
+    );
+
+    if (errorRango) {
+      mostrarError(errorRango, data);
       return;
     }
 

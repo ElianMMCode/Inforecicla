@@ -7,6 +7,16 @@
  */
 const $el = (id) => document.getElementById(id);
 const getVal = (id) => $el(id)?.value || "";
+const validarRangoFechas = (fechaInicio, horaInicio, fechaFin, horaFin) => {
+  const inicio = `${fechaInicio}T${horaInicio}`;
+  const fin = `${fechaFin || fechaInicio}T${horaFin}`;
+
+  if (fin <= inicio) {
+    return "La fecha de fin debe ser posterior a la de inicio.";
+  }
+
+  return "";
+};
 const setVal = (id, val) => {
   if ($el(id)) $el(id).value = val || "";
 };
@@ -495,6 +505,22 @@ document.addEventListener("DOMContentLoaded", function () {
         "alertEditarSuccess",
         "alertEditarErrorText",
         `Faltan campos obligatorios: ${faltan.join(", ")}`,
+      );
+    }
+
+    const errorRangoEditar = validarRangoFechas(
+      reqData.fechaInicio,
+      reqData.horaInicio,
+      reqData.fechaInicio,
+      reqData.horaFin,
+    );
+
+    if (errorRangoEditar) {
+      return manejarAlertas(
+        "alertEditarError",
+        "alertEditarSuccess",
+        "alertEditarErrorText",
+        errorRangoEditar,
       );
     }
 

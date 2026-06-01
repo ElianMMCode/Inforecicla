@@ -180,6 +180,15 @@ def _validar_titulo_evento(titulo):
     return titulo_normalizado, None
 
 
+def _validar_rango_fechas(fecha_inicio_dt, fecha_fin_dt):
+    if fecha_fin_dt <= fecha_inicio_dt:
+        return _error_json(
+            "La fecha de fin debe ser posterior a la de inicio.",
+            400,
+        )
+    return None
+
+
 def _parse_fecha_aware(fecha_texto, formato):
     from django.utils import timezone
 
@@ -485,6 +494,10 @@ def crear_evento_venta(request):
             f"{fecha_inicio} {hora_fin}", "%Y-%m-%d %H:%M"
         )
 
+        error_response = _validar_rango_fechas(fecha_inicio_dt, fecha_fin_dt)
+        if error_response:
+            return error_response
+
         evento = Evento.objects.create(
             material_id=material_id,
             centro_acopio_id=centro_acopio_id if centro_acopio_id else None,
@@ -562,6 +575,11 @@ def editar_evento_venta(request):
             evento.fecha_fin = _parse_fecha_aware(
                 f"{fecha_inicio} {hora_fin}", "%Y-%m-%d %H:%M"
             )
+
+        error_response = _validar_rango_fechas(evento.fecha_inicio, evento.fecha_fin)
+        if error_response:
+            return error_response
+
         evento.save()
         tipo_repeticion = data.get("tipoRepeticion", "NINGUNA")
         fecha_fin_repeticion = data.get("fechaFinRepeticion", None)
