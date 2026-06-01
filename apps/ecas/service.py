@@ -41,7 +41,8 @@ class PuntoService:
         punto.direccion = request.POST.get("direccionPunto", punto.direccion)
         punto.celular = request.POST.get("celularPunto", punto.celular)
         punto.email = request.POST.get("emailPunto", punto.email)
-        punto.telefono_punto = request.POST.get("telefonoPunto", punto.telefono_punto)
+        telefono_punto = request.POST.get("telefonoPunto", punto.telefono_punto)
+        punto.telefono_punto = telefono_punto.strip() if isinstance(telefono_punto, str) and telefono_punto.strip() else None
         punto.sitio_web = request.POST.get("sitioWebPunto", punto.sitio_web)
 
         # Latitud y longitud: convierte a float/None sólo si el dato viene y tiene valor

@@ -630,7 +630,7 @@ def _collect_registro_eca_fields(data):
         "numero_documento": data.get("numeroDocumento", "").strip(),
         "celular": data.get("celular", "").strip(),
         # Punto fields: most moved to step 2 (optional). Keep placeholders here
-        "telefono_punto": data.get("telefono_punto", "").strip(),  # optional (step2)
+        "telefono_punto": data.get("telefono_punto", "").strip() or None,  # optional (step2)
         "direccion": data.get("direccion", "").strip(),  # optional (step2)
         # City is fixed to DEFAULT_CITY for step1 (hidden from user)
         "ciudad": DEFAULT_CITY,
@@ -710,7 +710,7 @@ def _create_registro_eca(fields):
             gestor_eca=usuario,
             nombre=fields["nombres"],
             descripcion=fields["descripcion"],
-            telefono_punto=fields["telefono_punto"],
+            telefono_punto=fields["telefono_punto"] or None,
             direccion=fields["direccion"],
             ciudad=fields["ciudad"],
             # Use gestor email as default contact email for the punto; can be changed in step2
@@ -783,7 +783,7 @@ def _collect_registro_ciudadano_fields(data):
         "apellidos": data.get("apellidos", "").strip(),
         "email": data.get("email", "").strip().lower(),
         "celular": data.get("celular", "").strip(),
-        "tipo_documento": data.get("tipoDocumento", "").strip() or None,
+        "tipo_documento": data.get("tipoDocumento", "").strip(),
         "numero_documento": data.get("numeroDocumento", "").strip(),
         "ciudad": data.get("ciudad", DEFAULT_CITY).strip(),
         "localidad_id": data.get("localidad", "").strip(),
@@ -820,7 +820,7 @@ def _create_registro_ciudadano(fields):
             nombres=fields["nombres"],
             apellidos=fields["apellidos"],
             celular=fields["celular"],
-            tipo_documento=fields["tipo_documento"],
+            tipo_documento=fields["tipo_documento"] or "",
             tipo_usuario=cons.TipoUsuario.CIUDADANO,
             ciudad=fields.get("ciudad") or DEFAULT_CITY,
             localidad=fields.get("localidad_inst"),
