@@ -1,3 +1,6 @@
+import { init as initEditarCentroForm } from '../formularios/ecas-form-editar-centro.js';
+import { init as initFiltrosCentrosForm } from '../formularios/ecas-form-filtros-centros.js';
+
 (function () {
     const root = globalThis;
 
@@ -260,31 +263,43 @@
         }
     }
 
+    function matchesNombre(centro, filtro) {
+        return !filtro || normalizeString(centro.nombre || '').includes(normalizeString(filtro));
+    }
+
+    function matchesTipo(centro, filtro) {
+        if (!filtro) return true;
+        const tipoCentro = centro.get_tipo_centro_display || centro.tipo || '';
+        return !tipoCentro || normalizeString(tipoCentro).includes(normalizeString(filtro));
+    }
+
+    function matchesLocalidad(centro, filtro) {
+        if (!filtro) return true;
+        const localidad = getLocalidadNombre(centro, '');
+        return !localidad || normalizeString(localidad).includes(normalizeString(filtro));
+    }
+
+    function matchesContacto(centro, filtro) {
+        return !filtro || normalizeString(centro.nombre_contacto || '').includes(normalizeString(filtro));
+    }
+
+    function matchesEmail(centro, filtro) {
+        return !filtro || normalizeString(centro.email || '').includes(normalizeString(filtro));
+    }
+
+    function matchesTelefono(centro, filtro) {
+        return !filtro || normalizeString(centro.celular || '').includes(normalizeString(filtro));
+    }
+
     function filterCentros(centros, filtros) {
-        return centros.filter((centro) => {
-            if (filtros.nombre && !normalizeString(centro.nombre).includes(normalizeString(filtros.nombre))) {
-                return false;
-            }
-            if (filtros.tipo && centro.get_tipo_centro_display && centro.get_tipo_centro_display !== filtros.tipo && centro.tipo !== filtros.tipo) {
-                return false;
-            }
-            if (filtros.localidad) {
-                const localidad = getLocalidadNombre(centro, '');
-                if (localidad && normalizeString(localidad) !== normalizeString(filtros.localidad)) {
-                    return false;
-                }
-            }
-            if (filtros.contacto && centro.nombre_contacto && !normalizeString(centro.nombre_contacto).includes(normalizeString(filtros.contacto))) {
-                return false;
-            }
-            if (filtros.email && centro.email && !normalizeString(centro.email).includes(normalizeString(filtros.email))) {
-                return false;
-            }
-            if (filtros.telefono && centro.celular && !normalizeString(centro.celular).includes(normalizeString(filtros.telefono))) {
-                return false;
-            }
-            return true;
-        });
+        return centros.filter((centro) =>
+            matchesNombre(centro, filtros.nombre) &&
+            matchesTipo(centro, filtros.tipo) &&
+            matchesLocalidad(centro, filtros.localidad) &&
+            matchesContacto(centro, filtros.contacto) &&
+            matchesEmail(centro, filtros.email) &&
+            matchesTelefono(centro, filtros.telefono)
+        );
     }
 
     function syncSelectValue(selectId, value) {
@@ -304,6 +319,19 @@
         if (node) {
             node.textContent = value;
         }
+    }
+
+    function limpiarCampos(form) {
+        if (!form) return;
+        form.querySelectorAll('input[type="text"], input[type="email"]').forEach(input => {
+            input.value = '';
+        });
+        form.querySelectorAll('select').forEach(select => {
+            select.value = '';
+            if (root.jQuery?.fn?.select2) {
+                root.jQuery(select).val('').trigger('change');
+            }
+        });
     }
 
     function syncLocalidadSelectWithDelay(locId) {
@@ -337,7 +365,7 @@
         setText(prefix + 'Email', centro.email || '-');
         if (isPropio) {
             el('inputCentroId').value = centro.id ?? '';
-            setText('detCentroPropioNotas', (centro.nota && String(centro.nota).trim()) ? centro.nota : '-');
+            setText(prefix + 'Notas', (centro.nota && String(centro.nota).trim()) ? centro.nota : '-');
         }
         modal.show();
     }
@@ -381,7 +409,11 @@
             form.reset();
             form.action = '/punto-eca/centros/registrar-centro/guardar/';
             form.querySelector('#editCentroInputId').value = '';
-            form.querySelector('#editarCentroFeedback')?.remove();
+            form.classList.remove('was-validated');
+            const feedback = el('editarCentroFeedback');
+            if (feedback) {
+                feedback.remove();
+            }
         }
         const modalTitle = el('modalEditarCentroPropioLabel');
         if (modalTitle) {
@@ -453,45 +485,6 @@
         modalEditar.show();
     }
 
-    async function submitCentroEdit(formEditarCentro) {
-        const response = await fetch(formEditarCentro.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: new FormData(formEditarCentro),
-        });
-        const data = await response.json();
-        let msg = 'Error al guardar los cambios';
-        if (typeof data.mensaje === 'string') {
-            msg = data.mensaje;
-        } else if (data.status === 'ok') {
-            msg = 'Edicion exitosa';
-        }
-        let feedback = el('editarCentroFeedback');
-        if (!feedback) {
-            feedback = document.createElement('div');
-            feedback.id = 'editarCentroFeedback';
-            feedback.className = 'alert';
-            document.querySelector('#formEditarCentro .modal-body')?.prepend(feedback);
-        }
-        if (data.status === 'ok' && data.centro) {
-            feedback.textContent = msg;
-            feedback.className = 'alert alert-success';
-            const idx = (root.CENTROS_PROPIOS || []).findIndex((item) => String(item.id) === String(data.centro.id));
-            if (idx !== -1) {
-                root.CENTROS_PROPIOS[idx] = data.centro;
-            }
-            renderTablaCentros(root.CENTROS_PROPIOS, 'tablaCentrosPropiosBody');
-            updateBadge(root.CENTROS_PROPIOS.length, 'badgePropiosCount');
-            setTimeout(() => root.location.reload(), 1000);
-            setTimeout(() => markEditedCentroRow(data.centro.id), 500);
-            return;
-        }
-        feedback.textContent = msg;
-        feedback.className = 'alert alert-danger';
-    }
-
     async function deleteCentroByButton(btn) {
         const centroId = btn.dataset.id;
         if (!centroId) {
@@ -542,51 +535,6 @@
         }
     }
 
-    function bindFilterForm(scope) {
-        const form = el('filtrosFormCentros' + scope);
-        const data = scope === 'Global' ? (root.CENTROS_GLOBALES || []) : (root.CENTROS_PROPIOS || []);
-        if (!form) {
-            return;
-        }
-        initSelect2Filters(data, scope);
-
-        const filterButton = el(scope === 'Global' ? 'btnFiltrarGlobales' : 'btnFiltrarPropios');
-        const clearButton = el(scope === 'Global' ? 'btnLimpiarGlobales' : 'btnLimpiarPropios');
-        if (filterButton) {
-            filterButton.addEventListener('click', () => {
-                initSelect2Filters(data, scope);
-                const filtros = {
-                    nombre: el('filtroNombre' + scope).value,
-                    tipo: el('filtroTipo' + scope).value,
-                    localidad: el('filtroLocalidad' + scope).value,
-                    contacto: el('filtroContacto' + scope).value,
-                    email: el('filtroEmail' + scope).value,
-                    telefono: el('filtroTelefono' + scope).value,
-                };
-                const filtrados = filterCentros(data, filtros);
-                renderTablaCentros(filtrados, scope === 'Global' ? 'tablaCentrosGlobalesBody' : 'tablaCentrosPropiosBody');
-                updateBadge(filtrados.length, scope === 'Global' ? 'badgeGlobalesCount' : 'badgePropiosCount');
-            });
-        }
-        if (clearButton) {
-            clearButton.addEventListener('click', () => {
-                limpiarCampos(form);
-                initSelect2Filters(data, scope);
-                const filtros = {
-                    nombre: el('filtroNombre' + scope).value,
-                    tipo: el('filtroTipo' + scope).value,
-                    localidad: el('filtroLocalidad' + scope).value,
-                    contacto: el('filtroContacto' + scope).value,
-                    email: el('filtroEmail' + scope).value,
-                    telefono: el('filtroTelefono' + scope).value,
-                };
-                const filtrados = filterCentros(data, filtros);
-                renderTablaCentros(filtrados, scope === 'Global' ? 'tablaCentrosGlobalesBody' : 'tablaCentrosPropiosBody');
-                updateBadge(filtrados.length, scope === 'Global' ? 'badgeGlobalesCount' : 'badgePropiosCount');
-            });
-        }
-    }
-
     function bindDetailButtons() {
         document.addEventListener('click', (event) => {
             const btn = event.target.closest('.btn-ver-detalles-centro');
@@ -607,37 +555,23 @@
         });
     }
 
-    function bindEditSubmit() {
-        const formEditarCentro = el('formEditarCentro');
-        if (!formEditarCentro) {
-            return;
-        }
-        formEditarCentro.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const submitBtn = formEditarCentro.querySelector('[type=submit]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-            }
-            submitCentroEdit(formEditarCentro)
-                .catch((error) => {
-                    console.error('[EDIT-CENTRO] Error inesperado en la comunicacion', error);
-                    alert('Error inesperado en la comunicacion');
-                })
-                .finally(() => {
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                    }
-                });
+    function initFormulariosModulares() {
+        initEditarCentroForm({
+            renderTablaCentros,
+            updateBadge,
+            markEditedCentroRow,
+        });
+        initFiltrosCentrosForm({
+            filterCentros,
+            renderTablaCentros,
+            updateBadge,
+            limpiarCampos,
         });
     }
 
     function initCentroSection() {
         ensureMensajesContainer();
         loadCentroState();
-
-        if (el('mensajesCentroContainer')) {
-            // Keep behavior consistent when the fragment is re-rendered.
-        }
 
         initSelect2Filters(root.CENTROS_GLOBALES || [], 'Global');
         initSelect2Filters(root.CENTROS_PROPIOS || [], 'Propio');
@@ -647,11 +581,9 @@
         updateBadge((root.CENTROS_GLOBALES || []).length, 'badgeGlobalesCount');
         updateBadge((root.CENTROS_PROPIOS || []).length, 'badgePropiosCount');
 
-        bindFilterForm('Global');
-        bindFilterForm('Propio');
         bindDetailButtons();
         bindDeleteButtons();
-        bindEditSubmit();
+        initFormulariosModulares();
 
         el('btnAbrirEditarCentro')?.addEventListener('click', handleEditarCentroPropioClick);
         el('btnEditarCentroPropio')?.addEventListener('click', handleEditarCentroPropioClick);
@@ -659,4 +591,26 @@
     }
 
     document.addEventListener('DOMContentLoaded', initCentroSection);
+
+    globalThis.__ecasCentros = {
+        filterCentros,
+        renderTablaCentros,
+        updateBadge,
+        limpiarCampos,
+        markEditedCentroRow,
+        mostrarMensajeCentro,
+        readJsonArrayFromScript,
+        populateCatalogSelect,
+    };
 })();
+
+export const {
+    filterCentros,
+    renderTablaCentros,
+    updateBadge,
+    limpiarCampos,
+    markEditedCentroRow,
+    mostrarMensajeCentro,
+    readJsonArrayFromScript,
+    populateCatalogSelect,
+} = globalThis.__ecasCentros || {};
