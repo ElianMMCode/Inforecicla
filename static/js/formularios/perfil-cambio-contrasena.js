@@ -1,3 +1,5 @@
+import { showResultAlert, showValidationAlert } from './formulario-alertas.js';
+
 const PerfilCambioContrasenaModule = (() => {
     const FORM_ID = 'formPass';
     const FIELD_IDS = {
@@ -25,36 +27,6 @@ const PerfilCambioContrasenaModule = (() => {
         }
 
         return { form, actual, nueva, confirmar };
-    }
-
-    function showValidationAlert() {
-        if (globalThis.Swal?.fire) {
-            globalThis.Swal.fire({
-                icon: 'warning',
-                title: 'Campos obligatorios pendientes',
-                text: 'Revisa y completa los campos requeridos antes de continuar.',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#198754',
-            });
-            return;
-        }
-
-        globalThis.alert('Revisa y completa los campos requeridos antes de continuar.');
-    }
-
-    function showResultAlert(icon, title, text) {
-        if (globalThis.Swal?.fire) {
-            return globalThis.Swal.fire({
-                icon,
-                title,
-                text,
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#198754',
-            });
-        }
-
-        globalThis.alert(text);
-        return Promise.resolve();
     }
 
     function bindNativeValidationSuppression(form) {
@@ -154,7 +126,7 @@ const PerfilCambioContrasenaModule = (() => {
 
             if (!form.checkValidity()) {
                 form.classList.add('was-validated');
-                showValidationAlert();
+                showValidationAlert('Revisa y completa los campos requeridos antes de continuar.');
                 return;
             }
 

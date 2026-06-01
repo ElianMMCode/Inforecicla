@@ -600,17 +600,46 @@ class MapaInteractivo {
       "/images/eca-default.png",
     ];
 
-    const normalizado = String(url).trim().split("?")[0].split("#")[0].replace(/\/+$/, "");
+    const normalizado = this._normalizarRutaImagen(url);
     if (!normalizado) {
       return false;
     }
 
-    const origen = globalThis.location?.origin ? globalThis.location.origin.replace(/\/+$/, "") : "";
+    const origen = globalThis.location?.origin ? this._quitarSlashFinal(globalThis.location.origin) : "";
 
     return rutasSistema.some((ruta) => {
-      const rutaNormalizada = ruta.replace(/\/+$/, "");
+      const rutaNormalizada = this._quitarSlashFinal(ruta);
       return normalizado.endsWith(rutaNormalizada) || (origen && normalizado === `${origen}${rutaNormalizada}`);
     });
+  }
+
+  /**
+   * Normaliza una URL o ruta eliminando query/hash y slash final.
+   */
+  _normalizarRutaImagen(url) {
+    if (!url) {
+      return "";
+    }
+
+    const valor = String(url).trim();
+    if (!valor) {
+      return "";
+    }
+
+    const sinQuery = valor.split("?")[0];
+    const sinHash = sinQuery.split("#")[0];
+    return this._quitarSlashFinal(sinHash);
+  }
+
+  /**
+   * Elimina uno o más slash finales sin usar regex.
+   */
+  _quitarSlashFinal(valor) {
+    let resultado = String(valor || "");
+    while (resultado.endsWith("/")) {
+      resultado = resultado.slice(0, -1);
+    }
+    return resultado;
   }
 
   /**

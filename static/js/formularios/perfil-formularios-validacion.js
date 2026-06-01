@@ -1,3 +1,5 @@
+import { showResultAlert, showValidationAlert } from './formulario-alertas.js';
+
 const PerfilFormulariosValidacionModule = (() => {
     const FORM_IDS = ['formPunto', 'formEncargado'];
     const POINT_FORM_ID = 'formPunto';
@@ -33,36 +35,9 @@ const PerfilFormulariosValidacionModule = (() => {
         sync();
     }
 
-    function showValidationAlert(formId) {
+    function showFormValidationAlert(formId) {
         const formName = formId === 'formPunto' ? 'del punto ECA' : 'del encargado';
-
-        if (globalThis.Swal?.fire) {
-            globalThis.Swal.fire({
-                icon: 'warning',
-                title: 'Campos obligatorios pendientes',
-                text: `Revisa los campos ${formName} y corrige los datos marcados.`,
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#198754',
-            });
-            return;
-        }
-
-        globalThis.alert(`Revisa los campos ${formName} y corrige los datos marcados.`);
-    }
-
-    function showResultAlert(icon, title, text) {
-        if (globalThis.Swal?.fire) {
-            return globalThis.Swal.fire({
-                icon,
-                title,
-                text,
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#198754',
-            });
-        }
-
-        globalThis.alert(text);
-        return Promise.resolve();
+        return showValidationAlert(`Revisa los campos ${formName} y corrige los datos marcados.`);
     }
 
     function getPreviewElement(previewId) {
@@ -153,7 +128,7 @@ const PerfilFormulariosValidacionModule = (() => {
 
             if (!form.checkValidity()) {
                 form.classList.add('was-validated');
-                showValidationAlert(form.id);
+                showFormValidationAlert(form.id);
                 return;
             }
 
