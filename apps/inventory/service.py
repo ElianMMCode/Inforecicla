@@ -13,6 +13,10 @@ from apps.ecas.models import PuntoECA
 from apps.inventory.models import CategoriaMaterial, TipoMaterial
 
 
+MENSAJE_RECURSO_NO_ENCONTRADO = "Recurso no encontrado"
+IMAGEN_MATERIAL_DEFECTO = "/static/img/materiales.png"
+
+
 class InventoryService:
     @staticmethod
     @transaction.atomic
@@ -34,7 +38,9 @@ class InventoryService:
                 punto_eca=punto,
             ).values_list("material_id", flat=True)
 
-            materiales_catalogo = Material.objects.exclude(
+            materiales_catalogo = Material.objects.select_related(
+                "categoria", "tipo"
+            ).exclude(
                 id__in=materiales_en_inventario
             )
 
@@ -83,6 +89,94 @@ class InventoryService:
             }
 
     @staticmethod
+    def _obtener_materiales_inventario(punto_id):
+        punto_eca = get_object_or_404(PuntoECA, id=punto_id)
+        return Inventario.objects.filter(punto_eca=punto_eca).select_related("material")
+
+    @staticmethod
+    def _filtrar_materiales_inventario(queryset, query, categoria, tipo, unidad):
+        if query:
+            queryset = queryset.filter(Q(material__nombre__unaccent__icontains=query))
+        if categoria:
+            queryset = queryset.filter(
+                material__categoria__nombre__unaccent__icontains=categoria
+            )
+        if tipo:
+            queryset = queryset.filter(material__tipo__nombre__iexact=tipo)
+        if unidad:
+            queryset = queryset.filter(unidad_medida=unidad)
+        return queryset
+
+    @staticmethod
+    def _calcular_porcentaje_ocupacion(item):
+        if item.capacidad_maxima and item.capacidad_maxima > 0:
+            return round((item.stock_actual / item.capacidad_maxima) * 100, 2)
+        return 0
+
+    @staticmethod
+    def _determinar_estado_alerta(item, porcentaje_ocupacion):
+        if item.umbral_critico and porcentaje_ocupacion >= item.umbral_critico:
+            return "Crítico"
+        if item.umbral_alerta and porcentaje_ocupacion >= item.umbral_alerta:
+            return "Alerta"
+        return "OK"
+
+    @staticmethod
+    def _formatear_material_inventario(item):
+        try:
+            porcentaje_ocupacion = InventoryService._calcular_porcentaje_ocupacion(item)
+            estado_alerta = InventoryService._determinar_estado_alerta(
+                item, porcentaje_ocupacion
+            )
+            material = item.material
+            return {
+                "inventarioId": str(item.id),
+                "materialId": str(material.id),
+                "nmbMaterial": material.nombre,
+                "nmbCategoria": material.categoria.nombre if material.categoria else "General",
+                "nmbTipo": material.tipo.nombre if material.tipo else "N/A",
+                "dscMaterial": material.descripcion,
+                "stockActual": item.stock_actual,
+                "capacidadMaxima": item.capacidad_maxima,
+                "unidadMedida": item.unidad_medida,
+                "precioCompra": item.precio_compra,
+                "precioVenta": item.precio_venta,
+                "porcentaje_ocupacion": porcentaje_ocupacion,
+                "umbral_alerta": item.umbral_alerta if hasattr(item, "umbral_alerta") else 0,
+                "umbral_critico": item.umbral_critico if hasattr(item, "umbral_critico") else 0,
+                "imagenUrl": material.imagen_url if material.imagen_url else IMAGEN_MATERIAL_DEFECTO,
+                "estado_alerta": estado_alerta,
+            }
+        except Exception:
+            return {
+                "error": True,
+                "mensaje": "Error procesando material en inventario, omitido.",
+            }
+
+    @staticmethod
+    def _filtrar_resultados_por_ocupacion(resultados, ocupacion):
+        if not ocupacion:
+            return resultados
+
+        try:
+            rango = ocupacion.split("-")
+            minimo = float(rango[0]) if len(rango) > 0 and rango[0] else 0
+            maximo = float(rango[1]) if len(rango) > 1 and rango[1] else 100
+            return [
+                resultado
+                for resultado in resultados
+                if minimo <= resultado.get("porcentaje_ocupacion", 0) <= maximo
+            ]
+        except Exception:
+            return resultados
+
+    @staticmethod
+    def _filtrar_resultados_por_alerta(resultados, alerta):
+        if not alerta:
+            return resultados
+        return [resultado for resultado in resultados if resultado.get("estado_alerta") == alerta]
+
+    @staticmethod
     def buscar_materiales_dentro_inventario(data):
         """
         Busca y filtra materiales dentro del inventario de un Punto ECA.
@@ -108,11 +202,9 @@ class InventoryService:
             query = data.get("texto", "").strip()
             categoria = data.get("categoria", "").strip()
             tipo = data.get("tipo", "").strip()
-            unidad = data.get("unidad", "").strip()  # nuevo filtro
-            alerta = data.get("alerta", "").strip()  # nuevo filtro
-            ocupacion = data.get("ocupacion", "").strip()  # nuevo filtro
-            # if not request.user.is_authenticated:
-            #     return JsonResponse({"error": "Usuario no autenticado"})
+            unidad = data.get("unidad", "").strip()
+            alerta = data.get("alerta", "").strip()
+            ocupacion = data.get("ocupacion", "").strip()
             if not punto_id:
                 return [
                     {
@@ -122,10 +214,9 @@ class InventoryService:
                     }
                 ]
             try:
-                punto_eca = get_object_or_404(PuntoECA, id=punto_id)
-                materiales_inventario = Inventario.objects.filter(
-                    punto_eca=punto_eca
-                ).select_related("material")
+                materiales_inventario = InventoryService._obtener_materiales_inventario(
+                    punto_id
+                )
             except Http404:
                 return [
                     {
@@ -134,120 +225,20 @@ class InventoryService:
                         "status": 404,
                     }
                 ]
-            if query:
-                materiales_inventario = materiales_inventario.filter(
-                    Q(material__nombre__unaccent__icontains=query)
-                )
-            if categoria:
-                materiales_inventario = materiales_inventario.filter(
-                    material__categoria__nombre__unaccent__icontains=categoria
-                )
+            materiales_inventario = InventoryService._filtrar_materiales_inventario(
+                materiales_inventario, query, categoria, tipo, unidad
+            ).order_by("fecha_modificacion")
 
-            if tipo:
-                materiales_inventario = materiales_inventario.filter(
-                    material__tipo__nombre__iexact=tipo
-                )
-
-            if unidad:
-                materiales_inventario = materiales_inventario.filter(
-                    unidad_medida=unidad
-                )
-
-            materiales_inventario = materiales_inventario.order_by("fecha_modificacion")
-
-            resultados = []
-
-            for item in materiales_inventario:
-                try:
-                    porcentaje_ocupacion = 0
-                    if item.capacidad_maxima and item.capacidad_maxima > 0:
-                        porcentaje_ocupacion = (
-                            item.stock_actual / item.capacidad_maxima
-                        ) * 100
-                    else:
-                        porcentaje_ocupacion = 0
-                    porcentaje_ocupacion = round(porcentaje_ocupacion, 2)
-
-                    estado_alerta = "OK"
-                    # Mapping igual al template: Crítico si >= umbral_critico, Alerta si >= umbral_alerta, OK el resto
-                    if (
-                        item.umbral_critico
-                        and porcentaje_ocupacion >= item.umbral_critico
-                    ):
-                        estado_alerta = "Crítico"
-                    elif (
-                        item.umbral_alerta
-                        and porcentaje_ocupacion >= item.umbral_alerta
-                    ):
-                        estado_alerta = "Alerta"
-                    else:
-                        estado_alerta = "OK"
-
-                    resultados.append(
-                        {
-                            "inventarioId": str(item.id),
-                            "materialId": str(item.material.id),
-                            "nmbMaterial": item.material.nombre,
-                            "nmbCategoria": item.material.categoria.nombre
-                            if item.material.categoria
-                            else "General",
-                            "nmbTipo": item.material.tipo.nombre
-                            if item.material.tipo
-                            else "N/A",
-                            "dscMaterial": item.material.descripcion,
-                            "stockActual": item.stock_actual,
-                            "capacidadMaxima": item.capacidad_maxima,
-                            "unidadMedida": item.unidad_medida,
-                            "precioCompra": item.precio_compra,
-                            "precioVenta": item.precio_venta,
-                            "porcentaje_ocupacion": porcentaje_ocupacion,
-                            "umbral_alerta": item.umbral_alerta
-                            if hasattr(item, "umbral_alerta")
-                            else 0,
-                            "umbral_critico": item.umbral_critico
-                            if hasattr(item, "umbral_critico")
-                            else 0,
-                            "imagenUrl": item.material.imagen_url
-                            if item.material.imagen_url
-                            else "/static/img/materiales.png",
-                            "estado_alerta": estado_alerta,
-                        }
-                    )
-                except Exception:
-                    resultados.append(
-                        {
-                            "error": True,
-                            "mensaje": "Error procesando material en inventario, omitido.",
-                        }
-                    )
-                    continue
-            # Filtrado extra por ocupación y alerta
-            if ocupacion:
-                try:
-                    rango = ocupacion.split("-")
-                    minimo = float(rango[0]) if len(rango) > 0 else 0
-                    maximo = float(rango[1]) if len(rango) > 1 else 100
-                    resultados = [
-                        r
-                        for r in resultados
-                        if minimo <= r["porcentaje_ocupacion"] <= maximo
-                    ]
-                    print(
-                        f"Después de filtrar ocupacion '{ocupacion}': {len(resultados)} items"
-                    )
-                except Exception as e:
-                    print(f"Error filtrando por ocupacion: {e}")
-            if alerta:
-                try:
-                    # Validar alerta (OK, Alerta, Crítico)
-                    resultados = [r for r in resultados if r["estado_alerta"] == alerta]
-                    print(
-                        f"Después de filtrar alerta '{alerta}': {len(resultados)} items"
-                    )
-                except Exception as e:
-                    print(f"Error filtrando por alerta: {e}")
-
-            print(f"RESULTADOS: {len(resultados)}")
+            resultados = [
+                InventoryService._formatear_material_inventario(item)
+                for item in materiales_inventario
+            ]
+            resultados = InventoryService._filtrar_resultados_por_ocupacion(
+                resultados, ocupacion
+            )
+            resultados = InventoryService._filtrar_resultados_por_alerta(
+                resultados, alerta
+            )
             return resultados
         except Exception as e:
             return [
@@ -329,7 +320,7 @@ class InventoryService:
                 "umbralCritico": inventario_item.umbral_critico,
             }
         except Http404:
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": MENSAJE_RECURSO_NO_ENCONTRADO, "status": 404}
         except Exception as e:
             return {"mensaje": f"Error técnico: {str(e)}", "error": True, "status": 400}
 
@@ -373,7 +364,7 @@ class InventoryService:
                 "error": False,
             }
         except (Http404, Material.DoesNotExist, PuntoECA.DoesNotExist):
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": MENSAJE_RECURSO_NO_ENCONTRADO, "status": 404}
         except Exception as e:
             return {"mensaje": f"Error técnico: {str(e)}", "error": True, "status": 400}
 
@@ -421,7 +412,7 @@ class InventoryService:
             inventario_item.save()
             return {"mensaje": "Inventario actualizado con éxito.", "error": False}
         except (Http404, Inventario.DoesNotExist):
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": MENSAJE_RECURSO_NO_ENCONTRADO, "status": 404}
         except Exception as e:
             return {
                 "mensaje": f"Error técnico al actualizar: {str(e)}",
@@ -441,17 +432,12 @@ class InventoryService:
         """
         try:
             inventario_item = get_object_or_404(Inventario, id=inventario_id)
-            # # Validación de ownership/permiso: solo el gestor del punto puede borrar
-            # if not hasattr(request, "user") or not request.user.is_authenticated:
-            #     return JsonResponse({"error": "Usuario no autenticado."}, status=401)
-            # if inventario_item.punto_eca.gestor_eca != request.user:
-            #     return JsonResponse({"error": "No tiene permisos para borrar este inventario."}, status=403)
             inventario_item.delete()
             return {
                 "mensaje": "Material eliminado del inventario con éxito.",
                 "error": False,
             }
         except Inventario.DoesNotExist:
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": MENSAJE_RECURSO_NO_ENCONTRADO, "status": 404}
         except Exception as e:
             return {"mensaje": f"Error técnico: {str(e)}", "error": True, "status": 400}

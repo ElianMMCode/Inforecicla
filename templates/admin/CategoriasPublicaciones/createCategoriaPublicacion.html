@@ -32,6 +32,8 @@
     </a>
   </div>
 
+  {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'categorias_publicacion' %}
+
   <div class="card shadow-sm border-0" style="max-width: 600px;">
     <div class="card-header bg-success text-white"><i class="bi bi-folder me-1"></i> Formulario</div>
     <div class="card-body p-4">

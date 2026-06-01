@@ -3,32 +3,510 @@ from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
 from apps.ecas.constants import SECTION_TEMPLATES
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 import json
 from apps.ecas.models import CentroAcopio
 from apps.core.decorators import gestor_eca_or_admin_required
-
-# ===== import-export
 from .resources import CompraInventarioResource, VentaInventarioResource
-from import_export.formats.base_formats import XLSX
 from weasyprint import HTML
-
-INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
 from django.template.loader import render_to_string
-
-# =========== BULK IMPORT ===========
-from django.views.decorators.csrf import csrf_exempt
+import logging
 import csv
 import io
-from apps.inventory.models import Material, CategoriaMaterial, TipoMaterial, Inventario
-from apps.inventory.service import InventoryService
+import unicodedata
+from django.utils.dateparse import parse_date
+from apps.inventory.models import Material
 from apps.ecas.models import PuntoECA
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
+INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
+ERROR_METODO_NO_PERMITIDO = "Método no permitido"
+MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+MIME_PDF = "application/pdf"
+CSV_UTF8_ERROR_MESSAGE = "Error al leer el archivo. Verifique que sea UTF-8"
+TEXT_PLAIN = "text/plain"
 
-import unicodedata
+
+def _responder_error_json(mensaje, status=400):
+    return JsonResponse({"status": "error", "mensaje": mensaje}, status=status)
+
+
+def _responder_servicio_json(servicio_callable, *args, **kwargs):
+    try:
+        response = servicio_callable(*args, **kwargs)
+        return JsonResponse(response, safe=False)
+    except Exception as exc:
+        return JsonResponse(
+            {"mensaje": f"Error técnico: {str(exc)}", "error": True}, status=400
+        )
+
+
+def _responder_borrado_json(request, servicio_callable, identificador, mensaje_exito):
+    if request.method != "DELETE":
+        return JsonResponse(
+            {"success": False, "mensaje": ERROR_METODO_NO_PERMITIDO}, status=405
+        )
+
+    try:
+        resp = servicio_callable(request, identificador)
+        if isinstance(resp, dict):
+            resp.setdefault("success", True)
+        else:
+            resp = {"success": True, "mensaje": mensaje_exito, "resp": resp}
+        return JsonResponse(resp)
+    except Exception as exc:
+        return JsonResponse(
+            {"success": False, "mensaje": f"Error técnico: {str(exc)}"},
+            status=500,
+        )
+
+
+def _obtener_body_json(request):
+    if not request.body:
+        return {}
+    try:
+        return json.loads(request.body)
+    except json.JSONDecodeError as exc:
+        raise ValueError(INVALID_JSON_BODY_ERROR) from exc
+
+
+def _keywords_coinciden(keywords_a, keywords_b):
+    return bool(
+        keywords_a
+        and keywords_b
+        and (
+            keywords_a == keywords_b
+            or keywords_a <= keywords_b
+            or keywords_b <= keywords_a
+        )
+    )
+
+
+def _buscar_inventario_existente_por_keywords(punto_eca, keywords_busqueda):
+    inventarios_qs = Inventario.objects.filter(punto_eca=punto_eca).select_related(
+        "material"
+    )
+    for inventario in inventarios_qs:
+        if _keywords_coinciden(
+            keywords_busqueda, extraer_keywords(inventario.material.nombre)
+        ):
+            return inventario
+    return None
+
+
+def _buscar_material_catalogo_por_keywords(nombre_material, keywords_busqueda):
+    nombre_normalizado = nombre_material.strip()
+    material_catalogo = Material.objects.filter(
+        Q(nombre__iexact=nombre_normalizado)
+    ).first()
+    if material_catalogo:
+        return material_catalogo
+    material_catalogo = Material.objects.filter(
+        Q(nombre__icontains=nombre_normalizado)
+    ).first()
+    if material_catalogo:
+        return material_catalogo
+
+    for material in Material.objects.all():
+        if _keywords_coinciden(keywords_busqueda, extraer_keywords(material.nombre)):
+            return material
+    return None
+
+
+def _crear_inventario_desde_material(punto_eca, material_catalogo):
+    return Inventario.objects.create(
+        punto_eca=punto_eca,
+        material=material_catalogo,
+        stock_actual=0.0,
+        capacidad_maxima=100000.0,
+        unidad_medida="KG",
+        precio_compra=0.0,
+        precio_venta=0.0,
+        umbral_alerta=80,
+        umbral_critico=90,
+    )
+
+
+def _crear_mock_request_bulk_import(request, data):
+    return type("MockRequest", (), {"POST": data, "user": request.user})()
+
+
+def _procesar_fila_bulk_import(
+    fila_num,
+    fila,
+    punto_eca,
+    request,
+    campo_precio,
+    campo_fecha,
+    service_callable,
+    response_id_key,
+    etiqueta_movimiento,
+):
+    nombre_material = fila["nombreMaterial"].strip()
+    cantidad = fila["cantidad"].strip()
+    precio = fila[campo_precio].strip()
+    fecha = fila[campo_fecha].strip()
+    observaciones = fila.get("observaciones", "").strip()
+
+    if not nombre_material:
+        raise ValueError("nombreMaterial es requerido")
+    if not cantidad:
+        raise ValueError("cantidad es requerida")
+    if not precio:
+        raise ValueError(f"{campo_precio} es requerido")
+    if not fecha:
+        raise ValueError(f"{campo_fecha} es requerida")
+
+    inventario_item, material_creado, error_msg = _buscar_o_crear_material_inventario(
+        nombre_material, punto_eca
+    )
+    if error_msg:
+        raise ValueError(f"Error con material '{nombre_material}': {error_msg}")
+    if not inventario_item:
+        raise ValueError(
+            f"No se pudo obtener/crear inventario para material '{nombre_material}'"
+        )
+
+    data = {
+        "inventarioId": str(inventario_item.id),
+        "cantidad": cantidad,
+        campo_precio: precio,
+        campo_fecha: fecha,
+        "observaciones": observaciones,
+    }
+    mock_request = _crear_mock_request_bulk_import(request, data)
+    response = service_callable(mock_request, data)
+
+    if response.get("error"):
+        raise ValueError(
+            response.get("mensaje", f"Error al registrar {etiqueta_movimiento.lower()}")
+        )
+
+    mensaje_resultado = f"{etiqueta_movimiento} registrada exitosamente"
+    if material_creado:
+        mensaje_resultado += f" (Material '{nombre_material}' agregado al inventario)"
+
+    resultado = {
+        "fila": fila_num,
+        "status": "success",
+        "mensaje": mensaje_resultado,
+        "inventario_id": str(inventario_item.id),
+        "material_creado": material_creado,
+    }
+    resultado[response_id_key] = response.get(response_id_key)
+    return resultado
+
+
+def _procesar_bulk_import_csv(
+    request,
+    archivo_csv,
+    headers_esperados,
+    campo_precio,
+    campo_fecha,
+    service_callable,
+    response_id_key,
+    etiqueta_movimiento,
+):
+    try:
+        punto_eca = get_object_or_404(PuntoECA, gestor_eca=request.user)
+        archivo_contenido = archivo_csv.read().decode("utf-8")
+        csv_reader = csv.DictReader(io.StringIO(archivo_contenido))
+
+        headers_csv = set(csv_reader.fieldnames or [])
+        if not headers_esperados.issubset(headers_csv):
+            headers_faltantes = headers_esperados - headers_csv
+            return _responder_error_json(
+                f"Faltan columnas requeridas: {', '.join(headers_faltantes)}",
+                status=400,
+            )
+
+        resultados = []
+        filas_exitosas = 0
+        filas_con_error = 0
+
+        for fila_num, fila in enumerate(csv_reader, start=2):
+            try:
+                resultado = _procesar_fila_bulk_import(
+                    fila_num,
+                    fila,
+                    punto_eca,
+                    request,
+                    campo_precio,
+                    campo_fecha,
+                    service_callable,
+                    response_id_key,
+                    etiqueta_movimiento,
+                )
+                resultados.append(resultado)
+                filas_exitosas += 1
+            except Exception as exc:
+                resultados.append(
+                    {
+                        "fila": fila_num,
+                        "status": "error",
+                        "mensaje": str(exc),
+                        "datos": fila,
+                    }
+                )
+                filas_con_error += 1
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "mensaje": f"Procesamiento completado. {filas_exitosas} exitosas, {filas_con_error} con errores",
+                "resumen": {
+                    "total_filas": filas_exitosas + filas_con_error,
+                    "exitosas": filas_exitosas,
+                    "con_errores": filas_con_error,
+                },
+                "detalles": resultados,
+            }
+        )
+    except UnicodeDecodeError:
+        return _responder_error_json(CSV_UTF8_ERROR_MESSAGE, status=400)
+    except Exception as exc:
+        return _responder_error_json(
+            f"Error procesando archivo: {str(exc)}", status=500
+        )
+
+
+def _procesar_bulk_import_endpoint(
+    request,
+    headers_esperados,
+    campo_precio,
+    campo_fecha,
+    service_callable,
+    response_id_key,
+    etiqueta_movimiento,
+):
+    if request.method != "POST":
+        return _responder_error_json(ERROR_METODO_NO_PERMITIDO, status=405)
+
+    archivo_csv = request.FILES.get("file")
+    if not archivo_csv:
+        return _responder_error_json("No se encontró el archivo CSV", status=400)
+    if not archivo_csv.name.endswith(".csv"):
+        return _responder_error_json("El archivo debe ser de formato CSV", status=400)
+
+    return _procesar_bulk_import_csv(
+        request=request,
+        archivo_csv=archivo_csv,
+        headers_esperados=headers_esperados,
+        campo_precio=campo_precio,
+        campo_fecha=campo_fecha,
+        service_callable=service_callable,
+        response_id_key=response_id_key,
+        etiqueta_movimiento=etiqueta_movimiento,
+    )
+
+
+def _obtener_punto_eca_id_export(request):
+    return (request.GET.get("punto_eca_id") or request.GET.get("puntoId") or "").strip()
+
+
+def _obtener_filtro_export(request, nombre):
+    return (request.GET.get(nombre) or "").strip()
+
+
+def _aplicar_filtros_export(
+    request,
+    queryset,
+    fecha_campo,
+    incluir_centro_acopio=False,
+    tipo_movimiento_bloqueado=None,
+):
+    punto_eca_id = _obtener_punto_eca_id_export(request)
+    if punto_eca_id:
+        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+
+    material = _obtener_filtro_export(request, "material")
+    categoria = _obtener_filtro_export(request, "categoria")
+    tipo = _obtener_filtro_export(request, "tipo")
+    centro_acopio = _obtener_filtro_export(request, "centro_acopio")
+    tipo_movimiento = _obtener_filtro_export(request, "tipo_movimiento").lower()
+    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
+    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
+
+    if material:
+        queryset = queryset.filter(inventario__material__nombre__iexact=material)
+    if categoria:
+        queryset = queryset.filter(
+            inventario__material__categoria__nombre__iexact=categoria
+        )
+    if tipo:
+        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
+    if incluir_centro_acopio and centro_acopio:
+        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
+    if fecha_desde:
+        queryset = queryset.filter(**{f"{fecha_campo}__date__gte": fecha_desde})
+    if fecha_hasta:
+        queryset = queryset.filter(**{f"{fecha_campo}__date__lte": fecha_hasta})
+    if tipo_movimiento_bloqueado and tipo_movimiento == tipo_movimiento_bloqueado:
+        return queryset.none()
+    return queryset
+
+
+def _filtrar_historial_compras_export(request, queryset):
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_compra",
+        tipo_movimiento_bloqueado="venta",
+    )
+
+
+def _filtrar_historial_ventas_export(request, queryset):
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_venta",
+        incluir_centro_acopio=True,
+        tipo_movimiento_bloqueado="compra",
+    )
+
+
+def _filtrar_compras_export(request, queryset):
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_compra",
+    )
+
+
+def _filtrar_ventas_export(request, queryset):
+    return _aplicar_filtros_export(
+        request,
+        queryset,
+        fecha_campo="fecha_venta",
+        incluir_centro_acopio=True,
+    )
+
+
+def _normalizar_historial_movimiento(
+    registro,
+    tipo_movimiento,
+    fecha_attr,
+    precio_attr,
+    centro_acopio_resolver,
+):
+    cantidad = getattr(registro, "cantidad", None)
+    precio_unitario = getattr(registro, precio_attr, None)
+    return {
+        "tipo_movimiento": tipo_movimiento,
+        "material": registro.inventario.material.nombre,
+        "fecha": getattr(registro, fecha_attr),
+        "cantidad": cantidad,
+        "precio_unitario": precio_unitario,
+        "total": (cantidad or 0) * (precio_unitario or 0),
+        "centro_acopio": centro_acopio_resolver(registro),
+        "observaciones": registro.observaciones or "",
+    }
+
+
+def _normalizar_historial_compra(compra):
+    return _normalizar_historial_movimiento(
+        compra,
+        "Compra",
+        "fecha_compra",
+        "precio_compra",
+        lambda registro: getattr(registro.inventario.punto_eca, "nombre", ""),
+    )
+
+
+def _normalizar_historial_venta(venta):
+    return _normalizar_historial_movimiento(
+        venta,
+        "Venta",
+        "fecha_venta",
+        "precio_venta",
+        lambda registro: getattr(registro.centro_acopio, "nombre", "")
+        or getattr(registro.inventario.punto_eca, "nombre", ""),
+    )
+
+
+def _ordenar_historial_export(registros):
+    return sorted(
+        registros,
+        key=lambda registro: registro["fecha"].isoformat() if registro["fecha"] else "",
+        reverse=True,
+    )
+
+
+def _obtener_historial_export(request):
+    compras = _filtrar_historial_compras_export(
+        request,
+        models.CompraInventario.objects.all().select_related(
+            "inventario__material", "inventario__punto_eca"
+        ),
+    )
+    ventas = _filtrar_historial_ventas_export(
+        request,
+        models.VentaInventario.objects.all().select_related(
+            "inventario__material", "inventario__punto_eca", "centro_acopio"
+        ),
+    )
+    historial = [
+        *(_normalizar_historial_compra(compra) for compra in compras),
+        *(_normalizar_historial_venta(venta) for venta in ventas),
+    ]
+    return _ordenar_historial_export(historial)
+
+
+def _crear_dataset_historial(registros):
+    from tablib import Dataset
+
+    dataset = Dataset()
+    dataset.headers = [
+        "tipo_movimiento",
+        "material",
+        "fecha",
+        "cantidad",
+        "precio_unitario",
+        "total",
+        "centro_acopio",
+        "observaciones",
+    ]
+    for registro in registros:
+        dataset.append(
+            [
+                registro["tipo_movimiento"],
+                registro["material"],
+                registro["fecha"].strftime("%Y-%m-%d %H:%M"),
+                float(registro["cantidad"]) if registro["cantidad"] is not None else "",
+                float(registro["precio_unitario"])
+                if registro["precio_unitario"] is not None
+                else "",
+                float(registro["total"]) if registro["total"] is not None else "",
+                registro["centro_acopio"],
+                registro["observaciones"],
+            ]
+        )
+    return dataset
+
+
+def _generar_pdf_desde_template(
+    request, template_name, contexto, content_disposition, logger_message
+):
+    try:
+        html_string = render_to_string(template_name, contexto)
+        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
+        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
+        response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
+        response["Content-Disposition"] = content_disposition
+        return response
+    except Exception as exc:
+        logging.exception(logger_message)
+        return HttpResponse(
+            f"Error generando PDF: {str(exc)}", status=500, content_type=TEXT_PLAIN
+        )
+
+
+def _generar_respuesta_xlsx(dataset, filename):
+    export_data = dataset.export("xlsx")
+    response = HttpResponse(export_data, content_type=MIME_XLSX)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 def normalizar_palabra(w):
@@ -45,26 +523,26 @@ def normalizar_palabra(w):
 
 
 def extraer_keywords(texto):
-    stopwords = {
-        "de",
-        "el",
-        "la",
-        "los",
-        "las",
-        "y",
-        "del",
-        "en",
-        "a",
-        "por",
-        "para",
-        "al",
-        "con",
-        "sin",
-    }
-    palabras = [
-        normalizar_palabra(p) for p in texto.split() if (p.isalpha() or p.isalnum())
-    ]
-    return set(p for p in palabras if p not in stopwords)
+    stopwords = frozenset(
+        {
+            "de",
+            "el",
+            "la",
+            "los",
+            "las",
+            "y",
+            "del",
+            "en",
+            "a",
+            "por",
+            "para",
+            "al",
+            "con",
+            "sin",
+        }
+    )
+    palabras = (normalizar_palabra(p) for p in texto.split() if p.isalnum())
+    return {p for p in palabras if p not in stopwords}
 
 
 def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
@@ -77,75 +555,32 @@ def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
         tuple: (inventario_item, created, error_msg)
     """
     try:
-        # === Búsqueda permisiva de inventario existente (palabras normalizadas ===
         keywords_busqueda = extraer_keywords(nombre_material)
-        inventarios_qs = Inventario.objects.filter(punto_eca=punto_eca).select_related(
-            "material"
+        inventario_existente = _buscar_inventario_existente_por_keywords(
+            punto_eca, keywords_busqueda
         )
-        for inv in inventarios_qs:
-            # Sacar keywords normalizadas del nombre del material de inventario
-            kw_inv = extraer_keywords(inv.material.nombre)
-            if (
-                kw_inv
-                and keywords_busqueda
-                and (
-                    keywords_busqueda == kw_inv
-                    or keywords_busqueda <= kw_inv
-                    or kw_inv <= keywords_busqueda
-                )
-            ):
-                # Inventario existente (coincidencia permisiva)
-                return inv, False, None
+        if inventario_existente:
+            return inventario_existente, False, None
 
-        # ==== Búsqueda en catálogo y posible creación ====
-        # Exacta y substring tradicional (más legacy)
-        material_catalogo = Material.objects.filter(
-            Q(nombre__iexact=nombre_material.strip())
-        ).first()
-        if not material_catalogo:
-            material_catalogo = Material.objects.filter(
-                Q(nombre__icontains=nombre_material.strip())
-            ).first()
-        # Coincidencia permisiva de keywords
-        if not material_catalogo:
-            materiales = Material.objects.all()
-            for m in materiales:
-                keywords_mat = extraer_keywords(m.nombre)
-                if (
-                    keywords_busqueda
-                    and keywords_mat
-                    and (
-                        keywords_busqueda == keywords_mat
-                        or keywords_busqueda <= keywords_mat
-                        or keywords_mat <= keywords_busqueda
-                    )
-                ):
-                    material_catalogo = m
-                    break
+        material_catalogo = _buscar_material_catalogo_por_keywords(
+            nombre_material, keywords_busqueda
+        )
         if material_catalogo:
-            # Volver a chequear inventario por ID material, por si hay false match con keywords pero no es el mismo objeto
             inventario_existente = Inventario.objects.filter(
                 punto_eca=punto_eca, material=material_catalogo
             ).first()
             if inventario_existente:
                 return inventario_existente, False, None
-            nuevo_inventario = Inventario.objects.create(
-                punto_eca=punto_eca,
-                material=material_catalogo,
-                stock_actual=0.0,
-                capacidad_maxima=100000.0,  # Large capacity by default
-                unidad_medida="KG",
-                precio_compra=0.0,
-                precio_venta=0.0,
-                umbral_alerta=80,
-                umbral_critico=90,
+            nuevo_inventario = _crear_inventario_desde_material(
+                punto_eca, material_catalogo
             )
             return nuevo_inventario, True, None
-        # Material no existe ni siquiera con coincidencia permisiva, error
         return (
             None,
             False,
-            f"Material '{nombre_material}' no encontrado en el catálogo. Debe ser registrado previamente.",
+            (
+                f"Material '{nombre_material}' no encontrado en el catálogo. Debe ser registrado previamente."
+            ),
         )
     except Exception as e:
         return None, False, f"Error al buscar material: {str(e)}"
@@ -244,12 +679,12 @@ def _build_movimientos_context(punto):
             .distinct()
         ),
         "centros": centros_list,
-        "entradas": json.dumps(compras_list),
-        "salidas": json.dumps(ventas_list),
+        "entradas": compras_list,
+        "salidas": ventas_list,
         "historial_compras": compras_list,
         "historial_ventas": ventas_list,
-        "HISTORIAL_COMPRAS": json.dumps(compras_list),
-        "HISTORIAL_VENTAS": json.dumps(ventas_list),
+        "HISTORIAL_COMPRAS": compras_list,
+        "HISTORIAL_VENTAS": ventas_list,
     }
 
 
@@ -258,220 +693,113 @@ def _build_movimientos_context(punto):
 
 @gestor_eca_or_admin_required
 def registros_compras(request):
-    data = {}
-    if request.body:
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": INVALID_JSON_BODY_ERROR}, status=400)
     try:
-        response = CompraInventarioService.registro_compra(request, data)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+        data = _obtener_body_json(request)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return _responder_servicio_json(
+        CompraInventarioService.registro_compra, request, data
+    )
 
 
 @gestor_eca_or_admin_required
 def registros_ventas(request):
-    data = {}
-    if request.body:
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse(
-                {"error", "Cuerpo de pebtición JSON inválido"}, status=400
-            )
     try:
-        response = VentaInventarioService.registrar_venta(request, data)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+        data = _obtener_body_json(request)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return _responder_servicio_json(VentaInventarioService.registrar_venta, request, data)
 
 
 @gestor_eca_or_admin_required
 def editar_compra(request, compra_id):
-    data = {}
-    if request.body:
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse(
-                {"error", "Cuerpo de pebtición JSON inválido"}, status=400
-            )
     try:
-        response = CompraInventarioService.editar_compra(request, data, compra_id)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+        data = _obtener_body_json(request)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return _responder_servicio_json(
+        CompraInventarioService.editar_compra, request, data, compra_id
+    )
 
 
 @gestor_eca_or_admin_required
 def editar_venta(request, venta_id):
-    data = {}
-    if request.body:
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse(
-                {"error", "Cuerpo de pebtición JSON inválido"}, status=400
-            )
     try:
-        response = VentaInventarioService.editar_venta(request, data, venta_id)
-        return JsonResponse(response, safe=False)
-    except Exception as e:
-        return JsonResponse(
-            {"mensaje": f"Error técnico: {str(e)}", "error": True}, status=400
-        )
+        data = _obtener_body_json(request)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return _responder_servicio_json(VentaInventarioService.editar_venta, request, data, venta_id)
 
 
-from django.views.decorators.csrf import csrf_exempt
-
-
-@csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_compra(request, compra_id):
-    if request.method != "DELETE":
-        return JsonResponse(
-            {"success": False, "mensaje": "Método no permitido"}, status=405
-        )
-    # Intento parsear body (puede venir vacío): tolerante para fetch DELETE
-    data = {}
-    if request.body:
-        try:
-            data = json.loads(request.body)
-        except Exception:
-            pass  # No cortamos si no viene JSON, pero podríamos loggear
-    try:
-        resp = CompraInventarioService.borrar_compra(request, compra_id)
-        # Garantizamos formato estándar de respuesta
-        if isinstance(resp, dict):
-            resp.setdefault("success", True)
-        else:
-            resp = {"success": True, "mensaje": "Compra eliminada", "resp": resp}
-        return JsonResponse(resp)
-    except Exception as e:
-        return JsonResponse(
-            {"success": False, "mensaje": f"Error técnico: {str(e)}"}, status=500
-        )
+    return _responder_borrado_json(
+        request, CompraInventarioService.borrar_compra, compra_id, "Compra eliminada"
+    )
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_venta(request, venta_id):
-    if request.method != "DELETE":
-        return JsonResponse(
-            {"success": False, "mensaje": "Método no permitido"}, status=405
-        )
-    data = {}
-    if request.body:
-        try:
-            data = json.loads(request.body)
-        except Exception:
-            pass
-    try:
-        resp = VentaInventarioService.borrar_venta(request, venta_id)
-        # Garantizamos formato estándar de respuesta
-        if isinstance(resp, dict):
-            resp.setdefault("success", True)
-        else:
-            resp = {"success": True, "mensaje": "Venta eliminada", "resp": resp}
-        return JsonResponse(resp)
-    except Exception as e:
-        return JsonResponse(
-            {"success": False, "mensaje": f"Error técnico: {str(e)}"}, status=500
-        )
+    return _responder_borrado_json(
+        request, VentaInventarioService.borrar_venta, venta_id, "Venta eliminada"
+    )
 
 
 # ============== EXPORT EXCEL =============
 @gestor_eca_or_admin_required
 def exportar_compras_excel(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_compras_export(request, queryset)
     dataset = CompraInventarioResource().export(queryset)
-    export_data = dataset.xlsx
-    response = HttpResponse(
-        export_data,
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-    response["Content-Disposition"] = 'attachment; filename="compras.xlsx"'
-    return response
+    return _generar_respuesta_xlsx(dataset, "compras.xlsx")
 
 
 # ============== EXPORT PDF =============
 @gestor_eca_or_admin_required
 def exportar_compras_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.CompraInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_compras_export(request, queryset)
     compras = list(queryset)
-    # Renderizar el HTML como string
-    html_string = render_to_string("operations/compras_pdf.html", {"compras": compras})
-    # Generar PDF desde el HTML
-    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
-    response = HttpResponse(pdf_file, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="compras.pdf"'
-    return response
+    return _generar_pdf_desde_template(
+        request,
+        "operations/compras_pdf.html",
+        {"compras": compras},
+        'inline; filename="compras.pdf"',
+        "Error generando PDF de compras",
+    )
 
 
 @gestor_eca_or_admin_required
 def exportar_ventas_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_ventas_export(request, queryset)
     ventas = list(queryset)
-    # Calcular total_venta por cada venta, si no viene en el modelo
-    ventas_out = []
-    total_ventas = 0
-    for v in ventas:
-        total = (v.cantidad or 0) * (v.precio_venta or 0)
-        total_ventas += total
-        # Enriquecer objeto para el template, sin tocar el modelo
-        ventas_out.append(v)
-    html_string = render_to_string(
+    total_ventas = sum((v.cantidad or 0) * (v.precio_venta or 0) for v in ventas)
+    return _generar_pdf_desde_template(
+        request,
         "operations/ventas_pdf.html",
-        {"ventas": ventas_out, "total_ventas": total_ventas},
+        {"ventas": ventas, "total_ventas": total_ventas},
+        'inline; filename="ventas.pdf"',
+        "Error generando PDF de ventas",
     )
-    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
-    response = HttpResponse(pdf_file, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="ventas.pdf"'
-    return response
 
 
 @gestor_eca_or_admin_required
 def exportar_ventas_excel(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
     queryset = models.VentaInventario.objects.all().select_related(
         "inventario__material", "inventario__punto_eca", "centro_acopio"
     )
-    if punto_eca_id:
-        queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
+    queryset = _filtrar_ventas_export(request, queryset)
     dataset = VentaInventarioResource().export(queryset)
-    export_data = dataset.xlsx
-    response = HttpResponse(
-        export_data,
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-    response["Content-Disposition"] = 'attachment; filename="ventas.xlsx"'
-    return response
+    return _generar_respuesta_xlsx(dataset, "ventas.xlsx")
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def bulk_import_compras(request):
     """
@@ -484,181 +812,23 @@ def bulk_import_compras(request):
 
     Nota: Si el material no existe en el inventario, se creará automáticamente
     """
-    if request.method != "POST":
-        return JsonResponse(
-            {"status": "error", "mensaje": "Método no permitido"}, status=405
-        )
-
-    if "file" not in request.FILES:
-        return JsonResponse(
-            {"status": "error", "mensaje": "No se encontró el archivo CSV"}, status=400
-        )
-
-    archivo_csv = request.FILES["file"]
-
-    # Validar que sea CSV
-    if not archivo_csv.name.endswith(".csv"):
-        return JsonResponse(
-            {"status": "error", "mensaje": "El archivo debe ser de formato CSV"},
-            status=400,
-        )
-
-    try:
-        # Obtener el punto ECA del usuario
-        punto_eca = get_object_or_404(PuntoECA, gestor_eca=request.user)
-
-        # Leer CSV
-        archivo_contenido = archivo_csv.read().decode("utf-8")
-        csv_reader = csv.DictReader(io.StringIO(archivo_contenido))
-
-        resultados = []
-        filas_exitosas = 0
-        filas_con_error = 0
-
-        # Validar headers esperados
-        headers_esperados = {
+    return _procesar_bulk_import_endpoint(
+        request=request,
+        headers_esperados={
             "nombreMaterial",
             "cantidad",
             "precioCompra",
             "fechaCompra",
             "observaciones",
-        }
-        headers_csv = set(csv_reader.fieldnames or [])
-
-        if not headers_esperados.issubset(headers_csv):
-            headers_faltantes = headers_esperados - headers_csv
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "mensaje": f"Faltan columnas requeridas: {', '.join(headers_faltantes)}",
-                },
-                status=400,
-            )
-
-        # Procesar cada fila
-        for fila_num, fila in enumerate(
-            csv_reader, start=2
-        ):  # start=2 porque fila 1 son headers
-            try:
-                # Validar campos obligatorios
-                nombre_material = fila["nombreMaterial"].strip()
-                cantidad = fila["cantidad"].strip()
-                precio_compra = fila["precioCompra"].strip()
-                fecha_compra = fila["fechaCompra"].strip()
-                observaciones = fila.get("observaciones", "").strip()
-
-                if not nombre_material:
-                    raise ValueError("nombreMaterial es requerido")
-                if not cantidad:
-                    raise ValueError("cantidad es requerida")
-                if not precio_compra:
-                    raise ValueError("precioCompra es requerido")
-                if not fecha_compra:
-                    raise ValueError("fechaCompra es requerida")
-
-                # Buscar o crear material en inventario
-                inventario_item, material_creado, error_msg = (
-                    _buscar_o_crear_material_inventario(nombre_material, punto_eca)
-                )
-
-                if error_msg:
-                    raise ValueError(
-                        f"Error con material '{nombre_material}': {error_msg}"
-                    )
-
-                # Validar que inventario_item no sea None
-                if not inventario_item:
-                    raise ValueError(
-                        f"No se pudo obtener/crear inventario para material '{nombre_material}'"
-                    )
-
-                # Validar que inventario_item no sea None
-                if not inventario_item:
-                    raise ValueError(
-                        f"No se pudo obtener/crear inventario para material '{nombre_material}'"
-                    )
-
-                # Preparar datos para el servicio usando el inventarioId encontrado/creado
-                data = {
-                    "inventarioId": str(inventario_item.id),
-                    "cantidad": cantidad,
-                    "precioCompra": precio_compra,
-                    "fechaCompra": fecha_compra,
-                    "observaciones": observaciones,
-                }
-
-                # Crear request mock para pasar al servicio
-                mock_request = type(
-                    "MockRequest", (), {"POST": data, "user": request.user}
-                )()
-
-                # Usar el mismo servicio que la vista individual
-                response = CompraInventarioService.registro_compra(mock_request, data)
-
-                # Verificar si fue exitosa
-                if response.get("error"):
-                    raise ValueError(
-                        response.get("mensaje", "Error al registrar compra")
-                    )
-
-                mensaje_resultado = "Compra registrada exitosamente"
-                if material_creado:
-                    mensaje_resultado += (
-                        f" (Material '{nombre_material}' agregado al inventario)"
-                    )
-
-                resultados.append(
-                    {
-                        "fila": fila_num,
-                        "status": "success",
-                        "mensaje": mensaje_resultado,
-                        "compra_id": response.get("compra_id"),
-                        "inventario_id": str(inventario_item.id),
-                        "material_creado": material_creado,
-                    }
-                )
-                filas_exitosas += 1
-
-            except Exception as e:
-                resultados.append(
-                    {
-                        "fila": fila_num,
-                        "status": "error",
-                        "mensaje": str(e),
-                        "datos": fila,
-                    }
-                )
-                filas_con_error += 1
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "mensaje": f"Procesamiento completado. {filas_exitosas} exitosas, {filas_con_error} con errores",
-                "resumen": {
-                    "total_filas": filas_exitosas + filas_con_error,
-                    "exitosas": filas_exitosas,
-                    "con_errores": filas_con_error,
-                },
-                "detalles": resultados,
-            }
-        )
-
-    except UnicodeDecodeError:
-        return JsonResponse(
-            {
-                "status": "error",
-                "mensaje": "Error al leer el archivo. Verifique que sea UTF-8",
-            },
-            status=400,
-        )
-    except Exception as e:
-        return JsonResponse(
-            {"status": "error", "mensaje": f"Error procesando archivo: {str(e)}"},
-            status=500,
-        )
+        },
+        campo_precio="precioCompra",
+        campo_fecha="fechaCompra",
+        service_callable=CompraInventarioService.registro_compra,
+        response_id_key="compra_id",
+        etiqueta_movimiento="Compra",
+    )
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def bulk_import_ventas(request):
     """
@@ -671,175 +841,21 @@ def bulk_import_ventas(request):
 
     Nota: Si el material no existe en el inventario, se creará automáticamente
     """
-    if request.method != "POST":
-        return JsonResponse(
-            {"status": "error", "mensaje": "Método no permitido"}, status=405
-        )
-
-    if "file" not in request.FILES:
-        return JsonResponse(
-            {"status": "error", "mensaje": "No se encontró el archivo CSV"}, status=400
-        )
-
-    archivo_csv = request.FILES["file"]
-
-    # Validar que sea CSV
-    if not archivo_csv.name.endswith(".csv"):
-        return JsonResponse(
-            {"status": "error", "mensaje": "El archivo debe ser de formato CSV"},
-            status=400,
-        )
-
-    try:
-        # Obtener el punto ECA del usuario
-        punto_eca = get_object_or_404(PuntoECA, gestor_eca=request.user)
-
-        # Leer CSV
-        archivo_contenido = archivo_csv.read().decode("utf-8")
-        csv_reader = csv.DictReader(io.StringIO(archivo_contenido))
-
-        resultados = []
-        filas_exitosas = 0
-        filas_con_error = 0
-
-        # Validar headers esperados
-        headers_esperados = {
+    return _procesar_bulk_import_endpoint(
+        request=request,
+        headers_esperados={
             "nombreMaterial",
             "cantidad",
             "precioVenta",
             "fechaVenta",
-            # "centroAcopioId",
             "observaciones",
-        }
-        headers_csv = set(csv_reader.fieldnames or [])
-
-        if not headers_esperados.issubset(headers_csv):
-            headers_faltantes = headers_esperados - headers_csv
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "mensaje": f"Faltan columnas requeridas: {', '.join(headers_faltantes)}",
-                },
-                status=400,
-            )
-
-        # Procesar cada fila
-        for fila_num, fila in enumerate(
-            csv_reader, start=2
-        ):  # start=2 porque fila 1 son headers
-            try:
-                # Validar campos obligatorios
-                nombre_material = fila["nombreMaterial"].strip()
-                cantidad = fila["cantidad"].strip()
-                precio_venta = fila["precioVenta"].strip()
-                fecha_venta = fila["fechaVenta"].strip()
-                # centro_acopio_id = fila.get("centroAcopioId", "").strip()
-                observaciones = fila.get("observaciones", "").strip()
-
-                if not nombre_material:
-                    raise ValueError("nombreMaterial es requerido")
-                if not cantidad:
-                    raise ValueError("cantidad es requerida")
-                if not precio_venta:
-                    raise ValueError("precioVenta es requerido")
-                if not fecha_venta:
-                    raise ValueError("fechaVenta es requerida")
-
-                # Buscar o crear material en inventario
-                inventario_item, material_creado, error_msg = (
-                    _buscar_o_crear_material_inventario(nombre_material, punto_eca)
-                )
-
-                if error_msg:
-                    raise ValueError(
-                        f"Error con material '{nombre_material}': {error_msg}"
-                    )
-
-                # Validar que inventario_item no sea None
-                if not inventario_item:
-                    raise ValueError(
-                        f"No se pudo obtener/crear inventario para material '{nombre_material}'"
-                    )
-
-                # Preparar datos para el servicio usando el inventarioId encontrado/creado
-                data = {
-                    "inventarioId": str(inventario_item.id),
-                    "cantidad": cantidad,
-                    "precioVenta": precio_venta,
-                    "fechaVenta": fecha_venta,
-                    # "centroAcopioId": centro_acopio_id,
-                    "observaciones": observaciones,
-                }
-
-                # Crear request mock para pasar al servicio
-                mock_request = type(
-                    "MockRequest", (), {"POST": data, "user": request.user}
-                )()
-
-                # Usar el mismo servicio que la vista individual
-                response = VentaInventarioService.registrar_venta(mock_request, data)
-
-                # Verificar si fue exitosa
-                if response.get("error"):
-                    raise ValueError(
-                        response.get("mensaje", "Error al registrar venta")
-                    )
-
-                mensaje_resultado = "Venta registrada exitosamente"
-                if material_creado:
-                    mensaje_resultado += (
-                        f" (Material '{nombre_material}' agregado al inventario)"
-                    )
-
-                resultados.append(
-                    {
-                        "fila": fila_num,
-                        "status": "success",
-                        "mensaje": mensaje_resultado,
-                        "venta_id": response.get("venta_id"),
-                        "inventario_id": str(inventario_item.id),
-                        "material_creado": material_creado,
-                    }
-                )
-                filas_exitosas += 1
-
-            except Exception as e:
-                resultados.append(
-                    {
-                        "fila": fila_num,
-                        "status": "error",
-                        "mensaje": str(e),
-                        "datos": fila,
-                    }
-                )
-                filas_con_error += 1
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "mensaje": f"Procesamiento completado. {filas_exitosas} exitosas, {filas_con_error} con errores",
-                "resumen": {
-                    "total_filas": filas_exitosas + filas_con_error,
-                    "exitosas": filas_exitosas,
-                    "con_errores": filas_con_error,
-                },
-                "detalles": resultados,
-            }
-        )
-
-    except UnicodeDecodeError:
-        return JsonResponse(
-            {
-                "status": "error",
-                "mensaje": "Error al leer el archivo. Verifique que sea UTF-8",
-            },
-            status=400,
-        )
-    except Exception as e:
-        return JsonResponse(
-            {"status": "error", "mensaje": f"Error procesando archivo: {str(e)}"},
-            status=500,
-        )
+        },
+        campo_precio="precioVenta",
+        campo_fecha="fechaVenta",
+        service_callable=VentaInventarioService.registrar_venta,
+        response_id_key="venta_id",
+        etiqueta_movimiento="Venta",
+    )
 
 
 # =========== HISTORIAL EXPORT EXCEL ===========
@@ -848,150 +864,28 @@ def exportar_historial_excel(request):
     """
     Exporta un Excel combinado de compras y ventas para el historial de movimientos
     """
-    punto_eca_id = request.GET.get("punto_eca_id")
-    compras = models.CompraInventario.objects.all().select_related(
-        "inventario__material", "inventario__punto_eca"
-    )
-    ventas = models.VentaInventario.objects.all().select_related(
-        "inventario__material", "inventario__punto_eca", "centro_acopio"
-    )
-    if punto_eca_id:
-        compras = compras.filter(inventario__punto_eca__id=str(punto_eca_id))
-        ventas = ventas.filter(inventario__punto_eca__id=str(punto_eca_id))
-
-    rows = []
-    # Normalizar compras
-    for c in compras:
-        rows.append(
-            {
-                "tipo_movimiento": "Compra",
-                "material": c.inventario.material.nombre,
-                "fecha": c.fecha_compra,
-                "cantidad": c.cantidad,
-                "precio_unitario": c.precio_compra,
-                "total": (c.cantidad or 0) * (c.precio_compra or 0),
-                "centro_acopio": getattr(c.inventario.punto_eca, "nombre", ""),
-                "observaciones": c.observaciones or "",
-            }
+    rows = _obtener_historial_export(request)
+    if not rows:
+        return _responder_error_json(
+            "No hay movimientos para exportar con los filtros actuales.",
+            status=404,
         )
-    # Normalizar ventas
-    for v in ventas:
-        rows.append(
-            {
-                "tipo_movimiento": "Venta",
-                "material": v.inventario.material.nombre,
-                "fecha": v.fecha_venta,
-                "cantidad": v.cantidad,
-                "precio_unitario": v.precio_venta,
-                "total": (v.cantidad or 0) * (v.precio_venta or 0),
-                "centro_acopio": getattr(v.centro_acopio, "nombre", "")
-                or getattr(v.inventario.punto_eca, "nombre", ""),
-                "observaciones": v.observaciones or "",
-            }
-        )
-
-    # Ordenar por fecha descendente
-    rows = sorted(rows, key=lambda r: r["fecha"], reverse=True)
-
-    from tablib import Dataset
-
-    dataset = Dataset()
-    dataset.headers = [
-        "tipo_movimiento",
-        "material",
-        "fecha",
-        "cantidad",
-        "precio_unitario",
-        "total",
-        "centro_acopio",
-        "observaciones",
-    ]
-
-    for row in rows:
-        dataset.append(
-            [
-                row["tipo_movimiento"],
-                row["material"],
-                row["fecha"].strftime("%Y-%m-%d %H:%M"),
-                float(row["cantidad"]) if row["cantidad"] is not None else "",
-                float(row["precio_unitario"])
-                if row["precio_unitario"] is not None
-                else "",
-                float(row["total"]) if row["total"] is not None else "",
-                row["centro_acopio"],
-                row["observaciones"],
-            ]
-        )
-
-    export_data = dataset.export("xlsx")
-    response = HttpResponse(
-        export_data,
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-    response["Content-Disposition"] = (
-        'attachment; filename="historial_movimientos.xlsx"'
-    )
-    return response
+    dataset = _crear_dataset_historial(rows)
+    return _generar_respuesta_xlsx(dataset, "historial_movimientos.xlsx")
 
 
 @gestor_eca_or_admin_required
 def exportar_historial_pdf(request):
-    punto_eca_id = request.GET.get("punto_eca_id")
-    compras_queryset = models.CompraInventario.objects.all().select_related(
-        "inventario__material", "inventario__punto_eca"
+    historial = _obtener_historial_export(request)
+    if not historial:
+        return _responder_error_json(
+            "No hay movimientos para exportar con los filtros actuales.",
+            status=404,
+        )
+    return _generar_pdf_desde_template(
+        request,
+        "operations/historial_pdf.html",
+        {"historial": historial},
+        'inline; filename="historial.pdf"',
+        "Error generando PDF de historial",
     )
-    ventas_queryset = models.VentaInventario.objects.all().select_related(
-        "inventario__material", "inventario__punto_eca", "centro_acopio"
-    )
-    if punto_eca_id:
-        compras_queryset = compras_queryset.filter(
-            inventario__punto_eca__id=str(punto_eca_id)
-        )
-        ventas_queryset = ventas_queryset.filter(
-            inventario__punto_eca__id=str(punto_eca_id)
-        )
-
-    compras = list(compras_queryset)
-    ventas = list(ventas_queryset)
-    historial = []
-    for c in compras:
-        historial.append(
-            {
-                "tipo": "Compra",
-                "material": c.inventario.material.nombre
-                if hasattr(c.inventario.material, "nombre")
-                else "",
-                "cantidad": c.cantidad,
-                "precio_unitario": c.precio_compra,
-                "total": (c.cantidad or 0) * (c.precio_compra or 0),
-                "fecha": c.fecha_compra,
-                "categoria": getattr(c.inventario.material, "categoria", ""),
-                "observaciones": getattr(c, "observaciones", ""),
-            }
-        )
-    for v in ventas:
-        historial.append(
-            {
-                "tipo": "Venta",
-                "material": v.inventario.material.nombre
-                if hasattr(v.inventario.material, "nombre")
-                else "",
-                "cantidad": v.cantidad,
-                "precio_unitario": v.precio_venta,
-                "total": (v.cantidad or 0) * (v.precio_venta or 0),
-                "fecha": v.fecha_venta,
-                "categoria": getattr(v.inventario.material, "categoria", ""),
-                "observaciones": getattr(v, "observaciones", ""),
-                "centro_acopio": v.centro_acopio.nombre
-                if hasattr(v, "centro_acopio") and v.centro_acopio
-                else "",
-            }
-        )
-    historial.sort(key=lambda m: m["fecha"] or "", reverse=True)
-    html_string = render_to_string(
-        "operations/historial_pdf.html", {"historial": historial}
-    )
-    pdf_file = HTML(string=html_string).write_pdf(stylesheets=[])
-    response = HttpResponse(pdf_file, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="historial.pdf"'
-    return response

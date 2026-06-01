@@ -1,11 +1,17 @@
 import secrets
 import string
 import unittest
+import uuid
+from datetime import date
+from unittest.mock import patch
 
+from django.contrib.messages import get_messages
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.contrib.sessions.models import Session
 from django.test import TestCase
 
+from apps.ecas.models import Localidad
+from apps.users.utils import crear_token_validacion
 from config import constants as cons
 
 Usuario = get_user_model()
@@ -15,6 +21,7 @@ _LOGIN = "/login/"
 _LOGOUT = "/logout/"
 _RECOVER = "/recuperar-contrasena/"
 _PERFIL = "/perfil/"
+_PERFIL_SKIP_MODAL = "/perfil/?skip_modal=1"
 _PANEL_ADMIN = "/panel_admin/"
 _PUNTO_ECA = "/punto-eca/"
 
@@ -105,7 +112,7 @@ class ValidarCredencialesTests(TestCase):
             _LOGIN,
             {"email": "usuario@test.com", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu001_02_fallo_email_inexistente(self):
         """TC-CU00.1-02: Email no registrado → mensaje de error genérico."""
@@ -132,7 +139,27 @@ class ValidarCredencialesTests(TestCase):
             _LOGIN,
             {"email": "USUARIO@TEST.COM", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
+
+    def test_tc_cu001_05_login_incompleto_redirige_sin_parametro_forzado(self):
+        """TC-CU00.1-05: Un ciudadano con perfil incompleto redirige a /perfil/
+        sin `completar=1`, para no reabrir el modal al recargar."""
+        usuario = _crear_usuario(
+            email="incompleto@test.com",
+            numero_documento="7654321",
+        )
+        usuario.numero_documento = None
+        usuario.tipo_documento = None
+        usuario.fecha_nacimiento = None
+        usuario.localidad = None
+        usuario.save(update_fields=["numero_documento", "tipo_documento", "fecha_nacimiento", "localidad"])
+
+        response = self.client.post(
+            _LOGIN,
+            {"email": "incompleto@test.com", "password": _PASSWORD_VALIDA},
+        )
+
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu001_05_email_con_espacios_extra_es_saneado(self):
         """TC-CU00.1-05: Espacios al inicio/final del email son eliminados antes
@@ -141,7 +168,102 @@ class ValidarCredencialesTests(TestCase):
             _LOGIN,
             {"email": "  usuario@test.com  ", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
+
+    def test_tc_cu001_06_login_muestra_modal_de_validacion_de_cuenta(self):
+        """TC-CU00.1-06: El login expone el modal para ingresar el código de activación."""
+        response = self.client.get(_LOGIN)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="activationModal"')
+        self.assertContains(response, 'name="token"')
+
+    def test_tc_cu001_06b_login_anonimo_autenticado_redirige_a_su_destino(self):
+        """TC-CU00.1-06B: Un usuario autenticado no debe ver el login y debe ir a su dashboard."""
+        usuario = _crear_usuario(
+            email="redirigido@test.com",
+            numero_documento="900009",
+            tipo_usuario=cons.TipoUsuario.ADMIN,
+            is_staff=True,
+        )
+        self.client.force_login(usuario)
+
+        response = self.client.get(_LOGIN)
+
+        self.assertRedirects(response, _PANEL_ADMIN, fetch_redirect_response=False)
+
+    def test_tc_cu001_07_codigo_de_validacion_activa_la_cuenta(self):
+        """TC-CU00.1-07: action=activar valida el token y activa el usuario."""
+        usuario = _crear_usuario(
+            email="activar@test.com",
+            numero_documento="5555555",
+            is_active=False,
+        )
+        token_obj = crear_token_validacion(
+            email="activar@test.com",
+            tipo="verificacion",
+            usuario=usuario,
+            desactivar_previos=False,
+        )
+
+        response = self.client.get(
+            _LOGIN,
+            {
+                "action": "activar",
+                "email": "activar@test.com",
+                "token": token_obj.token,
+            },
+        )
+        # After activation, the user should be logged in and redirected to their post-login page
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
+        usuario.refresh_from_db()
+        token_obj.refresh_from_db()
+        self.assertTrue(usuario.is_active)
+        self.assertFalse(token_obj.activo)
+        self.assertIsNotNone(token_obj.fecha_validacion)
+        # Ensure session contains authenticated user
+        session = self.client.session
+        from django.contrib.auth import SESSION_KEY
+        self.assertIn(SESSION_KEY, session)
+
+    @patch("apps.users.views.enviar_email_verificacion", return_value=True)
+    def test_tc_cu001_08_login_inactivo_envia_un_solo_correo_de_activacion(self, mock_enviar_email):
+        """TC-CU00.1-08: Un login con cuenta inactiva debe reenviar un único correo
+        de activación y mostrar un solo mensaje informativo."""
+        _crear_usuario(
+            email="inactivo@test.com",
+            numero_documento="5555556",
+            is_active=False,
+        )
+
+        response = self.client.post(
+            _LOGIN,
+            {"email": "inactivo@test.com", "password": _PASSWORD_VALIDA},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(mock_enviar_email.called)
+        self.assertEqual(mock_enviar_email.call_count, 1)
+        self.assertTrue(response.context["show_activation_resend"])
+
+    @patch("apps.users.views.enviar_email_verificacion", return_value=True)
+    def test_tc_cu001_09_reenviar_activacion_envia_un_solo_correo(self, mock_enviar_email):
+        """TC-CU00.1-09: Reenviar activación desde el login debe enviar un único correo
+        y no duplicar la notificación informativa."""
+        _crear_usuario(
+            email="reenviar@test.com",
+            numero_documento="5555557",
+            is_active=False,
+        )
+
+        response = self.client.post(
+            _LOGIN,
+            {"action": "reenviar", "email": "reenviar@test.com"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(mock_enviar_email.call_count, 1)
+        self.assertTrue(any("Reenviamos el enlace de activación a tu correo." in str(m) for m in response.context["messages"]))
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -493,101 +615,182 @@ class RecuperarContrasenaTests(TestCase):
         )
         self.assertNotIn("recovery_user_id", self.client.session)
 
-    def test_tc_ext43_03_flujo_completo_cambia_contrasena_y_redirige(self):
-        """TC-EXT43-03: El flujo buscar → reset actualiza la contraseña, elimina
-        recovery_user_id de la sesión y redirige a login."""
-        # Paso 1: identificar usuario
-        self.client.post(
-            _RECOVER,
-            {"action": "buscar", "email": "usuario@test.com"},
-        )
 
-        # Paso 2: restablecer contraseña
+# ═════════════════════════════════════════════════════════════════════════════
+# CU-00.4 — Registro Ciudadano
+# Módulo: apps/users/views.py → render_registro_ciudadano
+# ═════════════════════════════════════════════════════════════════════════════
+
+class RegistroCiudadanoTests(TestCase):
+    """CU-00.4: Verifica que el registro ciudadano funciona con el alta mínima
+    y que el documento sintético no excede el límite del modelo."""
+
+    @patch("apps.users.views.enviar_email_verificacion", return_value=True)
+    def test_tc_cu004_01_registro_minimo_crea_usuario_sin_numero_documento_obligatorio(self, mock_enviar_email):
         response = self.client.post(
-            _RECOVER,
+            "/registro/ciudadano/",
             {
-                "action": "reset",
-                "email": "usuario@test.com",
-                "password": _PASSWORD_NUEVA,
-                "passwordConfirm": _PASSWORD_NUEVA,
-            },
-        )
-
-        self.assertRedirects(response, _LOGIN, fetch_redirect_response=False)
-        self.usuario.refresh_from_db()
-        self.assertTrue(self.usuario.check_password(_PASSWORD_NUEVA))
-        self.assertNotIn("recovery_user_id", self.client.session)
-
-    def test_tc_ext43_04_reset_con_password_corta_muestra_error(self):
-        """TC-EXT43-04: action=reset con password < 8 caracteres retorna error
-        de validación y no modifica la contraseña almacenada."""
-        self.client.post(
-            _RECOVER,
-            {"action": "buscar", "email": "usuario@test.com"},
-        )
-
-        response = self.client.post(
-            _RECOVER,
-            {
-                "action": "reset",
-                "email": "usuario@test.com",
-                "password": _PWD_CORTO,
-                "passwordConfirm": _PWD_CORTO,
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            "La nueva contraseña debe tener al menos 8 caracteres.",
-            response.context["errores"],
-        )
-        self.usuario.refresh_from_db()
-        self.assertTrue(
-            self.usuario.check_password(_PASSWORD_VALIDA),
-            "La contraseña original no debe haberse modificado.",
-        )
-
-    def test_tc_ext43_05_reset_con_passwords_diferentes_muestra_error(self):
-        """TC-EXT43-05: action=reset con passwords no coincidentes retorna error
-        de validación."""
-        self.client.post(
-            _RECOVER,
-            {"action": "buscar", "email": "usuario@test.com"},
-        )
-
-        response = self.client.post(
-            _RECOVER,
-            {
-                "action": "reset",
-                "email": "usuario@test.com",
+                "nombres": "Ana",
+                "apellidos": "Pérez",
+                "email": "ana.registro.largo@test.com",
+                "celular": "3001234567",
                 "password": _PASSWORD_VALIDA,
-                "passwordConfirm": _PASSWORD_NUEVA,
+                "passwordConfirm": _PASSWORD_VALIDA,
+                "terminos": "on",
             },
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            "Las contraseñas no coinciden.",
-            response.context["errores"],
+        self.assertEqual(response.status_code, 302)
+        usuario = Usuario.objects.get(email="ana.registro.largo@test.com")
+        self.assertIsNone(usuario.numero_documento)
+        self.assertTrue(mock_enviar_email.called)
+
+    def test_tc_cu004_01b_ciudadano_logueado_redirige_a_perfil(self):
+        usuario = _crear_usuario(email="logueado.ciudadano@test.com")
+        self.client.force_login(usuario)
+
+        response = self.client.get("/registro/ciudadano/")
+
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
+
+    def test_tc_cu004_02_manager_crea_usuario_sin_numero_documento_explicito(self):
+        usuario = Usuario.objects.create_user(
+            email="sin.documento@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Luis",
+            apellidos="Gómez",
         )
 
-    def test_tc_ext43_06_reset_directo_sin_buscar_previo_muestra_error(self):
-        """TC-EXT43-06: action=reset sin haber ejecutado buscar (sin
-        recovery_user_id en sesión) retorna error de flujo de validación."""
+        self.assertIsNone(usuario.numero_documento)
+
+    def test_tc_cu004_03_perfil_ciudadano_envia_pendientes_al_modal(self):
+        usuario = Usuario.objects.create_user(
+            email="pendientes@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="María",
+            apellidos="López",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
+        )
+
+        self.client.force_login(usuario)
+        response = self.client.get(_PERFIL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("perfil_pendientes", response.context)
+        self.assertTrue(response.context["perfil_pendientes"]["numero_documento"])
+        self.assertTrue(response.context["perfil_pendientes"]["tipo_documento"])
+        self.assertTrue(response.context["perfil_pendientes"]["localidad"])
+        self.assertTrue(response.context["perfil_pendientes"]["fecha_nacimiento"])
+
+    def test_tc_cu004_04_actualizacion_parcial_no_borra_datos_existentes(self):
+        localidad = Localidad.objects.create(localidad_id=uuid.uuid4(), nombre="Centro")
+        usuario = Usuario.objects.create_user(
+            email="parcial@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Carlos",
+            apellidos="Rojas",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
+        )
+
+        self.client.force_login(usuario)
+
         response = self.client.post(
-            _RECOVER,
+            "/perfil/actualizar/",
             {
-                "action": "reset",
-                "email": "usuario@test.com",
-                "password": _PWD_INCORRECTO,
-                "passwordConfirm": _PWD_INCORRECTO,
+                "localidad": str(localidad.localidad_id),
             },
+            follow=True,
         )
 
+        usuario.refresh_from_db()
         self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            "Debes validar primero tu correo para poder restablecer la contraseña.",
-            response.context["errores"],
+        self.assertIsNone(usuario.numero_documento)
+        self.assertIsNone(usuario.tipo_documento)
+        self.assertIsNone(usuario.fecha_nacimiento)
+        self.assertEqual(usuario.localidad_id, localidad.localidad_id)
+        self.assertFalse(response.context["perfil_pendientes"]["localidad"])
+
+        mensajes = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("Se guardaron algunos datos de tu perfil.", mensajes)
+
+    def test_tc_cu004_05_actualizacion_total_muestra_perfil_completado(self):
+        localidad = Localidad.objects.create(localidad_id=uuid.uuid4(), nombre="Norte")
+        usuario = Usuario.objects.create_user(
+            email="completo@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Laura",
+            apellidos="Torres",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
         )
+
+        self.client.force_login(usuario)
+
+        response = self.client.post(
+            "/perfil/actualizar/",
+            {
+                "tipoDocumento": "CC",
+                "numeroDocumento": "987654321",
+                "localidad": str(localidad.localidad_id),
+                "fechaNacimiento": "1995-05-10",
+            },
+            follow=True,
+        )
+
+        usuario.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(usuario.numero_documento, "987654321")
+        self.assertEqual(usuario.tipo_documento, "CC")
+        self.assertEqual(usuario.localidad_id, localidad.localidad_id)
+        self.assertEqual(usuario.fecha_nacimiento.isoformat(), "1995-05-10")
+        self.assertFalse(response.context["perfil_pendientes"]["numero_documento"])
+        self.assertFalse(response.context["perfil_pendientes"]["tipo_documento"])
+        self.assertFalse(response.context["perfil_pendientes"]["localidad"])
+        self.assertFalse(response.context["perfil_pendientes"]["fecha_nacimiento"])
+
+        mensajes = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("¡Perfil completado correctamente!", mensajes)
+
+    def test_tc_cu004_06_completar_perfil_vuelve_a_su_pagina_y_muestra_swal(self):
+        localidad = Localidad.objects.create(localidad_id=uuid.uuid4(), nombre="Sur")
+        usuario = Usuario.objects.create_user(
+            email="retorno@test.com",
+            password=_PASSWORD_VALIDA,
+            nombres="Pedro",
+            apellidos="Vega",
+            numero_documento=None,
+            tipo_documento=None,
+            fecha_nacimiento=None,
+            localidad=None,
+        )
+
+        self.client.force_login(usuario)
+
+        response = self.client.post(
+            "/perfil/actualizar/",
+            {
+                "return_to": "/perfil/completar/",
+                "numeroDocumento": "123456789",
+                "tipoDocumento": "CC",
+                "localidad": str(localidad.localidad_id),
+                "fechaNacimiento": "1992-07-15",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.redirect_chain[0][0], "/perfil/completar/")
+        self.assertEqual(response.status_code, 200)
+        mensajes = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("¡Perfil completado correctamente!", mensajes)
+
+
 
 #########################################################################

@@ -5,14 +5,26 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Iniciar Sesión - InfoRecicla</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-              rel="stylesheet">
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+                rel="stylesheet"
+                integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+                crossorigin="anonymous">
+          <link rel="stylesheet" href="{% static 'img/bootstrap-icons-1.13.1/bootstrap-icons.css' %}">
         <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
         .login-container {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 2rem 1rem 3rem;
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
 
@@ -37,7 +49,7 @@
 
         .login-header h1 {
             font-size: 1.8rem;
-            color: #28a745;
+            color: #1f7a42;
             font-weight: bold;
             margin: 0;
         }
@@ -57,8 +69,8 @@
         }
 
         .form-control:focus {
-            border-color: #28a745;
-            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+            border-color: #1f7a42;
+            box-shadow: 0 0 0 0.2rem rgba(31, 122, 66, 0.25);
         }
 
         .form-group {
@@ -73,19 +85,62 @@
 
         .btn-login {
             width: 100%;
-            padding: 0.75rem;
+            height: 48px;
+            padding: 0 1rem;
             font-size: 1rem;
             font-weight: 600;
             border: none;
             border-radius: 8px;
-            background: #28a745;
+            background: #1f7a42;
             color: white;
             cursor: pointer;
-            transition: background 0.3s, transform 0.2s;
+            transition: background 0.3s, transform 0.2s, box-shadow 0.12s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
         }
 
         .btn-login:hover {
-            background: #218838;
+            background: #176336;
+            transform: translateY(-2px);
+        }
+
+        .btn-login:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(40,167,69,0.12);
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            width: 18px;
+            height: 18px;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .btn-icon .bi, .btn-icon.bi {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        /* Ghost variant: transparent by default, filled on hover */
+        .btn-login.btn-ghost {
+            background: transparent;
+            color: #1f7a42;
+            border: 2px solid #1f7a42;
+            height: 48px;
+        }
+
+        .btn-login.btn-ghost .btn-icon {
+            color: #1f7a42;
+        }
+
+        .btn-login.btn-ghost:hover {
+            background: #1f7a42;
+            color: white;
             transform: translateY(-2px);
         }
 
@@ -97,6 +152,16 @@
             border-radius: 8px;
             margin-bottom: 1.5rem;
             border: none;
+        }
+
+        .alert-info {
+            background-color: #e8f4fd;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background-color: #d1e7dd;
+            color: #0f5132;
         }
 
         .alert-danger {
@@ -118,7 +183,7 @@
         }
 
         .login-footer a {
-            color: #28a745;
+            color: #1f7a42;
             text-decoration: none;
             font-weight: 600;
         }
@@ -136,11 +201,6 @@
             color: #999;
             gap: 0.75em;
         }
-        .divider-line {
-            flex: 1;
-            height: 1px;
-            background-color: #ddd;
-        }
 
         .register-links {
             display: flex;
@@ -148,83 +208,108 @@
             gap: 0.75rem;
         }
 
-        .register-links a {
+        .register-links a.btn-ghost {
             display: block;
             padding: 0.75rem;
-            border: 2px solid #28a745;
+            border: 2px solid #1f7a42;
             border-radius: 8px;
-            color: #28a745;
+            color: #1f7a42;
             text-decoration: none;
             text-align: center;
             font-weight: 600;
-            transition: all 0.3s;
+            transition: background-color 0.2s, color 0.2s, transform 0.12s;
             font-size: 0.9rem;
+            overflow: hidden;
         }
 
-        .register-links a:hover {
-            background-color: #28a745;
-            color: white;
+        .register-links a.btn-ghost, .register-links a.btn-ghost .btn-icon {
+            text-decoration: none !important;
         }
 
-        .form-check {
-            margin-bottom: 1rem;
+        .register-links a.btn-ghost .btn-icon {
+            color: #1f7a42;
+            transition: color 0.2s;
         }
 
-        .form-check-input {
-            border-color: #ddd;
+        .register-links a.btn-ghost:hover,
+        .register-links a.btn-ghost:focus {
+            background-color: #1f7a42;
+            color: #ffffff;
+            text-decoration: none;
+            transform: translateY(-2px);
         }
 
-        .form-check-input:checked {
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-
-        .form-check-label {
-            color: #666;
-            font-size: 0.9rem;
-            margin-left: 0.5rem;
+        .register-links a.btn-ghost:hover .btn-icon,
+        .register-links a.btn-ghost:focus .btn-icon {
+            color: #ffffff;
         }
 
         .forgot-password {
-            text-align: right;
-            margin-top: -0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-start;
+            justify-content: center;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .inline-action-btn {
+            color: #1f7a42;
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: background-color 0.15s, color 0.15s, transform 0.12s;
+        }
+
+        .inline-action-btn:hover {
+            text-decoration: none;
+            background-color: #1f7a42;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .activation-hint {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin: 0;
+            padding-left: 0.25rem;
+        }
+
+        .activation-modal-note {
+            font-size: 0.9rem;
+            color: #6c757d;
             margin-bottom: 1rem;
         }
 
-        .forgot-password a {
-            color: #28a745;
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .forgot-password a:hover {
-            text-decoration: underline;
-        }
         </style>
     </head>
     <body>
+        {% include "users/partials/navbar.html" with navbar_container_class="" %}
         <div class="login-container">
             <div class="login-card">
-                <div class="login-header">
-                    <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla">
-                    <h1>InfoRecicla</h1>
-                    <p>Plataforma de Reciclaje y Gestión ECA</p>
-                </div>
                 {% if errores %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <ul style="margin-bottom: 0;">
-                            {% for err in errores %}<li>{{ err }}</li>{% endfor %}
-                        </ul>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="alert"
-                                aria-label="Cerrar"></button>
-                    </div>
+                    <div class="serverSwal"
+                         data-swal-icon="error"
+                         data-swal-title="Errores"
+                         data-swal-text="{{ errores|join:"\\n"|escape }}"
+                         style="display:none;"></div>
+                {% endif %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="serverSwal"
+                             data-swal-icon="{{ message.tags|default:'info' }}"
+                             data-swal-title="{{ message.tags|capfirst }}"
+                             data-swal-text="{{ message|escape }}"
+                             style="display:none;"></div>
+                    {% endfor %}
                 {% endif %}
                 <div id="js-error-container"></div>
-                <form method="POST" id="loginForm">
+                <form method="POST" id="loginForm" data-login-url="{% url 'login' %}">
                     {% csrf_token %}
+                    <input type="hidden" id="loginAction" name="action" value="login">
                     <div class="form-group">
                         <label for="email" class="form-label">Correo Electrónico</label>
                         <input type="email"
@@ -232,84 +317,201 @@
                                id="email"
                                name="email"
                                placeholder="tu@email.com"
+                               value="{{ email|default:'' }}"
                                required
                                autofocus>
+                        <div class="invalid-feedback">Ingresa un correo electrónico válido.</div>
                     </div>
                     <div class="form-group">
                         <label for="password" class="form-label">Contraseña</label>
-                        <input type="password"
-                               class="form-control"
-                               id="password"
-                               name="password"
-                               placeholder="Contraseña"
-                               required>
+                        <div class="input-group">
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   name="password"
+                                   placeholder="Contraseña"
+                                   required>
+                            <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback">La contraseña es obligatoria.</div>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               id="rememberMe"
-                               name="rememberMe">
-                        <label class="form-check-label" for="rememberMe">Recuérdame</label>
-                    </div>
+                    <button type="submit" class="btn-login">
+                        <i class="bi bi-box-arrow-in-right btn-icon" aria-hidden="true"></i>
+                        Iniciar Sesión
+                    </button>
                     <div class="forgot-password">
-                        <a href="/recuperar-contrasena/">Olvidé mi contraseña</a>
+                        <button type="button"
+                                class="btn btn-link p-0 inline-action-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#recoveryModal">
+                            Olvidé mi contraseña
+                        </button>
+                        {% if show_activation_resend %}
+                            <div class="activation-inline" style="width:100%; margin-top:.5rem" data-activation-email="{{ email|default:'' }}">
+                                <p class="activation-hint">Tu cuenta no está activada. Reenviamos un enlace a <strong>{{ email }}</strong>. Si tienes el código, introdúcelo aquí:</p>
+                                <div id="activationInlineForm" class="d-flex gap-2 align-items-center">
+                                    <input type="text" name="token" id="activationInlineCode" class="form-control" placeholder="Código de verificación" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
+                                    <button type="button" id="activationInlineSubmit" class="btn btn-login">Validar cuenta</button>
+                                </div>
+                                <button type="button" class="btn btn-link p-0 inline-action-btn" id="resendActivationButton">Reenviar enlace de activación</button>
+                            </div>
+                        {% endif %}
                     </div>
-                    <button type="submit" class="btn-login">Iniciar Sesión</button>
                 </form>
                 <div class="divider">O registrarse</div>
                 <div class="register-links">
-                    <a href="/registro/ciudadano">Registrarse como Ciudadano</a>
-                    <a href="/registro/eca">Registrar Punto ECA</a>
+                    <a href="/registro/ciudadano" class="btn-login btn-ghost">
+                        <i class="bi bi-person-plus btn-icon" aria-hidden="true"></i>
+                        Registrarse como Ciudadano
+                    </a>
+                    <a href="/registro/eca" class="btn-login btn-ghost">
+                        <i class="bi bi-geo-alt-fill btn-icon" aria-hidden="true"></i>
+                        Registrar Punto ECA
+                    </a>
                 </div>
-                <div class="login-footer">
-                    <p>
-                        <a href="/" style="margin-top:1rem;display:inline-block;font-size:0.95rem;">&larr; Volver al inicio</a>
-                    </p>
                 </div>
             </div>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const loginForm = document.getElementById('loginForm');
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('password');
-            const jsErrorContainer = document.getElementById('js-error-container');
 
-            function showErrors(errors) {
-                jsErrorContainer.innerHTML = `<div class="alert alert-danger" role="alert"><ul style="margin-bottom: 0;">${errors.map(err => `<li>${err}</li>`).join('')}</ul></div>`;
-            }
+        <div class="modal fade" id="activationModal" tabindex="-1" aria-labelledby="activationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="activationModalLabel">Validar cuenta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="activation-modal-note">Ingresa el código que te enviamos por correo para activar tu cuenta.</p>
+                        <form method="GET" action="{% url 'login' %}" id="activationForm">
+                            <input type="hidden" name="action" value="activar">
+                            <input type="hidden" id="activationEmail" name="email" value="{{ email|default:'' }}">
+                            <div class="form-group">
+                                <label for="activationCode" class="form-label">Código de verificación</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="activationCode"
+                                       name="token"
+                                       placeholder="123456"
+                                       maxlength="6"
+                                       pattern="[0-9]{6}"
+                                       inputmode="numeric"
+                                       autocomplete="one-time-code"
+                                       required>
+                            </div>
+                            <button type="submit" class="btn-login">
+                                <i class="bi bi-shield-check btn-icon" aria-hidden="true"></i>
+                                Validar cuenta
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            loginForm.addEventListener('submit', function (e) {
-                let errors = [];
-                const emailValue = emailInput.value.trim();
-                const passwordValue = passwordInput.value;
-                // Validación de email
-                if (!emailValue) {
-                    errors.push('El correo electrónico es obligatorio.');
-                } else {
-                    // Regex básica de email
-                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailPattern.test(emailValue)) {
-                        errors.push('El correo electrónico no tiene un formato válido.');
+        <div class="modal fade" id="recoveryModal" tabindex="-1" aria-labelledby="recoveryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="recoveryModalLabel">Recuperar contraseña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% if recovery_step == 'cambiar' %}
+                            <p class="text-muted">Crea una nueva contraseña para <strong>{{ recovery_email }}</strong>.</p>
+                            {% include "users/partials/password_requirements.html" %}
+                            <form method="POST" action="{% url 'recuperar_contrasena_cambiar' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="recovery_email" value="{{ recovery_email }}">
+                                <div class="form-group">
+                                    <label for="recoveryPassword" class="form-label">Nueva contraseña</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="recoveryPassword" name="recovery_password" required>
+                                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                            <i class="bi bi-eye toggle-password" data-target="#recoveryPassword" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                        <label for="recoveryPasswordConfirm" class="form-label">Confirmar contraseña</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="recoveryPasswordConfirm" name="recovery_password_confirm" required>
+                                            <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                                                <i class="bi bi-eye toggle-password" data-target="#recoveryPasswordConfirm" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                </div>
+                                <button type="submit" class="btn-login">
+                                    <i class="bi bi-key-fill btn-icon" aria-hidden="true"></i>
+                                    Cambiar contraseña
+                                </button>
+                            </form>
+                        {% elif recovery_step == 'codigo' %}
+                            <p class="text-muted">Ingresa el código enviado a <strong>{{ recovery_email }}</strong>.</p>
+                            <form method="POST" action="{% url 'recuperar_contrasena_validar' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="recovery_email" value="{{ recovery_email }}">
+                                <div class="form-group">
+                                    <label for="recoveryCode" class="form-label">Código de verificación</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="recoveryCode"
+                                           name="recovery_codigo"
+                                           placeholder="123456"
+                                           maxlength="6"
+                                           pattern="[0-9]{6}"
+                                           inputmode="numeric"
+                                           required>
+                                </div>
+                                <button type="submit" class="btn-login">
+                                    <i class="bi bi-check2 btn-icon" aria-hidden="true"></i>
+                                    Validar código
+                                </button>
+                            </form>
+                        {% else %}
+                            <p class="text-muted">Te enviaremos un código de verificación por correo.</p>
+                            <form method="POST" action="{% url 'recuperar_contrasena_enviar' %}">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="recoveryEmail" class="form-label">Correo electrónico</label>
+                                    <input type="email"
+                                           class="form-control"
+                                           id="recoveryEmail"
+                                           name="recovery_email"
+                                           value="{{ email|default:'' }}"
+                                           placeholder="tu@email.com"
+                                           required>
+                                </div>
+                                <button type="submit" class="btn-login">
+                                    <i class="bi bi-envelope-fill btn-icon" aria-hidden="true"></i>
+                                    Enviar código
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"
+            integrity="sha384-nLoOnA/BDh8A/jxqtckg4DumuCGOBYUnNJLZdQz/zfYNp3wcjGSoWTAzgko06G/2"
+            crossorigin="anonymous"></script>
+        <script src="{% static 'js/formularios/login.js' %}?v=20260528"></script>
+        {% if recovery_step != 'enviar' %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var modalElement = document.getElementById('recoveryModal');
+                    if (modalElement && globalThis.bootstrap) {
+                        var modal = new bootstrap.Modal(modalElement);
+                        modal.show();
                     }
-                }
-                // Validación de contraseña
-                if (!passwordValue) {
-                    errors.push('La contraseña es obligatoria.');
-                }
-                if (errors.length > 0) {
-                    e.preventDefault();
-                    showErrors(errors);
-                    // Foco al primer campo inválido
-                    if (!emailValue) {
-                       emailInput.focus();
-                    } else if (!passwordValue) {
-                       passwordInput.focus();
-                    }
-                }
-            });
-        });
-        </script>
+                });
+            </script>
+        {% endif %}
+
     </body>
 </html>

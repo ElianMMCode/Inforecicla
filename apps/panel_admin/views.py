@@ -1,7 +1,13 @@
+from django.views.decorators.http import require_GET, require_POST
+import io
+import re as _re
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import update_session_auth_hash
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.db.models import Q
 
@@ -10,6 +16,504 @@ from apps.ecas.models import Localidad, PuntoECA
 from apps.inventory.models import CategoriaMaterial, Material, TipoMaterial
 from apps.panel_admin.service import AdminCatalogService, AdminDashboardService
 from config import constants as cons
+
+
+PDF_MIME_TYPE = "application/pdf"
+XLSX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+DEFAULT_CITY = "Bogotá"
+ADMIN_LISTAR_USUARIOS_URL = "panel_admin:listar_usuarios"
+ADMIN_LISTAR_PUBLICACIONES_URL = "panel_admin:listar_publicaciones_admin"
+ADMIN_PERFIL_URL = "panel_admin:perfil_admin"
+ADMIN_CREATE_PUBLICACION_TEMPLATE = "admin/Publicaciones/createPublicacion.html"
+EXCEL_DESCRIPTION_HEADER = "Descripción"
+CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
+
+
+def _crear_respuesta_descarga(contenido, content_type, filename):
+    response = HttpResponse(contenido, content_type=content_type)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+def _validar_nombre_perfil_admin(nombres, errores):
+    if not nombres or len(nombres) < 3:
+        errores.append("El nombre debe tener al menos 3 caracteres.")
+    elif len(nombres) > 30 or not _SOLO_LETRAS.match(nombres):
+        errores.append("El nombre solo puede contener letras (máx. 30).")
+
+
+def _validar_apellido_perfil_admin(apellidos, errores):
+    if not apellidos or len(apellidos) < 3:
+        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+    elif len(apellidos) > 40 or not _SOLO_LETRAS.match(apellidos):
+        errores.append("Los apellidos solo pueden contener letras (máx. 40).")
+
+
+def _validar_celular_perfil_admin(celular, errores):
+    if celular and not _CELULAR.match(celular):
+        errores.append(CELULAR_ERROR)
+
+
+def _validar_ciudad_perfil_admin(ciudad, errores):
+    if ciudad and (len(ciudad) > 15 or not _SOLO_CIUDAD.match(ciudad)):
+        errores.append("La ciudad solo puede contener letras (máx. 15).")
+
+
+def _validar_fecha_perfil_admin(fecha_str, errores):
+    from datetime import date as date_type
+
+    if not fecha_str:
+        return None
+
+    try:
+        fecha_nacimiento = date_type.fromisoformat(fecha_str)
+        if fecha_nacimiento > date_type.today():
+            errores.append("La fecha de nacimiento no puede ser futura.")
+        return fecha_nacimiento
+    except ValueError:
+        errores.append("Formato de fecha inválido.")
+        return None
+
+
+def _validar_localidad_perfil_admin(user, localidad_id, errores):
+    localidad_inst = user.localidad
+    if localidad_id:
+        try:
+            localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
+        except (Localidad.DoesNotExist, ValueError):
+            errores.append("La localidad seleccionada no es válida.")
+    return localidad_inst
+
+
+def _validar_datos_perfil_admin(user, nombres, apellidos, celular, ciudad, fecha_str, localidad_id):
+    errores = []
+
+    _validar_nombre_perfil_admin(nombres, errores)
+    _validar_apellido_perfil_admin(apellidos, errores)
+    _validar_celular_perfil_admin(celular, errores)
+    _validar_ciudad_perfil_admin(ciudad, errores)
+    fecha_nacimiento = _validar_fecha_perfil_admin(fecha_str, errores)
+    localidad_inst = _validar_localidad_perfil_admin(user, localidad_id, errores)
+
+    return errores, fecha_nacimiento, localidad_inst
+
+
+def _validar_cambio_contrasena_admin(user, actual, nueva, confirmar):
+    if len(actual) > 128 or len(nueva) > 128 or len(confirmar) > 128:
+        return "La contraseña no puede superar los 128 caracteres."
+    if not actual or not nueva or not confirmar:
+        return "Todos los campos de contraseña son obligatorios."
+    if not user.check_password(actual):
+        return "La contraseña actual es incorrecta."
+    if not _PASSWORD_COMP.match(nueva):
+        return (
+            "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula, "
+            "una minúscula, un número y un símbolo (@$!%*?&)."
+        )
+    if nueva != confirmar:
+        return "Las contraseñas nuevas no coinciden."
+    return None
+
+
+def _normalizar_texto(valor, default=""):
+    texto = (valor or "").strip()
+    return texto if texto else default
+
+
+def _obtener_datos_usuario_csv(fila):
+    email = _normalizar_texto(fila.get("email", "")).lower()
+    return {
+        "email": email,
+        "nombres": _normalizar_texto(fila.get("nombres", "")),
+        "apellidos": _normalizar_texto(fila.get("apellidos", "")),
+        "celular": _normalizar_texto(fila.get("celular", "")),
+        "password": _normalizar_texto(fila.get("password", "")),
+        "tipo_usuario": _normalizar_texto(fila.get("tipo_usuario", ""), cons.TipoUsuario.CIUDADANO),
+        "tipo_documento": _normalizar_texto(fila.get("tipo_documento", ""), cons.TipoDocumento.CC),
+        "numero_documento": _normalizar_texto(fila.get("numero_documento", ""), f"CSV_{email}"),
+        "ciudad": _normalizar_texto(fila.get("ciudad", ""), DEFAULT_CITY),
+    }
+
+
+def _validar_datos_usuario_csv(datos, fila_numero):
+    errores = []
+    if not all([datos["email"], datos["nombres"], datos["apellidos"], datos["celular"], datos["password"]]):
+        errores.append(f"Fila {fila_numero}: campos obligatorios incompletos.")
+    if datos["email"] and Usuario.objects.filter(email=datos["email"]).exists():
+        errores.append(f"Fila {fila_numero}: el email '{datos['email']}' ya existe.")
+    if datos["numero_documento"] and Usuario.objects.filter(numero_documento=datos["numero_documento"]).exists():
+        errores.append(f"Fila {fila_numero}: el documento '{datos['numero_documento']}' ya existe.")
+    return errores
+
+
+def _crear_usuario_desde_csv(datos):
+    with transaction.atomic():
+        usuario = Usuario(
+            email=datos["email"],
+            nombres=datos["nombres"],
+            apellidos=datos["apellidos"],
+            celular=datos["celular"],
+            tipo_usuario=datos["tipo_usuario"],
+            tipo_documento=datos["tipo_documento"],
+            numero_documento=datos["numero_documento"],
+            ciudad=datos["ciudad"],
+        )
+        usuario.set_password(datos["password"])
+        usuario.save()
+
+
+def _obtener_datos_crear_usuario_admin(data):
+    return {
+        "nombres": _normalizar_texto(data.get("nombres", "")),
+        "apellidos": _normalizar_texto(data.get("apellidos", "")),
+        "email": _normalizar_texto(data.get("email", "")).lower(),
+        "celular": _normalizar_texto(data.get("celular", "")),
+        "tipo_documento": _normalizar_texto(data.get("tipoDocumento", ""), cons.TipoDocumento.CC),
+        "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")),
+        "ciudad": _normalizar_texto(data.get("ciudad", ""), DEFAULT_CITY),
+        "localidad_id": _normalizar_texto(data.get("localidad", "")),
+        "fecha_nacimiento": _normalizar_texto(data.get("fechaNacimiento", "")) or None,
+        "tipo_usuario": _normalizar_texto(data.get("tipo_usuario", cons.TipoUsuario.CIUDADANO)),
+        "password": data.get("password", ""),
+        "password_confirm": data.get("passwordConfirm", ""),
+    }
+
+
+def _validar_campos_crear_usuario_admin(datos, errores):
+    if len(datos["nombres"]) < 3:
+        errores.append("El nombre debe tener al menos 3 caracteres.")
+    if len(datos["apellidos"]) < 3:
+        errores.append("Los apellidos deben tener al menos 3 caracteres.")
+    if not datos["email"]:
+        errores.append("Debe ingresar un email válido.")
+    if len(datos["celular"]) != 10 or not datos["celular"].startswith("3"):
+        errores.append(CELULAR_ERROR)
+    if not datos["ciudad"]:
+        errores.append("Debe especificar la ciudad.")
+
+
+def _validar_credenciales_crear_usuario_admin(datos, errores):
+    if not datos["password"] or not datos["password_confirm"]:
+        errores.append("Se requiere una contraseña.")
+    elif datos["password"] != datos["password_confirm"]:
+        errores.append("Las contraseñas no coinciden.")
+    elif len(datos["password"]) < 8:
+        errores.append("La contraseña debe tener al menos 8 caracteres.")
+
+
+def _validar_unicidad_crear_usuario_admin(datos, errores):
+    if datos["email"] and Usuario.objects.filter(email=datos["email"]).exists():
+        errores.append("Ya existe un usuario con ese correo electrónico.")
+    if datos["numero_documento"] and Usuario.objects.filter(numero_documento=datos["numero_documento"]).exists():
+        errores.append("Ya existe un usuario con ese número de documento.")
+
+
+def _obtener_localidad_crear_usuario_admin(localidad_id, errores):
+    localidad_inst = None
+    if localidad_id:
+        localidad_inst = Localidad.objects.filter(localidad_id=localidad_id).first()
+        if not localidad_inst:
+            errores.append("La localidad seleccionada no existe.")
+    return localidad_inst
+
+
+def _validar_tipo_usuario_crear_usuario_admin(datos, errores):
+    tipos_validos = {valor for valor, _ in cons.TipoUsuario.choices}
+    if datos["tipo_usuario"] not in tipos_validos:
+        errores.append("El tipo de usuario seleccionado no es válido.")
+
+
+def _validar_datos_crear_usuario_admin(datos):
+    errores = []
+
+    _validar_campos_crear_usuario_admin(datos, errores)
+    _validar_credenciales_crear_usuario_admin(datos, errores)
+    _validar_unicidad_crear_usuario_admin(datos, errores)
+    localidad_inst = _obtener_localidad_crear_usuario_admin(datos["localidad_id"], errores)
+    _validar_tipo_usuario_crear_usuario_admin(datos, errores)
+
+    return errores, localidad_inst
+
+
+def _crear_usuario_admin_desde_datos(datos, localidad_inst):
+    with transaction.atomic():
+        usuario = Usuario(
+            email=datos["email"],
+            numero_documento=datos["numero_documento"] or f"ADM_{datos['email']}",
+            nombres=datos["nombres"],
+            apellidos=datos["apellidos"],
+            celular=datos["celular"],
+            tipo_documento=datos["tipo_documento"],
+            tipo_usuario=datos["tipo_usuario"],
+            ciudad=datos["ciudad"],
+            localidad=localidad_inst,
+            fecha_nacimiento=datos["fecha_nacimiento"],
+        )
+        usuario.set_password(datos["password"])
+        usuario.save()
+
+
+def _obtener_datos_crear_punto_eca_admin(data):
+    return {
+        "nombre_punto": _normalizar_texto(data.get("nombre_punto", "")),
+        "nombres": _normalizar_texto(data.get("nombres", "")),
+        "apellidos": _normalizar_texto(data.get("apellidos", "")),
+        "email": _normalizar_texto(data.get("email", "")).lower(),
+        "email_gestor": _normalizar_texto(data.get("email_gestor", "")).lower(),
+        "tipo_documento": _normalizar_texto(data.get("tipoDocumento", ""), cons.TipoDocumento.CC),
+        "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")),
+        "celular": _normalizar_texto(data.get("celular", "")),
+        "telefono_punto": _normalizar_texto(data.get("telefono_punto", "")),
+        "direccion": _normalizar_texto(data.get("direccion", "")),
+        "ciudad": _normalizar_texto(data.get("ciudad", ""), DEFAULT_CITY),
+        "localidad_id": _normalizar_texto(data.get("localidad", "")),
+        "latitud": _normalizar_texto(data.get("latitud", "")),
+        "longitud": _normalizar_texto(data.get("longitud", "")),
+        "descripcion": _normalizar_texto(data.get("descripcion", "")),
+        "sitio_web": _normalizar_texto(data.get("sitio_web", "")),
+        "logo_url_punto": _normalizar_texto(data.get("logo_url_punto", "")),
+        "foto_url_punto": _normalizar_texto(data.get("foto_url_punto", "")),
+        "horario_atencion": _normalizar_texto(data.get("horario_atencion", "")),
+        "password": data.get("password", ""),
+        "password_confirm": data.get("passwordConfirm", ""),
+    }
+
+
+def _validar_campos_crear_punto_eca_admin(datos, errores):
+    for campo, mensaje in (
+        ("nombre_punto", "Debe ingresar el nombre del punto ECA."),
+        ("nombres", "Debe ingresar los nombres del gestor."),
+        ("apellidos", "Debe ingresar los apellidos del gestor."),
+        ("email", "Debe ingresar el email del punto ECA."),
+        ("email_gestor", "Debe ingresar el email del gestor."),
+        ("direccion", "Debe ingresar la dirección."),
+        ("ciudad", "Debe especificar la ciudad."),
+    ):
+        if not datos[campo]:
+            errores.append(mensaje)
+
+    if len(datos["celular"]) != 10 or not datos["celular"].startswith("3"):
+        errores.append(CELULAR_ERROR)
+    if len(datos["telefono_punto"]) != 10 or not datos["telefono_punto"].startswith("60"):
+        errores.append("El teléfono del punto debe iniciar con 60 y tener 10 dígitos.")
+    if not datos["latitud"] or not datos["longitud"]:
+        errores.append("Debe seleccionar una ubicación en el mapa.")
+
+
+def _validar_credenciales_crear_punto_eca_admin(datos, errores):
+    if not datos["password"] or not datos["password_confirm"]:
+        errores.append("Se requiere una contraseña.")
+    elif datos["password"] != datos["password_confirm"]:
+        errores.append("Las contraseñas no coinciden.")
+    elif len(datos["password"]) < 8:
+        errores.append("La contraseña debe tener al menos 8 caracteres.")
+
+
+def _validar_unicidad_crear_punto_eca_admin(datos, errores):
+    if datos["email_gestor"] and Usuario.objects.filter(email=datos["email_gestor"]).exists():
+        errores.append("Ya existe un usuario con ese correo de gestor.")
+    if datos["numero_documento"] and Usuario.objects.filter(numero_documento=datos["numero_documento"]).exists():
+        errores.append("Ya existe un usuario con ese número de documento.")
+
+
+def _obtener_localidad_crear_punto_eca_admin(localidad_id, errores):
+    localidad_inst = None
+    if localidad_id:
+        localidad_inst = Localidad.objects.filter(localidad_id=localidad_id).first()
+        if not localidad_inst:
+            errores.append("La localidad seleccionada no existe.")
+    return localidad_inst
+
+
+def _validar_datos_crear_punto_eca_admin(datos):
+    errores = []
+
+    _validar_campos_crear_punto_eca_admin(datos, errores)
+    _validar_credenciales_crear_punto_eca_admin(datos, errores)
+    _validar_unicidad_crear_punto_eca_admin(datos, errores)
+    localidad_inst = _obtener_localidad_crear_punto_eca_admin(datos["localidad_id"], errores)
+
+    return errores, localidad_inst
+
+
+def _crear_punto_eca_desde_datos(datos, localidad_inst):
+    with transaction.atomic():
+        usuario = Usuario(
+            email=datos["email_gestor"],
+            numero_documento=datos["numero_documento"] or f"GESTORECA_{datos['email_gestor']}",
+            celular=datos["celular"],
+            nombres=datos["nombres"],
+            apellidos=datos["apellidos"],
+            tipo_documento=datos["tipo_documento"],
+            tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+        )
+        usuario.set_password(datos["password"])
+        usuario.save()
+        PuntoECA.objects.create(
+            gestor_eca=usuario,
+            nombre=datos["nombre_punto"],
+            descripcion=datos["descripcion"],
+            telefono_punto=datos["telefono_punto"],
+            direccion=datos["direccion"],
+            ciudad=datos["ciudad"],
+            email=datos["email"],
+            celular=datos["celular"],
+            logo_url_punto=datos["logo_url_punto"],
+            foto_url_punto=datos["foto_url_punto"],
+            sitio_web=datos["sitio_web"],
+            horario_atencion=datos["horario_atencion"],
+            localidad=localidad_inst,
+            latitud=float(datos["latitud"]),
+            longitud=float(datos["longitud"]),
+        )
+
+
+def _escribir_puntos_eca_excel(ws, puntos):
+    for row, punto in enumerate(puntos, 2):
+        gestor = f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else ""
+        ws.cell(row=row, column=1, value=punto.nombre)
+        ws.cell(row=row, column=2, value=punto.direccion or "")
+        ws.cell(row=row, column=3, value=punto.localidad.nombre if punto.localidad else "")
+        ws.cell(row=row, column=4, value=punto.ciudad or "")
+        ws.cell(row=row, column=5, value=punto.telefono_punto or "")
+        ws.cell(row=row, column=6, value=punto.email or "")
+        ws.cell(row=row, column=7, value=punto.celular or "")
+        ws.cell(row=row, column=8, value=gestor)
+        ws.cell(row=row, column=9, value=punto.horario_atencion or "")
+        ws.cell(row=row, column=10, value=punto.sitio_web or "")
+        ws.cell(row=row, column=11, value=punto.estado or "")
+        ws.cell(row=row, column=12, value=punto.latitud or "")
+        ws.cell(row=row, column=13, value=punto.longitud or "")
+
+
+def _ajustar_ancho_columnas(ws):
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+
+def _procesar_importar_usuarios_csv(archivo):
+    import csv
+    import io
+
+    texto = archivo.read().decode("utf-8-sig")
+    lector = csv.DictReader(io.StringIO(texto))
+    campos_requeridos = {"nombres", "apellidos", "email", "celular", "password"}
+    fieldnames = set(lector.fieldnames or [])
+    if not campos_requeridos.issubset(fieldnames):
+        faltantes = campos_requeridos - fieldnames
+        raise ValueError(f"El CSV no tiene las columnas requeridas: {', '.join(faltantes)}")
+
+    creados = 0
+    errores = []
+    for fila_numero, fila in enumerate(lector, 2):
+        datos = _obtener_datos_usuario_csv(fila)
+        errores_fila = _validar_datos_usuario_csv(datos, fila_numero)
+        if errores_fila:
+            errores.extend(errores_fila)
+            continue
+
+        try:
+            _crear_usuario_desde_csv(datos)
+            creados += 1
+        except Exception as e:
+            errores.append(f"Fila {fila_numero}: {e}")
+
+    return creados, errores
+
+
+def _procesar_creacion_publicacion_admin(request, categorias, publicaciones_habilitadas):
+    from apps.publicaciones.models import CategoriaPublicacion, ImagenPublicacion, Publicacion
+
+    titulo = _normalizar_texto(request.POST.get("titulo"))
+    contenido = _normalizar_texto(request.POST.get("contenido"))
+    categoria_id = _normalizar_texto(request.POST.get("categoria_id"))
+
+    if not titulo:
+        messages.error(request, "El titulo es obligatorio.")
+        return None
+
+    categoria = None
+    if categoria_id:
+        categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
+        if not categoria:
+            messages.error(request, "La categoria seleccionada no existe.")
+            return render(
+                request,
+                ADMIN_CREATE_PUBLICACION_TEMPLATE,
+                {
+                    "publicaciones_habilitadas": publicaciones_habilitadas,
+                    "categorias": categorias,
+                    "form_data": request.POST,
+                    "active_tab": "publicaciones",
+                },
+            )
+
+    limite_bytes = 6 * 1024 * 1024
+    imagenes = request.FILES.getlist("imagenes")
+    imagenes_grandes = [img.name for img in imagenes if img.size > limite_bytes]
+    if imagenes_grandes:
+        nombres = ", ".join(imagenes_grandes)
+        messages.error(
+            request,
+            f"Las siguientes imágenes superan el límite de 6 MB y no pueden subirse: {nombres}.",
+        )
+        return render(
+            request,
+            ADMIN_CREATE_PUBLICACION_TEMPLATE,
+            {
+                "publicaciones_habilitadas": publicaciones_habilitadas,
+                "categorias": categorias,
+                "form_data": request.POST,
+            },
+        )
+
+    publicacion = Publicacion(
+        titulo=titulo,
+        contenido=contenido,
+        usuario=request.user,
+        categoria=categoria,
+        video=request.FILES.get("video") or None,
+        video_thumbnail=request.FILES.get("video_thumbnail") or None,
+    )
+    publicacion.save()
+
+    for imagen in imagenes:
+        ImagenPublicacion.objects.create(publicacion=publicacion, imagen=imagen)
+
+    messages.success(request, "Publicacion creada correctamente.")
+    return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
+
+
+def _aplicar_datos_usuario_admin(usuario, data):
+    usuario.nombres = _normalizar_texto(data.get("nombres"))
+    usuario.apellidos = _normalizar_texto(data.get("apellidos"))
+    usuario.email = _normalizar_texto(data.get("email")).lower()
+    usuario.celular = _normalizar_texto(data.get("celular"))
+    usuario.tipo_usuario = _normalizar_texto(data.get("tipo_usuario"), usuario.tipo_usuario).strip() or usuario.tipo_usuario
+    usuario.tipo_documento = _normalizar_texto(data.get("tipoDocumento"), usuario.tipo_documento).strip() or usuario.tipo_documento
+    usuario.numero_documento = _normalizar_texto(data.get("numeroDocumento"))
+    usuario.ciudad = _normalizar_texto(data.get("ciudad"), usuario.ciudad).strip() or usuario.ciudad
+    usuario.biografia = _normalizar_texto(data.get("biografia")) or None
+
+    estado_usuario = _normalizar_texto(data.get("estado_usuario")).lower()
+    if estado_usuario in {"activo", "inactivo"}:
+        usuario.is_active = estado_usuario == "activo"
+
+    localidad_id = _normalizar_texto(data.get("localidad"))
+    if localidad_id:
+        usuario.localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
+
+    usuario.fecha_nacimiento = _normalizar_texto(data.get("fechaNacimiento")) or None
+
+    password = _normalizar_texto(data.get("password"))
+    password_confirm = _normalizar_texto(data.get("passwordConfirm"))
+    if password or password_confirm:
+        if password != password_confirm:
+            return "Las contrasenas no coinciden."
+        usuario.set_password(password)
+
+    return None
 
 
 def es_administrador(user):
@@ -67,25 +571,19 @@ def listar_usuarios(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_usuarios_pdf(request):
-    import io
-    from django.http import HttpResponse
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
     usuarios = Usuario.objects.all().order_by("apellidos", "nombres")
     html = render_to_string("admin/Usuarios/usuarios_pdf.html", {"usuarios": usuarios})
     pdf = HTML(string=html).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="usuarios.pdf"'
-    return response
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "usuarios.pdf")
 
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_usuarios_excel(request):
-    import io
     import openpyxl
-    from django.http import HttpResponse
     from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = openpyxl.Workbook()
@@ -124,80 +622,24 @@ def exportar_usuarios_excel(request):
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    response = HttpResponse(buf.read(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="usuarios.xlsx"'
-    return response
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "usuarios.xlsx")
 
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def importar_usuarios_csv(request):
     if request.method != "POST":
-        return redirect("panel_admin:listar_usuarios")
+        return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
     archivo = request.FILES.get("archivo_csv")
     if not archivo:
         messages.error(request, "Debe seleccionar un archivo CSV.")
-        return redirect("panel_admin:listar_usuarios")
-
-    import csv
-    import io
-
-    creados = 0
-    errores = []
+        return redirect(ADMIN_LISTAR_USUARIOS_URL)
     try:
-        texto = archivo.read().decode("utf-8-sig")
-        lector = csv.DictReader(io.StringIO(texto))
-        campos_requeridos = {"nombres", "apellidos", "email", "celular", "password"}
-        fieldnames = set(lector.fieldnames or [])
-        if not campos_requeridos.issubset(fieldnames):
-            faltantes = campos_requeridos - fieldnames
-            messages.error(request, f"El CSV no tiene las columnas requeridas: {', '.join(faltantes)}")
-            return redirect("panel_admin:listar_usuarios")
-
-        for i, fila in enumerate(lector, 2):
-            try:
-                email = fila.get("email", "").strip().lower()
-                nombres = fila.get("nombres", "").strip()
-                apellidos = fila.get("apellidos", "").strip()
-                celular = fila.get("celular", "").strip()
-                password = fila.get("password", "").strip()
-                tipo_usuario = fila.get("tipo_usuario", "").strip() or cons.TipoUsuario.CIUDADANO
-                tipo_documento = fila.get("tipo_documento", "").strip() or cons.TipoDocumento.CC
-                numero_documento = fila.get("numero_documento", "").strip() or f"CSV_{email}"
-                ciudad = fila.get("ciudad", "").strip() or "Bogotá"
-
-                if not all([email, nombres, apellidos, celular, password]):
-                    errores.append(f"Fila {i}: campos obligatorios incompletos.")
-                    continue
-                if Usuario.objects.filter(email=email).exists():
-                    errores.append(f"Fila {i}: el email '{email}' ya existe.")
-                    continue
-                if Usuario.objects.filter(numero_documento=numero_documento).exists():
-                    errores.append(f"Fila {i}: el documento '{numero_documento}' ya existe.")
-                    continue
-
-                with transaction.atomic():
-                    usuario = Usuario(
-                        email=email,
-                        nombres=nombres,
-                        apellidos=apellidos,
-                        celular=celular,
-                        tipo_usuario=tipo_usuario,
-                        tipo_documento=tipo_documento,
-                        numero_documento=numero_documento,
-                        ciudad=ciudad,
-                    )
-                    usuario.set_password(password)
-                    usuario.save()
-                    creados += 1
-            except Exception as e:
-                errores.append(f"Fila {i}: {e}")
-
-    except Exception as e:
+        creados, errores = _procesar_importar_usuarios_csv(archivo)
+    except ValueError as e:
         messages.error(request, f"Error al procesar el archivo: {e}")
-        return redirect("panel_admin:listar_usuarios")
+        return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
     if creados:
         messages.success(request, f"{creados} usuario(s) importado(s) correctamente.")
@@ -206,7 +648,7 @@ def importar_usuarios_csv(request):
     if len(errores) > 10:
         messages.warning(request, f"... y {len(errores) - 10} error(es) adicionales omitidos.")
 
-    return redirect("panel_admin:listar_usuarios")
+    return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
 
 @login_required(login_url="/login/")
@@ -217,81 +659,26 @@ def crear_usuario_admin(request):
     tipos_usuario = cons.TipoUsuario.choices
 
     if request.method == "POST":
-        data = request.POST
-        errores = []
-
-        nombres = data.get("nombres", "").strip()
-        apellidos = data.get("apellidos", "").strip()
-        email = data.get("email", "").strip().lower()
-        celular = data.get("celular", "").strip()
-        tipo_documento = data.get("tipoDocumento", "").strip() or cons.TipoDocumento.CC
-        numero_documento = data.get("numeroDocumento", "").strip()
-        ciudad = data.get("ciudad", "Bogotá").strip()
-        localidad_id = data.get("localidad", "").strip()
-        fecha_nacimiento = data.get("fechaNacimiento", "").strip() or None
-        tipo_usuario = data.get("tipo_usuario", cons.TipoUsuario.CIUDADANO).strip()
-        password = data.get("password", "")
-        password_confirm = data.get("passwordConfirm", "")
-
-        if not nombres or len(nombres) < 3:
-            errores.append("El nombre debe tener al menos 3 caracteres.")
-        if not apellidos or len(apellidos) < 3:
-            errores.append("Los apellidos deben tener al menos 3 caracteres.")
-        if not email:
-            errores.append("Debe ingresar un email válido.")
-        if not celular or not celular.startswith("3") or len(celular) != 10:
-            errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
-        if not ciudad:
-            errores.append("Debe especificar la ciudad.")
-        if not password or not password_confirm:
-            errores.append("Se requiere una contraseña.")
-        elif password != password_confirm:
-            errores.append("Las contraseñas no coinciden.")
-        elif len(password) < 8:
-            errores.append("La contraseña debe tener al menos 8 caracteres.")
-
-        if email and Usuario.objects.filter(email=email).exists():
-            errores.append("Ya existe un usuario con ese correo electrónico.")
-        if numero_documento and Usuario.objects.filter(numero_documento=numero_documento).exists():
-            errores.append("Ya existe un usuario con ese número de documento.")
-
-        localidad_inst = None
-        if localidad_id:
-            localidad_inst = Localidad.objects.filter(localidad_id=localidad_id).first()
-            if not localidad_inst:
-                errores.append("La localidad seleccionada no existe.")
-
-        tipos_validos = {v for v, _ in cons.TipoUsuario.choices}
-        if tipo_usuario not in tipos_validos:
-            errores.append("El tipo de usuario seleccionado no es válido.")
+        data = _obtener_datos_crear_usuario_admin(request.POST)
+        errores, localidad_inst = _validar_datos_crear_usuario_admin(data)
 
         if errores:
-            return render(request, "admin/Usuarios/createUsuario.html", {
-                "errores": errores,
-                "localidades": localidades,
-                "tipos_documento": tipos_documento,
-                "tipos_usuario": tipos_usuario,
-                "form_data": data,
-            })
+            return render(
+                request,
+                "admin/Usuarios/createUsuario.html",
+                {
+                    "errores": errores,
+                    "localidades": localidades,
+                    "tipos_documento": tipos_documento,
+                    "tipos_usuario": tipos_usuario,
+                    "form_data": request.POST,
+                },
+            )
 
         try:
-            with transaction.atomic():
-                usuario = Usuario(
-                    email=email,
-                    numero_documento=numero_documento or f"ADM_{email}",
-                    nombres=nombres,
-                    apellidos=apellidos,
-                    celular=celular,
-                    tipo_documento=tipo_documento,
-                    tipo_usuario=tipo_usuario,
-                    ciudad=ciudad,
-                    localidad=localidad_inst,
-                    fecha_nacimiento=fecha_nacimiento if fecha_nacimiento else None,
-                )
-                usuario.set_password(password)
-                usuario.save()
-            messages.success(request, f"Usuario {nombres} {apellidos} creado correctamente.")
-            return redirect("panel_admin:listar_usuarios")
+            _crear_usuario_admin_desde_datos(data, localidad_inst)
+            messages.success(request, f"Usuario {data['nombres']} {data['apellidos']} creado correctamente.")
+            return redirect(ADMIN_LISTAR_USUARIOS_URL)
         except (IntegrityError, ValidationError) as e:
             messages.error(request, f"Error al crear el usuario: {e}")
 
@@ -340,71 +727,14 @@ def crear_publicacion_admin(request):
     categorias = []
 
     try:
-        from apps.publicaciones.models import CategoriaPublicacion, Publicacion
+        from apps.publicaciones.models import CategoriaPublicacion
 
-        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+        categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
 
         if request.method == "POST":
-            from apps.publicaciones.models import ImagenPublicacion
-            titulo = (request.POST.get("titulo") or "").strip()
-            contenido = (request.POST.get("contenido") or "").strip()
-            categoria_id = (request.POST.get("categoria_id") or "").strip()
-
-            if not titulo:
-                messages.error(request, "El titulo es obligatorio.")
-            else:
-                categoria = None
-                if categoria_id:
-                    categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
-                    if not categoria:
-                        messages.error(request, "La categoria seleccionada no existe.")
-                        return render(
-                            request,
-                            "admin/Publicaciones/createPublicacion.html",
-                            {
-                                "publicaciones_habilitadas": publicaciones_habilitadas,
-                                "categorias": categorias,
-                                "form_data": request.POST,
-                            },
-                        )
-
-                limite_bytes = 6 * 1024 * 1024  # 6 MB
-                imagenes = request.FILES.getlist("imagenes")
-                imagenes_grandes = [img.name for img in imagenes if img.size > limite_bytes]
-                if imagenes_grandes:
-                    nombres = ", ".join(imagenes_grandes)
-                    messages.error(
-                        request,
-                        f"Las siguientes imágenes superan el límite de 6 MB y no pueden subirse: {nombres}.",
-                    )
-                    return render(
-                        request,
-                        "admin/Publicaciones/createPublicacion.html",
-                        {
-                            "publicaciones_habilitadas": publicaciones_habilitadas,
-                            "categorias": categorias,
-                            "form_data": request.POST,
-                        },
-                    )
-
-                video_file = request.FILES.get("video") or None
-                thumbnail_file = request.FILES.get("video_thumbnail") or None
-
-                publicacion = Publicacion(
-                    titulo=titulo,
-                    contenido=contenido,
-                    usuario=request.user,
-                    categoria=categoria,
-                    video=video_file,
-                    video_thumbnail=thumbnail_file,
-                )
-                publicacion.save()
-
-                for img in imagenes:
-                    ImagenPublicacion.objects.create(publicacion=publicacion, imagen=img)
-
-                messages.success(request, "Publicacion creada correctamente.")
-                return redirect("panel_admin:listar_publicaciones_admin")
+            respuesta = _procesar_creacion_publicacion_admin(request, categorias, publicaciones_habilitadas)
+            if respuesta is not None:
+                return respuesta
 
     except Exception as e:
         publicaciones_habilitadas = False
@@ -412,10 +742,11 @@ def crear_publicacion_admin(request):
 
     return render(
         request,
-        "admin/Publicaciones/createPublicacion.html",
+        ADMIN_CREATE_PUBLICACION_TEMPLATE,
         {
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "categorias": categorias,
+            "active_tab": "publicaciones",
         },
     )
 
@@ -423,16 +754,13 @@ def crear_publicacion_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_puntos_eca_pdf(request):
-    from django.http import HttpResponse
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
     puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
     html = render_to_string("admin/PuntoECA/puntos_eca_pdf.html", {"puntos": puntos})
     pdf = HTML(string=html).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="puntos_eca.pdf"'
-    return response
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "puntos_eca.pdf")
 
 
 @login_required(login_url="/login/")
@@ -440,7 +768,6 @@ def exportar_puntos_eca_pdf(request):
 def exportar_puntos_eca_excel(request):
     import io
     import openpyxl
-    from django.http import HttpResponse
     from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = openpyxl.Workbook()
@@ -458,33 +785,13 @@ def exportar_puntos_eca_excel(request):
         cell.alignment = Alignment(horizontal="center")
 
     puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
-    for row, p in enumerate(puntos, 2):
-        gestor = f"{p.gestor_eca.nombres} {p.gestor_eca.apellidos}" if p.gestor_eca else ""
-        ws.cell(row=row, column=1, value=p.nombre)
-        ws.cell(row=row, column=2, value=p.direccion or "")
-        ws.cell(row=row, column=3, value=p.localidad.nombre if p.localidad else "")
-        ws.cell(row=row, column=4, value=p.ciudad or "")
-        ws.cell(row=row, column=5, value=p.telefono_punto or "")
-        ws.cell(row=row, column=6, value=p.email or "")
-        ws.cell(row=row, column=7, value=p.celular or "")
-        ws.cell(row=row, column=8, value=gestor)
-        ws.cell(row=row, column=9, value=p.horario_atencion or "")
-        ws.cell(row=row, column=10, value=p.sitio_web or "")
-        ws.cell(row=row, column=11, value=p.estado or "")
-        ws.cell(row=row, column=12, value=p.latitud or "")
-        ws.cell(row=row, column=13, value=p.longitud or "")
-
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+    _escribir_puntos_eca_excel(ws, puntos)
+    _ajustar_ancho_columnas(ws)
 
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    response = HttpResponse(buf.read(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="puntos_eca.xlsx"'
-    return response
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "puntos_eca.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -494,108 +801,24 @@ def crear_punto_eca_admin(request):
     tipos_documento = cons.TipoDocumento.choices
 
     if request.method == "POST":
-        data = request.POST
-        errores = []
-
-        nombre_punto = data.get("nombre_punto", "").strip()
-        nombres = data.get("nombres", "").strip()
-        apellidos = data.get("apellidos", "").strip()
-        email = data.get("email", "").strip().lower()
-        email_gestor = data.get("email_gestor", "").strip().lower()
-        tipo_documento = data.get("tipoDocumento") or cons.TipoDocumento.CC
-        numero_documento = data.get("numeroDocumento", "").strip()
-        celular = data.get("celular", "").strip()
-        telefono_punto = data.get("telefono_punto", "").strip()
-        direccion = data.get("direccion", "").strip()
-        ciudad = data.get("ciudad", "Bogotá").strip()
-        localidad_id = data.get("localidad", "").strip()
-        latitud = data.get("latitud", "").strip()
-        longitud = data.get("longitud", "").strip()
-        descripcion = data.get("descripcion", "").strip()
-        sitio_web = data.get("sitio_web", "").strip()
-        logo_url_punto = data.get("logo_url_punto", "").strip()
-        foto_url_punto = data.get("foto_url_punto", "").strip()
-        horario_atencion = data.get("horario_atencion", "").strip()
-        password = data.get("password", "")
-        password_confirm = data.get("passwordConfirm", "")
-
-        if not nombre_punto:
-            errores.append("Debe ingresar el nombre del punto ECA.")
-        if not nombres:
-            errores.append("Debe ingresar los nombres del gestor.")
-        if not apellidos:
-            errores.append("Debe ingresar los apellidos del gestor.")
-        if not email:
-            errores.append("Debe ingresar el email del punto ECA.")
-        if not email_gestor:
-            errores.append("Debe ingresar el email del gestor.")
-        if not celular or not celular.startswith("3") or len(celular) != 10:
-            errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
-        if not direccion:
-            errores.append("Debe ingresar la dirección.")
-        if not telefono_punto or not telefono_punto.startswith("60") or len(telefono_punto) != 10:
-            errores.append("El teléfono del punto debe iniciar con 60 y tener 10 dígitos.")
-        if not latitud or not longitud:
-            errores.append("Debe seleccionar una ubicación en el mapa.")
-        if not ciudad:
-            errores.append("Debe especificar la ciudad.")
-        if not password or not password_confirm:
-            errores.append("Se requiere una contraseña.")
-        elif password != password_confirm:
-            errores.append("Las contraseñas no coinciden.")
-        elif len(password) < 8:
-            errores.append("La contraseña debe tener al menos 8 caracteres.")
-
-        if email_gestor and Usuario.objects.filter(email=email_gestor).exists():
-            errores.append("Ya existe un usuario con ese correo de gestor.")
-        if numero_documento and Usuario.objects.filter(numero_documento=numero_documento).exists():
-            errores.append("Ya existe un usuario con ese número de documento.")
-
-        localidad_inst = None
-        if localidad_id:
-            localidad_inst = Localidad.objects.filter(localidad_id=localidad_id).first()
-            if not localidad_inst:
-                errores.append("La localidad seleccionada no existe.")
+        data = _obtener_datos_crear_punto_eca_admin(request.POST)
+        errores, localidad_inst = _validar_datos_crear_punto_eca_admin(data)
 
         if errores:
-            return render(request, "admin/PuntoECA/createPuntoECA.html", {
-                "errores": errores,
-                "localidades": localidades,
-                "tipos_documento": tipos_documento,
-                "form_data": data,
-            })
+            return render(
+                request,
+                "admin/PuntoECA/createPuntoECA.html",
+                {
+                    "errores": errores,
+                    "localidades": localidades,
+                    "tipos_documento": tipos_documento,
+                    "form_data": request.POST,
+                },
+            )
 
         try:
-            with transaction.atomic():
-                usuario = Usuario(
-                    email=email_gestor,
-                    numero_documento=numero_documento or f"GESTORECA_{email_gestor}",
-                    celular=celular,
-                    nombres=nombres,
-                    apellidos=apellidos,
-                    tipo_documento=tipo_documento,
-                    tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
-                )
-                usuario.set_password(password)
-                usuario.save()
-                PuntoECA.objects.create(
-                    gestor_eca=usuario,
-                    nombre=nombre_punto,
-                    descripcion=descripcion,
-                    telefono_punto=telefono_punto,
-                    direccion=direccion,
-                    ciudad=ciudad,
-                    email=email,
-                    celular=celular,
-                    logo_url_punto=logo_url_punto,
-                    foto_url_punto=foto_url_punto,
-                    sitio_web=sitio_web,
-                    horario_atencion=horario_atencion,
-                    localidad=localidad_inst,
-                    latitud=float(latitud),
-                    longitud=float(longitud),
-                )
-            messages.success(request, f"Punto ECA '{nombre_punto}' creado correctamente.")
+            _crear_punto_eca_desde_datos(data, localidad_inst)
+            messages.success(request, f"Punto ECA '{data['nombre_punto']}' creado correctamente.")
             return redirect("panel_admin:listar_puntos_eca_admin")
         except (IntegrityError, ValidationError) as e:
             messages.error(request, f"Error al crear el punto ECA: {e}")
@@ -623,16 +846,13 @@ def listar_puntos_eca_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_materiales_pdf(request):
-    from django.http import HttpResponse
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
     materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
     html = render_to_string("admin/Materiales/materiales_pdf.html", {"materiales": materiales})
     pdf = HTML(string=html).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="materiales.pdf"'
-    return response
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "materiales.pdf")
 
 
 @login_required(login_url="/login/")
@@ -640,14 +860,13 @@ def exportar_materiales_pdf(request):
 def exportar_materiales_excel(request):
     import io
     import openpyxl
-    from django.http import HttpResponse
     from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Materiales"
 
-    headers = ["Nombre", "Descripción", "Categoría", "Tipo", "Estado"]
+    headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Categoría", "Tipo", "Estado"]
     fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
     font = Font(color="FFFFFF", bold=True)
     for col, h in enumerate(headers, 1):
@@ -671,10 +890,7 @@ def exportar_materiales_excel(request):
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    response = HttpResponse(buf.read(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="materiales.xlsx"'
-    return response
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "materiales.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -694,16 +910,13 @@ def listar_materiales_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_categorias_material_pdf(request):
-    from django.http import HttpResponse
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
     categorias = CategoriaMaterial.objects.all().order_by("nombre")
     html = render_to_string("admin/CategoriasMateriales/categorias_material_pdf.html", {"categorias": categorias})
     pdf = HTML(string=html).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="categorias_material.pdf"'
-    return response
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_material.pdf")
 
 
 @login_required(login_url="/login/")
@@ -711,14 +924,13 @@ def exportar_categorias_material_pdf(request):
 def exportar_categorias_material_excel(request):
     import io
     import openpyxl
-    from django.http import HttpResponse
     from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Categorías de Materiales"
 
-    headers = ["Nombre", "Descripción", "Estado"]
+    headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
     fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
     font = Font(color="FFFFFF", bold=True)
     for col, h in enumerate(headers, 1):
@@ -739,10 +951,7 @@ def exportar_categorias_material_excel(request):
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    response = HttpResponse(buf.read(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="categorias_material.xlsx"'
-    return response
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_material.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -761,7 +970,6 @@ def listar_categorias_material_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_categorias_publicacion_pdf(request):
-    from django.http import HttpResponse
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
@@ -772,9 +980,7 @@ def exportar_categorias_publicacion_pdf(request):
         categorias = []
     html = render_to_string("admin/CategoriasPublicaciones/categorias_publicacion_pdf.html", {"categorias": categorias})
     pdf = HTML(string=html).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="categorias_publicacion.pdf"'
-    return response
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_publicacion.pdf")
 
 
 @login_required(login_url="/login/")
@@ -782,14 +988,13 @@ def exportar_categorias_publicacion_pdf(request):
 def exportar_categorias_publicacion_excel(request):
     import io
     import openpyxl
-    from django.http import HttpResponse
     from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Categorías de Publicaciones"
 
-    headers = ["Tipo", "Descripción", "Estado"]
+    headers = ["Tipo", EXCEL_DESCRIPTION_HEADER, "Estado"]
     fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
     font = Font(color="FFFFFF", bold=True)
     for col, h in enumerate(headers, 1):
@@ -816,10 +1021,7 @@ def exportar_categorias_publicacion_excel(request):
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    response = HttpResponse(buf.read(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="categorias_publicacion.xlsx"'
-    return response
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_publicacion.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -848,6 +1050,7 @@ def listar_categorias_publicacion_admin(request):
             "categorias": categorias,
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "search_query": q,
+            "active_tab": "categorias_publicacion",
         },
     )
 
@@ -855,16 +1058,13 @@ def listar_categorias_publicacion_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_tipos_material_pdf(request):
-    from django.http import HttpResponse
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
     tipos = TipoMaterial.objects.all().order_by("nombre")
     html = render_to_string("admin/TiposMateriales/tipos_material_pdf.html", {"tipos": tipos})
     pdf = HTML(string=html).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="tipos_material.pdf"'
-    return response
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_material.pdf")
 
 
 @login_required(login_url="/login/")
@@ -872,14 +1072,13 @@ def exportar_tipos_material_pdf(request):
 def exportar_tipos_material_excel(request):
     import io
     import openpyxl
-    from django.http import HttpResponse
     from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Tipos de Material"
 
-    headers = ["Nombre", "Descripción", "Estado"]
+    headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
     fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
     font = Font(color="FFFFFF", bold=True)
     for col, h in enumerate(headers, 1):
@@ -900,10 +1099,7 @@ def exportar_tipos_material_excel(request):
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    response = HttpResponse(buf.read(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="tipos_material.xlsx"'
-    return response
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "tipos_material.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -925,44 +1121,19 @@ def editar_usuario_admin(request, usuario_id):
     usuario = Usuario.objects.filter(id=usuario_id).first()
     if not usuario:
         messages.error(request, "Usuario no encontrado.")
-        return redirect("panel_admin:listar_usuarios")
+        return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
     if request.method == "POST":
-        usuario.nombres = (request.POST.get("nombres") or "").strip()
-        usuario.apellidos = (request.POST.get("apellidos") or "").strip()
-        usuario.email = (request.POST.get("email") or "").strip().lower()
-        usuario.celular = (request.POST.get("celular") or "").strip()
-        usuario.tipo_usuario = (request.POST.get("tipo_usuario") or usuario.tipo_usuario).strip() or usuario.tipo_usuario
-        usuario.tipo_documento = (request.POST.get("tipoDocumento") or usuario.tipo_documento).strip() or usuario.tipo_documento
-        usuario.numero_documento = (request.POST.get("numeroDocumento") or "").strip()
-        usuario.ciudad = (request.POST.get("ciudad") or "").strip() or usuario.ciudad
-        usuario.biografia = (request.POST.get("biografia") or "").strip() or None
-
-        estado_usuario = (request.POST.get("estado_usuario") or "").strip().lower()
-        if estado_usuario in {"activo", "inactivo"}:
-            usuario.is_active = estado_usuario == "activo"
-
-        localidad_id = (request.POST.get("localidad") or "").strip()
-        if localidad_id:
-            localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
-            usuario.localidad = localidad
-
-        fecha_nacimiento = request.POST.get("fechaNacimiento")
-        usuario.fecha_nacimiento = fecha_nacimiento or None
-
-        password = (request.POST.get("password") or "").strip()
-        password_confirm = (request.POST.get("passwordConfirm") or "").strip()
-        if password or password_confirm:
-            if password != password_confirm:
-                messages.error(request, "Las contrasenas no coinciden.")
-                contexto = {
-                    "usuario": usuario,
-                    "localidades": Localidad.objects.all().order_by("nombre"),
-                    "tipos_documento": cons.TipoDocumento.choices,
-                    "tipos_usuario": cons.TipoUsuario.choices,
-                }
-                return render(request, "admin/Usuarios/editUsuario.html", contexto)
-            usuario.set_password(password)
+        error = _aplicar_datos_usuario_admin(usuario, request.POST)
+        if error:
+            messages.error(request, error)
+            contexto = {
+                "usuario": usuario,
+                "localidades": Localidad.objects.all().order_by("nombre"),
+                "tipos_documento": cons.TipoDocumento.choices,
+                "tipos_usuario": cons.TipoUsuario.choices,
+            }
+            return render(request, "admin/Usuarios/editUsuario.html", contexto)
 
         try:
             usuario.full_clean()
@@ -988,12 +1159,12 @@ def editar_publicacion_admin(request, publicacion_id):
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
     except Exception:
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
-        return redirect("panel_admin:listar_publicaciones_admin")
+        return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     publicacion = Publicacion.objects.select_related("categoria", "usuario").filter(id=publicacion_id).first()
     if not publicacion:
         messages.error(request, "Publicacion no encontrada.")
-        return redirect("panel_admin:listar_publicaciones_admin")
+        return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_publicacion(publicacion_id, request.POST)
@@ -1146,6 +1317,7 @@ def editar_categoria_publicacion_admin(request, categoria_id):
             "form_data": form_data,
             "tipos_publicacion": tipos_publicacion,
             "estados": cons.Estado.choices,
+            "active_tab": "categorias_publicacion",
         },
     )
 
@@ -1262,6 +1434,7 @@ def crear_categoria_publicacion(request):
             "tipo_otro": "",
             "estado": "ACTIVO",
         },
+        "active_tab": "categorias_publicacion",
     }
     if request.method == "POST":
         resultado = AdminCatalogService.crear_categoria_publicacion(request.POST)
@@ -1282,14 +1455,11 @@ def crear_categoria_publicacion(request):
 
 # ─── Perfil del Administrador ───────────────────────────────────────────────
 
-import re as _re
-from django.contrib.auth import update_session_auth_hash
-
 _SOLO_LETRAS   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")
 _SOLO_CIUDAD   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$")
 _CELULAR       = _re.compile(r"^3\d{9}$")
 _PASSWORD_COMP = _re.compile(
-    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$"
+    r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,128}$"
 )
 
 
@@ -1304,7 +1474,7 @@ def perfil_admin(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 def actualizar_datos_admin(request):
     if request.method != "POST":
-        return redirect("panel_admin:perfil_admin")
+        return redirect(ADMIN_PERFIL_URL)
 
     user = request.user
     nombres        = request.POST.get("nombres", "").strip()
@@ -1313,52 +1483,26 @@ def actualizar_datos_admin(request):
     ciudad         = request.POST.get("ciudad", "").strip()
     localidad_id   = request.POST.get("localidad", "").strip()
     fecha_str      = request.POST.get("fechaNacimiento", "").strip()
-
-    from datetime import date as date_type
-    errores = []
-
-    if not nombres or len(nombres) < 3:
-        errores.append("El nombre debe tener al menos 3 caracteres.")
-    elif len(nombres) > 30 or not _SOLO_LETRAS.match(nombres):
-        errores.append("El nombre solo puede contener letras (máx. 30).")
-
-    if not apellidos or len(apellidos) < 3:
-        errores.append("Los apellidos deben tener al menos 3 caracteres.")
-    elif len(apellidos) > 40 or not _SOLO_LETRAS.match(apellidos):
-        errores.append("Los apellidos solo pueden contener letras (máx. 40).")
-
-    if celular and not _CELULAR.match(celular):
-        errores.append("El celular debe iniciar con 3 y tener 10 dígitos.")
-
-    if ciudad and (len(ciudad) > 15 or not _SOLO_CIUDAD.match(ciudad)):
-        errores.append("La ciudad solo puede contener letras (máx. 15).")
-
-    fecha_nacimiento = None
-    if fecha_str:
-        try:
-            fecha_nacimiento = date_type.fromisoformat(fecha_str)
-            if fecha_nacimiento > date_type.today():
-                errores.append("La fecha de nacimiento no puede ser futura.")
-        except ValueError:
-            errores.append("Formato de fecha inválido.")
-
-    localidad_inst = user.localidad
-    if localidad_id:
-        try:
-            localidad_inst = Localidad.objects.get(localidad_id=localidad_id)
-        except (Localidad.DoesNotExist, ValueError):
-            errores.append("La localidad seleccionada no es válida.")
+    errores, fecha_nacimiento, localidad_inst = _validar_datos_perfil_admin(
+        user,
+        nombres,
+        apellidos,
+        celular,
+        ciudad,
+        fecha_str,
+        localidad_id,
+    )
 
     if errores:
         for e in errores:
             messages.error(request, e)
-        return redirect("panel_admin:perfil_admin")
+        return redirect(ADMIN_PERFIL_URL)
 
     try:
         user.nombres         = nombres
         user.apellidos       = apellidos
         user.celular         = celular if celular else None
-        user.ciudad          = ciudad if ciudad else "Bogotá"
+        user.ciudad          = ciudad if ciudad else DEFAULT_CITY
         user.localidad       = localidad_inst
         user.fecha_nacimiento = fecha_nacimiento
         user.save()
@@ -1366,38 +1510,26 @@ def actualizar_datos_admin(request):
     except Exception:
         messages.error(request, "No se pudieron guardar los cambios.")
 
-    return redirect("panel_admin:perfil_admin")
+    return redirect(ADMIN_PERFIL_URL)
 
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_POST
 def cambiar_contrasena_admin(request):
-    if request.method != "POST":
-        return redirect("panel_admin:perfil_admin")
 
     user      = request.user
     actual    = request.POST.get("contrasenaActual", "")
     nueva     = request.POST.get("contrasenaNueva", "")
     confirmar = request.POST.get("confirmarContrasena", "")
 
-    if len(actual) > 128 or len(nueva) > 128 or len(confirmar) > 128:
-        messages.error(request, "La contraseña no puede superar los 128 caracteres.")
-    elif not actual or not nueva or not confirmar:
-        messages.error(request, "Todos los campos de contraseña son obligatorios.")
-    elif not user.check_password(actual):
-        messages.error(request, "La contraseña actual es incorrecta.")
-    elif not _PASSWORD_COMP.match(nueva):
-        messages.error(
-            request,
-            "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula, "
-            "una minúscula, un número y un símbolo (@$!%*?&).",
-        )
-    elif nueva != confirmar:
-        messages.error(request, "Las contraseñas nuevas no coinciden.")
+    error = _validar_cambio_contrasena_admin(user, actual, nueva, confirmar)
+    if error:
+        messages.error(request, error)
     else:
         user.set_password(nueva)
         user.save()
         update_session_auth_hash(request, user)
         messages.success(request, "Contraseña actualizada correctamente.")
 
-    return redirect("panel_admin:perfil_admin")
+    return redirect(ADMIN_PERFIL_URL)

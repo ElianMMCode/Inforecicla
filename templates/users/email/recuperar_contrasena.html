@@ -1,0 +1,45 @@
+{% extends "users/email/base.html" %}
+{% load static %}
+
+{% block page_title %}Recuperación de Contraseña - InfoRecicla{% endblock %}
+{% block brand_color %}#1f7a42{% endblock %}
+{% block brand_color_dark %}#176336{% endblock %}
+
+{% block logo_text %}
+    {% include 'users/email/partials/logo_block.html' %}
+{% endblock %}
+
+{% block email_title %}Recuperación de Contraseña{% endblock %}
+
+{% block content %}
+<!-- Banner similar al landing -->
+{% include 'users/email/partials/banner.html' with banner_title='Recupera tu contraseña' banner_subtitle='Usa el código para restablecer el acceso a tu cuenta.' %}
+
+<p>¡Hola!</p>
+
+<p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en <strong>InfoRecicla</strong>.</p>
+
+<p><strong>Tu código de verificación es:</strong></p>
+
+<div class="code-box" style="background-color:#f0f0f0; border-left:4px solid #1f7a42; padding:15px; margin:20px 0; text-align:center;">
+    <div class="code" style="font-size:32px; font-weight:bold; color:#1f7a42; letter-spacing:5px; font-family:'Courier New', monospace;">{{ token }}</div>
+</div>
+
+<p>Usa este código para validar tu identidad y establecer una nueva contraseña.</p>
+
+<p style="text-align:center; margin:18px 0;">
+    <a href="{{ enlace_validacion }}" style="display:inline-block; background:#218838; color:#ffffff; padding:12px 28px; text-decoration:none; font-weight:700; font-family:Arial, sans-serif; font-size:16px; line-height:1; border-radius:8px;">Restablecer Contraseña</a>
+</p>
+
+<div class="info" style="background:#e8f5e9; border:1px solid #c8e6c9; padding:10px 15px; border-radius:4px; margin:15px 0; font-size:14px; color:#2e7d32;">
+    <strong>⏱️ Este código caduca en {{ minutos }} minutos.</strong>
+</div>
+
+<div class="warning" style="background:#fff3e0; border:1px solid #ffe0b2; padding:10px 15px; border-radius:4px; margin:15px 0; font-size:13px; color:#9a3412;">
+    <strong>⚠️ Por tu seguridad:</strong> Nunca compartas este código con nadie. InfoRecicla nunca te pedirá que lo hagas.
+</div>
+
+<p>Si <strong>no</strong> solicitaste esta recuperación de contraseña, ignora este correo. Tu contraseña permanecerá igual.</p>
+
+<p>¿Problemas? <a href="mailto:soporte@inforecicla.com">Contacta al equipo de soporte</a></p>
+{% endblock %}

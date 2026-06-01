@@ -1,16 +1,9 @@
+{% extends "admin/base.html" %}
 {% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar Material - InfoRecicla Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-</head>
-<body class="bg-light">
-
-{% include "admin/partials/sidebar.html" with active="materiales" %}
+{% block page_title %}Editar Material - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="materiales" %}{% endblock %}
+{% block content %}
 
 <main class="col offset-md-2 p-4">
   {% if messages %}
@@ -40,24 +33,24 @@
         {% csrf_token %}
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-            <input type="text" name="nombre" class="form-control" value="{{ material.nombre }}" required maxlength="30">
+            <label for="material_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+            <input id="material_nombre" type="text" name="nombre" class="form-control" value="{{ material.nombre }}" required maxlength="30">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Imagen del Material</label>
+            <label for="material_imagen" class="form-label fw-semibold">Imagen del Material</label>
             <div class="mb-2">
               {% if material.imagen_url %}
                 <div class="mb-2">
                   <img src="{{ material.imagen_url }}" alt="{{ material.nombre }}" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
                 </div>
               {% endif %}
-              <input type="file" name="imagen" class="form-control" accept="image/*">
+              <input id="material_imagen" type="file" name="imagen" class="form-control" accept="image/*">
               <small class="form-text text-muted">Formatos: JPG, PNG, GIF (máximo 5MB)</small>
             </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Categoría</label>
-            <select name="categoria_id" class="form-select">
+            <label for="material_categoria_id" class="form-label fw-semibold">Categoría</label>
+            <select id="material_categoria_id" name="categoria_id" class="form-select">
               <option value="">Sin categoría</option>
               {% for cat in categorias %}
                 <option value="{{ cat.id }}" {% if material.categoria and material.categoria.id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
@@ -65,8 +58,8 @@
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Tipo</label>
-            <select name="tipo_id" class="form-select">
+            <label for="material_tipo_id" class="form-label fw-semibold">Tipo</label>
+            <select id="material_tipo_id" name="tipo_id" class="form-select">
               <option value="">Sin tipo</option>
               {% for tipo in tipos %}
                 <option value="{{ tipo.id }}" {% if material.tipo and material.tipo.id == tipo.id %}selected{% endif %}>{{ tipo.nombre }}</option>
@@ -74,16 +67,16 @@
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Estado</label>
-            <select name="estado" class="form-select">
+            <label for="material_estado" class="form-label fw-semibold">Estado</label>
+            <select id="material_estado" name="estado" class="form-select">
               {% for val, label in estados %}
                 <option value="{{ val }}" {% if material.estado == val %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="col-12">
-            <label class="form-label fw-semibold">Descripción</label>
-            <textarea name="descripcion" class="form-control" rows="3" maxlength="500">{{ material.descripcion|default:'' }}</textarea>
+            <label for="material_descripcion" class="form-label fw-semibold">Descripción</label>
+            <textarea id="material_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500">{{ material.descripcion|default:'' }}</textarea>
           </div>
           <div class="col-12 pt-2">
             <button type="submit" class="btn btn-success me-2">
@@ -97,6 +90,4 @@
   </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,162 @@
+[
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234501",
+    "fields": {
+        "nombre": "Usaquén",
+        "descripcion": "Localidad de Usaquén"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234502",
+    "fields": {
+        "nombre": "Chapinero",
+        "descripcion": "Localidad de Chapinero"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234503",
+    "fields": {
+        "nombre": "Santa Fe",
+        "descripcion": "Localidad de Santa Fe"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234504",
+    "fields": {
+        "nombre": "San Cristóbal",
+        "descripcion": "Localidad de San Cristóbal"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234505",
+    "fields": {
+        "nombre": "Usme",
+        "descripcion": "Localidad de Usme"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234506",
+    "fields": {
+        "nombre": "Tunjuelito",
+        "descripcion": "Localidad de Tunjuelito"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234507",
+    "fields": {
+        "nombre": "Bosa",
+        "descripcion": "Localidad de Bosa"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234508",
+    "fields": {
+        "nombre": "Kennedy",
+        "descripcion": "Localidad de Kennedy"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234509",
+    "fields": {
+        "nombre": "Fontibón",
+        "descripcion": "Localidad de Fontibón"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef0123450a",
+    "fields": {
+        "nombre": "Engativá",
+        "descripcion": "Localidad de Engativá"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef0123450b",
+    "fields": {
+        "nombre": "Suba",
+        "descripcion": "Localidad de Suba"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef0123450c",
+    "fields": {
+        "nombre": "Barrios Unidos",
+        "descripcion": "Localidad de Barrios Unidos"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef0123450d",
+    "fields": {
+        "nombre": "Teusaquillo",
+        "descripcion": "Localidad de Teusaquillo"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef0123450e",
+    "fields": {
+        "nombre": "Los Mártires",
+        "descripcion": "Localidad de Los Mártires"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef0123450f",
+    "fields": {
+        "nombre": "Antonio Nariño",
+        "descripcion": "Localidad de Antonio Nariño"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234510",
+    "fields": {
+        "nombre": "Puente Aranda",
+        "descripcion": "Localidad de Puente Aranda"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234511",
+    "fields": {
+        "nombre": "La Candelaria",
+        "descripcion": "Localidad de La Candelaria"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234512",
+    "fields": {
+        "nombre": "Rafael Uribe Uribe",
+        "descripcion": "Localidad de Rafael Uribe Uribe"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234513",
+    "fields": {
+        "nombre": "Ciudad Bolívar",
+        "descripcion": "Localidad de Ciudad Bolívar"
+    }
+},
+{
+    "model": "ecas.localidad",
+    "pk": "a1b2c3d4-e5f6-47a9-b12d-cdef01234514",
+    "fields": {
+        "nombre": "Sumapaz",
+        "descripcion": "Localidad de Sumapaz"
+    }
+}
+]

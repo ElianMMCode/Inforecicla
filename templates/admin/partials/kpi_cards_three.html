@@ -1,0 +1,29 @@
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-bottom border-3 border-{{ card1_color|default:'success' }} h-100">
+            <div class="card-body text-center p-4">
+                <i class="{{ card1_icon }} text-{{ card1_color|default:'success' }} fa-2x mb-2"></i>
+                <div class="text-muted fw-bold text-uppercase small">{{ card1_label }}</div>
+                <div class="display-6 text-{{ card1_color|default:'success' }} fw-bold">{{ card1_value }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-bottom border-3 border-{{ card2_color|default:'info' }} h-100">
+            <div class="card-body text-center p-4">
+                <i class="{{ card2_icon }} text-{{ card2_color|default:'info' }} fa-2x mb-2"></i>
+                <div class="text-muted fw-bold text-uppercase small">{{ card2_label }}</div>
+                <div class="display-6 text-{{ card2_color|default:'info' }} fw-bold">{{ card2_value }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-bottom border-3 border-{{ card3_color|default:'warning' }} h-100">
+            <div class="card-body text-center p-4">
+                <i class="{{ card3_icon }} text-{{ card3_color|default:'warning' }} fa-2x mb-2"></i>
+                <div class="text-muted fw-bold text-uppercase small">{{ card3_label }}</div>
+                <div class="display-6 text-{{ card3_color|default:'warning' }} fw-bold">{{ card3_value }}</div>
+            </div>
+        </div>
+    </div>
+</div>

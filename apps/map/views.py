@@ -37,6 +37,85 @@ def mercator_to_latlon(x, y):
     return lat, lon
 
 
+def _get_punto_image_url(punto, request, image_field_name, url_field_name):
+    """
+    Resuelve la URL pública de una imagen de PuntoECA priorizando el archivo subido.
+    """
+    image_field = getattr(punto, image_field_name, None)
+    if image_field:
+        try:
+            image_url = image_field.url
+        except Exception:
+            image_url = ""
+        if image_url:
+            if request is not None:
+                return request.build_absolute_uri(image_url)
+            return image_url
+
+    url_value = getattr(punto, url_field_name, "") or ""
+    if url_value and request is not None:
+        return request.build_absolute_uri(url_value)
+    return url_value
+
+
+def _arcgis_collect_features(data):
+    features = []
+    if "features" in data:
+        return data["features"]
+
+    feature_set = data.get("featureSet", {})
+    if "features" in feature_set:
+        return feature_set["features"]
+
+    operational_layers = data.get("operationalLayers", [])
+    if operational_layers:
+        for operational_layer in operational_layers:
+            feature_set = operational_layer.get("featureSet", {})
+            features.extend(feature_set.get("features", []))
+            if not features and "featureCollection" in operational_layer:
+                features.extend(
+                    operational_layer.get("featureCollection", {})
+                    .get("layers", [{}])[0]
+                    .get("featureSet", {})
+                    .get("features", [])
+                )
+        return features
+
+    if "layers" in data:
+        return data["layers"][0].get("featureSet", {}).get("features", [])
+
+    return features
+
+
+def _arcgis_feature_to_punto(feature):
+    attrs = feature.get("attributes", {})
+    geom = feature.get("geometry", {})
+    x = geom.get("x")
+    y = geom.get("y")
+
+    if x is None or y is None:
+        return None
+
+    try:
+        lat, lon = mercator_to_latlon(x, y)
+    except Exception:
+        lat, lon = 0, 0
+
+    return {
+        "id": attrs.get("ID") or attrs.get("ObjectId"),
+        "nombre": attrs.get("NOMBRE_ORGANIZACIÓN"),
+        "sigla": attrs.get("SIGLA_DE_LA_ASOCIACION"),
+        "estado": attrs.get("ESTADO_DE_LA_ORGANIZACIÓN"),
+        "localidad": attrs.get("LOCALIDAD__DIRECCIÓN_PRINCIPAL"),
+        "direccion": attrs.get("DIRECCIÓN_PRINCIPAL"),
+        "barrio": attrs.get("BARRIO"),
+        "email": attrs.get("CORREO_ELECTRÓNICO"),
+        "ciudad": attrs.get("Ciudad", "Bogotá D.C."),
+        "latitud": lat,
+        "longitud": lon,
+    }
+
+
 @require_GET
 def api_arcgis_puntos(request):
     """
@@ -55,24 +134,7 @@ def api_arcgis_puntos(request):
         resp.raise_for_status()
         data = resp.json()
 
-        features = []
-        if "features" in data:
-            features = data["features"]
-        elif "featureSet" in data and "features" in data["featureSet"]:
-            features = data["featureSet"]["features"]
-        elif "operationalLayers" in data and data["operationalLayers"]:
-            for operational_layer in data["operationalLayers"]:
-                feature_set = operational_layer.get("featureSet", {})
-                features += feature_set.get("features", [])
-                if not features and "featureCollection" in operational_layer:
-                    features += (
-                        operational_layer.get("featureCollection", {})
-                        .get("layers", [{}])[0]
-                        .get("featureSet", {})
-                        .get("features", [])
-                    )
-        elif "layers" in data:
-            features = data["layers"][0].get("featureSet", {}).get("features", [])
+        features = _arcgis_collect_features(data)
 
         if not features:
             return JsonResponse(
@@ -86,31 +148,9 @@ def api_arcgis_puntos(request):
 
         puntos = []
         for feature in features:
-            attrs = feature.get("attributes", {})
-            geom = feature.get("geometry", {})
-            x = geom.get("x")
-            y = geom.get("y")
-            if x is None or y is None:
-                continue
-            try:
-                lat, lon = mercator_to_latlon(x, y)
-            except Exception:
-                lat, lon = 0, 0
-            puntos.append(
-                {
-                    "id": attrs.get("ID") or attrs.get("ObjectId"),
-                    "nombre": attrs.get("NOMBRE_ORGANIZACIÓN"),
-                    "sigla": attrs.get("SIGLA_DE_LA_ASOCIACION"),
-                    "estado": attrs.get("ESTADO_DE_LA_ORGANIZACIÓN"),
-                    "localidad": attrs.get("LOCALIDAD__DIRECCIÓN_PRINCIPAL"),
-                    "direccion": attrs.get("DIRECCIÓN_PRINCIPAL"),
-                    "barrio": attrs.get("BARRIO"),
-                    "email": attrs.get("CORREO_ELECTRÓNICO"),
-                    "ciudad": attrs.get("Ciudad", "Bogotá D.C."),
-                    "latitud": lat,
-                    "longitud": lon,
-                }
-            )
+            punto = _arcgis_feature_to_punto(feature)
+            if punto is not None:
+                puntos.append(punto)
         return JsonResponse(
             puntos, safe=False, json_dumps_params={"ensure_ascii": False}
         )
@@ -121,7 +161,7 @@ def api_arcgis_puntos(request):
 @require_GET
 def api_puntos_eca(request):
     """
-    Endpoint REST: lista resúmen de todos los puntos ECA activos, normalizados para el mapa interactivo.
+    Endpoint REST: lista resúmen de todos los puntos ECA visibles en mapa, normalizados para el mapa interactivo.
 
     Lógica de negocio:
     - Cada entrada expone los datos indispensables para ubicar y mostrar el punto en el mapa (sin materiales ni detalles extendidos).
@@ -129,7 +169,9 @@ def api_puntos_eca(request):
     - El frontend consume esta lista para renderizar marcadores, preparar filtros rápidos y construir popups básicos.
     """
     puntos = []
-    for punto in PuntoECA.objects.all():
+    for punto in PuntoECA.objects.select_related(
+        "localidad", "gestor_eca"
+    ).filter(visible_en_mapa=True):
         try:
             localidad_nombre = punto.localidad.nombre
         except Exception:
@@ -161,7 +203,10 @@ def api_materiales(request):
     materiales = Material.objects.all()
     data = []
     for m in materiales:
-        cantidad = Inventario.objects.filter(material=m).count()
+        cantidad = Inventario.objects.filter(
+            material=m,
+            punto_eca__visible_en_mapa=True,
+        ).count()
         data.append({
             "materialId": str(m.id),
             "nombre": m.nombre,
@@ -182,7 +227,7 @@ def api_puntos_eca_detalle(request, punto_id):
     - Todos los campos relevantes para la gestión y visualización ya vienen "ready to use".
     """
     try:
-        punto = PuntoECA.objects.get(pk=punto_id)
+        punto = PuntoECA.objects.get(pk=punto_id, visible_en_mapa=True)
     except PuntoECA.DoesNotExist:
         raise Http404("No existe el punto ECA")
 
@@ -211,12 +256,13 @@ def api_puntos_eca_detalle(request, punto_id):
             }
         )
 
+    logo_url = _get_punto_image_url(punto, request, "logo_imagen_punto", "logo_url_punto")
+    foto_url = _get_punto_image_url(punto, request, "foto_imagen_punto", "foto_url_punto")
+
     resp = {
         "puntoEcaID": str(punto.pk),
         "nombrePunto": punto.nombre,
-        "localidadNombre": getattr(getattr(punto, "localidad", None), "nombre", "")
-        if getattr(punto, "localidad", None)
-        else "",
+        "localidadNombre": getattr(getattr(punto, "localidad", None), "nombre", ""),
         "direccion": punto.direccion,
         "descripcion": punto.descripcion,
         "telefonoPunto": punto.telefono_punto,
@@ -224,6 +270,8 @@ def api_puntos_eca_detalle(request, punto_id):
         "email": getattr(getattr(punto, "gestor_eca", None), "email", ""),
         "horarioAtencion": getattr(punto, "horario", ""),
         "materiales": materiales,
+        "logoUrl": logo_url,
+        "fotoUrl": foto_url,
     }
     return JsonResponse(resp, safe=False)
 
@@ -241,7 +289,9 @@ def api_puntos_eca_por_material(request, material_id):
     """
     inventarios = Inventario.objects.filter(material_id=material_id)
     puntos_ids = inventarios.values_list("punto_eca_id", flat=True)
-    puntos = PuntoECA.objects.filter(pk__in=puntos_ids)
+    puntos = PuntoECA.objects.select_related(
+        "localidad", "gestor_eca"
+    ).filter(pk__in=puntos_ids, visible_en_mapa=True).distinct()
     lista = []
     for punto in puntos:
         try:

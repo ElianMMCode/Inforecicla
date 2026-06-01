@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block page_title %}InfoRecicla{% endblock %}</title>
+    <style>
+        :root {
+            --brand-color: {% block brand_color %}#1f7a42{% endblock %};
+            --brand-color-dark: {% block brand_color_dark %}#176336{% endblock %};
+            --brand-soft: {% block brand_soft %}#e8f5e9{% endblock %};
+            --brand-soft-border: {% block brand_soft_border %}#c8e6c9{% endblock %};
+            --warning-bg: {% block warning_bg %}#fff3e0{% endblock %};
+            --warning-border: {% block warning_border %}#ffe0b2{% endblock %};
+            --warning-color: {% block warning_color %}#9a3412{% endblock %};
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--brand-color);
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 24px;
+            color: #333;
+            margin: 0;
+        }
+
+        .content {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .code-box {
+            background-color: #f0f0f0;
+            border-left: 4px solid var(--brand-color);
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .code {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--brand-color);
+            letter-spacing: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info {
+            background-color: var(--brand-soft);
+            border: 1px solid var(--brand-soft-border);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: var(--brand-color);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .button:hover {
+            background-color: var(--brand-color-dark);
+        }
+
+        .footer {
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+            color: #888;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .warning {
+            background-color: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">{% block logo_text %}♻️ InfoRecicla{% endblock %}</div>
+            <h1 class="title">{% block email_title %}{% endblock %}</h1>
+        </div>
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 InfoRecicla. Todos los derechos reservados.</p>
+            <p>Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+        </div>
+    </div>
+</body>
+</html>

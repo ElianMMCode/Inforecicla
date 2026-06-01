@@ -27,8 +27,8 @@
   <nav class="w-100 flex-grow-1" role="navigation">
     <ul class="nav nav-pills flex-column gap-1 w-100 m-0 p-0 list-unstyled">
       <li class="nav-item">
-        <a href="{% url 'panel_admin:panel_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'dashboard' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-speedometer2"></i> Dashboard
+        <a href="{% url 'panel_admin:panel_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'inicio' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-speedometer2"></i> Inicio
         </a>
       </li>
       <li class="nav-item">
@@ -42,6 +42,11 @@
         </a>
       </li>
       <li class="nav-item">
+        <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'categorias_publicacion' or active == 'cat_publicaciones' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
+          <i class="bi bi-folder-fill"></i> Categorías de publicaciones
+        </a>
+      </li>
+      <li class="nav-item">
         <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'ecas' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
           <i class="bi bi-geo-alt-fill"></i> Puntos ECA
         </a>
@@ -51,18 +56,15 @@
           <i class="bi bi-box-seam"></i> Materiales
         </a>
       </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'cat_publicaciones' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-folder-fill"></i> Cat. Publicaciones
-        </a>
-      </li>
     </ul>
   </nav>
   <div class="border-top border-white border-opacity-25 pt-3 mt-2">
     <a href="{% url 'panel_admin:perfil_admin' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2 {% if active == 'perfil' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
       <i class="bi bi-person-circle"></i> Mi Perfil
     </a>
-    <a href="/" class="nav-link text-white-50 small py-1"><i class="bi bi-house me-1"></i> Ir al Inicio</a>
+    <a href="/inicio/" class="btn btn-outline-light btn-sm w-100 mt-2">
+      <i class="bi bi-house-door me-1"></i> Página principal
+    </a>
     <form method="POST" action="/logout/" class="mt-1">
       {% csrf_token %}
       <button type="submit" class="btn btn-sm btn-outline-light w-100">

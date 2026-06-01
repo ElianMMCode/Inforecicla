@@ -15,6 +15,7 @@ from pathlib import Path
 
 import sys
 import os
+from django.contrib.messages import constants as message_constants
 
 # Opción A: Usar una variable de entorno (.env)
 # Si en Windows no configuran USE_REDIS=True, usará la memoria.
@@ -48,9 +49,21 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ["127.0.0.1", "localhost", "10.26.42.166"]
-
 GROQ_API_KEY = env("GROQ_API_KEY")
+SITE_URL = env("SITE_URL", default="http://127.0.0.1:8000")
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=25)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@inforecicla.local")
 
 # Application definition
 
@@ -108,7 +121,6 @@ TEMPLATES = [
     },
 ]
 
-# WSGI_APPLICATION = "config.wsgi.application"
 WSGI_APPLICATION = "config.asgi.application"
 
 
@@ -161,7 +173,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
@@ -172,11 +184,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Límites razonables para cargas de imágenes ECA
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+
 # Definición del modelo de usuario personalizado
 AUTH_USER_MODEL = "users.Usuario"
 
 # Mapeo de niveles de mensaje Django a clases Bootstrap
-from django.contrib.messages import constants as message_constants
 MESSAGE_TAGS = {
     message_constants.ERROR: "danger",
 }
