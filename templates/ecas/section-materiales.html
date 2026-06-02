@@ -2,13 +2,13 @@
 <!-- Fragment: Materiales -->
 <script>
 // Función global para obtener el CSRF Token (segura para cualquier script inline)
-window.getCSRFToken = function() {
+globalThis.getCSRFToken = function() {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, 10) === 'csrftoken=') {
+        for (const rawCookie of cookies) {
+            const cookie = rawCookie.trim();
+            if (cookie.startsWith('csrftoken=')) {
                 cookieValue = decodeURIComponent(cookie.substring(10));
                 break;
             }
@@ -141,7 +141,7 @@ window.getCSRFToken = function() {
             Registra, visualiza y gestiona los materiales en el inventario del centro de acopio
         </p>
     </div>
-    <!-- ACORDEÓN PRINCIPAL CON TODO -->
+    <!-- ACORDEÓN PRINCIPAL -->
     <div class="accordion accordion-flush shadow-sm" id="acordeonMateriales">
         <!-- Item 1: AGREGAR MATERIAL AL INVENTARIO -->
         <div class="accordion-item border-start border-5 border-success">
@@ -640,7 +640,15 @@ window.getCSRFToken = function() {
                     // ✅ Validar que al menos uno esté seleccionado
                     if (!categoria && !tipo) {
                         console.warn('⚠️ No se seleccionó categoría ni tipo');
-                        alert('Por favor selecciona al menos una Categoría o un Tipo');
+                        if (globalThis.Swal?.fire) {
+                            globalThis.Swal.fire({
+                                icon: 'warning',
+                                title: 'Selecciona un filtro',
+                                text: 'Por favor selecciona al menos una Categoría o un Tipo para realizar la búsqueda.',
+                                confirmButtonColor: '#198754',
+                                confirmButtonText: 'Entendido',
+                            });
+                        }
                         return;
                     }
 
@@ -817,14 +825,6 @@ window.getCSRFToken = function() {
                             </div>
                         </div>
                         <!-- Espaciador entre acordeón y tarjetas -->
-                        <!-- Mensaje vacío o alerta: solo mostrar uno a la vez -->
-                        <div id="mensajeInventarioVacio"
-                             class="alert alert-info text-center mb-4"
-                             style="display:none">
-                            <i class="bi bi-info-circle me-2"></i> No hay materiales registrados en el inventario.
-                        </div>
-                        <!-- Grid de tarjetas -->
-                        <!-- Espaciador entre acordeón y tarjetas -->
                         <div class="my-4"></div>
                         <!-- Mensaje vacío o alerta: solo mostrar uno a la vez -->
                         <div id="mensajeInventarioVacio"
@@ -849,7 +849,6 @@ window.getCSRFToken = function() {
                                         <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 {% if inventario.ocupacion_actual >= inventario.umbral_critico %} bg-danger-subtle text-danger {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %} bg-warning-subtle text-warning-emphasis {% else %} bg-success-subtle text-success-emphasis {% endif %}">
                                             <div>
                                                 <h5 class="card-title mb-0 fw-bold">{{ inventario.material.nombre }}</h5>
-                                                <!-- <small class="opacity-75">ID: #{{ inventario.material.id }}</small> -->
                                                 <small class="opacity-75">{{ inventario.material.tipo.nombre|default:"Tipo Desconocido" }}</small>
                                             </div>
                                             {% if inventario.ocupacion_actual >= inventario.umbral_critico %}
@@ -869,17 +868,12 @@ window.getCSRFToken = function() {
                                                         <span class="small text-muted fw-normal">{{ inventario.unidad_medida }}</span>
                                                     </span>
                                                 </div>
-                                                <div class="progress" style="height: 10px; border-radius: 5px;">
-                                                    {# Mapping exacto al JS: danger si ocupación >= umbral_critico, warning si ocupación >= umbral_alerta, success el resto #}
-                                                    <div class="progress-bar {% if inventario.ocupacion_actual >= inventario.umbral_critico %} bg-danger {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %} bg-warning {% else %} bg-success {% endif %}"
-                                                         role="progressbar"
-                                                         style="width: {{ inventario.ocupacion_actual|floatformat:0 }}%"
-                                                         aria-valuenow="{{ inventario.ocupacion_actual|floatformat:0 }}"
-                                                         aria-valuemin="0"
-                                                         aria-valuemax="100">
-                                                        <span class="small">{{ inventario.ocupacion_actual|floatformat:0 }}%</span>
-                                                    </div>
-                                                </div>
+                                                <progress class="w-100"
+                                                          value="{{ inventario.ocupacion_actual|floatformat:0 }}"
+                                                          max="100"
+                                                          style="height: 10px; border-radius: 5px; accent-color: {% if inventario.ocupacion_actual >= inventario.umbral_critico %} #dc3545 {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %} #ffc107 {% else %} #198754 {% endif %};">
+                                                    {{ inventario.ocupacion_actual|floatformat:0 }}%
+                                                </progress>
                                                 <p class="text-end small text-muted mt-1">Capacidad: {{ inventario.capacidad_maxima }}</p>
                                             </div>
                                             <div class="row g-2 py-3 border-top border-bottom">
@@ -1115,7 +1109,7 @@ window.getCSRFToken = function() {
                                 aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-4">
-                        <form id="formularioEditarInventario">
+                        <form id="formularioEditarInventario" novalidate>
                             <!-- Material ID (oculto) -->
                             <input type="hidden" id="editarMaterialId" value="">
                             <!-- Row 1: Stock y Capacidad -->
@@ -1124,26 +1118,30 @@ window.getCSRFToken = function() {
                                     <label for="editarStockActual" class="form-label fw-bold">
                                         <i class="bi bi-inbox text-success me-2"></i>Stock Actual
                                     </label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <input type="number"
                                                class="form-control"
                                                id="editarStockActual"
+                                               min="0"
                                                step="0.01"
                                                required>
                                         <span class="input-group-text" id="editarStockUnidad">un.</span>
+                                        <div class="invalid-feedback">Ingresa el stock actual (mayor o igual a 0).</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editarCapacidadMaxima" class="form-label fw-bold">
                                         <i class="bi bi-archive text-primary me-2"></i>Capacidad Máxima
                                     </label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <input type="number"
                                                class="form-control"
                                                id="editarCapacidadMaxima"
+                                               min="0"
                                                step="0.01"
                                                required>
                                         <span class="input-group-text" id="editarCapacidadUnidad">un.</span>
+                                        <div class="invalid-feedback">Ingresa la capacidad máxima (mayor o igual a 0).</div>
                                     </div>
                                 </div>
                             </div>
@@ -1158,6 +1156,7 @@ window.getCSRFToken = function() {
                                         {% for value, label in unidades_medida %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                                     </select>
                                     <small class="text-muted d-block mt-2">Selecciona la unidad de medida del material</small>
+                                    <div class="invalid-feedback">Selecciona una unidad de medida.</div>
                                 </div>
                             </div>
                             <!-- Row 2: Precios -->
@@ -1166,26 +1165,30 @@ window.getCSRFToken = function() {
                                     <label for="editarPrecioCompra" class="form-label fw-bold">
                                         <i class="bi bi-cart-plus text-info me-2"></i>Precio de Compra
                                     </label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <span class="input-group-text">$</span>
                                         <input type="number"
                                                class="form-control"
                                                id="editarPrecioCompra"
+                                               min="0"
                                                step="0.01"
                                                required>
+                                        <div class="invalid-feedback">Ingresa el precio de compra (mayor o igual a 0).</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editarPrecioVenta" class="form-label fw-bold">
                                         <i class="bi bi-cart-check text-warning me-2"></i>Precio de Venta
                                     </label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <span class="input-group-text">$</span>
                                         <input type="number"
                                                class="form-control"
                                                id="editarPrecioVenta"
+                                               min="0"
                                                step="0.01"
                                                required>
+                                        <div class="invalid-feedback">Ingresa el precio de venta (mayor o igual a 0).</div>
                                     </div>
                                 </div>
                             </div>
@@ -1200,7 +1203,9 @@ window.getCSRFToken = function() {
                                            id="editarUmbralAlerta"
                                            min="0"
                                            max="100"
+                                           step="1"
                                            required>
+                                    <div class="invalid-feedback">Ingresa el umbral de alerta (entre 0 y 100).</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="editarUmbralCritico" class="form-label fw-bold">
@@ -1211,7 +1216,9 @@ window.getCSRFToken = function() {
                                            id="editarUmbralCritico"
                                            min="0"
                                            max="100"
+                                           step="1"
                                            required>
+                                    <div class="invalid-feedback">Ingresa el umbral crítico (entre 0 y 100).</div>
                                 </div>
                             </div>
                             <!-- Resumen de cambios -->
@@ -1225,170 +1232,11 @@ window.getCSRFToken = function() {
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-1"></i>Cancelar
                         </button>
-                        <button type="button" class="btn btn-warning" id="btnGuardarCambios">
+                        <button type="submit"
+                                class="btn btn-warning"
+                                id="btnGuardarCambios"
+                                form="formularioEditarInventario">
                             <i class="bi bi-check-circle me-1"></i>Guardar Cambios
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Modal de Resultado del Guardado (Éxito o Error) -->
-        <div class="modal fade"
-             id="modalResultadoGuardado"
-             tabindex="-1"
-             aria-labelledby="modalResultadoLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-body p-5 text-center">
-                        <!-- Icono dinámico -->
-                        <div class="mb-4">
-                            <i id="iconoResultado"
-                               class="bi bi-check-circle text-success"
-                               style="font-size: 4rem"></i>
-                        </div>
-                        <!-- Título dinámico -->
-                        <h5 id="tituloResultado"
-                            class="fw-bold mb-3 text-success"
-                            style="font-size: 1.5rem">¡Operación Exitosa!</h5>
-                        <!-- Mensaje dinámico -->
-                        <p id="mensajeResultado" class="text-muted mb-0" style="font-size: 1rem">
-                            Los cambios se han guardado correctamente en la base de datos.
-                        </p>
-                    </div>
-                    <div class="modal-footer bg-light border-top">
-                        <button type="button" class="btn btn-success" id="btnOkResultado">
-                            <i class="bi bi-check-circle me-1"></i>OK
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Modal de Éxito en Actualización -->
-        <div class="modal fade"
-             id="modalExitoActualizacion"
-             tabindex="-1"
-             aria-labelledby="modalExitoLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-body p-4 text-center">
-                        <div class="mb-3">
-                            <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
-                        </div>
-                        <h5 class="modal-title fw-bold text-success mb-2" id="modalExitoLabel">¡Operación Exitosa!</h5>
-                        <p class="text-muted mb-0">Los cambios se han guardado correctamente en la base de datos.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Modal de Resumen de Actualización -->
-        <div class="modal fade"
-             id="modalResumenActualizacion"
-             tabindex="-1"
-             aria-labelledby="modalResumenLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-header bg-success text-white border-0">
-                        <h5 class="modal-title fw-bold" id="modalResumenLabel">
-                            <i class="bi bi-info-circle me-2"></i>Datos Actualizados
-                        </h5>
-                        <button type="button"
-                                class="btn-close btn-close-white"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <!-- Información del Material -->
-                        <div class="mb-4">
-                            <h6 class="text-success fw-bold mb-3">
-                                <i class="bi bi-tag me-2"></i>Información del Material
-                            </h6>
-                            <div class="alert alert-light border-start border-4 border-success">
-                                <p class="mb-1">
-                                    <strong>Nombre:</strong>
-                                    <span id="resumenNombreMaterial">-</span>
-                                </p>
-                                <p class="mb-0">
-                                    <strong>Ubicación:</strong>
-                                    <span id="resumenNombrePunto">-</span>
-                                </p>
-                            </div>
-                        </div>
-                        <!-- Stock e Inventario -->
-                        <div class="mb-4">
-                            <h6 class="text-info fw-bold mb-3">
-                                <i class="bi bi-boxes me-2"></i>Stock e Inventario
-                            </h6>
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <div class="p-3 rounded-2 bg-info bg-opacity-10 border-start border-4 border-info">
-                                        <small class="text-muted">Stock Actual</small>
-                                        <p class="h6 fw-bold mb-0" id="resumenStockActual">-</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="p-3 rounded-2 bg-warning bg-opacity-10 border-start border-4 border-warning">
-                                        <small class="text-muted">Capacidad Máxima</small>
-                                        <p class="h6 fw-bold mb-0" id="resumenCapacidadMaxima">-</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <div class="p-3 rounded-2 bg-secondary bg-opacity-10 border-start border-4 border-secondary">
-                                    <small class="text-muted">Unidad de Medida</small>
-                                    <p class="h6 fw-bold mb-0" id="resumenUnidadMedida">-</p>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Precios -->
-                        <div class="mb-4">
-                            <h6 class="text-danger fw-bold mb-3">
-                                <i class="bi bi-currency-dollar me-2"></i>Precios
-                            </h6>
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <div class="p-3 rounded-2 bg-danger bg-opacity-10 border-start border-4 border-danger">
-                                        <small class="text-muted">Precio de Compra</small>
-                                        <p class="h6 fw-bold mb-0" id="resumenPrecioCompra">-</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="p-3 rounded-2 bg-success bg-opacity-10 border-start border-4 border-success">
-                                        <small class="text-muted">Precio de Venta</small>
-                                        <p class="h6 fw-bold mb-0" id="resumenPrecioVenta">-</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Umbrales -->
-                        <div>
-                            <h6 class="text-warning fw-bold mb-3">
-                                <i class="bi bi-exclamation-triangle me-2"></i>Umbrales de Alerta
-                            </h6>
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <div class="p-3 rounded-2 bg-warning bg-opacity-10 border-start border-4 border-warning">
-                                        <small class="text-muted">Umbral Alerta</small>
-                                        <p class="h6 fw-bold mb-0" id="resumenUmbralAlerta">-</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="p-3 rounded-2 bg-danger bg-opacity-10 border-start border-4 border-danger">
-                                        <small class="text-muted">Umbral Crítico</small>
-                                        <p class="h6 fw-bold mb-0" id="resumenUmbralCritico">-</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer bg-light border-top">
-                        <button type="button"
-                                class="btn btn-success"
-                                data-bs-dismiss="modal"
-                                id="btnCerrarResumen">
-                            <i class="bi bi-check-circle me-1"></i>Cerrar
                         </button>
                     </div>
                 </div>
@@ -1397,78 +1245,24 @@ window.getCSRFToken = function() {
         <!-- SCRIPT PARA MANEJO DE MODALES -->
         <script>
         // ====================================================================
-        // FUNCIÓN GLOBAL: Mostrar Modal de Resultado
+        // FUNCIÓN GLOBAL: Mostrar notificación con SweetAlert2
+        // (Reemplaza al antiguo modal custom #modalResultadoGuardado)
         // ====================================================================
         function mostrarModalResultado(esExito, titulo, mensaje) {
-            console.log('🔔 Mostrando modal de resultado:', { esExito, titulo, mensaje });
+            console.log('🔔 Mostrando notificación Swal:', { esExito, titulo, mensaje });
 
-            const modalEl = document.getElementById('modalResultadoGuardado');
-            if (!modalEl) {
-                console.error('❌ Modal de resultado no encontrado');
-                alert(titulo + '\n' + mensaje);
-                return;
+            if (!globalThis.Swal?.fire) {
+                console.error('❌ SweetAlert2 no disponible');
+                return Promise.resolve({ isConfirmed: false });
             }
 
-            // Actualizar contenido
-            const icono = document.getElementById('iconoResultado');
-            const tituloEl = document.getElementById('tituloResultado');
-            const mensajeEl = document.getElementById('mensajeResultado');
-
-            if (icono) {
-                if (esExito) {
-                    icono.className = 'bi bi-check-circle text-success';
-                } else {
-                    icono.className = 'bi bi-exclamation-circle text-danger';
-                }
-                icono.style.fontSize = '4rem';
-            }
-
-            if (tituloEl) {
-                tituloEl.textContent = titulo;
-                tituloEl.style.fontSize = '1.5rem';
-                tituloEl.className = esExito ? 'fw-bold mb-3 text-success' : 'fw-bold mb-3 text-danger';
-            }
-
-            if (mensajeEl) {
-                mensajeEl.textContent = mensaje;
-            }
-
-            // Configurar botón OK
-            const btnOkResultado = document.getElementById('btnOkResultado');
-            if (btnOkResultado) {
-                // Limpiar eventos previos
-                btnOkResultado.onclick = null;
-                btnOkResultado.onclick = function() {
-                    console.log('✓ Botón OK presionado. Recargando página...');
-                    // Cerrar modal usando Bootstrap
-                    const bsModal = bootstrap.Modal.getInstance(modalEl);
-                    if (bsModal) {
-                        bsModal.hide();
-                    } else {
-                        modalEl.classList.remove('show');
-                        const backdrop = document.querySelector('.modal-backdrop');
-                        if (backdrop) backdrop.remove();
-                    }
-                    // Recargar página
-                    setTimeout(() => {
-                        window.location.reload(true);
-                    }, 300);
-                };
-            }
-
-            // Mostrar modal
-            try {
-                const modal = new bootstrap.Modal(modalEl, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
-                console.log('✓ Modal creado, mostrando...');
-                modal.show();
-                console.log('✓ Modal mostrado exitosamente');
-            } catch (err) {
-                console.error('❌ Error mostrando modal:', err);
-                alert(titulo + '\n' + mensaje);
-            }
+            return globalThis.Swal.fire({
+                icon: esExito ? 'success' : 'error',
+                title: titulo,
+                text: mensaje,
+                confirmButtonColor: '#198754',
+                confirmButtonText: 'Entendido',
+            });
         }
 
         // ====================================================================
@@ -1515,6 +1309,106 @@ window.getCSRFToken = function() {
                 manejarClickTarjeta(btn);
             }
 
+            function setText(id, text) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            }
+
+            function aplicarDatosBasicos(data, inventarioId) {
+                const stockNum = Number(data.stockActual);
+                const capacidadNum = Number(data.capacidadMaxima);
+                const unidad = data.unidadMedida || 'unidades';
+
+                setText('modalHeaderNombre', 'Detalles del Material');
+                setText('modalNombreMaterial', data.nmbMaterial || '-');
+                setText('modalMaterialId', inventarioId);
+                setText('modalUnidadMedida', data.unidadMedida || '-');
+                setText('modalStockActual', stockNum.toFixed(2));
+                setText('modalStockUnidad', unidad);
+                setText('modalCapacidadMaxima', capacidadNum.toFixed(2));
+                setText('modalCapacidadUnidad', unidad);
+                setText('modalEspacioUsado', stockNum.toFixed(2));
+                setText('modalEspacioDisponible', Math.max(capacidadNum - stockNum, 0).toFixed(2));
+                setText('modalPrecioCompra', '$ ' + Number(data.precioCompra).toFixed(2));
+                setText('modalPrecioVenta', '$ ' + Number(data.precioVenta).toFixed(2));
+            }
+
+            function aplicarCalculos(data) {
+                const precioVenta = Number(data.precioVenta);
+                const precioCompra = Number(data.precioCompra);
+                const stock = Number(data.stockActual);
+
+                const margen = (precioVenta - precioCompra) || 0;
+                setText('modalMargenGanancia', '$ ' + margen.toFixed(2));
+
+                const pctMargen = precioCompra > 0
+                    ? Math.round((margen / precioCompra) * 100) + '%'
+                    : '0%';
+                setText('modalPorcentajeMargen', pctMargen);
+
+                const valorTotal = (stock * precioCompra) || 0;
+                setText('modalValorTotal', '$ ' + valorTotal.toFixed(2));
+                setText('modalUmbralAlerta', (data.umbralAlerta || 0) + '%');
+                setText('modalUmbralCritico', (data.umbralCritico || 0) + '%');
+            }
+
+            function aplicarOcupacion(data) {
+                const stock = Number(data.stockActual);
+                const capacidad = Number(data.capacidadMaxima);
+                const porcentaje = capacidad > 0 ? Math.round((stock / capacidad) * 100) : 0;
+
+                setText('modalOcupacionPorcentaje', porcentaje + '%');
+
+                const barra = document.getElementById('modalOcupacionBar');
+                const textoBar = document.getElementById('modalOcupacionText');
+                if (!barra || !textoBar) return;
+
+                const estado = aplicarColorBarra(barra, porcentaje, data.umbralAlerta, data.umbralCritico);
+                textoBar.textContent = porcentaje + '%';
+
+                const estadoTextEl = document.getElementById('modalEstadoText');
+                const estadoIconEl = document.getElementById('modalEstadoIcon');
+                if (estadoTextEl) estadoTextEl.textContent = estado;
+                if (estadoIconEl) {
+                    estadoIconEl.className = 'bi bi-circle-fill me-1';
+                    const clasePorEstado = {
+                        'Crítico': 'text-danger',
+                        'Alerta': 'text-warning',
+                    };
+                    estadoIconEl.classList.add(clasePorEstado[estado] || 'text-success');
+                }
+            }
+
+            function prepararBotonesModal(data, inventarioId) {
+                const btnEditar = document.getElementById('btnEditarMaterial');
+                const btnBorrar = document.getElementById('btnBorrarMaterial');
+                const puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId || '';
+
+                if (btnEditar) {
+                    btnEditar.dataset.inventarioId = inventarioId;
+                    btnEditar.dataset.materialId = inventarioId;
+                    btnEditar.dataset.stock = data.stockActual;
+                    btnEditar.dataset.capacidad = data.capacidadMaxima;
+                    btnEditar.dataset.unidad = data.unidadMedida;
+                    btnEditar.dataset.precioCompra = data.precioCompra;
+                    btnEditar.dataset.precioVenta = data.precioVenta;
+                    btnEditar.dataset.umbralAlerta = data.umbralAlerta;
+                    btnEditar.dataset.umbralCritico = data.umbralCritico;
+                }
+                if (btnBorrar) {
+                    btnBorrar.dataset.inventarioId = inventarioId;
+                    btnBorrar.dataset.nombreMaterial = data.nmbMaterial || '-';
+                    btnBorrar.dataset.puntoEcaId = puntoEcaId;
+                }
+            }
+
+            function rellenarModalDetalles(data, inventarioId) {
+                aplicarDatosBasicos(data, inventarioId);
+                aplicarCalculos(data);
+                aplicarOcupacion(data);
+                prepararBotonesModal(data, inventarioId);
+            }
+
             function manejarClickTarjeta(btn) {
                 // NEW: Traemos los datos completos usando AJAX
                 const inventarioId = btn.dataset.inventarioId;
@@ -1537,72 +1431,7 @@ window.getCSRFToken = function() {
                 fetch(`/punto-eca/materiales/inventario/${puntoId}/${inventarioId}`)
                     .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer los datos'))
                     .then(data => {
-                        // Ahora sí, rellenamos el modal con data
-                        setText('modalHeaderNombre', 'Detalles del Material');
-                        setText('modalNombreMaterial', data.nmbMaterial || '-');
-                        setText('modalMaterialId', inventarioId);
-                        setText('modalUnidadMedida', data.unidadMedida || '-');
-                        setText('modalStockActual', Number(data.stockActual).toFixed(2));
-                        setText('modalStockUnidad', data.unidadMedida || 'unidades');
-                        setText('modalCapacidadMaxima', Number(data.capacidadMaxima).toFixed(2));
-                        setText('modalCapacidadUnidad', data.unidadMedida || 'unidades');
-                        setText('modalEspacioUsado', Number(data.stockActual).toFixed(2));
-                        setText('modalEspacioDisponible', Math.max(Number(data.capacidadMaxima) - Number(data.stockActual), 0).toFixed(2));
-                        setText('modalPrecioCompra', '$ ' + Number(data.precioCompra).toFixed(2));
-                        setText('modalPrecioVenta', '$ ' + Number(data.precioVenta).toFixed(2));
-            
-                        // Margen y total
-                        const margen = (Number(data.precioVenta) - Number(data.precioCompra)) || 0;
-                        setText('modalMargenGanancia', '$ ' + margen.toFixed(2));
-                        const pctMargen = (Number(data.precioCompra) > 0) ? Math.round((margen / Number(data.precioCompra)) * 100) + '%' : '0%';
-                        setText('modalPorcentajeMargen', pctMargen);
-                        const valorTotal = (Number(data.stockActual) * Number(data.precioCompra)) || 0;
-                        setText('modalValorTotal', '$ ' + Number(valorTotal).toFixed(2));
-                        setText('modalUmbralAlerta', (data.umbralAlerta || 0) + '%');
-                        setText('modalUmbralCritico', (data.umbralCritico || 0) + '%');
-            
-                        // Ocupación
-                        const porcentaje = (Number(data.capacidadMaxima) > 0)
-                            ? Math.round((Number(data.stockActual) / Number(data.capacidadMaxima)) * 100)
-                            : 0;
-                        setText('modalOcupacionPorcentaje', porcentaje + '%');
-                        const barra = document.getElementById('modalOcupacionBar');
-                        const textoBar = document.getElementById('modalOcupacionText');
-                        if (barra && textoBar) {
-                            const estado = aplicarColorBarra(barra, porcentaje, data.umbralAlerta, data.umbralCritico);
-                            textoBar.textContent = porcentaje + '%';
-                            const estadoTextEl = document.getElementById('modalEstadoText');
-                            const estadoIconEl = document.getElementById('modalEstadoIcon');
-                            if (estadoTextEl) estadoTextEl.textContent = estado;
-                            if (estadoIconEl) {
-                                estadoIconEl.className = 'bi bi-circle-fill me-1';
-                                if (estado === 'Crítico') estadoIconEl.classList.add('text-danger');
-                                else if (estado === 'Alerta') estadoIconEl.classList.add('text-warning');
-                                else estadoIconEl.classList.add('text-success');
-                            }
-                        }
-            
-                        // Guardar id en botones del modal
-                        const btnEditar = document.getElementById('btnEditarMaterial');
-                        const btnBorrar = document.getElementById('btnBorrarMaterial');
-                        if (btnEditar) {
-                            btnEditar.dataset.inventarioId = inventarioId;
-                            btnEditar.dataset.materialId = inventarioId;
-                            btnEditar.dataset.stock = data.stockActual;
-                            btnEditar.dataset.capacidad = data.capacidadMaxima;
-                            btnEditar.dataset.unidad = data.unidadMedida;
-                            btnEditar.dataset.precioCompra = data.precioCompra;
-                            btnEditar.dataset.precioVenta = data.precioVenta;
-                            btnEditar.dataset.umbralAlerta = data.umbralAlerta;
-                            btnEditar.dataset.umbralCritico = data.umbralCritico;
-                        }
-                        if (btnBorrar) {
-                            btnBorrar.dataset.inventarioId = inventarioId;
-                            btnBorrar.dataset.nombreMaterial = data.nmbMaterial || '-';
-                            btnBorrar.dataset.puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId || '';
-                        }
-            
-                        // Mostrar modal detalles
+                        rellenarModalDetalles(data, inventarioId);
                         if (detallesModalInstance) {
                             console.log('✓ Abriendo modal de detalles (datos actualizados)');
                             detallesModalInstance.show();
@@ -1612,22 +1441,18 @@ window.getCSRFToken = function() {
                     })
                     .catch(err => {
                         console.error('Error trayendo datos reales del inventario:', err);
-                        alert('Error al traer datos del material');
+                        if (globalThis.Swal?.fire) {
+                            globalThis.Swal.fire({
+                                icon: 'error',
+                                title: 'Error al cargar',
+                                text: 'No fue posible obtener los datos del material. Intenta nuevamente.',
+                                confirmButtonColor: '#198754',
+                                confirmButtonText: 'Entendido',
+                            });
+                        }
                     });
-            
-                function setText(id, text) {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.textContent = text;
-                    }
-                }
             }
-            
 
-            function ponerEstadoOcupacion(stock, capacidad) {
-                const pct = (capacidad && capacidad > 0) ? Math.round((stock / capacidad) * 100) : 0;
-                return Math.min(Math.max(pct, 0), 100);
-            }
 
             function aplicarColorBarra(barEl, porcentaje, umbralAlerta, umbralCritico) {
                 barEl.style.width = porcentaje + '%';
@@ -1700,135 +1525,10 @@ window.getCSRFToken = function() {
                 }
             }
 
-            // Configurar botón de guardar cambios
-            function configurarBtnGuardar() {
-                const btnGuardarModal = document.getElementById('btnGuardarCambios');
-                if (btnGuardarModal) {
-                    btnGuardarModal.removeEventListener('click', manejarClickGuardar);
-                    btnGuardarModal.addEventListener('click', manejarClickGuardar);
-                }
-            }
-
-            function manejarClickGuardar(e) {
-                e.preventDefault();
-                guardarCambios(this);
-            }
-
-            function guardarCambios(btnGuardar) {
-                if (!btnGuardar) {
-                    btnGuardar = document.getElementById('btnGuardarCambios');
-                }
-            
-                const inventarioId = document.getElementById('editarMaterialId').value;
-                const stockActual = parseFloat(document.getElementById('editarStockActual').value) || 0;
-                const capacidadMaxima = parseFloat(document.getElementById('editarCapacidadMaxima').value) || 0;
-                const unidadMedida = document.getElementById('editarUnidadMedida').value;
-                const precioCompra = parseFloat(document.getElementById('editarPrecioCompra').value) || 0;
-                const precioVenta = parseFloat(document.getElementById('editarPrecioVenta').value) || 0;
-                const umbralAlerta = parseInt(document.getElementById('editarUmbralAlerta').value) || 0;
-                const umbralCritico = parseInt(document.getElementById('editarUmbralCritico').value) || 0;
-            
-                // ✅ Obtener datos del usuario correctamente
-                const section = document.querySelector('section[data-gestor]') || document.querySelector('section[data-punto-eca-id]');
-                let gestor = section?.getAttribute('data-gestor') || '';
-                let usuarioId = section?.getAttribute('data-usuario-id') || '';
-            
-                console.log('💾 Guardando cambios de inventario:', { inventarioId, stockActual, capacidadMaxima, unidadMedida, precioCompra, precioVenta, umbralAlerta, umbralCritico });
-                console.log('📍 Datos de usuario:', { gestor, usuarioId });
-            
-                if (!inventarioId) {
-                    mostrarModalResultado(false, 'Error', 'No se encontró el ID del inventario');
-                    return;
-                }
-            
-                if (!gestor || !usuarioId) {
-                    console.error('❌ Datos de usuario no encontrados. Verificar atributos data-*');
-                    mostrarModalResultado(false, 'Error', 'No se encontraron los datos de usuario. Por favor recarga la página.');
-                    return;
-                }
-            
-                if (!stockActual || !capacidadMaxima || !unidadMedida || !precioCompra || !precioVenta) {
-                    mostrarModalResultado(false, 'Error', 'Por favor completa todos los campos requeridos');
-                    return;
-                }
-            
-                const datosActualizacion = {
-                    stockActual: stockActual,
-                    capacidadMaxima: capacidadMaxima,
-                    unidadMedida: unidadMedida,
-                    precioCompra: precioCompra,
-                    precioVenta: precioVenta,
-                    umbralAlerta: umbralAlerta,
-                    umbralCritico: umbralCritico
-                };
-            
-                // ✅ Usar la referencia al botón
-                const textoOriginal = btnGuardar?.innerHTML || 'Guardar Cambios';
-                if (btnGuardar) {
-                    btnGuardar.disabled = true;
-                    btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando...';
-                }
-            
-                const url = `inventario/actualizar/${inventarioId}`;
-                // Obtener el CSRF token del form (input hidden) o de la cookie como respaldo
-                function getCSRFTokenFromFormOrCookie() {
-                    var tokenForm = document.querySelector('#formularioEditarInventario [name=csrfmiddlewaretoken]');
-                    if (tokenForm && tokenForm.value) return tokenForm.value;
-                    return getCSRFToken();
-                }
-                const csrfToken = getCSRFTokenFromFormOrCookie();
-                console.log('🔗 URL de actualización:', url);
-            
-                fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify(datosActualizacion)
-                })
-                    .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
-                    .then(({ status, ok, data }) => {
-                        console.log('📦 Respuesta del servidor:', { status, ok, data });
-            
-                        // Cerrar modales previos
-                        if (editarModalInstance) editarModalInstance.hide();
-            
-                        if (!ok) {
-                            // Mostrar error
-                            const mensajeError = data?.mensaje || data?.message || 'Hubo un error al guardar los cambios';
-                            console.error('❌ Error en respuesta:', mensajeError);
-                            mostrarModalResultado(false, 'Error al guardar', mensajeError);
-                            if (btnGuardar) {
-                                btnGuardar.disabled = false;
-                                btnGuardar.innerHTML = textoOriginal;
-                            }
-                        } else {
-                            console.log('✅ Actualización exitosa:', data);
-                            // Mostrar éxito
-                            mostrarModalResultado(true, '¡Operación Exitosa!', 'Los cambios se han guardado correctamente en la base de datos.');
-                            if (btnGuardar) {
-                                btnGuardar.disabled = false;
-                                btnGuardar.innerHTML = textoOriginal;
-                            }
-                        }
-                    })
-                    .catch(err => {
-                        console.error('❌ Error en fetch:', err);
-                        if (editarModalInstance) editarModalInstance.hide();
-                        mostrarModalResultado(false, 'Error', 'Error al guardar cambios: ' + err.message);
-                        if (btnGuardar) {
-                            btnGuardar.disabled = false;
-                            btnGuardar.innerHTML = textoOriginal;
-                        }
-                    });
-            }
-
             // Función para mostrar el modal de resultado
             // YA DEFINIDA GLOBALMENTE ARRIBA
 
-            // Borrar: confirmación simple
+            // Borrar: confirmación con SweetAlert2
             function configurarBtnBorrar() {
                 const btnBorrarModal = document.getElementById('btnBorrarMaterial');
                 if (btnBorrarModal) {
@@ -1837,78 +1537,102 @@ window.getCSRFToken = function() {
                 }
             }
 
-            function manejarClickBorrar(e) {
+            async function manejarClickBorrar(e) {
                 e.preventDefault();
-                confirmarBorrado(this);
-            }
-
-            function confirmarBorrado(btnBorrar) {
+                const btnBorrar = e.currentTarget;
                 if (!btnBorrar) {
-                    btnBorrar = document.getElementById('btnBorrarMaterial');
+                    return;
                 }
 
-                const csrfToken = getCSRFToken(); // CSRF token global
-            
-                const inventarioId = btnBorrar?.dataset.inventarioid || btnBorrar?.dataset.inventarioId || '';
-                const nombreMaterial = btnBorrar?.dataset.nombreMaterial || 'el material';
-                const puntoEcaId = btnBorrar?.dataset.puntoEcaId || '';
+                const inventarioId = btnBorrar.dataset.inventarioid || btnBorrar.dataset.inventarioId || '';
+                const nombreMaterial = btnBorrar.dataset.nombreMaterial || 'el material';
+                const puntoEcaId = btnBorrar.dataset.puntoEcaId || '';
 
-                // ✅ Obtener datos del usuario correctamente
                 const section = document.querySelector('section[data-gestor]');
-                let gestor = section?.getAttribute('data-gestor') || '';
-                let usuarioId = section?.getAttribute('data-usuario-id') || '';
+                const gestor = section?.dataset.gestor || '';
+                const usuarioId = section?.dataset.usuarioId || '';
 
                 console.log('🗑️ Preparando eliminación:', { inventarioId, nombreMaterial, gestor, usuarioId, puntoEcaId });
 
                 if (!gestor || !usuarioId || !puntoEcaId) {
                     console.error('❌ Datos no encontrados', { gestor, usuarioId, puntoEcaId });
-                    alert('Error: No se encontraron los datos necesarios. Por favor recarga la página.');
+                    if (globalThis.Swal?.fire) {
+                        await globalThis.Swal.fire({
+                            icon: 'error',
+                            title: 'Datos no encontrados',
+                            text: 'No se encontraron los datos necesarios. Por favor recarga la página.',
+                            confirmButtonColor: '#198754',
+                            confirmButtonText: 'Entendido',
+                        });
+                    }
                     return;
                 }
 
-                if (!inventarioId) {
-                    if (!confirm('¿Deseas borrar este material del inventario?')) return;
-                } else {
-                    if (!confirm('¿Confirma eliminar "' + nombreMaterial + '" del inventario?')) return;
+                if (!globalThis.Swal?.fire) {
+                    console.error('❌ SweetAlert2 no disponible');
+                    return;
                 }
 
+                const confirmacion = await globalThis.Swal.fire({
+                    icon: 'warning',
+                    title: '¿Confirmar eliminación?',
+                    text: inventarioId
+                        ? `Vas a eliminar "${nombreMaterial}" del inventario. Esta acción no se puede deshacer.`
+                        : '¿Deseas borrar este material del inventario? Esta acción no se puede deshacer.',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true,
+                });
+
+                if (!confirmacion.isConfirmed) {
+                    return;
+                }
+
+                await confirmarBorrado(btnBorrar);
+            }
+
+            async function confirmarBorrado(btnBorrar) {
+                if (!btnBorrar) {
+                    btnBorrar = document.getElementById('btnBorrarMaterial');
+                }
+
+                const csrfToken = getCSRFToken();
+                const inventarioId = btnBorrar?.dataset.inventarioid || btnBorrar?.dataset.inventarioId || '';
+                const puntoEcaId = btnBorrar?.dataset.puntoEcaId || '';
+
                 const url = `inventario/eliminar/${inventarioId}/`;
-                console.log('🗑️ RL de eliminación:', url);
+                const payload = { puntoId: puntoEcaId };
+                console.log('🗑️ URL de eliminación:', url, '📤 Body:', payload);
 
-                const payload = {
-                    puntoId: puntoEcaId
-                };
-                console.log('📤 Body a enviar:', payload);
-
-                fetch(url, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify(payload)
-                })
-                    .then(res => {
-                        console.log('📦 Respuesta del DELETE:', { status: res.status, ok: res.ok });
-                        if (res.ok) {
-                            return res.json();
-                        } else {
-                            return res.json().then(j => { throw new Error(j?.mensaje || j?.message || 'Error al borrar'); });
-                        }
-                    })
-                    .then(data => {
-                        console.log('✅ Eliminación exitosa:', data);
-                        mostrarModalResultado(true, '¡Eliminado!', 'El material ha sido eliminado del inventario correctamente.');
-                        if (detallesModalInstance) detallesModalInstance.hide();
-                        // Recargar después de cerrar modal
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    })
-                    .catch(err => {
-                        console.error('❌ Error borrando:', err);
-                        mostrarModalResultado(false, 'Error al eliminar', 'No fue posible borrar: ' + (err.message || err));
+                try {
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify(payload)
                     });
+
+                    console.log('📦 Respuesta del DELETE:', { status: res.status, ok: res.ok });
+
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => null);
+                        throw new Error(errData?.mensaje || errData?.message || 'Error al borrar');
+                    }
+
+                    await res.json();
+                    console.log('✅ Eliminación exitosa');
+                    await mostrarModalResultado(true, '¡Eliminado!', 'El material ha sido eliminado del inventario correctamente.');
+                    if (detallesModalInstance) detallesModalInstance.hide();
+                    globalThis.setTimeout(() => globalThis.location.reload(), 1500);
+                } catch (err) {
+                    console.error('❌ Error borrando:', err);
+                    await mostrarModalResultado(false, 'Error al eliminar', 'No fue posible borrar: ' + (err.message || err));
+                }
             }
 
             function inicializar() {
@@ -1917,7 +1641,6 @@ window.getCSRFToken = function() {
                 inicializarModales();
                 configurarEventListeners();
                 configurarBtnEditar();
-                configurarBtnGuardar();
                 configurarBtnBorrar();
                 isInitialized = true;
             }
@@ -1930,7 +1653,7 @@ window.getCSRFToken = function() {
             }
 
             // Re-inicializar si el contenedor cambia (para actualizaciones dinámicas)
-            window.addEventListener('reinicializarModales', inicializar);
+            globalThis.addEventListener('reinicializarModales', inicializar);
 
             console.log('✓ Script de modales cargado');
         })();
@@ -1938,12 +1661,20 @@ window.getCSRFToken = function() {
         <!-- ============================================================ -->
         <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS) -->
         <!-- ============================================================ -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+                integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+                crossorigin="anonymous"></script>
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-              rel="stylesheet" />
+              rel="stylesheet"
+              integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ"
+              crossorigin="anonymous" />
         <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
-              rel="stylesheet" />
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+              rel="stylesheet"
+              integrity="sha384-dZ/kdA+7jiSms5Z+NkfRPANv1sHvWqS7e51A6ywK9wsJztsDG2q4gA4Ltui+/1yW"
+              crossorigin="anonymous" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
+                integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3"
+                crossorigin="anonymous"></script>
         <!-- ============================================================ -->
         <!-- SELECT2 INICIALIZACIÓN CON FORMATSTATE PERSONALIZADO -->
         <!-- ============================================================ -->
@@ -1957,9 +1688,9 @@ window.getCSRFToken = function() {
         // ========================================================
         function formatState(state) {
             if (!state.id) return state.text;
-            var imagenUrl = state.element?.getAttribute('data-imagen') || '/imagenes/materiales.png';
-            var nmbTipo = state.element?.getAttribute('data-tipo') || '';
-            var nmbCategoria = state.element?.getAttribute('data-categoria') || '';
+            var imagenUrl = state.element?.dataset.imagen || '/imagenes/materiales.png';
+            var nmbTipo = state.element?.dataset.tipo || '';
+            var nmbCategoria = state.element?.dataset.categoria || '';
             var $state = $(
                 '<span class="select2-state">' +
                 '<img class="img-material-select2" alt="material" style="width: 24px; height: 24px; margin-right: 8px; border-radius: 4px; object-fit: cover;" /> ' +
@@ -2052,9 +1783,9 @@ window.getCSRFToken = function() {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
                 const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, 10) === 'csrftoken=') {
+                for (const rawCookie of cookies) {
+                    const cookie = rawCookie.trim();
+                    if (cookie.startsWith('csrftoken=')) {
                         cookieValue = decodeURIComponent(cookie.substring(10));
                         break;
                     }
@@ -2063,86 +1794,77 @@ window.getCSRFToken = function() {
             return cookieValue;
         }
 
-        function cargarCategoriasYTiposDesdeMateriales() {
-            return new Promise((resolve) => {
-                const puntoId = document.getElementById('agregarPuntoId')?.value || '';
-                if (!puntoId) {
-                    console.warn('⚠️ No hay puntoId; se omite carga de categorías/tipos desde materiales');
-                    return resolve();
+        function poblarSelectConValores(sel, valores, placeholderHtml) {
+            if (!sel) return;
+            sel.innerHTML = placeholderHtml;
+            for (const valor of valores.sort()) {
+                const opt = document.createElement('option');
+                opt.value = valor;
+                opt.text = valor;
+                sel.appendChild(opt);
+            }
+        }
+
+        function destruirSelect2SiExiste(sel) {
+            if (sel && $(sel).data('select2')) {
+                $(sel).select2('destroy');
+            }
+        }
+
+        function inicializarSelect2(sel, placeholder, logLabel) {
+            if (!sel) return;
+            if ($ === undefined || $.fn.select2 === undefined) {
+                sel.insertAdjacentHTML('afterend', '<div style="color:red;font-weight:bold;">[Select2 NO CARGADO] Revisá los assets de JS y CSS</div>');
+                console.error('[Select2] jQuery o Select2 NO están presentes!');
+                return;
+            }
+            $(sel).select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder });
+            console.log(`[Select2] ${logLabel} inicializado.`);
+        }
+
+        function extraerCategoriasYTipos(data) {
+            const categorias = new Set();
+            const tipos = new Set();
+            for (const m of data) {
+                if (m.nmbCategoria) categorias.add(m.nmbCategoria);
+                if (m.nmbTipo) tipos.add(m.nmbTipo);
+            }
+            return { categorias, tipos };
+        }
+
+        async function cargarCategoriasYTiposDesdeMateriales() {
+            const puntoId = document.getElementById('agregarPuntoId')?.value || '';
+            if (!puntoId) {
+                console.warn('⚠️ No hay puntoId; se omite carga de categorías/tipos desde materiales');
+                return;
+            }
+
+            try {
+                const res = await fetch('/punto-eca/materiales/catalogo/buscar?puntoId=' + encodeURIComponent(puntoId), {
+                    headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
+                });
+                const data = await res.json();
+                if (!res.ok || !Array.isArray(data)) {
+                    console.warn('⚠️ No se obtuvieron materiales o respuesta inválida');
+                    return;
                 }
 
-                fetch('/punto-eca/materiales/catalogo/buscar?puntoId=' + encodeURIComponent(puntoId), {
-                    headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
-                })
-                    .then(res => res.json().then(data => ({ ok: res.ok, data })))
-                    .then(({ ok, data }) => {
-                        if (!ok || !Array.isArray(data)) {
-                            console.warn('⚠️ No se obtuvieron materiales o respuesta inválida');
-                            return resolve();
-                        }
+                const { categorias, tipos } = extraerCategoriasYTipos(data);
+                const selCat = document.getElementById('selectCategoriaBusqueda');
+                const selTipo = document.getElementById('selectTipoBusqueda');
 
-                        const categorias = new Set();
-                        const tipos = new Set();
+                destruirSelect2SiExiste(selCat);
+                destruirSelect2SiExiste(selTipo);
+                poblarSelectConValores(selCat, categorias, '<option value=""></option>');
+                poblarSelectConValores(selTipo, tipos, '<option value=""></option>');
+                inicializarSelect2(selCat, 'Selecciona una categoría...', 'Render/inicializado para categoría.');
+                inicializarSelect2(selTipo, 'Selecciona un tipo...', 'Render/inicializado para tipo.');
 
-                        data.forEach(m => {
-                            // Debug para ver qué trae m.nmbCategoria y m.nmbTipo
-                            console.log("[DEBUG] m.nmbCategoria:", m.nmbCategoria, "m.nmbTipo:", m.nmbTipo);
-                            if (m.nmbCategoria) categorias.add(m.nmbCategoria);
-                            if (m.nmbTipo) tipos.add(m.nmbTipo);
-                        });
-
-                        const selCat = document.getElementById('selectCategoriaBusqueda');
-                        const selTipo = document.getElementById('selectTipoBusqueda');
-
-                        if (selCat) {
-                            // Destroy Select2 instance BEFORE changing options
-                            if ($(selCat).data('select2')) {
-                                $(selCat).select2('destroy');
-                                console.log('[Select2] Instancia de categoría destruida antes de update');
-                            }
-                            selCat.innerHTML = '<option value=""></option>';
-                            Array.from(categorias).sort().forEach(c => {
-                                const opt = document.createElement('option');
-                                opt.value = c;
-                                opt.text = c;
-                                selCat.appendChild(opt);
-                            });
-                            if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
-                                selCat.insertAdjacentHTML('afterend', '<div style="color:red;font-weight:bold;">[Select2 NO CARGADO] Revisá los assets de JS y CSS</div>');
-                                console.error('[Select2] jQuery o Select2 NO están presentes!');
-                            } else {
-                                $(selCat).select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Selecciona una categoría...' });
-                                console.log('[Select2] Render/inicializado para categoría. Opciones:', Array.from(categorias));
-                                // selCat.insertAdjacentHTML('afterend', '<div style="color:green;font-weight:bold;">[Select2 inicializado OK]</div>');
-                            }
-                        }
-                        
-                        if (selTipo) {
-                            // Destroy Select2 instance BEFORE changing options
-                            if ($(selTipo).data('select2')) {
-                                $(selTipo).select2('destroy');
-                                console.log('[Select2] Instancia de tipo destruida antes de update');
-                            }
-                            selTipo.innerHTML = '<option value=""></option>';
-                            Array.from(tipos).sort().forEach(t => {
-                                const opt = document.createElement('option');
-                                opt.value = t;
-                                opt.text = t;
-                                selTipo.appendChild(opt);
-                            });
-                            $(selTipo).select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Selecciona un tipo...' });
-                            console.log('[Select2] Render/inicializado para tipo. Opciones:', Array.from(tipos));
-                        }
-                        
-                        console.log('✓ Categorías cargadas:', Array.from(categorias));
-                        console.log('✓ Tipos cargados:', Array.from(tipos));
-                        resolve();
-                    })
-                    .catch(err => {
-                        console.error('❌ Error cargando materiales:', err);
-                        resolve();
-                    });
-            });
+                console.log('✓ Categorías cargadas:', Array.from(categorias));
+                console.log('✓ Tipos cargados:', Array.from(tipos));
+            } catch (err) {
+                console.error('❌ Error cargando materiales:', err);
+            }
         }
 
         // ========================================================
@@ -2195,72 +1917,40 @@ window.getCSRFToken = function() {
             $busquedaMaterialInventario.on('select2:select', function(e) {
                 var data = e.params.data;
                 $busquedaMaterialInventario.val(null).trigger('change');
-                if (typeof window.filtrarTarjetasPorNombre === 'function') window.filtrarTarjetasPorNombre(data.text);
+                if (typeof globalThis.filtrarTarjetasPorNombre === 'function') globalThis.filtrarTarjetasPorNombre(data.text);
             });
         }
 
         // ========================================================
         // CARGAR CATEGORÍAS Y TIPOS ÚNICOS PARA FILTROS DE INVENTARIO
         // ========================================================
-        function cargarCategoriasYTiposInventario() {
-            return new Promise((resolve) => {
-                const puntoId = document.getElementById('agregarPuntoId')?.value || '';
-                if (!puntoId) {
-                    console.warn('⚠️ No hay puntoId para filtros de inventario');
-                    return resolve();
-                }
+        async function cargarCategoriasYTiposInventario() {
+            const puntoId = document.getElementById('agregarPuntoId')?.value || '';
+            if (!puntoId) {
+                console.warn('⚠️ No hay puntoId para filtros de inventario');
+                return;
+            }
 
-                fetch('/punto-eca/materiales/inventario?puntoId=' + encodeURIComponent(puntoId), {
+            try {
+                const res = await fetch('/punto-eca/materiales/inventario?puntoId=' + encodeURIComponent(puntoId), {
                     method: 'GET',
                     headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
-                })
-                    .then(res => res.json().then(data => ({ ok: res.ok, data })))
-                    .then(({ ok, data }) => {
-                        if (!ok || !Array.isArray(data)) {
-                            console.warn('⚠️ No se obtuvieron materiales para filtros de inventario');
-                            return resolve();
-                        }
+                });
+                const data = await res.json();
+                if (!res.ok || !Array.isArray(data)) {
+                    console.warn('⚠️ No se obtuvieron materiales para filtros de inventario');
+                    return;
+                }
 
-                        const categorias = new Set();
-                        const tipos = new Set();
+                const { categorias, tipos } = extraerCategoriasYTipos(data);
+                poblarSelectConValores(document.getElementById('filtroCategoriaSelectInventario'), categorias, '<option value="">-- Todas las categorías --</option>');
+                poblarSelectConValores(document.getElementById('filtroTipoSelectInventario'), tipos, '<option value="">-- Todos los tipos --</option>');
 
-                        data.forEach(m => {
-                            if (m.nmbCategoria) categorias.add(m.nmbCategoria);
-                            if (m.nmbTipo) tipos.add(m.nmbTipo);
-                        });
-
-                        const selCatInv = document.getElementById('filtroCategoriaSelectInventario');
-                        const selTipoInv = document.getElementById('filtroTipoSelectInventario');
-
-                        if (selCatInv) {
-                            selCatInv.innerHTML = '<option value="">-- Todas las categorías --</option>';
-                            Array.from(categorias).sort().forEach(c => {
-                                const opt = document.createElement('option');
-                                opt.value = c;
-                                opt.text = c;
-                                selCatInv.appendChild(opt);
-                            });
-                        }
-
-                        if (selTipoInv) {
-                            selTipoInv.innerHTML = '<option value="">-- Todos los tipos --</option>';
-                            Array.from(tipos).sort().forEach(t => {
-                                const opt = document.createElement('option');
-                                opt.value = t;
-                                opt.text = t;
-                                selTipoInv.appendChild(opt);
-                            });
-                        }
-
-                        console.log('✓ Categorías para inventario cargadas:', Array.from(categorias));
-                        console.log('✓ Tipos para inventario cargados:', Array.from(tipos));
-                        resolve();
-                    })
-                    .catch(err => {
-                        console.error('❌ Error cargando materiales para inventario:', err);
-                        resolve();
-                    });
-            });
+                console.log('✓ Categorías para inventario cargadas:', Array.from(categorias));
+                console.log('✓ Tipos para inventario cargados:', Array.from(tipos));
+            } catch (err) {
+                console.error('❌ Error cargando materiales para inventario:', err);
+            }
         }
 
         // ========================================================
@@ -2314,7 +2004,15 @@ window.getCSRFToken = function() {
                         if (ocupacion) params.append('ocupacion', ocupacion);
                         if (puntoId) params.append('puntoId', puntoId);
                         else {
-                            alert('Error: faltó el puntoId');
+                            if (globalThis.Swal?.fire) {
+                                globalThis.Swal.fire({
+                                    icon: 'error',
+                                    title: 'Falta el punto ECA',
+                                    text: 'No se pudo identificar el punto ECA. Recarga la página e intenta nuevamente.',
+                                    confirmButtonColor: '#198754',
+                                    confirmButtonText: 'Entendido',
+                                });
+                            }
                             return;
                         }
                 var url = '/punto-eca/materiales/inventario/' + (params.toString() ? ('?' + params.toString()) : '');
@@ -2371,10 +2069,10 @@ window.getCSRFToken = function() {
                                         }
                                         var card = document.createElement('div');
                                         card.className = 'col-12 col-md-6 col-lg-4 tarjeta-material';
-                                        card.setAttribute('data-categoria', categoria);
-                                        card.setAttribute('data-tipo-material', tipo);
-                                        card.setAttribute('data-inventario-id', inv.id || '');
-                                        card.setAttribute('data-nombre-material', nombre);
+                                        card.dataset.categoria = categoria;
+                                        card.dataset.tipoMaterial = tipo;
+                                        card.dataset.inventarioId = inv.id || '';
+                                        card.dataset.nombreMaterial = nombre;
                                         card.innerHTML = `
                                             <div class="card h-100 shadow-sm border-0 transition-hover position-relative">
                                                 <div class="position-absolute top-0 start-0 m-2">
@@ -2491,7 +2189,7 @@ window.getCSRFToken = function() {
         // ============================================================
         // FUNCIÓN GLOBAL: Filtrar tarjetas por nombre
         // ============================================================
-        window.filtrarTarjetasPorNombre = function(nombreMaterial) {
+        globalThis.filtrarTarjetasPorNombre = function(nombreMaterial) {
             console.log('✓ Material seleccionado en búsqueda independiente:', {
                 id: nombreMaterial,
                 text: nombreMaterial,
@@ -2506,7 +2204,7 @@ window.getCSRFToken = function() {
 
             tarjetas.forEach(tarjeta => {
                 materialesProcessed++;
-                const nombreTarjeta = tarjeta.getAttribute('data-nombre-material') || '';
+                const nombreTarjeta = tarjeta.dataset.nombreMaterial || '';
 
                 if (nombreTarjeta.toLowerCase().includes(nombreMaterial.toLowerCase())) {
                     tarjeta.style.display = '';
@@ -2528,13 +2226,12 @@ window.getCSRFToken = function() {
                     mensaje.innerHTML = '<i class="bi bi-search me-2"></i>No se encontraron materiales que coincidan con "' + nombreMaterial + '"';
                     document.getElementById('contenedorMateriales')?.parentNode.insertBefore(mensaje, document.getElementById('contenedorMateriales'));
                 }
-            } else {
-                if (mensaje) {
-                    mensaje.remove();
-                }
+            } else if (mensaje) {
+                mensaje.remove();
             }
         };
     })();
         </script>
     <script type="module" src="{% static 'js/formularios/ecas-form-agregar-inventario.js' %}"></script>
+    <script type="module" src="{% static 'js/formularios/ecas-form-editar-inventario.js' %}"></script>
     </section>

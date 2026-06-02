@@ -1,19 +1,18 @@
-const EcAsFormAgregarInventario = (() => {
-    const FORM_ID = 'formAgregarInventario';
-    const MODAL_ID = 'agregarInventarioModal';
-    const SUBMIT_ENDPOINT = '/punto-eca/materiales/inventario/agregar/';
-    const SUCCESS_RELOAD_DELAY_MS = 1200;
+const EcAsFormEditarInventario = (() => {
+    const FORM_ID = 'formularioEditarInventario';
+    const MODAL_ID = 'editarModal';
+    const SUBMIT_ENDPOINT_PREFIX = 'inventario/actualizar/';
     const SWAL_CONFIRM_COLOR = '#198754';
-    const CROSS_FIELD_MESSAGE = 'El stock inicial no puede superar la capacidad máxima.';
+    const CROSS_FIELD_MESSAGE = 'El stock actual no puede superar la capacidad máxima.';
 
     const FIELD_MESSAGES = {
-        stockInicial: 'Ingresa el stock inicial (mayor o igual a 0).',
-        capacidadMaxima: 'Ingresa la capacidad máxima (mayor o igual a 0).',
-        unidadMedida: 'Selecciona una unidad de medida.',
-        precioCompra: 'Ingresa el precio de compra (mayor o igual a 0).',
-        precioVenta: 'Ingresa el precio de venta (mayor o igual a 0).',
-        umbralAlerta: 'Ingresa el umbral de alerta (entre 0 y 100).',
-        umbralCritico: 'Ingresa el umbral crítico (entre 0 y 100).',
+        editarStockActual: 'Ingresa el stock actual (mayor o igual a 0).',
+        editarCapacidadMaxima: 'Ingresa la capacidad máxima (mayor o igual a 0).',
+        editarUnidadMedida: 'Selecciona una unidad de medida.',
+        editarPrecioCompra: 'Ingresa el precio de compra (mayor o igual a 0).',
+        editarPrecioVenta: 'Ingresa el precio de venta (mayor o igual a 0).',
+        editarUmbralAlerta: 'Ingresa el umbral de alerta (entre 0 y 100).',
+        editarUmbralCritico: 'Ingresa el umbral crítico (entre 0 y 100).',
     };
 
     const FIELD_IDS = Object.keys(FIELD_MESSAGES);
@@ -37,6 +36,14 @@ const EcAsFormAgregarInventario = (() => {
     function getCsrfToken(form) {
         const tokenInput = form.querySelector('[name=csrfmiddlewaretoken]');
         return tokenInput instanceof HTMLInputElement ? tokenInput.value : '';
+    }
+
+    function hideEditModal() {
+        const modalEl = document.getElementById(MODAL_ID);
+        const modalInstance = modalEl ? globalThis.bootstrap?.Modal?.getInstance(modalEl) : null;
+        if (modalInstance) {
+            modalInstance.hide();
+        }
     }
 
     function attachInvalidCapture(form) {
@@ -80,8 +87,8 @@ const EcAsFormAgregarInventario = (() => {
     }
 
     function validateCrossField(form) {
-        const stockInput = form.querySelector('#stockInicial');
-        const capacityInput = form.querySelector('#capacidadMaxima');
+        const stockInput = form.querySelector('#editarStockActual');
+        const capacityInput = form.querySelector('#editarCapacidadMaxima');
         if (!(stockInput instanceof HTMLInputElement) || !(capacityInput instanceof HTMLInputElement)) {
             return true;
         }
@@ -96,8 +103,8 @@ const EcAsFormAgregarInventario = (() => {
     }
 
     function attachCrossFieldLiveValidation(form) {
-        const stockInput = form.querySelector('#stockInicial');
-        const capacityInput = form.querySelector('#capacidadMaxima');
+        const stockInput = form.querySelector('#editarStockActual');
+        const capacityInput = form.querySelector('#editarCapacidadMaxima');
         [stockInput, capacityInput].forEach((input) => {
             if (input instanceof HTMLInputElement) {
                 input.addEventListener('input', () => {
@@ -135,23 +142,32 @@ const EcAsFormAgregarInventario = (() => {
     }
 
     function buildPayload(form) {
-        const puntoInput = form.querySelector('#agregarPuntoId');
-        const materialInput = form.querySelector('#agregarMaterialId');
         return {
-            materialId: materialInput instanceof HTMLInputElement ? materialInput.value : '',
-            puntoEcaId: puntoInput instanceof HTMLInputElement ? puntoInput.value : '',
-            stockActual: Number.parseFloat(form.querySelector('#stockInicial')?.value) || 0,
-            capacidadMaxima: Number.parseFloat(form.querySelector('#capacidadMaxima')?.value) || 0,
-            unidadMedida: form.querySelector('#unidadMedida')?.value || '',
-            precioCompra: Number.parseFloat(form.querySelector('#precioCompra')?.value) || 0,
-            precioVenta: Number.parseFloat(form.querySelector('#precioVenta')?.value) || 0,
-            umbralAlerta: Number.parseInt(form.querySelector('#umbralAlerta')?.value, 10) || 0,
-            umbralCritico: Number.parseInt(form.querySelector('#umbralCritico')?.value, 10) || 0,
+            stockActual: Number.parseFloat(form.querySelector('#editarStockActual')?.value) || 0,
+            capacidadMaxima: Number.parseFloat(form.querySelector('#editarCapacidadMaxima')?.value) || 0,
+            unidadMedida: form.querySelector('#editarUnidadMedida')?.value || '',
+            precioCompra: Number.parseFloat(form.querySelector('#editarPrecioCompra')?.value) || 0,
+            precioVenta: Number.parseFloat(form.querySelector('#editarPrecioVenta')?.value) || 0,
+            umbralAlerta: Number.parseInt(form.querySelector('#editarUmbralAlerta')?.value, 10) || 0,
+            umbralCritico: Number.parseInt(form.querySelector('#editarUmbralCritico')?.value, 10) || 0,
+        };
+    }
+
+    function getInventarioId(form) {
+        const idInput = form.querySelector('#editarMaterialId');
+        return idInput instanceof HTMLInputElement ? idInput.value : '';
+    }
+
+    function getSectionContext() {
+        const section = document.querySelector('section[data-gestor]') || document.querySelector('section[data-punto-eca-id]');
+        return {
+            gestor: section?.dataset.gestor || '',
+            usuarioId: section?.dataset.usuarioId || '',
         };
     }
 
     function setSubmittingState(form, isSubmitting) {
-        const submitBtn = form.querySelector('#btnGuardarInventario');
+        const submitBtn = form.querySelector('#btnGuardarCambios');
         if (!(submitBtn instanceof HTMLButtonElement)) {
             return null;
         }
@@ -171,14 +187,35 @@ const EcAsFormAgregarInventario = (() => {
         return submitBtn;
     }
 
-    async function submitInventario(form) {
+    function notifyResult(esExito, titulo, mensaje) {
+        return showSwal(esExito ? 'success' : 'error', titulo, mensaje);
+    }
+
+    async function submitEdicion(form) {
         const csrf = getCsrfToken(form);
+        const inventarioId = getInventarioId(form);
+        const { gestor, usuarioId } = getSectionContext();
+
+        if (!inventarioId) {
+            notifyResult(false, 'Error', 'No se encontró el ID del inventario.');
+            return;
+        }
+
+        if (!gestor || !usuarioId) {
+            if (globalThis.console?.error) {
+                globalThis.console.error('[EDITAR-INVENTARIO] Datos de usuario no encontrados.');
+            }
+            notifyResult(false, 'Error', 'No se encontraron los datos de usuario. Por favor recarga la página.');
+            return;
+        }
+
         setSubmittingState(form, true);
         const payload = buildPayload(form);
+        const url = `${SUBMIT_ENDPOINT_PREFIX}${inventarioId}`;
 
         try {
-            const response = await globalThis.fetch(SUBMIT_ENDPOINT, {
-                method: 'POST',
+            const response = await globalThis.fetch(url, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrf,
@@ -191,25 +228,21 @@ const EcAsFormAgregarInventario = (() => {
 
             const data = await response.json().catch(() => null);
 
+            hideEditModal();
+
             if (response.ok && !data?.error) {
-                await showSwal('success', '¡Operación exitosa!', 'El material fue agregado al inventario.');
-                form.reset();
-                const modalEl = document.getElementById(MODAL_ID);
-                const modalInstance = modalEl ? globalThis.bootstrap?.Modal?.getInstance(modalEl) : null;
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-                globalThis.setTimeout(() => globalThis.location.reload(), SUCCESS_RELOAD_DELAY_MS);
+                notifyResult(true, '¡Operación Exitosa!', 'Los cambios se han guardado correctamente en la base de datos.');
                 return;
             }
 
-            const errorMessage = data?.mensaje || data?.message || data?.error || 'No fue posible guardar el inventario.';
-            await showSwal('error', 'Error al guardar', errorMessage);
+            const errorMessage = data?.mensaje || data?.message || data?.error || 'Hubo un error al guardar los cambios';
+            notifyResult(false, 'Error al guardar', errorMessage);
         } catch (error) {
+            hideEditModal();
             if (globalThis.console?.error) {
-                globalThis.console.error('[AGREGAR-INVENTARIO] Error en fetch:', error);
+                globalThis.console.error('[EDITAR-INVENTARIO] Error en fetch:', error);
             }
-            await showSwal('error', 'Error', 'No se pudo conectar con el servidor.');
+            notifyResult(false, 'Error', 'No se pudo conectar con el servidor.');
         } finally {
             setSubmittingState(form, false);
         }
@@ -233,13 +266,13 @@ const EcAsFormAgregarInventario = (() => {
         }
 
         form.classList.add('was-validated');
-        await submitInventario(form);
+        await submitEdicion(form);
     }
 
     function attachResetCleanup(form) {
         form.addEventListener('reset', () => {
             form.classList.remove('was-validated');
-            const stockInput = form.querySelector('#stockInicial');
+            const stockInput = form.querySelector('#editarStockActual');
             if (stockInput instanceof HTMLInputElement) {
                 setCrossFieldError(stockInput, '');
             }
@@ -265,8 +298,8 @@ const EcAsFormAgregarInventario = (() => {
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        EcAsFormAgregarInventario.init();
+        EcAsFormEditarInventario.init();
     }, { once: true });
 } else {
-    EcAsFormAgregarInventario.init();
+    EcAsFormEditarInventario.init();
 }
