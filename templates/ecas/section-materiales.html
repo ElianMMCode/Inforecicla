@@ -1749,7 +1749,7 @@ globalThis.getCSRFToken = function() {
             
                 // Fetch inventario/buscar por materialId y puntoId
                 if (materialId && puntoId) {
-                    fetch(`/punto-eca/materiales/inventario?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`, { method: 'GET' })
+                    fetch(`/punto-eca/materiales/inventario/?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`, { method: 'GET' })
                         .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer detalles de inventario'))
                         .then(info => {
                             document.getElementById('stockInicial').value = info.stockActual || '';
@@ -1840,7 +1840,7 @@ globalThis.getCSRFToken = function() {
             }
 
             try {
-                const res = await fetch('/punto-eca/materiales/catalogo/buscar?puntoId=' + encodeURIComponent(puntoId), {
+                const res = await fetch('/punto-eca/materiales/catalogo/buscar/?puntoId=' + encodeURIComponent(puntoId), {
                     headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
                 });
                 const data = await res.json();
@@ -1932,7 +1932,7 @@ globalThis.getCSRFToken = function() {
             }
 
             try {
-                const res = await fetch('/punto-eca/materiales/inventario?puntoId=' + encodeURIComponent(puntoId), {
+                const res = await fetch('/punto-eca/materiales/inventario/?puntoId=' + encodeURIComponent(puntoId), {
                     method: 'GET',
                     headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
                 });
