@@ -1,10 +1,9 @@
+import { createInventarioFormController } from './ecas-inventario-form-base.js';
+
 const EcAsFormAgregarInventario = (() => {
-    const FORM_ID = 'formAgregarInventario';
     const MODAL_ID = 'agregarInventarioModal';
     const SUBMIT_ENDPOINT = '/punto-eca/materiales/inventario/agregar/';
     const SUCCESS_RELOAD_DELAY_MS = 1200;
-    const SWAL_CONFIRM_COLOR = '#198754';
-    const CROSS_FIELD_MESSAGE = 'El stock inicial no puede superar la capacidad máxima.';
 
     const FIELD_MESSAGES = {
         stockInicial: 'Ingresa el stock inicial (mayor o igual a 0).',
@@ -15,124 +14,6 @@ const EcAsFormAgregarInventario = (() => {
         umbralAlerta: 'Ingresa el umbral de alerta (entre 0 y 100).',
         umbralCritico: 'Ingresa el umbral crítico (entre 0 y 100).',
     };
-
-    const FIELD_IDS = Object.keys(FIELD_MESSAGES);
-
-    function showSwal(icon, title, text) {
-        if (globalThis.Swal?.fire) {
-            return globalThis.Swal.fire({
-                icon,
-                title,
-                text,
-                confirmButtonColor: SWAL_CONFIRM_COLOR,
-                confirmButtonText: 'Entendido',
-            });
-        }
-        if (globalThis.console?.warn) {
-            globalThis.console.warn('SweetAlert2 no disponible:', title, text);
-        }
-        return Promise.resolve({ isConfirmed: true });
-    }
-
-    function getCsrfToken() {
-        const cookieToken = globalThis.getCSRFToken?.();
-        return typeof cookieToken === 'string' ? cookieToken : '';
-    }
-
-    function attachInvalidCapture(form) {
-        const elements = form.querySelectorAll('input, select, textarea');
-        elements.forEach((element) => {
-            element.addEventListener('invalid', (event) => {
-                event.preventDefault();
-            }, true);
-        });
-    }
-
-    function removeCrossFieldFeedback(input) {
-        const wrapper = input.closest('.input-group') || input.parentElement;
-        const existing = wrapper?.querySelector('.invalid-feedback.cross-field');
-        if (existing) {
-            existing.remove();
-        }
-    }
-
-    function setCrossFieldError(input, message) {
-        if (!(input instanceof HTMLInputElement)) {
-            return;
-        }
-        if (message) {
-            input.setCustomValidity(message);
-            const wrapper = input.closest('.input-group') || input.parentElement;
-            if (!wrapper) {
-                return;
-            }
-            let feedback = wrapper.querySelector('.invalid-feedback.cross-field');
-            if (!feedback) {
-                feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback cross-field';
-                wrapper.appendChild(feedback);
-            }
-            feedback.textContent = message;
-            return;
-        }
-        input.setCustomValidity('');
-        removeCrossFieldFeedback(input);
-    }
-
-    function validateCrossField(form) {
-        const stockInput = form.querySelector('#stockInicial');
-        const capacityInput = form.querySelector('#capacidadMaxima');
-        if (!(stockInput instanceof HTMLInputElement) || !(capacityInput instanceof HTMLInputElement)) {
-            return true;
-        }
-        const stock = Number.parseFloat(stockInput.value);
-        const capacity = Number.parseFloat(capacityInput.value);
-        if (Number.isFinite(stock) && Number.isFinite(capacity) && stock > capacity) {
-            setCrossFieldError(stockInput, CROSS_FIELD_MESSAGE);
-            return false;
-        }
-        setCrossFieldError(stockInput, '');
-        return true;
-    }
-
-    function attachCrossFieldLiveValidation(form) {
-        const stockInput = form.querySelector('#stockInicial');
-        const capacityInput = form.querySelector('#capacidadMaxima');
-        [stockInput, capacityInput].forEach((input) => {
-            if (input instanceof HTMLInputElement) {
-                input.addEventListener('input', () => {
-                    if (input.validity.customError) {
-                        validateCrossField(form);
-                    }
-                });
-            }
-        });
-    }
-
-    function ensureFieldMessages(form) {
-        FIELD_IDS.forEach((fieldId) => {
-            const input = form.querySelector(`#${fieldId}`);
-            if (!input) {
-                return;
-            }
-            const inputGroup = input.closest('.input-group');
-            const wrapper = inputGroup || input.parentElement;
-            if (!wrapper) {
-                return;
-            }
-            if (!wrapper.querySelector(`#${fieldId} ~ .invalid-feedback, .invalid-feedback[data-for="${fieldId}"]`)) {
-                const feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback';
-                feedback.dataset.for = fieldId;
-                feedback.textContent = FIELD_MESSAGES[fieldId];
-                if (inputGroup) {
-                    inputGroup.appendChild(feedback);
-                } else {
-                    input.after(feedback);
-                }
-            }
-        });
-    }
 
     function buildPayload(form) {
         const puntoInput = form.querySelector('#agregarPuntoId');
@@ -150,38 +31,14 @@ const EcAsFormAgregarInventario = (() => {
         };
     }
 
-    function setSubmittingState(form, isSubmitting) {
-        const submitBtn = form.querySelector('#btnGuardarInventario');
-        if (!(submitBtn instanceof HTMLButtonElement)) {
-            return null;
-        }
-        if (isSubmitting) {
-            if (!submitBtn.dataset.originalHtml) {
-                submitBtn.dataset.originalHtml = submitBtn.innerHTML;
-            }
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando...';
-        } else {
-            submitBtn.disabled = false;
-            if (submitBtn.dataset.originalHtml) {
-                submitBtn.innerHTML = submitBtn.dataset.originalHtml;
-                delete submitBtn.dataset.originalHtml;
-            }
-        }
-        return submitBtn;
-    }
-
-    async function submitInventario(form) {
-        const csrf = getCsrfToken();
+    async function submitInventario(form, payload, { setSubmittingState, showSwal, getCsrfToken }) {
         setSubmittingState(form, true);
-        const payload = buildPayload(form);
-
         try {
             const response = await globalThis.fetch(SUBMIT_ENDPOINT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrf,
+                    'X-CSRFToken': getCsrfToken(),
                     'X-Requested-With': 'XMLHttpRequest',
                     Accept: 'application/json',
                 },
@@ -215,58 +72,20 @@ const EcAsFormAgregarInventario = (() => {
         }
     }
 
-    async function handleSubmit(event) {
-        const form = event.currentTarget;
-        event.preventDefault();
-        event.stopPropagation();
-
-        validateCrossField(form);
-
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
-            await showSwal(
-                'warning',
-                'Campos obligatorios pendientes',
-                'Por favor completa todos los campos requeridos del inventario.'
-            );
-            return;
-        }
-
-        form.classList.add('was-validated');
-        await submitInventario(form);
-    }
-
-    function attachResetCleanup(form) {
-        form.addEventListener('reset', () => {
-            form.classList.remove('was-validated');
-            const stockInput = form.querySelector('#stockInicial');
-            if (stockInput instanceof HTMLInputElement) {
-                setCrossFieldError(stockInput, '');
-            }
-        });
-    }
-
-    function init() {
-        const form = document.getElementById(FORM_ID);
-        if (!(form instanceof HTMLFormElement)) {
-            return;
-        }
-        ensureFieldMessages(form);
-        attachInvalidCapture(form);
-        attachCrossFieldLiveValidation(form);
-        attachResetCleanup(form);
-        form.addEventListener('submit', (event) => {
-            handleSubmit(event);
-        });
-    }
-
-    return { init };
+    return createInventarioFormController({
+        formId: 'formAgregarInventario',
+        submitButtonId: 'btnGuardarInventario',
+        stockInputId: 'stockInicial',
+        capacityInputId: 'capacidadMaxima',
+        crossFieldMessage: 'El stock inicial no puede superar la capacidad máxima.',
+        fieldMessages: FIELD_MESSAGES,
+        buildPayload,
+        submit: submitInventario,
+    });
 })();
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        EcAsFormAgregarInventario.init();
-    }, { once: true });
+    document.addEventListener('DOMContentLoaded', EcAsFormAgregarInventario.init, { once: true });
 } else {
     EcAsFormAgregarInventario.init();
 }
