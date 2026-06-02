@@ -34,9 +34,9 @@ const EcAsFormAgregarInventario = (() => {
         return Promise.resolve({ isConfirmed: true });
     }
 
-    function getCsrfToken(form) {
-        const tokenInput = form.querySelector('[name=csrfmiddlewaretoken]');
-        return tokenInput instanceof HTMLInputElement ? tokenInput.value : '';
+    function getCsrfToken() {
+        const cookieToken = globalThis.getCSRFToken?.();
+        return typeof cookieToken === 'string' ? cookieToken : '';
     }
 
     function attachInvalidCapture(form) {
@@ -172,7 +172,7 @@ const EcAsFormAgregarInventario = (() => {
     }
 
     async function submitInventario(form) {
-        const csrf = getCsrfToken(form);
+        const csrf = getCsrfToken();
         setSubmittingState(form, true);
         const payload = buildPayload(form);
 

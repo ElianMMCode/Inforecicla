@@ -1797,7 +1797,7 @@ globalThis.getCSRFToken = function() {
         function poblarSelectConValores(sel, valores, placeholderHtml) {
             if (!sel) return;
             sel.innerHTML = placeholderHtml;
-            for (const valor of valores.sort()) {
+            for (const valor of Array.from(valores).sort()) {
                 const opt = document.createElement('option');
                 opt.value = valor;
                 opt.text = valor;

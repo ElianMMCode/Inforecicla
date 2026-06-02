@@ -1,7 +1,7 @@
 const EcAsFormEditarInventario = (() => {
     const FORM_ID = 'formularioEditarInventario';
     const MODAL_ID = 'editarModal';
-    const SUBMIT_ENDPOINT_PREFIX = 'inventario/actualizar/';
+    const SUBMIT_ENDPOINT_PREFIX = '/punto-eca/materiales/inventario/actualizar/';
     const SWAL_CONFIRM_COLOR = '#198754';
     const CROSS_FIELD_MESSAGE = 'El stock actual no puede superar la capacidad máxima.';
 
@@ -33,9 +33,9 @@ const EcAsFormEditarInventario = (() => {
         return Promise.resolve({ isConfirmed: true });
     }
 
-    function getCsrfToken(form) {
-        const tokenInput = form.querySelector('[name=csrfmiddlewaretoken]');
-        return tokenInput instanceof HTMLInputElement ? tokenInput.value : '';
+    function getCsrfToken() {
+        const cookieToken = globalThis.getCSRFToken?.();
+        return typeof cookieToken === 'string' ? cookieToken : '';
     }
 
     function hideEditModal() {
@@ -192,7 +192,7 @@ const EcAsFormEditarInventario = (() => {
     }
 
     async function submitEdicion(form) {
-        const csrf = getCsrfToken(form);
+        const csrf = getCsrfToken();
         const inventarioId = getInventarioId(form);
         const { gestor, usuarioId } = getSectionContext();
 
