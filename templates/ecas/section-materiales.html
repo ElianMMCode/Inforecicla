@@ -1,3 +1,4 @@
+{% load static %}
 <!-- Fragment: Materiales -->
 <script>
 // Función global para obtener el CSRF Token (segura para cualquier script inline)
@@ -256,7 +257,7 @@ window.getCSRFToken = function() {
                                 aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="formAgregarInventario">
+                        <form id="formAgregarInventario" novalidate>
                             {% csrf_token %}
                             <!-- Input hidden para guardar el ID del material (no visible) -->
                             <input type="hidden" id="agregarMaterialId">
@@ -286,6 +287,7 @@ window.getCSRFToken = function() {
                                            min="0"
                                            required>
                                     <small class="text-muted">Cantidad inicial a agregar</small>
+                                    <div class="invalid-feedback">Ingresa el stock inicial (mayor o igual a 0).</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="capacidadMaxima" class="form-label fw-semibold">Capacidad Máxima</label>
@@ -296,6 +298,7 @@ window.getCSRFToken = function() {
                                            min="0"
                                            required>
                                     <small class="text-muted">Máximo que puede almacenar</small>
+                                    <div class="invalid-feedback">Ingresa la capacidad máxima (mayor o igual a 0).</div>
                                 </div>
                             </div>
                             <!-- Fila 2.5: Unidad de Medida -->
@@ -309,6 +312,7 @@ window.getCSRFToken = function() {
                                         {% for value, label in unidades_medida %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                                     </select>
                                     <small class="text-muted">Selecciona la unidad de medida para el stock</small>
+                                    <div class="invalid-feedback">Selecciona una unidad de medida.</div>
                                 </div>
                             </div>
                             <!-- Fila 3: Precios -->
@@ -316,7 +320,7 @@ window.getCSRFToken = function() {
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="precioCompra" class="form-label fw-semibold">Precio de Compra</label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <span class="input-group-text">$</span>
                                         <input type="number"
                                                class="form-control border-2 border-success"
@@ -325,11 +329,12 @@ window.getCSRFToken = function() {
                                                min="0"
                                                step="0.01"
                                                required>
+                                        <div class="invalid-feedback">Ingresa el precio de compra (mayor o igual a 0).</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="precioVenta" class="form-label fw-semibold">Precio de Venta</label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <span class="input-group-text">$</span>
                                         <input type="number"
                                                class="form-control border-2 border-success"
@@ -338,6 +343,7 @@ window.getCSRFToken = function() {
                                                min="0"
                                                step="0.01"
                                                required>
+                                        <div class="invalid-feedback">Ingresa el precio de venta (mayor o igual a 0).</div>
                                     </div>
                                 </div>
                             </div>
@@ -346,7 +352,7 @@ window.getCSRFToken = function() {
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="umbralAlerta" class="form-label fw-semibold">Umbral de Alerta (%)</label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <input type="number"
                                                class="form-control border-2 border-success"
                                                id="umbralAlerta"
@@ -356,12 +362,13 @@ window.getCSRFToken = function() {
                                                step="1"
                                                required>
                                         <span class="input-group-text">%</span>
+                                        <div class="invalid-feedback">Ingresa el umbral de alerta (entre 0 y 100).</div>
                                     </div>
                                     <small class="text-muted">Porcentaje mínimo antes de alertar</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="umbralCritico" class="form-label fw-semibold">Umbral Crítico (%)</label>
-                                    <div class="input-group">
+                                    <div class="input-group has-validation">
                                         <input type="number"
                                                class="form-control border-2 border-success"
                                                id="umbralCritico"
@@ -371,6 +378,7 @@ window.getCSRFToken = function() {
                                                step="1"
                                                required>
                                         <span class="input-group-text">%</span>
+                                        <div class="invalid-feedback">Ingresa el umbral crítico (entre 0 y 100).</div>
                                     </div>
                                     <small class="text-muted">Porcentaje crítico de stock</small>
                                 </div>
@@ -389,7 +397,10 @@ window.getCSRFToken = function() {
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-1"></i>Cancelar
                         </button>
-                        <button type="button" class="btn btn-success" id="btnGuardarInventario">
+                        <button type="submit"
+                                class="btn btn-success"
+                                id="btnGuardarInventario"
+                                form="formAgregarInventario">
                             <i class="bi bi-check-circle me-1"></i>Guardar en Inventario
                         </button>
                     </div>
@@ -2523,120 +2534,7 @@ window.getCSRFToken = function() {
                 }
             }
         };
-
-        // ========================================================
-        // MANEJADOR: Botón Guardar Inventario
-        // ========================================================
-        var btnGuardarInventario = document.getElementById('btnGuardarInventario');
-        if (btnGuardarInventario) {
-            btnGuardarInventario.addEventListener('click', function() {
-                console.log('💾 Guardando inventario...');
-
-                var materialId = document.getElementById('agregarMaterialId')?.value;
-                var materialNombre = document.getElementById('agregarMaterialNombre')?.value;
-                var puntoId = document.getElementById('agregarPuntoId')?.value;
-                var stockInicial = parseFloat(document.getElementById('stockInicial')?.value) || 0;
-                var capacidadMaxima = parseFloat(document.getElementById('capacidadMaxima')?.value) || 0;
-                var unidadMedida = document.getElementById('unidadMedida')?.value;
-                var precioCompra = parseFloat(document.getElementById('precioCompra')?.value) || 0;
-                var precioVenta = parseFloat(document.getElementById('precioVenta')?.value) || 0;
-                var umbralAlerta = parseInt(document.getElementById('umbralAlerta')?.value) || 0;
-                var umbralCritico = parseInt(document.getElementById('umbralCritico')?.value) || 0;
-
-                // Validaciones
-                if (!materialId || !materialNombre || !puntoId) {
-                    alert('❌ Error: Debe seleccionar un material primero');
-                    return;
-                }
-                if (stockInicial <= 0) {
-                    alert('❌ Error: Stock inicial debe ser mayor a 0');
-                    return;
-                }
-                if (capacidadMaxima <= 0) {
-                    alert('❌ Error: Capacidad máxima debe ser mayor a 0');
-                    return;
-                }
-                if (stockInicial > capacidadMaxima) {
-                    alert('❌ Error: Stock inicial no puede ser mayor a capacidad máxima');
-                    return;
-                }
-                if (!unidadMedida) {
-                    alert('❌ Error: Debe seleccionar unidad de medida');
-                    return;
-                }
-                if (precioCompra <= 0) {
-                    alert('❌ Error: Precio de compra debe ser mayor a 0');
-                    return;
-                }
-                if (precioVenta <= 0) {
-                    alert('❌ Error: Precio de venta debe ser mayor a 0');
-                    return;
-                }
-                if (umbralAlerta <= 0 || umbralAlerta > 100) {
-                    alert('❌ Error: Umbral de alerta debe estar entre 1 y 100');
-                    return;
-                }
-                if (umbralCritico <= 0 || umbralCritico > 100) {
-                    alert('❌ Error: Umbral crítico debe estar entre 1 y 100');
-                    return;
-                }
-
-                var inventarioData = {
-                    materialId: materialId,
-                    puntoEcaId: puntoId,
-                    stockActual: stockInicial,
-                    capacidadMaxima: capacidadMaxima,
-                    unidadMedida: unidadMedida,
-                    precioCompra: precioCompra,
-                    precioVenta: precioVenta,
-                    umbralAlerta: umbralAlerta,
-                    umbralCritico: umbralCritico
-                };
-
-                console.log('📦 Datos:', inventarioData);
-
-                var textoOriginal = btnGuardarInventario.innerHTML;
-                btnGuardarInventario.disabled = true;
-                btnGuardarInventario.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando...';
-
-                fetch('/punto-eca/materiales/inventario/agregar/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken, // <-- ESTA LÍNEA ES VITAL
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify(inventarioData)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    console.log('✅ Respuesta:', data);
-                    btnGuardarInventario.disabled = false;
-                    btnGuardarInventario.innerHTML = textoOriginal;
-
-                    if (!data.error) {
-                        alert('✅ ' + (data.mensaje || 'Material agregado exitosamente'));
-                        document.getElementById('formAgregarInventario').reset();
-                        document.getElementById('agregarMaterialId').value = '';
-                        document.getElementById('agregarMaterialNombre').value = '';
-
-                        var modal = bootstrap.Modal.getInstance(document.getElementById('agregarInventarioModal'));
-                        if (modal) modal.hide();
-
-                        setTimeout(() => window.location.reload(), 1500);
-                    } else {
-                        alert('❌ Error: ' + (data.mensaje || 'Error desconocido'));
-                    }
-                })
-                .catch(err => {
-                    console.error('❌ Error:', err);
-                    btnGuardarInventario.disabled = false;
-                    btnGuardarInventario.innerHTML = textoOriginal;
-                    alert('❌ Error: ' + err.message);
-                });
-            });
-            console.log('✓ btnGuardarInventario configurado');
-        }
     })();
         </script>
+    <script type="module" src="{% static 'js/formularios/ecas-form-agregar-inventario.js' %}"></script>
     </section>
