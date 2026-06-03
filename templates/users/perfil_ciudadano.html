@@ -198,164 +198,240 @@
 
             <div class="tab-content">
                 <div class="tab-pane fade {% if tab_activo == 'datos' or not tab_activo %}show active{% endif %}" id="datos">
-                    <div class="row g-4">
-                        <!-- Tarjeta de resumen -->
-                        <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold text-success mb-4">
-                                        <i class="bi bi-person-lines-fill me-2"></i>
-                                        Información Personal
-                                    </h5>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-person-badge me-1 text-success"></i>NOMBRES
+                    <div class="shadow-sm rounded-4 bg-white overflow-hidden">
+                        <ul class="nav nav-tabs nav-fill border-bottom bg-transparent px-3 pt-3" id="datosSubTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active fw-semibold text-dark bg-white border border-bottom-0 rounded-top-3 px-3 py-2 mx-1"
+                                   id="datosPersonales-tab" data-bs-toggle="tab" href="#datosPersonalesPanel"
+                                   role="tab" aria-controls="datosPersonalesPanel" aria-selected="true">
+                                    <span class="bg-success p-2 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-person-fill text-white"></i>
+                                    </span>
+                                    <span class="d-inline-flex flex-column text-start">
+                                        <span class="d-block">Datos Personales</span>
+                                        <small class="text-muted fw-normal">Información y edición del perfil</small>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold text-dark bg-light border border-bottom-0 rounded-top-3 px-3 py-2 mx-1"
+                                   id="configuracion-tab" data-bs-toggle="tab" href="#configuracionPanel"
+                                   role="tab" aria-controls="configuracionPanel" aria-selected="false">
+                                    <span class="bg-secondary p-2 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-gear text-white"></i>
+                                    </span>
+                                    <span class="d-inline-flex flex-column text-start">
+                                        <span class="d-block">Configuración</span>
+                                        <small class="text-muted fw-normal">Preferencias y contraseña</small>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="tab-content bg-light" id="datosSubTabsContent">
+                            <div class="tab-pane fade show active" id="datosPersonalesPanel" role="tabpanel" aria-labelledby="datosPersonales-tab">
+                                <div class="d-grid gap-4 p-4">
+                                    <!-- Tarjeta de resumen -->
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <h5 class="fw-bold text-success mb-4">
+                                                <i class="bi bi-person-lines-fill me-2"></i>
+                                                Información Personal
+                                            </h5>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-person-badge me-1 text-success"></i>NOMBRES
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.nombres }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-person me-1 text-success"></i>APELLIDOS
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.apellidos }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-envelope me-1 text-success"></i>CORREO ELECTRÓNICO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.email }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-telephone me-1 text-success"></i>CELULAR
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.celular|default:"No registrado" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-geo-alt me-1 text-success"></i>CIUDAD
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.ciudad|default:"Bogotá" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-map me-1 text-success"></i>LOCALIDAD
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.localidad.nombre|default:"No registrada" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-card-text me-1 text-success"></i>TIPO DE DOCUMENTO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.get_tipo_documento_display }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-hash me-1 text-success"></i>NÚMERO DE DOCUMENTO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">
+                                                        {% if user.numero_documento and not user.numero_documento|slice:":4" == "CIU_" %}
+                                                            {{ user.numero_documento }}
+                                                        {% else %}
+                                                            No registrado
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-calendar me-1 text-success"></i>FECHA DE NACIMIENTO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-calendar-check me-1 text-success"></i>MIEMBRO DESDE
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
+                                                </div>
                                             </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.nombres }}</p>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-person me-1 text-success"></i>APELLIDOS
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.apellidos }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-envelope me-1 text-success"></i>CORREO ELECTRÓNICO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.email }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-telephone me-1 text-success"></i>CELULAR
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.celular|default:"No registrado" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-geo-alt me-1 text-success"></i>CIUDAD
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.ciudad|default:"Bogotá" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-map me-1 text-success"></i>LOCALIDAD
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.localidad.nombre|default:"No registrada" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-card-text me-1 text-success"></i>TIPO DE DOCUMENTO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.get_tipo_documento_display }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-hash me-1 text-success"></i>NÚMERO DE DOCUMENTO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">
-                                                {% if user.numero_documento and not user.numero_documento|slice:":4" == "CIU_" %}
-                                                    {{ user.numero_documento }}
-                                                {% else %}
-                                                    No registrado
-                                                {% endif %}
-                                            </p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-calendar me-1 text-success"></i>FECHA DE NACIMIENTO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-calendar-check me-1 text-success"></i>MIEMBRO DESDE
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
+                                    </div>
+
+                                    <!-- Editar información personal -->
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <h5 class="fw-bold text-success mb-4">
+                                                <i class="bi bi-pencil-fill me-2"></i>
+                                                Editar Información
+                                            </h5>
+                                            <form method="POST" action="/perfil/actualizar/" novalidate id="formDatos">
+                                                {% csrf_token %}
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="nombres">Nombres *</label>
+                                                        <input type="text" class="form-control" id="nombres" name="nombres"
+                                                               value="{{ user.nombres }}"
+                                                               minlength="3" maxlength="30" pattern=".{3,30}" required>
+                                                        <div class="invalid-feedback">Mínimo 3 letras, máximo 30, sin números ni símbolos.</div>
+                                                        <small class="text-muted">3-30 caracteres</small>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="apellidos">Apellidos *</label>
+                                                        <input type="text" class="form-control" id="apellidos" name="apellidos"
+                                                               value="{{ user.apellidos }}"
+                                                               minlength="3" maxlength="40" pattern=".{3,40}" required>
+                                                        <div class="invalid-feedback">Mínimo 3 letras, máximo 40, sin números ni símbolos.</div>
+                                                        <small class="text-muted">3-40 caracteres</small>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="celular">Celular *</label>
+                                                        <input type="text" class="form-control" id="celular" name="celular"
+                                                               maxlength="10" minlength="10" pattern="\d{10}"
+                                                               inputmode="numeric" placeholder="10 dígitos"
+                                                               value="{{ user.celular|default:'' }}" data-digits-only="10" required>
+                                                        <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
+                                                        <small class="text-muted">Exactamente 10 dígitos</small>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="ciudad">Ciudad</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
+                                                            <input id="ciudad" type="text" class="form-control bg-light text-muted" value="Bogotá" disabled>
+                                                        </div>
+                                                        <small class="text-muted">El servicio está disponible únicamente en Bogotá.</small>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="localidad">Localidad</label>
+                                                        <select class="form-select" id="localidad" name="localidad">
+                                                            <option value="">Seleccionar localidad</option>
+                                                            {% for loc in localidades %}
+                                                                <option value="{{ loc.localidad_id }}"
+                                                                    {% if user.localidad and user.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>
+                                                                    {{ loc.nombre }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <div class="invalid-feedback">Selecciona una localidad válida.</div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="fechaNac">Fecha de Nacimiento</label>
+                                                        <input type="date" class="form-control" id="fechaNac" name="fechaNacimiento"
+                                                               value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+                                                        <div class="invalid-feedback">La fecha no puede ser futura.</div>
+                                                        <small class="text-muted">Formato YYYY-MM-DD (opcional)</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                                                    </button>
+                                                    <button type="reset" class="btn btn-outline-secondary">
+                                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Editar información personal -->
-                        <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold text-success mb-4">
-                                        <i class="bi bi-pencil-fill me-2"></i>
-                                        Editar Información
-                                    </h5>
-                                    <form method="POST" action="/perfil/actualizar/" novalidate id="formDatos">
-                                        {% csrf_token %}
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label for="nombres" class="form-label fw-semibold">Nombres</label>
-                                                <input id="nombres" type="text" name="nombres" class="form-control"
-                                                       value="{{ user.nombres }}"
-                                                       required minlength="3" maxlength="30"
-                                                       pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
-                                                <div class="invalid-feedback">Mínimo 3 letras, máximo 30, sin números ni símbolos.</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="apellidos" class="form-label fw-semibold">Apellidos</label>
-                                                <input id="apellidos" type="text" name="apellidos" class="form-control"
-                                                       value="{{ user.apellidos }}"
-                                                       required minlength="3" maxlength="40"
-                                                       pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
-                                                <div class="invalid-feedback">Mínimo 3 letras, máximo 40, sin números ni símbolos.</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="celular" class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
-                                                <input id="celular" type="text" name="celular" class="form-control"
-                                                       value="{{ user.celular|default:'' }}"
-                                                       placeholder="3001234567"
-                                                       pattern="3[0-9]{9}" maxlength="10">
-                                                <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="ciudad" class="form-label fw-semibold">Ciudad</label>
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
-                                                    <input id="ciudad" type="text" class="form-control bg-light text-muted" value="Bogotá" disabled>
+                            <div class="tab-pane fade" id="configuracionPanel" role="tabpanel" aria-labelledby="configuracion-tab">
+                                <div class="d-grid gap-4 p-4">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <div class="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2 mb-3">
+                                                <div>
+                                                    <h5 class="fw-bold text-success mb-1">
+                                                        <i class="bi bi-sliders me-2"></i>
+                                                        Preferencias
+                                                    </h5>
+                                                    <p class="text-muted small mb-0">Administra las notificaciones y la visibilidad de tu perfil.</p>
                                                 </div>
-                                                <small class="text-muted">El servicio está disponible únicamente en Bogotá.</small>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label for="localidad" class="form-label fw-semibold">Localidad</label>
-                                                <select id="localidad" name="localidad" class="form-select">
-                                                    <option value="">Sin localidad</option>
-                                                    {% for loc in localidades %}
-                                                        <option value="{{ loc.localidad_id }}"
-                                                            {% if user.localidad and user.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>
-                                                            {{ loc.nombre }}
-                                                        </option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="fechaNac" class="form-label fw-semibold">Fecha de Nacimiento <span class="text-muted fw-normal">(opcional)</span></label>
-                                                  <input id="fechaNac" type="date" name="fechaNacimiento" class="form-control"
-                                                      value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
-                                                <div class="invalid-feedback">La fecha no puede ser futura.</div>
-                                            </div>
-                                            <div class="col-12 mt-2">
-                                                <button type="submit" class="btn btn-success px-4">
-                                                    <i class="bi bi-check-circle me-2"></i>Guardar Cambios
-                                                </button>
-                                            </div>
+                                            <form id="formPreferenciasCiudadano">
+                                                <div class="mb-3">
+                                                    <p class="form-label mb-2">Notificaciones por correo</p>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" id="cfgNotiEmail" type="checkbox" checked>
+                                                        <label class="form-check-label" for="cfgNotiEmail">Cambios importantes en tu cuenta</label>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" id="cfgNotiMensajes" type="checkbox" checked>
+                                                        <label class="form-check-label" for="cfgNotiMensajes">Mensajes de puntos ECA</label>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" id="cfgNotiPublicaciones" type="checkbox" checked>
+                                                        <label class="form-check-label" for="cfgNotiPublicaciones">Alertas de publicaciones</label>
+                                                    </div>
+                                                    <small class="text-muted d-block mt-2">Estas preferencias son visuales en esta versión.</small>
+                                                </div>
+                                                <hr>
+                                                <div class="d-grid gap-2">
+                                                    <button class="btn btn-success" type="button" id="btnGuardarPreferencias">
+                                                        <i class="bi bi-save me-2"></i>Guardar Preferencias
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
-                                    </form>
+                                    </div>
+                                    {% include 'partials/password_change_card.html' %}
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Cambiar contraseña (partial) -->
-                        <div class="col-12">
-                            {% include 'partials/password_change_card.html' %}
-                        </div>
-
                     </div>
                 </div>
 
@@ -1007,6 +1083,76 @@
             await cargarMensajesDePunto(chatPuntoId);
         }, 300);
     }
+
+    // Preferencias del ciudadano (visual: muestra swal informativo)
+    const btnPreferencias = document.getElementById('btnGuardarPreferencias');
+    if (btnPreferencias) {
+        btnPreferencias.addEventListener('click', function() {
+            if (typeof Swal === 'undefined') return;
+            Swal.fire({
+                icon: 'info',
+                title: 'Preferencias',
+                text: 'Las preferencias se podrán guardar en una próxima versión.',
+                confirmButtonColor: '#145c3a'
+            });
+        });
+    }
+
+    // Sub-tabs de "Mis Datos" (Datos Personales / Configuración):
+    // - Persistir el sub-tab activo en localStorage para que, tras un POST
+    //   a /perfil/actualizar/ (que redirige a /perfil/), el usuario siga
+    //   viendo la sub-pestaña que tenía abierta.
+    // - También leer el hash de la URL (#config) por si el usuario entra
+    //   directo a una sub-pestaña vía link.
+    (function initDatosSubTabs() {
+        const subTabsContainer = document.getElementById('datosSubTabs');
+        if (!subTabsContainer) return;
+        const STORAGE_KEY = 'ciudadanoSubTabActivo';
+        const VALID_IDS = new Set(['datosPersonalesPanel', 'configuracionPanel']);
+
+        function getValidTabId() {
+            const fromHash = (globalThis.location.hash || '').replace('#', '');
+            if (VALID_IDS.has(fromHash)) return fromHash;
+            try {
+                const fromStorage = globalThis.localStorage.getItem(STORAGE_KEY);
+                if (fromStorage && VALID_IDS.has(fromStorage)) return fromStorage;
+            } catch (e) {
+                if (globalThis.console?.debug) {
+                    globalThis.console.debug('No se pudo leer la sub-pestaña guardada:', e);
+                }
+            }
+            return 'datosPersonalesPanel';
+        }
+
+        function activateTab(tabId) {
+            const trigger = subTabsContainer.querySelector('[href="#' + tabId + '"]');
+            if (!trigger) return;
+            if (trigger.classList.contains('active')) return;
+            const TabCtor = globalThis.bootstrap?.Tab;
+            if (TabCtor) {
+                TabCtor.getOrCreateInstance(trigger).show();
+            } else {
+                trigger.click();
+            }
+        }
+
+        // Al cargar, abrir la sub-pestaña guardada
+        activateTab(getValidTabId());
+
+        // Escuchar cambios de tab para persistir
+        subTabsContainer.addEventListener('shown.bs.tab', function(event) {
+            const targetId = event.target?.getAttribute('href')?.replace('#', '');
+            if (targetId && VALID_IDS.has(targetId)) {
+                try {
+                    globalThis.localStorage.setItem(STORAGE_KEY, targetId);
+                } catch (e) {
+                    if (globalThis.console?.debug) {
+                        globalThis.console.debug('No se pudo guardar la sub-pestaña activa:', e);
+                    }
+                }
+            }
+        });
+    })();
 </script>
 </body>
 </html>
