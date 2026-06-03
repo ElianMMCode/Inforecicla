@@ -142,7 +142,6 @@
   {{ salidas|json_script:"salidas-data" }}
   {{ HISTORIAL_COMPRAS|json_script:"historial-compras-data" }}
   {{ HISTORIAL_VENTAS|json_script:"historial-ventas-data" }}
-  {{ materiales_stock_data|json_script:"materiales-stock-data" }}
   <!-- Data inyectada por Django (parseada por static/js/ecas/movimientos/movimientos.js) -->
   <div class="accordion accordion-flush shadow-sm" id="movimientosAccordion">
     <!-- ITEM 1: ENTRADAS DE MATERIAL -->
@@ -1105,213 +1104,16 @@
                   </li>
                   <li class="page-item">
                     <button class="page-link" type="button">Siguiente</button>
-                   </li>
-                 </ul>
-               </nav>
-             </div>
-           </div>
-         </div>
-       </div>
-     </div>
-     <!-- ITEM 4: FLUJO E HISTORIAL DE STOCK (GRÁFICA TEMPORAL) -->
-     <div class="accordion-item border-start border-5 border-info">
-       <h2 class="accordion-header" id="headingStockChart">
-         <button
-           class="accordion-button fw-bold collapsed"
-           type="button"
-           data-bs-toggle="collapse"
-           data-bs-target="#collapseStockChart"
-         >
-           <span class="bg-info p-2 rounded-circle me-3 movimientos-icon-circle">
-             <i class="bi bi-graph-up text-white"></i>
-           </span>
-           <span>
-             <span class="fw-bold text-dark d-block"
-               >Flujo e Historial de Stock</span
-             >
-             <small class="text-muted fw-normal"
-               >Visualización temporal del nivel de inventario por material</small
-             >
-           </span>
-         </button>
-       </h2>
-       <div
-         id="collapseStockChart"
-         class="accordion-collapse collapse"
-         data-bs-parent="#movimientosAccordion"
-       >
-         <div class="accordion-body p-4 bg-light">
-           <!-- Filtros -->
-           <div class="card shadow-sm mb-4">
-             <div class="card-header bg-info-subtle border-0 px-4 py-3">
-               <h6 class="mb-0 fw-bold text-info">
-                 <i class="bi bi-sliders me-2"></i>Filtros de la Gráfica
-               </h6>
-             </div>
-              <div class="card-body">
-                <div class="row g-3 align-items-start">
-                  <div class="col-md-5">
-                    <fieldset
-                      class="stock-chart-fieldset border-0 p-0 m-0"
-                      id="stockChartMaterialesFieldset"
-                    >
-                      <legend
-                        class="form-label fw-semibold small mb-1 float-none w-auto"
-                      >
-                        Materiales a comparar
-                        <span
-                          class="badge bg-info ms-1"
-                          id="badgeCountMateriales"
-                          >0</span
-                        >
-                      </legend>
-                      <div
-                        id="stockChartMaterialesList"
-                        class="border rounded p-2 bg-white"
-                        style="max-height: 200px; overflow-y: auto;"
-                      >
-                        <small class="text-muted">Cargando materiales…</small>
-                      </div>
-                    </fieldset>
-                   <div class="d-flex gap-2 mt-2">
-                     <button
-                       type="button"
-                       class="btn btn-sm btn-outline-info fw-semibold"
-                       id="btnSeleccionarTodos"
-                     >
-                       Todos
-                     </button>
-                     <button
-                       type="button"
-                       class="btn btn-sm btn-outline-secondary fw-semibold"
-                       id="btnLimpiarMateriales"
-                     >
-                       Ninguno
-                     </button>
-                   </div>
-                 </div>
-                 <div class="col-md-3">
-                   <label
-                     class="form-label fw-semibold small mb-1"
-                     for="stockChartDesde"
-                     >Desde</label
-                   >
-                   <input
-                     type="date"
-                     id="stockChartDesde"
-                     class="form-control form-control-sm"
-                   />
-                 </div>
-                 <div class="col-md-2">
-                   <label
-                     class="form-label fw-semibold small mb-1"
-                     for="stockChartHasta"
-                     >Hasta</label
-                   >
-                   <input
-                     type="date"
-                     id="stockChartHasta"
-                     class="form-control form-control-sm"
-                   />
-                 </div>
-                 <div class="col-md-2">
-                   <label
-                     class="form-label fw-semibold small mb-1"
-                     for="stockChartGranularidad"
-                     >Granularidad</label
-                   >
-                   <select
-                     id="stockChartGranularidad"
-                     class="form-select form-select-sm"
-                   >
-                     <option value="day" selected>Día</option>
-                     <option value="week">Semana</option>
-                     <option value="month">Mes</option>
-                   </select>
-                 </div>
-               </div>
-               <div class="row g-3 mt-2 align-items-center">
-                 <div class="col-md-4">
-                   <div class="form-check form-switch">
-                     <input
-                       class="form-check-input"
-                       type="checkbox"
-                       id="stockChartCapacidad"
-                       checked
-                     />
-                     <label
-                       class="form-check-label small"
-                       for="stockChartCapacidad"
-                     >
-                       Mostrar línea de capacidad máxima
-                     </label>
-                   </div>
-                 </div>
-                 <div class="col-md-8 text-end">
-                   <button
-                     type="button"
-                     class="btn btn-info btn-sm fw-semibold"
-                     id="btnAplicarFiltrosStockChart"
-                   >
-                     <i class="bi bi-arrow-clockwise me-1"></i>Aplicar
-                   </button>
-                   <button
-                     type="button"
-                     class="btn btn-outline-success btn-sm fw-semibold"
-                     id="btnExportarStockPng"
-                   >
-                     <i class="bi bi-download me-1"></i>Exportar PNG
-                   </button>
-                 </div>
-               </div>
-             </div>
-           </div>
-           <!-- Resumen -->
-           <div class="row g-3 mb-4" id="stockChartResumen">
-             <div class="col-12 text-muted small">
-               <em
-                 >Selecciona al menos un material para ver el resumen.</em
-               >
-             </div>
-           </div>
-           <!-- Gráfica / estado vacío -->
-           <div class="card shadow-sm">
-             <div
-               class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center"
-             >
-               <h6 class="mb-0 fw-bold text-dark">
-                 <i class="bi bi-graph-up me-2"></i>Evolución del Stock
-               </h6>
-               <span
-                 class="badge bg-info rounded-pill"
-                 id="badgeStockChartCount"
-                 >0 materiales</span
-               >
-             </div>
-             <div class="card-body">
-               <div
-                 id="stockChartEmpty"
-                 class="text-center text-muted py-5"
-               >
-                 <i class="bi bi-bar-chart-line display-4 d-block mb-2"></i>
-                 <p class="mb-0">
-                   Selecciona al menos un material y un rango de fechas.
-                 </p>
-               </div>
-               <div
-                 id="stockChartWrapper"
-                 class="d-none"
-                 style="position: relative; height: 380px;"
-               >
-                 <canvas id="stockTimeChart"></canvas>
-               </div>
-             </div>
-           </div>
-         </div>
-       </div>
-     </div>
-   </div>
-   <!-- FIN DEL ACORDEÓN -->
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FIN DEL ACORDEÓN -->
   <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS con tema Bootstrap4) -->
   <link href="{% static 'css/ecas/movimientos.css' %}" rel="stylesheet">
 
@@ -1340,12 +1142,6 @@
    <script
      src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
      integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3"
-     crossorigin="anonymous"
-   ></script>
-   <!-- Chart.js v4 (UMD) para la gráfica temporal de stock -->
-   <script
-     src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
-     integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g"
      crossorigin="anonymous"
    ></script>
   <!-- SCRIPT INLINE PARA BÚSQUEDA Y SELECCIÓN DE MATERIALES -->
@@ -1961,6 +1757,4 @@
   </div>
   <!-- SCRIPT: EVENT LISTENERS PARA BOTONES DE ACCIONES -->
   <script src="{% static 'js/ecas/movimientos/movimientos.js' %}"></script>
-  <!-- SCRIPT: GRÁFICA TEMPORAL DE STOCK -->
-  <script src="{% static 'js/ecas/movimientos/stock-chart.js' %}"></script>
 </section>

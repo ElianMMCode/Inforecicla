@@ -659,20 +659,6 @@ def _build_movimientos_context(punto):
         centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
     centros_list = list(centros_map.values())
 
-    materiales_stock_data = [
-        {
-            "inventarioId": str(inv.id),
-            "materialId": str(inv.material.id),
-            "nombre": inv.material.nombre,
-            "categoria": getattr(inv.material.categoria, "nombre", ""),
-            "tipo": getattr(inv.material.tipo, "nombre", ""),
-            "unidadMedida": inv.unidad_medida,
-            "stockActual": float(inv.stock_actual or 0),
-            "capacidadMaxima": float(inv.capacidad_maxima or 0),
-        }
-        for inv in materiales_inventario
-    ]
-
     return {
         "seccion": "movimientos",
         "section_template": SECTION_TEMPLATES["movimientos"],
@@ -680,7 +666,6 @@ def _build_movimientos_context(punto):
         "punto": punto,
         "unidades_medida": cons.UnidadMedida.choices,
         "materiales_inventario": materiales_inventario,
-        "materiales_stock_data": materiales_stock_data,
         "categoria_inventario": (
             Inventario.objects.filter(punto_eca=punto)
             .select_related("material__categoria")
