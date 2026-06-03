@@ -15,8 +15,10 @@
     globalThis.PAGINA_ACTUAL_ENTRADAS = globalThis.PAGINA_ACTUAL_ENTRADAS || 1;
     globalThis.PAGINA_ACTUAL_SALIDAS = globalThis.PAGINA_ACTUAL_SALIDAS || 1;
     globalThis.REGISTROS_POR_PAGINA = globalThis.REGISTROS_POR_PAGINA || 5;
-    globalThis.PAGINA_ACTUAL_HISTORIAL = globalThis.PAGINA_ACTUAL_HISTORIAL || 1;
-    globalThis.REGISTROS_POR_PAGINA_HISTORIAL = globalThis.REGISTROS_POR_PAGINA_HISTORIAL || 10;
+    globalThis.PAGINA_ACTUAL_HISTORIAL =
+      globalThis.PAGINA_ACTUAL_HISTORIAL || 1;
+    globalThis.REGISTROS_POR_PAGINA_HISTORIAL =
+      globalThis.REGISTROS_POR_PAGINA_HISTORIAL || 10;
   } catch (err) {
     console.error("Error parsing injected template data:", err);
   }
@@ -26,7 +28,9 @@ function parseJsonInyectado(id) {
   const elemento = document.getElementById(id);
   if (!elemento) return [];
   try {
-    return JSON.parse(elemento.textContent || elemento.innerText || "null") || [];
+    return (
+      JSON.parse(elemento.textContent || elemento.innerText || "null") || []
+    );
   } catch (error) {
     console.warn("No se pudo parsear", id, error);
     return [];
@@ -259,8 +263,8 @@ function generarHtmlPaginacion(totalPaginas, paginaActual) {
     '"><button class="page-link" type="button" data-page="' +
     (paginaActual - 1) +
     '" ' +
-    (paginaActual <= 1 ? 'disabled' : '') +
-    '>Anterior</button></li>';
+    (paginaActual <= 1 ? "disabled" : "") +
+    ">Anterior</button></li>";
 
   for (let i = 1; i <= totalPaginas; i++) {
     html +=
@@ -279,13 +283,17 @@ function generarHtmlPaginacion(totalPaginas, paginaActual) {
     '"><button class="page-link" type="button" data-page="' +
     (paginaActual + 1) +
     '" ' +
-    (paginaActual >= totalPaginas ? 'disabled' : '') +
-    '>Siguiente</button></li>';
+    (paginaActual >= totalPaginas ? "disabled" : "") +
+    ">Siguiente</button></li>";
 
   return html;
 }
 
-function actualizarPaginacionGenerica(paginacionId, totalPaginas, paginaActual) {
+function actualizarPaginacionGenerica(
+  paginacionId,
+  totalPaginas,
+  paginaActual,
+) {
   const paginacion = document.getElementById(paginacionId);
   if (!paginacion) return;
   if (totalPaginas <= 0) {
@@ -339,7 +347,10 @@ function construirFilaMovimientoTabla({
   const cantidadTxt = escaparHtml(formatearMoneda(cantidad));
   const precioTxt = escaparHtml(formatearMoneda(precio));
   const totalTxt = escaparHtml(formatearMoneda(total));
-  const centroHtml = centro === null ? "" : `<td class="small">${escaparHtml(centro || "-")}</td>`;
+  const centroHtml =
+    centro === null
+      ? ""
+      : `<td class="small">${escaparHtml(centro || "-")}</td>`;
 
   return `
     <tr data-categoria="${escaparHtml(categoria)}" data-tipo="${escaparHtml(tipo)}">
@@ -368,11 +379,11 @@ function construirFilaMovimientoTabla({
 function esRespuestaExitosaMovimiento(data) {
   return Boolean(
     data &&
-      (data.error === false ||
-        data.ok ||
-        data.success ||
-        data.status === 200 ||
-        data.status === 201),
+    (data.error === false ||
+      data.ok ||
+      data.success ||
+      data.status === 200 ||
+      data.status === 201),
   );
 }
 
@@ -405,7 +416,8 @@ function enviarActualizacionMovimiento({
         mostrarSwalMensajeMovimiento({
           icon: "error",
           title: tituloError || "Error al actualizar",
-          text: data.mensaje || data.message || textoError || "Error al actualizar",
+          text:
+            data.mensaje || data.message || textoError || "Error al actualizar",
         });
       }
     });
@@ -424,7 +436,8 @@ function poblarDetalleMovimiento({
   botonAtributo = null,
   botonValor = null,
 }) {
-  document.getElementById(`det${prefijo}Material`).textContent = material || "-";
+  document.getElementById(`det${prefijo}Material`).textContent =
+    material || "-";
   document.getElementById(`det${prefijo}Fecha`).textContent = fecha;
   document.getElementById(`det${prefijo}Cantidad`).textContent =
     cantidad.toLocaleString("es-CO", { minimumFractionDigits: 2 });
@@ -448,19 +461,25 @@ function poblarDetalleMovimiento({
 }
 
 function obtenerHistorialMovimiento(movimientoId, esCompra) {
-  const listado = esCompra ? globalThis.HISTORIAL_COMPRAS : globalThis.HISTORIAL_VENTAS;
+  const listado = esCompra
+    ? globalThis.HISTORIAL_COMPRAS
+    : globalThis.HISTORIAL_VENTAS;
   const campoId = esCompra ? "compraId" : "ventaId";
   return (listado || []).find((item) => item[campoId] === movimientoId);
 }
 
 function obtenerMovimientoInicial(movimientoId, esCompra) {
-  const listado = esCompra ? globalThis.ENTRADAS_INICIALES : globalThis.SALIDAS_INICIALES;
+  const listado = esCompra
+    ? globalThis.ENTRADAS_INICIALES
+    : globalThis.SALIDAS_INICIALES;
   const campoId = esCompra ? "compraId" : "ventaId";
   return (listado || []).find((item) => item[campoId] === movimientoId);
 }
 
 function mostrarDetallesSalidaPorId(ventaId) {
-  const salida = (globalThis.SALIDAS_INICIALES || []).find((item) => item.ventaId === ventaId);
+  const salida = (globalThis.SALIDAS_INICIALES || []).find(
+    (item) => item.ventaId === ventaId,
+  );
   if (!salida) {
     mostrarSwalMensajeMovimiento({
       icon: "info",
@@ -504,7 +523,14 @@ function asignarDataEnBotones(ids, atributo, valor) {
   });
 }
 
-function poblarDetallesHistorialCompra(movimiento, fecha, cantidad, precio, total, movimientoId) {
+function poblarDetallesHistorialCompra(
+  movimiento,
+  fecha,
+  cantidad,
+  precio,
+  total,
+  movimientoId,
+) {
   poblarDetalleMovimiento({
     prefijo: "Entrada",
     material: movimiento.nombreMaterial,
@@ -519,7 +545,14 @@ function poblarDetallesHistorialCompra(movimiento, fecha, cantidad, precio, tota
   });
 }
 
-function poblarDetallesHistorialVenta(movimiento, fecha, cantidad, precio, total, movimientoId) {
+function poblarDetallesHistorialVenta(
+  movimiento,
+  fecha,
+  cantidad,
+  precio,
+  total,
+  movimientoId,
+) {
   poblarDetalleMovimiento({
     prefijo: "Salida",
     material: movimiento.nombreMaterial,
@@ -584,7 +617,9 @@ function manejarClickEdicionMovimiento(btn) {
 
   if (!movimientoId) return;
 
-  cerrarModalRelacionado(esCompra ? "detallesEntradaModal" : "detallesSalidaModal");
+  cerrarModalRelacionado(
+    esCompra ? "detallesEntradaModal" : "detallesSalidaModal",
+  );
 
   const movimiento = esHistorial
     ? obtenerHistorialMovimiento(movimientoId, esCompra)
@@ -768,7 +803,8 @@ async function descargarArchivoExportacion(url, filename) {
     method: "GET",
     credentials: "same-origin",
     headers: {
-      Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      Accept:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     },
   });
 
@@ -776,7 +812,9 @@ async function descargarArchivoExportacion(url, filename) {
     throw new Error(`HTTP ${response.status}`);
   }
 
-  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  const contentType = (
+    response.headers.get("content-type") || ""
+  ).toLowerCase();
   if (!contentType.includes("spreadsheetml.sheet")) {
     const text = await response.text();
     throw new Error(
@@ -852,21 +890,33 @@ function sincronizarEnlacesExportacion() {
       obtenerParamsExportCompras,
       "compras.xlsx",
     ],
-    ["btnExportComprasPdf", "/punto-eca/movimientos/exportar-compras-pdf/", obtenerParamsExportCompras],
+    [
+      "btnExportComprasPdf",
+      "/punto-eca/movimientos/exportar-compras-pdf/",
+      obtenerParamsExportCompras,
+    ],
     [
       "btnExportVentasExcel",
       "/punto-eca/movimientos/exportar-ventas-excel/",
       obtenerParamsExportVentas,
       "ventas.xlsx",
     ],
-    ["btnExportVentasPdf", "/punto-eca/movimientos/exportar-ventas-pdf/", obtenerParamsExportVentas],
+    [
+      "btnExportVentasPdf",
+      "/punto-eca/movimientos/exportar-ventas-pdf/",
+      obtenerParamsExportVentas,
+    ],
     [
       "btnExportHistorialExcel",
       "/punto-eca/movimientos/exportar-historial-excel/",
       obtenerParamsExportHistorial,
       "historial_movimientos.xlsx",
     ],
-    ["btnExportHistorialPdf", "/punto-eca/movimientos/exportar-historial-pdf/", obtenerParamsExportHistorial],
+    [
+      "btnExportHistorialPdf",
+      "/punto-eca/movimientos/exportar-historial-pdf/",
+      obtenerParamsExportHistorial,
+    ],
   ];
 
   exportaciones.forEach(([botonId, baseUrl, obtenerParams, filename]) => {
@@ -893,7 +943,9 @@ function sincronizarEnlacesExportacion() {
               text: "El servidor no devolvió un Excel válido.",
             });
           } else {
-            alert("No se pudo descargar el archivo. Revisa la sesión o intenta de nuevo.");
+            alert(
+              "No se pudo descargar el archivo. Revisa la sesión o intenta de nuevo.",
+            );
           }
         }
       });
@@ -933,10 +985,18 @@ function eliminarMovimientoPorId(tipo, id, opciones = {}) {
       if (!confirmado) return;
 
       const listado = esCompra
-        ? [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.ENTRADAS_INICIALES || [])]
-        : [...(globalThis.HISTORIAL_VENTAS || []), ...(globalThis.SALIDAS_INICIALES || [])];
+        ? [
+            ...(globalThis.HISTORIAL_COMPRAS || []),
+            ...(globalThis.ENTRADAS_INICIALES || []),
+          ]
+        : [
+            ...(globalThis.HISTORIAL_VENTAS || []),
+            ...(globalThis.SALIDAS_INICIALES || []),
+          ];
       const campoId = esCompra ? "compraId" : "ventaId";
-      const entrada = listado.find((item) => String(item[campoId]) === String(id));
+      const entrada = listado.find(
+        (item) => String(item[campoId]) === String(id),
+      );
 
       if (!entrada) {
         globalThis.mostrarSwalMensajeMovimiento({
@@ -954,14 +1014,17 @@ function eliminarMovimientoPorId(tipo, id, opciones = {}) {
         materialId: entrada.materialId || "",
       };
 
-      fetch(`/punto-eca/movimientos/borrar-${esCompra ? "compra" : "venta"}/${id}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": obtenerCsrfTokenMovimiento(),
+      fetch(
+        `/punto-eca/movimientos/borrar-${esCompra ? "compra" : "venta"}/${id}/`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": obtenerCsrfTokenMovimiento(),
+          },
+          body: JSON.stringify(datosEliminar),
         },
-        body: JSON.stringify(datosEliminar),
-      })
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.success || data.ok || !data.error) {
@@ -986,8 +1049,7 @@ function eliminarMovimientoPorId(tipo, id, opciones = {}) {
             icon: "error",
             title: "Error de red",
             text:
-              "Error al procesar la solicitud: " +
-              (error?.message ?? error),
+              "Error al procesar la solicitud: " + (error?.message ?? error),
           });
         });
     });
@@ -1053,7 +1115,9 @@ const eliminacionesMovimientos = [
 ];
 
 document.addEventListener("click", function (e) {
-  const accion = eliminacionesMovimientos.find((item) => e.target.closest(item.selector));
+  const accion = eliminacionesMovimientos.find((item) =>
+    e.target.closest(item.selector),
+  );
   if (!accion) return;
   const btn = e.target.closest(accion.selector);
   const id = accion.obtenerId(btn);
@@ -1249,7 +1313,8 @@ document.addEventListener("click", function (e) {
         let seccionBusquedaMaterial = document.getElementById(
           "seccionBusquedaMaterial",
         );
-        if (seccionBusquedaMaterial) seccionBusquedaMaterial.classList.remove("d-none");
+        if (seccionBusquedaMaterial)
+          seccionBusquedaMaterial.classList.remove("d-none");
         let formEntradaContainer = document.getElementById(
           "formEntradaContainer",
         );
@@ -1298,10 +1363,26 @@ document.addEventListener("click", function (e) {
         ["MaterialCategoria", campos.categoria, { dispararChange: true }],
         ["MaterialDescripcion", campos.descripcion, { dispararChange: true }],
         ["MaterialUnidad", campos.unidad, { dispararChange: true }],
-        ["StockActual", formatearNumeroCampo(campos.stockActual), { dispararChange: true }],
-        ["CapacidadMaxima", formatearNumeroCampo(campos.capacidadMaxima), { dispararChange: true }],
-        ["PrecioCompra", formatearNumeroCampo(campos.precioCompra), { dispararChange: true, dispararInput: true }],
-        ["PrecioVenta", formatearNumeroCampo(campos.precioVenta), { dispararChange: true, dispararInput: true }],
+        [
+          "StockActual",
+          formatearNumeroCampo(campos.stockActual),
+          { dispararChange: true },
+        ],
+        [
+          "CapacidadMaxima",
+          formatearNumeroCampo(campos.capacidadMaxima),
+          { dispararChange: true },
+        ],
+        [
+          "PrecioCompra",
+          formatearNumeroCampo(campos.precioCompra),
+          { dispararChange: true, dispararInput: true },
+        ],
+        [
+          "PrecioVenta",
+          formatearNumeroCampo(campos.precioVenta),
+          { dispararChange: true, dispararInput: true },
+        ],
       ].forEach(([sufijo, valor, opciones]) => {
         establecerValorCampo(
           document.getElementById(prefijo + sufijo),
@@ -1396,7 +1477,8 @@ document.addEventListener("click", function (e) {
             ? Number.parseFloat(dataset.stockActual)
             : null,
         capacidadMaxima:
-          dataset.capacidadMaxima !== undefined && dataset.capacidadMaxima !== ""
+          dataset.capacidadMaxima !== undefined &&
+          dataset.capacidadMaxima !== ""
             ? Number.parseFloat(dataset.capacidadMaxima)
             : null,
         precioCompra:
@@ -1410,41 +1492,46 @@ document.addEventListener("click", function (e) {
       };
     }
 
-      function mostrarPanelMaterialSeleccionado() {
-        let formEntradaContainer = document.getElementById("formEntradaContainer");
-        let formSalidaContainer = document.getElementById("formSalidaContainer");
-        if (formEntradaContainer) formEntradaContainer.classList.remove("d-none");
-        if (formSalidaContainer) formSalidaContainer.classList.remove("d-none");
+    function mostrarPanelMaterialSeleccionado() {
+      let formEntradaContainer = document.getElementById(
+        "formEntradaContainer",
+      );
+      let formSalidaContainer = document.getElementById("formSalidaContainer");
+      if (formEntradaContainer) formEntradaContainer.classList.remove("d-none");
+      if (formSalidaContainer) formSalidaContainer.classList.remove("d-none");
 
-        let seccionBusquedaMaterial = document.getElementById(
-          "seccionBusquedaMaterial",
+      let seccionBusquedaMaterial = document.getElementById(
+        "seccionBusquedaMaterial",
+      );
+      if (seccionBusquedaMaterial)
+        seccionBusquedaMaterial.classList.add("d-none");
+
+      let collapseEntradas = document.getElementById("collapseEntradas");
+      let collapseSalidas = document.getElementById("collapseSalidas");
+      if (collapseEntradas) {
+        collapseEntradas.classList.add("show");
+        collapseEntradas.setAttribute("aria-expanded", "true");
+        let buttonEntradas = document.querySelector(
+          '[data-bs-target="#collapseEntradas"]',
         );
-        if (seccionBusquedaMaterial) seccionBusquedaMaterial.classList.add("d-none");
-
-        let collapseEntradas = document.getElementById("collapseEntradas");
-        let collapseSalidas = document.getElementById("collapseSalidas");
-        if (collapseEntradas) {
-          collapseEntradas.classList.add("show");
-          collapseEntradas.setAttribute("aria-expanded", "true");
-          let buttonEntradas = document.querySelector(
-            '[data-bs-target="#collapseEntradas"]',
-          );
-          if (buttonEntradas) buttonEntradas.classList.remove("collapsed");
-        }
-        if (collapseSalidas) {
-          collapseSalidas.classList.add("show");
-          collapseSalidas.setAttribute("aria-expanded", "true");
-          let buttonSalidas = document.querySelector(
-            '[data-bs-target="#collapseSalidas"]',
-          );
-          if (buttonSalidas) buttonSalidas.classList.remove("collapsed");
-        }
-
-        triggerEventsCampo(document.getElementById("entradaMaterialSeleccionado"));
-        triggerEventsCampo(document.getElementById("entradaMaterialId"));
-        triggerEventsCampo(document.getElementById("salidaMaterialSeleccionado"));
-        triggerEventsCampo(document.getElementById("salidaMaterialId"));
+        if (buttonEntradas) buttonEntradas.classList.remove("collapsed");
       }
+      if (collapseSalidas) {
+        collapseSalidas.classList.add("show");
+        collapseSalidas.setAttribute("aria-expanded", "true");
+        let buttonSalidas = document.querySelector(
+          '[data-bs-target="#collapseSalidas"]',
+        );
+        if (buttonSalidas) buttonSalidas.classList.remove("collapsed");
+      }
+
+      triggerEventsCampo(
+        document.getElementById("entradaMaterialSeleccionado"),
+      );
+      triggerEventsCampo(document.getElementById("entradaMaterialId"));
+      triggerEventsCampo(document.getElementById("salidaMaterialSeleccionado"));
+      triggerEventsCampo(document.getElementById("salidaMaterialId"));
+    }
 
     function manejarSeleccionResultadoMaterial(e) {
       e.preventDefault();
@@ -1458,7 +1545,9 @@ document.addEventListener("click", function (e) {
       );
       if (modalInstance) modalInstance.hide();
 
-      const formEntradaContainer = document.getElementById("formEntradaContainer");
+      const formEntradaContainer = document.getElementById(
+        "formEntradaContainer",
+      );
       mostrarPanelMaterialSeleccionado();
 
       if (
@@ -1475,7 +1564,7 @@ document.addEventListener("click", function (e) {
     // INICIALIZAR SELECT2 EN BUSCAR MATERIAL (AJAX)
     let $buscarMaterial = $(inputBusqueda);
     if ($buscarMaterial.length) {
-      let endpoint = "/punto-eca/materiales/inventario";
+      let endpoint = "/punto-eca/materiales/inventario/";
 
       $buscarMaterial.select2({
         theme: "bootstrap4",
@@ -1565,7 +1654,10 @@ document.addEventListener("click", function (e) {
           const formEntradaContainer = document.getElementById(
             "formEntradaContainer",
           );
-          if (formEntradaContainer && typeof formEntradaContainer.scrollIntoView === "function") {
+          if (
+            formEntradaContainer &&
+            typeof formEntradaContainer.scrollIntoView === "function"
+          ) {
             formEntradaContainer.scrollIntoView({
               behavior: "smooth",
               block: "center",
@@ -1659,7 +1751,8 @@ document.addEventListener("click", function (e) {
         const data = await res.json();
 
         if (!res.ok) {
-          let mensajeError = data?.mensaje || data?.message || "Error desconocido";
+          let mensajeError =
+            data?.mensaje || data?.message || "Error desconocido";
           if (estadoBusquedaEl) {
             estadoBusquedaEl.innerHTML =
               '<div class="alert alert-warning mb-0" role="alert"><i class="bi bi-exclamation-triangle me-2"></i>' +
@@ -1715,14 +1808,19 @@ document.addEventListener("click", function (e) {
 
         item.dataset.materialId = material.materialId || "";
         item.dataset.inventarioId =
-          material.inventarioId || material.inventario_id || material.inventarioID || "";
+          material.inventarioId ||
+          material.inventario_id ||
+          material.inventarioID ||
+          "";
         item.dataset.nombre = material.nmbMaterial || "";
         item.dataset.descripcion = material.dscMaterial || "";
         item.dataset.tipo = material.nmbTipo || "";
         item.dataset.categoria = material.nmbCategoria || "";
         item.dataset.unidad = unidadVal;
         item.dataset.stockActual = numeroComoTexto(material.stockActual);
-        item.dataset.capacidadMaxima = numeroComoTexto(material.capacidadMaxima);
+        item.dataset.capacidadMaxima = numeroComoTexto(
+          material.capacidadMaxima,
+        );
         item.dataset.precioCompra = numeroComoTexto(material.precioCompra);
         item.dataset.precioVenta = numeroComoTexto(material.precioVenta);
 
@@ -1802,8 +1900,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if ($filtroMaterialCompra.length) {
       poblarSelectConValores(
         $filtroMaterialCompra,
-        obtenerValoresUnicos(globalThis.ENTRADAS_INICIALES, (entrada) =>
-          entrada.nombreMaterial,
+        obtenerValoresUnicos(
+          globalThis.ENTRADAS_INICIALES,
+          (entrada) => entrada.nombreMaterial,
         ),
         "Selecciona material...",
         { minimumInputLength: 0 },
@@ -1813,8 +1912,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if ($filtroCategoriaCompra.length) {
       poblarSelectConValores(
         $filtroCategoriaCompra,
-        obtenerValoresUnicos(globalThis.ENTRADAS_INICIALES, (entrada) =>
-          entrada.nombreCategoria,
+        obtenerValoresUnicos(
+          globalThis.ENTRADAS_INICIALES,
+          (entrada) => entrada.nombreCategoria,
         ),
         "Selecciona categoría...",
       );
@@ -1823,8 +1923,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if ($filtroTipoCompra.length) {
       poblarSelectConValores(
         $filtroTipoCompra,
-        obtenerValoresUnicos(globalThis.ENTRADAS_INICIALES, (entrada) =>
-          entrada.nombreTipo,
+        obtenerValoresUnicos(
+          globalThis.ENTRADAS_INICIALES,
+          (entrada) => entrada.nombreTipo,
         ),
         "Selecciona tipo...",
       );
@@ -1840,8 +1941,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if ($filtroMaterialVenta.length) {
       poblarSelectConValores(
         $filtroMaterialVenta,
-        obtenerValoresUnicos(globalThis.SALIDAS_INICIALES, (salida) =>
-          salida.nombreMaterial,
+        obtenerValoresUnicos(
+          globalThis.SALIDAS_INICIALES,
+          (salida) => salida.nombreMaterial,
         ),
         "Selecciona material...",
       );
@@ -1850,8 +1952,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if ($filtroCategoriaVenta.length) {
       poblarSelectConValores(
         $filtroCategoriaVenta,
-        obtenerValoresUnicos(globalThis.SALIDAS_INICIALES, (salida) =>
-          salida.nombreCategoria,
+        obtenerValoresUnicos(
+          globalThis.SALIDAS_INICIALES,
+          (salida) => salida.nombreCategoria,
         ),
         "Selecciona categoría...",
       );
@@ -1860,8 +1963,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if ($filtroTipoVenta.length) {
       poblarSelectConValores(
         $filtroTipoVenta,
-        obtenerValoresUnicos(globalThis.SALIDAS_INICIALES, (salida) =>
-          salida.nombreTipo,
+        obtenerValoresUnicos(
+          globalThis.SALIDAS_INICIALES,
+          (salida) => salida.nombreTipo,
         ),
         "Selecciona tipo...",
       );
@@ -1873,8 +1977,10 @@ document.addEventListener("DOMContentLoaded", function () {
         : Object.values(globalThis.CENTROS || {});
       poblarSelectConValores(
         $filtroCentroVenta,
-        obtenerValoresUnicos(centros, (centro) =>
-          centro.nombre || centro.nmbCentro || centro.nmbCentroAcopio || "",
+        obtenerValoresUnicos(
+          centros,
+          (centro) =>
+            centro.nombre || centro.nmbCentro || centro.nmbCentroAcopio || "",
         ),
         "Selecciona centro de acopio...",
       );
@@ -1891,7 +1997,10 @@ document.addEventListener("DOMContentLoaded", function () {
       poblarSelectConValores(
         $filtroHistorialMaterial,
         obtenerValoresUnicos(
-          [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.HISTORIAL_VENTAS || [])],
+          [
+            ...(globalThis.HISTORIAL_COMPRAS || []),
+            ...(globalThis.HISTORIAL_VENTAS || []),
+          ],
           (mov) => mov.nombreMaterial,
         ),
         "Selecciona material...",
@@ -1903,7 +2012,10 @@ document.addEventListener("DOMContentLoaded", function () {
       poblarSelectConValores(
         $filtroHistorialCategoria,
         obtenerValoresUnicos(
-          [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.HISTORIAL_VENTAS || [])],
+          [
+            ...(globalThis.HISTORIAL_COMPRAS || []),
+            ...(globalThis.HISTORIAL_VENTAS || []),
+          ],
           (mov) => mov.nombreCategoria,
         ),
         "Selecciona categoría...",
@@ -1914,7 +2026,10 @@ document.addEventListener("DOMContentLoaded", function () {
       poblarSelectConValores(
         $filtroHistorialTipo,
         obtenerValoresUnicos(
-          [...(globalThis.HISTORIAL_COMPRAS || []), ...(globalThis.HISTORIAL_VENTAS || [])],
+          [
+            ...(globalThis.HISTORIAL_COMPRAS || []),
+            ...(globalThis.HISTORIAL_VENTAS || []),
+          ],
           (mov) => mov.nombreTipo,
         ),
         "Selecciona tipo...",
@@ -1927,8 +2042,9 @@ document.addEventListener("DOMContentLoaded", function () {
         : Object.values(globalThis.CENTROS || {});
       poblarSelectConValores(
         $filtroHistorialCentroAcopio,
-        obtenerValoresUnicos(centros, (c) =>
-          c.nombre || c.nmbCentro || c.nmbCentroAcopio || "",
+        obtenerValoresUnicos(
+          centros,
+          (c) => c.nombre || c.nmbCentro || c.nmbCentroAcopio || "",
         ),
         "Selecciona centro de acopio...",
       );
@@ -2320,7 +2436,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const seccionBusquedaMaterial = document.getElementById(
       "seccionBusquedaMaterial",
     );
-    if (seccionBusquedaMaterial) seccionBusquedaMaterial.classList.remove("d-none");
+    if (seccionBusquedaMaterial)
+      seccionBusquedaMaterial.classList.remove("d-none");
   };
 
   // Actualizar stocks
@@ -2517,7 +2634,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function obtenerDatosFormularioMovimiento(prefijo) {
     return {
-      materialSeleccionado: document.getElementById(`${prefijo}MaterialSeleccionado`),
+      materialSeleccionado: document.getElementById(
+        `${prefijo}MaterialSeleccionado`,
+      ),
       cantidad: document.getElementById(`${prefijo}Cantidad`),
       fecha: document.getElementById(`${prefijo}Fecha`),
       precio: document.getElementById(
@@ -2529,7 +2648,8 @@ document.addEventListener("DOMContentLoaded", function () {
         globalThis.lastMaterialSeleccionado?.inventario_id ||
         "",
       materialId: document.getElementById(`${prefijo}MaterialId`)?.value || "",
-      observaciones: document.getElementById(`${prefijo}Observaciones`)?.value || "",
+      observaciones:
+        document.getElementById(`${prefijo}Observaciones`)?.value || "",
       centroAcopio: document.getElementById("salidaCentroAcopio")?.value || "",
       puntoEcaId: document.querySelector("section[data-punto-eca-id]")?.dataset
         .puntoEcaId,
@@ -2542,16 +2662,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function construirResumenExitoMovimiento(prefijo, extras = {}) {
     const cantidad = document.getElementById(`${prefijo}Cantidad`)?.value || 0;
-    const precio = document.getElementById(
-      prefijo === "entrada" ? "entradaPrecioCompra" : "salidaPrecioVenta",
-    )?.value || 0;
+    const precio =
+      document.getElementById(
+        prefijo === "entrada" ? "entradaPrecioCompra" : "salidaPrecioVenta",
+      )?.value || 0;
 
     return {
-      material: document.getElementById(`${prefijo}MaterialSeleccionado`)?.value,
+      material: document.getElementById(`${prefijo}MaterialSeleccionado`)
+        ?.value,
       cantidad,
       fecha: document.getElementById(`${prefijo}Fecha`)?.value,
       precio,
-      total: (Number.parseFloat(cantidad) || 0) * (Number.parseFloat(precio) || 0),
+      total:
+        (Number.parseFloat(cantidad) || 0) * (Number.parseFloat(precio) || 0),
       observaciones: document.getElementById(`${prefijo}Observaciones`)?.value,
       ...extras,
     };
@@ -2561,10 +2684,15 @@ document.addEventListener("DOMContentLoaded", function () {
     ev.preventDefault();
     const form = ev.currentTarget;
     const submitBtn = obtenerBotonSubmitFormulario(form);
-    establecerEstadoBotonSubmit(submitBtn, true, '<i class="bi bi-check-circle me-2"></i>Guardar Entrada');
+    establecerEstadoBotonSubmit(
+      submitBtn,
+      true,
+      '<i class="bi bi-check-circle me-2"></i>Guardar Entrada',
+    );
 
     const datosFormulario = obtenerDatosFormularioMovimiento("entrada");
-    const { materialSeleccionado, cantidad, fecha, precio, csrfToken } = datosFormulario;
+    const { materialSeleccionado, cantidad, fecha, precio, csrfToken } =
+      datosFormulario;
 
     let esValido = true;
 
@@ -2668,10 +2796,21 @@ document.addEventListener("DOMContentLoaded", function () {
     form.dataset.enviando = "1";
 
     const submitBtn = obtenerBotonSubmitFormulario(form);
-    establecerEstadoBotonSubmit(submitBtn, true, '<i class="bi bi-check-circle me-2"></i>Guardar Salida');
+    establecerEstadoBotonSubmit(
+      submitBtn,
+      true,
+      '<i class="bi bi-check-circle me-2"></i>Guardar Salida',
+    );
 
     const datosFormulario = obtenerDatosFormularioMovimiento("salida");
-    const { materialSeleccionado, cantidad, fecha, precio, csrfToken, centroAcopio } = datosFormulario;
+    const {
+      materialSeleccionado,
+      cantidad,
+      fecha,
+      precio,
+      csrfToken,
+      centroAcopio,
+    } = datosFormulario;
 
     let esValido = true;
 
@@ -2730,8 +2869,10 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
           const datosExitoVenta = construirResumenExitoMovimiento("salida", {
             centroAcopio:
-              document.getElementById("salidaCentroAcopio")?.selectedOptions?.[0]
-                ?.textContent || centroAcopio || "-",
+              document.getElementById("salidaCentroAcopio")
+                ?.selectedOptions?.[0]?.textContent ||
+              centroAcopio ||
+              "-",
             idRegistro:
               resp.venta_id ||
               resp.ventaId ||
@@ -2776,7 +2917,10 @@ document.addEventListener("DOMContentLoaded", function () {
         );
       })
       .finally(() => {
-        if (form.dataset.enviando !== "1" && document.querySelectorAll(".swal2-container").length === 0) {
+        if (
+          form.dataset.enviando !== "1" &&
+          document.querySelectorAll(".swal2-container").length === 0
+        ) {
           establecerEstadoBotonSubmit(
             submitBtn,
             false,
@@ -2839,22 +2983,22 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!descargarPlantilla) return;
 
     const esCompras = modo === "compras";
-      const url = esCompras
-        ? "/static/plantilla_carga_compras.csv"
-        : "/static/plantilla_carga_ventas.csv";
-      const text = esCompras
-        ? "Descargar plantilla de ejemplo para compras"
-        : "Descargar plantilla de ejemplo para ventas";
+    const url = esCompras
+      ? "/static/plantilla_carga_compras.csv"
+      : "/static/plantilla_carga_ventas.csv";
+    const text = esCompras
+      ? "Descargar plantilla de ejemplo para compras"
+      : "Descargar plantilla de ejemplo para ventas";
 
-      if (descargarPlantilla.tagName === "A") {
-        descargarPlantilla.href = url;
-        descargarPlantilla.textContent = text;
-        descargarPlantilla.setAttribute("target", "_blank");
-        descargarPlantilla.setAttribute("rel", "noopener noreferrer");
-      } else {
-        descargarPlantilla.dataset.href = url;
-        descargarPlantilla.textContent = text;
-      }
+    if (descargarPlantilla.tagName === "A") {
+      descargarPlantilla.href = url;
+      descargarPlantilla.textContent = text;
+      descargarPlantilla.setAttribute("target", "_blank");
+      descargarPlantilla.setAttribute("rel", "noopener noreferrer");
+    } else {
+      descargarPlantilla.dataset.href = url;
+      descargarPlantilla.textContent = text;
+    }
   }
 
   function generarDetalleCargaMasiva(detalle) {
@@ -3049,19 +3193,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-    // Eliminar salida desde modal
-    const btnEliminarSalidaModal = document.getElementById("btnEliminarSalida");
-    if (btnEliminarSalidaModal) {
-      btnEliminarSalidaModal.addEventListener("click", function () {
-        eliminarVentaPorId(this.dataset.ventaId, {
-          confirmTitle: "Eliminar salida",
-          confirmText: "¿Estás seguro de que deseas eliminar esta salida?",
-          successTitle: "Salida eliminada",
-          successText: "Salida eliminada correctamente",
-          sinDatosText: "No se encontraron los datos de esta salida",
-        });
+  // Eliminar salida desde modal
+  const btnEliminarSalidaModal = document.getElementById("btnEliminarSalida");
+  if (btnEliminarSalidaModal) {
+    btnEliminarSalidaModal.addEventListener("click", function () {
+      eliminarVentaPorId(this.dataset.ventaId, {
+        confirmTitle: "Eliminar salida",
+        confirmText: "¿Estás seguro de que deseas eliminar esta salida?",
+        successTitle: "Salida eliminada",
+        successText: "Salida eliminada correctamente",
+        sinDatosText: "No se encontraron los datos de esta salida",
       });
-    }
+    });
+  }
 
   // Guardar Edición Compra
   const btnGuardarCompra = document.getElementById("btnGuardarCompra");
@@ -3202,10 +3346,13 @@ function inicializarCalculoMovimiento({
     const precio = Number.parseFloat(precioInput?.value) || 0;
     const cantidad = Number.parseFloat(cantidadInput?.value) || 0;
     const total = precio * cantidad;
-    if (totalInput) totalInput.value = Number.isFinite(total) ? total.toFixed(2) : "";
+    if (totalInput)
+      totalInput.value = Number.isFinite(total) ? total.toFixed(2) : "";
 
     const stockActual = Number.parseFloat(stockInput?.value) || 0;
-    const stockCalculado = esCompra ? stockActual + cantidad : stockActual - cantidad;
+    const stockCalculado = esCompra
+      ? stockActual + cantidad
+      : stockActual - cantidad;
     if (stockResultado) {
       stockResultado.textContent = Number.isFinite(stockCalculado)
         ? stockCalculado.toFixed(2)
@@ -3217,7 +3364,8 @@ function inicializarCalculoMovimiento({
     precioInput.addEventListener("input", calcularTotal);
     precioInput.addEventListener("keydown", bloquearTeclas);
     precioInput.addEventListener("input", function () {
-      if (this.value && this.value.length > 12) this.value = this.value.slice(0, 12);
+      if (this.value && this.value.length > 12)
+        this.value = this.value.slice(0, 12);
       calcularTotal();
     });
   }
@@ -3226,7 +3374,8 @@ function inicializarCalculoMovimiento({
     cantidadInput.addEventListener("input", calcularTotal);
     cantidadInput.addEventListener("keydown", bloquearTeclas);
     cantidadInput.addEventListener("input", function () {
-      if (this.value && this.value.length > 10) this.value = this.value.slice(0, 10);
+      if (this.value && this.value.length > 10)
+        this.value = this.value.slice(0, 10);
       calcularTotal();
     });
   }
