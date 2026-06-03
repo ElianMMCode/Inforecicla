@@ -4,8 +4,7 @@
 {% block body_class %}bg-light{% endblock %}
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="usuarios" %}{% endblock %}
 {% block content %}
-
-<main class="col offset-md-2 p-4">
+<div>
   {% if messages %}
   <div class="mb-3">
     {% for message in messages %}
@@ -148,6 +147,25 @@
       </table>
     </div>
   </div>
-</main>
+{% endblock %}
 
+{% block extra_scripts %}
+{% if messages %}
+  {% with first_message=messages|first %}
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof Swal === "undefined") {
+        return;
+      }
+
+      Swal.fire({
+        icon: "{{ first_message.tags|default:'info' }}",
+        title: "{{ first_message.tags|capfirst|default:'Mensaje'|escapejs }}",
+        text: "{{ first_message|escapejs }}",
+        confirmButtonColor: "#198754",
+      });
+    });
+  </script>
+  {% endwith %}
+{% endif %}
 {% endblock %}

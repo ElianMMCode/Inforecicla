@@ -4,6 +4,7 @@
 {% block page_title %}Nuevo Usuario - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="usuarios" %}{% endblock %}
+{% block messages %}{% endblock %}
 {% block content %}
   <div class="mb-4 d-flex justify-content-between align-items-center">
     <div>
@@ -15,18 +16,6 @@
     </a>
   </div>
 
-  {% if errores %}
-  <div class="alert alert-danger alert-dismissible fade show mb-4">
-    <strong>Por favor corrige los siguientes errores:</strong>
-    <ul class="mb-0 mt-2">
-      {% for error in errores %}
-        <li>{{ error }}</li>
-      {% endfor %}
-    </ul>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-  {% endif %}
-
   <div class="card shadow-sm border-0">
     <div class="card-header bg-success text-white"><i class="bi bi-person me-1"></i> Formulario</div>
     <div class="card-body p-4">
@@ -36,24 +25,24 @@
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="createUserNombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
-            <input id="createUserNombres" type="text" name="nombres" class="form-control" required minlength="3"
+            <input id="createUserNombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30"
                    value="{{ form_data.nombres|default:'' }}" placeholder="Nombres">
-            <div class="invalid-feedback">Ingresa al menos 3 caracteres para los nombres.</div>
+            <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres para los nombres.</div>
           </div>
           <div class="col-md-6">
             <label for="createUserApellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
-            <input id="createUserApellidos" type="text" name="apellidos" class="form-control" required minlength="3"
+            <input id="createUserApellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40"
                    value="{{ form_data.apellidos|default:'' }}" placeholder="Apellidos">
-            <div class="invalid-feedback">Ingresa al menos 3 caracteres para los apellidos.</div>
+            <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres para los apellidos.</div>
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label for="createUserEmail" class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-            <input id="createUserEmail" type="email" name="email" class="form-control" required
+            <label for="createUserEmail" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+            <input id="createUserEmail" type="text" name="email" class="form-control" required maxlength="254" inputmode="email" autocomplete="email"
                    value="{{ form_data.email|default:'' }}" placeholder="usuario@ejemplo.com">
-            <div class="invalid-feedback">Ingresa un correo electrónico válido.</div>
+            <div class="invalid-feedback">Ingresa un correo con un solo @ y dominio válido (.com, .co, .edu.co o .com.co).</div>
           </div>
           <div class="col-md-6">
             <label for="createUserCelular" class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
@@ -66,27 +55,28 @@
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label for="createUserTipoDocumento" class="form-label fw-semibold">Tipo de Documento</label>
-            <select id="createUserTipoDocumento" name="tipoDocumento" class="form-select">
+            <label for="createUserTipoDocumento" class="form-label fw-semibold">Tipo de Documento <span class="text-danger">*</span></label>
+            <select id="createUserTipoDocumento" name="tipoDocumento" class="form-select" required>
               <option value="">Seleccionar...</option>
               {% for val, label in tipos_documento %}
                 <option value="{{ val }}" {% if form_data.tipoDocumento == val %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
+            <div class="invalid-feedback">Selecciona un tipo de documento.</div>
           </div>
           <div class="col-md-6">
-            <label for="createUserNumeroDocumento" class="form-label fw-semibold">Número de Documento</label>
-            <input id="createUserNumeroDocumento" type="text" name="numeroDocumento" class="form-control"
+            <label for="createUserNumeroDocumento" class="form-label fw-semibold">Número de Documento <span class="text-danger">*</span></label>
+            <input id="createUserNumeroDocumento" type="text" name="numeroDocumento" class="form-control" required minlength="6" maxlength="20" inputmode="numeric"
                    value="{{ form_data.numeroDocumento|default:'' }}" placeholder="1234567890">
+            <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos, sin letras ni caracteres especiales.</div>
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="createUserCiudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
-            <input id="createUserCiudad" type="text" name="ciudad" class="form-control" required
-                   value="{{ form_data.ciudad|default:'Bogotá' }}" placeholder="Bogotá">
-            <div class="invalid-feedback">La ciudad es obligatoria.</div>
+            <input id="createUserCiudad" type="text" name="ciudad" class="form-control" value="Bogotá" readonly aria-readonly="true">
+            <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
           </div>
           <div class="col-md-6">
             <label for="createUserLocalidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
@@ -126,14 +116,24 @@
         <div class="row g-3 mb-4">
           <div class="col-md-6">
             <label for="createUserPassword" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
-            <input id="createUserPassword" type="password" name="password" class="form-control" required minlength="8"
-                   placeholder="Mínimo 8 caracteres">
+            <div class="input-group">
+              <input id="createUserPassword" type="password" name="password" class="form-control" required minlength="8"
+                     placeholder="Mínimo 8 caracteres">
+              <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" aria-label="Mostrar u ocultar contraseña" data-target="#createUserPassword">
+                <i class="bi bi-eye toggle-password" data-target="#createUserPassword" aria-hidden="true"></i>
+              </button>
+            </div>
             <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
           </div>
           <div class="col-md-6">
             <label for="createUserPasswordConfirm" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
-            <input id="createUserPasswordConfirm" type="password" name="passwordConfirm" class="form-control" required minlength="8"
-                   placeholder="Repite la contraseña">
+            <div class="input-group">
+              <input id="createUserPasswordConfirm" type="password" name="passwordConfirm" class="form-control" required minlength="8"
+                     placeholder="Repite la contraseña">
+              <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" aria-label="Mostrar u ocultar confirmación de contraseña" data-target="#createUserPasswordConfirm">
+                <i class="bi bi-eye toggle-password" data-target="#createUserPasswordConfirm" aria-hidden="true"></i>
+              </button>
+            </div>
             <div class="invalid-feedback">Confirma la contraseña y verifica que coincida.</div>
           </div>
         </div>
@@ -162,5 +162,21 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{% if errores %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof Swal === "undefined") {
+      return;
+    }
+
+    Swal.fire({
+      icon: "error",
+      title: "Revisa los campos",
+      html: '<div class="text-start"><ul class="mb-0 ps-3">{% for error in errores %}<li>{{ error|escape }}</li>{% endfor %}</ul></div>',
+      confirmButtonColor: "#198754",
+    });
+  });
+</script>
+{% endif %}
 <script src="{% static 'js/admin/crear_usuario.js' %}"></script>
 {% endblock %}

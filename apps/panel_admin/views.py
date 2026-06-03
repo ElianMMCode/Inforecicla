@@ -167,9 +167,9 @@ def _obtener_datos_crear_usuario_admin(data):
         "apellidos": _normalizar_texto(data.get("apellidos", "")),
         "email": _normalizar_texto(data.get("email", "")).lower(),
         "celular": _normalizar_texto(data.get("celular", "")),
-        "tipo_documento": _normalizar_texto(data.get("tipoDocumento", ""), cons.TipoDocumento.CC),
+        "tipo_documento": _normalizar_texto(data.get("tipoDocumento", "")),
         "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")),
-        "ciudad": _normalizar_texto(data.get("ciudad", ""), DEFAULT_CITY),
+        "ciudad": DEFAULT_CITY,
         "localidad_id": _normalizar_texto(data.get("localidad", "")),
         "fecha_nacimiento": _normalizar_texto(data.get("fechaNacimiento", "")) or None,
         "tipo_usuario": _normalizar_texto(data.get("tipo_usuario", cons.TipoUsuario.CIUDADANO)),
@@ -181,14 +181,46 @@ def _obtener_datos_crear_usuario_admin(data):
 def _validar_campos_crear_usuario_admin(datos, errores):
     if len(datos["nombres"]) < 3:
         errores.append("El nombre debe tener al menos 3 caracteres.")
+    elif len(datos["nombres"]) > 30:
+        errores.append("El nombre no puede superar 30 caracteres.")
     if len(datos["apellidos"]) < 3:
         errores.append("Los apellidos deben tener al menos 3 caracteres.")
-    if not datos["email"]:
-        errores.append("Debe ingresar un email válido.")
+    elif len(datos["apellidos"]) > 40:
+        errores.append("Los apellidos no pueden superar 40 caracteres.")
+    _validar_email_crear_usuario_admin(datos["email"], errores)
     if len(datos["celular"]) != 10 or not datos["celular"].startswith("3"):
         errores.append(CELULAR_ERROR)
+    if not datos["tipo_documento"]:
+        errores.append("Debe seleccionar un tipo de documento.")
+    elif datos["tipo_documento"] not in {valor for valor, _ in cons.TipoDocumento.choices}:
+        errores.append("El tipo de documento seleccionado no es válido.")
+    if not datos["numero_documento"]:
+        errores.append("Debe ingresar un número de documento.")
+    elif not _re.fullmatch(r"\d{6,20}", datos["numero_documento"]):
+        errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
     if not datos["ciudad"]:
         errores.append("Debe especificar la ciudad.")
+
+
+def _validar_email_crear_usuario_admin(email, errores):
+    if not email:
+        errores.append("Debe ingresar un correo electrónico.")
+        return
+
+    if " " in email:
+        errores.append("El correo electrónico no puede contener espacios.")
+        return
+
+    cantidad_arrobas = email.count("@")
+    if cantidad_arrobas != 1:
+        errores.append("El correo electrónico debe contener exactamente 1 símbolo @.")
+        return
+
+    dominio = email.rsplit("@", 1)[-1].lower()
+    dominios_validos = _re.compile(r"^(?:[A-Za-z0-9-]+\.)+(?:com|co|edu\.co|com\.co)$", _re.IGNORECASE)
+
+    if not dominios_validos.match(dominio):
+        errores.append("El correo electrónico debe terminar en .com, .co, .edu.co o .com.co.")
 
 
 def _validar_credenciales_crear_usuario_admin(datos, errores):
@@ -238,7 +270,7 @@ def _crear_usuario_admin_desde_datos(datos, localidad_inst):
     with transaction.atomic():
         usuario = Usuario(
             email=datos["email"],
-            numero_documento=datos["numero_documento"] or f"ADM_{datos['email']}",
+            numero_documento=datos["numero_documento"],
             nombres=datos["nombres"],
             apellidos=datos["apellidos"],
             celular=datos["celular"],
@@ -679,7 +711,18 @@ def crear_usuario_admin(request):
             messages.success(request, f"Usuario {data['nombres']} {data['apellidos']} creado correctamente.")
             return redirect(ADMIN_LISTAR_USUARIOS_URL)
         except (IntegrityError, ValidationError) as e:
-            messages.error(request, f"Error al crear el usuario: {e}")
+            errores = [f"Error al crear el usuario: {e}"]
+            return render(
+                request,
+                "admin/Usuarios/createUsuario.html",
+                {
+                    "errores": errores,
+                    "localidades": localidades,
+                    "tipos_documento": tipos_documento,
+                    "tipos_usuario": tipos_usuario,
+                    "form_data": request.POST,
+                },
+            )
 
     return render(request, "admin/Usuarios/createUsuario.html", {
         "localidades": localidades,
