@@ -4,13 +4,19 @@ Existen funciones para buscar, filtrar, crear, actualizar y eliminar materiales 
 Las operaciones aplican validaciones, manejo de errores y formateo de respuestas para integración directa con vistas o APIs.
 """
 
-from django.db import transaction
+from uuid import UUID
+
+from django.db import DatabaseError, transaction
 from django.http import Http404
-from apps.inventory.models import Material, Inventario
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from apps.ecas.models import PuntoECA
-from apps.inventory.models import CategoriaMaterial, TipoMaterial
+from apps.inventory.models import (
+    CategoriaMaterial,
+    Inventario,
+    Material,
+    TipoMaterial,
+)
 
 
 MENSAJE_RECURSO_NO_ENCONTRADO = "Recurso no encontrado"
@@ -18,6 +24,81 @@ IMAGEN_MATERIAL_DEFECTO = "/static/img/materiales.png"
 
 
 class InventoryService:
+    @staticmethod
+    def _validar_parametros_busqueda_fuera(punto_id, query, categoria, tipo):
+        """Valida los parámetros de entrada para búsqueda de materiales fuera de inventario.
+        Retorna dict con error y status si algo falla, o None si todo es válido.
+        """
+        if not punto_id or not str(punto_id).strip():
+            return {
+                "error": True,
+                "mensaje": "El parámetro 'puntoId' es obligatorio.",
+                "status": 400,
+            }
+        try:
+            UUID(str(punto_id))
+        except (ValueError, AttributeError, TypeError):
+            return {
+                "error": True,
+                "mensaje": f"El ID '{punto_id}' no tiene un formato UUID válido.",
+                "status": 400,
+            }
+        filtros_invalidos = [
+            nombre
+            for nombre, valor in (("query", query), ("categoria", categoria), ("tipo", tipo))
+            if valor is not None and not isinstance(valor, str)
+        ]
+        if filtros_invalidos:
+            return {
+                "error": True,
+                "mensaje": (
+                    "Los filtros deben ser cadenas de texto. "
+                    f"Tipos inválidos en: {', '.join(filtros_invalidos)}."
+                ),
+                "status": 400,
+            }
+        return None
+
+    @staticmethod
+    def _obtener_punto_eca_o_error(punto_id):
+        """Busca un PuntoECA por id. Retorna (punto, None) o (None, dict_error)."""
+        try:
+            return PuntoECA.objects.get(id=punto_id), None
+        except PuntoECA.DoesNotExist:
+            return None, {
+                "error": True,
+                "mensaje": f"No existe un PuntoECA con id '{punto_id}'.",
+                "status": 404,
+            }
+
+    @staticmethod
+    def _aplicar_filtros_catalogo(queryset, query, categoria, tipo):
+        """Aplica filtros opcionales (query, categoria, tipo) al queryset del catálogo."""
+        if query:
+            queryset = queryset.filter(
+                Q(nombre__unaccent__icontains=query)
+                | Q(categoria__nombre__unaccent__icontains=query)
+                | Q(tipo__nombre__unaccent__icontains=query)
+            )
+        if categoria:
+            queryset = queryset.filter(categoria__nombre__unaccent__iexact=categoria)
+        if tipo:
+            queryset = queryset.filter(tipo__nombre__unaccent__iexact=tipo)
+        return queryset
+
+    @staticmethod
+    def _formatear_material_fuera_inventario(material):
+        """Proyecta un Material a la estructura de respuesta del catálogo."""
+        return {
+            "materialId": str(material.id),
+            "nmbMaterial": material.nombre,
+            "nmbCategoria": material.categoria.nombre if material.categoria else "General",
+            "nmbTipo": material.tipo.nombre if material.tipo else "N/A",
+            "dscMaterial": material.descripcion,
+            "unidad": "",
+            "imagenUrl": material.imagen_url if material.imagen_url else IMAGEN_MATERIAL_DEFECTO,
+        }
+
     @staticmethod
     @transaction.atomic
     def buscar_materiales_fuera_inventario(punto_id, query, categoria, tipo):
@@ -30,61 +111,52 @@ class InventoryService:
             categoria (str): nombre de la categoría a filtrar
             tipo (str): nombre del tipo de material a filtrar
         Retorna:
-            list[dict] o dict con error.
+            list[dict] con los materiales encontrados, o dict con error y status HTTP sugerido.
+            Errores posibles:
+                - 400: punto_id ausente, con formato UUID inválido o filtros no str.
+                - 404: PuntoECA no existe en la base de datos.
+                - 500: error técnico inesperado al consultar el catálogo.
         """
+        error = InventoryService._validar_parametros_busqueda_fuera(
+            punto_id, query, categoria, tipo
+        )
+        if error:
+            return error
+
+        punto, error = InventoryService._obtener_punto_eca_o_error(punto_id)
+        if error:
+            return error
+
         try:
-            punto = get_object_or_404(PuntoECA, id=punto_id)
             materiales_en_inventario = Inventario.objects.filter(
                 punto_eca=punto,
             ).values_list("material_id", flat=True)
 
-            materiales_catalogo = Material.objects.select_related(
-                "categoria", "tipo"
-            ).exclude(
-                id__in=materiales_en_inventario
+            materiales_catalogo = (
+                Material.objects.select_related("categoria", "tipo")
+                .exclude(id__in=materiales_en_inventario)
+                .distinct()
+            )
+            materiales_catalogo = InventoryService._aplicar_filtros_catalogo(
+                materiales_catalogo, query, categoria, tipo
             )
 
-            if query:
-                materiales_catalogo = materiales_catalogo.filter(
-                    Q(nombre__unaccent__icontains=query)
-                    | Q(categoria__nombre__unaccent__icontains=query)
-                    | Q(tipo__nombre__unaccent__icontains=query)
-                )
-            if categoria:
-                materiales_catalogo = materiales_catalogo.filter(
-                    categoria__nombre__unaccent__iexact=categoria
-                )
-            if tipo:
-                materiales_catalogo = materiales_catalogo.filter(
-                    tipo__nombre__unaccent__iexact=tipo
-                )
-
-            materiales_catalogo = materiales_catalogo.distinct()
-
-            resultados = []
-            for m in materiales_catalogo:
-                resultados.append(
-                    {
-                        "materialId": str(m.id),
-                        "nmbMaterial": m.nombre,
-                        "nmbCategoria": m.categoria.nombre
-                        if m.categoria
-                        else "General",
-                        "nmbTipo": m.tipo.nombre if m.tipo else "N/A",
-                        "dscMaterial": m.descripcion,
-                        "unidad": "",
-                        "imagenUrl": m.imagen_url
-                        if m.imagen_url
-                        else "/static/img/materiales.png",
-                    }
-                )
-            return resultados
-        except Http404:
-            return {"error": True, "mensaje": "PuntoECA no encontrado", "status": 404}
-        except Exception:
+            return [
+                InventoryService._formatear_material_fuera_inventario(m)
+                for m in materiales_catalogo
+            ]
+        except DatabaseError as e:
             return {
                 "error": True,
-                "mensaje": "Error técnico en búsqueda de materiales fuera de inventario",
+                "mensaje": f"Error de base de datos al consultar el catálogo de materiales: {str(e)}",
+                "status": 500,
+            }
+        except Exception as e:
+            return {
+                "error": True,
+                "mensaje": (
+                    f"Error técnico inesperado en búsqueda de materiales fuera de inventario: {str(e)}"
+                ),
                 "status": 500,
             }
 
