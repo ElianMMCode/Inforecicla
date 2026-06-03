@@ -24,6 +24,7 @@ ADMIN_LISTAR_USUARIOS_URL = "panel_admin:listar_usuarios"
 ADMIN_LISTAR_PUBLICACIONES_URL = "panel_admin:listar_publicaciones_admin"
 ADMIN_PERFIL_URL = "panel_admin:perfil_admin"
 ADMIN_CREATE_PUBLICACION_TEMPLATE = "admin/Publicaciones/createPublicacion.html"
+ADMIN_CREATE_USUARIO_TEMPLATE = "admin/Usuarios/createUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 
@@ -37,14 +38,14 @@ def _crear_respuesta_descarga(contenido, content_type, filename):
 def _validar_nombre_perfil_admin(nombres, errores):
     if not nombres or len(nombres) < 3:
         errores.append("El nombre debe tener al menos 3 caracteres.")
-    elif len(nombres) > 30 or not _SOLO_LETRAS.match(nombres):
+    elif len(nombres) > 30 or not _texto_solo_letras(nombres, permitir_apostrofo=True):
         errores.append("El nombre solo puede contener letras (máx. 30).")
 
 
 def _validar_apellido_perfil_admin(apellidos, errores):
     if not apellidos or len(apellidos) < 3:
         errores.append("Los apellidos deben tener al menos 3 caracteres.")
-    elif len(apellidos) > 40 or not _SOLO_LETRAS.match(apellidos):
+    elif len(apellidos) > 40 or not _texto_solo_letras(apellidos, permitir_apostrofo=True):
         errores.append("Los apellidos solo pueden contener letras (máx. 40).")
 
 
@@ -54,8 +55,16 @@ def _validar_celular_perfil_admin(celular, errores):
 
 
 def _validar_ciudad_perfil_admin(ciudad, errores):
-    if ciudad and (len(ciudad) > 15 or not _SOLO_CIUDAD.match(ciudad)):
+    if ciudad and (len(ciudad) > 15 or not _texto_solo_letras(ciudad)):
         errores.append("La ciudad solo puede contener letras (máx. 15).")
+
+
+def _texto_solo_letras(texto, permitir_apostrofo=False):
+    if not texto:
+        return False
+
+    caracteres_permitidos = " -'" if permitir_apostrofo else " -"
+    return all(caracter.isalpha() or caracter in caracteres_permitidos for caracter in texto)
 
 
 def _validar_fecha_perfil_admin(fecha_str, errores):
@@ -104,7 +113,7 @@ def _validar_cambio_contrasena_admin(user, actual, nueva, confirmar):
         return "Todos los campos de contraseña son obligatorios."
     if not user.check_password(actual):
         return "La contraseña actual es incorrecta."
-    if not _PASSWORD_COMP.match(nueva):
+    if not _contrasena_cumple_complejidad(nueva):
         return (
             "La nueva contraseña debe tener mínimo 8 caracteres, una mayúscula, "
             "una minúscula, un número y un símbolo (@$!%*?&)."
@@ -112,6 +121,18 @@ def _validar_cambio_contrasena_admin(user, actual, nueva, confirmar):
     if nueva != confirmar:
         return "Las contraseñas nuevas no coinciden."
     return None
+
+
+def _contrasena_cumple_complejidad(contrasena):
+    if len(contrasena) < 8:
+        return False
+
+    tiene_mayuscula = any(caracter.isupper() for caracter in contrasena)
+    tiene_minuscula = any(caracter.islower() for caracter in contrasena)
+    tiene_numero = any(caracter.isdigit() for caracter in contrasena)
+    tiene_especial = any(caracter in "@$!%*?&" for caracter in contrasena)
+
+    return tiene_mayuscula and tiene_minuscula and tiene_numero and tiene_especial
 
 
 def _normalizar_texto(valor, default=""):
@@ -196,7 +217,7 @@ def _validar_campos_crear_usuario_admin(datos, errores):
         errores.append("El tipo de documento seleccionado no es válido.")
     if not datos["numero_documento"]:
         errores.append("Debe ingresar un número de documento.")
-    elif not _re.fullmatch(r"\d{6,20}", datos["numero_documento"]):
+    elif not (datos["numero_documento"].isdigit() and 6 <= len(datos["numero_documento"]) <= 20):
         errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
     if not datos["ciudad"]:
         errores.append("Debe especificar la ciudad.")
@@ -217,9 +238,12 @@ def _validar_email_crear_usuario_admin(email, errores):
         return
 
     dominio = email.rsplit("@", 1)[-1].lower()
-    dominios_validos = _re.compile(r"^(?:[A-Za-z0-9-]+\.)+(?:com|co|edu\.co|com\.co)$", _re.IGNORECASE)
-
-    if not dominios_validos.match(dominio):
+    if not (
+        dominio.endswith(".com")
+        or dominio.endswith(".co")
+        or dominio.endswith(".edu.co")
+        or dominio.endswith(".com.co")
+    ):
         errores.append("El correo electrónico debe terminar en .com, .co, .edu.co o .com.co.")
 
 
@@ -716,7 +740,7 @@ def crear_usuario_admin(request):
         if errores:
             return render(
                 request,
-                "admin/Usuarios/createUsuario.html",
+                ADMIN_CREATE_USUARIO_TEMPLATE,
                 {
                     "errores": errores,
                     "localidades": localidades,
@@ -734,7 +758,7 @@ def crear_usuario_admin(request):
             errores = [f"Error al crear el usuario: {e}"]
             return render(
                 request,
-                "admin/Usuarios/createUsuario.html",
+                ADMIN_CREATE_USUARIO_TEMPLATE,
                 {
                     "errores": errores,
                     "localidades": localidades,
@@ -744,7 +768,7 @@ def crear_usuario_admin(request):
                 },
             )
 
-    return render(request, "admin/Usuarios/createUsuario.html", {
+    return render(request, ADMIN_CREATE_USUARIO_TEMPLATE, {
         "localidades": localidades,
         "tipos_documento": tipos_documento,
         "tipos_usuario": tipos_usuario,
@@ -1520,8 +1544,6 @@ def crear_categoria_publicacion(request):
 
 # ─── Perfil del Administrador ───────────────────────────────────────────────
 
-_SOLO_LETRAS   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$")
-_SOLO_CIUDAD   = _re.compile(r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$")
 _CELULAR       = _re.compile(r"^3\d{9}$")
 _PASSWORD_COMP = _re.compile(
     r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$"

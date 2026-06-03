@@ -1,5 +1,9 @@
 # apps/panel_admin/service.py
+import datetime
+from decimal import Decimal as decimal
+
 from django.db import transaction
+from django.http import Http404
 from apps.ecas.models import Localidad, PuntoECA
 from apps.users.models import Usuario
 from apps.inventory.models import Inventario, TipoMaterial, CategoriaMaterial, Material
@@ -7,13 +11,87 @@ from config import constants as cons
 from apps.operations.models import VentaInventario, CompraInventario
 from apps.inventory.service import InventoryService
 from apps.operations.service import CompraInventarioService, VentaInventarioService
+from apps.panel_admin import models
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.utils import timezone
 
 
 ESTADO_INVALIDO_MSG = "Estado invalido."
+NOMBRE_OBLIGATORIO_MSG = "El nombre es obligatorio."
+NOMBRE_MAX_30_MSG = "El nombre no puede superar 30 caracteres."
+DESCRIPCION_MAX_500_MSG = "La descripcion no puede superar 500 caracteres."
+PUBLICACIONES_NO_HABILITADAS_MSG = (
+    "El modulo de publicaciones no esta habilitado en la configuracion actual."
+)
+TIPO_MAX_30_MSG = "El tipo no puede exceder 30 caracteres."
+NOMBRE_CATEGORIA_OBLIGATORIO_MSG = "El nombre de la categoría es obligatorio."
+NOMBRE_CATEGORIA_MAX_30_MSG = "El nombre no puede exceder 30 caracteres."
+DESCRIPCION_CATEGORIA_MAX_500_MSG = (
+    "La descripción no puede exceder 500 caracteres."
+)
+RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado"
+UTC_SUFFIX = "+00:00"
+
+
+def _obtener_localidad(valor_localidad):
+    if not valor_localidad:
+        return None
+
+    localidad = Localidad.objects.filter(localidad_id=valor_localidad).first()
+    if localidad:
+        return localidad
+
+    return Localidad.objects.filter(nombre__iexact=valor_localidad).first()
+
+
+def _to_decimal(valor):
+    return decimal(str(valor))
+
+
+def _parse_datetime_aware(valor, formato_alternativo="%Y-%m-%d %H:%M:%S"):
+    if not isinstance(valor, str):
+        return valor
+
+    try:
+        fecha_dt = datetime.datetime.fromisoformat(valor.replace("Z", UTC_SUFFIX))
+    except Exception:
+        fecha_dt = datetime.datetime.strptime(valor, formato_alternativo)
+
+    if timezone.is_naive(fecha_dt):
+        fecha_dt = timezone.make_aware(fecha_dt)
+    return fecha_dt
+
+
+def _obtener_inventario_operacion(data):
+    inventario_id = data.get("inventarioId")
+    if inventario_id:
+        inventario = Inventario.objects.filter(id=inventario_id).first()
+        if inventario:
+            return inventario, None
+
+    punto_id = data.get("puntoEcaId")
+    material_id = data.get("materialId")
+    if punto_id and material_id:
+        inventario = Inventario.objects.filter(
+            punto_eca_id=punto_id, material_id=material_id
+        ).first()
+        if inventario:
+            return inventario, None
+
+        return None, {
+            "error": True,
+            "mensaje": "Inventario no encontrado por punto y material.",
+            "status": 404,
+        }
+
+    return None, {
+        "error": True,
+        "mensaje": "Inventario no encontrado.",
+        "status": 404,
+    }
 
 
 class AdminDashboardService:
@@ -39,7 +117,7 @@ class AdminDashboardService:
             resumen["total_categorias_materiales"] = CategoriaMaterial.objects.count()
             resumen["total_tipos_material"] = TipoMaterial.objects.count()
         except Exception:
-            pass
+            return resumen
 
         # Publicaciones puede estar deshabilitada en algunos entornos.
         try:
@@ -48,7 +126,7 @@ class AdminDashboardService:
             resumen["total_publicaciones"] = Publicacion.objects.count()
             resumen["total_categorias_publicaciones"] = CategoriaPublicacion.objects.count()
         except Exception:
-            pass
+            return resumen
 
         return resumen
 
@@ -81,7 +159,7 @@ class AdminCatalogService:
                     tipos.append((nombre, nombre))
                     valores.add(nombre)
         except Exception:
-            pass
+            return tipos
 
         return tipos
 
@@ -94,11 +172,11 @@ class AdminCatalogService:
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
         if len(nombre) > 30:
-            return {"ok": False, "message": "El nombre no puede superar 30 caracteres."}
+            return {"ok": False, "message": NOMBRE_MAX_30_MSG}
         if descripcion and len(descripcion) > 500:
-            return {"ok": False, "message": "La descripcion no puede superar 500 caracteres."}
+            return {"ok": False, "message": DESCRIPCION_MAX_500_MSG}
         if estado not in estados_validos:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
@@ -119,11 +197,11 @@ class AdminCatalogService:
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
         if len(nombre) > 30:
-            return {"ok": False, "message": "El nombre no puede superar 30 caracteres."}
+            return {"ok": False, "message": NOMBRE_MAX_30_MSG}
         if descripcion and len(descripcion) > 500:
-            return {"ok": False, "message": "La descripcion no puede superar 500 caracteres."}
+            return {"ok": False, "message": DESCRIPCION_MAX_500_MSG}
         if estado not in estados_validos:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
@@ -146,9 +224,9 @@ class AdminCatalogService:
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
         if len(nombre) > 30:
-            return {"ok": False, "message": "El nombre no puede superar 30 caracteres."}
+            return {"ok": False, "message": NOMBRE_MAX_30_MSG}
         if estado not in estados_validos:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
@@ -184,7 +262,7 @@ class AdminCatalogService:
         except Exception:
             return {
                 "ok": False,
-                "message": "El modulo de publicaciones no esta habilitado en la configuracion actual.",
+                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
             }
 
         nombre = (data.get("nombre") or "").strip()
@@ -200,7 +278,7 @@ class AdminCatalogService:
         if not tipo:
             return {"ok": False, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
         if len(tipo) > 30:
-            return {"ok": False, "message": "El tipo no puede exceder 30 caracteres."}
+            return {"ok": False, "message": TIPO_MAX_30_MSG}
 
         tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         estados_validos = {value for value, _ in cons.Estado.choices}
@@ -214,14 +292,14 @@ class AdminCatalogService:
 
             if "nombre" in campos_modelo:
                 if not nombre:
-                    return {"ok": False, "message": "El nombre de la categoría es obligatorio."}
+                    return {"ok": False, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
                 if len(nombre) > 30:
-                    return {"ok": False, "message": "El nombre no puede exceder 30 caracteres."}
+                    return {"ok": False, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
                 payload["nombre"] = nombre
 
             if "descripcion" in campos_modelo:
                 if len(descripcion) > 500:
-                    return {"ok": False, "message": "La descripción no puede exceder 500 caracteres."}
+                    return {"ok": False, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
                 payload["descripcion"] = descripcion
 
             obj = CategoriaPublicacion(**payload)
@@ -807,7 +885,7 @@ class AdminFacadeService:
     @staticmethod
     def registros_carga_masiva(request):
         """Fachada para carga masiva CSV en formularios de registro."""
-        from apps.users.service import UserService
+        from apps.core.service import UserService
 
         return UserService.carga_masiva(request)
 
@@ -876,47 +954,50 @@ class AdminFacadeService:
         except Exception:
             return None
 
+
+
+
     # ═════════════════════════════════════════════════════════════
     # INVENTARIO - Gestión de inventarios
     # ═════════════════════════════════════════════════════════════
 
-    @staticmethod
-    def inventario_estadisticas(punto_id=None):
+@staticmethod
+def inventario_estadisticas(punto_id=None):
         """Obtener estadísticas de inventario"""
         return AdminInventoryService.obtener_estadisticas_inventario(punto_id)
 
-    @staticmethod
-    def inventario_listar_todos(punto_id=None, filtros=None):
+@staticmethod
+def inventario_listar_todos(punto_id=None, filtros=None):
         """Listar todos los inventarios"""
         return AdminInventoryService.listar_todos_inventarios(punto_id, filtros)
 
-    @staticmethod
-    def inventario_criticos(punto_id=None):
+@staticmethod
+def inventario_criticos(punto_id=None):
         """Obtener inventarios en estado crítico"""
         return AdminInventoryService.inventarios_criticos(punto_id)
 
-    @staticmethod
-    def inventario_buscar_fuera(punto_id, query, categoria, tipo):
+@staticmethod
+def inventario_buscar_fuera(punto_id, query, categoria, tipo):
         """Buscar materiales fuera del inventario"""
         return InventoryService.buscar_materiales_fuera_inventario(punto_id, query, categoria, tipo)
 
-    @staticmethod
-    def inventario_buscar_dentro(data):
+@staticmethod
+def inventario_buscar_dentro(data):
         """Buscar materiales dentro del inventario"""
         return InventoryService.buscar_materiales_dentro_inventario(data)
 
-    @staticmethod
-    def inventario_crear(data):
+@staticmethod
+def inventario_crear(data):
         """Crear nuevo item en inventario"""
         return InventoryService.crear_inventario(data)
 
-    @staticmethod
-    def inventario_actualizar(inventario_id, data):
+@staticmethod
+def inventario_actualizar(inventario_id, data):
         """Actualizar item en inventario"""
         return InventoryService.actualizar_inventario(inventario_id, data)
 
-    @staticmethod
-    def inventario_eliminar(inventario_id):
+@staticmethod
+def inventario_eliminar(inventario_id):
         """Eliminar item del inventario"""
         return InventoryService.eliminar_material_inventario(inventario_id)
 
@@ -924,53 +1005,53 @@ class AdminFacadeService:
     # OPERACIONES - Compras y ventas
     # ═════════════════════════════════════════════════════════════
 
-    @staticmethod
-    def operaciones_listar_compras(punto_id=None, filtros=None):
+@staticmethod
+def operaciones_listar_compras(punto_id=None, filtros=None):
         """Listar todas las compras"""
         return AdminOperationsService.listar_todas_compras(punto_id, filtros)
 
-    @staticmethod
-    def operaciones_listar_ventas(punto_id=None, filtros=None):
+@staticmethod
+def operaciones_listar_ventas(punto_id=None, filtros=None):
         """Listar todas las ventas"""
         return AdminOperationsService.listar_todas_ventas(punto_id, filtros)
 
-    @staticmethod
-    def operaciones_registrar_compra(request, data):
+@staticmethod
+def operaciones_registrar_compra(request, data):
         """Registrar nueva compra"""
         return CompraInventarioService.registro_compra(request, data)
 
-    @staticmethod
-    def operaciones_editar_compra(request, data, compra_id):
+@staticmethod
+def operaciones_editar_compra(request, data, compra_id):
         """Editar compra existente"""
         return CompraInventarioService.editar_compra(request, data, compra_id)
 
-    @staticmethod
-    def operaciones_eliminar_compra(request, compra_id):
+@staticmethod
+def operaciones_eliminar_compra(request, compra_id):
         """Eliminar compra"""
         return CompraInventarioService.borrar_compra(request, compra_id)
 
-    @staticmethod
-    def operaciones_registrar_venta(request, data):
+@staticmethod
+def operaciones_registrar_venta(request, data):
         """Registrar nueva venta"""
         return VentaInventarioService.registrar_venta(request, data)
 
-    @staticmethod
-    def operaciones_editar_venta(request, data, venta_id):
+@staticmethod
+def operaciones_editar_venta(request, data, venta_id):
         """Editar venta existente"""
         return VentaInventarioService.editar_venta(request, data, venta_id)
 
-    @staticmethod
-    def operaciones_eliminar_venta(request, venta_id):
+@staticmethod
+def operaciones_eliminar_venta(request, venta_id):
         """Eliminar venta"""
         return VentaInventarioService.borrar_venta(request, venta_id)
 
-    @staticmethod
-    def operaciones_estadisticas(punto_id=None):
+@staticmethod
+def operaciones_estadisticas(punto_id=None):
         """Obtener estadísticas de operaciones"""
         return AdminOperationsService.estadisticas_operaciones(punto_id)
 
-    @staticmethod
-    def operaciones_exportar_excel(punto_id=None):
+@staticmethod
+def operaciones_exportar_excel(punto_id=None):
         """Exportar historial en Excel"""
         return AdminOperationsService.exportar_historial_excel(punto_id)
 
@@ -2139,13 +2220,9 @@ class AdminVentaInventarioService:
             # intentar asociar localidad si se proporciona
             localidad_val = data.get('localidad')
             if localidad_val:
-                try:
-                    extra['localidad'] = Localidad.objects.get(localidad_id=localidad_val)
-                except Exception:
-                    try:
-                        extra['localidad'] = Localidad.objects.get(nombre__iexact=localidad_val)
-                    except Exception:
-                        pass
+                localidad = _obtener_localidad(localidad_val)
+                if localidad:
+                    extra['localidad'] = localidad
 
             usuario = None
             try:
@@ -2224,19 +2301,19 @@ class AdminVentaInventarioService:
 
             localidad_id = data.get("localidad_id") or data.get("localidad")
             if localidad_id:
-                try:
-                    punto.localidad = Localidad.objects.get(localidad_id=localidad_id)
-                except Localidad.DoesNotExist:
-                    pass
+                localidad = _obtener_localidad(localidad_id)
+                if localidad:
+                    punto.localidad = localidad
 
             gestor_id = data.get("gestor_id")
             if gestor_id:
-                try:
-                    punto.gestor_eca = Usuario.objects.get(id=gestor_id)
-                except Usuario.DoesNotExist:
-                    pass
+                gestor = Usuario.objects.filter(id=gestor_id).first()
+                if gestor:
+                    punto.gestor_eca = gestor
 
             punto.save()
             return punto
         except Exception:
             return None
+
+AdminOperationsService = AdminCompraInventarioService

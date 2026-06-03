@@ -94,7 +94,63 @@ function limitarUnSoloArroba(valor) {
     return texto;
   }
 
-  return texto.slice(0, primerArroba + 1) + texto.slice(primerArroba + 1).replace(/@/g, "");
+  return texto.slice(0, primerArroba + 1) + texto.slice(primerArroba + 1).replaceAll("@", "");
+}
+
+function normalizarSoloDigitos(campo) {
+  if (!campo) {
+    return;
+  }
+
+  const valor = campo.value;
+  const soloDigitos = valor.replace(/\D/g, "");
+
+  if (valor !== soloDigitos) {
+    campo.value = soloDigitos;
+  }
+}
+
+function validarLongitudTexto(campo, minimo, maximo, mensajeMinimo, mensajeMaximo) {
+  if (!campo) {
+    return true;
+  }
+
+  const valor = campo.value.trim();
+
+  if (!valor) {
+    campo.setCustomValidity("");
+    actualizarEstadoCampo(campo);
+    return true;
+  }
+
+  if (valor.length < minimo) {
+    campo.setCustomValidity(mensajeMinimo);
+    actualizarEstadoCampo(campo);
+    return false;
+  }
+
+  if (valor.length > maximo) {
+    campo.setCustomValidity(mensajeMaximo);
+    actualizarEstadoCampo(campo);
+    return false;
+  }
+
+  campo.setCustomValidity("");
+  actualizarEstadoCampo(campo);
+  return true;
+}
+
+function validarNombreCompleto(campo, minimo, maximo, mensajeMinimo, mensajeMaximo) {
+  return validarLongitudTexto(campo, minimo, maximo, mensajeMinimo, mensajeMaximo);
+}
+
+function sincronizarValidacionCampo(campo) {
+  if (!campo) {
+    return;
+  }
+
+  campo.setCustomValidity(campo.checkValidity() ? "" : campo.validationMessage);
+  actualizarEstadoCampo(campo);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -146,49 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
     passwordRequirementsBox.classList.add("alert-light", "border");
   }
 
-  function normalizarSoloDigitos(campo) {
-    if (!campo) {
-      return;
-    }
-
-    const valor = campo.value;
-    const soloDigitos = valor.replace(/\D/g, "");
-
-    if (valor !== soloDigitos) {
-      campo.value = soloDigitos;
-    }
-  }
-
-  function validarLongitudTexto(campo, minimo, maximo, mensajeMinimo, mensajeMaximo) {
-    if (!campo) {
-      return true;
-    }
-
-    const valor = campo.value.trim();
-
-    if (!valor) {
-      campo.setCustomValidity("");
-      actualizarEstadoCampo(campo);
-      return true;
-    }
-
-    if (valor.length < minimo) {
-      campo.setCustomValidity(mensajeMinimo);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    if (valor.length > maximo) {
-      campo.setCustomValidity(mensajeMaximo);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    campo.setCustomValidity("");
-    actualizarEstadoCampo(campo);
-    return true;
-  }
-
   function validarEmail() {
     if (!emailInput) {
       return true;
@@ -221,7 +234,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const dominio = email.split("@").pop() || "";
-    const dominioValido = /^(?:[A-Za-z0-9-]+\.)+(?:com|co|edu\.co|com\.co)$/i.test(dominio);
+    const dominioValido =
+      dominio.endsWith(".com") ||
+      dominio.endsWith(".co") ||
+      dominio.endsWith(".edu.co") ||
+      dominio.endsWith(".com.co");
 
     if (!dominioValido) {
       emailInput.setCustomValidity("El correo electrónico debe terminar en .com, .co, .edu.co o .com.co.");
@@ -264,24 +281,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return tieneLocalidad;
   }
 
-  function validarNombreCompleto(campo, minimo, maximo, mensajeMinimo, mensajeMaximo) {
-    return validarLongitudTexto(campo, minimo, maximo, mensajeMinimo, mensajeMaximo);
-  }
-
-  function sincronizarValidacionCampo(campo) {
-    if (!campo) {
-      return;
-    }
-
-    campo.setCustomValidity(campo.checkValidity() ? "" : campo.validationMessage);
-    actualizarEstadoCampo(campo);
-  }
-
   function obtenerErroresFormulario() {
     return Array.from(new Set(
       camposValidacionRapida
         .map((campo) => campo.validationMessage)
-        .filter((mensaje) => Boolean(mensaje)),
+        .filter(Boolean),
     ));
   }
 
