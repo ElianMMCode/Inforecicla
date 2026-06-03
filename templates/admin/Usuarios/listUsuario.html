@@ -151,7 +151,8 @@
 
 {% block extra_scripts %}
 {% if messages %}
-  {% with first_message=messages|first %}
+  {% for first_message in messages %}
+    {% if forloop.first %}
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       if (typeof Swal === "undefined") {
@@ -166,6 +167,7 @@
       });
     });
   </script>
-  {% endwith %}
+    {% endif %}
+  {% endfor %}
 {% endif %}
 {% endblock %}

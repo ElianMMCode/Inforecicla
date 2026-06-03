@@ -547,6 +547,26 @@ def _aplicar_datos_usuario_admin(usuario, data):
     return None
 
 
+def _formatear_error_validacion(excepcion):
+    if hasattr(excepcion, "message_dict") and excepcion.message_dict:
+        mensajes = []
+        for valores in excepcion.message_dict.values():
+            if isinstance(valores, (list, tuple)):
+                mensajes.extend(str(valor) for valor in valores if str(valor).strip())
+            elif str(valores).strip():
+                mensajes.append(str(valores))
+
+        if mensajes:
+            return " ".join(mensajes)
+
+    if hasattr(excepcion, "messages") and excepcion.messages:
+        mensajes = [str(mensaje) for mensaje in excepcion.messages if str(mensaje).strip()]
+        if mensajes:
+            return " ".join(mensajes)
+
+    return str(excepcion)
+
+
 def es_administrador(user):
     if not user.is_authenticated:
         return False
@@ -1182,6 +1202,9 @@ def editar_usuario_admin(request, usuario_id):
             usuario.save()
             messages.success(request, "Usuario actualizado correctamente.")
             return redirect("panel_admin:editar_usuario_admin", usuario_id=usuario.id)
+        except ValidationError as e:
+            mensajes_error = _formatear_error_validacion(e)
+            messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
         except Exception as e:
             messages.error(request, f"No se pudo actualizar el usuario: {e}")
 
