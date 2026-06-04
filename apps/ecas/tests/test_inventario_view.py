@@ -210,6 +210,18 @@ class TestSeccionInventario(TestCase):
         response = self.client.get("/punto-eca/inventario/?ovtab=ovtab-fake")
         self.assertEqual(response.status_code, 200)
 
+    def test_ruta_legacy_materiales_retorna_404(self):
+        """Decisión 2: /materiales/ debe devolver 404 duro (no redirect)."""
+        self._login()
+        response = self.client.get("/punto-eca/materiales/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_ruta_legacy_movimientos_retorna_404(self):
+        """Decisión 2: /movimientos/ debe devolver 404 duro (no redirect)."""
+        self._login()
+        response = self.client.get("/punto-eca/movimientos/")
+        self.assertEqual(response.status_code, 404)
+
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
 class TestInventarioEstados(TestCase):

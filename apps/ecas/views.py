@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.db.models import Q
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
@@ -130,15 +130,17 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
         return redirect("login")
     punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
 
+    # Secciones legacy /materiales/ y /movimientos/ fueron consolidadas en /inventario/
+    # (ver PLAN-INVENTARIO.md, Fase 6 — decisión 2). Devolver 404 duro en lugar de redirect
+    # para que los usuarios con URLs guardadas vean claramente que la ruta ya no existe.
+    if seccion in ("materiales", "movimientos"):
+        raise Http404("Sección consolidada en /inventario/")
+
     if seccion == "perfil":
         perfil_tab = request.GET.get("tab", perfil_tab)
 
     if seccion == "perfil":
         context = _build_perfil_context(punto, perfil_tab=perfil_tab)
-    elif seccion == "materiales":
-        context = _build_materiales_context(punto)
-    elif seccion == "movimientos":
-        context = _build_movimientos_context(punto)
     elif seccion == "inventario":
         context = _build_inventario_context(punto)
     elif seccion == "centros":
