@@ -28,6 +28,13 @@ from apps.users.models import Usuario
 from config import constants as cons
 
 
+def _parse_inv_data(value):
+    """Acepta dict o string JSON (compatibilidad con view antes/después del fix)."""
+    if isinstance(value, dict):
+        return value
+    return json.loads(value)
+
+
 def _crear_usuario_gestor(email, **kwargs):
     """Crea un gestor ECA. Por defecto password aleatorio y tipo GECA."""
     defaults = {
@@ -122,12 +129,12 @@ class TestSeccionInventario(TestCase):
         self.assertTemplateUsed(response, "ecas/section-inventario.html")
 
     def test_contexto_tiene_inv_data_json_serializado(self):
-        """El contexto debe incluir inv_data_json como string JSON válido."""
+        """El contexto debe incluir inv_data_json como dict serializable."""
         self._login()
         response = self.client.get("/punto-eca/inventario/")
         self.assertEqual(response.status_code, 200)
         self.assertIn("inv_data_json", response.context)
-        data = json.loads(response.context["inv_data_json"])
+        data = _parse_inv_data(response.context["inv_data_json"])
         self.assertIn("materiales_inventario", data)
         self.assertIn("centros", data)
         self.assertIn("historial_compras", data)
@@ -137,7 +144,7 @@ class TestSeccionInventario(TestCase):
         """El inventario creado en setUp debe aparecer en el JSON pre-serializado."""
         self._login()
         response = self.client.get("/punto-eca/inventario/")
-        data = json.loads(response.context["inv_data_json"])
+        data = _parse_inv_data(response.context["inv_data_json"])
         self.assertEqual(len(data["materiales_inventario"]), 1)
         item = data["materiales_inventario"][0]
         self.assertEqual(item["nombre"], "Botella PET")
@@ -153,8 +160,8 @@ class TestSeccionInventario(TestCase):
         self._login()
         response = self.client.get("/punto-eca/inventario/")
         raw = response.context["inv_data_json"]
-        # json.loads debe poder parsear sin errores
-        data = json.loads(raw)
+        # Si la view entrega dict, lo aceptamos; si entrega string, parseamos
+        data = _parse_inv_data(raw)
         # Re-serializar para confirmar que es JSON-safe
         re_serialized = json.dumps(data)
         self.assertIsInstance(re_serialized, str)
@@ -297,7 +304,7 @@ class TestInventarioEstados(TestCase):
 
     def test_clasificacion_estado_ok_alerta_critico(self):
         response = self.client.get("/punto-eca/inventario/")
-        data = json.loads(response.context["inv_data_json"])
+        data = _parse_inv_data(response.context["inv_data_json"])
         estados = {item["nombre"]: item["estado"] for item in data["materiales_inventario"]}
         self.assertEqual(estados["Lata OK"], "ok")
         self.assertEqual(estados["Lata Alerta"], "alerta")

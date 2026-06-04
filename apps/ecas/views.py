@@ -452,7 +452,6 @@ def _build_inventario_context(punto):
         "historial_compras": historial_compras,
         "historial_ventas": historial_ventas,
     }
-    inv_data_json = json.dumps(inv_data, ensure_ascii=False)
 
     return {
         "seccion": "inventario",
@@ -479,8 +478,8 @@ def _build_inventario_context(punto):
         "centros": centros,
         "historial_compras": historial_compras,
         "historial_ventas": historial_ventas,
-        # JSON pre-serializado
-        "inv_data_json": inv_data_json,
+        # Dict para que el template lo serialice UNA sola vez con |json_script
+        "inv_data_json": inv_data,
     }
 
 
