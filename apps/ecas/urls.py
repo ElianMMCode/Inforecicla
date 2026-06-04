@@ -32,6 +32,7 @@ urlpatterns = [
         "movimientos/", render_seccion, {"seccion": "movimientos"}, name="movimientos"
     ),
     path("perfil/", render_seccion, {"seccion": "perfil"}, name="perfil"),
+    path("inventario/", render_seccion, {"seccion": "inventario"}, name="inventario"),
     path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
     path("<str:seccion>/", render_seccion, name="render_seccion"),
     path("editar-perfil/<str:id>/", editar_perfil_gestor, name="editar_perfil"),

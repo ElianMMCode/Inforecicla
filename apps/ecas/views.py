@@ -139,6 +139,8 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
         context = _build_materiales_context(punto)
     elif seccion == "movimientos":
         context = _build_movimientos_context(punto)
+    elif seccion == "inventario":
+        context = _build_inventario_context(punto)
     elif seccion == "centros":
         context = _build_centros_context(punto)
     elif seccion == "calendario":
@@ -233,6 +235,68 @@ def _build_centros_context(punto):
         "localidades_catalogo": localidades_catalogo,
         "tipos_catalogo": tipos_catalogo,
     }
+
+
+def _build_inventario_context(punto):
+    """
+    Construye el contexto unificado para la nueva sección /inventario/.
+
+    Consolida los datos de las secciones legacy 'materiales' y 'movimientos'
+    en un único dict listo para alimentar el template section-inventario.html
+    (ver PLAN-INVENTARIO.md, Fases 1-7).
+
+    Estrategia: reusa los builders existentes para no duplicar lógica. Los
+    builders viejos se eliminarán en Fase 7 cuando las rutas /materiales/ y
+    /movimientos/ devuelvan 404.
+
+    Args:
+        punto: Instancia de PuntoECA.
+
+    Returns:
+        dict con la forma:
+        {
+            "seccion": "inventario",
+            "section_template": "ecas/section-inventario.html",
+            "punto": punto,
+            "gestor": punto.gestor_eca,
+            "unidades_medida": [...],
+
+            # === Inventario (KPIs y cards) ===
+            "materiales_inventario": [...],
+            "total_stock": float,
+            "total_capacidad": float,
+            "total_ok": int,
+            "total_alerta": int,
+            "total_critico": int,
+            "ocupacion_porcentaje": int,
+            "material_mayor_ocupacion": Inventario|None,
+            "material_mas_caro": Inventario|None,
+            "material_mas_barato": Inventario|None,
+            "costo_total_inventario": float,
+            "materiales_criticos": [...],
+            "categoria_inventario": [...],
+            "tipo_inventario": [...],
+
+            # === Movimientos (historial y stock chart) ===
+            "materiales_stock_data": [...],
+            "centros": [...],
+            "entradas": [...],
+            "salidas": [...],
+            "historial_compras": [...],
+            "historial_ventas": [...],
+        }
+    """
+    # Reusar builders existentes (Fase 7 los borrará)
+    materiales_ctx = _build_materiales_context(punto)
+    movimientos_ctx = _build_movimientos_context(punto)
+
+    # Merge: el dict de movimientos_ctx sobreescribe si hay colisión,
+    # pero conservamos la clave "seccion" y "section_template" del inventario.
+    merged = {**materiales_ctx, **movimientos_ctx}
+    merged["seccion"] = "inventario"
+    merged["section_template"] = SECTION_TEMPLATES["inventario"]
+
+    return merged
 
 
 def _decimal_to_float_recursive(obj):
