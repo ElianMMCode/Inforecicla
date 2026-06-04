@@ -2,10 +2,8 @@ from apps.inventory.models import Inventario
 from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
-from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse, HttpResponse
 import json
-from apps.ecas.models import CentroAcopio
 from apps.core.decorators import gestor_eca_or_admin_required
 from .resources import CompraInventarioResource, VentaInventarioResource
 from weasyprint import HTML
@@ -587,123 +585,6 @@ def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
 
 
 # Create your views here.
-def _build_movimientos_context(punto):
-    # ... (código existente de contexto) ...
-    materiales_inventario = list(
-        Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
-    )
-    compras = (
-        models.CompraInventario.objects.filter(inventario__punto_eca=punto)
-        .select_related("inventario__material")
-        .order_by("-fecha_compra")
-    )
-
-    compras_list = [
-        {
-            "compraId": str(compra.id),
-            "inventarioId": str(compra.inventario.id),
-            "materialId": str(compra.inventario.material.id),
-            "nombreMaterial": compra.inventario.material.nombre,
-            "nombreCategoria": getattr(
-                compra.inventario.material.categoria, "nombre", ""
-            ),
-            "nombreTipo": getattr(compra.inventario.material.tipo, "nombre", ""),
-            "cantidad": float(compra.cantidad),
-            "fechaCompra": compra.fecha_compra.isoformat(),
-            "precioCompra": float(compra.precio_compra or 0),
-            "observaciones": compra.observaciones or "",
-        }
-        for compra in compras
-    ]
-
-    ventas = (
-        models.VentaInventario.objects.filter(inventario__punto_eca=punto)
-        .select_related("inventario__material", "centro_acopio")
-        .order_by("-fecha_venta")
-    )
-
-    ventas_list = [
-        {
-            "ventaId": str(venta.id),
-            "inventarioId": str(venta.inventario.id),
-            "materialId": str(venta.inventario.material.id),
-            "nombreMaterial": venta.inventario.material.nombre,
-            "nombreCategoria": getattr(
-                venta.inventario.material.categoria, "nombre", ""
-            ),
-            "nombreTipo": getattr(venta.inventario.material.tipo, "nombre", ""),
-            "cantidad": float(venta.cantidad),
-            "fechaVenta": venta.fecha_venta.isoformat(),
-            "precioVenta": float(venta.precio_venta or 0),
-            "observaciones": venta.observaciones or "",
-            "nombreCentroAcopio": getattr(venta.centro_acopio, "nombre", "")
-            if getattr(venta, "centro_acopio", None)
-            else "",
-            "centroAcopioId": str(venta.centro_acopio.id)
-            if getattr(venta, "centro_acopio", None)
-            else "",
-        }
-        for venta in ventas
-    ]
-
-    # Centros de acopio (globales y asociados a este punto)
-    centros_globales = list(
-        CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
-    )
-    centros_locales = list(
-        CentroAcopio.objects.filter(puntos_eca=punto, visibilidad=cons.Visibilidad.ECA)
-    )
-    # Unificar por ID y convertir a lista de dicts simples para JS/JSON
-    centros_map = {}
-    for c in centros_globales + centros_locales:
-        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
-    centros_list = list(centros_map.values())
-
-    materiales_stock_data = [
-        {
-            "inventarioId": str(inv.id),
-            "materialId": str(inv.material.id),
-            "nombre": inv.material.nombre,
-            "categoria": getattr(inv.material.categoria, "nombre", ""),
-            "tipo": getattr(inv.material.tipo, "nombre", ""),
-            "unidadMedida": inv.unidad_medida,
-            "stockActual": float(inv.stock_actual or 0),
-            "capacidadMaxima": float(inv.capacidad_maxima or 0),
-        }
-        for inv in materiales_inventario
-    ]
-
-    return {
-        "seccion": "movimientos",
-        "section_template": SECTION_TEMPLATES["movimientos"],
-        "gestor": punto.gestor_eca,
-        "punto": punto,
-        "unidades_medida": cons.UnidadMedida.choices,
-        "materiales_inventario": materiales_inventario,
-        "materiales_stock_data": materiales_stock_data,
-        "categoria_inventario": (
-            Inventario.objects.filter(punto_eca=punto)
-            .select_related("material__categoria")
-            .values_list("material__categoria__nombre", flat=True)
-            .distinct()
-        ),
-        "tipo_inventario": (
-            Inventario.objects.filter(punto_eca=punto)
-            .select_related("material__tipo")
-            .values_list("material__tipo__nombre", flat=True)
-            .distinct()
-        ),
-        "centros": centros_list,
-        "entradas": compras_list,
-        "salidas": ventas_list,
-        "historial_compras": compras_list,
-        "historial_ventas": ventas_list,
-        "HISTORIAL_COMPRAS": compras_list,
-        "HISTORIAL_VENTAS": ventas_list,
-    }
-
-
-# (Código de views existentes continúa abajo...)
 
 
 @gestor_eca_or_admin_required

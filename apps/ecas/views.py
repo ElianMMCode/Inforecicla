@@ -13,9 +13,7 @@ from config import constants as cons
 from apps.core.service import UserService
 from apps.ecas.service import PuntoService, Helper
 from apps.ecas.constants import SECTION_TEMPLATES
-from apps.operations.views import _build_movimientos_context
 from apps.scheduling.views import _build_calendario_context
-from apps.inventory.views import _build_materiales_context
 from apps.core.decorators import gestor_eca_or_admin_required
 from apps.reciclabot.service import AsistenteECAService
 import decimal
@@ -118,23 +116,24 @@ def _build_perfil_pendientes(usuario, punto):
 def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     """
     Vista principal que renderiza una sección del panel Punto ECA según el parámetro 'seccion'.
-    - Selecciona la plantilla y los datos correctos para mostrar la sección indicada (perfil, materiales, movimientos, centros, calendario, resumen, etc).
+    - Selecciona la plantilla y los datos correctos para mostrar la sección indicada (perfil, centros, calendario, resumen, etc).
     - Controla acceso de usuario.
     - Decide de forma centralizada qué builder de contexto invocar para la sección.
     - Usa helpers para construir el contexto específico de cada sección (modularidad, clean arch).
     """
+    # Secciones legacy /materiales/ y /movimientos/ fueron consolidadas en /inventario/
+    # (Fase 6 — decisión 2). Devolver 404 duro en lugar de redirect para que los usuarios
+    # con URLs guardadas vean claramente que la ruta ya no existe. El check va ANTES del
+    # fallback a "resumen" para que no se enmascare como sección válida.
+    if seccion in ("materiales", "movimientos"):
+        raise Http404("Sección consolidada en /inventario/")
+
     if seccion not in SECTION_TEMPLATES:
         seccion = "resumen"
 
     if not request.user.is_authenticated:
         return redirect("login")
     punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
-
-    # Secciones legacy /materiales/ y /movimientos/ fueron consolidadas en /inventario/
-    # (ver PLAN-INVENTARIO.md, Fase 6 — decisión 2). Devolver 404 duro en lugar de redirect
-    # para que los usuarios con URLs guardadas vean claramente que la ruta ya no existe.
-    if seccion in ("materiales", "movimientos"):
-        raise Http404("Sección consolidada en /inventario/")
 
     if seccion == "perfil":
         perfil_tab = request.GET.get("tab", perfil_tab)
@@ -243,13 +242,12 @@ def _build_inventario_context(punto):
     """
     Construye el contexto unificado para la nueva sección /inventario/.
 
-    Consolida los datos de las secciones legacy 'materiales' y 'movimientos'
-    en un único dict listo para alimentar el template section-inventario.html
-    (ver PLAN-INVENTARIO.md, Fases 1-7).
-
-    Estrategia: reusa los builders existentes para no duplicar lógica. Los
-    builders viejos se eliminarán en Fase 7 cuando las rutas /materiales/ y
-    /movimientos/ devuelvan 404.
+    Consolida los datos de inventario, KPIs, historial de movimientos y
+    centros de acopio en un único dict listo para alimentar el template
+    section-inventario.html. Es la única fuente de datos de la sección
+    tras la Fase 7 (los builders legacy _build_materiales_context y
+    _build_movimientos_context fueron eliminados al consolidar las
+    secciones /materiales/ y /movimientos/ en /inventario/).
 
     Args:
         punto: Instancia de PuntoECA.
@@ -280,29 +278,147 @@ def _build_inventario_context(punto):
             "tipo_inventario": [...],
 
             # === Movimientos (historial y stock chart) ===
-            "materiales_stock_data": [...],
             "centros": [...],
-            "entradas": [...],
-            "salidas": [...],
             "historial_compras": [...],
             "historial_ventas": [...],
+
+            # === Pre-serializado para el JS del template ===
+            "inv_data_json": str (JSON),
         }
     """
-    # Reusar builders existentes (Fase 7 los borrará)
-    materiales_ctx = _build_materiales_context(punto)
-    movimientos_ctx = _build_movimientos_context(punto)
+    from apps.inventory.models import Inventario
+    from apps.operations import models as ops_models
+    from apps.ecas.models import CentroAcopio
 
-    # Merge: el dict de movimientos_ctx sobreescribe si hay colisión,
-    # pero conservamos la clave "seccion" y "section_template" del inventario.
-    merged = {**materiales_ctx, **movimientos_ctx}
-    merged["seccion"] = "inventario"
-    merged["section_template"] = SECTION_TEMPLATES["inventario"]
+    # --- Inventario (cards + KPIs) ---
+    materiales_inventario = list(
+        Inventario.objects.filter(punto_eca=punto)
+        .select_related("material__categoria", "material__tipo")
+        .order_by("-fecha_modificacion")
+    )
 
-    # Datos serializados para el JS del template /inventario/.
-    # Pre-serializamos aquí para evitar custom template tags y garantizar
-    # JSON-safe (queriesets → dicts).
-    import json as _json
+    total_stock = sum(float(inv.stock_actual or 0) for inv in materiales_inventario)
+    total_capacidad = sum(float(inv.capacidad_maxima or 0) for inv in materiales_inventario)
 
+    total_ok = sum(
+        1
+        for inv in materiales_inventario
+        if float(inv.ocupacion_actual) < float(inv.umbral_alerta)
+    )
+    total_alerta = sum(
+        1
+        for inv in materiales_inventario
+        if float(inv.umbral_alerta) <= float(inv.ocupacion_actual) < float(inv.umbral_critico)
+    )
+    total_critico = sum(
+        1
+        for inv in materiales_inventario
+        if float(inv.ocupacion_actual) >= float(inv.umbral_critico)
+    )
+
+    ocupacion_porcentaje = (
+        round((total_stock / total_capacidad) * 100) if total_capacidad > 0 else 0
+    )
+
+    material_mayor_ocupacion = None
+    material_mas_caro = None
+    material_mas_barato = None
+    costo_total_inventario = 0
+    materiales_criticos = []
+    if materiales_inventario:
+        material_mayor_ocupacion = max(
+            materiales_inventario, key=lambda i: float(i.ocupacion_actual)
+        )
+        material_mas_caro = max(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        )
+        material_mas_barato = min(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        )
+        costo_total_inventario = sum(
+            float(i.stock_actual or 0) * float(i.precio_compra or 0)
+            for i in materiales_inventario
+        )
+        materiales_criticos = [
+            i for i in materiales_inventario if float(i.ocupacion_actual) >= float(i.umbral_critico)
+        ]
+
+    categoria_inventario = (
+        Inventario.objects.filter(punto_eca=punto)
+        .select_related("material__categoria")
+        .values_list("material__categoria__nombre", flat=True)
+        .distinct()
+    )
+    tipo_inventario = (
+        Inventario.objects.filter(punto_eca=punto)
+        .select_related("material__tipo")
+        .values_list("material__tipo__nombre", flat=True)
+        .distinct()
+    )
+
+    # --- Historial de compras ---
+    compras = (
+        ops_models.CompraInventario.objects.filter(inventario__punto_eca=punto)
+        .select_related("inventario__material")
+        .order_by("-fecha_compra")
+    )
+    historial_compras = [
+        {
+            "compraId": str(c.id),
+            "inventarioId": str(c.inventario.id),
+            "materialId": str(c.inventario.material.id),
+            "nombreMaterial": c.inventario.material.nombre,
+            "nombreCategoria": getattr(c.inventario.material.categoria, "nombre", ""),
+            "nombreTipo": getattr(c.inventario.material.tipo, "nombre", ""),
+            "cantidad": float(c.cantidad),
+            "fechaCompra": c.fecha_compra.isoformat(),
+            "precioCompra": float(c.precio_compra or 0),
+            "observaciones": c.observaciones or "",
+        }
+        for c in compras
+    ]
+
+    # --- Historial de ventas ---
+    ventas = (
+        ops_models.VentaInventario.objects.filter(inventario__punto_eca=punto)
+        .select_related("inventario__material", "centro_acopio")
+        .order_by("-fecha_venta")
+    )
+    historial_ventas = [
+        {
+            "ventaId": str(v.id),
+            "inventarioId": str(v.inventario.id),
+            "materialId": str(v.inventario.material.id),
+            "nombreMaterial": v.inventario.material.nombre,
+            "nombreCategoria": getattr(v.inventario.material.categoria, "nombre", ""),
+            "nombreTipo": getattr(v.inventario.material.tipo, "nombre", ""),
+            "cantidad": float(v.cantidad),
+            "fechaVenta": v.fecha_venta.isoformat(),
+            "precioVenta": float(v.precio_venta or 0),
+            "observaciones": v.observaciones or "",
+            "nombreCentroAcopio": getattr(v.centro_acopio, "nombre", "")
+            if getattr(v, "centro_acopio", None)
+            else "",
+            "centroAcopioId": str(v.centro_acopio.id)
+            if getattr(v, "centro_acopio", None)
+            else "",
+        }
+        for v in ventas
+    ]
+
+    # --- Centros de acopio (globales + asociados al punto) ---
+    centros_globales = list(
+        CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
+    )
+    centros_locales = list(
+        CentroAcopio.objects.filter(puntos_eca=punto, visibilidad=cons.Visibilidad.ECA)
+    )
+    centros_map = {}
+    for c in centros_globales + centros_locales:
+        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
+    centros = list(centros_map.values())
+
+    # --- Pre-serialización JSON-safe para el JS del template ---
     inv_data = {
         "materiales_inventario": [
             {
@@ -330,15 +446,42 @@ def _build_inventario_context(punto):
                 if getattr(inv, "fecha_modificacion", None)
                 else "",
             }
-            for inv in materiales_ctx["materiales_inventario"]
+            for inv in materiales_inventario
         ],
-        "centros": list(movimientos_ctx.get("centros") or []),
-        "historial_compras": list(movimientos_ctx.get("historial_compras") or []),
-        "historial_ventas": list(movimientos_ctx.get("historial_ventas") or []),
+        "centros": centros,
+        "historial_compras": historial_compras,
+        "historial_ventas": historial_ventas,
     }
-    merged["inv_data_json"] = _json.dumps(inv_data, ensure_ascii=False)
+    inv_data_json = json.dumps(inv_data, ensure_ascii=False)
 
-    return merged
+    return {
+        "seccion": "inventario",
+        "section_template": SECTION_TEMPLATES["inventario"],
+        "gestor": punto.gestor_eca,
+        "punto": punto,
+        "unidades_medida": cons.UnidadMedida.choices,
+        # Inventario
+        "materiales_inventario": materiales_inventario,
+        "total_stock": total_stock,
+        "total_capacidad": total_capacidad,
+        "total_ok": total_ok,
+        "total_alerta": total_alerta,
+        "total_critico": total_critico,
+        "ocupacion_porcentaje": ocupacion_porcentaje,
+        "material_mayor_ocupacion": material_mayor_ocupacion,
+        "material_mas_caro": material_mas_caro,
+        "material_mas_barato": material_mas_barato,
+        "costo_total_inventario": costo_total_inventario,
+        "materiales_criticos": materiales_criticos,
+        "categoria_inventario": categoria_inventario,
+        "tipo_inventario": tipo_inventario,
+        # Movimientos
+        "centros": centros,
+        "historial_compras": historial_compras,
+        "historial_ventas": historial_ventas,
+        # JSON pre-serializado
+        "inv_data_json": inv_data_json,
+    }
 
 
 def _decimal_to_float_recursive(obj):

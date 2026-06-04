@@ -10,8 +10,6 @@ SECTION_TEMPLATES = {
     "resumen": "ecas/section-resumen.html",
     "calendario": "ecas/section-calendario.html",
     "centros": "ecas/section-centros.html",
-    "materiales": "ecas/section-materiales.html",
-    "movimientos": "ecas/section-movimientos.html",
     "perfil": "ecas/section-perfil.html",
     "mensajes": "ecas/section-mensajes.html",
     "inventario": "ecas/section-inventario.html",
