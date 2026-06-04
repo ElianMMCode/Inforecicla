@@ -531,6 +531,12 @@
         renderHistorialGeneral();
         bindExtras();
         renderFlujoMaterialesList();
+        // Deep-link desde sidebar: ?ovtab=ovtab-xxx
+        const urlOvtab = new URLSearchParams(window.location.search).get("ovtab");
+        if (urlOvtab) {
+            const valid = ["ovtab-inventario", "ovtab-buscar", "ovtab-bulk", "ovtab-historial", "ovtab-flujo"];
+            if (valid.includes(urlOvtab)) activarOvTab(urlOvtab);
+        }
         // Render charts tras primer paint (espera CSS)
         setTimeout(() => {
             if (document.getElementById("inv-stock-time-chart")) renderOvtabChart();
