@@ -1,0 +1,67 @@
+from django.urls import path, include
+from apps.ecas.views import (
+    render_seccion,
+    editar_perfil_gestor,
+    actualizar_perfil_gestor,
+    editar_punto,
+    actualizar_punto,
+    toggle_visible,
+    crear_centro,
+    actualizar_centro,
+)
+from . import views
+from apps.chat.views import PuntoChatListView
+
+# Este archivo contiene rutas propias de secciones del punto-eca y edición de perfil.
+app_name = "punto-eca"
+
+urlpatterns = [
+    path("", render_seccion, {"seccion": "resumen"}, name="render_seccion"),
+    path("calendario/", render_seccion, {"seccion": "calendario"}, name="calendario"),
+    path("centros/", render_seccion, {"seccion": "centros"}, name="centros"),
+    path("mensajes/", render_seccion, {"seccion": "mensajes"}, name="mensajes"),
+    path("mensajes/chats/", PuntoChatListView.as_view(), name="mensajes-chats"),
+    path(
+        "configuracion/",
+        render_seccion,
+        {"seccion": "perfil", "perfil_tab": "configuracion"},
+        name="configuracion",
+    ),
+    path("materiales/", render_seccion, {"seccion": "materiales"}, name="materiales"),
+    path(
+        "movimientos/", render_seccion, {"seccion": "movimientos"}, name="movimientos"
+    ),
+    path("perfil/", render_seccion, {"seccion": "perfil"}, name="perfil"),
+    path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
+    path("<str:seccion>/", render_seccion, name="render_seccion"),
+    path("editar-perfil/<str:id>/", editar_perfil_gestor, name="editar_perfil"),
+    path("editar-perfil/<str:id>/guardar/", actualizar_perfil_gestor, name="actualizar_perfil"),
+    path("editar-punto/<str:id>/", editar_punto, name="editar_punto"),
+    path("editar-punto/<str:id>/guardar/", actualizar_punto, name="actualizar_punto"),
+    path("centros/editar-centro/<str:id>/", views.editar_centro, name="editar_centro"),
+    path("centros/editar-centro/<str:id>/guardar/", actualizar_centro, name="actualizar_centro"),
+    # CRUD de materiales bajo punto-eca/materiales/
+    path(
+        "materiales/",
+        include("apps.inventory.urls", namespace="inventario"),
+    ),
+    path(
+        "calendario/",
+        include("apps.scheduling.urls", namespace="calendario"),
+    ),
+    path(
+        "movimientos/",
+        include("apps.operations.urls", namespace="movimientos"),
+    ),
+    path("centros/registrar-centro/", views.registrar_centro, name="registrar_centro"),
+    path("centros/registrar-centro/guardar/", crear_centro, name="crear_centro"),
+    path("pref/toggle-visible/", toggle_visible, name="toggle_visible"),
+    path(
+        "centros/eliminar-centro/<str:id>/",
+        views.eliminar_centro,
+        name="eliminar_centro",
+    ),
+    path("asistente/", include("apps.reciclabot.urls", namespace="reciclabot")),
+    # # Endpoint para buscador de puntos ECA
+    # path("puntos-eca-json/", views.puntos_eca_json, name="puntos_eca_json"),
+]

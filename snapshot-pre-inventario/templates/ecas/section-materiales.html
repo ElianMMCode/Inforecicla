@@ -1,0 +1,2237 @@
+{% load static %}
+<!-- Fragment: Materiales -->
+<script>
+// Función global para obtener el CSRF Token (segura para cualquier script inline)
+globalThis.getCSRFToken = function() {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (const rawCookie of cookies) {
+            const cookie = rawCookie.trim();
+            if (cookie.startsWith('csrftoken=')) {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+};
+</script>
+<section class="py-4"
+         data-gestor="{{ gestor }}"
+         data-usuario-id="{{ gestor.id }}"
+         data-punto-eca-id="{{ punto.id }}">
+    <div class="card bg-light p-4 mb-4 shadow-sm kpi-row-header">
+        <!-- Nueva grilla bootstrap: filas y columnas fijas, rígidas, para KPIs -->
+        <div class="container-fluid">
+            <div class="row gx-1 gy-1 flex-wrap justify-content-center">
+                <!-- Fila 1: KPIs principales -->
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-success"><i class="bi bi-graph-up me-2"></i> Ocupación Total</span>
+                        <div class="progress mt-1" style="height: 28px;">
+                            <div class="progress-bar bg-success"
+                                 style="width: {{ ocupacion_porcentaje }}%">
+                                <span class="fw-bold text-dark">{{ ocupacion_porcentaje }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-info"><i class="bi bi-archive me-2"></i> Capacidad Máxima</span>
+                        <span class="badge bg-info p-2" style="font-size:1.2em">{{ total_capacidad|default:'-' }}</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-primary"><i class="bi bi-box-seam me-2"></i> Materiales</span>
+                        <span class="badge bg-primary p-2" style="font-size:1.2em">{{ materiales_inventario|length }}</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-muted">Estados</span>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <span class="badge bg-success">OK: {{ total_ok }}</span>
+                            <span class="badge bg-warning">Alerta: {{ total_alerta }}</span>
+                            <span class="badge bg-danger">Crítico: {{ total_critico }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row gx-2 gy-2 flex-wrap justify-content-center mt-1">
+                <!-- Fila 2: KPIs secundarios -->
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-dark"><i class="bi bi-star-fill text-warning me-1"></i> Material más ocupado</span>
+                        {% if material_mayor_ocupacion %}
+                            <span class="badge bg-warning text-dark fw-bold p-2 text-truncate kpi-badge"
+                                  style="max-width:160px"
+                                  title="{{ material_mayor_ocupacion.material.nombre }}">
+                                {{ material_mayor_ocupacion.material.nombre }}
+                                <br />
+                                <small>{{ material_mayor_ocupacion.ocupacion_actual|floatformat:0 }}% ocupado</small>
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-info"><i class="bi bi-cash-stack me-2"></i> Valor Total Inventario</span>
+                        <span class="badge bg-success text-white fw-bold p-2"
+                              style="font-size:1.1em">$ {{ costo_total_inventario|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-primary"><i class="bi bi-gem me-2"></i> Material más caro</span>
+                        {% if material_mas_caro %}
+                            <span class="badge bg-primary text-white fw-bold p-2 mb-2 text-truncate kpi-badge"
+                                  style="max-width:160px"
+                                  title="{{ material_mas_caro.material.nombre }}">
+                                {{ material_mas_caro.material.nombre }}
+                                <br />
+                                <small>$ {{ material_mas_caro.precio_compra|floatformat:2 }}</small>
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                    <div class="card kpi-card text-center p-3 h-100">
+                        <span class="fw-bold text-muted"><i class="bi bi-box me-2"></i> Material más barato</span>
+                        {% if material_mas_barato %}
+                            <span class="badge bg-secondary text-dark fw-bold p-2 mb-2 text-truncate kpi-badge"
+                                  style="max-width:160px"
+                                  title="{{ material_mas_barato.material.nombre }}">
+                                {{ material_mas_barato.material.nombre }}
+                                <br />
+                                <small>$ {{ material_mas_barato.precio_compra|floatformat:2 }}</small>
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Minimal custom style for truncation and mobile -->
+        <style>
+        .kpi-card .kpi-badge {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        @media (max-width: 600px) {
+          .kpi-card { min-width: 98vw; margin-bottom: 10px; }
+          .kpi-card .kpi-badge { max-width:90vw; }
+        }
+        </style>
+    </div>
+    <!-- Título principal -->
+    <div class="mb-4">
+        <h2 class="h4 fw-bold text-dark mb-1">
+            <i class="bi bi-box-seam me-2"></i>Gestión de Materiales
+        </h2>
+        <p class="text-muted small mb-0">
+            Registra, visualiza y gestiona los materiales en el inventario del centro de acopio
+        </p>
+    </div>
+    <!-- ACORDEÓN PRINCIPAL -->
+    <div class="accordion accordion-flush shadow-sm" id="acordeonMateriales">
+        <!-- Item 1: AGREGAR MATERIAL AL INVENTARIO -->
+        <div class="accordion-item border-start border-5 border-success">
+            <h2 class="accordion-header" id="headingAgregar">
+                <button class="accordion-button fw-bold collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseAgregar"
+                        aria-expanded="false"
+                        aria-controls="collapseAgregar">
+                    <span class="bg-success p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
+                        <i class="bi bi-plus-circle text-white"></i>
+                    </span>
+                    <span>
+                        <span class="fw-bold text-dark d-block">Agregar Material al Inventario</span>
+                        <small class="text-muted fw-normal">Registra nuevos materiales en tu inventario</small>
+                    </span>
+                </button>
+            </h2>
+            <div id="collapseAgregar"
+                 class="accordion-collapse collapse"
+                 aria-labelledby="headingAgregar"
+                 data-bs-parent="#acordeonMateriales">
+                <div class="accordion-body p-4 bg-light">
+                    <!-- SECCIÓN 1: Búsqueda Independiente de Material por Nombre -->
+                    <div class="mb-4 pb-4 border-bottom">
+                        <h6 class="fw-semibold text-success mb-3">
+                            <i class="bi bi-search me-2"></i>Opción 1: Buscar por Nombre de Material
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-muted mb-1"
+                                       for="buscarMaterialSelect">Buscar Material</label>
+                                <select id="buscarMaterialSelect"
+                                        class="form-select form-select-lg border-2 border-success js-select2-material"
+                                        style="width: 100%">
+                                    <option></option>
+                                </select>
+                                <small class="text-muted">Escribe el nombre del material o selecciona uno de la lista. Al seleccionar se abrirá el formulario de agregar.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- SECCIÓN 2: Búsqueda por Categoría y Tipo -->
+                    <div class="mb-0">
+                        <h6 class="fw-semibold text-success mb-3">
+                            <i class="bi bi-funnel me-2"></i>Opción 2: Buscar por Categoría y Tipo
+                        </h6>
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold text-muted mb-1"
+                                       for="selectCategoriaBusqueda">Categoría</label>
+                                <select id="selectCategoriaBusqueda"
+                                        class="form-select border-2 border-success js-select2-categoria"
+                                        style="width: 100%">
+                                    <option value="">-- Selecciona una categoría --</option>
+                                    <!-- Mostrar categorías del inventario si existen -->
+                                    <option>Categoría del Inventario</option>
+                                    <!-- Si no hay categorías en inventario, mostrar del catálogo -->
+                                    <option>Categoría</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold text-muted mb-1"
+                                       for="selectTipoBusqueda">Tipo</label>
+                                <select id="selectTipoBusqueda"
+                                        class="form-select border-2 border-success js-select2-tipo"
+                                        style="width: 100%">
+                                    <option value="">-- Selecciona un tipo --</option>
+                                    <!-- Las opciones se cargarán dinámicamente SOLO desde el inventario por JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button id="btnBuscarPorCategoriaTipo"
+                                        class="btn btn-success w-100"
+                                        type="button">
+                                    <i class="bi bi-search me-1"></i>Buscar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <button id="btnLimpiarBusquedaAgregar"
+                                        class="btn btn-outline-secondary w-100"
+                                        type="button">
+                                    <i class="bi bi-eraser me-1"></i>Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL: AGREGAR MATERIAL AL INVENTARIO -->
+        <div class="modal fade"
+             id="agregarInventarioModal"
+             tabindex="-1"
+             aria-labelledby="agregarInventarioModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="agregarInventarioModalLabel">
+                            <i class="bi bi-plus-circle me-2"></i>Agregar Material al Inventario
+                        </h5>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formAgregarInventario" novalidate>
+                            {% csrf_token %}
+                            <!-- Input hidden para guardar el ID del material (no visible) -->
+                            <input type="hidden" id="agregarMaterialId">
+                            <!-- Input hidden para guardar el ID del punto (no visible) -->
+                            <input type="hidden" id="agregarPuntoId" value="{{ punto.id }}">
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label for="agregarMaterialNombre" class="form-label fw-semibold">Material Seleccionado</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="agregarMaterialNombre"
+                                           readonly
+                                           style="background-color: #f5f5f5">
+                                </div>
+                            </div>
+                            <!-- Divisor -->
+                            <hr class="my-4">
+                            <!-- Fila 2: Datos de Inventario -->
+                            <h6 class="fw-semibold text-success mb-3">Datos de Inventario</h6>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="stockInicial" class="form-label fw-semibold">Stock Inicial</label>
+                                    <input type="number"
+                                           class="form-control border-2 border-success"
+                                           id="stockInicial"
+                                           placeholder="0"
+                                           min="0"
+                                           required>
+                                    <small class="text-muted">Cantidad inicial a agregar</small>
+                                    <div class="invalid-feedback">Ingresa el stock inicial (mayor o igual a 0).</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="capacidadMaxima" class="form-label fw-semibold">Capacidad Máxima</label>
+                                    <input type="number"
+                                           class="form-control border-2 border-success"
+                                           id="capacidadMaxima"
+                                           placeholder="1000"
+                                           min="0"
+                                           required>
+                                    <small class="text-muted">Máximo que puede almacenar</small>
+                                    <div class="invalid-feedback">Ingresa la capacidad máxima (mayor o igual a 0).</div>
+                                </div>
+                            </div>
+                            <!-- Fila 2.5: Unidad de Medida -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="unidadMedida" class="form-label fw-semibold">Unidad de Medida</label>
+                                    <select class="form-select border-2 border-success"
+                                            id="unidadMedida"
+                                            required>
+                                        <option value="" selected disabled>Selecciona una unidad</option>
+                                        {% for value, label in unidades_medida %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                    </select>
+                                    <small class="text-muted">Selecciona la unidad de medida para el stock</small>
+                                    <div class="invalid-feedback">Selecciona una unidad de medida.</div>
+                                </div>
+                            </div>
+                            <!-- Fila 3: Precios -->
+                            <h6 class="fw-semibold text-success mb-3 mt-4">Precios</h6>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="precioCompra" class="form-label fw-semibold">Precio de Compra</label>
+                                    <div class="input-group has-validation">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="precioCompra"
+                                               placeholder="0.00"
+                                               min="0"
+                                               step="0.01"
+                                               required>
+                                        <div class="invalid-feedback">Ingresa el precio de compra (mayor o igual a 0).</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="precioVenta" class="form-label fw-semibold">Precio de Venta</label>
+                                    <div class="input-group has-validation">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="precioVenta"
+                                               placeholder="0.00"
+                                               min="0"
+                                               step="0.01"
+                                               required>
+                                        <div class="invalid-feedback">Ingresa el precio de venta (mayor o igual a 0).</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Fila 4: Umbrales -->
+                            <h6 class="fw-semibold text-success mb-3 mt-4">Umbrales de Alerta</h6>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="umbralAlerta" class="form-label fw-semibold">Umbral de Alerta (%)</label>
+                                    <div class="input-group has-validation">
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="umbralAlerta"
+                                               placeholder="25"
+                                               min="0"
+                                               max="100"
+                                               step="1"
+                                               required>
+                                        <span class="input-group-text">%</span>
+                                        <div class="invalid-feedback">Ingresa el umbral de alerta (entre 0 y 100).</div>
+                                    </div>
+                                    <small class="text-muted">Porcentaje mínimo antes de alertar</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="umbralCritico" class="form-label fw-semibold">Umbral Crítico (%)</label>
+                                    <div class="input-group has-validation">
+                                        <input type="number"
+                                               class="form-control border-2 border-success"
+                                               id="umbralCritico"
+                                               placeholder="10"
+                                               min="0"
+                                               max="100"
+                                               step="1"
+                                               required>
+                                        <span class="input-group-text">%</span>
+                                        <div class="invalid-feedback">Ingresa el umbral crítico (entre 0 y 100).</div>
+                                    </div>
+                                    <small class="text-muted">Porcentaje crítico de stock</small>
+                                </div>
+                            </div>
+                            <!-- Mensaje de estado -->
+                            <div id="mensajeEstado"
+                                 class="alert alert-info mt-4"
+                                 style="display: none"
+                                 role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span id="textoMensaje"></span>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-top bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                        </button>
+                        <button type="submit"
+                                class="btn btn-success"
+                                id="btnGuardarInventario"
+                                form="formAgregarInventario">
+                            <i class="bi bi-check-circle me-1"></i>Guardar en Inventario
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL: RESULTADOS DE BÚSQUEDA POR CATEGORÍA Y TIPO -->
+        <div class="modal fade"
+             id="buscarMaterialModal"
+             tabindex="-1"
+             aria-labelledby="buscarMaterialModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title" id="buscarMaterialModalLabel">
+                            <i class="bi bi-search me-2"></i>Resultados de Búsqueda
+                        </h5>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Estado de búsqueda (loading, resultados, sin resultados) -->
+                        <div id="estadoBusquedaMateriales" class="text-center py-4">
+                            <i class="bi bi-search display-6 d-block mb-2"></i>
+                            <p class="mb-0">Realizando búsqueda...</p>
+                        </div>
+                        <!-- Lista de resultados -->
+                        <div id="resultadosBusqueda" class="list-group mt-3">
+                            <!-- Los resultados se cargarán aquí dinámicamente -->
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- SCRIPT INLINE PARA MANEJAR BÚSQUEDA POR CATEGORÍA Y TIPO + LIMPIAR -->
+        <script>
+        // ============================================================
+        // FUNCIONES GLOBALES PARA BÚSQUEDA
+        // ============================================================
+        // Función para disparar búsqueda y abrir modal (disponible globalmente)
+        function dispararBusquedaYAbrirModal(filtros) {
+            console.log('Disparando búsqueda con filtros:', filtros);
+
+            var modalBuscarMaterial = document.getElementById('buscarMaterialModal');
+            if (!modalBuscarMaterial) {
+                console.error('Modal de búsqueda no encontrado');
+                return;
+            }
+
+            // Mostrar estado loading
+            var estadoBusquedaEl = document.getElementById('estadoBusquedaMateriales');
+            estadoBusquedaEl.innerHTML = '<div class="d-flex flex-column align-items-center"><div class="spinner-border text-success mb-3" role="status"></div><p class="mb-0">Buscando materiales...</p></div>';
+
+            // Limpiar resultados
+            var listaResultadosEl = document.getElementById('resultadosBusqueda');
+            listaResultadosEl.innerHTML = '';
+
+            // Abrir modal
+            var modal = new bootstrap.Modal(modalBuscarMaterial);
+            modal.show();
+
+            // Ejecutar búsqueda AJAX
+            var endpoint = '/punto-eca/materiales/catalogo/buscar/';
+            var puntoId = document.getElementById('agregarPuntoId')?.value || '';
+
+            var params = new URLSearchParams();
+            if (filtros.texto) params.append('texto', filtros.texto);
+            if (filtros.categoria) params.append('categoria', filtros.categoria);
+            if (filtros.tipo) params.append('tipo', filtros.tipo);
+            if (puntoId) params.append('puntoId', puntoId);
+
+            var url = endpoint + (params.toString() ? ('?' + params.toString()) : '');
+            console.log('Buscando en:', url);
+
+            fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+                .then(res => res.json().then(data => ({ ok: res.ok, data: data })))
+                .then(({ ok, data }) => {
+                    console.log('Respuesta recibida:', data);
+
+                    if (!ok) {
+                        var mensajeError = data?.mensaje || data?.message || 'Error desconocido';
+                        console.error('Error:', mensajeError);
+                        estadoBusquedaEl.innerHTML = '<div class="alert alert-warning mb-0" role="alert"><i class="bi bi-exclamation-triangle me-2"></i>' + mensajeError + '</div>';
+                        return;
+                    }
+
+                    if (!Array.isArray(data)) data = [];
+
+                    console.log('Total de resultados:', data.length);
+
+                    // Renderizar resultados
+                    renderResultadosBusquedaModal(data);
+                })
+                .catch(err => {
+                    console.error('Error en búsqueda:', err);
+                    estadoBusquedaEl.innerHTML = '<div class="alert alert-danger mb-0" role="alert"><i class="bi bi-exclamation-octagon me-2"></i>Error de conexión</div>';
+                });
+        }
+
+        // Función para renderizar resultados en modal (disponible globalmente)
+        function renderResultadosBusquedaModal(materiales) {
+            console.log('🎨 Renderizando', materiales.length, 'resultados');
+
+            var listaResultadosEl = document.getElementById('resultadosBusqueda');
+            var estadoBusquedaEl = document.getElementById('estadoBusquedaMateriales');
+
+            listaResultadosEl.innerHTML = '';
+
+            if (!materiales || materiales.length === 0) {
+                listaResultadosEl.innerHTML = '<div class="list-group-item text-muted text-center py-4">Sin resultados disponibles</div>';
+                estadoBusquedaEl.innerHTML = '<i class="bi bi-search display-6 d-block mb-2"></i><p class="mb-0">No se encontraron materiales con estos filtros</p>';
+                return;
+            }
+
+            materiales.forEach(material => {
+                var item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action resultado-material-item d-flex align-items-start gap-3';
+                item.dataset.materialId = material.materialId || '';
+                item.dataset.nombre = material.nmbMaterial || '';
+                item.dataset.descripcion = material.dscMaterial || '';
+                item.dataset.tipo = material.nmbTipo || '';
+                item.dataset.categoria = material.nmbCategoria || '';
+                item.dataset.unidad = material.unidad || '';
+
+                var img = document.createElement('img');
+                img.src = material.imagenUrl || '/static/img/materiales.png';
+                img.alt = material.nmbMaterial || 'Material';
+                img.className = 'rounded';
+                img.style.width = '64px';
+                img.style.height = '64px';
+                img.style.objectFit = 'cover';
+                img.style.flexShrink = '0';
+
+                var content = document.createElement('div');
+                content.className = 'flex-grow-1 text-start';
+
+                var title = document.createElement('div');
+                title.className = 'fw-semibold';
+                title.textContent = material.nmbMaterial || 'Material sin nombre';
+
+                var desc = document.createElement('small');
+                desc.className = 'text-muted d-block mb-2';
+                desc.textContent = material.dscMaterial || 'Sin descripción';
+
+                var badges = document.createElement('div');
+                var tipoBadge = document.createElement('span');
+                tipoBadge.className = 'badge bg-primary me-1';
+                tipoBadge.textContent = material.nmbTipo || 'Tipo';
+                var catBadge = document.createElement('span');
+                catBadge.className = 'badge bg-secondary';
+                catBadge.textContent = material.nmbCategoria || 'Categoría';
+
+                badges.appendChild(tipoBadge);
+                badges.appendChild(catBadge);
+
+                content.appendChild(title);
+                content.appendChild(desc);
+                content.appendChild(badges);
+
+                var actionBadge = document.createElement('span');
+                actionBadge.className = 'badge bg-success rounded-pill align-self-start';
+                actionBadge.textContent = 'Seleccionar';
+
+                item.appendChild(img);
+                item.appendChild(content);
+                item.appendChild(actionBadge);
+
+                listaResultadosEl.appendChild(item);
+            });
+
+            estadoBusquedaEl.innerHTML = '<i class="bi bi-check-circle text-success display-6 d-block mb-2"></i><p class="mb-0">Selecciona un material para continuar</p>';
+
+            // Agregar manejadores de clic a cada material
+            document.querySelectorAll('.resultado-material-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    var materialId = this.dataset.materialId;
+                    var materialNombre = this.dataset.nombre;
+
+                    console.log('📦 Material seleccionado:', materialId, '-', materialNombre);
+
+                    // Llenar los campos del formulario
+                    document.getElementById('agregarMaterialId').value = materialId;
+                    document.getElementById('agregarMaterialNombre').value = materialNombre;
+
+                    // Limpiar campos de entrada
+                    document.getElementById('stockInicial').value = '';
+                    document.getElementById('capacidadMaxima').value = '';
+                    document.getElementById('precioCompra').value = '';
+                    document.getElementById('precioVenta').value = '';
+                    document.getElementById('umbralAlerta').value = '';
+                    document.getElementById('umbralCritico').value = '';
+                    document.getElementById('unidadMedida').value = '';
+
+                    // Cerrar modal de búsqueda
+                    var modalBusquedaInstance = bootstrap.Modal.getInstance(document.getElementById('buscarMaterialModal'));
+                    if (modalBusquedaInstance) {
+                        modalBusquedaInstance.hide();
+                    }
+
+                    // Abrir modal de agregar inventario
+                    var modalAgregar = document.getElementById('agregarInventarioModal');
+                    if (modalAgregar) {
+                        var modal = new bootstrap.Modal(modalAgregar);
+                        modal.show();
+                        console.log('✓ Modal de agregar inventario abierto');
+                    }
+                });
+            });
+        }
+
+        // Script IIFE para handlers de botones
+        (function() {
+            console.log('📌 Script inline de búsqueda independiente ejecutándose...');
+
+            // ============================================================
+            // HANDLER: BOTÓN BUSCAR POR CATEGORÍA Y TIPO
+            // ============================================================
+            const btnBuscarPorCategoriaTipo = document.getElementById('btnBuscarPorCategoriaTipo');
+            if (btnBuscarPorCategoriaTipo) {
+                btnBuscarPorCategoriaTipo.addEventListener('click', function() {
+                    console.log('🔍 BÚSQUEDA POR CATEGORÍA Y TIPO (mediante botón)');
+
+                    const categoria = document.getElementById('selectCategoriaBusqueda')?.value || '';
+                    const tipo = document.getElementById('selectTipoBusqueda')?.value || '';
+
+                    // ✅ Validar que al menos uno esté seleccionado
+                    if (!categoria && !tipo) {
+                        console.warn('⚠️ No se seleccionó categoría ni tipo');
+                        if (globalThis.Swal?.fire) {
+                            globalThis.Swal.fire({
+                                icon: 'warning',
+                                title: 'Selecciona un filtro',
+                                text: 'Por favor selecciona al menos una Categoría o un Tipo para realizar la búsqueda.',
+                                confirmButtonColor: '#198754',
+                                confirmButtonText: 'Entendido',
+                            });
+                        }
+                        return;
+                    }
+
+                    console.log('✅ Filtros válidos:', { categoria, tipo });
+
+                    // 🎯 Disparar búsqueda con filtros de categoría y tipo (SIN búsqueda de texto)
+                    dispararBusquedaYAbrirModal({
+                        texto: '',      // No usar búsqueda de texto (búsqueda independiente)
+                        categoria: categoria,
+                        tipo: tipo
+                    });
+                });
+                console.log('✓ Handler BUSCAR POR CATEGORÍA Y TIPO vinculado (solo dispara al hacer clic)');
+            }
+
+            // ============================================================
+            // HANDLER: BOTÓN LIMPIAR
+            // ============================================================
+            const btnLimpiarAgregar = document.getElementById('btnLimpiarBusquedaAgregar');
+            if (btnLimpiarAgregar) {
+                btnLimpiarAgregar.addEventListener('click', function() {
+                    console.log('🧹 Limpiando búsqueda y filtros del acordeón agregar...');
+
+                    // Limpiar Select2 de Buscar Material (pero no abrir modal)
+                    $('#buscarMaterialSelect').val(null).trigger('change');
+                    console.log('✓ Limpiado: Buscar Material');
+
+                    // Limpiar Select2 de Categoría
+                    $('#selectCategoriaBusqueda').val('').trigger('change');
+                    console.log('✓ Limpiado: Categoría');
+
+                    // Limpiar Select2 de Tipo
+                    $('#selectTipoBusqueda').val('').trigger('change');
+                    console.log('✓ Limpiado: Tipo');
+
+                    console.log('✓ Todos los campos limpiados correctamente');
+                });
+                console.log('✓ Handler LIMPIAR vinculado');
+            }
+
+            console.log('✓ Script inline completado');
+        })();
+        </script>
+        <!-- Item 3: MATERIALES EN INVENTARIO -->
+        <div class="accordion-item border-start border-5 border-primary">
+            <h2 class="accordion-header" id="headingTarjetas">
+                <button class="accordion-button fw-bold"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseTarjetas"
+                        aria-expanded="true"
+                        aria-controls="collapseTarjetas">
+                    <span class="bg-primary p-2 rounded-circle me-3"
+                          style="width: 40px;
+                                 height: 40px;
+                                 display: flex;
+                                 align-items: center;
+                                 justify-content: center">
+                        <i class="bi bi-collection text-white"></i>
+                    </span>
+                    <span>
+                        <span class="fw-bold text-dark d-block">Materiales en Inventario</span>
+                        <small class="text-muted fw-normal"><span>{{ punto.inventario_set.count }}</span> items disponibles</small>
+                    </span>
+                </button>
+            </h2>
+            <div id="collapseTarjetas"
+                 class="accordion-collapse collapse show"
+                 aria-labelledby="headingTarjetas"
+                 data-bs-parent="#acordeonMateriales">
+                <div class="accordion-body p-4 bg-light">
+                    <div class="accordion mb-4" id="acordeonFiltrosTarjetas">
+                        <div class="accordion-item border-bottom border-2 border-secondary-subtle">
+                            <h2 class="accordion-header bg-light" id="headingBusquedaTarjetas">
+                                <button class="accordion-button fw-semibold collapsed"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBusquedaTarjetas"
+                                        aria-expanded="false"
+                                        aria-controls="collapseBusquedaTarjetas">
+                                    <i class="bi bi-funnel text-muted me-2"></i>
+                                    <span>Búsqueda y Filtros</span>
+                                </button>
+                            </h2>
+                            <div id="collapseBusquedaTarjetas"
+                                 class="accordion-collapse collapse"
+                                 aria-labelledby="headingBusquedaTarjetas"
+                                 data-bs-parent="#acordeonFiltrosTarjetas">
+                                <div class="accordion-body p-4 bg-white">
+                                    <!-- Select2: Buscar Material - Solo para seleccionar -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold text-muted mb-1"
+                                                   for="busquedaMaterialInventario">Buscar Material</label>
+                                            <select id="busquedaMaterialInventario"
+                                                    class="form-select border-2 border-success js-select2-busqueda-inventario"
+                                                    style="width: 100%">
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Categoría, Tipo, Alerta, Unidad, Ocupación -->
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6 col-lg-3">
+                                            <label class="form-label fw-semibold text-muted mb-1"
+                                                   for="filtroCategoriaSelectInventario">Categoría</label>
+                                            <select id="filtroCategoriaSelectInventario"
+                                                    class="form-select border-2 border-success js-select2-filtro-categoria-inventario"
+                                                    style="width: 100%">
+                                                <option value="">-- Todas las categorías --</option>
+                                                <!-- Mostrar categorías del inventario si existen -->
+                                                <option></option>
+                                                <!-- Si no hay categorías en inventario, mostrar del catálogo -->
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 col-lg-3">
+                                            <label class="form-label fw-semibold text-muted mb-1"
+                                                   for="filtroTipoSelectInventario">Tipo</label>
+                                            <select id="filtroTipoSelectInventario"
+                                                    class="form-select border-2 border-success js-select2-filtro-tipo-inventario"
+                                                    style="width: 100%">
+                                                <option value="">-- Todos los tipos --</option>
+                                                <!-- Mostrar tipos del inventario si existen -->
+                                                <option></option>
+                                                <!-- Si no hay tipos en inventario, mostrar del catálogo -->
+                                                <option></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 col-lg-3">
+                                            <label for="filtroAlerataInventario"
+                                                   class="form-label fw-semibold text-muted mb-1">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Alerta
+                                            </label>
+                                            <select class="form-select border-2 border-success js-select2-filtro-alerta-inventario"
+                                                    id="filtroAlerataInventario"
+                                                    style="width: 100%">
+                                                <option value="">Todas las alertas</option>
+                                                <option>OK</option>
+                                                <option>Alerta</option>
+                                                <option>Crítico</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 col-lg-3">
+                                            <label for="filtroUnidadInventario"
+                                                   class="form-label fw-semibold text-muted mb-1">
+                                                <i class="bi bi-ruler me-1"></i>Unidad de Medida
+                                            </label>
+                                            <select class="form-select border-2 border-success js-select2-filtro-unidad-inventario"
+                                                    id="filtroUnidadInventario"
+                                                    style="width: 100%">
+                                                <option value="">Todas las unidades</option>
+                                                {% for value, label in unidades_medida %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Ocupación y Botones -->
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6 col-lg-3 d-flex align-items-end gap-2">
+                                            <button id="btnBuscarInventario"
+                                                    class="btn btn-success flex-grow-1"
+                                                    type="button">
+                                                <i class="bi bi-search me-1"></i>Buscar
+                                            </button>
+                                            <button id="btnLimpiarTodosFiltraInventario"
+                                                    class="btn btn-outline-secondary"
+                                                    type="button"
+                                                    title="Limpiar todos los filtros">
+                                                <i class="bi bi-eraser me-1"></i>Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Espaciador entre acordeón y tarjetas -->
+                        <div class="my-4"></div>
+                        <!-- Mensaje vacío o alerta: solo mostrar uno a la vez -->
+                        <div id="mensajeInventarioVacio"
+                             class="alert alert-info text-center mb-4"
+                             style="display:none">
+                            <i class="bi bi-info-circle me-2"></i> No hay materiales registrados en el inventario.
+                        </div>
+                        <!-- Grid de tarjetas -->
+                        <div class="row g-4" id="contenedorMateriales">
+                            {% for inventario in materiales_inventario %}
+                                <div class="col-12 col-md-6 col-lg-4 tarjeta-material"
+                                     data-categoria="{{ inventario.material.categoria.nombre|slugify }}"
+                                     data-tipo-material="{{ inventario.material.tipo.nombre|default:'Tipo Desconocido' }}"
+                                     data-inventario-id="{{ inventario.id }}"
+                                     data-nombre-material="{{ inventario.material.nombre }}">
+                                    <div class="card h-100 shadow-sm border-0 transition-hover position-relative">
+                                        <div class="position-absolute top-0 start-0 m-2">
+                                            <span class="badge rounded-pill bg-dark opacity-75">
+                                                <i class="bi bi-tag-fill me-1"></i>{{ inventario.material.categoria.nombre|default:"General" }}
+                                            </span>
+                                        </div>
+                                        <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 {% if inventario.ocupacion_actual >= inventario.umbral_critico %} bg-danger-subtle text-danger {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %} bg-warning-subtle text-warning-emphasis {% else %} bg-success-subtle text-success-emphasis {% endif %}">
+                                            <div>
+                                                <h5 class="card-title mb-0 fw-bold">{{ inventario.material.nombre }}</h5>
+                                                <small class="opacity-75">{{ inventario.material.tipo.nombre|default:"Tipo Desconocido" }}</small>
+                                            </div>
+                                            {% if inventario.ocupacion_actual >= inventario.umbral_critico %}
+                                                <i class="bi bi-exclamation-octagon-fill fs-4" title="Stock Crítico"></i>
+                                            {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %}
+                                                <i class="bi bi-exclamation-triangle-fill fs-4" title="Stock Bajo"></i>
+                                            {% else %}
+                                                <i class="bi bi-check-circle-fill fs-4" title="Stock Óptimo"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-4">
+                                                <div class="d-flex justify-content-between align-items-end mb-1">
+                                                    <span class="text-muted small fw-semibold">Disponibilidad</span>
+                                                    <span class="h5 mb-0 fw-bold">
+                                                        {{ inventario.stock_actual|floatformat:2 }}
+                                                        <span class="small text-muted fw-normal">{{ inventario.unidad_medida }}</span>
+                                                    </span>
+                                                </div>
+                                                <progress class="w-100"
+                                                          value="{{ inventario.ocupacion_actual|floatformat:0 }}"
+                                                          max="100"
+                                                          style="height: 10px; border-radius: 5px; accent-color: {% if inventario.ocupacion_actual >= inventario.umbral_critico %} #dc3545 {% elif inventario.ocupacion_actual >= inventario.umbral_alerta %} #ffc107 {% else %} #198754 {% endif %};">
+                                                    {{ inventario.ocupacion_actual|floatformat:0 }}%
+                                                </progress>
+                                                <p class="text-end small text-muted mt-1">Capacidad: {{ inventario.capacidad_maxima }}</p>
+                                            </div>
+                                            <div class="row g-2 py-3 border-top border-bottom">
+                                                <div class="col-6 border-end">
+                                                    <p class="text-muted small mb-0 text-uppercase">Costo Compra</p>
+                                                    <span class="fw-bold text-dark">$ {{ inventario.precio_compra|floatformat:2 }}</span>
+                                                </div>
+                                                <div class="col-6 ps-3">
+                                                    <p class="text-muted small mb-0 text-uppercase">Valor Venta</p>
+                                                    <span class="fw-bold text-dark">$ {{ inventario.precio_venta|floatformat:2 }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent border-0 pb-3">
+                                            <div class="d-grid">
+                                                <button type="button"
+                                                        class="btn btn-outline-dark btn-sm detallesBtn rounded-pill"
+                                                        data-inventario-id="{{ inventario.id }}">
+                                                    <i class="bi bi-clipboard-data me-2"></i>Ver Hoja Técnica
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODALS: reemplazo por la versión global solicitada -->
+        <!-- MODAL GLOBAL - DISPONIBLE EN TODAS LAS PÁGINAS -->
+        <div class="modal fade"
+             id="detallesModal"
+             tabindex="-1"
+             aria-labelledby="detallesModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg rounded-3">
+                    <!-- Header con fondo verde -->
+                    <div class="modal-header border-0 bg-success text-white p-4 rounded-top-3">
+                        <div>
+                            <h5 class="modal-title fw-bold fs-5" id="detallesModalLabel">
+                                <i class="bi bi-box-seam me-2"></i><span id="modalHeaderNombre">Detalles del Material</span>
+                            </h5>
+                            <small class="text-white-50"><i class="bi bi-info-circle me-1"></i>Información completa del inventario</small>
+                        </div>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <!-- Sección 1: Información Básica -->
+                        <div class="p-4 border-bottom bg-light">
+                            <h6 class="text-success mb-3 fw-bold">
+                                <i class="bi bi-info-circle me-2"></i>Información Básica
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-light border-start border-4 border-success">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-tag me-1"></i>Nombre del Material</small>
+                                        <p class="h6 text-success fw-bold mb-0" id="modalNombreMaterial">-</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 d-none">
+                                    <div class="p-3 rounded-2 bg-light border-start border-4 border-primary">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-code-square me-1"></i>ID del Material</small>
+                                        <p class="h6 font-monospace text-primary fw-bold mb-0"
+                                           id="modalMaterialId">-</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-warning bg-opacity-10 border-start border-4 border-warning">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-rulers me-1"></i>Unidad de Medida</small>
+                                        <p class="h6 fw-bold mb-0" id="modalUnidadMedida">-</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-danger bg-opacity-10 border-start border-4 border-danger">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-circle-fill me-1" id="modalEstadoIcon"></i>Estado Actual</small>
+                                        <p class="h6 fw-bold mb-0" id="modalEstadoText">-</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Sección 2: Ocupación -->
+                        <div class="p-4 border-bottom">
+                            <h6 class="text-success mb-3 fw-bold">
+                                <i class="bi bi-pie-chart me-2"></i>Ocupación del Inventario <span class="badge bg-success" id="modalOcupacionPorcentaje">0%</span>
+                            </h6>
+                            <div class="progress rounded-pill" style="height: 40px;">
+                                <div id="modalOcupacionBar"
+                                     class="progress-bar d-flex align-items-center justify-content-center fw-bold text-white fs-6">
+                                    <small id="modalOcupacionText">0%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Sección 3: Stock e Inventario -->
+                        <div class="p-4 border-bottom bg-light">
+                            <h6 class="text-success mb-3 fw-bold">
+                                <i class="bi bi-inbox me-2"></i>Inventario
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-white border border-success border-opacity-25 border-start border-4 border-success">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-inbox me-1"></i>Stock Actual</small>
+                                        <p class="h5 text-success fw-bold mb-1" id="modalStockActual">0.00</p>
+                                        <small class="text-muted" id="modalStockUnidad">unidades</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-white border border-primary border-opacity-25 border-start border-4 border-primary">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-archive me-1"></i>Capacidad Máxima</small>
+                                        <p class="h5 text-primary fw-bold mb-1" id="modalCapacidadMaxima">0.00</p>
+                                        <small class="text-muted" id="modalCapacidadUnidad">unidades</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-white border border-info border-opacity-25 border-start border-4 border-info">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-diagram-3 me-1"></i>Espacio Usado</small>
+                                        <p class="h5 text-info fw-bold mb-0" id="modalEspacioUsado">0.00</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-white border border-warning border-opacity-25 border-start border-4 border-warning">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-diagram-3 me-1"></i>Espacio Disponible</small>
+                                        <p class="h5 text-warning fw-bold mb-0" id="modalEspacioDisponible">0.00</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Sección 4: Precios y Márgenes -->
+                        <div class="p-4 border-bottom">
+                            <h6 class="text-success mb-3 fw-bold">
+                                <i class="bi bi-tag-fill me-2"></i>Análisis de Precios
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-primary bg-opacity-10 border-start border-4 border-primary">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-cart-plus me-1"></i>Precio de Compra</small>
+                                        <p class="h5 text-primary fw-bold mb-0" id="modalPrecioCompra">$ 0.00</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-warning bg-opacity-10 border-start border-4 border-warning">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-cart-check me-1"></i>Precio de Venta</small>
+                                        <p class="h5 text-warning fw-bold mb-0" id="modalPrecioVenta">$ 0.00</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-danger bg-opacity-10 border-start border-4 border-danger">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-percent me-1"></i>Margen de Ganancia</small>
+                                        <p class="h5 text-danger fw-bold mb-0" id="modalMargenGanancia">$ 0.00</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-success bg-opacity-10 border-start border-4 border-success">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-percent me-1"></i>% Margen</small>
+                                        <p class="h5 text-success fw-bold mb-0" id="modalPorcentajeMargen">0%</p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="p-3 rounded-2 bg-white border-3 border-success">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-calculator me-1 text-success"></i>Valor Total en Inventario</small>
+                                        <p class="h4 text-success fw-bold mb-0" id="modalValorTotal">$ 0.00</p>
+                                        <small class="text-muted">(Stock Actual × Precio Compra)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Sección 5: Umbrales y Alertas -->
+                        <div class="p-4 border-bottom bg-light">
+                            <h6 class="text-success mb-3 fw-bold">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Umbrales y Alertas
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-warning bg-opacity-10 border-start border-4 border-warning">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-exclamation-triangle me-1"></i>Umbral de Alerta</small>
+                                        <p class="h5 text-warning fw-bold mb-0" id="modalUmbralAlerta">0%</p>
+                                        <small class="text-muted">Se activa al superar este %</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-2 bg-danger bg-opacity-10 border-start border-4 border-danger">
+                                        <small class="text-muted d-block mb-1"><i class="bi bi-exclamation-octagon me-1"></i>Umbral Crítico</small>
+                                        <p class="h5 text-danger fw-bold mb-0" id="modalUmbralCritico">0%</p>
+                                        <small class="text-muted">Requiere atención inmediata</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Indicador de Estado -->
+                        <div class="p-4 border-bottom" id="modalEstadoIndicador"></div>
+                        <!-- Resumen de Alertas -->
+                        <div class="p-4" id="modalResumenAlertas"></div>
+                    </div>
+                    <div class="modal-footer bg-light border-top">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Cerrar
+                        </button>
+                        <button type="button" class="btn btn-warning" id="btnEditarMaterial">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </button>
+                        <button type="button" class="btn btn-danger" id="btnBorrarMaterial">
+                            <i class="bi bi-trash me-1"></i>Borrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL EDITAR - PARA EDITAR DATOS DEL INVENTARIO -->
+        <div class="modal fade"
+             id="editarModal"
+             tabindex="-1"
+             aria-labelledby="editarModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow-lg rounded-3">
+                    <!-- Header -->
+                    <div class="modal-header border-0 bg-warning text-dark p-4 rounded-top-3">
+                        <div>
+                            <h5 class="modal-title fw-bold fs-5" id="editarModalLabel">
+                                <i class="bi bi-pencil-square me-2"></i>Editar Inventario
+                            </h5>
+                            <small class="text-secondary"><i class="bi bi-info-circle me-1"></i>Actualiza los datos del material</small>
+                        </div>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formularioEditarInventario" novalidate>
+                            <!-- Material ID (oculto) -->
+                            <input type="hidden" id="editarMaterialId" value="">
+                            <!-- Row 1: Stock y Capacidad -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="editarStockActual" class="form-label fw-bold">
+                                        <i class="bi bi-inbox text-success me-2"></i>Stock Actual
+                                    </label>
+                                    <div class="input-group has-validation">
+                                        <input type="number"
+                                               class="form-control"
+                                               id="editarStockActual"
+                                               min="0"
+                                               step="0.01"
+                                               required>
+                                        <span class="input-group-text" id="editarStockUnidad">un.</span>
+                                        <div class="invalid-feedback">Ingresa el stock actual (mayor o igual a 0).</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="editarCapacidadMaxima" class="form-label fw-bold">
+                                        <i class="bi bi-archive text-primary me-2"></i>Capacidad Máxima
+                                    </label>
+                                    <div class="input-group has-validation">
+                                        <input type="number"
+                                               class="form-control"
+                                               id="editarCapacidadMaxima"
+                                               min="0"
+                                               step="0.01"
+                                               required>
+                                        <span class="input-group-text" id="editarCapacidadUnidad">un.</span>
+                                        <div class="invalid-feedback">Ingresa la capacidad máxima (mayor o igual a 0).</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Row 1.5: Unidad de Medida -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="editarUnidadMedida" class="form-label fw-bold">
+                                        <i class="bi bi-rulers text-warning me-2"></i>Unidad de Medida
+                                    </label>
+                                    <select class="form-select" id="editarUnidadMedida" required>
+                                        <option value="">-- Seleccionar unidad --</option>
+                                        {% for value, label in unidades_medida %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                    </select>
+                                    <small class="text-muted d-block mt-2">Selecciona la unidad de medida del material</small>
+                                    <div class="invalid-feedback">Selecciona una unidad de medida.</div>
+                                </div>
+                            </div>
+                            <!-- Row 2: Precios -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="editarPrecioCompra" class="form-label fw-bold">
+                                        <i class="bi bi-cart-plus text-info me-2"></i>Precio de Compra
+                                    </label>
+                                    <div class="input-group has-validation">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number"
+                                               class="form-control"
+                                               id="editarPrecioCompra"
+                                               min="0"
+                                               step="0.01"
+                                               required>
+                                        <div class="invalid-feedback">Ingresa el precio de compra (mayor o igual a 0).</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="editarPrecioVenta" class="form-label fw-bold">
+                                        <i class="bi bi-cart-check text-warning me-2"></i>Precio de Venta
+                                    </label>
+                                    <div class="input-group has-validation">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number"
+                                               class="form-control"
+                                               id="editarPrecioVenta"
+                                               min="0"
+                                               step="0.01"
+                                               required>
+                                        <div class="invalid-feedback">Ingresa el precio de venta (mayor o igual a 0).</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Row 3: Umbrales -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="editarUmbralAlerta" class="form-label fw-bold">
+                                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>Umbral de Alerta (%)
+                                    </label>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="editarUmbralAlerta"
+                                           min="0"
+                                           max="100"
+                                           step="1"
+                                           required>
+                                    <div class="invalid-feedback">Ingresa el umbral de alerta (entre 0 y 100).</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="editarUmbralCritico" class="form-label fw-bold">
+                                        <i class="bi bi-exclamation-octagon text-danger me-2"></i>Umbral Crítico (%)
+                                    </label>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="editarUmbralCritico"
+                                           min="0"
+                                           max="100"
+                                           step="1"
+                                           required>
+                                    <div class="invalid-feedback">Ingresa el umbral crítico (entre 0 y 100).</div>
+                                </div>
+                            </div>
+                            <!-- Resumen de cambios -->
+                            <div class="alert alert-info rounded-2" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Nota:</strong> Los cambios se guardarán en la base de datos. Asegúrate de verificar los datos antes de guardar.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer bg-light border-top">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                        </button>
+                        <button type="submit"
+                                class="btn btn-warning"
+                                id="btnGuardarCambios"
+                                form="formularioEditarInventario">
+                            <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- SCRIPT PARA MANEJO DE MODALES -->
+        <script>
+        // ====================================================================
+        // FUNCIÓN GLOBAL: Mostrar notificación con SweetAlert2
+        // (Reemplaza al antiguo modal custom #modalResultadoGuardado)
+        // ====================================================================
+        function mostrarModalResultado(esExito, titulo, mensaje) {
+            console.log('🔔 Mostrando notificación Swal:', { esExito, titulo, mensaje });
+
+            if (!globalThis.Swal?.fire) {
+                console.error('❌ SweetAlert2 no disponible');
+                return Promise.resolve({ isConfirmed: false });
+            }
+
+            return globalThis.Swal.fire({
+                icon: esExito ? 'success' : 'error',
+                title: titulo,
+                text: mensaje,
+                confirmButtonColor: '#198754',
+                confirmButtonText: 'Entendido',
+            });
+        }
+
+        // ====================================================================
+        // IIFE: Sistema de Modales
+        // ====================================================================
+        (function() {
+            let detallesModalInstance = null;
+            let editarModalInstance = null;
+            let isInitialized = false;
+
+            function inicializarModales() {
+                // Esperar a que bootstrap esté disponible
+                if (typeof bootstrap === 'undefined') {
+                    console.warn('⚠️ Bootstrap no está disponible aún, reintentando...');
+                    setTimeout(inicializarModales, 100);
+                    return;
+                }
+
+                const detallesModalEl = document.getElementById('detallesModal');
+                const editarModalEl = document.getElementById('editarModal');
+
+                if (detallesModalEl) {
+                    detallesModalInstance = new bootstrap.Modal(detallesModalEl, { backdrop: 'static' });
+                    console.log('✓ Modal de detalles inicializado');
+                }
+                if (editarModalEl) {
+                    editarModalInstance = new bootstrap.Modal(editarModalEl, { backdrop: 'static' });
+                    console.log('✓ Modal de editar inicializado');
+                }
+            }
+
+            function configurarEventListeners() {
+                // Usar delegación de eventos a nivel de documento para mayor robustez
+                document.removeEventListener('click', manejarClickGlobal);
+                document.addEventListener('click', manejarClickGlobal);
+                console.log('✓ Event listeners configurados globalmente');
+            }
+
+            function manejarClickGlobal(e) {
+                const btn = e.target.closest('.detallesBtn');
+                if (!btn) return;
+
+                console.log('✓ Clic en botón de detalles detectado');
+                manejarClickTarjeta(btn);
+            }
+
+            function setText(id, text) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            }
+
+            function aplicarDatosBasicos(data, inventarioId) {
+                const stockNum = Number(data.stockActual);
+                const capacidadNum = Number(data.capacidadMaxima);
+                const unidad = data.unidadMedida || 'unidades';
+
+                setText('modalHeaderNombre', 'Detalles del Material');
+                setText('modalNombreMaterial', data.nmbMaterial || '-');
+                setText('modalMaterialId', inventarioId);
+                setText('modalUnidadMedida', data.unidadMedida || '-');
+                setText('modalStockActual', stockNum.toFixed(2));
+                setText('modalStockUnidad', unidad);
+                setText('modalCapacidadMaxima', capacidadNum.toFixed(2));
+                setText('modalCapacidadUnidad', unidad);
+                setText('modalEspacioUsado', stockNum.toFixed(2));
+                setText('modalEspacioDisponible', Math.max(capacidadNum - stockNum, 0).toFixed(2));
+                setText('modalPrecioCompra', '$ ' + Number(data.precioCompra).toFixed(2));
+                setText('modalPrecioVenta', '$ ' + Number(data.precioVenta).toFixed(2));
+            }
+
+            function aplicarCalculos(data) {
+                const precioVenta = Number(data.precioVenta);
+                const precioCompra = Number(data.precioCompra);
+                const stock = Number(data.stockActual);
+
+                const margen = (precioVenta - precioCompra) || 0;
+                setText('modalMargenGanancia', '$ ' + margen.toFixed(2));
+
+                const pctMargen = precioCompra > 0
+                    ? Math.round((margen / precioCompra) * 100) + '%'
+                    : '0%';
+                setText('modalPorcentajeMargen', pctMargen);
+
+                const valorTotal = (stock * precioCompra) || 0;
+                setText('modalValorTotal', '$ ' + valorTotal.toFixed(2));
+                setText('modalUmbralAlerta', (data.umbralAlerta || 0) + '%');
+                setText('modalUmbralCritico', (data.umbralCritico || 0) + '%');
+            }
+
+            function aplicarOcupacion(data) {
+                const stock = Number(data.stockActual);
+                const capacidad = Number(data.capacidadMaxima);
+                const porcentaje = capacidad > 0 ? Math.round((stock / capacidad) * 100) : 0;
+
+                setText('modalOcupacionPorcentaje', porcentaje + '%');
+
+                const barra = document.getElementById('modalOcupacionBar');
+                const textoBar = document.getElementById('modalOcupacionText');
+                if (!barra || !textoBar) return;
+
+                const estado = aplicarColorBarra(barra, porcentaje, data.umbralAlerta, data.umbralCritico);
+                textoBar.textContent = porcentaje + '%';
+
+                const estadoTextEl = document.getElementById('modalEstadoText');
+                const estadoIconEl = document.getElementById('modalEstadoIcon');
+                if (estadoTextEl) estadoTextEl.textContent = estado;
+                if (estadoIconEl) {
+                    estadoIconEl.className = 'bi bi-circle-fill me-1';
+                    const clasePorEstado = {
+                        'Crítico': 'text-danger',
+                        'Alerta': 'text-warning',
+                    };
+                    estadoIconEl.classList.add(clasePorEstado[estado] || 'text-success');
+                }
+            }
+
+            function prepararBotonesModal(data, inventarioId) {
+                const btnEditar = document.getElementById('btnEditarMaterial');
+                const btnBorrar = document.getElementById('btnBorrarMaterial');
+                const puntoEcaId = document.querySelector('section[data-punto-eca-id]')?.dataset.puntoEcaId || '';
+
+                if (btnEditar) {
+                    btnEditar.dataset.inventarioId = inventarioId;
+                    btnEditar.dataset.materialId = inventarioId;
+                    btnEditar.dataset.stock = data.stockActual;
+                    btnEditar.dataset.capacidad = data.capacidadMaxima;
+                    btnEditar.dataset.unidad = data.unidadMedida;
+                    btnEditar.dataset.precioCompra = data.precioCompra;
+                    btnEditar.dataset.precioVenta = data.precioVenta;
+                    btnEditar.dataset.umbralAlerta = data.umbralAlerta;
+                    btnEditar.dataset.umbralCritico = data.umbralCritico;
+                }
+                if (btnBorrar) {
+                    btnBorrar.dataset.inventarioId = inventarioId;
+                    btnBorrar.dataset.nombreMaterial = data.nmbMaterial || '-';
+                    btnBorrar.dataset.puntoEcaId = puntoEcaId;
+                }
+            }
+
+            function rellenarModalDetalles(data, inventarioId) {
+                aplicarDatosBasicos(data, inventarioId);
+                aplicarCalculos(data);
+                aplicarOcupacion(data);
+                prepararBotonesModal(data, inventarioId);
+            }
+
+            function manejarClickTarjeta(btn) {
+                // NEW: Traemos los datos completos usando AJAX
+                const inventarioId = btn.dataset.inventarioId;
+                const puntoId = document.getElementById('agregarPuntoId')?.value; // existente en el DOM
+
+                // Log para debug antes del fetch
+                console.log('DEBUG - Modal Detalles:', {
+                    inventarioId: inventarioId,
+                    puntoId: puntoId
+                });
+
+                if (!inventarioId) {
+                    console.error('No inventarioId en dataset');
+                    return;
+                }
+
+                // Bonus UX: Mostrar loading
+                setText('modalNombreMaterial', 'Cargando...');
+
+                fetch(`/punto-eca/materiales/inventario/${puntoId}/${inventarioId}`)
+                    .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer los datos'))
+                    .then(data => {
+                        rellenarModalDetalles(data, inventarioId);
+                        if (detallesModalInstance) {
+                            console.log('✓ Abriendo modal de detalles (datos actualizados)');
+                            detallesModalInstance.show();
+                        } else {
+                            console.error('✗ detallesModalInstance no está inicializado');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error trayendo datos reales del inventario:', err);
+                        if (globalThis.Swal?.fire) {
+                            globalThis.Swal.fire({
+                                icon: 'error',
+                                title: 'Error al cargar',
+                                text: 'No fue posible obtener los datos del material. Intenta nuevamente.',
+                                confirmButtonColor: '#198754',
+                                confirmButtonText: 'Entendido',
+                            });
+                        }
+                    });
+            }
+
+
+            function aplicarColorBarra(barEl, porcentaje, umbralAlerta, umbralCritico) {
+                barEl.style.width = porcentaje + '%';
+                barEl.className = 'progress-bar d-flex align-items-center justify-content-center fw-bold text-white fs-6';
+                if (porcentaje >= (umbralCritico || 100)) {
+                    barEl.classList.add('bg-danger');
+                    return 'Crítico';
+                }
+                if (porcentaje >= (umbralAlerta || 50)) {
+                    barEl.classList.add('bg-warning');
+                    return 'Alerta';
+                }
+                barEl.classList.add('bg-success');
+                return 'OK';
+            }
+
+            // Abrir modal editar y rellenar campos
+            function configurarBtnEditar() {
+                const btnEditarModal = document.getElementById('btnEditarMaterial');
+                if (btnEditarModal) {
+                    btnEditarModal.removeEventListener('click', abrirModalEditar);
+                    btnEditarModal.addEventListener('click', abrirModalEditar);
+                }
+            }
+
+            function abrirModalEditar() {
+                const inventarioId = this.dataset.inventarioid || this.dataset.inventarioId || '';
+                const materialId = this.dataset.materialid || this.dataset.materialId || '';
+                const stock = this.dataset.stock || '';
+                const capacidad = this.dataset.capacidad || '';
+                const unidad = this.dataset.unidad || '';
+                const precioCompra = this.dataset.preciocompra || this.dataset.precioCompra || '0';
+                const precioVenta = this.dataset.precioventa || this.dataset.precioVenta || '0';
+                const umbralAlerta = this.dataset.umbralalerta || this.dataset.umbralAlerta || '0';
+                const umbralCritico = this.dataset.umbralcritico || this.dataset.umbralCritico || '0';
+
+                console.log('Abriendo modal editar con inventarioId:', inventarioId);
+
+                const inputHidden = document.getElementById('editarMaterialId');
+                if (inputHidden) inputHidden.value = inventarioId || materialId || '';
+
+                const inputStock = document.getElementById('editarStockActual');
+                if (inputStock) inputStock.value = stock;
+
+                const inputCapacidad = document.getElementById('editarCapacidadMaxima');
+                if (inputCapacidad) inputCapacidad.value = capacidad;
+
+                const selectUnidad = document.getElementById('editarUnidadMedida');
+                if (selectUnidad && unidad) {
+                    const opt = Array.from(selectUnidad.options).find(o => o.value === unidad || o.text === unidad);
+                    if (opt) selectUnidad.value = opt.value;
+                }
+
+                const inputPrecioCompra = document.getElementById('editarPrecioCompra');
+                if (inputPrecioCompra) inputPrecioCompra.value = precioCompra;
+
+                const inputPrecioVenta = document.getElementById('editarPrecioVenta');
+                if (inputPrecioVenta) inputPrecioVenta.value = precioVenta;
+
+                const inputUmbralAlerta = document.getElementById('editarUmbralAlerta');
+                if (inputUmbralAlerta) inputUmbralAlerta.value = umbralAlerta;
+
+                const inputUmbralCritico = document.getElementById('editarUmbralCritico');
+                if (inputUmbralCritico) inputUmbralCritico.value = umbralCritico;
+
+                if (detallesModalInstance) detallesModalInstance.hide();
+                if (editarModalInstance) {
+                    console.log('✓ Abriendo modal de editar');
+                    editarModalInstance.show();
+                }
+            }
+
+            // Función para mostrar el modal de resultado
+            // YA DEFINIDA GLOBALMENTE ARRIBA
+
+            // Borrar: confirmación con SweetAlert2
+            function configurarBtnBorrar() {
+                const btnBorrarModal = document.getElementById('btnBorrarMaterial');
+                if (btnBorrarModal) {
+                    btnBorrarModal.removeEventListener('click', manejarClickBorrar);
+                    btnBorrarModal.addEventListener('click', manejarClickBorrar);
+                }
+            }
+
+            async function manejarClickBorrar(e) {
+                e.preventDefault();
+                const btnBorrar = e.currentTarget;
+                if (!btnBorrar) {
+                    return;
+                }
+
+                const inventarioId = btnBorrar.dataset.inventarioid || btnBorrar.dataset.inventarioId || '';
+                const nombreMaterial = btnBorrar.dataset.nombreMaterial || 'el material';
+                const puntoEcaId = btnBorrar.dataset.puntoEcaId || '';
+
+                const section = document.querySelector('section[data-gestor]');
+                const gestor = section?.dataset.gestor || '';
+                const usuarioId = section?.dataset.usuarioId || '';
+
+                console.log('🗑️ Preparando eliminación:', { inventarioId, nombreMaterial, gestor, usuarioId, puntoEcaId });
+
+                if (!gestor || !usuarioId || !puntoEcaId) {
+                    console.error('❌ Datos no encontrados', { gestor, usuarioId, puntoEcaId });
+                    if (globalThis.Swal?.fire) {
+                        await globalThis.Swal.fire({
+                            icon: 'error',
+                            title: 'Datos no encontrados',
+                            text: 'No se encontraron los datos necesarios. Por favor recarga la página.',
+                            confirmButtonColor: '#198754',
+                            confirmButtonText: 'Entendido',
+                        });
+                    }
+                    return;
+                }
+
+                if (!globalThis.Swal?.fire) {
+                    console.error('❌ SweetAlert2 no disponible');
+                    return;
+                }
+
+                const confirmacion = await globalThis.Swal.fire({
+                    icon: 'warning',
+                    title: '¿Confirmar eliminación?',
+                    text: inventarioId
+                        ? `Vas a eliminar "${nombreMaterial}" del inventario. Esta acción no se puede deshacer.`
+                        : '¿Deseas borrar este material del inventario? Esta acción no se puede deshacer.',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true,
+                });
+
+                if (!confirmacion.isConfirmed) {
+                    return;
+                }
+
+                await confirmarBorrado(btnBorrar);
+            }
+
+            async function confirmarBorrado(btnBorrar) {
+                if (!btnBorrar) {
+                    btnBorrar = document.getElementById('btnBorrarMaterial');
+                }
+
+                const csrfToken = getCSRFToken();
+                const inventarioId = btnBorrar?.dataset.inventarioid || btnBorrar?.dataset.inventarioId || '';
+                const puntoEcaId = btnBorrar?.dataset.puntoEcaId || '';
+
+                const url = `inventario/eliminar/${inventarioId}/`;
+                const payload = { puntoId: puntoEcaId };
+                console.log('🗑️ URL de eliminación:', url, '📤 Body:', payload);
+
+                try {
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    console.log('📦 Respuesta del DELETE:', { status: res.status, ok: res.ok });
+
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => null);
+                        throw new Error(errData?.mensaje || errData?.message || 'Error al borrar');
+                    }
+
+                    await res.json();
+                    console.log('✅ Eliminación exitosa');
+                    await mostrarModalResultado(true, '¡Eliminado!', 'El material ha sido eliminado del inventario correctamente.');
+                    if (detallesModalInstance) detallesModalInstance.hide();
+                    globalThis.setTimeout(() => globalThis.location.reload(), 1500);
+                } catch (err) {
+                    console.error('❌ Error borrando:', err);
+                    await mostrarModalResultado(false, 'Error al eliminar', 'No fue posible borrar: ' + (err.message || err));
+                }
+            }
+
+            function inicializar() {
+                if (isInitialized) return;
+                console.log('📌 Inicializando sistema de modales de materiales');
+                inicializarModales();
+                configurarEventListeners();
+                configurarBtnEditar();
+                configurarBtnBorrar();
+                isInitialized = true;
+            }
+
+            // Inicializar cuando el DOM está listo
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', inicializar);
+            } else {
+                inicializar();
+            }
+
+            // Re-inicializar si el contenedor cambia (para actualizaciones dinámicas)
+            globalThis.addEventListener('reinicializarModales', inicializar);
+
+            console.log('✓ Script de modales cargado');
+        })();
+        </script>
+        <!-- ============================================================ -->
+        <!-- SELECT2 ASSETS (jQuery + Select2 CSS/JS) -->
+        <!-- ============================================================ -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+                integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+                crossorigin="anonymous"></script>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+              rel="stylesheet"
+              integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ"
+              crossorigin="anonymous" />
+        <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+              rel="stylesheet"
+              integrity="sha384-dZ/kdA+7jiSms5Z+NkfRPANv1sHvWqS7e51A6ywK9wsJztsDG2q4gA4Ltui+/1yW"
+              crossorigin="anonymous" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
+                integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3"
+                crossorigin="anonymous"></script>
+        <!-- ============================================================ -->
+        <!-- SELECT2 INICIALIZACIÓN CON FORMATSTATE PERSONALIZADO -->
+        <!-- ============================================================ -->
+        <script>
+    (function() {
+        console.log('📌 Inicializando Select2 - Acordeón Agregar Material...');
+        const csrftoken = document.querySelector('#formAgregarInventario [name=csrfmiddlewaretoken]')?.value || '';
+        console.log('[CSRF DEBUG] token extraído:', csrftoken);
+        // ========================================================
+        // FUNCIÓN PARA FORMATEAR EL ESTADO (Selección)
+        // ========================================================
+        function formatState(state) {
+            if (!state.id) return state.text;
+            var imagenUrl = state.element?.dataset.imagen || '/imagenes/materiales.png';
+            var nmbTipo = state.element?.dataset.tipo || '';
+            var nmbCategoria = state.element?.dataset.categoria || '';
+            var $state = $(
+                '<span class="select2-state">' +
+                '<img class="img-material-select2" alt="material" style="width: 24px; height: 24px; margin-right: 8px; border-radius: 4px; object-fit: cover;" /> ' +
+                '<span class="state-text"></span>' +
+                '<small class="state-meta" style="margin-left: 4px; color: #999; font-size: 0.85em;"></small></span>'
+            );
+            $state.find('.state-text').text(state.text);
+            $state.find('img').attr('src', imagenUrl);
+            var metaText = [];
+            if (nmbTipo) metaText.push(nmbTipo);
+            if (nmbCategoria) metaText.push(nmbCategoria);
+            if (metaText.length) $state.find('.state-meta').text('(' + metaText.join(' • ') + ')');
+            return $state;
+        }
+
+        // ========================================================
+        // INICIALIZAR SELECT2 EN BUSCAR MATERIAL (ACORDEÓN AGREGAR)
+        // ========================================================
+        var $buscarMaterial = $('#buscarMaterialSelect');
+        if ($buscarMaterial.length) {
+            var endpointBuscar = '/punto-eca/materiales/catalogo/buscar/';
+            var puntoIdBuscar = document.getElementById('agregarPuntoId')?.value || '';
+            $buscarMaterial.select2({
+                theme: 'bootstrap4', width: '100%', placeholder: 'Escribe el nombre del material...', minimumInputLength: 1, allowClear: true,
+                ajax: {
+                    url: endpointBuscar,
+                    dataType: 'json', delay: 300,
+                    data: function(params) {
+                        var searchTerm = params.term || '';
+                        return { texto: searchTerm, puntoId: puntoIdBuscar };
+                    },
+                    processResults: function(data) {
+                        if (!Array.isArray(data)) data = [];
+                        var results = data.map(function(m) {
+                            return {
+                                id: m.materialId || m.id || '',
+                                text: m.nmbMaterial || m.nombre || 'Material sin nombre',
+                                element: $('<option>').attr('data-imagen', m.imagenUrl || '/imagenes/materiales.png').attr('data-tipo', m.nmbTipo || '').attr('data-categoria', m.nmbCategoria || '')[0],
+                                dto: m
+                            };
+                        });
+                        return { results: results };
+                    }
+                },
+                templateSelection: formatState,
+                templateResult: formatState
+            });
+            $buscarMaterial.on('select2:select', function(e) {
+                var data = e.params.data;
+                var materialId = data.id;
+                var puntoId = document.getElementById('agregarPuntoId')?.value || '';
+            
+                // Prefill nombre e id
+                document.getElementById('agregarMaterialId').value = materialId;
+                document.getElementById('agregarMaterialNombre').value = data.text;
+            
+                // Fetch inventario/buscar por materialId y puntoId
+                if (materialId && puntoId) {
+                    fetch(`/punto-eca/materiales/inventario/?materialId=${encodeURIComponent(materialId)}&puntoId=${encodeURIComponent(puntoId)}`, { method: 'GET' })
+                        .then(res => res.ok ? res.json() : Promise.reject('No se pudo traer detalles de inventario'))
+                        .then(info => {
+                            document.getElementById('stockInicial').value = info.stockActual || '';
+                            document.getElementById('capacidadMaxima').value = info.capacidadMaxima || '';
+                            document.getElementById('unidadMedida').value = info.unidadMedida || '';
+                            document.getElementById('precioCompra').value = info.precioCompra || '';
+                            document.getElementById('precioVenta').value = info.precioVenta || '';
+                            document.getElementById('umbralAlerta').value = info.umbralAlerta || '';
+                            document.getElementById('umbralCritico').value = info.umbralCritico || '';
+                        })
+                        .catch(() => {
+                            ['stockInicial','capacidadMaxima','precioCompra','precioVenta','umbralAlerta','umbralCritico'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+                            document.getElementById('unidadMedida').value = '';
+                        });
+                } else {
+                    ['stockInicial','capacidadMaxima','precioCompra','precioVenta','umbralAlerta','umbralCritico'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+                    document.getElementById('unidadMedida').value = '';
+                }
+                // Abre el modal y limpia select
+                $buscarMaterial.val(null).trigger('change');
+                var modalAgregar = document.getElementById('agregarInventarioModal');
+                if (modalAgregar) new bootstrap.Modal(modalAgregar).show();
+            });
+        }
+
+        // ========================================================
+        // CARGAR CATEGORÍAS Y TIPOS ÚNICOS DESDE MATERIALES DEL PUNTO
+        // ========================================================
+        // CSRF helper global for Django
+        function getCSRFToken() {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (const rawCookie of cookies) {
+                    const cookie = rawCookie.trim();
+                    if (cookie.startsWith('csrftoken=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function poblarSelectConValores(sel, valores, placeholderHtml) {
+            if (!sel) return;
+            sel.innerHTML = placeholderHtml;
+            for (const valor of Array.from(valores).sort()) {
+                const opt = document.createElement('option');
+                opt.value = valor;
+                opt.text = valor;
+                sel.appendChild(opt);
+            }
+        }
+
+        function destruirSelect2SiExiste(sel) {
+            if (sel && $(sel).data('select2')) {
+                $(sel).select2('destroy');
+            }
+        }
+
+        function inicializarSelect2(sel, placeholder, logLabel) {
+            if (!sel) return;
+            if ($ === undefined || $.fn.select2 === undefined) {
+                sel.insertAdjacentHTML('afterend', '<div style="color:red;font-weight:bold;">[Select2 NO CARGADO] Revisá los assets de JS y CSS</div>');
+                console.error('[Select2] jQuery o Select2 NO están presentes!');
+                return;
+            }
+            $(sel).select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder });
+            console.log(`[Select2] ${logLabel} inicializado.`);
+        }
+
+        function extraerCategoriasYTipos(data) {
+            const categorias = new Set();
+            const tipos = new Set();
+            for (const m of data) {
+                if (m.nmbCategoria) categorias.add(m.nmbCategoria);
+                if (m.nmbTipo) tipos.add(m.nmbTipo);
+            }
+            return { categorias, tipos };
+        }
+
+        async function cargarCategoriasYTiposDesdeMateriales() {
+            const puntoId = document.getElementById('agregarPuntoId')?.value || '';
+            if (!puntoId) {
+                console.warn('⚠️ No hay puntoId; se omite carga de categorías/tipos desde materiales');
+                return;
+            }
+
+            try {
+                const res = await fetch('/punto-eca/materiales/catalogo/buscar/?puntoId=' + encodeURIComponent(puntoId), {
+                    headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
+                });
+                const data = await res.json();
+                if (!res.ok || !Array.isArray(data)) {
+                    console.warn('⚠️ No se obtuvieron materiales o respuesta inválida');
+                    return;
+                }
+
+                const { categorias, tipos } = extraerCategoriasYTipos(data);
+                const selCat = document.getElementById('selectCategoriaBusqueda');
+                const selTipo = document.getElementById('selectTipoBusqueda');
+
+                destruirSelect2SiExiste(selCat);
+                destruirSelect2SiExiste(selTipo);
+                poblarSelectConValores(selCat, categorias, '<option value=""></option>');
+                poblarSelectConValores(selTipo, tipos, '<option value=""></option>');
+                inicializarSelect2(selCat, 'Selecciona una categoría...', 'Render/inicializado para categoría.');
+                inicializarSelect2(selTipo, 'Selecciona un tipo...', 'Render/inicializado para tipo.');
+
+                console.log('✓ Categorías cargadas:', Array.from(categorias));
+                console.log('✓ Tipos cargados:', Array.from(tipos));
+            } catch (err) {
+                console.error('❌ Error cargando materiales:', err);
+            }
+        }
+
+        // ========================================================
+        // INICIALIZAR SELECT2 EN CATEGORÍA/TIPO (DESPUÉS DE CARGAR DATOS)
+        // ========================================================
+        cargarCategoriasYTiposDesdeMateriales().finally(function() {
+            var $selectCategoria = $('#selectCategoriaBusqueda');
+            if ($selectCategoria.length) {
+                $selectCategoria.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Selecciona una categoría...' });
+                $selectCategoria.on('select2:select', function(e) { /* noop: esperar botón buscar */ });
+            }
+            var $selectTipo = $('#selectTipoBusqueda');
+            if ($selectTipo.length) {
+                $selectTipo.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Selecciona un tipo...' });
+                $selectTipo.on('select2:select', function(e) { /* noop: esperar botón buscar */ });
+            }
+            console.log('✓ Select2 inicializado para categoría y tipo');
+        });
+
+        // ========================================================
+        // INICIALIZAR SELECT2 EN UNIDAD MEDIDA (fuera de modal)
+        // ========================================================
+        var unidadMedidaEl = document.getElementById('unidadMedida');
+        if (unidadMedidaEl && !(unidadMedidaEl.closest && unidadMedidaEl.closest('#agregarInventarioModal'))) {
+            $('#unidadMedida').select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: '📐 Selecciona una unidad...' });
+        }
+
+        // ========================================================
+        // SELECT2 BÚSQUEDA DE MATERIAL EN INVENTARIO - INDEPENDIENTE
+        // ========================================================
+        var $busquedaMaterialInventario = $('#busquedaMaterialInventario');
+        if ($busquedaMaterialInventario.length) {
+            var endpointInventario = 'inventario';
+            var puntoIdInventario = document.getElementById('agregarPuntoId')?.value || '';
+            $busquedaMaterialInventario.select2({
+                theme: 'bootstrap4', width: '100%', placeholder: 'Escribe el nombre del material...', allowClear: true, minimumInputLength: 1,
+                ajax: {
+                    url: endpointInventario,
+                    dataType: 'json', delay: 300,
+                    data: function(params) { return { texto: (params.term || ''), puntoId: puntoIdInventario }; },
+                    processResults: function(data) {
+                        if (!Array.isArray(data)) data = [];
+                        var results = data.map(function(m) {
+                            return { id: m.nmbMaterial, text: m.nmbMaterial, materialId: m.materialId, category: m.nmbCategoria || '', type: m.nmbTipo || '' };
+                        });
+                        return { results: results };
+                    }
+                }
+            });
+            $busquedaMaterialInventario.on('select2:select', function(e) {
+                var data = e.params.data;
+                $busquedaMaterialInventario.val(null).trigger('change');
+                if (typeof globalThis.filtrarTarjetasPorNombre === 'function') globalThis.filtrarTarjetasPorNombre(data.text);
+            });
+        }
+
+        // ========================================================
+        // CARGAR CATEGORÍAS Y TIPOS ÚNICOS PARA FILTROS DE INVENTARIO
+        // ========================================================
+        async function cargarCategoriasYTiposInventario() {
+            const puntoId = document.getElementById('agregarPuntoId')?.value || '';
+            if (!puntoId) {
+                console.warn('⚠️ No hay puntoId para filtros de inventario');
+                return;
+            }
+
+            try {
+                const res = await fetch('/punto-eca/materiales/inventario/?puntoId=' + encodeURIComponent(puntoId), {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json', 'X-CSRFToken': getCSRFToken() }
+                });
+                const data = await res.json();
+                if (!res.ok || !Array.isArray(data)) {
+                    console.warn('⚠️ No se obtuvieron materiales para filtros de inventario');
+                    return;
+                }
+
+                const { categorias, tipos } = extraerCategoriasYTipos(data);
+                poblarSelectConValores(document.getElementById('filtroCategoriaSelectInventario'), categorias, '<option value="">-- Todas las categorías --</option>');
+                poblarSelectConValores(document.getElementById('filtroTipoSelectInventario'), tipos, '<option value="">-- Todos los tipos --</option>');
+
+                console.log('✓ Categorías para inventario cargadas:', Array.from(categorias));
+                console.log('✓ Tipos para inventario cargados:', Array.from(tipos));
+            } catch (err) {
+                console.error('❌ Error cargando materiales para inventario:', err);
+            }
+        }
+
+        // ========================================================
+        // INICIALIZAR SELECT2 PARA FILTROS DE INVENTARIO
+        // ========================================================
+        cargarCategoriasYTiposInventario().finally(function() {
+            // Inicializar Select2 para categoría de inventario
+            var $filtroCategoriaInventario = $('#filtroCategoriaSelectInventario');
+            if ($filtroCategoriaInventario.length) {
+                $filtroCategoriaInventario.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Todas las categorías' });
+            }
+
+            // Inicializar Select2 para tipo de inventario
+            var $filtroTipoInventario = $('#filtroTipoSelectInventario');
+            if ($filtroTipoInventario.length) {
+                $filtroTipoInventario.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Todos los tipos' });
+            }
+
+            // Inicializar Select2 para alerta
+            var $filtroAlerataInventario = $('#filtroAlerataInventario');
+            if ($filtroAlerataInventario.length) {
+                $filtroAlerataInventario.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Todas las alertas' });
+            }
+
+            // Inicializar Select2 para unidad
+            var $filtroUnidadInventario = $('#filtroUnidadInventario');
+            if ($filtroUnidadInventario.length) {
+                $filtroUnidadInventario.select2({ theme: 'bootstrap4', width: '100%', allowClear: true, placeholder: 'Todas las unidades' });
+            }
+
+            console.log('✓ Select2 inicializado para todos los filtros de inventario');
+        });
+
+        // ========================================================
+        // MANEJADOR: Botón Buscar Inventario
+        // ========================================================
+        var btnBuscarInventario = document.getElementById('btnBuscarInventario');
+        if (btnBuscarInventario) {
+            btnBuscarInventario.addEventListener('click', function() {
+                var categoria = $('#filtroCategoriaSelectInventario').val() || '';
+                var tipo = $('#filtroTipoSelectInventario').val() || '';
+                var alerta = $('#filtroAlerataInventario').val() || '';
+                var unidad = $('#filtroUnidadInventario').val() || '';
+                var ocupacion = $('#filtroOcupacionInventario').val() || '';
+                        var puntoId = document.getElementById('agregarPuntoId')?.value || '';
+                        var params = new URLSearchParams();
+                        if (categoria) params.append('categoria', categoria);
+                        if (tipo) params.append('tipo', tipo);
+                        if (alerta) params.append('alerta', alerta);
+                        if (unidad) params.append('unidad', unidad);
+                        if (ocupacion) params.append('ocupacion', ocupacion);
+                        if (puntoId) params.append('puntoId', puntoId);
+                        else {
+                            if (globalThis.Swal?.fire) {
+                                globalThis.Swal.fire({
+                                    icon: 'error',
+                                    title: 'Falta el punto ECA',
+                                    text: 'No se pudo identificar el punto ECA. Recarga la página e intenta nuevamente.',
+                                    confirmButtonColor: '#198754',
+                                    confirmButtonText: 'Entendido',
+                                });
+                            }
+                            return;
+                        }
+                var url = '/punto-eca/materiales/inventario/' + (params.toString() ? ('?' + params.toString()) : '');
+                // AJAX para actualizar la UI sin recargar
+                fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+                    .then(res => res.json())
+                    .then(data => {
+                        // Actualizar el contenedor de materiales dinámicamente
+                        console.log('Resultados filtrados:', data);
+                        renderizarTarjetasMateriales(data);
+                    })
+                    .catch(err => {
+                        console.error('Error buscando materiales:', err);
+                        mostrarMensajeNoResultados('Ocurrió un error buscando materiales.');
+                    });
+
+                // --- Renderizado dinámico de tarjetas de materiales ---
+                function renderizarTarjetasMateriales(materiales) {
+                    var contenedor = document.getElementById('contenedorMateriales');
+                    if (!contenedor) return;
+                    contenedor.innerHTML = '';
+                    var mensajeVacio = document.getElementById('mensajeNoResultados');
+                    if (mensajeVacio) mensajeVacio.remove();
+                    if (!Array.isArray(materiales) || materiales.length === 0) {
+                        mostrarMensajeNoResultados('No hay materiales que coincidan con los filtros.');
+                        return;
+                    }
+                    materiales.forEach(function(inv) {
+                                        // Mapping visual de la card
+                                        const mat = inv.material || {};
+                                        const categoria = inv.nmbCategoria || 'General';
+                                        const tipo = mat.tipo?.nombre || mat.tipo || inv.tipo?.nombre || inv.tipo || inv.nmbTipo || 'Tipo Desconocido';
+                                        const nombre = mat.nombre || inv.nombre || inv.nmbMaterial || inv.material?.nombre || inv.materialName || '-';
+                                        const stock = inv.stock_actual ?? inv.stockActual ?? inv.material?.stock_actual ?? inv.material?.stockActual ?? 0;
+                                        const capacidad = inv.capacidad_maxima ?? inv.capacidadMaxima ?? inv.material?.capacidad_maxima ?? inv.material?.capacidadMaxima ?? 0;
+                                        const unidad = inv.unidad_medida || inv.unidadMedida || inv.material?.unidad_medida || inv.material?.unidadMedida || inv.unidad || '';
+                                        const precioCompra = inv.precio_compra ?? inv.precioCompra ?? inv.material?.precio_compra ?? inv.material?.precioCompra ?? 0;
+                                        const precioVenta = inv.precio_venta ?? inv.precioVenta ?? inv.material?.precio_venta ?? inv.material?.precioVenta ?? 0;
+                                        const ocupacion_actual = inv.ocupacion_actual ?? inv.ocupacionActual ?? (capacidad > 0 ? (stock / capacidad) * 100 : 0);
+                                        const umbral_alerta = inv.umbral_alerta ?? inv.umbralAlerta ?? mat.umbral_alerta ?? mat.umbralAlerta ?? 50;
+                                        const umbral_critico = inv.umbral_critico ?? inv.umbralCritico ?? mat.umbral_critico ?? mat.umbralCritico ?? 100;
+                                        // Mapping de color/barra/icono igual que el template
+                                        let barraClass = 'bg-success', headerClass = 'bg-success-subtle text-success-emphasis', icon = 'bi-check-circle-fill fs-4', iconTitle = 'Stock Óptimo';
+                                        if (ocupacion_actual >= umbral_critico) {
+                                            barraClass = 'bg-danger';
+                                            headerClass = 'bg-danger-subtle text-danger';
+                                            icon = 'bi-exclamation-octagon-fill fs-4';
+                                            iconTitle = 'Stock Crítico';
+                                        } else if (ocupacion_actual >= umbral_alerta) {
+                                            barraClass = 'bg-warning';
+                                            headerClass = 'bg-warning-subtle text-warning-emphasis';
+                                            icon = 'bi-exclamation-triangle-fill fs-4';
+                                            iconTitle = 'Stock Bajo';
+                                        }
+                                        var card = document.createElement('div');
+                                        card.className = 'col-12 col-md-6 col-lg-4 tarjeta-material';
+                                        card.dataset.categoria = categoria;
+                                        card.dataset.tipoMaterial = tipo;
+                                        card.dataset.inventarioId = inv.id || '';
+                                        card.dataset.nombreMaterial = nombre;
+                                        card.innerHTML = `
+                                            <div class="card h-100 shadow-sm border-0 transition-hover position-relative">
+                                                <div class="position-absolute top-0 start-0 m-2">
+                                                    <span class="badge rounded-pill bg-dark opacity-75">
+                                                        <i class="bi bi-tag-fill me-1"></i>${categoria || 'General'}
+                                                    </span>
+                                                </div>
+                                                <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3 ${headerClass}">
+                                                    <div>
+                                                        <h5 class="card-title mb-0 fw-bold">${nombre}</h5>
+                                                        <small class="opacity-75">${tipo}</small>
+                                                    </div>
+                                                    <i class="${icon}" title="${iconTitle}"></i>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="mb-4">
+                                                        <div class="d-flex justify-content-between align-items-end mb-1">
+                                                            <span class="text-muted small fw-semibold">Disponibilidad</span>
+                                                            <span class="h5 mb-0 fw-bold">
+                                                                ${Number(stock).toFixed(2)}
+                                                                <span class="small text-muted fw-normal">${unidad}</span>
+                                                            </span>
+                                                        </div>
+                                                        <div class="progress" style="height: 10px; border-radius: 5px;">
+                                                            <div class="progress-bar ${barraClass}" role="progressbar" style="width: ${ocupacion_actual.toFixed(0)}%" aria-valuenow="${ocupacion_actual.toFixed(0)}" aria-valuemin="0" aria-valuemax="100">
+                                                                <span class="small">${ocupacion_actual.toFixed(0)}%</span>
+                                                            </div>
+                                                        </div>
+                                                        <p class="text-end small text-muted mt-1">Capacidad: ${Number(capacidad).toFixed(2)}</p>
+                                                    </div>
+                                                    <div class="row g-2 py-3 border-top border-bottom">
+                                                        <div class="col-6 border-end">
+                                                            <p class="text-muted small mb-0 text-uppercase">Costo Compra</p>
+                                                            <span class="fw-bold text-dark">$ ${Number(precioCompra).toFixed(2)}</span>
+                                                        </div>
+                                                        <div class="col-6 ps-3">
+                                                            <p class="text-muted small mb-0 text-uppercase">Valor Venta</p>
+                                                            <span class="fw-bold text-dark">$ ${Number(precioVenta).toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-transparent border-0 pb-3">
+                                                    <div class="d-grid">
+                                                        <button type="button" class="btn btn-outline-dark btn-sm detallesBtn rounded-pill" data-inventario-id="${inv.inventarioId || inv.id || ''}">
+                                                            <i class="bi bi-clipboard-data me-2"></i>Ver Hoja Técnica
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                        contenedor.appendChild(card);
+                                    });
+                }
+
+                function mostrarMensajeNoResultados(mensaje) {
+                    var contenedor = document.getElementById('contenedorMateriales');
+                    if (!contenedor) return;
+                    var vacio = document.createElement('div');
+                    vacio.id = 'mensajeNoResultados';
+                    vacio.className = 'alert alert-info text-center my-4';
+                    vacio.innerHTML = '<i class="bi bi-info-circle me-2"></i>' + (mensaje || 'No se encontraron materiales.');
+                    contenedor.parentNode.insertBefore(vacio, contenedor);
+                }
+            });
+        }
+
+        // ========================================================
+        // MANEJADOR: Botón Limpiar Todos los Filtros
+        // ========================================================
+        var btnLimpiarTodos = document.getElementById('btnLimpiarTodosFiltraInventario');
+        if (btnLimpiarTodos) {
+            btnLimpiarTodos.addEventListener('click', function() {
+                $('#busquedaMaterialInventario').val(null).trigger('change');
+                $('#filtroCategoriaSelectInventario').val('').trigger('change');
+                $('#filtroTipoSelectInventario').val('').trigger('change');
+                $('#filtroAlerataInventario').val('').trigger('change');
+                $('#filtroUnidadInventario').val('').trigger('change');
+                $('#filtroOcupacionInventario').val('').trigger('change');
+                document.querySelectorAll('.tarjeta-material').forEach(function(t){ t.style.display=''; });
+                var mensaje = document.getElementById('mensajeNoResultados'); if (mensaje) mensaje.remove();
+
+                // Nuevo: Disparar búsqueda AJAX sin filtros para refrescar el inventario completo
+                var puntoId = document.getElementById('agregarPuntoId')?.value || '';
+                if (!puntoId) return;
+                var url = '/punto-eca/materiales/inventario/?puntoId=' + encodeURIComponent(puntoId);
+                fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+                    .then(res => res.json())
+                    .then(data => {
+                        // Utiliza la misma función de renderizado que el botón Buscar
+                        if (typeof renderizarTarjetasMateriales === 'function') {
+                            renderizarTarjetasMateriales(data);
+                        } else {
+                            // Si no está en global, trae la lógica inline de renderizado de tarjetas
+                            var contenedor = document.getElementById('contenedorMateriales');
+                            if (!contenedor) return;
+                            contenedor.innerHTML = '';
+                            if (!Array.isArray(data) || data.length === 0) {
+                                var vacio = document.createElement('div');
+                                vacio.id = 'mensajeNoResultados';
+                                vacio.className = 'alert alert-info text-center my-4';
+                                vacio.innerHTML = '<i class="bi bi-info-circle me-2"></i>No hay materiales disponibles.';
+                                contenedor.parentNode.insertBefore(vacio, contenedor);
+                                return;
+                            }
+                            // ... Aquí podrías reusar el renderizado si lo extraés como función global
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error('Error al refrescar materiales tras limpiar filtros:', err);
+                    });
+            });
+        }
+
+        // ============================================================
+        // FUNCIÓN GLOBAL: Filtrar tarjetas por nombre
+        // ============================================================
+        globalThis.filtrarTarjetasPorNombre = function(nombreMaterial) {
+            console.log('✓ Material seleccionado en búsqueda independiente:', {
+                id: nombreMaterial,
+                text: nombreMaterial,
+                materialId: nombreMaterial,
+                category: '',
+                type: ''
+            });
+
+            const tarjetas = document.querySelectorAll('.tarjeta-material');
+            let materialesProcessed = 0;
+            let tarjetasMostradas = 0;
+
+            tarjetas.forEach(tarjeta => {
+                materialesProcessed++;
+                const nombreTarjeta = tarjeta.dataset.nombreMaterial || '';
+
+                if (nombreTarjeta.toLowerCase().includes(nombreMaterial.toLowerCase())) {
+                    tarjeta.style.display = '';
+                    tarjetasMostradas++;
+                } else {
+                    tarjeta.style.display = 'none';
+                }
+            });
+
+            console.log(`✓ Materiales procesados: ${materialesProcessed} materiales:${tarjetasMostradas}`);
+
+            // Mostrar mensaje si no hay resultados
+            let mensaje = document.getElementById('mensajeNoResultados');
+            if (tarjetasMostradas === 0) {
+                if (!mensaje) {
+                    mensaje = document.createElement('div');
+                    mensaje.id = 'mensajeNoResultados';
+                    mensaje.className = 'alert alert-info text-center';
+                    mensaje.innerHTML = '<i class="bi bi-search me-2"></i>No se encontraron materiales que coincidan con "' + nombreMaterial + '"';
+                    document.getElementById('contenedorMateriales')?.parentNode.insertBefore(mensaje, document.getElementById('contenedorMateriales'));
+                }
+            } else if (mensaje) {
+                mensaje.remove();
+            }
+        };
+    })();
+        </script>
+    <script type="module" src="{% static 'js/formularios/ecas-form-agregar-inventario.js' %}"></script>
+    <script type="module" src="{% static 'js/formularios/ecas-form-editar-inventario.js' %}"></script>
+    </section>
