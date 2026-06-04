@@ -1,57 +1,1409 @@
 {% load static %}
-{# Placeholder temporal para Fase 1 — será reemplazado en Fase 2 con el template completo. #}
-<section class="p-3" data-seccion="inventario-placeholder">
-  <h2 class="h4 fw-bold text-success mb-3">
-    <i class="bi bi-box-seam me-2"></i>Inventario
-  </h2>
-  <div class="alert alert-info small mb-3">
-    Esta es la nueva sección unificada <code>/inventario/</code>. El template final se
-    construye en Fase 2 del plan. Datos de prueba: <strong>{{ materiales_inventario|length }}</strong>
-    materiales en inventario, <strong>{{ total_ok }}</strong> OK,
-    <strong>{{ total_alerta }}</strong> en alerta, <strong>{{ total_critico }}</strong> críticos.
-  </div>
-  <div class="row g-3">
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Ocupación global</div>
-          <div class="h3 fw-bold">{{ ocupacion_porcentaje }}%</div>
-          <div class="small text-muted">
-            {{ total_stock|floatformat:0 }} / {{ total_capacidad|floatformat:0 }} kg
-          </div>
+{# Sección unificada de Inventario — refactor /inventario/ (ver PLAN-INVENTARIO.md). #}
+{# CSRF helper para scripts inline que hagan fetch POST/PATCH/DELETE. #}
+<script>
+globalThis.getCSRFToken = function () {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        for (const rawCookie of document.cookie.split(';')) {
+            const cookie = rawCookie.trim();
+            if (cookie.startsWith('csrftoken=')) {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+};
+</script>
+<section class="py-4"
+         data-seccion="inventario"
+         data-punto-eca-id="{{ punto.id }}"
+         data-gestor-id="{{ gestor.id }}">
+    {{ inv_data_json|json_script:"inv-data" }}
+
+    <style>
+    .inv-progress-thin { height: 8px; }
+    .inv-mini-img {
+        width: 48px; height: 48px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; color: #fff; flex-shrink: 0;
+        background: linear-gradient(135deg, #6c757d, #495057);
+    }
+    .inv-cat-plasticos { background: linear-gradient(135deg, #20c997, #0d9488); }
+    .inv-cat-papel-y-carton { background: linear-gradient(135deg, #fd7e14, #d97706); }
+    .inv-cat-vidrio { background: linear-gradient(135deg, #0dcaf0, #0891b2); }
+    .inv-cat-metales { background: linear-gradient(135deg, #6c757d, #495057); }
+    .inv-tarjeta { transition: transform .15s ease, box-shadow .15s ease; cursor: pointer; }
+    .inv-tarjeta:hover { transform: translateY(-2px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.12) !important; }
+    .inv-tarjeta-hint {
+        position: absolute; bottom: .5rem; right: .75rem;
+        font-size: .7rem; color: #6c757d; opacity: 0; transition: opacity .15s;
+    }
+    .inv-tarjeta:hover .inv-tarjeta-hint { opacity: 1; }
+    .inv-hover-arrow {
+        position: absolute; bottom: .5rem; left: .75rem;
+        font-size: .9rem; color: #198754; opacity: 0; transition: opacity .15s, transform .15s;
+    }
+    .inv-tarjeta:hover .inv-hover-arrow { opacity: 1; transform: translateX(4px); }
+    .nav-tabs-inventario .nav-link { color: #495057; font-weight: 500; }
+    .nav-tabs-inventario .nav-link.active {
+        color: #198754; font-weight: 600;
+        border-bottom: 3px solid #198754;
+    }
+    .estado-section { display: none; }
+    .estado-section.active { display: block; }
+    .ovtab-pane { display: none; }
+    .ovtab-pane.active { display: block; }
+    .tab-pane-stack { display: none; }
+    .tab-pane-stack.active { display: block; }
+    .context-bar { background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%); }
+    .inv-fake-input {
+        background-color: #f5f5f5; border: 1px solid #dee2e6;
+        border-radius: .375rem; padding: .375rem .75rem; font-size: .875rem;
+    }
+    </style>
+
+    {# ============================================================ #}
+    {# ESTADO 1: LANDING (vista general con tabs)                   #}
+    {# ============================================================ #}
+    <div id="estado-landing" class="estado-section active">
+
+        {# --- 3 KPI blocks compactos (decisión 14) --- #}
+        <div class="row g-3 mb-3">
+            <div class="col-lg-4 col-md-6">
+                <div class="card border-start border-5 border-success shadow-sm h-100 p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="fw-bold text-success small">
+                                <i class="bi bi-bar-chart-line me-1"></i>Físico
+                            </span>
+                            <div class="progress mt-1" style="height: 18px;">
+                                <div class="progress-bar bg-success" style="width: {{ ocupacion_porcentaje }}%">
+                                    <span class="fw-bold text-dark">{{ ocupacion_porcentaje }}%</span>
+                                </div>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">
+                                Cap. Máx: {{ total_capacidad|floatformat:0 }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card border-start border-5 border-danger shadow-sm h-100 p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold text-danger small">
+                                <i class="bi bi-shield-exclamation me-1"></i>Salud
+                            </span>
+                            <div class="mt-1">
+                                <span class="badge bg-success me-1" style="font-size: 0.75rem;">OK {{ total_ok }}</span>
+                                <span class="badge bg-warning text-dark me-1" style="font-size: 0.75rem;">Alerta {{ total_alerta }}</span>
+                                <span class="badge bg-danger" style="font-size: 0.75rem;">Crítico {{ total_critico }}</span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block" style="font-size: 0.7rem;">Materiales</small>
+                            <span class="fs-3 fw-bold text-dark">{{ materiales_inventario|length }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card border-start border-5 border-warning shadow-sm h-100 p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold text-muted" style="font-size: 0.75rem;">
+                                <i class="bi bi-cash-stack me-1"></i>Valor del Inventario
+                            </span>
+                            <div class="fs-4 fw-bold text-success lh-1">$ {{ costo_total_inventario|floatformat:0 }}</div>
+                        </div>
+                        <div class="text-end" style="font-size: 0.7rem;">
+                            {% if material_mas_caro %}
+                                <div><span>🔥</span> <strong>{{ material_mas_caro.material.nombre|truncatechars:14 }}</strong>
+                                    <span class="badge bg-primary" style="font-size: 0.7rem;">$ {{ material_mas_caro.precio_compra|floatformat:0 }}</span>
+                                </div>
+                            {% endif %}
+                            {% if material_mas_barato %}
+                                <div><span>🧊</span> <strong>{{ material_mas_barato.material.nombre|truncatechars:14 }}</strong>
+                                    <span class="badge bg-secondary text-dark" style="font-size: 0.7rem;">$ {{ material_mas_barato.precio_compra|floatformat:0 }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Valor del inventario</div>
-          <div class="h3 fw-bold">$ {{ costo_total_inventario|floatformat:0 }}</div>
+
+        <div class="mb-3">
+            <h2 class="h4 fw-bold text-dark mb-1">
+                <i class="bi bi-box-seam me-2"></i>Gestión Integral de Inventario
+            </h2>
+            <p class="text-muted small mb-0">
+                Filtra y opera sobre tus materiales, o navega entre las pestañas de vistas generales.
+            </p>
         </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Movimientos</div>
-          <div class="h3 fw-bold">{{ entradas|length }} / {{ salidas|length }}</div>
-          <div class="small text-muted">compras / ventas</div>
+
+        {# --- OTRAS VISTAS (5 tabs) --- #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white border-0 p-0">
+                <ul class="nav nav-tabs nav-tabs-inventario px-3 pt-2" id="otrasVistasTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-ovtab="ovtab-inventario" type="button">
+                            <i class="bi bi-collection me-1"></i>Inventario
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-ovtab="ovtab-buscar" type="button">
+                            <i class="bi bi-search-plus me-1"></i>Buscar / Crear
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-ovtab="ovtab-historial" type="button">
+                            <i class="bi bi-clock-history me-1"></i>Historial General
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-ovtab="ovtab-flujo" type="button">
+                            <i class="bi bi-graph-up me-1"></i>Flujo de Stock
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-ovtab="ovtab-bulk" type="button">
+                            <i class="bi bi-upload me-1"></i>Carga Masiva
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content p-4 bg-light">
+
+                {# ============== TAB: INVENTARIO (cards + filtros) ============== #}
+                <div class="ovtab-pane active" id="ovtab-inventario">
+                    <div class="card border-start border-5 border-success shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                <h5 class="fw-bold text-dark mb-0">
+                                    <i class="bi bi-collection me-2"></i>Inventario actual
+                                    <span class="badge bg-secondary ms-2" id="inv-filter-total-badge">
+                                        {{ materiales_inventario|length }} items
+                                    </span>
+                                </h5>
+                                <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#inv-modal-picker">
+                                    <i class="bi bi-plus-circle me-1"></i>Agregar material nuevo
+                                </button>
+                            </div>
+
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-nombre">
+                                        <i class="bi bi-search me-1"></i>Buscar por nombre
+                                    </label>
+                                    <input type="text" class="form-control border-2 border-success"
+                                           id="inv-filter-nombre" placeholder="Ej: Plástico, Cartón, Vidrio...">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-categoria">Categoría</label>
+                                    <select class="form-select border-2 border-success" id="inv-filter-categoria">
+                                        <option value="">Todas las categorías</option>
+                                        {% for c in categoria_inventario %}<option value="{{ c|slugify }}">{{ c }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-tipo">Tipo</label>
+                                    <select class="form-select border-2 border-success" id="inv-filter-tipo">
+                                        <option value="">Todos</option>
+                                        {% for t in tipo_inventario %}<option value="{{ t|slugify }}">{{ t }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-estado">Estado</label>
+                                    <select class="form-select border-2 border-success" id="inv-filter-estado">
+                                        <option value="">Todos</option>
+                                        <option value="ok">OK</option>
+                                        <option value="alerta">Alerta</option>
+                                        <option value="critico">Crítico</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-ocupacion">
+                                        <i class="bi bi-bar-chart me-1"></i>Ocupación
+                                    </label>
+                                    <select class="form-select border-2 border-success" id="inv-filter-ocupacion">
+                                        <option value="">Todos los niveles</option>
+                                        <option value="0-15">Vacío (0–15%)</option>
+                                        <option value="15-40">Bajo (15–40%)</option>
+                                        <option value="40-70">Medio (40–70%)</option>
+                                        <option value="70-100">Alto (70–100%)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1">
+                                    <button class="btn btn-outline-secondary w-100" id="inv-filter-limpiar" type="button" title="Limpiar filtros">
+                                        <i class="bi bi-eraser"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex justify-content-between align-items-center">
+                                <small class="text-muted" id="inv-filter-counter">
+                                    Mostrando {{ materiales_inventario|length }} de {{ materiales_inventario|length }} materiales
+                                </small>
+                                <small class="text-muted" id="inv-filter-hint" style="display:none">
+                                    <i class="bi bi-info-circle me-1"></i>Click en cualquier tarjeta para operar sobre el material
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4" id="inv-cards-grid">
+                        {% for inv in materiales_inventario %}
+                            <div class="col-12 col-md-6 col-lg-4 inv-tarjeta-material"
+                                 data-inv-id="{{ inv.id }}"
+                                 data-nombre="{{ inv.material.nombre|lower }}"
+                                 data-categoria="{{ inv.material.categoria.nombre|default_if_none:''|slugify }}"
+                                 data-tipo="{{ inv.material.tipo.nombre|default_if_none:''|slugify }}"
+                                 data-estado="{% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}critico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}alerta{% else %}ok{% endif %}"
+                                 data-ocupacion="{{ inv.ocupacion_actual }}">
+                                <div class="card h-100 shadow-sm border-0 position-relative inv-tarjeta" role="button" tabindex="0">
+                                    <div class="position-absolute top-0 start-0 m-2">
+                                        <span class="badge rounded-pill bg-dark opacity-75">
+                                            <i class="bi bi-tag-fill me-1"></i>{{ inv.material.categoria.nombre|default:'—' }}
+                                        </span>
+                                    </div>
+                                    <div class="card-header border-0 d-flex justify-content-between align-items-start pt-5 pb-3
+                                                {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}bg-danger-subtle text-danger
+                                                {% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}bg-warning-subtle text-warning-emphasis
+                                                {% else %}bg-success-subtle text-success-emphasis{% endif %}">
+                                        <div>
+                                            <h5 class="card-title mb-0 fw-bold">{{ inv.material.nombre }}</h5>
+                                            <small class="opacity-75">{{ inv.material.tipo.nombre|default:'—' }}</small>
+                                        </div>
+                                        <span class="badge {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}bg-danger{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                            {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}Crítico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}Alerta{% else %}OK{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center gap-3 mb-3">
+                                            <div class="inv-mini-img inv-cat-{{ inv.material.categoria.nombre|default:'otro'|slugify }}">
+                                                <i class="bi bi-box-seam"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                                    <span>{{ inv.stock_actual|floatformat:0 }} / {{ inv.capacidad_maxima|floatformat:0 }} {{ inv.unidad_medida }}</span>
+                                                    <span>{{ inv.ocupacion_actual }}%</span>
+                                                </div>
+                                                <div class="progress inv-progress-thin">
+                                                    <div class="progress-bar {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}bg-danger{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}bg-warning{% else %}bg-success{% endif %}"
+                                                         style="width: {{ inv.ocupacion_actual }}%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span><i class="bi bi-cash me-1"></i>$ {{ inv.precio_compra|floatformat:0 }}/{{ inv.unidad_medida }}</span>
+                                            <span><i class="bi bi-arrow-up me-1"></i>$ {{ inv.precio_venta|floatformat:0 }}/{{ inv.unidad_medida }}</span>
+                                        </div>
+                                    </div>
+                                    <span class="inv-tarjeta-hint">Click para operar</span>
+                                    <span class="inv-hover-arrow"><i class="bi bi-arrow-right"></i></span>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12">
+                                <div class="alert alert-info text-center mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No tienes materiales en tu inventario todavía.
+                                    Usa <strong>Agregar material nuevo</strong> para empezar.
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="inv-mensaje-sin-resultados"
+                         class="alert alert-warning text-center mb-4"
+                         style="display:none">
+                        <i class="bi bi-funnel me-2"></i>
+                        Ningún material coincide con los filtros aplicados.
+                        <button class="btn btn-sm btn-link p-0 ms-2" type="button" id="inv-filter-limpiar-vacio">Limpiar filtros</button>
+                    </div>
+                </div>
+                {# ============== TAB: BUSCAR / CREAR (form inline) ============== #}
+                <div class="ovtab-pane" id="ovtab-buscar">
+                    <div class="card border-start border-5 border-info shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                <h5 class="fw-bold text-info mb-0">
+                                    <i class="bi bi-search-plus me-2"></i>Buscar / Crear Material
+                                </h5>
+                                <span class="badge bg-info" id="inv-tab-buscar-contador">Catálogo de materiales</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <button class="btn btn-info text-white" type="button" id="inv-btn-abrir-picker">
+                                    <i class="bi bi-search me-1"></i>Buscar material en catálogo
+                                </button>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Selecciona un material del catálogo para completar el formulario y agregarlo a tu inventario.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="inv-tab-buscar-placeholder" class="card shadow-sm mb-4 border-2 border-dashed">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-arrow-up-circle display-4 text-muted mb-3 d-block"></i>
+                            <h6 class="text-muted mb-2">No has seleccionado ningún material todavía</h6>
+                            <p class="text-muted small mb-0">
+                                Usa el botón <strong>"Buscar material en catálogo"</strong> de arriba
+                                para escoger uno y luego completar el formulario.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card border-start border-5 border-success shadow-sm mb-4"
+                         id="inv-tab-buscar-form-container" style="display:none">
+                        <div class="card-header bg-success text-white p-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-plus-circle me-2"></i>Agregar Material al Inventario
+                            </h5>
+                            <button class="btn btn-sm btn-outline-light" type="button" id="inv-btn-limpiar-seleccion">
+                                <i class="bi bi-x-lg me-1"></i>Cambiar material
+                            </button>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="inv-form-crear-inventario" novalidate>
+                                {% csrf_token %}
+                                <input type="hidden" id="inv-crear-material-id" name="materialId">
+                                <input type="hidden" id="inv-crear-punto-id" name="puntoId" value="{{ punto.id }}">
+                                <div class="row g-3 mb-4">
+                                    <div class="col-12">
+                                        <label for="inv-crear-material-nombre" class="form-label fw-semibold">Material Seleccionado</label>
+                                        <input type="text" class="form-control" id="inv-crear-material-nombre" readonly style="background-color: #f5f5f5">
+                                    </div>
+                                </div>
+                                <hr class="my-4">
+                                <h6 class="fw-semibold text-success mb-3">Datos de Inventario</h6>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="inv-crear-stock-inicial" class="form-label fw-semibold">Stock Inicial</label>
+                                        <input type="number" class="form-control border-2 border-success"
+                                               id="inv-crear-stock-inicial" name="stockInicial" placeholder="0" min="0" required>
+                                        <small class="text-muted">Cantidad inicial a agregar</small>
+                                        <div class="invalid-feedback">Ingresa el stock inicial (mayor o igual a 0).</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="inv-crear-capacidad-maxima" class="form-label fw-semibold">Capacidad Máxima</label>
+                                        <input type="number" class="form-control border-2 border-success"
+                                               id="inv-crear-capacidad-maxima" name="capacidadMaxima" placeholder="1000" min="0" required>
+                                        <small class="text-muted">Máximo que puede almacenar</small>
+                                        <div class="invalid-feedback">Ingresa la capacidad máxima (mayor o igual a 0).</div>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="inv-crear-unidad-medida" class="form-label fw-semibold">Unidad de Medida</label>
+                                        <select class="form-select border-2 border-success" id="inv-crear-unidad-medida" name="unidadMedida" required>
+                                            <option value="" selected disabled>Selecciona una unidad</option>
+                                            {% for value, label in unidades_medida %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                        </select>
+                                        <small class="text-muted">Selecciona la unidad de medida para el stock</small>
+                                        <div class="invalid-feedback">Selecciona una unidad de medida.</div>
+                                    </div>
+                                </div>
+                                <h6 class="fw-semibold text-success mb-3 mt-4">Precios</h6>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="inv-crear-precio-compra" class="form-label fw-semibold">Precio de Compra</label>
+                                        <div class="input-group has-validation">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control border-2 border-success"
+                                                   id="inv-crear-precio-compra" name="precioCompra" placeholder="0.00" min="0" step="0.01" required>
+                                            <div class="invalid-feedback">Ingresa el precio de compra (mayor o igual a 0).</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="inv-crear-precio-venta" class="form-label fw-semibold">Precio de Venta</label>
+                                        <div class="input-group has-validation">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control border-2 border-success"
+                                                   id="inv-crear-precio-venta" name="precioVenta" placeholder="0.00" min="0" step="0.01" required>
+                                            <div class="invalid-feedback">Ingresa el precio de venta (mayor o igual a 0).</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h6 class="fw-semibold text-success mb-3 mt-4">Umbrales de Alerta</h6>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="inv-crear-umbral-alerta" class="form-label fw-semibold">Umbral de Alerta (%)</label>
+                                        <div class="input-group has-validation">
+                                            <input type="number" class="form-control border-2 border-success"
+                                                   id="inv-crear-umbral-alerta" name="umbralAlerta" placeholder="25" min="0" max="100" step="1" value="25" required>
+                                            <span class="input-group-text">%</span>
+                                            <div class="invalid-feedback">Ingresa el umbral de alerta (entre 0 y 100).</div>
+                                        </div>
+                                        <small class="text-muted">Porcentaje mínimo antes de alertar</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="inv-crear-umbral-critico" class="form-label fw-semibold">Umbral Crítico (%)</label>
+                                        <div class="input-group has-validation">
+                                            <input type="number" class="form-control border-2 border-success"
+                                                   id="inv-crear-umbral-critico" name="umbralCritico" placeholder="10" min="0" max="100" step="1" value="10" required>
+                                            <span class="input-group-text">%</span>
+                                            <div class="invalid-feedback">Ingresa el umbral crítico (entre 0 y 100).</div>
+                                        </div>
+                                        <small class="text-muted">Porcentaje crítico de stock</small>
+                                    </div>
+                                </div>
+                                <div id="inv-crear-mensaje-estado" class="alert alert-info mt-4" style="display:none" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <span id="inv-crear-texto-mensaje"></span>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                    <button type="button" class="btn btn-secondary" id="inv-btn-cancelar-crear">
+                                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success" id="inv-btn-guardar-crear">
+                                        <i class="bi bi-check-circle me-1"></i>Guardar en Inventario
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                {# ============== TAB: HISTORIAL GENERAL ============== #}
+                <div class="ovtab-pane" id="ovtab-historial">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light border-0 px-4 py-3">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-material">Material</label>
+                                    <select class="form-select form-select-sm" id="inv-hfiltro-material">
+                                        <option value="">-- Todos --</option>
+                                        {% for inv in materiales_inventario %}
+                                            <option value="{{ inv.id }}">{{ inv.material.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-tipo">Tipo movimiento</label>
+                                    <select class="form-select form-select-sm" id="inv-hfiltro-tipo">
+                                        <option value="">Todos</option>
+                                        <option value="compra">Compra</option>
+                                        <option value="venta">Venta</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-desde">Desde</label>
+                                    <input type="date" class="form-control form-control-sm" id="inv-hfiltro-desde">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-hasta">Hasta</label>
+                                    <input type="date" class="form-control form-control-sm" id="inv-hfiltro-hasta">
+                                </div>
+                                <div class="col-md-12 d-flex align-items-end gap-2">
+                                    <button class="btn btn-primary btn-sm fw-semibold" type="button" id="inv-hfiltro-aplicar">
+                                        <i class="bi bi-search me-1"></i>Buscar
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="inv-hfiltro-limpiar">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <h6 class="mb-0 fw-bold text-dark">Todos los movimientos</h6>
+                                <a class="btn btn-sm btn-outline-success fw-semibold ms-2" href="/punto-eca/movimientos/exportar-compras-excel/">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                                </a>
+                                <a class="btn btn-sm btn-outline-danger fw-semibold" href="/punto-eca/movimientos/exportar-compras-pdf/">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                                </a>
+                            </div>
+                            <span class="badge bg-secondary rounded-pill" id="inv-hbadge-count">
+                                {{ historial_compras|length|add:historial_ventas|length }} registros
+                            </span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="fw-bold small">Fecha</th>
+                                        <th class="fw-bold small">Tipo</th>
+                                        <th class="fw-bold small">Material</th>
+                                        <th class="fw-bold small text-end">Cantidad</th>
+                                        <th class="fw-bold small text-end">$ Unit.</th>
+                                        <th class="fw-bold small">Total</th>
+                                        <th class="fw-bold small text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-tablasHistorialBody">
+                                    {# Poblado por JS — historial_compras + historial_ventas #}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer bg-light border-top px-4 py-3 text-center">
+                            <small class="text-muted" id="inv-hfooter-count">—</small>
+                        </div>
+                    </div>
+                </div>
+
+                {# ============== TAB: FLUJO DE STOCK ============== #}
+                <div class="ovtab-pane" id="ovtab-flujo">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info-subtle border-0 px-4 py-3">
+                            <h6 class="mb-0 fw-bold text-info"><i class="bi bi-sliders me-2"></i>Filtros de la gráfica</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold small">Materiales a comparar</label>
+                                    <div class="border rounded p-2 bg-white" style="max-height:160px; overflow-y:auto" id="inv-flujo-materiales-list">
+                                        {# Checkboxes generados por JS desde materiales_inventario #}
+                                    </div>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button class="btn btn-sm btn-outline-info" type="button" id="inv-flujo-todos">Todos</button>
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" id="inv-flujo-ninguno">Ninguno</button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small" for="inv-flujo-desde">Desde</label>
+                                    <input type="date" class="form-control form-control-sm" id="inv-flujo-desde">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-flujo-hasta">Hasta</label>
+                                    <input type="date" class="form-control form-control-sm" id="inv-flujo-hasta">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-flujo-granularidad">Granularidad</label>
+                                    <select class="form-select form-select-sm" id="inv-flujo-granularidad">
+                                        <option value="dia">Día</option>
+                                        <option value="semana">Semana</option>
+                                        <option value="mes">Mes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="inv-flujo-cap" checked>
+                                    <label class="form-check-label small" for="inv-flujo-cap">Mostrar línea de capacidad máxima</label>
+                                </div>
+                                <div>
+                                    <button class="btn btn-info btn-sm fw-semibold" type="button" id="inv-flujo-aplicar">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Materiales</small><h4 class="text-success fw-bold mb-0" id="inv-flujo-kpi-materiales">—</h4></div></div>
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Compras</small><h4 class="text-primary fw-bold mb-0" id="inv-flujo-kpi-compras">—</h4></div></div>
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ventas</small><h4 class="text-info fw-bold mb-0" id="inv-flujo-kpi-ventas">—</h4></div></div>
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ocupación</small><h4 class="text-warning fw-bold mb-0" id="inv-flujo-kpi-ocupacion">—</h4></div></div>
+                    </div>
+
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up me-2"></i>Evolución del stock</h6>
+                            <span class="badge bg-info rounded-pill" id="inv-flujo-badge">—</span>
+                        </div>
+                        <div class="card-body">
+                            <div style="position:relative; height: 300px;">
+                                <canvas id="inv-stock-time-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ============== TAB: CARGA MASIVA ============== #}
+                <div class="ovtab-pane" id="ovtab-bulk">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card text-center p-4 h-100">
+                                <i class="bi bi-arrow-down-circle text-danger" style="font-size:3rem"></i>
+                                <h5 class="mt-3 fw-bold">Cargar Compras</h5>
+                                <p class="text-muted small">Importa múltiples compras de material desde CSV</p>
+                                <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#inv-modalCargaMasiva">
+                                    <i class="bi bi-upload me-1"></i>Importar Compras
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card text-center p-4 h-100">
+                                <i class="bi bi-arrow-up-circle text-success" style="font-size:3rem"></i>
+                                <h5 class="mt-3 fw-bold">Cargar Ventas</h5>
+                                <p class="text-muted small">Importa múltiples ventas de material desde CSV</p>
+                                <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#inv-modalCargaMasiva">
+                                    <i class="bi bi-upload me-1"></i>Importar Ventas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Formato CSV requerido:</strong> columnas <code>nombreMaterial</code>,
+                        <code>cantidad</code>, <code>precioCompra</code> o <code>precioVenta</code>,
+                        <code>fechaCompra</code> o <code>fechaVenta</code>. Descarga la
+                        <a href="#">plantilla de compras</a> o la <a href="#">plantilla de ventas</a>.
+                    </div>
+                </div>
+                {# === CHUNK 4 ANCHOR === #}
+            </div>
         </div>
-      </div>
     </div>
-  </div>
-  <hr class="my-4" />
-  <h3 class="h6 fw-bold">Materiales en inventario</h3>
-  <ul class="list-group list-group-flush">
-    {% for inv in materiales_inventario %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        {{ inv.material.nombre }}
-        <span class="badge bg-secondary">
-          {{ inv.stock_actual|floatformat:0 }} / {{ inv.capacidad_maxima|floatformat:0 }} {{ inv.unidad_medida }}
-        </span>
-      </li>
-    {% empty %}
-      <li class="list-group-item text-muted">Sin materiales en inventario.</li>
-    {% endfor %}
-  </ul>
+    {# /estado-landing #}
+
+    {# ============================================================ #}
+    {# ESTADO 2: WORKSPACE (material seleccionado)                   #}
+    {# ============================================================ #}
+    <div id="estado-workspace" class="estado-section">
+
+        <button class="btn btn-link text-decoration-none mb-2" type="button" id="inv-btn-volver-landing">
+            <i class="bi bi-arrow-left me-1"></i>Volver al inventario general
+        </button>
+
+        <div class="card context-bar shadow-sm mb-3">
+            <div class="card-body p-3">
+                <div class="row align-items-center g-3">
+                    <div class="col-auto">
+                        <div class="inv-mini-img" id="inv-ws-mini-img" style="width:80px;height:80px;font-size:2.2rem">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h4 class="fw-bold text-dark mb-1">
+                            <span id="inv-ws-nombre">—</span>
+                            <span class="badge ms-2" id="inv-ws-estado">—</span>
+                        </h4>
+                        <div class="d-flex flex-wrap gap-3 small text-muted">
+                            <span><i class="bi bi-tag me-1"></i><span id="inv-ws-categoria">—</span></span>
+                            <span><i class="bi bi-circle me-1"></i><span id="inv-ws-tipo">—</span></span>
+                            <span><i class="bi bi-clock me-1"></i>Última act.: <span id="inv-ws-ultact">—</span></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Stock actual</span>
+                            <span class="fw-bold"><span id="inv-ws-stock">—</span></span>
+                        </div>
+                        <div class="progress inv-progress-thin mb-2">
+                            <div class="progress-bar" id="inv-ws-progress" style="width: 0%"></div>
+                        </div>
+                        <div class="d-flex gap-3 small">
+                            <span><i class="bi bi-cash text-muted me-1"></i>Compra: <strong>$ <span id="inv-ws-pcompra">—</span></strong>/<span id="inv-ws-unidad-c">—</span></span>
+                            <span><i class="bi bi-arrow-up text-muted me-1"></i>Venta: <strong>$ <span id="inv-ws-pventa">—</span></strong>/<span id="inv-ws-unidad-v">—</span></span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-outline-primary btn-sm" type="button" id="inv-btn-cambiar-material">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Cambiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs nav-tabs-inventario mb-3" id="workspaceTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-tab="tab-datos" type="button">
+                    <i class="bi bi-info-circle me-1"></i>Datos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-tab="tab-compra" type="button">
+                    <i class="bi bi-arrow-down me-1"></i>Compra
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-tab="tab-venta" type="button">
+                    <i class="bi bi-arrow-up me-1"></i>Venta
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-tab="tab-historial" type="button">
+                    <i class="bi bi-clock-history me-1"></i>Historial
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-tab="tab-flujo" type="button">
+                    <i class="bi bi-graph-up me-1"></i>Flujo
+                </button>
+            </li>
+        </ul>
+
+        {# TAB DATOS #}
+        <div class="tab-pane-stack active" id="tab-datos">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-success-subtle border-0 px-4 py-3">
+                    <h6 class="mb-0 fw-bold text-success">
+                        <i class="bi bi-info-circle me-2"></i>Hoja Técnica — <span id="inv-ws-datos-nombre">—</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted fw-bold mb-3">Identificación</h6>
+                            <dl class="row mb-0 small">
+                                <dt class="col-5 text-muted">Material</dt><dd class="col-7 fw-semibold" id="inv-ws-datos-material">—</dd>
+                                <dt class="col-5 text-muted">Categoría</dt><dd class="col-7" id="inv-ws-datos-categoria">—</dd>
+                                <dt class="col-5 text-muted">Tipo</dt><dd class="col-7" id="inv-ws-datos-tipo">—</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted fw-bold mb-3">Inventario</h6>
+                            <dl class="row mb-0 small">
+                                <dt class="col-5 text-muted">Capacidad máxima</dt><dd class="col-7 fw-semibold" id="inv-ws-datos-cap">—</dd>
+                                <dt class="col-5 text-muted">Stock actual</dt><dd class="col-7 fw-semibold text-success" id="inv-ws-datos-stock">—</dd>
+                                <dt class="col-5 text-muted">Unidad de medida</dt><dd class="col-7" id="inv-ws-datos-unidad">—</dd>
+                                <dt class="col-5 text-muted">Umbral alerta</dt><dd class="col-7" id="inv-ws-datos-umbral-a">—</dd>
+                                <dt class="col-5 text-muted">Umbral crítico</dt><dd class="col-7" id="inv-ws-datos-umbral-c">—</dd>
+                                <dt class="col-5 text-muted">Estado</dt><dd class="col-7"><span class="badge" id="inv-ws-datos-estado">—</span></dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-12">
+                            <hr>
+                            <h6 class="text-muted fw-bold mb-3">Precios</h6>
+                            <dl class="row mb-0 small">
+                                <dt class="col-sm-2 text-muted">Precio de compra</dt><dd class="col-sm-4 fw-semibold" id="inv-ws-datos-pcompra">—</dd>
+                                <dt class="col-sm-2 text-muted">Precio de venta</dt><dd class="col-sm-4 fw-semibold" id="inv-ws-datos-pventa">—</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#inv-modal-editar-inventario">
+                        <i class="bi bi-pencil-square me-1"></i>Editar
+                    </button>
+                    <button class="btn btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#inv-modal-eliminar">
+                        <i class="bi bi-trash me-1"></i>Eliminar del inventario
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {# TAB COMPRA — formEntrada con IDs preservados #}
+        <div class="tab-pane-stack" id="tab-compra">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-danger-subtle border-0 px-4 py-3">
+                    <h6 class="mb-0 fw-bold text-danger">
+                        <i class="bi bi-arrow-down-circle me-2"></i>Registrar Compra — <span class="inv-ws-tab-nombre">—</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form id="formEntrada" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" id="formEntradaInventarioId" name="inventarioId">
+                        <input type="hidden" id="formEntradaPuntoId" name="puntoId" value="{{ punto.id }}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formEntradaMaterial">Material <span class="text-danger">*</span></label>
+                                <input type="text" class="inv-fake-input w-100" id="formEntradaMaterial" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formEntradaFecha">Fecha <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control form-control-sm border-danger border-2"
+                                       id="formEntradaFecha" name="fecha" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formEntradaCantidad">Cantidad <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
+                                       id="formEntradaCantidad" name="cantidad" placeholder="0.00" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formEntradaPrecio">Precio Unitario (COP) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
+                                       id="formEntradaPrecio" name="precioCompra" placeholder="0.00" min="0" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small" for="formEntradaObservaciones">Observaciones</label>
+                                <textarea class="form-control form-control-sm" id="formEntradaObservaciones" name="observaciones" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                    <button class="btn btn-outline-primary btn-sm fw-semibold" type="button" id="inv-btn-cambiar-material-compra">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Cambiar material
+                    </button>
+                    <button class="btn btn-danger btn-sm fw-semibold" type="button" id="inv-btn-guardar-entrada">
+                        <i class="bi bi-check-circle me-1"></i>Guardar Entrada
+                    </button>
+                </div>
+            </div>
+            {# Tabla de últimas entradas #}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2"></i>Últimas compras</h6>
+                    <span class="badge bg-danger rounded-pill" id="badgeEntradasCount">0</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="fw-bold small">Fecha</th>
+                                    <th class="fw-bold small text-end">Cantidad</th>
+                                    <th class="fw-bold small text-end">$ Unit.</th>
+                                    <th class="fw-bold small">Total</th>
+                                    <th class="fw-bold small text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablasEntradasBody">
+                                {# Poblado por JS #}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light border-top px-4 py-3 text-center" id="paginacionEntradas">
+                    {# Paginación generada por JS #}
+                </div>
+            </div>
+        </div>
+
+        {# TAB VENTA — formSalida con IDs preservados #}
+        <div class="tab-pane-stack" id="tab-venta">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-success-subtle border-0 px-4 py-3">
+                    <h6 class="mb-0 fw-bold text-success">
+                        <i class="bi bi-arrow-up-circle me-2"></i>Registrar Venta — <span class="inv-ws-tab-nombre">—</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form id="formSalida" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" id="formSalidaInventarioId" name="inventarioId">
+                        <input type="hidden" id="formSalidaPuntoId" name="puntoId" value="{{ punto.id }}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formSalidaMaterial">Material <span class="text-danger">*</span></label>
+                                <input type="text" class="inv-fake-input w-100" id="formSalidaMaterial" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formSalidaFecha">Fecha <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control form-control-sm border-success border-2"
+                                       id="formSalidaFecha" name="fecha" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formSalidaCantidad">Cantidad <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
+                                       id="formSalidaCantidad" name="cantidad" placeholder="0.00" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formSalidaPrecio">Precio Unitario (COP) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
+                                       id="formSalidaPrecio" name="precioVenta" placeholder="0.00" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formSalidaCentro">Centro de Acopio <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm border-success border-2" id="formSalidaCentro" name="centroAcopioId" required>
+                                    <option value="">Selecciona un centro...</option>
+                                    {% for c in centros %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small" for="formSalidaObservaciones">Observaciones</label>
+                                <textarea class="form-control form-control-sm" id="formSalidaObservaciones" name="observaciones" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                    <button class="btn btn-outline-primary btn-sm fw-semibold" type="button" id="inv-btn-cambiar-material-venta">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Cambiar material
+                    </button>
+                    <button class="btn btn-success btn-sm fw-semibold" type="button" id="inv-btn-guardar-salida">
+                        <i class="bi bi-check-circle me-1"></i>Guardar Salida
+                    </button>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2"></i>Últimas ventas</h6>
+                    <span class="badge bg-success rounded-pill" id="badgeSalidasCount">0</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="fw-bold small">Fecha</th>
+                                    <th class="fw-bold small text-end">Cantidad</th>
+                                    <th class="fw-bold small text-end">$ Unit.</th>
+                                    <th class="fw-bold small">Total</th>
+                                    <th class="fw-bold small">Centro</th>
+                                    <th class="fw-bold small text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablasSalidasBody">
+                                {# Poblado por JS #}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light border-top px-4 py-3 text-center" id="paginacionSalidas">
+                    {# Paginación generada por JS #}
+                </div>
+            </div>
+        </div>
+
+        {# TAB HISTORIAL (workspace) — IDs preservados #}
+        <div class="tab-pane-stack" id="tab-historial">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2"></i>Historial — <span class="inv-ws-tab-nombre">—</span></h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success" type="button" id="btnExportHistorialExcel">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" type="button" id="btnExportHistorialPdf">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="fw-bold small">Fecha</th>
+                                    <th class="fw-bold small">Tipo</th>
+                                    <th class="fw-bold small text-end">Cantidad</th>
+                                    <th class="fw-bold small text-end">$ Unit.</th>
+                                    <th class="fw-bold small">Total</th>
+                                    <th class="fw-bold small">Centro</th>
+                                    <th class="fw-bold small text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablasHistorialBody">
+                                {# Poblado por JS — sólo del material seleccionado #}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light border-top px-4 py-3 text-center">
+                    <small class="text-muted" id="paginacionHistorial">—</small>
+                </div>
+            </div>
+        </div>
+
+        {# TAB FLUJO (workspace) #}
+        <div class="tab-pane-stack" id="tab-flujo">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-info-subtle border-0 px-4 py-3">
+                    <h6 class="mb-0 fw-bold text-info">
+                        <i class="bi bi-graph-up me-2"></i>Flujo de Stock — <span class="inv-ws-tab-nombre">—</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Stock hoy</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-stock">—</h4></div></div>
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Movs del mes</small><h4 class="text-info fw-bold mb-0" id="inv-ws-flujo-movs">—</h4></div></div>
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Compras</small><h4 class="text-primary fw-bold mb-0" id="inv-ws-flujo-compras">—</h4></div></div>
+                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ventas</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-ventas">—</h4></div></div>
+                    </div>
+                    <div style="position:relative; height: 320px;">
+                        <canvas id="stockTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {# /estado-workspace #}
+
+    {# === CHUNK 5 ANCHOR (modals) === #}
+    {# ============== 8 MODALS ============== #}
+
+    {# 1. Picker de catálogo #}
+    <div class="modal fade" id="inv-modal-picker" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="bi bi-search me-2"></i>Buscar Material en Catálogo</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted mb-1" for="inv-picker-buscar">
+                                <i class="bi bi-search me-1"></i>Buscar
+                            </label>
+                            <input type="text" class="form-control border-2 border-info" id="inv-picker-buscar"
+                                   placeholder="Nombre, descripción o tipo..." autofocus>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold text-muted mb-1" for="inv-picker-categoria">Categoría</label>
+                            <select class="form-select border-2 border-info" id="inv-picker-categoria">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold text-muted mb-1" for="inv-picker-mostrar">Mostrar</label>
+                            <select class="form-select border-2 border-info" id="inv-picker-mostrar">
+                                <option value="todos">Todos</option>
+                                <option value="disponibles">Solo disponibles</option>
+                                <option value="en-inventario">En mi inventario</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="text-center mb-2">
+                        <small class="text-muted" id="inv-picker-contador">Buscando catálogo...</small>
+                    </div>
+                    <div class="list-group" id="inv-picker-lista"></div>
+                    <div id="inv-picker-vacio" class="alert alert-warning text-center mt-3" style="display:none">
+                        <i class="bi bi-funnel me-2"></i>No encontramos materiales del catálogo que coincidan con tu búsqueda.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <small class="text-muted me-auto">
+                        <i class="bi bi-info-circle me-1"></i>Los materiales provienen del catálogo del sistema.
+                        El ECA solo selecciona y registra los que va a operar.
+                    </small>
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 2. Editar inventario (hoja técnica) #}
+    <div class="modal fade" id="inv-modal-editar-inventario" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar Inventario — <span id="inv-edit-inv-titulo">—</span></h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning small mb-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Los cambios afectan a partir de este momento y se reflejan en la próxima operación. La historia de movimientos no se modifica.
+                    </div>
+                    <form id="inv-form-editar-inventario" novalidate>
+                        <input type="hidden" id="inv-edit-inventario-id" name="inventarioId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="inv-edit-stock-inicial">Stock inicial</label>
+                                <input type="number" class="form-control border-2 border-primary" id="inv-edit-stock-inicial"
+                                       name="stockInicial" min="0" step="0.01" required>
+                                <div class="invalid-feedback">Ingresa un stock inicial válido.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="inv-edit-capacidad-maxima">Capacidad máxima</label>
+                                <input type="number" class="form-control border-2 border-primary" id="inv-edit-capacidad-maxima"
+                                       name="capacidadMaxima" min="0" step="0.01" required>
+                                <div class="invalid-feedback">Ingresa la capacidad máxima.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="inv-edit-unidad-medida">Unidad de medida</label>
+                                <select class="form-select border-2 border-primary" id="inv-edit-unidad-medida" name="unidadMedida" required>
+                                    <option value="" disabled>—</option>
+                                    {% for value, label in unidades_medida %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold small" for="inv-edit-umbral-alerta">Umbral alerta (%)</label>
+                                <input type="number" class="form-control border-2 border-primary" id="inv-edit-umbral-alerta"
+                                       name="umbralAlerta" min="0" max="100" step="1" required>
+                                <div class="invalid-feedback">0-100.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold small" for="inv-edit-umbral-critico">Umbral crítico (%)</label>
+                                <input type="number" class="form-control border-2 border-primary" id="inv-edit-umbral-critico"
+                                       name="umbralCritico" min="0" max="100" step="1" required>
+                                <div class="invalid-feedback">0-100.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="inv-edit-precio-compra">Precio de compra</label>
+                                <div class="input-group has-validation">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control border-2 border-primary" id="inv-edit-precio-compra"
+                                           name="precioCompra" min="0" step="0.01" required>
+                                    <div class="invalid-feedback">Ingresa el precio de compra.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="inv-edit-precio-venta">Precio de venta</label>
+                                <div class="input-group has-validation">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control border-2 border-primary" id="inv-edit-precio-venta"
+                                           name="precioVenta" min="0" step="0.01" required>
+                                    <div class="invalid-feedback">Ingresa el precio de venta.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="inv-edit-mensaje-estado" class="alert alert-info mt-4" style="display:none" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <span id="inv-edit-texto-mensaje"></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                        <i class="bi bi-x me-1"></i>Cancelar
+                    </button>
+                    <button class="btn btn-primary" type="button" id="inv-btn-guardar-editar-inventario">
+                        <i class="bi bi-check-circle me-1"></i>Guardar cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 3. Eliminar inventario #}
+    <div class="modal fade" id="inv-modal-eliminar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Eliminar del inventario</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro que querés eliminar <strong id="inv-eliminar-nombre">—</strong> de tu inventario?</p>
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Esta acción <strong>no borra</strong> el historial de movimientos ya registrados,
+                        pero el material dejará de estar disponible para nuevas operaciones.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-danger" type="button" id="inv-btn-confirmar-eliminar">Sí, eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 4. Carga masiva — IDs preservados #}
+    <div class="modal fade" id="inv-modalCargaMasiva" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Importar Carga Masiva</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="inv-carga-tipo">Tipo de movimiento</label>
+                        <select class="form-select" id="inv-carga-tipo">
+                            <option value="compra">Compra</option>
+                            <option value="venta">Venta</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="inv-carga-archivo">Seleccioná el archivo CSV</label>
+                        <input type="file" class="form-control" id="inv-carga-archivo" accept=".csv">
+                    </div>
+                    <div class="alert alert-info small mb-0">
+                        <strong>Columnas requeridas:</strong>
+                        <ul class="mb-1 mt-1">
+                            <li><code>nombreMaterial</code> (obligatorio)</li>
+                            <li><code>cantidad</code> (obligatorio)</li>
+                            <li><code>precioCompra</code> o <code>precioVenta</code> (obligatorio)</li>
+                            <li><code>fechaCompra</code> o <code>fechaVenta</code> (YYYY-MM-DD)</li>
+                        </ul>
+                        <a href="#">Descargar plantilla de ejemplo</a>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary fw-semibold" id="inv-btn-ejecutar-carga">
+                        <i class="bi bi-arrow-bar-up me-1"></i>Subir archivo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 5. Detalle Compra (read-only) — IDs inv-detalle-compra-* #}
+    <div class="modal fade" id="inv-modal-detalle-compra" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-eye me-2"></i>Detalle Compra de Material</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6"><div class="border-start border-4 border-success ps-2 small"><div class="text-muted">Material</div><div class="fw-semibold" id="inv-detalle-compra-material">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-info ps-2 small"><div class="text-muted">Fecha</div><div class="fw-semibold" id="inv-detalle-compra-fecha">—</div></div></div>
+                        <div class="col-md-4"><div class="border-start border-4 border-warning ps-2 small"><div class="text-muted">Cantidad</div><div class="fw-semibold" id="inv-detalle-compra-cantidad">—</div></div></div>
+                        <div class="col-md-4"><div class="border-start border-4 border-warning ps-2 small"><div class="text-muted">Precio Unitario</div><div class="fw-semibold" id="inv-detalle-compra-precio">—</div></div></div>
+                        <div class="col-md-4"><div class="border-start border-4 border-primary ps-2 small"><div class="text-muted">Total</div><div class="fw-semibold" id="inv-detalle-compra-total">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-secondary ps-2 small"><div class="text-muted">Categoría</div><div class="fw-semibold" id="inv-detalle-compra-categoria">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-info ps-2 small"><div class="text-muted">Tipo</div><div class="fw-semibold">Compra</div></div></div>
+                        <div class="col-12"><div class="border-start border-4 border-light ps-2 small"><div class="text-muted">Observaciones</div><div class="fw-semibold" id="inv-detalle-compra-observaciones">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-light ps-2 small"><div class="text-muted">Usuario registro</div><div class="fw-semibold" id="inv-detalle-compra-usuario">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-light ps-2 small"><div class="text-muted">ID Movimiento</div><div class="fw-semibold" id="inv-detalle-compra-id">—</div></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cerrar
+                    </button>
+                    <button class="btn btn-primary" type="button" id="inv-btn-detalle-compra-editar">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 6. Detalle Venta (read-only) — IDs inv-detalle-venta-* #}
+    <div class="modal fade" id="inv-modal-detalle-venta" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-eye me-2"></i>Detalle Venta de Material</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6"><div class="border-start border-4 border-success ps-2 small"><div class="text-muted">Material</div><div class="fw-semibold" id="inv-detalle-venta-material">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-info ps-2 small"><div class="text-muted">Fecha</div><div class="fw-semibold" id="inv-detalle-venta-fecha">—</div></div></div>
+                        <div class="col-md-4"><div class="border-start border-4 border-warning ps-2 small"><div class="text-muted">Cantidad</div><div class="fw-semibold" id="inv-detalle-venta-cantidad">—</div></div></div>
+                        <div class="col-md-4"><div class="border-start border-4 border-warning ps-2 small"><div class="text-muted">Precio Unitario</div><div class="fw-semibold" id="inv-detalle-venta-precio">—</div></div></div>
+                        <div class="col-md-4"><div class="border-start border-4 border-primary ps-2 small"><div class="text-muted">Total</div><div class="fw-semibold" id="inv-detalle-venta-total">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-secondary ps-2 small"><div class="text-muted">Categoría</div><div class="fw-semibold" id="inv-detalle-venta-categoria">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-info ps-2 small"><div class="text-muted">Tipo</div><div class="fw-semibold">Venta</div></div></div>
+                        <div class="col-12"><div class="border-start border-4 border-info ps-2 small"><div class="text-muted">Centro de Acopio destino</div><div class="fw-semibold" id="inv-detalle-venta-centro">—</div></div></div>
+                        <div class="col-12"><div class="border-start border-4 border-light ps-2 small"><div class="text-muted">Observaciones</div><div class="fw-semibold" id="inv-detalle-venta-observaciones">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-light ps-2 small"><div class="text-muted">Usuario registro</div><div class="fw-semibold" id="inv-detalle-venta-usuario">—</div></div></div>
+                        <div class="col-md-6"><div class="border-start border-4 border-light ps-2 small"><div class="text-muted">ID Movimiento</div><div class="fw-semibold" id="inv-detalle-venta-id">—</div></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cerrar
+                    </button>
+                    <button class="btn btn-primary" type="button" id="inv-btn-detalle-venta-editar">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 7. Editar Compra #}
+    <div class="modal fade" id="inv-modal-editar-compra" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar Compra de Material</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="inv-form-editar-compra">
+                        <input type="hidden" id="inv-edit-compra-id" name="id">
+                        <input type="hidden" id="inv-edit-compra-inventario-id" name="inventarioId">
+                        <input type="hidden" id="inv-edit-compra-material-id" name="materialId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-compra-material">Material</label>
+                                <input type="text" class="form-control form-control-sm bg-light" id="inv-edit-compra-material" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-compra-fecha">Fecha <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control form-control-sm border-danger border-2"
+                                       id="inv-edit-compra-fecha" name="fecha" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-compra-cantidad">Cantidad <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
+                                       id="inv-edit-compra-cantidad" name="cantidad" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-compra-precio">Precio Unitario (COP) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
+                                       id="inv-edit-compra-precio" name="precioCompra" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" for="inv-edit-compra-observaciones">Observaciones</label>
+                                <textarea class="form-control form-control-sm border-danger border-2" id="inv-edit-compra-observaciones" name="observaciones" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button class="btn btn-danger" type="button" id="inv-btn-guardar-editar-compra">
+                        <i class="bi bi-check-circle me-1"></i>Guardar cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 8. Editar Venta #}
+    <div class="modal fade" id="inv-modal-editar-venta" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar Venta de Material</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="inv-form-editar-venta">
+                        <input type="hidden" id="inv-edit-venta-id" name="id">
+                        <input type="hidden" id="inv-edit-venta-inventario-id" name="inventarioId">
+                        <input type="hidden" id="inv-edit-venta-material-id" name="materialId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-venta-material">Material</label>
+                                <input type="text" class="form-control form-control-sm bg-light" id="inv-edit-venta-material" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-venta-fecha">Fecha <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control form-control-sm border-success border-2"
+                                       id="inv-edit-venta-fecha" name="fecha" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-venta-cantidad">Cantidad <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
+                                       id="inv-edit-venta-cantidad" name="cantidad" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-venta-precio">Precio Unitario (COP) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
+                                       id="inv-edit-venta-precio" name="precioVenta" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="inv-edit-venta-centro">Centro de Acopio <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm border-success border-2" id="inv-edit-venta-centro" name="centroAcopioId" required>
+                                    <option value="">Selecciona un centro...</option>
+                                    {% for c in centros %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" for="inv-edit-venta-observaciones">Observaciones</label>
+                                <textarea class="form-control form-control-sm border-success border-2" id="inv-edit-venta-observaciones" name="observaciones" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button class="btn btn-success" type="button" id="inv-btn-guardar-editar-venta">
+                        <i class="bi bi-check-circle me-1"></i>Guardar cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# === Script externo de la sección === #}
+    <script src="{% static 'js/ecas/inventario/inventario.js' %}"></script>
 </section>

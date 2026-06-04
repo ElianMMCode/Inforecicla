@@ -296,6 +296,46 @@ def _build_inventario_context(punto):
     merged["seccion"] = "inventario"
     merged["section_template"] = SECTION_TEMPLATES["inventario"]
 
+    # Datos serializados para el JS del template /inventario/.
+    # Pre-serializamos aquí para evitar custom template tags y garantizar
+    # JSON-safe (queriesets → dicts).
+    import json as _json
+
+    inv_data = {
+        "materiales_inventario": [
+            {
+                "inventarioId": str(inv.id),
+                "materialId": str(inv.material.id),
+                "nombre": inv.material.nombre,
+                "categoria": getattr(inv.material.categoria, "nombre", ""),
+                "tipo": getattr(inv.material.tipo, "nombre", ""),
+                "unidad": inv.unidad_medida,
+                "stockActual": float(inv.stock_actual or 0),
+                "capacidadMaxima": float(inv.capacidad_maxima or 0),
+                "ocupacion": float(inv.ocupacion_actual),
+                "estado": (
+                    "critico"
+                    if float(inv.ocupacion_actual) >= float(inv.umbral_critico)
+                    else "alerta"
+                    if float(inv.ocupacion_actual) >= float(inv.umbral_alerta)
+                    else "ok"
+                ),
+                "umbralAlerta": float(inv.umbral_alerta or 0),
+                "umbralCritico": float(inv.umbral_critico or 0),
+                "precioCompra": float(inv.precio_compra or 0),
+                "precioVenta": float(inv.precio_venta or 0),
+                "fechaModificacion": inv.fecha_modificacion.isoformat()
+                if getattr(inv, "fecha_modificacion", None)
+                else "",
+            }
+            for inv in materiales_ctx["materiales_inventario"]
+        ],
+        "centros": list(movimientos_ctx.get("centros") or []),
+        "historial_compras": list(movimientos_ctx.get("historial_compras") or []),
+        "historial_ventas": list(movimientos_ctx.get("historial_ventas") or []),
+    }
+    merged["inv_data_json"] = _json.dumps(inv_data, ensure_ascii=False)
+
     return merged
 
 
