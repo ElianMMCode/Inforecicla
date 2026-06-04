@@ -529,6 +529,13 @@
 
         // Render inicial
         renderHistorialGeneral();
+        bindExtras();
+        renderFlujoMaterialesList();
+        // Render charts tras primer paint (espera CSS)
+        setTimeout(() => {
+            if (document.getElementById("inv-stock-time-chart")) renderOvtabChart();
+            if (document.getElementById("stockTimeChart") && currentMaterial) renderWsChart();
+        }, 100);
     }
 
     // ============================================================
@@ -650,6 +657,566 @@
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
     });
+
+    // ============================================================
+    // SUBMIT: REGISTRAR COMPRA / VENTA (workspace forms)
+    // ============================================================
+    function submitEntrada(e) {
+        if (e) e.preventDefault();
+        const form = document.getElementById("formEntrada");
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        const payload = Object.fromEntries(new FormData(form).entries());
+        payload.cantidad = Number(payload.cantidad);
+        payload.precioCompra = Number(payload.precioCompra);
+        payload.inventarioId = payload.inventarioId;
+        payload.puntoId = Number(payload.puntoId);
+        fetch("/punto-eca/movimientos/registrar-compra/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            body: JSON.stringify(payload),
+        })
+            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(({ ok, d }) => {
+                if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
+                Swal.fire({ icon: "success", title: "Compra registrada", text: d.mensaje || "Operación exitosa", timer: 1500, showConfirmButton: false });
+                setTimeout(() => window.location.reload(), 1500);
+            })
+            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+    }
+    function submitSalida(e) {
+        if (e) e.preventDefault();
+        const form = document.getElementById("formSalida");
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        const centro = document.getElementById("formSalidaCentro");
+        if (centro && !centro.value) { centro.reportValidity(); return; }
+        const payload = Object.fromEntries(new FormData(form).entries());
+        payload.cantidad = Number(payload.cantidad);
+        payload.precioVenta = Number(payload.precioVenta);
+        payload.centroAcopioId = payload.centroAcopioId;
+        payload.puntoId = Number(payload.puntoId);
+        fetch("/punto-eca/movimientos/registrar-venta/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            body: JSON.stringify(payload),
+        })
+            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(({ ok, d }) => {
+                if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
+                Swal.fire({ icon: "success", title: "Venta registrada", text: d.mensaje || "Operación exitosa", timer: 1500, showConfirmButton: false });
+                setTimeout(() => window.location.reload(), 1500);
+            })
+            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+    }
+
+    // ============================================================
+    // SUBMIT: EDITAR COMPRA / VENTA (modales)
+    // ============================================================
+    function submitEditarCompra() {
+        const form = document.getElementById("inv-form-editar-compra");
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        const payload = Object.fromEntries(new FormData(form).entries());
+        payload.cantidad = Number(payload.cantidad);
+        payload.precioCompra = Number(payload.precioCompra);
+        fetch(`/punto-eca/movimientos/editar-compra/${payload.id}/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            body: JSON.stringify(payload),
+        })
+            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(({ ok, d }) => {
+                if (!ok) throw new Error(d?.mensaje || "Error al editar");
+                bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-compra"))?.hide();
+                Swal.fire({ icon: "success", title: "Compra actualizada", timer: 1500, showConfirmButton: false });
+                setTimeout(() => window.location.reload(), 1500);
+            })
+            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+    }
+    function submitEditarVenta() {
+        const form = document.getElementById("inv-form-editar-venta");
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        const centro = document.getElementById("inv-edit-venta-centro");
+        if (centro && !centro.value) { centro.reportValidity(); return; }
+        const payload = Object.fromEntries(new FormData(form).entries());
+        payload.cantidad = Number(payload.cantidad);
+        payload.precioVenta = Number(payload.precioVenta);
+        fetch(`/punto-eca/movimientos/editar-venta/${payload.id}/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            body: JSON.stringify(payload),
+        })
+            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(({ ok, d }) => {
+                if (!ok) throw new Error(d?.mensaje || "Error al editar");
+                bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-venta"))?.hide();
+                Swal.fire({ icon: "success", title: "Venta actualizada", timer: 1500, showConfirmButton: false });
+                setTimeout(() => window.location.reload(), 1500);
+            })
+            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+    }
+
+    // ============================================================
+    // ELIMINAR COMPRA / VENTA
+    // ============================================================
+    function eliminarMovimiento(tipo, id) {
+        if (!id) return;
+        const url = `/punto-eca/movimientos/borrar-${tipo}/${id}/`;
+        Swal.fire({
+            title: "¿Eliminar?",
+            text: `Esta acción no se puede deshacer.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+        }).then((r) => {
+            if (!r.isConfirmed) return;
+            fetch(url, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            })
+                .then((res) => res.json().then((d) => ({ ok: res.ok, d })))
+                .then(({ ok, d }) => {
+                    if (!ok) throw new Error(d?.mensaje || "Error al eliminar");
+                    Swal.fire({ icon: "success", title: "Eliminado", timer: 1200, showConfirmButton: false });
+                    setTimeout(() => window.location.reload(), 1200);
+                })
+                .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+        });
+    }
+    function eliminarCompraActual() {
+        const id = document.getElementById("inv-edit-compra-id")?.value;
+        eliminarMovimiento("compra", id);
+    }
+    function eliminarVentaActual() {
+        const id = document.getElementById("inv-edit-venta-id")?.value;
+        eliminarMovimiento("venta", id);
+    }
+    function eliminarDetalleCompra() {
+        eliminarMovimiento("compra", document.getElementById("inv-detalle-compra-id")?.textContent.trim());
+    }
+    function eliminarDetalleVenta() {
+        eliminarMovimiento("venta", document.getElementById("inv-detalle-venta-id")?.textContent.trim());
+    }
+
+    // ============================================================
+    // EXPORTAR CON FILTROS APLICADOS
+    // ============================================================
+    function buildExportQuery(base) {
+        const params = new URLSearchParams();
+        const material = document.getElementById("inv-hfiltro-material")?.value;
+        const tipo = document.getElementById("inv-hfiltro-tipo")?.value;
+        const desde = document.getElementById("inv-hfiltro-desde")?.value;
+        const hasta = document.getElementById("inv-hfiltro-hasta")?.value;
+        if (material) params.append("inventarioId", material);
+        if (tipo) params.append("tipo", tipo);
+        if (desde) params.append("desde", desde);
+        if (hasta) params.append("hasta", hasta);
+        const qs = params.toString();
+        return qs ? `${base}?${qs}` : base;
+    }
+    function exportarHistorialExcel() {
+        window.location.href = buildExportQuery("/punto-eca/movimientos/exportar-historial-excel/");
+    }
+    function exportarHistorialPdf() {
+        window.location.href = buildExportQuery("/punto-eca/movimientos/exportar-historial-pdf/");
+    }
+
+    // ============================================================
+    // FILTRO HISTORIAL GENERAL (landing)
+    // ============================================================
+    function aplicarFiltrosHistorial() {
+        const materialId = document.getElementById("inv-hfiltro-material")?.value || "";
+        const tipo = document.getElementById("inv-hfiltro-tipo")?.value || "";
+        const desde = document.getElementById("inv-hfiltro-desde")?.value;
+        const hasta = document.getElementById("inv-hfiltro-hasta")?.value;
+        const desdeD = desde ? new Date(desde + "T00:00:00") : null;
+        const hastaD = hasta ? new Date(hasta + "T23:59:59") : null;
+
+        const filas = [];
+        const enRango = (iso) => {
+            if (!desdeD && !hastaD) return true;
+            const d = new Date(iso);
+            if (isNaN(d)) return false;
+            if (desdeD && d < desdeD) return false;
+            if (hastaD && d > hastaD) return false;
+            return true;
+        };
+
+        if (!tipo || tipo === "compra") {
+            comprasDB.filter((c) => !materialId || String(c.inventarioId) === String(materialId)).filter((c) => enRango(c.fechaCompra)).forEach((c) => filas.push(filaHistorial(c, "compra")));
+        }
+        if (!tipo || tipo === "venta") {
+            ventasDB.filter((v) => !materialId || String(v.inventarioId) === String(materialId)).filter((v) => enRango(v.fechaVenta)).forEach((v) => filas.push(filaHistorial(v, "venta")));
+        }
+        const tbody = document.getElementById("inv-tablasHistorialBody");
+        if (tbody) tbody.innerHTML = filas.join("") || '<tr><td colspan="8" class="text-center text-muted py-3">Sin movimientos con los filtros aplicados</td></tr>';
+        const counter = document.getElementById("inv-hbadge-count");
+        if (counter) counter.textContent = `${filas.length} registros`;
+    }
+    function limpiarFiltrosHistorial() {
+        ["inv-hfiltro-material", "inv-hfiltro-tipo", "inv-hfiltro-desde", "inv-hfiltro-hasta"].forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
+        renderHistorialGeneral();
+    }
+
+    // ============================================================
+    // CHART CUSTOM CANVAS (sin Chart.js, decisión 17)
+    // ============================================================
+    const PALETA = ["#0d6efd", "#dc3545", "#198754", "#ffc107", "#6f42c1", "#fd7e14", "#20c997", "#d63384", "#0dcaf0", "#6c757d"];
+    const MAX_PUNTOS = 60;
+    const chartState = {
+        ovtab: { data: [], labels: [], series: new Map(), capacidad: new Map() },
+        ws: { data: [], labels: [], series: new Map(), capacidad: new Map() },
+    };
+
+    function toISODate(d) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+    }
+    function inicioDeSemana(d) {
+        const c = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const dia = c.getDay();
+        c.setDate(c.getDate() + (dia === 0 ? -6 : 1 - dia));
+        return c;
+    }
+    function bucketDeFecha(fecha, gran) {
+        if (gran === "dia") return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+        if (gran === "semana") return inicioDeSemana(fecha);
+        return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+    }
+    function bucketKey(fecha, gran) {
+        if (gran === "dia") return toISODate(fecha);
+        if (gran === "semana") return `W${toISODate(inicioDeSemana(fecha))}`;
+        return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
+    }
+    function generarBuckets(desde, hasta, gran) {
+        const inicio = bucketDeFecha(desde, gran);
+        const fin = bucketDeFecha(hasta, gran);
+        const buckets = [];
+        const cursor = new Date(inicio);
+        while (cursor <= fin) {
+            buckets.push(new Date(cursor));
+            if (gran === "dia") cursor.setDate(cursor.getDate() + 1);
+            else if (gran === "semana") cursor.setDate(cursor.getDate() + 7);
+            else cursor.setMonth(cursor.getMonth() + 1);
+            if (buckets.length > MAX_PUNTOS) break;
+        }
+        return buckets;
+    }
+    function formatearLabelBucket(fecha, gran) {
+        if (gran === "dia") return fecha.toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
+        if (gran === "semana") return `Sem ${toISODate(fecha).slice(5)}`;
+        return fecha.toLocaleDateString("es-CO", { month: "short", year: "numeric" });
+    }
+
+    /**
+     * Construye la serie histórica para un material anclando en stockActual
+     * y restando las operaciones FUTURAS al rango (delta inverso).
+     */
+    function construirSerieMaterial(material, compras, ventas, desde, hasta, gran) {
+        const ops = [];
+        compras.filter((c) => String(c.inventarioId) === String(material.inventarioId)).forEach((c) => {
+            const f = c.fechaCompra ? new Date(c.fechaCompra) : null;
+            if (f) ops.push({ fecha: f, delta: Number(c.cantidad) || 0 });
+        });
+        ventas.filter((v) => String(v.inventarioId) === String(material.inventarioId)).forEach((v) => {
+            const f = v.fechaVenta ? new Date(v.fechaVenta) : null;
+            if (f) ops.push({ fecha: f, delta: -(Number(v.cantidad) || 0) });
+        });
+        const buckets = generarBuckets(desde, hasta, gran);
+        const serie = [];
+        let stock = Number(material.stockActual) || 0;
+        // Restar ops futuras al bucket más reciente
+        const lastBucket = buckets[buckets.length - 1];
+        if (lastBucket) {
+            const futuroMax = new Date(lastBucket);
+            if (gran === "dia") futuroMax.setDate(futuroMax.getDate() + 1);
+            else if (gran === "semana") futuroMax.setDate(futuroMax.getDate() + 7);
+            else futuroMax.setMonth(futuroMax.getMonth() + 1);
+            ops.filter((o) => o.fecha >= lastBucket && o.fecha < futuroMax).forEach((o) => { stock -= o.delta; });
+        }
+        // Walk backwards, acumulando deltas negativos
+        const opsIdx = [...ops].sort((a, b) => b.fecha - a.fecha);
+        for (let i = buckets.length - 1; i >= 0; i--) {
+            const b = buckets[i];
+            const bKey = bucketKey(b, gran);
+            const next = i + 1 < buckets.length ? buckets[i + 1] : (() => {
+                const x = new Date(b);
+                if (gran === "dia") x.setDate(x.getDate() + 1);
+                else if (gran === "semana") x.setDate(x.getDate() + 7);
+                else x.setMonth(x.getMonth() + 1);
+                return x;
+            })();
+            while (opsIdx.length && opsIdx[0].fecha >= b && opsIdx[0].fecha < next) {
+                stock -= opsIdx.shift().delta;
+            }
+            serie[i] = Math.max(0, stock);
+        }
+        return serie;
+    }
+
+    function renderChart(canvasId, materiales, gran, mostrarCap) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const W = canvas.clientWidth || 600;
+        const H = canvas.clientHeight || 300;
+        canvas.width = W * (window.devicePixelRatio || 1);
+        canvas.height = H * (window.devicePixelRatio || 1);
+        ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, W, H);
+        if (!materiales.length) {
+            ctx.fillStyle = "#6c757d";
+            ctx.font = "14px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Selecciona al menos un material.", W / 2, H / 2);
+            return;
+        }
+        const hoy = new Date();
+        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        const desde = inicioMes;
+        const hasta = hoy;
+        const buckets = generarBuckets(desde, hasta, gran);
+        const labels = buckets.map((b) => formatearLabelBucket(b, gran));
+        const series = materiales.map((m) => ({
+            nombre: m.nombre,
+            color: PALETA[materiales.indexOf(m) % PALETA.length],
+            valores: construirSerieMaterial(m, comprasDB, ventasDB, desde, hasta, gran),
+            capacidad: Number(m.capacidadMaxima) || 0,
+        }));
+        // Calcular rango Y
+        let maxY = 0;
+        series.forEach((s) => s.valores.forEach((v) => { if (v > maxY) maxY = v; }));
+        if (mostrarCap) series.forEach((s) => { if (s.capacidad > maxY) maxY = s.capacidad; });
+        if (maxY === 0) maxY = 1;
+        const padL = 50, padR = 10, padT = 10, padB = 30;
+        const innerW = W - padL - padR;
+        const innerH = H - padT - padB;
+        // Grid
+        ctx.strokeStyle = "#e9ecef";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = padT + (innerH * i) / 4;
+            ctx.beginPath();
+            ctx.moveTo(padL, y);
+            ctx.lineTo(W - padR, y);
+            ctx.stroke();
+            ctx.fillStyle = "#6c757d";
+            ctx.font = "10px system-ui, sans-serif";
+            ctx.textAlign = "right";
+            const val = maxY - (maxY * i) / 4;
+            ctx.fillText(val.toFixed(0), padL - 4, y + 3);
+        }
+        // Eje X labels (samplear)
+        const stepX = Math.max(1, Math.floor(labels.length / 8));
+        ctx.fillStyle = "#6c757d";
+        ctx.textAlign = "center";
+        labels.forEach((lbl, i) => {
+            if (i % stepX === 0) {
+                const x = padL + (innerW * i) / Math.max(1, buckets.length - 1);
+                ctx.fillText(lbl, x, H - 10);
+            }
+        });
+        // Líneas
+        const xAt = (i) => padL + (innerW * i) / Math.max(1, buckets.length - 1);
+        const yAt = (v) => padT + innerH - (innerH * v) / maxY;
+        series.forEach((s) => {
+            // Capacidad (línea punteada)
+            if (mostrarCap && s.capacidad > 0) {
+                ctx.strokeStyle = s.color + "55";
+                ctx.setLineDash([4, 4]);
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, yAt(s.capacidad));
+                ctx.lineTo(W - padR, yAt(s.capacidad));
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            // Serie
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            s.valores.forEach((v, i) => {
+                const x = xAt(i), y = yAt(v);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            // Puntos
+            ctx.fillStyle = s.color;
+            s.valores.forEach((v, i) => {
+                if (i % stepX !== 0 && i !== s.valores.length - 1) return;
+                ctx.beginPath();
+                ctx.arc(xAt(i), yAt(v), 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        });
+        // Leyenda
+        ctx.font = "11px system-ui, sans-serif";
+        ctx.textAlign = "left";
+        let lx = padL;
+        const ly = padT + 12;
+        series.forEach((s) => {
+            const txt = s.nombre;
+            const tw = ctx.measureText(txt).width + 16;
+            ctx.fillStyle = s.color;
+            ctx.fillRect(lx, ly - 8, 10, 10);
+            ctx.fillStyle = "#212529";
+            ctx.fillText(txt, lx + 14, ly);
+            lx += tw;
+            if (lx > W - 60) return;
+        });
+    }
+
+    function renderOvtabChart() {
+        const checks = document.querySelectorAll('#inv-flujo-materiales-list input[type="checkbox"]:checked');
+        const ids = Array.from(checks).map((c) => c.value);
+        const mats = materialesDB.filter((m) => ids.includes(String(m.inventarioId)));
+        const gran = document.getElementById("inv-flujo-granularidad")?.value || "dia";
+        const cap = document.getElementById("inv-flujo-cap")?.checked;
+        renderChart("inv-stock-time-chart", mats, gran, cap);
+        const badge = document.getElementById("inv-flujo-badge");
+        if (badge) badge.textContent = `${mats.length} material${mats.length === 1 ? "" : "es"}`;
+        const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setKpi("inv-flujo-kpi-materiales", mats.length);
+        setKpi("inv-flujo-kpi-compras", comprasDB.length);
+        setKpi("inv-flujo-kpi-ventas", ventasDB.length);
+        const ocupacionPromedio = mats.length
+            ? Math.round(mats.reduce((s, m) => s + Number(m.ocupacion || 0), 0) / mats.length)
+            : 0;
+        setKpi("inv-flujo-kpi-ocupacion", `${ocupacionPromedio}%`);
+    }
+    function renderWsChart() {
+        if (!currentMaterial) return;
+        const gran = "dia";
+        renderChart("stockTimeChart", [currentMaterial], gran, true);
+        const invId = currentMaterial.inventarioId;
+        const cm = comprasDB.filter((c) => String(c.inventarioId) === String(invId));
+        const vm = ventasDB.filter((v) => String(v.inventarioId) === String(invId));
+        const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setKpi("inv-ws-flujo-stock", `${Number(currentMaterial.stockActual).toLocaleString("es-CO")} ${currentMaterial.unidad}`);
+        setKpi("inv-ws-flujo-movs", cm.length + vm.length);
+        setKpi("inv-ws-flujo-compras", cm.length);
+        setKpi("inv-ws-flujo-ventas", vm.length);
+    }
+
+    function renderFlujoMaterialesList() {
+        const cont = document.getElementById("inv-flujo-materiales-list");
+        if (!cont) return;
+        cont.innerHTML = materialesDB.map((m, i) => `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="${escapeHtml(m.inventarioId)}" id="inv-flujo-mat-${i}" checked>
+                <label class="form-check-label small" for="inv-flujo-mat-${i}">
+                    <span style="display:inline-block;width:10px;height:10px;background:${PALETA[i % PALETA.length]};border-radius:2px;margin-right:4px"></span>
+                    ${escapeHtml(m.nombre)}
+                </label>
+            </div>
+        `).join("") || '<small class="text-muted">No hay materiales en el inventario.</small>';
+        cont.querySelectorAll('input[type="checkbox"]').forEach((cb) => cb.addEventListener("change", renderOvtabChart));
+    }
+
+    // ============================================================
+    // BIND EXTRA
+    // ============================================================
+    function bindExtras() {
+        // Submit forms workspace
+        document.getElementById("formEntrada")?.addEventListener("submit", submitEntrada);
+        document.getElementById("formSalida")?.addEventListener("submit", submitSalida);
+        document.getElementById("inv-btn-guardar-entrada")?.addEventListener("click", (e) => { e.preventDefault(); submitEntrada(e); });
+        document.getElementById("inv-btn-guardar-salida")?.addEventListener("click", (e) => { e.preventDefault(); submitSalida(e); });
+
+        // Submit editar modales
+        document.getElementById("inv-btn-guardar-editar-compra")?.addEventListener("click", submitEditarCompra);
+        document.getElementById("inv-btn-guardar-editar-venta")?.addEventListener("click", submitEditarVenta);
+
+        // Eliminar desde modales de edición (botón extra en footer)
+        const editCompraFooter = document.querySelector("#inv-modal-editar-compra .modal-footer");
+        if (editCompraFooter && !document.getElementById("inv-btn-eliminar-editar-compra")) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.id = "inv-btn-eliminar-editar-compra";
+            btn.className = "btn btn-outline-danger me-auto";
+            btn.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar';
+            btn.addEventListener("click", eliminarCompraActual);
+            editCompraFooter.prepend(btn);
+        }
+        const editVentaFooter = document.querySelector("#inv-modal-editar-venta .modal-footer");
+        if (editVentaFooter && !document.getElementById("inv-btn-eliminar-editar-venta")) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.id = "inv-btn-eliminar-editar-venta";
+            btn.className = "btn btn-outline-danger me-auto";
+            btn.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar';
+            btn.addEventListener("click", eliminarVentaActual);
+            editVentaFooter.prepend(btn);
+        }
+        // Eliminar desde modales de detalle
+        const detCompraFooter = document.querySelector("#inv-modal-detalle-compra .modal-footer");
+        if (detCompraFooter && !document.getElementById("inv-btn-eliminar-detalle-compra")) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.id = "inv-btn-eliminar-detalle-compra";
+            btn.className = "btn btn-outline-danger me-auto";
+            btn.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar';
+            btn.addEventListener("click", eliminarDetalleCompra);
+            detCompraFooter.prepend(btn);
+        }
+        const detVentaFooter = document.querySelector("#inv-modal-detalle-venta .modal-footer");
+        if (detVentaFooter && !document.getElementById("inv-btn-eliminar-detalle-venta")) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.id = "inv-btn-eliminar-detalle-venta";
+            btn.className = "btn btn-outline-danger me-auto";
+            btn.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar';
+            btn.addEventListener("click", eliminarDetalleVenta);
+            detVentaFooter.prepend(btn);
+        }
+
+        // Exportar historial con filtros
+        document.getElementById("btnExportHistorialExcel")?.addEventListener("click", exportarHistorialExcel);
+        document.getElementById("btnExportHistorialPdf")?.addEventListener("click", exportarHistorialPdf);
+        // Exportar historial general desde ovtab
+        document.querySelectorAll("#ovtab-historial a[href*='exportar-']").forEach((a) => {
+            a.addEventListener("click", (e) => {
+                e.preventDefault();
+                const href = a.getAttribute("href").split("?")[0];
+                const isHist = href.includes("historial");
+                if (isHist) {
+                    window.location.href = buildExportQuery(href);
+                } else {
+                    window.location.href = href;
+                }
+            });
+        });
+
+        // Filtros historial
+        document.getElementById("inv-hfiltro-aplicar")?.addEventListener("click", aplicarFiltrosHistorial);
+        document.getElementById("inv-hfiltro-limpiar")?.addEventListener("click", limpiarFiltrosHistorial);
+
+        // Chart ovtab
+        document.getElementById("inv-flujo-aplicar")?.addEventListener("click", renderOvtabChart);
+        document.getElementById("inv-flujo-granularidad")?.addEventListener("change", renderOvtabChart);
+        document.getElementById("inv-flujo-cap")?.addEventListener("change", renderOvtabChart);
+        document.getElementById("inv-flujo-todos")?.addEventListener("click", () => {
+            document.querySelectorAll('#inv-flujo-materiales-list input[type="checkbox"]').forEach((c) => { c.checked = true; });
+            renderOvtabChart();
+        });
+        document.getElementById("inv-flujo-ninguno")?.addEventListener("click", () => {
+            document.querySelectorAll('#inv-flujo-materiales-list input[type="checkbox"]').forEach((c) => { c.checked = false; });
+            renderOvtabChart();
+        });
+
+        // Render ovtab chart cuando se abre
+        document.querySelector('#otrasVistasTabs [data-ovtab="ovtab-flujo"]')?.addEventListener("click", () => {
+            setTimeout(renderOvtabChart, 50);
+        });
+        // Render ws chart cuando se abre su tab
+        document.querySelector('#workspaceTabs [data-tab="tab-flujo"]')?.addEventListener("click", () => {
+            setTimeout(renderWsChart, 50);
+        });
+    }
 
     // --- Init ---
     if (document.readyState === "loading") {
