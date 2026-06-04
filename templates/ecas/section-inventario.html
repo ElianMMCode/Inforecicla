@@ -36,16 +36,28 @@ globalThis.getCSRFToken = function () {
     .inv-cat-metales { background: linear-gradient(135deg, #6c757d, #495057); }
     .inv-tarjeta { transition: transform .15s ease, box-shadow .15s ease; cursor: pointer; }
     .inv-tarjeta:hover { transform: translateY(-2px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.12) !important; }
-    .inv-tarjeta-hint {
-        position: absolute; bottom: .5rem; right: .75rem;
-        font-size: .7rem; color: #6c757d; opacity: 0; transition: opacity .15s;
+    .inv-tarjeta-btn {
+        position: absolute; top: .65rem; right: .65rem;
+        width: 34px; height: 34px; border-radius: 50%;
+        background: rgba(25, 135, 84, 0.12); color: #198754;
+        border: 0; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1rem; line-height: 1; padding: 0;
+        opacity: 0; transform: scale(.7);
+        transition: opacity .18s ease, transform .18s ease, background .18s ease, color .18s ease;
+        pointer-events: none; cursor: pointer;
     }
-    .inv-tarjeta:hover .inv-tarjeta-hint { opacity: 1; }
-    .inv-hover-arrow {
-        position: absolute; bottom: .5rem; left: .75rem;
-        font-size: .9rem; color: #198754; opacity: 0; transition: opacity .15s, transform .15s;
+    .inv-tarjeta:hover .inv-tarjeta-btn,
+    .inv-tarjeta:focus-within .inv-tarjeta-btn {
+        opacity: 1; transform: scale(1);
+        background: #198754; color: #fff;
+        pointer-events: auto;
     }
-    .inv-tarjeta:hover .inv-hover-arrow { opacity: 1; transform: translateX(4px); }
+    .inv-tarjeta-btn:hover, .inv-tarjeta-btn:focus {
+        background: #146c43 !important; color: #fff !important;
+        transform: scale(1.08) !important;
+        box-shadow: 0 2px 8px rgba(25, 135, 84, 0.4);
+        outline: none;
+    }
     .nav-tabs-inventario .nav-link { color: #495057; font-weight: 500; }
     .nav-tabs-inventario .nav-link.active {
         color: #198754; font-weight: 600;
@@ -303,8 +315,9 @@ globalThis.getCSRFToken = function () {
                                             <span><i class="bi bi-arrow-up me-1"></i>$ {{ inv.precio_venta|floatformat:0 }}/{{ inv.unidad_medida }}</span>
                                         </div>
                                     </div>
-                                    <span class="inv-tarjeta-hint">Click para operar</span>
-                                    <span class="inv-hover-arrow"><i class="bi bi-arrow-right"></i></span>
+                                    <button type="button" class="inv-tarjeta-btn" aria-label="Operar sobre este material">
+                                        <i class="bi bi-arrow-right"></i>
+                                    </button>
                                 </div>
                             </div>
                         {% empty %}

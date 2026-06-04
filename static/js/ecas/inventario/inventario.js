@@ -487,14 +487,22 @@
         document.getElementById("inv-filter-limpiar")?.addEventListener("click", limpiarFiltrosCards);
         document.getElementById("inv-filter-limpiar-vacio")?.addEventListener("click", limpiarFiltrosCards);
 
-        // Cards → workspace
-        document.querySelectorAll(".inv-tarjeta-material").forEach((card) => {
-            const go = () => irWorkspace(card.dataset.invId, "tab-datos");
-            card.querySelector(".inv-tarjeta")?.addEventListener("click", go);
-            card.querySelector(".inv-tarjeta")?.addEventListener("keydown", (e) => {
-                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+        // Cards → workspace (delegado en el grid, captura clicks en card o botón)
+        const cardsGrid = document.getElementById("inv-cards-grid");
+        if (cardsGrid) {
+            const goFromCard = (target) => {
+                const card = target.closest(".inv-tarjeta-material");
+                if (!card) return;
+                irWorkspace(card.dataset.invId, "tab-datos");
+            };
+            cardsGrid.addEventListener("click", (e) => goFromCard(e.target));
+            cardsGrid.addEventListener("keydown", (e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                if (!e.target.closest(".inv-tarjeta")) return;
+                e.preventDefault();
+                goFromCard(e.target);
             });
-        });
+        }
 
         // Volver / cambiar
         document.getElementById("inv-btn-volver-landing")?.addEventListener("click", irLanding);
