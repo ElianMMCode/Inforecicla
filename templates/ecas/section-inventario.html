@@ -402,14 +402,16 @@ globalThis.getCSRFToken = function () {
                                     <div class="col-md-6">
                                         <label for="inv-crear-stock-inicial" class="form-label fw-semibold">Stock Inicial</label>
                                         <input type="number" class="form-control border-2 border-success"
-                                               id="inv-crear-stock-inicial" name="stockInicial" placeholder="0" min="0" required>
+                                               id="inv-crear-stock-inicial" name="stockInicial" placeholder="0" min="0"
+                                               data-numeric-decimal required>
                                         <small class="text-muted">Cantidad inicial a agregar</small>
                                         <div class="invalid-feedback">Ingresa el stock inicial (mayor o igual a 0).</div>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="inv-crear-capacidad-maxima" class="form-label fw-semibold">Capacidad Máxima</label>
                                         <input type="number" class="form-control border-2 border-success"
-                                               id="inv-crear-capacidad-maxima" name="capacidadMaxima" placeholder="1000" min="0" required>
+                                               id="inv-crear-capacidad-maxima" name="capacidadMaxima" placeholder="1000" min="0"
+                                               data-numeric-decimal required>
                                         <small class="text-muted">Máximo que puede almacenar</small>
                                         <div class="invalid-feedback">Ingresa la capacidad máxima (mayor o igual a 0).</div>
                                     </div>
@@ -432,7 +434,8 @@ globalThis.getCSRFToken = function () {
                                         <div class="input-group has-validation">
                                             <span class="input-group-text">$</span>
                                             <input type="number" class="form-control border-2 border-success"
-                                                   id="inv-crear-precio-compra" name="precioCompra" placeholder="0.00" min="0" step="0.01" required>
+                                                   id="inv-crear-precio-compra" name="precioCompra" placeholder="0.00" min="0" step="0.01"
+                                                   data-numeric-decimal required>
                                             <div class="invalid-feedback">Ingresa el precio de compra (mayor o igual a 0).</div>
                                         </div>
                                     </div>
@@ -441,7 +444,8 @@ globalThis.getCSRFToken = function () {
                                         <div class="input-group has-validation">
                                             <span class="input-group-text">$</span>
                                             <input type="number" class="form-control border-2 border-success"
-                                                   id="inv-crear-precio-venta" name="precioVenta" placeholder="0.00" min="0" step="0.01" required>
+                                                   id="inv-crear-precio-venta" name="precioVenta" placeholder="0.00" min="0" step="0.01"
+                                                   data-numeric-decimal required>
                                             <div class="invalid-feedback">Ingresa el precio de venta (mayor o igual a 0).</div>
                                         </div>
                                     </div>
@@ -452,7 +456,8 @@ globalThis.getCSRFToken = function () {
                                         <label for="inv-crear-umbral-alerta" class="form-label fw-semibold">Umbral de Alerta (%)</label>
                                         <div class="input-group has-validation">
                                             <input type="number" class="form-control border-2 border-success"
-                                                   id="inv-crear-umbral-alerta" name="umbralAlerta" placeholder="25" min="0" max="100" step="1" value="25" required>
+                                                   id="inv-crear-umbral-alerta" name="umbralAlerta" placeholder="25" min="0" max="100" step="1" value="25"
+                                                   data-numeric-integer required>
                                             <span class="input-group-text">%</span>
                                             <div class="invalid-feedback">Ingresa el umbral de alerta (entre 0 y 100).</div>
                                         </div>
@@ -462,7 +467,8 @@ globalThis.getCSRFToken = function () {
                                         <label for="inv-crear-umbral-critico" class="form-label fw-semibold">Umbral Crítico (%)</label>
                                         <div class="input-group has-validation">
                                             <input type="number" class="form-control border-2 border-success"
-                                                   id="inv-crear-umbral-critico" name="umbralCritico" placeholder="10" min="0" max="100" step="1" value="10" required>
+                                                   id="inv-crear-umbral-critico" name="umbralCritico" placeholder="10" min="0" max="100" step="1" value="10"
+                                                   data-numeric-integer required>
                                             <span class="input-group-text">%</span>
                                             <div class="invalid-feedback">Ingresa el umbral crítico (entre 0 y 100).</div>
                                         </div>
@@ -831,12 +837,14 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formEntradaCantidad">Cantidad <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
-                                       id="formEntradaCantidad" name="cantidad" placeholder="0.00" min="0" required>
+                                       id="formEntradaCantidad" name="cantidad" placeholder="0.00" min="0"
+                                       data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formEntradaPrecio">Precio Unitario (COP) <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
-                                       id="formEntradaPrecio" name="precioCompra" placeholder="0.00" min="0" required>
+                                       id="formEntradaPrecio" name="precioCompra" placeholder="0.00" min="0"
+                                       data-numeric-decimal required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold small" for="formEntradaObservaciones">Observaciones</label>
@@ -910,12 +918,14 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaCantidad">Cantidad <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
-                                       id="formSalidaCantidad" name="cantidad" placeholder="0.00" min="0" required>
+                                       id="formSalidaCantidad" name="cantidad" placeholder="0.00" min="0"
+                                       data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaPrecio">Precio Unitario (COP) <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
-                                       id="formSalidaPrecio" name="precioVenta" placeholder="0.00" min="0" required>
+                                       id="formSalidaPrecio" name="precioVenta" placeholder="0.00" min="0"
+                                       data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaCentro">Centro de Acopio <span class="text-danger">*</span></label>
@@ -1108,13 +1118,13 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="inv-edit-stock-inicial">Stock inicial</label>
                                 <input type="number" class="form-control border-2 border-primary" id="inv-edit-stock-inicial"
-                                       name="stockInicial" min="0" step="0.01" required>
+                                       name="stockInicial" min="0" step="0.01" data-numeric-decimal required>
                                 <div class="invalid-feedback">Ingresa un stock inicial válido.</div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="inv-edit-capacidad-maxima">Capacidad máxima</label>
                                 <input type="number" class="form-control border-2 border-primary" id="inv-edit-capacidad-maxima"
-                                       name="capacidadMaxima" min="0" step="0.01" required>
+                                       name="capacidadMaxima" min="0" step="0.01" data-numeric-decimal required>
                                 <div class="invalid-feedback">Ingresa la capacidad máxima.</div>
                             </div>
                             <div class="col-md-6">
@@ -1127,13 +1137,13 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold small" for="inv-edit-umbral-alerta">Umbral alerta (%)</label>
                                 <input type="number" class="form-control border-2 border-primary" id="inv-edit-umbral-alerta"
-                                       name="umbralAlerta" min="0" max="100" step="1" required>
+                                       name="umbralAlerta" min="0" max="100" step="1" data-numeric-integer required>
                                 <div class="invalid-feedback">0-100.</div>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold small" for="inv-edit-umbral-critico">Umbral crítico (%)</label>
                                 <input type="number" class="form-control border-2 border-primary" id="inv-edit-umbral-critico"
-                                       name="umbralCritico" min="0" max="100" step="1" required>
+                                       name="umbralCritico" min="0" max="100" step="1" data-numeric-integer required>
                                 <div class="invalid-feedback">0-100.</div>
                             </div>
                             <div class="col-md-6">
@@ -1141,7 +1151,7 @@ globalThis.getCSRFToken = function () {
                                 <div class="input-group has-validation">
                                     <span class="input-group-text">$</span>
                                     <input type="number" class="form-control border-2 border-primary" id="inv-edit-precio-compra"
-                                           name="precioCompra" min="0" step="0.01" required>
+                                           name="precioCompra" min="0" step="0.01" data-numeric-decimal required>
                                     <div class="invalid-feedback">Ingresa el precio de compra.</div>
                                 </div>
                             </div>
@@ -1150,7 +1160,7 @@ globalThis.getCSRFToken = function () {
                                 <div class="input-group has-validation">
                                     <span class="input-group-text">$</span>
                                     <input type="number" class="form-control border-2 border-primary" id="inv-edit-precio-venta"
-                                           name="precioVenta" min="0" step="0.01" required>
+                                           name="precioVenta" min="0" step="0.01" data-numeric-decimal required>
                                     <div class="invalid-feedback">Ingresa el precio de venta.</div>
                                 </div>
                             </div>
@@ -1335,12 +1345,12 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-compra-cantidad">Cantidad <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
-                                       id="inv-edit-compra-cantidad" name="cantidad" required>
+                                       id="inv-edit-compra-cantidad" name="cantidad" data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-compra-precio">Precio Unitario (COP) <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
-                                       id="inv-edit-compra-precio" name="precioCompra" required>
+                                       id="inv-edit-compra-precio" name="precioCompra" data-numeric-decimal required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold" for="inv-edit-compra-observaciones">Observaciones</label>
@@ -1387,12 +1397,12 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-venta-cantidad">Cantidad <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
-                                       id="inv-edit-venta-cantidad" name="cantidad" required>
+                                       id="inv-edit-venta-cantidad" name="cantidad" data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-venta-precio">Precio Unitario (COP) <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
-                                       id="inv-edit-venta-precio" name="precioVenta" required>
+                                       id="inv-edit-venta-precio" name="precioVenta" data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-venta-centro">Centro de Acopio <span class="text-danger">*</span></label>
@@ -1420,6 +1430,7 @@ globalThis.getCSRFToken = function () {
         </div>
     </div>
 
-    {# === Script externo de la sección === #}
+    {# === Scripts externos de la sección === #}
+    <script src="{% static 'js/formularios/numeric-input-guard.js' %}"></script>
     <script src="{% static 'js/ecas/inventario/inventario.js' %}"></script>
 </section>
