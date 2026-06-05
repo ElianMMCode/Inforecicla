@@ -487,6 +487,53 @@ class TestHistorialWorkspace(TestCase):
         # buildExportQuery debe preferir currentMaterial sobre el filtro landing
         self.assertIn("materialIdEfectivo", js)
 
+    def test_js_inv_hfiltro_tipo_no_usa_select2(self):
+        """El filtro de tipo de movimiento (#inv-hfiltro-tipo) debe permanecer
+        como <select> nativo, sin Select2, para que el listener 'change'
+        que activa/desactiva el centro de acopio dispare confiablemente
+        cuando el usuario elige 'Venta' (en landing o workspace)."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # La línea exacta de apply() del historial NO debe incluir
+        # 'inv-hfiltro-tipo' (sin el sufijo '-material').
+        import re
+        match = re.search(r'apply\("(#inv-hfiltro-[^"]+)"\)', js)
+        self.assertIsNotNone(match, "no se encontró la línea apply() del historial")
+        historial_selector = match.group(1)
+        self.assertIn("inv-hfiltro-centro", historial_selector)
+        self.assertIn("inv-hfiltro-categoria", historial_selector)
+        self.assertIn("inv-hfiltro-tipo-material", historial_selector)
+        # Buscar 'inv-hfiltro-tipo' SIN el sufijo '-material'
+        self.assertNotRegex(historial_selector, r'inv-hfiltro-tipo(?!-)')
+        # Pero el listener de change SÍ debe estar bindeado
+        self.assertIn('addEventListener("change", _wrapWithScope(_toggleCentroAcopioLock))', js)
+
+    def test_js_reinit_select2_al_activar_tab(self):
+        """Cuando el usuario activa el tab 'Historial' (en landing o
+        workspace), Select2 debe re-inicializarse sobre los selects del
+        pane AHORA visible. Sin este re-init, los wrappers de Select2
+        quedan con width incorrecto porque Select2 mide dimensiones al
+        init time, y el pane estaba oculto."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # Helper de re-init debe existir
+        self.assertIn("function _reinitSelect2InPane(pane)", js)
+        # activarOvTab y activarTab deben llamarlo
+        for fn in ("function activarOvTab", "function activarTab"):
+            self.assertIn(fn, js)
+            fn_block = js.split(fn, 1)[1].split("function ", 2)[0]
+            self.assertIn("_reinitSelect2InPane(pane)", fn_block,
+                          f"{fn} no llama a _reinitSelect2InPane")
+        # El re-init NO debe tocar inv-hfiltro-tipo (queda nativo)
+        reinit_block = js.split("function _reinitSelect2InPane", 1)[1].split("function ", 2)[0]
+        self.assertIn('not("#inv-hfiltro-tipo")', reinit_block)
+
     def test_js_funciones_historial_son_scope_aware(self):
         """Las funciones que leen/escriben del historial deben usar el helper
         _q() (scope-aware) en lugar de getElementById para soportar que el
@@ -528,21 +575,4 @@ class TestHistorialWorkspace(TestCase):
         # El tbody de acciones debe incluir "inv-tablasHistorialBody" en la lista
         acciones_block = js.split("// Acciones en tablas (delegado)", 1)[1]
         self.assertIn('"inv-tablasHistorialBody"', acciones_block)
-
-    def test_js_listener_tipo_select_usa_event_delegation(self):
-        """El listener change de inv-hfiltro-tipo debe usar event delegation en
-        document, no querySelectorAll sobre el <select>, porque Select2
-        reemplaza la UI del <select> y el evento change puede no llegar al
-        listener vinculado directamente. La delegación en document garantiza
-        que el listener dispare para los selects del landing y del workspace."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
-        # Debe existir un document.addEventListener('change', ...) que filtra por id
-        self.assertIn("document.addEventListener(\"change\"", js)
-        self.assertIn('e.target.id === "inv-hfiltro-tipo"', js)
-        # Debe determinar scope desde e.target.closest
-        self.assertIn('e.target.closest("#tab-historial")', js)
 

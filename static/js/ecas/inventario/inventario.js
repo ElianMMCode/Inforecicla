@@ -162,6 +162,10 @@
         const pane = document.getElementById(tabId);
         if (btn) btn.classList.add("active");
         if (pane) pane.classList.add("active");
+        // Re-init Select2 sobre los selects del pane AHORA visible.
+        // Sin esto, los Select2 inicializados en bind() sobre paneles ocultos
+        // muestran wrappers con width incorrecto (Select2 mide al init).
+        if (pane) _reinitSelect2InPane(pane);
     }
 
     function activarTab(tabId) {
@@ -171,6 +175,19 @@
         const pane = document.getElementById(tabId);
         if (btn) btn.classList.add("active");
         if (pane) pane.classList.add("active");
+        if (pane) _reinitSelect2InPane(pane);
+    }
+
+    function _reinitSelect2InPane(pane) {
+        if (typeof window.jQuery === "undefined" || typeof window.jQuery.fn.select2 === "undefined") return;
+        const $ = window.jQuery;
+        const base = { theme: "bootstrap-5", language: "es", width: "100%" };
+        const $selects = $(pane).find("select").not("#inv-hfiltro-tipo");
+        $selects.each(function () {
+            const $el = $(this);
+            if ($el.data("select2")) $el.select2("destroy");
+            $el.select2(Object.assign({}, base));
+        });
     }
 
     // ============================================================
@@ -539,8 +556,11 @@
         // 1) Filtros landing (cards)
         apply("#inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion");
 
-        // 2) Filtros historial general
-        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-tipo-material, #inv-hfiltro-tipo, #inv-hfiltro-centro");
+        // 2) Filtros historial general (Select2 en todos MENOS tipo de
+        // movimiento, que debe permanecer como <select> nativo para que el
+        // listener de 'change' dispare confiablemente el toggle del centro
+        // de acopio al elegir "Venta").
+        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-tipo-material, #inv-hfiltro-centro");
 
         // 3) Filtro chart
         apply("#inv-flujo-granularidad");
@@ -1561,16 +1581,9 @@
         document.querySelectorAll('[id="inv-hfiltro-limpiar"]').forEach((el) => {
             el.addEventListener("click", _wrapWithScope(limpiarFiltrosHistorial));
         });
-        // Centro de acopio se habilita sólo si tipo=venta.
-        // Event delegation en document: Select2 reemplaza la UI del <select>
-        // por su propio widget y e.currentTarget puede no ser el <select>
-        // original. Delegar en document garantiza que el listener dispare
-        // sin importar el wrapping de Select2.
-        document.addEventListener("change", (e) => {
-            if (e.target && e.target.id === "inv-hfiltro-tipo") {
-                isWorkspaceHistorial = !!e.target.closest("#tab-historial");
-                _toggleCentroAcopioLock();
-            }
+        // Centro de acopio se habilita sólo si tipo=venta
+        document.querySelectorAll('[id="inv-hfiltro-tipo"]').forEach((el) => {
+            el.addEventListener("change", _wrapWithScope(_toggleCentroAcopioLock));
         });
 
         // Chart ovtab
