@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from config.base_models import CreacionModificacionModel, DescripcionModel
@@ -174,8 +175,40 @@ class Inventario(CreacionModificacionModel):
         else:
             self.ocupacion_actual = 0
 
+    def recalcular_alerta(self):
+        """Clasifica el estado de alerta según los umbrales configurados.
+
+        Lógica: el objetivo es acumular para luego vender, por lo que las
+        alertas se disparan cuando el inventario se está LLENANDO (no cuando
+        se está vaciando). Si la ocupación alcanza o supera `umbral_critico`
+        → CRITICO; si alcanza o supera `umbral_alerta` → ALERTA; en otro
+        caso → OK.
+        """
+        ocup = float(self.ocupacion_actual or 0)
+        if self.umbral_critico is not None and ocup >= float(self.umbral_critico):
+            self.alerta = Alerta.CRITICO
+        elif self.umbral_alerta is not None and ocup >= float(self.umbral_alerta):
+            self.alerta = Alerta.ALERTA
+        else:
+            self.alerta = Alerta.OK
+
+    def clean(self):
+        super().clean()
+        if (
+            self.umbral_alerta is not None
+            and self.umbral_critico is not None
+            and self.umbral_critico >= self.umbral_alerta
+        ):
+            raise ValidationError({
+                "umbral_critico": (
+                    "El umbral crítico debe ser MENOR al umbral de alerta. "
+                    "Las alertas se disparan al acercarse al tope de capacidad."
+                ),
+            })
+
     def save(self, *args, **kwargs):
         self.recalcular_ocupacion()
+        self.recalcular_alerta()
         super().save(*args, **kwargs)
 
 

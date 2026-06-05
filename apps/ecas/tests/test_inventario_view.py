@@ -152,7 +152,7 @@ class TestSeccionInventario(TestCase):
         self.assertEqual(item["tipo"], "PET")
         self.assertEqual(item["unidad"], "KG")
         self.assertEqual(item["stockActual"], 50.0)
-        self.assertEqual(item["estado"], "ok")  # 50 < 70 (alerta)
+        self.assertEqual(item["estado"], "ok")  # 50% ocupación < 70% umbral_alerta → ok (aún no alcanza alerta)
         self.assertEqual(str(item["inventarioId"]), str(self.inventario.id))
 
     def test_contexto_inv_data_json_safe_sin_decimal(self):
