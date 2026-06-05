@@ -229,6 +229,54 @@ class TestSeccionInventario(TestCase):
         response = self.client.get("/punto-eca/movimientos/")
         self.assertEqual(response.status_code, 404)
 
+    def test_section_inventario_sirve_los_17_selects_y_assets_select2(self):
+        self._login()
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # Los 17 <select> de la sección deben estar presentes en el HTML.
+        selects_esperados = [
+            # Filtros landing cards (4)
+            "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion",
+            # Filtros historial general (5)
+            "inv-hfiltro-material", "inv-hfiltro-categoria", "inv-hfiltro-tipo-material",
+            "inv-hfiltro-tipo", "inv-hfiltro-centro",
+            # Filtro chart (1)
+            "inv-flujo-granularidad",
+            # Form inputs inline (2)
+            "inv-crear-unidad-medida", "formSalidaCentro",
+            # Form inputs en modales (5)
+            "inv-picker-categoria", "inv-picker-mostrar",
+            "inv-edit-unidad-medida", "inv-carga-tipo", "inv-edit-venta-centro",
+        ]
+        for sel_id in selects_esperados:
+            with self.subTest(select=sel_id):
+                self.assertIn(f'id="{sel_id}"', content, f"falta <select id={sel_id}> en el HTML")
+
+        # El layout puntoECA-layout.html debe proveer los assets de Select2
+        # (jQuery + select2.min.js + i18n es + bootstrap-5-theme).
+        assets_layout = [
+            "jquery-3.6.0.min.js",
+            "select2.min.js",
+            "i18n/es.js",
+            "select2-bootstrap-5-theme",
+            "select2.min.css",
+        ]
+        for asset in assets_layout:
+            with self.subTest(asset=asset):
+                self.assertIn(asset, content, f"layout no provee {asset}")
+
+        # El JS de la sección se carga por <script src=...>, no inline.
+        # Verificamos que el archivo estático declara y llama el helper.
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path, "static js/ecas/inventario/inventario.js no encontrado")
+        with open(js_path, encoding="utf-8") as fh:
+            js_src = fh.read()
+        self.assertIn("function _initSelect2InSection", js_src)
+        self.assertIn("_initSelect2InSection()", js_src)  # llamada en bind()
+
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
 class TestInventarioEstados(TestCase):
@@ -309,3 +357,4 @@ class TestInventarioEstados(TestCase):
         self.assertEqual(estados["Lata OK"], "ok")
         self.assertEqual(estados["Lata Alerta"], "alerta")
         self.assertEqual(estados["Lata Crítico"], "critico")
+

@@ -503,9 +503,55 @@
     }
 
     // ============================================================
+    // SELECT2 — Inicialización de los 17 selects de la sección.
+    // Select2 + jQuery + i18n es + bootstrap-5-theme ya están
+    // cargados por templates/ecas/puntoECA-layout.html (CDN).
+    // Re-init idempotente: select2('destroy') antes de select2().
+    // ============================================================
+
+    function _initSelect2InSection() {
+        if (typeof window.jQuery === "undefined" || typeof window.jQuery.fn.select2 === "undefined") {
+            console.warn("[inventario] Select2 no está cargado; los filtros quedan como <select> nativos.");
+            return;
+        }
+        const $ = window.jQuery;
+        const base = { theme: "bootstrap-5", language: "es", width: "100%" };
+
+        const apply = (selector, extra) => {
+            const $els = $(selector);
+            if (!$els.length) return;
+            $els.each(function () {
+                const $el = $(this);
+                if ($el.data("select2")) $el.select2("destroy");
+                $el.select2(Object.assign({}, base, extra || {}));
+            });
+        };
+
+        // 1) Filtros landing (cards)
+        apply("#inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion");
+
+        // 2) Filtros historial general
+        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-tipo-material, #inv-hfiltro-tipo, #inv-hfiltro-centro");
+
+        // 3) Filtro chart
+        apply("#inv-flujo-granularidad");
+
+        // 4) Form inputs inline (ovtab-buscar, workspace)
+        apply("#inv-crear-unidad-medida, #formSalidaCentro");
+
+        // 5) Selects en modales → dropdownParent requerido
+        apply("#inv-picker-categoria, #inv-picker-mostrar", { dropdownParent: $("#inv-modal-picker") });
+        apply("#inv-edit-unidad-medida", { dropdownParent: $("#inv-modal-editar-inventario") });
+        apply("#inv-carga-tipo", { dropdownParent: $("#inv-modalCargaMasiva") });
+        apply("#inv-edit-venta-centro", { dropdownParent: $("#inv-modal-editar-venta") });
+    }
+
+    // ============================================================
     // EVENT LISTENERS (delegación + específicos)
     // ============================================================
+
     function bind() {
+        _initSelect2InSection();
         // Tabs
         document.querySelectorAll("#otrasVistasTabs [data-ovtab]").forEach((btn) => {
             btn.addEventListener("click", () => activarOvTab(btn.dataset.ovtab));
@@ -1001,9 +1047,21 @@
         ventasDB.forEach((v) => {
             if (v.nombreCentroAcopio) nombres.add(v.nombreCentroAcopio);
         });
+        const ordenados = Array.from(nombres).sort((a, b) => a.localeCompare(b, "es"));
         const opts = ['<option value="">—</option>']
-            .concat(Array.from(nombres).sort().map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`));
+            .concat(ordenados.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`));
         sel.innerHTML = opts.join("");
+
+        // Re-init Select2 (idempotente): destroy antes, select2 después.
+        // Solo aplica si Select2 está cargado y el <select> ya fue inicializado.
+        if (typeof window.jQuery !== "undefined" && typeof window.jQuery.fn.select2 !== "undefined" && window.jQuery(sel).data("select2")) {
+            window.jQuery(sel).select2("destroy");
+            window.jQuery(sel).select2({ theme: "bootstrap-5", language: "es", width: "100%" });
+        }
+
+        // Re-aplicar estado disabled después de re-poblar (puede haber sido
+        // alterado por _toggleCentroAcopioLock).
+        _toggleCentroAcopioLock();
     }
 
     function _toggleCentroAcopioLock() {
