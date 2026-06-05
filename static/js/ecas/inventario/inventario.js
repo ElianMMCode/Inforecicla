@@ -415,6 +415,21 @@
     // ============================================================
     // FORM SUBMIT: CREAR INVENTARIO
     // ============================================================
+    function validarOrdenUmbrales(alertaId, criticoId, errorId) {
+        const alerta = Number(document.getElementById(alertaId)?.value);
+        const critico = Number(document.getElementById(criticoId)?.value);
+        const errorEl = document.getElementById(errorId);
+        const criticoInput = document.getElementById(criticoId);
+        if (Number.isFinite(alerta) && Number.isFinite(critico) && critico >= alerta) {
+            if (errorEl) errorEl.style.display = "block";
+            if (criticoInput) criticoInput.classList.add("is-invalid");
+            return false;
+        }
+        if (errorEl) errorEl.style.display = "none";
+        if (criticoInput) criticoInput.classList.remove("is-invalid");
+        return true;
+    }
+
     function submitCrearInventario(e) {
         if (e) e.preventDefault();
         const required = [
@@ -436,6 +451,18 @@
             const msg = document.getElementById("inv-crear-mensaje-estado");
             msg.className = "alert alert-danger mt-4";
             document.getElementById("inv-crear-texto-mensaje").textContent = "Por favor completa todos los campos requeridos.";
+            msg.style.display = "block";
+            return;
+        }
+        if (!validarOrdenUmbrales(
+            "inv-crear-umbral-alerta",
+            "inv-crear-umbral-critico",
+            "inv-crear-umbral-orden-error"
+        )) {
+            const msg = document.getElementById("inv-crear-mensaje-estado");
+            msg.className = "alert alert-danger mt-4";
+            document.getElementById("inv-crear-texto-mensaje").textContent =
+                "El umbral crítico debe ser menor al umbral de alerta (las alertas se disparan al acercarse al tope de capacidad).";
             msg.style.display = "block";
             return;
         }
@@ -609,6 +636,18 @@
             const msg = document.getElementById("inv-edit-mensaje-estado");
             msg.className = "alert alert-danger mt-4";
             document.getElementById("inv-edit-texto-mensaje").textContent = "Por favor completa todos los campos requeridos.";
+            msg.style.display = "block";
+            return;
+        }
+        if (!validarOrdenUmbrales(
+            "inv-edit-umbral-alerta",
+            "inv-edit-umbral-critico",
+            "inv-edit-umbral-orden-error"
+        )) {
+            const msg = document.getElementById("inv-edit-mensaje-estado");
+            msg.className = "alert alert-danger mt-4";
+            document.getElementById("inv-edit-texto-mensaje").textContent =
+                "El umbral crítico debe ser menor al umbral de alerta (las alertas se disparan al acercarse al tope de capacidad).";
             msg.style.display = "block";
             return;
         }
