@@ -738,17 +738,24 @@ class TestFlujoRefactor(TestCase):
         self.assertIsNotNone(js_path)
         with open(js_path, encoding="utf-8") as fh:
             js = fh.read()
-        # Funciones núcleo
+        # Funciones núcleo (function declarations)
         for fn in [
             "function construirSerieGanancias",
             "function renderOvGananciasChart",
             "function renderWsGananciasChart",
             "function bucketIndexFor",
-            "function formatearCOP",
             "function _reinitChartsInPane",
         ]:
             with self.subTest(fn=fn):
                 self.assertIn(fn, js)
+        # Helpers de formato COP (pueden ser const arrow o function)
+        for helper in [
+            "formatearCOP",       # alias largo (KPIs, modales)
+            "formatearCOPCorto",  # formato compacto (K/M/B para eje Y)
+            "formatCOP",          # legacy alias
+        ]:
+            with self.subTest(helper=helper):
+                self.assertIn(helper, js)
         # Listeners
         for sel in [
             '#ovFlujoSubtabs [data-ovsub]',
@@ -772,8 +779,49 @@ class TestFlujoRefactor(TestCase):
         self.assertIn("ingresos", js)
         self.assertIn("costos", js)
         self.assertIn("profit", js)
-        # formatearCOP con sufijos K/M/B
-        self.assertIn("formatearCOP", js)
+        # formatearCOP con sufijos K/M/B (en formatearCOPCorto)
+        self.assertIn("formatearCOPCorto", js)
         # Modo ganancia con línea y=0 punteada si minY<0
         self.assertIn('modo === "ganancia"', js)
+
+    def test_precios_formateados_como_cop_pesos_colombianos(self):
+        """Todos los precios deben formatearse como COP con separador de miles es-CO."""
+        self.client.force_login(self.user)
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        # 1) KPI "Valor del Inventario" usa filtro intcomma (separador de miles es-CO: 100.000)
+        self.assertIn("$ 100.000", content, "Valor del Inventario debe tener separador de miles (es-CO)")
+        # 2) Cards de inventario: precios con intcomma y sufijo COP
+        self.assertIn("COP</span>", content, "Cards deben indicar explícitamente la moneda COP")
+        # 3) Inputs de precio: input-group con prefijo $ y sufijo COP
+        for input_id in [
+            "inv-crear-precio-compra", "inv-crear-precio-venta",
+            "inv-edit-precio-compra", "inv-edit-precio-venta",
+            "formEntradaPrecio", "formSalidaPrecio",
+            "inv-edit-compra-precio", "inv-edit-venta-precio",
+        ]:
+            with self.subTest(input=input_id):
+                self.assertIn(f'id="{input_id}"', content)
+        # 4) Form labels de precios mencionan COP
+        self.assertIn("Precio de Compra", content)
+        self.assertIn("Precio de Venta", content)
+        # 5) JS: formatearCOP (largo) y formatearCOPCorto (K/M/B) deben existir
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # formato largo: usa toLocaleString("es-CO") con máximo 0 decimales
+        self.assertIn('"es-CO", { maximumFractionDigits: 0 }', js)
+        # formato compacto: K, M, B
+        self.assertRegex(js, r'formatearCOPCorto[\s\S]*?1e9[\s\S]*?1e6[\s\S]*?1e3')
+        # formatearCOP es el alias largo (mismo formato)
+        self.assertRegex(js, r"const formatearCOP\s*=\s*\(n\)\s*=>\s*formatCOP\(n\)")
+        # 6) Eje Y de chart usa formatearCOPCorto (no el largo, para no saturar)
+        chart_block = js.split("function renderChart", 1)[1].split("// Líneas", 1)[0]
+        self.assertIn("formatearCOPCorto", chart_block)
+        # 7) KPIs de ganancias usan formatearCOP (largo)
+        self.assertIn('formatearCOP(ingresosTotal)', js)
+        self.assertIn('formatearCOP(costosTotal)', js)
+        self.assertIn('formatearCOP(profitTotal)', js)
 

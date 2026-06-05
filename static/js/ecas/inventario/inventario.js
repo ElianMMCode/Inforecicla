@@ -23,7 +23,21 @@
     let isWorkspaceHistorial = false;
 
     // --- Helpers de formato ---
-    const formatCOP = (n) => "$ " + Number(n || 0).toLocaleString("es-CO");
+    // Moneda: todos los precios de la app son pesos colombianos (COP).
+    //   - formatCOP      -> formato completo es-CO: "$ 1.500.000" (KPIs, modales, totales).
+    //   - formatearCOP   -> alias largo (mismo formato), usado por los handlers del flujo.
+    //   - formatearCOPCorto -> formato compacto con sufijos K/M/B: "$ 1.5M" (eje Y de chart).
+    const formatCOP = (n) => "$ " + Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 });
+    const formatearCOP = (n) => formatCOP(n);
+    const formatearCOPCorto = (n) => {
+        const v = Number(n) || 0;
+        const abs = Math.abs(v);
+        const sign = v < 0 ? "-$ " : "$ ";
+        if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(1)}B`;
+        if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)}M`;
+        if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(0)}K`;
+        return `${sign}${abs.toFixed(0)}`;
+    };
     const formatQty = (n, u) => `${Number(n || 0).toLocaleString("es-CO")} ${u || ""}`.trim();
     const formatDateCO = (iso) => {
         if (!iso) return "—";
@@ -1411,15 +1425,6 @@
         return -1;
     }
 
-    function formatearCOP(v) {
-        const n = Number(v) || 0;
-        const abs = Math.abs(n);
-        if (abs >= 1e9) return `$ ${(n / 1e9).toFixed(1)}B`;
-        if (abs >= 1e6) return `$ ${(n / 1e6).toFixed(1)}M`;
-        if (abs >= 1e3) return `$ ${(n / 1e3).toFixed(0)}K`;
-        return `$ ${n.toFixed(0)}`;
-    }
-
     function renderChart(canvasId, opts) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -1495,7 +1500,10 @@
             ctx.font = "10px system-ui, sans-serif";
             ctx.textAlign = "right";
             const val = maxY - (maxY - minY) * t;
-            const labelTxt = modo === "ganancia" ? formatearCOP(val) : val.toFixed(0);
+            // Eje Y: para ganancias usamos formato compacto (K/M/B) para no
+            // saturar el chart con cifras largas. Los KPIs (que sí pueden
+            // mostrar la cifra completa) usan formatearCOP() en su lugar.
+            const labelTxt = modo === "ganancia" ? formatearCOPCorto(val) : val.toFixed(0);
             ctx.fillText(labelTxt, padL - 6, y + 3);
         }
         // Línea de y=0 (referencia para profit)
