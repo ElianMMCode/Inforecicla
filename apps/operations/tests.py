@@ -227,6 +227,123 @@ class TestExportHistorialFiltrosAvanzados(TestCase):
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class TestExportFilename(TestCase):
+    """Verifica que el nombre del archivo de export incluya la fecha
+    de creación del archivo y el material filtrado (o 'general' si no
+    hay filtro de material).
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.localidad = Localidad.objects.create(
+            localidad_id=uuid.uuid4(), nombre="Bogotá"
+        )
+        cls.user = _crear_gestor("filename-test@example.com")
+        cls.punto = PuntoECA.objects.create(
+            nombre="Punto Filename",
+            email=f"fn-{uuid.uuid4().hex[:8]}@x.com",
+            celular="3005556666",
+            latitud=4.6,
+            longitud=-74.0,
+            localidad=cls.localidad,
+            gestor_eca=cls.user,
+        )
+        cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
+        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
+        cls.mat = Material.objects.create(
+            nombre="Lata Test", categoria=cls.categoria, tipo=cls.tipo
+        )
+        cls.inv = Inventario.objects.create(
+            punto_eca=cls.punto,
+            material=cls.mat,
+            capacidad_maxima=1000,
+            unidad_medida="KG",
+            stock_actual=500,
+            umbral_alerta=70,
+            umbral_critico=90,
+            precio_compra=1000,
+            precio_venta=2000,
+        )
+        cls.compra = CompraInventario.objects.create(
+            inventario=cls.inv,
+            cantidad=10,
+            precio_compra=1000,
+            fecha_compra="2024-06-15T10:00:00",
+        )
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def _disposition(self, response):
+        # Devuelve el filename (sin prefijo 'attachment; filename="').
+        cd = response["Content-Disposition"]
+        return cd.split("filename=")[-1].strip('"; ')
+
+    def test_filename_compras_con_material(self):
+        response = self.client.get(
+            "/punto-eca/movimientos/exportar-compras-excel/?material=Lata%20Test",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        fn = self._disposition(response)
+        # formato: compras_Lata_Test_YYYY-MM-DD_HHMM.xlsx
+        self.assertRegex(fn, r"^compras_Lata_Test_\d{4}-\d{2}-\d{2}_\d{4}\.xlsx$")
+
+    def test_filename_compras_sin_material(self):
+        response = self.client.get(
+            "/punto-eca/movimientos/exportar-compras-excel/",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        fn = self._disposition(response)
+        self.assertRegex(fn, r"^compras_general_\d{4}-\d{2}-\d{2}_\d{4}\.xlsx$")
+
+    def test_filename_pdf_historial(self):
+        # PDF inline filename
+        response = self.client.get(
+            "/punto-eca/movimientos/exportar-historial-pdf/?material=Lata%20Test",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        cd = response["Content-Disposition"]
+        self.assertIn("inline", cd)
+        self.assertRegex(cd, r"historial_Lata_Test_\d{4}-\d{2}-\d{2}_\d{4}\.pdf")
+
+    def test_filename_sanitiza_acentos(self):
+        response = self.client.get(
+            "/punto-eca/movimientos/exportar-compras-excel/?material=Lata%20Pl%C3%A1stico",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        fn = self._disposition(response)
+        # 'Plástico' → 'Plastico' (sin tilde, sin 'á' en filename)
+        self.assertIn("Plastico", fn)
+        self.assertNotIn("á", fn)
+        self.assertRegex(fn, r"^compras_Lata_Plastico_\d{4}-\d{2}-\d{2}_\d{4}\.xlsx$")
+
+    def test_filename_dos_export_seguidos_difieren_o_coinciden_legitimamente(self):
+        # Dos exports en el mismo segundo pueden coincidir, pero el formato
+        # siempre es válido. Esto valida que la fecha se incluye.
+        r1 = self.client.get(
+            "/punto-eca/movimientos/exportar-ventas-excel/",
+            HTTP_ACCEPT="application/json",
+        )
+        r2 = self.client.get(
+            "/punto-eca/movimientos/exportar-ventas-excel/",
+            HTTP_ACCEPT="application/json",
+        )
+        # Sin ventas: 404 con cuerpo JSON, no se genera filename.
+        # Pero igual probamos con compras.
+        r3 = self.client.get(
+            "/punto-eca/movimientos/exportar-compras-excel/",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(r3.status_code, 200)
+        self.assertRegex(self._disposition(r3), r"^compras_general_\d{4}-\d{2}-\d{2}_\d{4}\.xlsx$")
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
 class TestEditarMovimiento(TestCase):
     """Verifica que la edición de compras/ventas desde el historial general:
 

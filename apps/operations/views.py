@@ -13,6 +13,8 @@ import csv
 import io
 import unicodedata
 from django.utils.dateparse import parse_date
+import datetime
+import re
 from apps.inventory.models import Material
 from apps.ecas.models import PuntoECA
 from django.shortcuts import get_object_or_404
@@ -380,6 +382,32 @@ def _parse_decimal_export(value):
         return None
 
 
+def _sanitize_filename_component(s):
+    """Convierte un string en filename-safe (ASCII alfanumérico, '_' o '-').
+
+    - Quita acentos: 'Lata Plástico' → 'Lata_Plastico'.
+    - Reemplaza espacios y caracteres especiales por '_'.
+    - Vacío o None → 'general'.
+    """
+    if not s:
+        return "general"
+    s = unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("utf-8")
+    s = re.sub(r"[^A-Za-z0-9_-]+", "_", s).strip("_")
+    return s or "general"
+
+
+def _generar_filename_export(tipo, request, ext):
+    """Genera nombre de archivo de export: {tipo}_{material}_{YYYY-MM-DD_HHMM}.{ext}.
+
+    - material: nombre del filtro 'material' o 'general' si no hay.
+    - fecha: datetime.now() al momento de crear el archivo.
+    """
+    material = _obtener_filtro_export(request, "material")
+    material_safe = _sanitize_filename_component(material)
+    fecha = datetime.datetime.now().strftime("%Y-%m-%d_%H%M")
+    return f"{tipo}_{material_safe}_{fecha}.{ext}"
+
+
 def _filtrar_historial_compras_export(request, queryset):
     return _aplicar_filtros_export(
         request,
@@ -686,7 +714,7 @@ def exportar_compras_excel(request):
     )
     queryset = _filtrar_compras_export(request, queryset)
     dataset = CompraInventarioResource().export(queryset)
-    return _generar_respuesta_xlsx(dataset, "compras.xlsx")
+    return _generar_respuesta_xlsx(dataset, _generar_filename_export("compras", request, "xlsx"))
 
 
 # ============== EXPORT PDF =============
@@ -701,7 +729,7 @@ def exportar_compras_pdf(request):
         request,
         "operations/compras_pdf.html",
         {"compras": compras},
-        'inline; filename="compras.pdf"',
+        f'inline; filename="{_generar_filename_export("compras", request, "pdf")}"',
         "Error generando PDF de compras",
     )
 
@@ -718,7 +746,7 @@ def exportar_ventas_pdf(request):
         request,
         "operations/ventas_pdf.html",
         {"ventas": ventas, "total_ventas": total_ventas},
-        'inline; filename="ventas.pdf"',
+        f'inline; filename="{_generar_filename_export("ventas", request, "pdf")}"',
         "Error generando PDF de ventas",
     )
 
@@ -730,7 +758,7 @@ def exportar_ventas_excel(request):
     )
     queryset = _filtrar_ventas_export(request, queryset)
     dataset = VentaInventarioResource().export(queryset)
-    return _generar_respuesta_xlsx(dataset, "ventas.xlsx")
+    return _generar_respuesta_xlsx(dataset, _generar_filename_export("ventas", request, "xlsx"))
 
 
 @gestor_eca_or_admin_required
@@ -804,7 +832,7 @@ def exportar_historial_excel(request):
             status=404,
         )
     dataset = _crear_dataset_historial(rows)
-    return _generar_respuesta_xlsx(dataset, "historial_movimientos.xlsx")
+    return _generar_respuesta_xlsx(dataset, _generar_filename_export("historial", request, "xlsx"))
 
 
 @gestor_eca_or_admin_required
@@ -819,6 +847,6 @@ def exportar_historial_pdf(request):
         request,
         "operations/historial_pdf.html",
         {"historial": historial},
-        'inline; filename="historial.pdf"',
+        f'inline; filename="{_generar_filename_export("historial", request, "pdf")}"',
         "Error generando PDF de historial",
     )
