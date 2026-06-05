@@ -473,7 +473,7 @@ globalThis.getCSRFToken = function () {
                                             <div class="invalid-feedback">Ingresa el umbral crítico (entre 0 y 100).</div>
                                         </div>
                                         <small class="text-muted">Porcentaje de ocupación a partir del cual se considera capacidad crítica</small>
-                                        <div class="invalid-feedback" id="inv-crear-umbral-orden-error">El umbral crítico debe ser menor al umbral de alerta.</div>
+                                        <div class="invalid-feedback" id="inv-crear-umbral-orden-error">El umbral de alerta debe ser menor al umbral crítico.</div>
                                     </div>
                                 </div>
                                 <div id="inv-crear-mensaje-estado" class="alert alert-info mt-4" style="display:none" role="alert">
@@ -1146,7 +1146,7 @@ globalThis.getCSRFToken = function () {
                                 <input type="number" class="form-control border-2 border-primary" id="inv-edit-umbral-critico"
                                        name="umbralCritico" min="0" max="100" step="1" placeholder="90" data-numeric-integer required>
                                 <div class="invalid-feedback">0-100.</div>
-                                <div class="invalid-feedback" id="inv-edit-umbral-orden-error">El umbral crítico debe ser menor al umbral de alerta.</div>
+                                <div class="invalid-feedback" id="inv-edit-umbral-orden-error">El umbral de alerta debe ser menor al umbral crítico.</div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="inv-edit-precio-compra">Precio de compra</label>

@@ -68,7 +68,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         verbose_name="Umbral de alerta (%)",
-        help_text="Porcentaje del stock que activará una alerta (0-100%). Debe ser mayor al umbral crítico",
+        help_text="Porcentaje de ocupación que activa alerta (0-100%). Debe ser MENOR al umbral crítico",
     )
 
     umbral_critico = models.SmallIntegerField(
@@ -81,7 +81,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         verbose_name="Umbral crítico (%)",
-        help_text="Porcentaje del stock que activará una alerta crítica (0-100%). Debe ser menor al umbral de alerta",
+        help_text="Porcentaje de ocupación que activa estado crítico (0-100%). Debe ser MAYOR al umbral de alerta",
     )
 
     alerta = models.CharField(
@@ -197,12 +197,12 @@ class Inventario(CreacionModificacionModel):
         if (
             self.umbral_alerta is not None
             and self.umbral_critico is not None
-            and self.umbral_critico >= self.umbral_alerta
+            and self.umbral_alerta >= self.umbral_critico
         ):
             raise ValidationError({
-                "umbral_critico": (
-                    "El umbral crítico debe ser MENOR al umbral de alerta. "
-                    "Las alertas se disparan al acercarse al tope de capacidad."
+                "umbral_alerta": (
+                    "El umbral de alerta debe ser MENOR al umbral crítico. "
+                    "La alerta se dispara ANTES que el estado crítico (a menor % de ocupación)."
                 ),
             })
 

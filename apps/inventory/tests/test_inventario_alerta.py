@@ -97,7 +97,12 @@ class TestInventarioAlertaAutomatica(TestCase):
 
 
 class TestInventarioOrdenUmbrales(TestCase):
-    """`Inventario.clean()` debe rechazar umbral_critico >= umbral_alerta."""
+    """`Inventario.clean()` debe rechazar umbral_alerta >= umbral_critico.
+
+    La lógica de fill-up requiere que la alerta se dispare ANTES que el
+    estado crítico (a menor % de ocupación). Por tanto, ua < uc es
+    obligatorio.
+    """
 
     def setUp(self):
         self.punto, self.material = _crear_punto_y_material()
@@ -116,17 +121,20 @@ class TestInventarioOrdenUmbrales(TestCase):
         )
 
     def test_orden_correcto_no_falla(self):
-        inv = self._build(ua=80, uc=70)
+        # ua=70, uc=90: la alerta se dispara al 70%, el crítico al 90%
+        inv = self._build(ua=70, uc=90)
         inv.full_clean()  # no debe lanzar
 
-    def test_orden_inverso_uc_mayor_que_ua_falla(self):
-        inv = self._build(ua=80, uc=90)
+    def test_orden_inverso_ua_mayor_que_uc_falla(self):
+        # ua=80, uc=70: el crítico se dispararía ANTES que la alerta
+        inv = self._build(ua=80, uc=70)
         with self.assertRaises(ValidationError) as ctx:
             inv.full_clean()
-        self.assertIn("umbral_critico", ctx.exception.message_dict)
+        self.assertIn("umbral_alerta", ctx.exception.message_dict)
 
-    def test_orden_inverso_uc_igual_a_ua_falla(self):
+    def test_orden_inverso_ua_igual_a_uc_falla(self):
+        # ua=80, uc=80: ambos se dispararían al mismo tiempo
         inv = self._build(ua=80, uc=80)
         with self.assertRaises(ValidationError) as ctx:
             inv.full_clean()
-        self.assertIn("umbral_critico", ctx.exception.message_dict)
+        self.assertIn("umbral_alerta", ctx.exception.message_dict)

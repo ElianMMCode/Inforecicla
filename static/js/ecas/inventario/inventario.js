@@ -416,16 +416,19 @@
     // FORM SUBMIT: CREAR INVENTARIO
     // ============================================================
     function validarOrdenUmbrales(alertaId, criticoId, errorId) {
-        const alerta = Number(document.getElementById(alertaId)?.value);
-        const critico = Number(document.getElementById(criticoId)?.value);
-        const errorEl = document.getElementById(errorId);
+        const alertaInput = document.getElementById(alertaId);
         const criticoInput = document.getElementById(criticoId);
-        if (Number.isFinite(alerta) && Number.isFinite(critico) && critico >= alerta) {
+        const errorEl = document.getElementById(errorId);
+        const alerta = Number(alertaInput?.value);
+        const critico = Number(criticoInput?.value);
+        if (Number.isFinite(alerta) && Number.isFinite(critico) && alerta >= critico) {
             if (errorEl) errorEl.style.display = "block";
+            if (alertaInput) alertaInput.classList.add("is-invalid");
             if (criticoInput) criticoInput.classList.add("is-invalid");
             return false;
         }
         if (errorEl) errorEl.style.display = "none";
+        if (alertaInput) alertaInput.classList.remove("is-invalid");
         if (criticoInput) criticoInput.classList.remove("is-invalid");
         return true;
     }
@@ -462,7 +465,7 @@
             const msg = document.getElementById("inv-crear-mensaje-estado");
             msg.className = "alert alert-danger mt-4";
             document.getElementById("inv-crear-texto-mensaje").textContent =
-                "El umbral crítico debe ser menor al umbral de alerta (las alertas se disparan al acercarse al tope de capacidad).";
+                "El umbral de alerta debe ser menor al umbral crítico (la alerta se dispara antes que el estado crítico).";
             msg.style.display = "block";
             return;
         }
@@ -647,7 +650,7 @@
             const msg = document.getElementById("inv-edit-mensaje-estado");
             msg.className = "alert alert-danger mt-4";
             document.getElementById("inv-edit-texto-mensaje").textContent =
-                "El umbral crítico debe ser menor al umbral de alerta (las alertas se disparan al acercarse al tope de capacidad).";
+                "El umbral de alerta debe ser menor al umbral crítico (la alerta se dispara antes que el estado crítico).";
             msg.style.display = "block";
             return;
         }
