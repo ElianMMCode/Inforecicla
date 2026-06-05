@@ -358,3 +358,132 @@ class TestInventarioEstados(TestCase):
         self.assertEqual(estados["Lata Alerta"], "alerta")
         self.assertEqual(estados["Lata Crítico"], "critico")
 
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class TestHistorialWorkspace(TestCase):
+    """El tab-historial del workspace debe reusar los mismos IDs que ovtab-historial
+    (filtros, paginación, badge, botones de export), salvo el filtro de Material
+    (porque el material está fijo al seleccionado en el workspace)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.localidad = Localidad.objects.create(
+            localidad_id=uuid.uuid4(),
+            nombre="Chapinero",
+        )
+        cls.categoria = CategoriaMaterial.objects.create(nombre="Plásticos")
+        cls.tipo = TipoMaterial.objects.create(nombre="PET")
+        cls.material = Material.objects.create(
+            nombre="Botella PET", categoria=cls.categoria, tipo=cls.tipo,
+        )
+
+    def setUp(self):
+        self.client = Client()
+        self.user = _crear_usuario_gestor("ws@example.com")
+        self.punto_eca = PuntoECA.objects.create(
+            gestor_eca=self.user,
+            nombre="Punto ECA Workspace",
+            telefono_punto="6012222222",
+            direccion="Calle 2",
+            ciudad="Bogotá",
+            email="ws@example.com",
+            celular="3002222222",
+            latitud=4.6097,
+            longitud=-74.0817,
+            localidad=self.localidad,
+        )
+        self.user.tipo_usuario = cons.TipoUsuario.GESTOR_ECA
+        self.user.save()
+        self.client.force_login(self.user)
+
+    def test_workspace_historial_reusa_ids_filtros_ovtab(self):
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        ids_filtros = [
+            "inv-hfiltro-categoria",
+            "inv-hfiltro-tipo-material",
+            "inv-hfiltro-tipo",
+            "inv-hfiltro-desde",
+            "inv-hfiltro-hasta",
+            "inv-hfiltro-centro",
+            "inv-hfiltro-cantidad-min",
+            "inv-hfiltro-cantidad-max",
+            "inv-hfiltro-monto-min",
+            "inv-hfiltro-monto-max",
+            "inv-hfiltro-aplicar",
+            "inv-hfiltro-limpiar",
+        ]
+        for fid in ids_filtros:
+            with self.subTest(filtro=fid):
+                self.assertIn(f'id="{fid}"', content,
+                              f"workspace tab-historial falta {fid}")
+
+    def test_workspace_historial_no_tiene_filtro_material(self):
+        response = self.client.get("/punto-eca/inventario/")
+        content = response.content.decode("utf-8")
+        # El filtro de Material sí está en ovtab-historial (landing)…
+        self.assertIn('id="inv-hfiltro-material"', content)
+        # …pero el workspace solo lo necesita si está dentro del tab-historial.
+        # Verificamos que NO aparece después del tab-pane-stack id="tab-historial".
+        idx_tab = content.find('id="tab-historial"')
+        idx_cierre = content.find('id="tab-flujo"')
+        seccion_workspace = content[idx_tab:idx_cierre]
+        self.assertNotIn('id="inv-hfiltro-material"', seccion_workspace,
+                         "workspace tab-historial no debe tener filtro de Material")
+
+    def test_workspace_historial_tiene_paginacion_y_badge(self):
+        response = self.client.get("/punto-eca/inventario/")
+        content = response.content.decode("utf-8")
+        idx_tab = content.find('id="tab-historial"')
+        idx_cierre = content.find('id="tab-flujo"')
+        seccion = content[idx_tab:idx_cierre]
+        for id_ in ("inv-tablasHistorialBody", "inv-hpager",
+                    "inv-hfooter-count", "inv-hbadge-count",
+                    "inv-btn-export-historial-excel", "inv-btn-export-historial-pdf"):
+            with self.subTest(id=id_):
+                self.assertIn(f'id="{id_}"', seccion,
+                              f"workspace tab-historial falta {id_}")
+
+    def test_workspace_historial_no_tiene_ids_legacy(self):
+        response = self.client.get("/punto-eca/inventario/")
+        content = response.content.decode("utf-8")
+        for id_legacy in ("btnExportHistorialExcel", "btnExportHistorialPdf",
+                          "tablasHistorialBody", "paginacionHistorial"):
+            with self.subTest(id_legacy=id_legacy):
+                self.assertNotIn(f'id="{id_legacy}"', content,
+                                 f"ID legacy {id_legacy} no debe existir")
+
+    def test_workspace_tiene_7_columnas_y_landing_8(self):
+        response = self.client.get("/punto-eca/inventario/")
+        content = response.content.decode("utf-8")
+        idx_tab = content.find('id="tab-historial"')
+        idx_cierre = content.find('id="tab-flujo"')
+        seccion_workspace = content[idx_tab:idx_cierre]
+        # El workspace NO debe tener columna Material
+        self.assertNotIn(">Material<", seccion_workspace)
+        # El landing (ovtab-historial) SÍ debe tenerla
+        idx_ovtab = content.find('id="ovtab-historial"')
+        idx_ovtab_cierre = content.find('id="ovtab-flujo"')
+        seccion_landing = content[idx_ovtab:idx_ovtab_cierre]
+        self.assertIn(">Material<", seccion_landing)
+
+    def test_js_tiene_logica_workspace_historial(self):
+        """El JS de inventario debe contener la lógica que auto-filtra por
+        currentMaterialId y propaga el material al export cuando se está en el
+        workspace del historial."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # Flag de estado workspace
+        self.assertIn("isWorkspaceHistorial", js)
+        # renderHistorialMaterial debe llamar al mismo pipeline paginado
+        self.assertIn("function renderHistorialMaterial", js)
+        self.assertIn("renderHistorialGeneralPaged", js.split("function renderHistorialMaterial", 1)[1].split("function ", 2)[0])
+        # getCurrentHistorialRows debe usar currentMaterialId cuando isWorkspaceHistorial
+        self.assertIn("effectiveMaterialId", js)
+        # buildExportQuery debe preferir currentMaterial sobre el filtro landing
+        self.assertIn("materialIdEfectivo", js)
+

@@ -1034,42 +1034,121 @@ globalThis.getCSRFToken = function () {
             </div>
         </div>
 
-        {# TAB HISTORIAL (workspace) — IDs preservados #}
+        {# TAB HISTORIAL (workspace) — mismos IDs que ovtab-historial (sin filtro Material) #}
         <div class="tab-pane-stack" id="tab-historial">
-            <div class="card shadow-sm mb-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light border-0 px-4 py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-categoria">Categoría</label>
+                            <select class="form-select form-select-sm" id="inv-hfiltro-categoria">
+                                <option value="">-- Todas --</option>
+                                {% for cat in categoria_inventario %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-tipo-material">Tipo material</label>
+                            <select class="form-select form-select-sm" id="inv-hfiltro-tipo-material">
+                                <option value="">-- Todos --</option>
+                                {% for tip in tipo_inventario %}
+                                    <option value="{{ tip }}">{{ tip }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-tipo">Tipo mov.</label>
+                            <select class="form-select form-select-sm" id="inv-hfiltro-tipo">
+                                <option value="">Todos</option>
+                                <option value="compra">Compra</option>
+                                <option value="venta">Venta</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-desde">Desde</label>
+                            <input type="date" class="form-control form-control-sm" id="inv-hfiltro-desde">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-hasta">Hasta</label>
+                            <input type="date" class="form-control form-control-sm" id="inv-hfiltro-hasta">
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-centro">Centro de acopio</label>
+                            <select class="form-select form-select-sm" id="inv-hfiltro-centro" disabled>
+                                <option value="">—</option>
+                            </select>
+                            <small class="form-text text-muted">Habilitado al elegir Venta</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-cantidad-min">Cantidad mín.</label>
+                            <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-cantidad-min" placeholder="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-cantidad-max">Cantidad máx.</label>
+                            <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-cantidad-max" placeholder="∞">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-monto-min">Monto mín.</label>
+                            <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-monto-min" placeholder="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small" for="inv-hfiltro-monto-max">Monto máx.</label>
+                            <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-monto-max" placeholder="∞">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end gap-1">
+                            <button class="btn btn-primary btn-sm fw-semibold flex-grow-1" type="button" id="inv-hfiltro-aplicar" title="Aplicar filtros">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" id="inv-hfiltro-limpiar" title="Limpiar filtros">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
                 <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2"></i>Historial — <span class="inv-ws-tab-nombre">—</span></h6>
-                    <div>
-                        <button class="btn btn-sm btn-outline-success" type="button" id="btnExportHistorialExcel">
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="mb-0 fw-bold text-dark">Historial — <span class="inv-ws-tab-nombre">—</span></h6>
+                        <button class="btn btn-sm btn-outline-success fw-semibold ms-2" type="button" id="inv-btn-export-historial-excel">
                             <i class="bi bi-file-earmark-excel me-1"></i>Excel
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" type="button" id="btnExportHistorialPdf">
+                        <button class="btn btn-sm btn-outline-danger fw-semibold" type="button" id="inv-btn-export-historial-pdf">
                             <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                         </button>
                     </div>
+                    <span class="badge bg-secondary rounded-pill" id="inv-hbadge-count">0 registros</span>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="fw-bold small">Fecha</th>
-                                    <th class="fw-bold small">Tipo</th>
-                                    <th class="fw-bold small text-end">Cantidad</th>
-                                    <th class="fw-bold small text-end">$ Unit.</th>
-                                    <th class="fw-bold small">Total</th>
-                                    <th class="fw-bold small">Centro</th>
-                                    <th class="fw-bold small text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablasHistorialBody">
-                                {# Poblado por JS — sólo del material seleccionado #}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="fw-bold small">Fecha</th>
+                                <th class="fw-bold small">Tipo</th>
+                                <th class="fw-bold small text-end">Cantidad</th>
+                                <th class="fw-bold small text-end">$ Unit.</th>
+                                <th class="fw-bold small">Total</th>
+                                <th class="fw-bold small">Centro</th>
+                                <th class="fw-bold small text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inv-tablasHistorialBody">
+                            {# Poblado por JS — sólo del material seleccionado #}
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-footer bg-light border-top px-4 py-3 text-center">
-                    <small class="text-muted" id="paginacionHistorial">—</small>
+                <div class="card-footer bg-light border-top px-4 py-3 d-flex justify-content-between align-items-center">
+                    <small class="text-muted" id="inv-hfooter-count">—</small>
+                    <nav aria-label="Paginación historial">
+                        <ul class="pagination pagination-sm mb-0" id="inv-hpager"></ul>
+                    </nav>
                 </div>
             </div>
         </div>

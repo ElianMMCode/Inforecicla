@@ -20,6 +20,7 @@
     // --- Estado en memoria ---
     let currentMaterialId = null;
     let currentMaterial = null;
+    let isWorkspaceHistorial = false;
 
     // --- Helpers de formato ---
     const formatCOP = (n) => "$ " + Number(n || 0).toLocaleString("es-CO");
@@ -47,6 +48,9 @@
     function irLanding() {
         document.getElementById("estado-landing")?.classList.add("active");
         document.getElementById("estado-workspace")?.classList.remove("active");
+        currentMaterialId = null;
+        currentMaterial = null;
+        isWorkspaceHistorial = false;
         activarOvTab("ovtab-inventario");
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -59,10 +63,17 @@
         }
         currentMaterialId = invId;
         currentMaterial = inv;
+        isWorkspaceHistorial = tabId === "tab-historial";
         poblarWorkspace(inv);
         document.getElementById("estado-landing")?.classList.remove("active");
         document.getElementById("estado-workspace")?.classList.add("active");
         if (tabId) activarTab(tabId);
+        if (isWorkspaceHistorial) {
+            historialPage = 1;
+            _poblarCentrosAcopio();
+            _toggleCentroAcopioLock();
+            renderHistorialGeneralPaged();
+        }
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -245,14 +256,12 @@
     }
 
     function renderHistorialMaterial(invId) {
-        const tbody = document.getElementById("tablasHistorialBody");
-        if (!tbody) return;
-        const rows = [];
-        comprasDB.filter((c) => String(c.inventarioId) === String(invId)).forEach((c) => rows.push(filaHistorial(c, "compra", { showMaterial: false })));
-        ventasDB.filter((v) => String(v.inventarioId) === String(invId)).forEach((v) => rows.push(filaHistorial(v, "venta", { showMaterial: false })));
-        tbody.innerHTML = rows.join("") || '<tr><td colspan="7" class="text-center text-muted py-3">Sin movimientos</td></tr>';
-        const p = document.getElementById("paginacionHistorial");
-        if (p) p.textContent = `${rows.length} movimientos`;
+        currentMaterialId = invId;
+        isWorkspaceHistorial = true;
+        historialPage = 1;
+        _poblarCentrosAcopio();
+        _toggleCentroAcopioLock();
+        renderHistorialGeneralPaged();
     }
 
     function renderEntradasMaterial(invId) {
@@ -602,7 +611,7 @@
         document.getElementById("inv-form-crear-inventario")?.addEventListener("submit", submitCrearInventario);
 
         // Acciones en tablas (delegado)
-        ["inv-tablasHistorialBody", "tablasHistorialBody", "tablasEntradasBody", "tablasSalidasBody"]
+        ["inv-tablasHistorialBody", "tablasEntradasBody", "tablasSalidasBody"]
             .forEach((tbodyId) => {
                 document.getElementById(tbodyId)?.addEventListener("click", (e) => {
                     const btn = e.target.closest("button[data-accion]");
@@ -935,8 +944,15 @@
 
     function buildExportQuery(base) {
         const params = new URLSearchParams();
-        const materialId = document.getElementById("inv-hfiltro-material")?.value;
-        const materialNombre = _lookupMaterialNombreByInventarioId(materialId);
+        const materialIdFiltro = document.getElementById("inv-hfiltro-material")?.value;
+        const materialIdEfectivo = isWorkspaceHistorial && currentMaterialId
+            ? String(currentMaterialId)
+            : materialIdFiltro;
+        const materialNombre = materialIdEfectivo
+            ? (currentMaterial && String(currentMaterial.inventarioId) === String(materialIdEfectivo)
+                ? currentMaterial.nombre
+                : _lookupMaterialNombreByInventarioId(materialIdEfectivo))
+            : "";
         const categoria = document.getElementById("inv-hfiltro-categoria")?.value;
         const tipoMaterial = document.getElementById("inv-hfiltro-tipo-material")?.value;
         const tipo = document.getElementById("inv-hfiltro-tipo")?.value;
@@ -991,7 +1007,10 @@
     // FILTRO HISTORIAL GENERAL (landing)
     // ============================================================
     function getCurrentHistorialRows() {
-        const materialId = document.getElementById("inv-hfiltro-material")?.value || "";
+        const filtroMaterialId = document.getElementById("inv-hfiltro-material")?.value || "";
+        const effectiveMaterialId = isWorkspaceHistorial && currentMaterialId
+            ? String(currentMaterialId)
+            : filtroMaterialId;
         const categoria = document.getElementById("inv-hfiltro-categoria")?.value || "";
         const tipoMaterial = document.getElementById("inv-hfiltro-tipo-material")?.value || "";
         const tipo = document.getElementById("inv-hfiltro-tipo")?.value || "";
@@ -1020,7 +1039,7 @@
 
         if (aceptaCompra) {
             comprasDB.forEach((c) => {
-                if (materialId && String(c.inventarioId) !== String(materialId)) return;
+                if (effectiveMaterialId && String(c.inventarioId) !== String(effectiveMaterialId)) return;
                 if (categoria && c.nombreCategoria !== categoria) return;
                 if (tipoMaterial && c.nombreTipo !== tipoMaterial) return;
                 if (!enRango(c.fechaCompra)) return;
@@ -1035,7 +1054,7 @@
         }
         if (aceptaVenta) {
             ventasDB.forEach((v) => {
-                if (materialId && String(v.inventarioId) !== String(materialId)) return;
+                if (effectiveMaterialId && String(v.inventarioId) !== String(effectiveMaterialId)) return;
                 if (categoria && v.nombreCategoria !== categoria) return;
                 if (tipoMaterial && v.nombreTipo !== tipoMaterial) return;
                 if (centro && v.nombreCentroAcopio !== centro) return;
@@ -1144,10 +1163,13 @@
         if (historialPage > pages) historialPage = pages;
         const start = (historialPage - 1) * PAGE_SIZE;
         const slice = rows.slice(start, start + PAGE_SIZE);
+        const showMaterial = !isWorkspaceHistorial;
+        const colspan = showMaterial ? 8 : 7;
+        const filaOpts = { showMaterial };
         if (slice.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Sin movimientos con los filtros aplicados</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-muted py-3">Sin movimientos con los filtros aplicados</td></tr>`;
         } else {
-            tbody.innerHTML = slice.map((r) => filaHistorial(r, r._tipo)).join("");
+            tbody.innerHTML = slice.map((r) => filaHistorial(r, r._tipo, filaOpts)).join("");
         }
         if (footer) {
             const from = total === 0 ? 0 : start + 1;
@@ -1503,10 +1525,7 @@
             detVentaFooter.prepend(btn);
         }
 
-        // Exportar historial con filtros
-        document.getElementById("btnExportHistorialExcel")?.addEventListener("click", exportarHistorialExcel);
-        document.getElementById("btnExportHistorialPdf")?.addEventListener("click", exportarHistorialPdf);
-        // Exportar historial general desde ovtab (nuevos botones con ID)
+        // Exportar historial (mismos botones reusados por landing y workspace)
         document.getElementById("inv-btn-export-historial-excel")?.addEventListener("click", exportarHistorialExcel);
         document.getElementById("inv-btn-export-historial-pdf")?.addEventListener("click", exportarHistorialPdf);
 
