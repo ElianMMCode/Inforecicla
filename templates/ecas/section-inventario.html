@@ -74,6 +74,12 @@ globalThis.getCSRFToken = function () {
         background-color: #f5f5f5; border: 1px solid #dee2e6;
         border-radius: .375rem; padding: .375rem .75rem; font-size: .875rem;
     }
+    /* Filtros de fecha del historial: más padding interno para que la
+       fecha se vea completa sin quedar pegada al icono de calendario. */
+    #inv-hfiltro-desde, #inv-hfiltro-hasta {
+        padding-left: .85rem;
+        padding-right: 2.1rem;
+    }
     </style>
 
     {# ============================================================ #}
@@ -501,7 +507,7 @@ globalThis.getCSRFToken = function () {
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-material">Material</label>
                                     <select class="form-select form-select-sm" id="inv-hfiltro-material">
                                         <option value="">-- Todos --</option>
@@ -510,7 +516,7 @@ globalThis.getCSRFToken = function () {
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-categoria">Categoría</label>
                                     <select class="form-select form-select-sm" id="inv-hfiltro-categoria">
                                         <option value="">-- Todas --</option>
@@ -536,11 +542,11 @@ globalThis.getCSRFToken = function () {
                                         <option value="venta">Venta</option>
                                     </select>
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2">
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-desde">Desde</label>
                                     <input type="date" class="form-control form-control-sm" id="inv-hfiltro-desde">
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2">
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-hasta">Hasta</label>
                                     <input type="date" class="form-control form-control-sm" id="inv-hfiltro-hasta">
                                 </div>
