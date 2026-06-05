@@ -1561,9 +1561,16 @@
         document.querySelectorAll('[id="inv-hfiltro-limpiar"]').forEach((el) => {
             el.addEventListener("click", _wrapWithScope(limpiarFiltrosHistorial));
         });
-        // Centro de acopio se habilita sólo si tipo=venta
-        document.querySelectorAll('[id="inv-hfiltro-tipo"]').forEach((el) => {
-            el.addEventListener("change", _wrapWithScope(_toggleCentroAcopioLock));
+        // Centro de acopio se habilita sólo si tipo=venta.
+        // Event delegation en document: Select2 reemplaza la UI del <select>
+        // por su propio widget y e.currentTarget puede no ser el <select>
+        // original. Delegar en document garantiza que el listener dispare
+        // sin importar el wrapping de Select2.
+        document.addEventListener("change", (e) => {
+            if (e.target && e.target.id === "inv-hfiltro-tipo") {
+                isWorkspaceHistorial = !!e.target.closest("#tab-historial");
+                _toggleCentroAcopioLock();
+            }
         });
 
         // Chart ovtab

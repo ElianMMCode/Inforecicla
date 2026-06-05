@@ -529,3 +529,20 @@ class TestHistorialWorkspace(TestCase):
         acciones_block = js.split("// Acciones en tablas (delegado)", 1)[1]
         self.assertIn('"inv-tablasHistorialBody"', acciones_block)
 
+    def test_js_listener_tipo_select_usa_event_delegation(self):
+        """El listener change de inv-hfiltro-tipo debe usar event delegation en
+        document, no querySelectorAll sobre el <select>, porque Select2
+        reemplaza la UI del <select> y el evento change puede no llegar al
+        listener vinculado directamente. La delegación en document garantiza
+        que el listener dispare para los selects del landing y del workspace."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # Debe existir un document.addEventListener('change', ...) que filtra por id
+        self.assertIn("document.addEventListener(\"change\"", js)
+        self.assertIn('e.target.id === "inv-hfiltro-tipo"', js)
+        # Debe determinar scope desde e.target.closest
+        self.assertIn('e.target.closest("#tab-historial")', js)
+
