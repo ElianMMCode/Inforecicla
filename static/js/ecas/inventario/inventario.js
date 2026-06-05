@@ -819,10 +819,16 @@
     function submitEditarCompra() {
         const form = document.getElementById("inv-form-editar-compra");
         if (!form.checkValidity()) { form.reportValidity(); return; }
-        const payload = Object.fromEntries(new FormData(form).entries());
-        payload.cantidad = Number(payload.cantidad);
-        payload.precioCompra = Number(payload.precioCompra);
-        fetch(`/punto-eca/movimientos/editar-compra/${payload.id}/`, {
+        const raw = Object.fromEntries(new FormData(form).entries());
+        // Mapear nombres del form al contrato del servicio.
+        const payload = {
+            compraId: raw.id,
+            fechaCompra: raw.fecha,
+            cantidad: Number(raw.cantidad),
+            precioCompra: Number(raw.precioCompra),
+            observaciones: raw.observaciones || "",
+        };
+        fetch(`/punto-eca/movimientos/editar-compra/${raw.id}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -841,10 +847,17 @@
         if (!form.checkValidity()) { form.reportValidity(); return; }
         const centro = document.getElementById("inv-edit-venta-centro");
         if (centro && !centro.value) { centro.reportValidity(); return; }
-        const payload = Object.fromEntries(new FormData(form).entries());
-        payload.cantidad = Number(payload.cantidad);
-        payload.precioVenta = Number(payload.precioVenta);
-        fetch(`/punto-eca/movimientos/editar-venta/${payload.id}/`, {
+        const raw = Object.fromEntries(new FormData(form).entries());
+        // Mapear nombres del form al contrato del servicio.
+        const payload = {
+            ventaId: raw.id,
+            fechaVenta: raw.fecha,
+            cantidad: Number(raw.cantidad),
+            precioVenta: Number(raw.precioVenta),
+            observaciones: raw.observaciones || "",
+        };
+        if (centro) payload.centroAcopioId = centro.value;
+        fetch(`/punto-eca/movimientos/editar-venta/${raw.id}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),

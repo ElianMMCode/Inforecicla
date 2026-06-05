@@ -34,7 +34,12 @@ def _responder_error_json(mensaje, status=400):
 def _responder_servicio_json(servicio_callable, *args, **kwargs):
     try:
         response = servicio_callable(*args, **kwargs)
-        return JsonResponse(response, safe=False)
+        # Propagar el "status" del body al HTTP status. Si el body
+        # no incluye "status" o no es un dict, usar 200 por defecto.
+        http_status = 200
+        if isinstance(response, dict):
+            http_status = response.pop("status", 200) or 200
+        return JsonResponse(response, safe=False, status=http_status)
     except Exception as exc:
         return JsonResponse(
             {"mensaje": f"Error técnico: {str(exc)}", "error": True}, status=400

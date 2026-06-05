@@ -224,3 +224,156 @@ class TestExportHistorialFiltrosAvanzados(TestCase):
         response = self._exportar_excel(cantidad_min="abc")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self._contar_filas_xlsx(response), 1)
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class TestEditarMovimiento(TestCase):
+    """Verifica que la edición de compras/ventas desde el historial general:
+
+    1. El servicio recibe los nombres de campos correctos (compraId,
+       fechaCompra, etc.) y persiste los cambios.
+    2. La view propaga el 'status' del body al HTTP status (bug histórico:
+       retornaba 200 incluso con error → el JS mostraba "Compra
+       actualizada" sin guardar).
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.localidad = Localidad.objects.create(
+            localidad_id=uuid.uuid4(), nombre="Bogotá"
+        )
+        cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
+        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
+        cls.centro = CentroAcopio.objects.create(
+            nombre="Centro Edit",
+            tipo_centro="PUBLICO",
+            visibilidad="GLOBAL",
+            email="edit@x.com",
+            celular="3001112222",
+            ciudad="Bogotá",
+            localidad=cls.localidad,
+        )
+        cls.user = _crear_gestor("edit-test@example.com")
+        cls.punto = PuntoECA.objects.create(
+            nombre="Punto Edit",
+            email=f"edit-{uuid.uuid4().hex[:8]}@x.com",
+            celular="3003334444",
+            latitud=4.6,
+            longitud=-74.0,
+            localidad=cls.localidad,
+            gestor_eca=cls.user,
+        )
+        cls.mat = Material.objects.create(
+            nombre="Lata Edit", categoria=cls.categoria, tipo=cls.tipo
+        )
+        cls.inv = Inventario.objects.create(
+            punto_eca=cls.punto,
+            material=cls.mat,
+            capacidad_maxima=1000,
+            unidad_medida="KG",
+            stock_actual=500,
+            umbral_alerta=70,
+            umbral_critico=90,
+            precio_compra=1000,
+            precio_venta=2000,
+        )
+        cls.compra = CompraInventario.objects.create(
+            inventario=cls.inv,
+            cantidad=10,
+            precio_compra=1000,
+            fecha_compra="2024-06-15T10:00:00",
+        )
+        cls.venta = VentaInventario.objects.create(
+            inventario=cls.inv,
+            cantidad=5,
+            precio_venta=2000,
+            centro_acopio=cls.centro,
+            fecha_venta="2024-06-15T11:00:00",
+        )
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def _patch_compra(self, payload):
+        return self.client.patch(
+            f"/punto-eca/movimientos/editar-compra/{self.compra.id}/",
+            data=__import__("json").dumps(payload),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN="x",
+        )
+
+    def _patch_venta(self, payload):
+        return self.client.patch(
+            f"/punto-eca/movimientos/editar-venta/{self.venta.id}/",
+            data=__import__("json").dumps(payload),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN="x",
+        )
+
+    def test_editar_compra_payload_correcto_persiste_y_retorna_200(self):
+        response = self._patch_compra({
+            "compraId": str(self.compra.id),
+            "fechaCompra": "2025-01-15T10:00:00",
+            "cantidad": "25.00",
+            "precioCompra": "1500.00",
+            "observaciones": "editada",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json().get("error"))
+        self.compra.refresh_from_db()
+        self.assertEqual(self.compra.cantidad, 25)
+        self.assertEqual(self.compra.precio_compra, 1500)
+        self.assertEqual(self.compra.observaciones, "editada")
+
+    def test_editar_compra_sin_compraId_retorna_400_no_200(self):
+        # Bug histórico: la view no propagaba 'status' del body, retornaba
+        # 200 con error=True → JS mostraba éxito sin guardar.
+        response = self._patch_compra({
+            "id": str(self.compra.id),
+            "fechaCompra": "2025-01-15T10:00:00",
+            "cantidad": "20.00",
+            "precioCompra": "1500.00",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.json().get("error"))
+        # La compra NO se modifica.
+        self.compra.refresh_from_db()
+        self.assertEqual(self.compra.cantidad, 10)
+
+    def test_editar_compra_cantidad_negativa_retorna_400(self):
+        response = self._patch_compra({
+            "compraId": str(self.compra.id),
+            "fechaCompra": "2025-01-15T10:00:00",
+            "cantidad": "-1",
+            "precioCompra": "1500.00",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.json().get("error"))
+
+    def test_editar_venta_payload_correcto_persiste_y_retorna_200(self):
+        response = self._patch_venta({
+            "ventaId": str(self.venta.id),
+            "fechaVenta": "2025-01-15T11:00:00",
+            "cantidad": "8.00",
+            "precioVenta": "3500.00",
+            "observaciones": "editada",
+            "centroAcopioId": str(self.centro.id),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json().get("error"))
+        self.venta.refresh_from_db()
+        self.assertEqual(self.venta.cantidad, 8)
+        self.assertEqual(self.venta.precio_venta, 3500)
+
+    def test_editar_venta_sin_ventaId_retorna_400_no_200(self):
+        response = self._patch_venta({
+            "id": str(self.venta.id),
+            "fechaVenta": "2025-01-15T11:00:00",
+            "cantidad": "8.00",
+            "precioVenta": "3500.00",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.json().get("error"))
+        self.venta.refresh_from_db()
+        self.assertEqual(self.venta.cantidad, 5)
