@@ -944,7 +944,7 @@
 
     function buildExportQuery(base) {
         const params = new URLSearchParams();
-        const materialIdFiltro = document.getElementById("inv-hfiltro-material")?.value;
+        const materialIdFiltro = _q("inv-hfiltro-material")?.value;
         const materialIdEfectivo = isWorkspaceHistorial && currentMaterialId
             ? String(currentMaterialId)
             : materialIdFiltro;
@@ -953,16 +953,16 @@
                 ? currentMaterial.nombre
                 : _lookupMaterialNombreByInventarioId(materialIdEfectivo))
             : "";
-        const categoria = document.getElementById("inv-hfiltro-categoria")?.value;
-        const tipoMaterial = document.getElementById("inv-hfiltro-tipo-material")?.value;
-        const tipo = document.getElementById("inv-hfiltro-tipo")?.value;
-        const desde = document.getElementById("inv-hfiltro-desde")?.value;
-        const hasta = document.getElementById("inv-hfiltro-hasta")?.value;
-        const centro = document.getElementById("inv-hfiltro-centro")?.value;
-        const cantidadMin = document.getElementById("inv-hfiltro-cantidad-min")?.value;
-        const cantidadMax = document.getElementById("inv-hfiltro-cantidad-max")?.value;
-        const montoMin = document.getElementById("inv-hfiltro-monto-min")?.value;
-        const montoMax = document.getElementById("inv-hfiltro-monto-max")?.value;
+        const categoria = _q("inv-hfiltro-categoria")?.value;
+        const tipoMaterial = _q("inv-hfiltro-tipo-material")?.value;
+        const tipo = _q("inv-hfiltro-tipo")?.value;
+        const desde = _q("inv-hfiltro-desde")?.value;
+        const hasta = _q("inv-hfiltro-hasta")?.value;
+        const centro = _q("inv-hfiltro-centro")?.value;
+        const cantidadMin = _q("inv-hfiltro-cantidad-min")?.value;
+        const cantidadMax = _q("inv-hfiltro-cantidad-max")?.value;
+        const montoMin = _q("inv-hfiltro-monto-min")?.value;
+        const montoMax = _q("inv-hfiltro-monto-max")?.value;
         if (materialNombre) params.append("material", materialNombre);
         if (categoria) params.append("categoria", categoria);
         if (tipoMaterial) params.append("tipo", tipoMaterial);
@@ -1007,20 +1007,20 @@
     // FILTRO HISTORIAL GENERAL (landing)
     // ============================================================
     function getCurrentHistorialRows() {
-        const filtroMaterialId = document.getElementById("inv-hfiltro-material")?.value || "";
+        const filtroMaterialId = _q("inv-hfiltro-material")?.value || "";
         const effectiveMaterialId = isWorkspaceHistorial && currentMaterialId
             ? String(currentMaterialId)
             : filtroMaterialId;
-        const categoria = document.getElementById("inv-hfiltro-categoria")?.value || "";
-        const tipoMaterial = document.getElementById("inv-hfiltro-tipo-material")?.value || "";
-        const tipo = document.getElementById("inv-hfiltro-tipo")?.value || "";
-        const desde = document.getElementById("inv-hfiltro-desde")?.value;
-        const hasta = document.getElementById("inv-hfiltro-hasta")?.value;
-        const centro = document.getElementById("inv-hfiltro-centro")?.value || "";
-        const cantidadMin = parseFloat(document.getElementById("inv-hfiltro-cantidad-min")?.value);
-        const cantidadMax = parseFloat(document.getElementById("inv-hfiltro-cantidad-max")?.value);
-        const montoMin = parseFloat(document.getElementById("inv-hfiltro-monto-min")?.value);
-        const montoMax = parseFloat(document.getElementById("inv-hfiltro-monto-max")?.value);
+        const categoria = _q("inv-hfiltro-categoria")?.value || "";
+        const tipoMaterial = _q("inv-hfiltro-tipo-material")?.value || "";
+        const tipo = _q("inv-hfiltro-tipo")?.value || "";
+        const desde = _q("inv-hfiltro-desde")?.value;
+        const hasta = _q("inv-hfiltro-hasta")?.value;
+        const centro = _q("inv-hfiltro-centro")?.value || "";
+        const cantidadMin = parseFloat(_q("inv-hfiltro-cantidad-min")?.value);
+        const cantidadMax = parseFloat(_q("inv-hfiltro-cantidad-max")?.value);
+        const montoMin = parseFloat(_q("inv-hfiltro-monto-min")?.value);
+        const montoMax = parseFloat(_q("inv-hfiltro-monto-max")?.value);
         const desdeD = desde ? new Date(desde + "T00:00:00") : null;
         const hastaD = hasta ? new Date(hasta + "T23:59:59") : null;
 
@@ -1072,8 +1072,20 @@
         return rows;
     }
 
+    function _q(id) {
+        const scope = isWorkspaceHistorial ? "#tab-historial" : "#ovtab-historial";
+        return document.querySelector(`${scope} #${id}`);
+    }
+
+    function _wrapWithScope(handler) {
+        return (e) => {
+            isWorkspaceHistorial = !!e.currentTarget.closest("#tab-historial");
+            handler();
+        };
+    }
+
     function _poblarCentrosAcopio() {
-        const sel = document.getElementById("inv-hfiltro-centro");
+        const sel = _q("inv-hfiltro-centro");
         if (!sel) return;
         const nombres = new Set();
         ventasDB.forEach((v) => {
@@ -1097,8 +1109,8 @@
     }
 
     function _toggleCentroAcopioLock() {
-        const tipo = document.getElementById("inv-hfiltro-tipo")?.value;
-        const sel = document.getElementById("inv-hfiltro-centro");
+        const tipo = _q("inv-hfiltro-tipo")?.value;
+        const sel = _q("inv-hfiltro-centro");
         if (!sel) return;
         const enabled = tipo === "venta";
         sel.disabled = !enabled;
@@ -1106,7 +1118,7 @@
     }
 
     function renderPager(total, current) {
-        const pager = document.getElementById("inv-hpager");
+        const pager = _q("inv-hpager");
         if (!pager) return;
         if (total === 0) {
             pager.innerHTML = "";
@@ -1153,9 +1165,9 @@
     }
 
     function renderHistorialGeneralPaged() {
-        const tbody = document.getElementById("inv-tablasHistorialBody");
-        const footer = document.getElementById("inv-hfooter-count");
-        const badge = document.getElementById("inv-hbadge-count");
+        const tbody = _q("inv-tablasHistorialBody");
+        const footer = _q("inv-hfooter-count");
+        const badge = _q("inv-hbadge-count");
         if (!tbody) return;
         const rows = getCurrentHistorialRows();
         const total = rows.length;
@@ -1202,7 +1214,7 @@
             "inv-hfiltro-monto-min",
             "inv-hfiltro-monto-max",
         ].forEach((id) => {
-            const el = document.getElementById(id);
+            const el = _q(id);
             if (el) el.value = "";
         });
         _toggleCentroAcopioLock();
@@ -1525,15 +1537,28 @@
             detVentaFooter.prepend(btn);
         }
 
-        // Exportar historial (mismos botones reusados por landing y workspace)
-        document.getElementById("inv-btn-export-historial-excel")?.addEventListener("click", exportarHistorialExcel);
-        document.getElementById("inv-btn-export-historial-pdf")?.addEventListener("click", exportarHistorialPdf);
+        // Exportar historial (mismos botones reusados por landing y workspace;
+        // se bindea a TODOS los elementos con el mismo ID vía querySelectorAll
+        // porque landing y workspace comparten los mismos IDs y se debe
+        // respetar el scope del botón que disparó el evento).
+        document.querySelectorAll('[id="inv-btn-export-historial-excel"]').forEach((el) => {
+            el.addEventListener("click", _wrapWithScope(exportarHistorialExcel));
+        });
+        document.querySelectorAll('[id="inv-btn-export-historial-pdf"]').forEach((el) => {
+            el.addEventListener("click", _wrapWithScope(exportarHistorialPdf));
+        });
 
         // Filtros historial
-        document.getElementById("inv-hfiltro-aplicar")?.addEventListener("click", aplicarFiltrosHistorial);
-        document.getElementById("inv-hfiltro-limpiar")?.addEventListener("click", limpiarFiltrosHistorial);
+        document.querySelectorAll('[id="inv-hfiltro-aplicar"]').forEach((el) => {
+            el.addEventListener("click", _wrapWithScope(aplicarFiltrosHistorial));
+        });
+        document.querySelectorAll('[id="inv-hfiltro-limpiar"]').forEach((el) => {
+            el.addEventListener("click", _wrapWithScope(limpiarFiltrosHistorial));
+        });
         // Centro de acopio se habilita sólo si tipo=venta
-        document.getElementById("inv-hfiltro-tipo")?.addEventListener("change", _toggleCentroAcopioLock);
+        document.querySelectorAll('[id="inv-hfiltro-tipo"]').forEach((el) => {
+            el.addEventListener("change", _wrapWithScope(_toggleCentroAcopioLock));
+        });
 
         // Chart ovtab
         document.getElementById("inv-flujo-aplicar")?.addEventListener("click", renderOvtabChart);

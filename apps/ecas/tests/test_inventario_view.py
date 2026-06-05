@@ -487,3 +487,29 @@ class TestHistorialWorkspace(TestCase):
         # buildExportQuery debe preferir currentMaterial sobre el filtro landing
         self.assertIn("materialIdEfectivo", js)
 
+    def test_js_funciones_historial_son_scope_aware(self):
+        """Las funciones que leen/escriben del historial deben usar el helper
+        _q() (scope-aware) en lugar de getElementById para soportar que el
+        landing y el workspace compartan los mismos IDs en el DOM.
+        Esto evita el bug 'workspace muestra 0 registros'."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # Helper _q debe existir
+        self.assertIn("function _q(id)", js)
+        # Las funciones del historial deben llamar a _q (no getElementById)
+        # Verificamos por función específica
+        for fn_name in ("renderHistorialGeneralPaged", "renderPager",
+                        "getCurrentHistorialRows", "buildExportQuery",
+                        "limpiarFiltrosHistorial", "_poblarCentrosAcopio",
+                        "_toggleCentroAcopioLock"):
+            self.assertIn(f"function {fn_name}", js,
+                          f"función {fn_name} no encontrada")
+        # Wrapper de scope para listeners
+        self.assertIn("function _wrapWithScope", js)
+        # Listeners usan querySelectorAll (no getElementById) para soportar IDs duplicados
+        self.assertIn("querySelectorAll('[id=\"inv-hfiltro-aplicar\"]')", js)
+        self.assertIn("querySelectorAll('[id=\"inv-btn-export-historial-excel\"]')", js)
+
