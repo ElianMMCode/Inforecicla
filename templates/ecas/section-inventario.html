@@ -278,7 +278,7 @@ globalThis.getCSRFToken = function () {
                                  data-categoria="{{ inv.material.categoria.nombre|default_if_none:''|slugify }}"
                                  data-tipo="{{ inv.material.tipo.nombre|default_if_none:''|slugify }}"
                                  data-estado="{% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}critico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}alerta{% else %}ok{% endif %}"
-                                 data-ocupacion="{{ inv.ocupacion_actual }}">
+                                 data-ocupacion="{{ inv.ocupacion_actual|floatformat:0 }}">
                                 <div class="card h-100 shadow-sm border-0 position-relative inv-tarjeta" role="button" tabindex="0">
                                     <div class="position-absolute top-0 start-0 m-2">
                                         <span class="badge rounded-pill bg-dark opacity-75">
@@ -305,11 +305,11 @@ globalThis.getCSRFToken = function () {
                                             <div class="flex-grow-1">
                                                 <div class="d-flex justify-content-between small text-muted mb-1">
                                                     <span>{{ inv.stock_actual|floatformat:0 }} / {{ inv.capacidad_maxima|floatformat:0 }} {{ inv.unidad_medida }}</span>
-                                                    <span>{{ inv.ocupacion_actual }}%</span>
+                                                    <span>{{ inv.ocupacion_actual|floatformat:0 }}%</span>
                                                 </div>
                                                 <div class="progress inv-progress-thin">
                                                     <div class="progress-bar {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}bg-danger{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}bg-warning{% else %}bg-success{% endif %}"
-                                                         style="width: {{ inv.ocupacion_actual }}%"></div>
+                                                         style="width: {{ inv.ocupacion_actual|floatformat:0 }}%; min-width: 2px;"></div>
                                                 </div>
                                             </div>
                                         </div>
