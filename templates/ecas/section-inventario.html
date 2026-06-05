@@ -87,16 +87,19 @@ globalThis.getCSRFToken = function () {
                 <div class="card border-start border-5 border-success shadow-sm h-100 p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="flex-grow-1">
-                            <span class="fw-bold text-success small">
-                                <i class="bi bi-bar-chart-line me-1"></i>Físico
-                            </span>
-                            <div class="progress mt-1" style="height: 18px;">
-                                <div class="progress-bar bg-success" style="width: {{ ocupacion_porcentaje }}%">
-                                    <span class="fw-bold text-dark">{{ ocupacion_porcentaje }}%</span>
-                                </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-success small">
+                                    <i class="bi bi-bar-chart-line me-1"></i>Físico
+                                </span>
+                                <span class="fw-bold small {% if ocupacion_porcentaje > 0 %}text-success{% else %}text-muted{% endif %}">
+                                    {{ ocupacion_porcentaje }}%
+                                </span>
                             </div>
-                            <small class="text-muted" style="font-size: 0.7rem;">
-                                Cap. Máx: {{ total_capacidad|floatformat:0 }}
+                            <div class="progress mt-1" style="height: 14px;">
+                                <div class="progress-bar bg-success" style="width: {{ ocupacion_porcentaje }}%; min-width: 2px;"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">
+                                Cap. Máx: {{ total_capacidad|floatformat:0 }}{% if total_capacidad == 0 %} <span class="text-warning">(sin inventario)</span>{% endif %}
                             </small>
                         </div>
                     </div>
