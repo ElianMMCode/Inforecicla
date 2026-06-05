@@ -1070,7 +1070,7 @@
         const start = (historialPage - 1) * PAGE_SIZE;
         const slice = rows.slice(start, start + PAGE_SIZE);
         if (slice.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Sin movimientos con los filtros aplicados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Sin movimientos con los filtros aplicados</td></tr>';
         } else {
             tbody.innerHTML = slice.map((r) => filaHistorial(r, r._tipo)).join("");
         }
