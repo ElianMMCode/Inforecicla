@@ -15,6 +15,7 @@ JSON_CONTENT_TYPE = "application/json"
 ERROR_INSTANCIA_NO_ENCONTRADA = "Instancia no encontrada."
 ERROR_EVENTO_NO_ENCONTRADO = "Evento no encontrado."
 ERROR_NO_ES_INSTANCIA = "No es una instancia."
+MAX_TITULO_EVENTO = 100
 
 
 def _build_event_payload(payload, extra=None):
@@ -168,6 +169,26 @@ def _error_json(mensaje, status):
     return JsonResponse({"success": False, "error": mensaje}, status=status)
 
 
+def _validar_titulo_evento(titulo):
+    titulo_normalizado = (titulo or "").strip()
+    if not titulo_normalizado:
+        return None, _error_json("El título es obligatorio.", 400)
+    if len(titulo_normalizado) > MAX_TITULO_EVENTO:
+        return None, _error_json(
+            f"El título no puede superar {MAX_TITULO_EVENTO} caracteres.", 400
+        )
+    return titulo_normalizado, None
+
+
+def _validar_rango_fechas(fecha_inicio_dt, fecha_fin_dt):
+    if fecha_fin_dt <= fecha_inicio_dt:
+        return _error_json(
+            "La fecha de fin debe ser posterior a la de inicio.",
+            400,
+        )
+    return None
+
+
 def _parse_fecha_aware(fecha_texto, formato):
     from django.utils import timezone
 
@@ -256,7 +277,8 @@ def _sincronizar_instancias_repeticion(
     fecha_actual_inicio = fecha_inicio_dt
     fecha_actual_fin = fecha_fin_dt
     rep_numero = 1
-    while fecha_actual_inicio <= rep_end:
+    rep_end_date = rep_end.date()
+    while fecha_actual_inicio.date() <= rep_end_date:
         _crear_instancia_repeticion(
             evento=evento,
             punto_eca_id=punto_eca_id,
@@ -325,7 +347,9 @@ def _aplicar_fecha_fin_repeticion(evento, fecha_fin_repeticion, tipo_repeticion)
     if not fecha_fin_repeticion or tipo_repeticion == "NINGUNA":
         evento.fecha_fin_repeticion = None
     else:
-        evento.fecha_fin_repeticion = fecha_fin_repeticion
+        evento.fecha_fin_repeticion = _parse_fecha_aware(
+            fecha_fin_repeticion, "%Y-%m-%d"
+        )
 
 
 def _recrear_instancias_evento(evento, tipo_repeticion, fecha_fin_repeticion, observaciones):
@@ -443,7 +467,9 @@ def crear_evento_venta(request):
         data = _parse_request_data(request)
         material_id = data.get("materialId")
         centro_acopio_id = data.get("centroAcopioId")
-        titulo = data.get("titulo")
+        titulo, error_response = _validar_titulo_evento(data.get("titulo"))
+        if error_response:
+            return error_response
         descripcion = data.get("descripcion", "")
         fecha_inicio = data.get("fechaInicio")
         hora_inicio = data.get("horaInicio")
@@ -459,7 +485,7 @@ def crear_evento_venta(request):
         usuario_id = request.user.id
         punto_eca_id = punto_eca.id
 
-        if not (material_id and titulo and fecha_inicio and hora_inicio and hora_fin):
+        if not (material_id and fecha_inicio and hora_inicio and hora_fin):
             return JsonResponse(
                 {"success": False, "error": "Faltan campos obligatorios."}, status=400
             )
@@ -470,6 +496,10 @@ def crear_evento_venta(request):
         fecha_fin_dt = _parse_fecha_aware(
             f"{fecha_inicio} {hora_fin}", "%Y-%m-%d %H:%M"
         )
+
+        error_response = _validar_rango_fechas(fecha_inicio_dt, fecha_fin_dt)
+        if error_response:
+            return error_response
 
         evento = Evento.objects.create(
             material_id=material_id,
@@ -482,10 +512,13 @@ def crear_evento_venta(request):
             fecha_fin=fecha_fin_dt,
             color=color,
             tipo_repeticion=tipo_repeticion,
-            fecha_fin_repeticion=fecha_fin_repeticion if fecha_fin_repeticion else None,
+            fecha_fin_repeticion=
+            _parse_fecha_aware(fecha_fin_repeticion, "%Y-%m-%d")
+            if fecha_fin_repeticion
+            else None,
         )
 
-        _crear_instancias_repeticion(
+        _sincronizar_instancias_repeticion(
             evento=evento,
             punto_eca_id=punto_eca_id,
             usuario_id=usuario_id,
@@ -548,6 +581,11 @@ def editar_evento_venta(request):
             evento.fecha_fin = _parse_fecha_aware(
                 f"{fecha_inicio} {hora_fin}", "%Y-%m-%d %H:%M"
             )
+
+        error_response = _validar_rango_fechas(evento.fecha_inicio, evento.fecha_fin)
+        if error_response:
+            return error_response
+
         evento.save()
         tipo_repeticion = data.get("tipoRepeticion", "NINGUNA")
         fecha_fin_repeticion = data.get("fechaFinRepeticion", None)

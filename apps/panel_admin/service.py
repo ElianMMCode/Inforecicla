@@ -356,7 +356,8 @@ class AdminCatalogService:
             punto.direccion = (data.get("direccion") or "").strip()
             punto.email = (data.get("email") or "").strip()
             punto.celular = (data.get("celular") or "").strip()
-            punto.telefono_punto = (data.get("telefono_punto") or "").strip()
+            telefono_punto = (data.get("telefono_punto") or "").strip()
+            punto.telefono_punto = telefono_punto or None
             punto.horario_atencion = (data.get("horario_atencion") or "").strip()
             punto.descripcion = (data.get("descripcion") or "").strip()
             punto.sitio_web = (data.get("sitio_web") or "").strip()
@@ -612,7 +613,8 @@ class AdminPuntoService:
             punto.direccion = data.get("direccionPunto", punto.direccion)
             punto.celular = data.get("celularPunto", punto.celular)
             punto.email = data.get("emailPunto", punto.email)
-            punto.telefono_punto = data.get("telefonoPunto", punto.telefono_punto)
+            telefono_punto = data.get("telefonoPunto", punto.telefono_punto)
+            punto.telefono_punto = telefono_punto.strip() if isinstance(telefono_punto, str) and telefono_punto.strip() else None
             punto.sitio_web = data.get("sitioWebPunto", punto.sitio_web)
             punto.descripcion = data.get("descripcionPunto", punto.descripcion)
             punto.logo_url_punto = data.get("logoUrlPunto", punto.logo_url_punto)
@@ -2205,7 +2207,7 @@ class AdminVentaInventarioService:
                 direccion=direccion or "",
                 celular=data.get("celular") or "",
                 email=data.get("email") or "",
-                telefono_punto=data.get("telefono") or "",
+                telefono_punto=(data.get("telefono") or "").strip() or None,
                 sitio_web=data.get("sitio_web") or "",
                 descripcion=data.get("descripcion") or "",
                 logo_url_punto=data.get("logo_url") or "",

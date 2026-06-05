@@ -8,29 +8,10 @@
     <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        nav {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            max-height: 100vh;
-        }
-
-        .nav-link {
-            transition: all 0.3s ease;
-            margin-bottom: 0.5rem;
-        }
-
-        .nav-link:hover {
-            background-color: rgba(255,255,255,0.15) !important;
-            transform: translateX(5px);
-        }
-
-        .nav-link.active {
-            background-color: rgba(255,255,255,0.25) !important;
         }
 
         .card {
@@ -40,10 +21,6 @@
         .card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
-        }
-
-        header {
-            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
         }
 
         .form-control:focus {
@@ -59,10 +36,6 @@
             color: #145c3a !important;
         }
 
-        main {
-            background-color: #f8f9fa;
-            min-height: 100vh;
-        }
         /* Chat bubble styles */
         .chat-bubble {
             padding: 0.65rem 1rem;
@@ -118,11 +91,32 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" integrity="sha256-Tobw4i5HcbW4qsJMYTxmGAameLGvooTQPPatA9PiGgo=" crossorigin="anonymous"></script>
 </head>
 <body class="bg-light">
-<div class="d-flex">
-    {% include 'users/_sidebar.html' %}
+<div class="d-flex min-vh-100">
+    <!-- Sidebar desktop -->
+    <nav class="sidebar sidebar-nav bg-success text-white p-3 d-none d-md-flex flex-column">
+        {% include 'users/_sidebar.html' %}
+    </nav>
+    <!-- Offcanvas Sidebar Mobile -->
+    <div class="offcanvas offcanvas-start sidebar-offcanvas bg-success text-white" tabindex="-1" id="sidebarOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">InfoRecicla</h5>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            {% include 'users/_sidebar.html' %}
+        </div>
+    </div>
 
     <!-- Main Content -->
-    <main class="flex-grow-1" style="margin-left: 280px;">
+    <div class="flex-grow-1 d-flex flex-column" style="min-width:0;">
+        <!-- Topbar Mobile -->
+        <div class="d-md-none d-flex align-items-center bg-success px-3 py-2 shadow position-sticky top-0" style="z-index:1045;">
+            <button class="btn btn-link text-white px-0 me-3" style="font-size:1.8rem;" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Abrir menú">
+                <i class="bi bi-list"></i>
+            </button>
+            <img src="{% static 'img/logo.png' %}" alt="Logo" width="40" height="40" class="rounded me-2"/>
+            <span class="fw-semibold">InfoRecicla</span>
+        </div>
         <!-- Header -->
         <header class="bg-white border-bottom shadow-sm sticky-top">
             <div class="container-fluid py-3 px-4">
@@ -133,6 +127,19 @@
                     </div>
                     <div class="col-auto">
                         <div class="d-flex align-items-center gap-3">
+                            <div class="d-none d-md-flex align-items-center gap-2 pe-3 border-end">
+                                <div class="rounded-circle bg-success-subtle d-flex align-items-center justify-content-center" style="width:42px;height:42px;">
+                                    <i class="bi bi-person-fill text-success fs-5"></i>
+                                </div>
+                                <div class="lh-sm">
+                                    <div class="fw-semibold small">{{ user.get_short_name }}</div>
+                                    <small class="text-muted d-flex align-items-center gap-1" style="font-size:.72rem;">
+                                        {{ user.get_full_name }}
+                                        <span class="badge bg-success bg-opacity-10 text-light px-2 py-1 rounded-pill">Ciudadano</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success px-2 py-0 rounded-pill">Ciudadano</span>
+                                    </small>
+                                </div>
+                            </div>
                             <span class="badge bg-success bg-opacity-10 text-light px-3 py-2 rounded-pill">
                                 <i class="bi bi-geo-alt-fill me-1"></i>{{ user.ciudad|default:"Bogotá" }}
                             </span>
@@ -184,483 +191,247 @@
                     Completa tu perfil para acceder a todas las funciones de InfoRecicla.
                 </div>
                 <div>
-                    <button type="button" class="btn btn-sm btn-success px-3 py-2" data-bs-toggle="modal" data-bs-target="#completarPerfilModal">Completar ahora</button>
-                    <a id="recordarmeAlertLink" data-recordarme="1" href="/perfil/" class="btn btn-sm btn-outline-secondary ms-2">Recordarme después</a>
+                    <a id="recordarmeAlertLink" data-recordarme="1" href="/perfil/" class="btn btn-sm btn-outline-secondary">Recordarme después</a>
                 </div>
             </div>
             {% endif %}
 
-            {% if perfil_incompleto or request.GET.completar == '1' %}
-            <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                function getCookie(name) {
-                    const cookie = document.cookie.split('; ').find((row) => row.startsWith(name + '='));
-                    return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
-                }
-
-                const modalPersistKey = 'completarPerfilDismissed_{{ user.pk }}';
-
-                function storageGet(key) {
-                    try {
-                        return window.localStorage.getItem(key) || window.sessionStorage.getItem(key) || '';
-                    } catch (e) {
-                        return '';
-                    }
-                }
-
-                function storageSet(key, value) {
-                    try {
-                        window.localStorage.setItem(key, value);
-                    } catch (e) {
-                        try { window.sessionStorage.setItem(key, value); } catch (err) {}
-                    }
-                }
-
-                const currentTipoDocumento = '{{ user.tipo_documento|default:"" }}';
-                const currentNumeroDocumento = '{{ user.numero_documento|default:"" }}';
-
-                const form = document.getElementById('completarPerfilForm');
-                if (!form) return;
-
-                const DOC_RULES = {
-                    'CC': { min: 6, max: 10 },
-                    'CE': { min: 6, max: 12 },
-                    'PA': { min: 6, max: 9 },
-                    'NIT': { min: 6, max: 15 },
-                    'TI': { min: 6, max: 11 },
-                    '': { min: 3, max: 32 }
-                };
-
-                function getDocRules(tipo) {
-                    return DOC_RULES[tipo] || DOC_RULES[''];
-                }
-
-                const modalNumeroEl = document.getElementById('modal_numeroDocumento');
-                const modalTipoEl = document.getElementById('modal_tipoDocumento');
-                let modalDocDisponible = null;
-                let modalDocVerificado = '';
-
-                function mostrarSwalDocumentoEnUso(mensaje) {
-                    try {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Documento en uso',
-                            text: mensaje || 'Ya existe un usuario con ese número de documento',
-                            confirmButtonColor: '#145c3a'
-                        });
-                    } catch (e) {
-                        console.warn('Swal unavailable', e);
-                    }
-                }
-
-                function verificarDocumentoModal(valor) {
-                    const val = (valor || '').trim();
-                    if (!val) {
-                        modalDocDisponible = null;
-                        modalDocVerificado = '';
-                        return Promise.resolve(true);
-                    }
-
-                    if (modalDocVerificado === val && modalDocDisponible !== null) {
-                        return Promise.resolve(modalDocDisponible);
-                    }
-
-                    return fetch('/perfil/check-documento/', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': getCookie('csrftoken'),
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: 'numeroDocumento=' + encodeURIComponent(val)
-                    }).then(r => r.json()).then(data => {
-                        modalDocVerificado = val;
-                        modalDocDisponible = !!data.available;
-                        if (data.available) {
-                            return true;
-                        }
-
-                        const mensaje = data.message || 'Documento en uso';
-                        showErrorFor('numeroDocumento', mensaje);
-                        mostrarSwalDocumentoEnUso(mensaje);
-                        return false;
-                    }).catch(err => {
-                        console.error('Error comprobando documento', err);
-                        modalDocDisponible = null;
-                        modalDocVerificado = '';
-                        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo verificar el documento', confirmButtonColor: '#145c3a'});
-                        return false;
-                    });
-                }
-
-                function applyModalMax() {
-                    if (!modalNumeroEl) return;
-                    const tipo = (modalTipoEl && modalTipoEl.value) ? modalTipoEl.value : '';
-                    const rules = getDocRules(tipo);
-                    modalNumeroEl.value = modalNumeroEl.value.replace(/\D/g, '').substring(0, rules.max);
-                    modalNumeroEl.maxLength = rules.max;
-                    modalNumeroEl.setAttribute('inputmode', 'numeric');
-                    modalNumeroEl.setAttribute('pattern', String.raw`\d*`);
-                }
-
-                if (modalNumeroEl) {
-                    modalNumeroEl.addEventListener('input', function() {
-                        const tipo = (modalTipoEl && modalTipoEl.value) ? modalTipoEl.value : '';
-                        const rules = getDocRules(tipo);
-                        this.value = this.value.replace(/\D/g, '').substring(0, rules.max);
-                        modalDocDisponible = null;
-                        modalDocVerificado = '';
-                    });
-
-                    modalNumeroEl.addEventListener('blur', function() {
-                        const val = this.value.trim();
-                        if (!val) return;
-                        verificarDocumentoModal(val);
-                    });
-                }
-
-                if (modalTipoEl) {
-                    modalTipoEl.addEventListener('change', applyModalMax);
-                    applyModalMax();
-                }
-
-                const submitBtn = document.getElementById('modalSubmitBtn');
-                const modalEl = document.getElementById('completarPerfilModal');
-
-                if (modalEl) {
-                    modalEl.addEventListener('hide.bs.modal', function() {
-                        storageSet(modalPersistKey, '1');
-                        try {
-                            const url = new URL(window.location);
-                            if (url.searchParams.has('completar')) {
-                                url.searchParams.delete('completar');
-                                history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-                            }
-                        } catch (e) {}
-                    });
-                }
-
-                function clearFeedback() {
-                    ['tipoDocumento','numeroDocumento','localidad','fechaNacimiento'].forEach(id => {
-                        const fb = document.getElementById('modal_' + id + '_feedback');
-                        const el = document.getElementById('modal_' + id);
-                        if (fb) fb.textContent = '';
-                        if (el) el.classList.remove('is-invalid');
-                    });
-                }
-
-                function showErrorFor(id, msg) {
-                    const fb = document.getElementById('modal_' + id + '_feedback');
-                    const el = document.getElementById('modal_' + id);
-                    if (fb) fb.textContent = msg;
-                    if (el) el.classList.add('is-invalid');
-                }
-
-                async function handleModalSubmitResponse(res) {
-                    let data = null;
-                    try { data = await res.json(); } catch (e) { data = null; }
-
-                    if (res.ok && data && data.ok) {
-                        const text = data.message || 'Perfil actualizado correctamente';
-                        storageSet(modalPersistKey, '1');
-                        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                        modal.hide();
-                        Swal.fire({icon: 'success', title: 'Guardado', text: text, confirmButtonColor: '#145c3a'}).then(() => location.reload());
-                        return;
-                    }
-
-                    if (data && data.errors) {
-                        for (const [field, msgs] of Object.entries(data.errors)) {
-                            showErrorFor(field, Array.isArray(msgs) ? msgs.join(' ') : String(msgs));
-                        }
-                        return;
-                    }
-
-                    const msg = data && data.message ? data.message : (await res.text());
-                    Swal.fire({icon: 'error', title: 'Error', html: msg, confirmButtonColor: '#145c3a'});
-                }
-
-                async function submitCompletarPerfilForm() {
-                    submitBtn.disabled = true;
-                    try {
-                        const fd = new FormData(form);
-                        const res = await fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': getCookie('csrftoken'),
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: fd
-                        });
-                        await handleModalSubmitResponse(res);
-                    } catch (err) {
-                        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo conectarse al servidor', confirmButtonColor: '#145c3a'});
-                        console.error(err);
-                    } finally {
-                        submitBtn.disabled = false;
-                    }
-                }
-
-                form.addEventListener('submit', async function(ev) {
-                    ev.preventDefault();
-                    clearFeedback();
-
-                    const numero = (document.getElementById('modal_numeroDocumento') || {}).value || '';
-                    const tipo = (document.getElementById('modal_tipoDocumento') || {}).value || '';
-                    const fecha = (document.getElementById('modal_fechaNacimiento') || {}).value || '';
-                    const effectiveNumero = numero || currentNumeroDocumento;
-                    const effectiveTipo = tipo || currentTipoDocumento;
-
-                    let hasError = false;
-
-                    if (numero) {
-                        const tipoForValid = effectiveTipo || '';
-                        const rules = getDocRules(tipoForValid);
-                        if (numero.length < rules.min || numero.length > rules.max) {
-                            showErrorFor('numeroDocumento', `Número de documento inválido (solo dígitos, entre ${rules.min} y ${rules.max} caracteres)`);
-                            hasError = true;
-                        }
-                    }
-
-                    if (tipo && !effectiveNumero) {
-                        showErrorFor('numeroDocumento', 'Debes ingresar el número de documento cuando seleccionas un tipo');
-                        hasError = true;
-                    }
-                    if (numero && !effectiveTipo) {
-                        showErrorFor('tipoDocumento', 'Debes seleccionar el tipo de documento cuando ingresas un número');
-                        hasError = true;
-                    }
-
-                    if (fecha) {
-                        const d = new Date(fecha);
-                        const today = new Date();
-                        if (d > today) {
-                            showErrorFor('fechaNacimiento', 'La fecha no puede ser futura');
-                            hasError = true;
-                        } else {
-                            const age = new Date(today - d).getUTCFullYear() - 1970;
-                            if (age < 14) {
-                                showErrorFor('fechaNacimiento', 'Debes tener al menos 14 años');
-                                hasError = true;
-                            }
-                        }
-                    }
-
-                    if (hasError) return;
-
-                    if (numero) {
-                        const isAvailable = await verificarDocumentoModal(numero);
-                        if (!isAvailable) return;
-                    }
-
-                    await submitCompletarPerfilForm();
-                });
-
-                const openOnIncomplete = {% if perfil_incompleto and not request.GET.skip_modal == '1' %}true{% else %}false{% endif %};
-                if (openOnIncomplete) {
-                    try {
-                        if (!storageGet(modalPersistKey)) {
-                            if (modalEl) {
-                                new bootstrap.Modal(modalEl).show();
-                                storageSet(modalPersistKey, '1');
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('sessionStorage unavailable for modal show control', e);
-                    }
-                }
-
-                document.addEventListener('click', function(ev) {
-                    try {
-                        const a = ev.target.closest && ev.target.closest('a[data-recordarme]');
-                        if (!a) return;
-                        ev.preventDefault();
-                        storageSet(modalPersistKey, '1');
-
-                        if (modalEl) {
-                            const modalInst = bootstrap.Modal.getInstance(modalEl);
-                            if (modalInst) modalInst.hide();
-                        }
-
-                        const alerta = a.closest('.alert');
-                        if (alerta) {
-                            try { bootstrap.Alert.getOrCreateInstance(alerta).close(); } catch (e) { alerta.remove(); }
-                        }
-
-                        try {
-                            const u = new URL(window.location);
-                            u.searchParams.delete('completar');
-                            history.replaceState({}, document.title, u.pathname + u.search + u.hash);
-                        } catch (e) {}
-                    } catch (e) {
-                        console.warn('recordarme handler error', e);
-                    }
-                });
-            });
-            </script>
-
-                        {% include 'users/_completar_perfil_modal.html' %}
-            {% endif %}
-
             <div class="tab-content">
                 <div class="tab-pane fade {% if tab_activo == 'datos' or not tab_activo %}show active{% endif %}" id="datos">
-                    <div class="row g-4">
-                        <!-- Tarjeta de resumen -->
-                        <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold text-success mb-4">
-                                        <i class="bi bi-person-lines-fill me-2"></i>
-                                        Información Personal
-                                    </h5>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-person-badge me-1 text-success"></i>NOMBRES
+                    <div class="shadow-sm rounded-4 bg-white overflow-hidden">
+                        <ul class="nav nav-tabs nav-fill border-bottom bg-transparent px-3 pt-3" id="datosSubTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active fw-semibold text-dark bg-white border border-bottom-0 rounded-top-3 px-3 py-2 mx-1"
+                                   id="datosPersonales-tab" data-bs-toggle="tab" href="#datosPersonalesPanel"
+                                   role="tab" aria-controls="datosPersonalesPanel" aria-selected="true">
+                                    <span class="bg-success p-2 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-person-fill text-white"></i>
+                                    </span>
+                                    <span class="d-inline-flex flex-column text-start">
+                                        <span class="d-block">Datos Personales</span>
+                                        <small class="text-muted fw-normal">Información y edición del perfil</small>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold text-dark bg-light border border-bottom-0 rounded-top-3 px-3 py-2 mx-1"
+                                   id="configuracion-tab" data-bs-toggle="tab" href="#configuracionPanel"
+                                   role="tab" aria-controls="configuracionPanel" aria-selected="false">
+                                    <span class="bg-secondary p-2 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="bi bi-gear text-white"></i>
+                                    </span>
+                                    <span class="d-inline-flex flex-column text-start">
+                                        <span class="d-block">Configuración</span>
+                                        <small class="text-muted fw-normal">Preferencias y contraseña</small>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="tab-content bg-light" id="datosSubTabsContent">
+                            <div class="tab-pane fade show active" id="datosPersonalesPanel" role="tabpanel" aria-labelledby="datosPersonales-tab">
+                                <div class="d-grid gap-4 p-4">
+                                    <!-- Tarjeta de resumen -->
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <h5 class="fw-bold text-success mb-4">
+                                                <i class="bi bi-person-lines-fill me-2"></i>
+                                                Información Personal
+                                            </h5>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-person-badge me-1 text-success"></i>NOMBRES
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.nombres }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-person me-1 text-success"></i>APELLIDOS
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.apellidos }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-envelope me-1 text-success"></i>CORREO ELECTRÓNICO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.email }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-telephone me-1 text-success"></i>CELULAR
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.celular|default:"No registrado" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-geo-alt me-1 text-success"></i>CIUDAD
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.ciudad|default:"Bogotá" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-map me-1 text-success"></i>LOCALIDAD
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.localidad.nombre|default:"No registrada" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-card-text me-1 text-success"></i>TIPO DE DOCUMENTO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.get_tipo_documento_display }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-hash me-1 text-success"></i>NÚMERO DE DOCUMENTO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">
+                                                        {% if user.numero_documento and not user.numero_documento|slice:":4" == "CIU_" %}
+                                                            {{ user.numero_documento }}
+                                                        {% else %}
+                                                            No registrado
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-calendar me-1 text-success"></i>FECHA DE NACIMIENTO
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-label fw-semibold text-muted small mb-1">
+                                                        <i class="bi bi-calendar-check me-1 text-success"></i>MIEMBRO DESDE
+                                                    </div>
+                                                    <p class="mb-0 fs-6 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
+                                                </div>
                                             </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.nombres }}</p>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-person me-1 text-success"></i>APELLIDOS
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.apellidos }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-envelope me-1 text-success"></i>CORREO ELECTRÓNICO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.email }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-telephone me-1 text-success"></i>CELULAR
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.celular|default:"No registrado" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-geo-alt me-1 text-success"></i>CIUDAD
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.ciudad|default:"Bogotá" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-map me-1 text-success"></i>LOCALIDAD
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.localidad.nombre|default:"No registrada" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-card-text me-1 text-success"></i>TIPO DE DOCUMENTO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.get_tipo_documento_display }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-hash me-1 text-success"></i>NÚMERO DE DOCUMENTO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">
-                                                {% if user.numero_documento and not user.numero_documento|slice:":4" == "CIU_" %}
-                                                    {{ user.numero_documento }}
-                                                {% else %}
-                                                    No registrado
-                                                {% endif %}
-                                            </p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-calendar me-1 text-success"></i>FECHA DE NACIMIENTO
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-label fw-semibold text-muted small mb-1">
-                                                <i class="bi bi-calendar-check me-1 text-success"></i>MIEMBRO DESDE
-                                            </div>
-                                            <p class="mb-0 fs-6 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
+                                    </div>
+
+                                    <!-- Editar información personal -->
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <h5 class="fw-bold text-success mb-4">
+                                                <i class="bi bi-pencil-fill me-2"></i>
+                                                Editar Información
+                                            </h5>
+                                            <form method="POST" action="/perfil/actualizar/" novalidate id="formDatos">
+                                                {% csrf_token %}
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="nombres">Nombres *</label>
+                                                        <input type="text" class="form-control" id="nombres" name="nombres"
+                                                               value="{{ user.nombres }}"
+                                                               minlength="3" maxlength="30" pattern=".{3,30}" required>
+                                                        <div class="invalid-feedback">Mínimo 3 letras, máximo 30, sin números ni símbolos.</div>
+                                                        <small class="text-muted">3-30 caracteres</small>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="apellidos">Apellidos *</label>
+                                                        <input type="text" class="form-control" id="apellidos" name="apellidos"
+                                                               value="{{ user.apellidos }}"
+                                                               minlength="3" maxlength="40" pattern=".{3,40}" required>
+                                                        <div class="invalid-feedback">Mínimo 3 letras, máximo 40, sin números ni símbolos.</div>
+                                                        <small class="text-muted">3-40 caracteres</small>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="celular">Celular *</label>
+                                                        <input type="text" class="form-control" id="celular" name="celular"
+                                                               maxlength="10" minlength="10" pattern="\d{10}"
+                                                               inputmode="numeric" placeholder="10 dígitos"
+                                                               value="{{ user.celular|default:'' }}" data-digits-only="10" required>
+                                                        <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
+                                                        <small class="text-muted">Exactamente 10 dígitos</small>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="ciudad">Ciudad</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
+                                                            <input id="ciudad" type="text" class="form-control bg-light text-muted" value="Bogotá" disabled>
+                                                        </div>
+                                                        <small class="text-muted">El servicio está disponible únicamente en Bogotá.</small>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="localidad">Localidad</label>
+                                                        <select class="form-select" id="localidad" name="localidad">
+                                                            <option value="">Seleccionar localidad</option>
+                                                            {% for loc in localidades %}
+                                                                <option value="{{ loc.localidad_id }}"
+                                                                    {% if user.localidad and user.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>
+                                                                    {{ loc.nombre }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <div class="invalid-feedback">Selecciona una localidad válida.</div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold" for="fechaNac">Fecha de Nacimiento</label>
+                                                        <input type="date" class="form-control" id="fechaNac" name="fechaNacimiento"
+                                                               value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+                                                        <div class="invalid-feedback">La fecha no puede ser futura.</div>
+                                                        <small class="text-muted">Formato YYYY-MM-DD (opcional)</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                                                    </button>
+                                                    <button type="reset" class="btn btn-outline-secondary">
+                                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Editar información personal -->
-                        <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold text-success mb-4">
-                                        <i class="bi bi-pencil-fill me-2"></i>
-                                        Editar Información
-                                    </h5>
-                                    <form method="POST" action="/perfil/actualizar/" novalidate id="formDatos">
-                                        {% csrf_token %}
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label for="nombres" class="form-label fw-semibold">Nombres</label>
-                                                <input id="nombres" type="text" name="nombres" class="form-control"
-                                                       value="{{ user.nombres }}"
-                                                       required minlength="3" maxlength="30"
-                                                       pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
-                                                <div class="invalid-feedback">Mínimo 3 letras, máximo 30, sin números ni símbolos.</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="apellidos" class="form-label fw-semibold">Apellidos</label>
-                                                <input id="apellidos" type="text" name="apellidos" class="form-control"
-                                                       value="{{ user.apellidos }}"
-                                                       required minlength="3" maxlength="40"
-                                                       pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
-                                                <div class="invalid-feedback">Mínimo 3 letras, máximo 40, sin números ni símbolos.</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="celular" class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
-                                                <input id="celular" type="text" name="celular" class="form-control"
-                                                       value="{{ user.celular|default:'' }}"
-                                                       placeholder="3001234567"
-                                                       pattern="3[0-9]{9}" maxlength="10">
-                                                <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="ciudad" class="form-label fw-semibold">Ciudad</label>
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
-                                                    <input id="ciudad" type="text" class="form-control bg-light text-muted" value="Bogotá" disabled>
+                            <div class="tab-pane fade" id="configuracionPanel" role="tabpanel" aria-labelledby="configuracion-tab">
+                                <div class="d-grid gap-4 p-4">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <div class="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2 mb-3">
+                                                <div>
+                                                    <h5 class="fw-bold text-success mb-1">
+                                                        <i class="bi bi-sliders me-2"></i>
+                                                        Preferencias
+                                                    </h5>
+                                                    <p class="text-muted small mb-0">Administra las notificaciones y la visibilidad de tu perfil.</p>
                                                 </div>
-                                                <small class="text-muted">El servicio está disponible únicamente en Bogotá.</small>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label for="localidad" class="form-label fw-semibold">Localidad</label>
-                                                <select id="localidad" name="localidad" class="form-select">
-                                                    <option value="">Sin localidad</option>
-                                                    {% for loc in localidades %}
-                                                        <option value="{{ loc.localidad_id }}"
-                                                            {% if user.localidad and user.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>
-                                                            {{ loc.nombre }}
-                                                        </option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="fechaNac" class="form-label fw-semibold">Fecha de Nacimiento <span class="text-muted fw-normal">(opcional)</span></label>
-                                                  <input id="fechaNac" type="date" name="fechaNacimiento" class="form-control"
-                                                      value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
-                                                <div class="invalid-feedback">La fecha no puede ser futura.</div>
-                                            </div>
-                                            <div class="col-12 mt-2">
-                                                <button type="submit" class="btn btn-success px-4">
-                                                    <i class="bi bi-check-circle me-2"></i>Guardar Cambios
-                                                </button>
-                                            </div>
+                                            <form id="formPreferenciasCiudadano">
+                                                <div class="mb-3">
+                                                    <p class="form-label mb-2">Notificaciones por correo</p>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" id="cfgNotiEmail" type="checkbox" checked>
+                                                        <label class="form-check-label" for="cfgNotiEmail">Cambios importantes en tu cuenta</label>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" id="cfgNotiMensajes" type="checkbox" checked>
+                                                        <label class="form-check-label" for="cfgNotiMensajes">Mensajes de puntos ECA</label>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" id="cfgNotiPublicaciones" type="checkbox" checked>
+                                                        <label class="form-check-label" for="cfgNotiPublicaciones">Alertas de publicaciones</label>
+                                                    </div>
+                                                    <small class="text-muted d-block mt-2">Estas preferencias son visuales en esta versión.</small>
+                                                </div>
+                                                <hr>
+                                                <div class="d-grid gap-2">
+                                                    <button class="btn btn-success" type="button" id="btnGuardarPreferencias">
+                                                        <i class="bi bi-save me-2"></i>Guardar Preferencias
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
-                                    </form>
+                                    </div>
+                                    {% include 'partials/password_change_card.html' %}
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Cambiar contraseña (partial) -->
-                        <div class="col-12">
-                            {% include 'partials/password_change_card.html' %}
-                        </div>
-
                     </div>
                 </div>
 
@@ -859,7 +630,7 @@
 
             </div>
         </div>
-    </main>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
@@ -1312,25 +1083,76 @@
             await cargarMensajesDePunto(chatPuntoId);
         }, 300);
     }
-</script>
-<script>
-// Inicializar toggles de mostrar/ocultar contraseña en perfil
-document.querySelectorAll('.toggle-password').forEach(function(icon){
-    icon.addEventListener('click', function(){
-        const targetSelector = icon.dataset.target;
-        const input = document.querySelector(targetSelector);
-        if (!input) return;
-        if (input.type === 'password'){
-            input.type = 'text';
-            icon.classList.remove('bi-eye');
-            icon.classList.add('bi-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.remove('bi-eye-slash');
-            icon.classList.add('bi-eye');
+
+    // Preferencias del ciudadano (visual: muestra swal informativo)
+    const btnPreferencias = document.getElementById('btnGuardarPreferencias');
+    if (btnPreferencias) {
+        btnPreferencias.addEventListener('click', function() {
+            if (typeof Swal === 'undefined') return;
+            Swal.fire({
+                icon: 'info',
+                title: 'Preferencias',
+                text: 'Las preferencias se podrán guardar en una próxima versión.',
+                confirmButtonColor: '#145c3a'
+            });
+        });
+    }
+
+    // Sub-tabs de "Mis Datos" (Datos Personales / Configuración):
+    // - Persistir el sub-tab activo en localStorage para que, tras un POST
+    //   a /perfil/actualizar/ (que redirige a /perfil/), el usuario siga
+    //   viendo la sub-pestaña que tenía abierta.
+    // - También leer el hash de la URL (#config) por si el usuario entra
+    //   directo a una sub-pestaña vía link.
+    (function initDatosSubTabs() {
+        const subTabsContainer = document.getElementById('datosSubTabs');
+        if (!subTabsContainer) return;
+        const STORAGE_KEY = 'ciudadanoSubTabActivo';
+        const VALID_IDS = new Set(['datosPersonalesPanel', 'configuracionPanel']);
+
+        function getValidTabId() {
+            const fromHash = (globalThis.location.hash || '').replace('#', '');
+            if (VALID_IDS.has(fromHash)) return fromHash;
+            try {
+                const fromStorage = globalThis.localStorage.getItem(STORAGE_KEY);
+                if (fromStorage && VALID_IDS.has(fromStorage)) return fromStorage;
+            } catch (e) {
+                if (globalThis.console?.debug) {
+                    globalThis.console.debug('No se pudo leer la sub-pestaña guardada:', e);
+                }
+            }
+            return 'datosPersonalesPanel';
         }
-    });
-});
+
+        function activateTab(tabId) {
+            const trigger = subTabsContainer.querySelector('[href="#' + tabId + '"]');
+            if (!trigger) return;
+            if (trigger.classList.contains('active')) return;
+            const TabCtor = globalThis.bootstrap?.Tab;
+            if (TabCtor) {
+                TabCtor.getOrCreateInstance(trigger).show();
+            } else {
+                trigger.click();
+            }
+        }
+
+        // Al cargar, abrir la sub-pestaña guardada
+        activateTab(getValidTabId());
+
+        // Escuchar cambios de tab para persistir
+        subTabsContainer.addEventListener('shown.bs.tab', function(event) {
+            const targetId = event.target?.getAttribute('href')?.replace('#', '');
+            if (targetId && VALID_IDS.has(targetId)) {
+                try {
+                    globalThis.localStorage.setItem(STORAGE_KEY, targetId);
+                } catch (e) {
+                    if (globalThis.console?.debug) {
+                        globalThis.console.debug('No se pudo guardar la sub-pestaña activa:', e);
+                    }
+                }
+            }
+        });
+    })();
 </script>
 </body>
 </html>

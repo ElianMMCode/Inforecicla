@@ -50,6 +50,7 @@ class PuntoECA(LocalizacionWebHorarioModel):
         max_length=10,
         unique=True,
         blank=True,
+        null=True,
         validators=[
             RegexValidator(
                 regex="^60\\d{8}",

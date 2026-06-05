@@ -1,5 +1,6 @@
 import base64
 import tempfile
+from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
@@ -129,6 +130,32 @@ class TestRegistroPuntoECA(TestCase):
             reverse("login") + "?email=newuser2@example.com&show_activation_resend=1",
             fetch_redirect_response=False,
         )
+
+    @override_settings(DEBUG=True)
+    @patch("apps.users.views.enviar_email_verificacion", return_value=True)
+    def test_registro_punto_eca_post_sin_telefono_punto(self, mock_enviar_email):
+        """El registro de PuntoECA debe aceptar un teléfono fijo vacío y guardarlo como NULL."""
+        data = {
+            "nombres": "Test User 3",
+            "apellidos": "Test Lastname 3",
+            "email": "newuser3@example.com",
+            "tipoDocumento": "CC",
+            "numeroDocumento": "0987654321",
+            "celular": "3211234567",
+            "direccion": "Calle Falsa 123",
+            "ciudad": "Bogotá",
+            "localidad": str(self.localidad.localidad_id),
+            "latitud": "4.6097",
+            "longitud": "-74.0817",
+            "password": self.password_aleatorio,
+            "passwordConfirm": self.password_aleatorio,
+            "terminos": "on",
+        }
+
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 302)
+        punto = self.user.punto_eca.__class__.objects.get(gestor_eca__email="newuser3@example.com")
+        self.assertIsNone(punto.telefono_punto)
 
     def test_completar_pendientes_elimina_aviso(self):
         """Completar los campos pendientes del gestor y punto debe ocultar el aviso."""
