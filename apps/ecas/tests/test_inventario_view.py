@@ -513,3 +513,19 @@ class TestHistorialWorkspace(TestCase):
         self.assertIn("querySelectorAll('[id=\"inv-hfiltro-aplicar\"]')", js)
         self.assertIn("querySelectorAll('[id=\"inv-btn-export-historial-excel\"]')", js)
 
+    def test_js_listener_acciones_bindea_ambos_tbodys(self):
+        """El listener delegado de botones ver/editar debe bindearse a TODOS
+        los elementos con id inv-tablasHistorialBody (landing + workspace),
+        no solo al primero, porque getElementById sólo resuelve al primero.
+        Ver https://github.com/... (commit 5b349d6 y este fix)."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # El bloque de acciones debe usar querySelectorAll para inv-tablasHistorialBody
+        self.assertIn('querySelectorAll(tbodySelector)', js)
+        # El tbody de acciones debe incluir "inv-tablasHistorialBody" en la lista
+        acciones_block = js.split("// Acciones en tablas (delegado)", 1)[1]
+        self.assertIn('"inv-tablasHistorialBody"', acciones_block)
+

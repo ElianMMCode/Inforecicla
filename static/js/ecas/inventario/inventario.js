@@ -610,16 +610,22 @@
         document.getElementById("inv-btn-cancelar-crear")?.addEventListener("click", limpiarSeleccionCrear);
         document.getElementById("inv-form-crear-inventario")?.addEventListener("submit", submitCrearInventario);
 
-        // Acciones en tablas (delegado)
+        // Acciones en tablas (delegado). inv-tablasHistorialBody existe en
+        // landing y workspace, por eso se bindea a TODOS los elementos.
         ["inv-tablasHistorialBody", "tablasEntradasBody", "tablasSalidasBody"]
             .forEach((tbodyId) => {
-                document.getElementById(tbodyId)?.addEventListener("click", (e) => {
-                    const btn = e.target.closest("button[data-accion]");
-                    if (!btn) return;
-                    const id = btn.dataset.id;
-                    const tipo = btn.dataset.tipo;
-                    if (btn.dataset.accion === "ver") verMovimiento(tipo, id);
-                    if (btn.dataset.accion === "editar") editarMovimiento(tipo, id);
+                const tbodySelector = tbodyId.startsWith("inv-")
+                    ? `[id="${tbodyId}"]`
+                    : `#${tbodyId}`;
+                document.querySelectorAll(tbodySelector).forEach((tbody) => {
+                    tbody.addEventListener("click", (e) => {
+                        const btn = e.target.closest("button[data-accion]");
+                        if (!btn) return;
+                        const id = btn.dataset.id;
+                        const tipo = btn.dataset.tipo;
+                        if (btn.dataset.accion === "ver") verMovimiento(tipo, id);
+                        if (btn.dataset.accion === "editar") editarMovimiento(tipo, id);
+                    });
                 });
             });
 
