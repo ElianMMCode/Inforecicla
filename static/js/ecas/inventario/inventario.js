@@ -319,7 +319,7 @@
         const cont = document.getElementById("inv-picker-contador");
         if (cont) cont.textContent = "Cargando catálogo...";
         const puntoId = document.getElementById("inv-crear-punto-id")?.value || "";
-        const url = `/punto-eca/materiales/catalogo/buscar/?puntoId=${encodeURIComponent(puntoId)}`;
+        const url = `/punto-eca/inventario/catalogo/buscar/?puntoId=${encodeURIComponent(puntoId)}`;
         fetch(url, { headers: { Accept: "application/json" } })
             .then((r) => r.json())
             .then((data) => {
@@ -471,14 +471,16 @@
         }
         const form = document.getElementById("inv-form-crear-inventario");
         const payload = Object.fromEntries(new FormData(form).entries());
-        payload.stockInicial = Number(payload.stockInicial);
+        payload.stockActual = Number(payload.stockInicial);
         payload.capacidadMaxima = Number(payload.capacidadMaxima);
         payload.precioCompra = Number(payload.precioCompra);
         payload.precioVenta = Number(payload.precioVenta);
         payload.umbralAlerta = Number(payload.umbralAlerta);
         payload.umbralCritico = Number(payload.umbralCritico);
-        payload.puntoId = Number(payload.puntoId);
-        payload.materialId = Number(payload.materialId);
+        payload.puntoEcaId = String(payload.puntoId || "");
+        payload.materialId = String(payload.materialId || "");
+        delete payload.puntoId;
+        delete payload.stockInicial;
 
         fetch("/punto-eca/inventario/agregar/", {
             method: "POST",
@@ -656,7 +658,7 @@
         }
         const invId = document.getElementById("inv-edit-inventario-id").value;
         const payload = {
-            stockInicial: Number(document.getElementById("inv-edit-stock-inicial").value),
+            stockActual: Number(document.getElementById("inv-edit-stock-inicial").value),
             capacidadMaxima: Number(document.getElementById("inv-edit-capacidad-maxima").value),
             unidadMedida: document.getElementById("inv-edit-unidad-medida").value,
             umbralAlerta: Number(document.getElementById("inv-edit-umbral-alerta").value),

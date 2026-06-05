@@ -9,6 +9,12 @@ from apps.ecas.views import (
     crear_centro,
     actualizar_centro,
 )
+from apps.inventory.views import (
+    buscar_materiales_catalogo_view,
+    agregar_al_inventario_view,
+    actualizar_inventario_view,
+    eliminar_inventario_view,
+)
 from . import views
 from apps.chat.views import PuntoChatListView
 
@@ -41,10 +47,26 @@ urlpatterns = [
     path("editar-punto/<str:id>/guardar/", actualizar_punto, name="actualizar_punto"),
     path("centros/editar-centro/<str:id>/", views.editar_centro, name="editar_centro"),
     path("centros/editar-centro/<str:id>/guardar/", actualizar_centro, name="actualizar_centro"),
-    # CRUD de materiales bajo punto-eca/materiales/
+    # CRUD de inventario bajo punto-eca/inventario/ (consolidado)
     path(
-        "materiales/",
-        include("apps.inventory.urls", namespace="inventario"),
+        "inventario/catalogo/buscar/",
+        buscar_materiales_catalogo_view,
+        name="inventario_catalogo_buscar",
+    ),
+    path(
+        "inventario/agregar/",
+        agregar_al_inventario_view,
+        name="inventario_agregar",
+    ),
+    path(
+        "inventario/actualizar/<uuid:inventario_id>/",
+        actualizar_inventario_view,
+        name="inventario_actualizar",
+    ),
+    path(
+        "inventario/eliminar/<uuid:inventario_id>/",
+        eliminar_inventario_view,
+        name="inventario_eliminar",
     ),
     path(
         "calendario/",
