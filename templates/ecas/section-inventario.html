@@ -67,8 +67,12 @@ globalThis.getCSRFToken = function () {
     .estado-section.active { display: block; }
     .ovtab-pane { display: none; }
     .ovtab-pane.active { display: block; }
+    .ovsub-pane { display: none; }
+    .ovsub-pane.active { display: block; }
     .tab-pane-stack { display: none; }
     .tab-pane-stack.active { display: block; }
+    .wssub-pane { display: none; }
+    .wssub-pane.active { display: block; }
     .context-bar { background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%); }
     .inv-fake-input {
         background-color: #f5f5f5; border: 1px solid #dee2e6;
@@ -79,6 +83,21 @@ globalThis.getCSRFToken = function () {
     #inv-hfiltro-desde, #inv-hfiltro-hasta {
         padding-left: .85rem;
         padding-right: 2.1rem;
+    }
+    /* Gráficos de flujo: el canvas debe ocupar todo el ancho disponible
+       del card-body. El wrapper position:relative da el alto; el canvas
+       debe estirarse al 100% con display:block para que clientWidth
+       refleje el ancho real. */
+    .inv-chart-wrap { position: relative; height: 450px; width: 100%; }
+    .inv-chart-wrap canvas { display: block; width: 100% !important; height: 100% !important; }
+    /* Sub-tabs de Stock/Ganancias dentro del flujo */
+    .nav-subtabs-inventario .nav-link {
+        color: #6c757d; font-weight: 500; font-size: .9rem;
+        padding: .35rem .9rem;
+    }
+    .nav-subtabs-inventario .nav-link.active {
+        color: #198754; font-weight: 600;
+        background-color: #e8f5ed; border-color: #198754 #198754 #fff;
     }
     </style>
 
@@ -632,68 +651,145 @@ globalThis.getCSRFToken = function () {
 
                 {# ============== TAB: FLUJO DE STOCK ============== #}
                 <div class="ovtab-pane" id="ovtab-flujo">
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-info-subtle border-0 px-4 py-3">
-                            <h6 class="mb-0 fw-bold text-info"><i class="bi bi-sliders me-2"></i>Filtros de la gráfica</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-5">
-                                    <label class="form-label fw-semibold small">Materiales a comparar</label>
-                                    <div class="border rounded p-2 bg-white" style="max-height:160px; overflow-y:auto" id="inv-flujo-materiales-list">
-                                        {# Checkboxes generados por JS desde materiales_inventario #}
+                    <ul class="nav nav-tabs nav-subtabs-inventario mb-3" id="ovFlujoSubtabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-ovsub="ovstock" type="button">
+                                <i class="bi bi-box-seam me-1"></i>Stock
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-ovsub="ovgan" type="button">
+                                <i class="bi bi-cash-coin me-1"></i>Ganancias
+                            </button>
+                        </li>
+                    </ul>
+
+                    {# === Sub-pane: Stock (landing) === #}
+                    <div class="ovsub-pane active" id="ovstock">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-info-subtle border-0 px-4 py-3">
+                                <h6 class="mb-0 fw-bold text-info"><i class="bi bi-sliders me-2"></i>Filtros de la gráfica</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-semibold small">Materiales a comparar</label>
+                                        <div class="border rounded p-2 bg-white" style="max-height:160px; overflow-y:auto" id="inv-flujo-materiales-list">
+                                            {# Checkboxes generados por JS desde materiales_inventario #}
+                                        </div>
+                                        <div class="d-flex gap-2 mt-2">
+                                            <button class="btn btn-sm btn-outline-info" type="button" id="inv-flujo-todos">Todos</button>
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" id="inv-flujo-ninguno">Ninguno</button>
+                                        </div>
                                     </div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <button class="btn btn-sm btn-outline-info" type="button" id="inv-flujo-todos">Todos</button>
-                                        <button class="btn btn-sm btn-outline-secondary" type="button" id="inv-flujo-ninguno">Ninguno</button>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small" for="inv-flujo-stock-desde">Desde</label>
+                                        <input type="date" class="form-control form-control-sm" id="inv-flujo-stock-desde">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-semibold small" for="inv-flujo-stock-hasta">Hasta</label>
+                                        <input type="date" class="form-control form-control-sm" id="inv-flujo-stock-hasta">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-semibold small" for="inv-flujo-stock-granularidad">Granularidad</label>
+                                        <select class="form-select form-select-sm" id="inv-flujo-stock-granularidad">
+                                            <option value="dia">Día</option>
+                                            <option value="semana">Semana</option>
+                                            <option value="mes">Mes</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold small" for="inv-flujo-desde">Desde</label>
-                                    <input type="date" class="form-control form-control-sm" id="inv-flujo-desde">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold small" for="inv-flujo-hasta">Hasta</label>
-                                    <input type="date" class="form-control form-control-sm" id="inv-flujo-hasta">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold small" for="inv-flujo-granularidad">Granularidad</label>
-                                    <select class="form-select form-select-sm" id="inv-flujo-granularidad">
-                                        <option value="dia">Día</option>
-                                        <option value="semana">Semana</option>
-                                        <option value="mes">Mes</option>
-                                    </select>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="inv-flujo-stock-cap" checked>
+                                        <label class="form-check-label small" for="inv-flujo-stock-cap">Mostrar línea de capacidad máxima</label>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-info btn-sm fw-semibold" type="button" id="inv-flujo-stock-aplicar">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>Aplicar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="inv-flujo-cap" checked>
-                                    <label class="form-check-label small" for="inv-flujo-cap">Mostrar línea de capacidad máxima</label>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Materiales</small><h4 class="text-success fw-bold mb-0" id="inv-flujo-kpi-materiales">—</h4></div></div>
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Compras</small><h4 class="text-primary fw-bold mb-0" id="inv-flujo-kpi-compras">—</h4></div></div>
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ventas</small><h4 class="text-info fw-bold mb-0" id="inv-flujo-kpi-ventas">—</h4></div></div>
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ocupación</small><h4 class="text-warning fw-bold mb-0" id="inv-flujo-kpi-ocupacion">—</h4></div></div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up me-2"></i>Evolución del stock</h6>
+                                <span class="badge bg-info rounded-pill" id="inv-flujo-badge">—</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="inv-chart-wrap">
+                                    <canvas id="inv-stock-time-chart"></canvas>
                                 </div>
-                                <div>
-                                    <button class="btn btn-info btn-sm fw-semibold" type="button" id="inv-flujo-aplicar">
+                            </div>
+                        </div>
+                    </div>
+
+                    {# === Sub-pane: Ganancias (landing) === #}
+                    <div class="ovsub-pane" id="ovgan">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-success-subtle border-0 px-4 py-3">
+                                <h6 class="mb-0 fw-bold text-success"><i class="bi bi-sliders me-2"></i>Filtros de ganancias</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-semibold small">Materiales a evaluar</label>
+                                        <div class="border rounded p-2 bg-white" style="max-height:160px; overflow-y:auto" id="inv-flujo-gan-materiales-list">
+                                            {# Checkboxes reusados de la lista de stock (mismos materiales) #}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small" for="inv-flujo-gan-desde">Desde</label>
+                                        <input type="date" class="form-control form-control-sm" id="inv-flujo-gan-desde">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-semibold small" for="inv-flujo-gan-hasta">Hasta</label>
+                                        <input type="date" class="form-control form-control-sm" id="inv-flujo-gan-hasta">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-semibold small" for="inv-flujo-gan-granularidad">Granularidad</label>
+                                        <select class="form-select form-select-sm" id="inv-flujo-gan-granularidad">
+                                            <option value="dia">Día</option>
+                                            <option value="semana">Semana</option>
+                                            <option value="mes">Mes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button class="btn btn-success btn-sm fw-semibold" type="button" id="inv-flujo-gan-aplicar">
                                         <i class="bi bi-arrow-clockwise me-1"></i>Aplicar
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Materiales</small><h4 class="text-success fw-bold mb-0" id="inv-flujo-kpi-materiales">—</h4></div></div>
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Compras</small><h4 class="text-primary fw-bold mb-0" id="inv-flujo-kpi-compras">—</h4></div></div>
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ventas</small><h4 class="text-info fw-bold mb-0" id="inv-flujo-kpi-ventas">—</h4></div></div>
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ocupación</small><h4 class="text-warning fw-bold mb-0" id="inv-flujo-kpi-ocupacion">—</h4></div></div>
-                    </div>
-
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up me-2"></i>Evolución del stock</h6>
-                            <span class="badge bg-info rounded-pill" id="inv-flujo-badge">—</span>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Ingresos</small><h4 class="text-primary fw-bold mb-0" id="inv-flujo-gan-kpi-ingresos">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Costos</small><h4 class="text-warning fw-bold mb-0" id="inv-flujo-gan-kpi-costos">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Profit neto</small><h4 class="fw-bold mb-0" id="inv-flujo-gan-kpi-profit">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Margen</small><h4 class="fw-bold mb-0" id="inv-flujo-gan-kpi-margen">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Top material</small><h6 class="fw-bold mb-0 small" id="inv-flujo-gan-kpi-top">—</h6><small class="text-muted d-block" id="inv-flujo-gan-kpi-top-val">—</small></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Movs con pérdida</small><h4 class="text-danger fw-bold mb-0" id="inv-flujo-gan-kpi-perdida">—</h4></div></div>
                         </div>
-                        <div class="card-body">
-                            <div style="position:relative; height: 300px;">
-                                <canvas id="inv-stock-time-chart"></canvas>
+
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-cash-coin me-2"></i>Flujo de ganancias</h6>
+                                <span class="badge bg-success rounded-pill" id="inv-flujo-gan-badge">—</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="inv-chart-wrap">
+                                    <canvas id="inv-ganancias-chart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1155,21 +1251,61 @@ globalThis.getCSRFToken = function () {
 
         {# TAB FLUJO (workspace) #}
         <div class="tab-pane-stack" id="tab-flujo">
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-info-subtle border-0 px-4 py-3">
-                    <h6 class="mb-0 fw-bold text-info">
-                        <i class="bi bi-graph-up me-2"></i>Flujo de Stock — <span class="inv-ws-tab-nombre">—</span>
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Stock hoy</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-stock">—</h4></div></div>
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Movs del mes</small><h4 class="text-info fw-bold mb-0" id="inv-ws-flujo-movs">—</h4></div></div>
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Compras</small><h4 class="text-primary fw-bold mb-0" id="inv-ws-flujo-compras">—</h4></div></div>
-                        <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ventas</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-ventas">—</h4></div></div>
+            <ul class="nav nav-tabs nav-subtabs-inventario mb-3" id="wsFlujoSubtabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-wssub="wsstock" type="button">
+                        <i class="bi bi-box-seam me-1"></i>Stock
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-wssub="wsgan" type="button">
+                        <i class="bi bi-cash-coin me-1"></i>Ganancias
+                    </button>
+                </li>
+            </ul>
+
+            {# === Sub-pane: Stock (workspace) === #}
+            <div class="wssub-pane active" id="wsstock">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-info-subtle border-0 px-4 py-3">
+                        <h6 class="mb-0 fw-bold text-info">
+                            <i class="bi bi-graph-up me-2"></i>Flujo de Stock — <span class="inv-ws-tab-nombre">—</span>
+                        </h6>
                     </div>
-                    <div style="position:relative; height: 320px;">
-                        <canvas id="stockTimeChart"></canvas>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Stock hoy</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-stock">—</h4></div></div>
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Movs del mes</small><h4 class="text-info fw-bold mb-0" id="inv-ws-flujo-movs">—</h4></div></div>
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Compras</small><h4 class="text-primary fw-bold mb-0" id="inv-ws-flujo-compras">—</h4></div></div>
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ventas</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-ventas">—</h4></div></div>
+                        </div>
+                        <div class="inv-chart-wrap">
+                            <canvas id="stockTimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# === Sub-pane: Ganancias (workspace) === #}
+            <div class="wssub-pane" id="wsgan">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-success-subtle border-0 px-4 py-3">
+                        <h6 class="mb-0 fw-bold text-success">
+                            <i class="bi bi-cash-coin me-2"></i>Flujo de Ganancias — <span class="inv-ws-tab-nombre">—</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Ingresos</small><h4 class="text-primary fw-bold mb-0" id="inv-ws-flujo-gan-ingresos">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Costos</small><h4 class="text-warning fw-bold mb-0" id="inv-ws-flujo-gan-costos">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Profit neto</small><h4 class="fw-bold mb-0" id="inv-ws-flujo-gan-profit">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Margen</small><h4 class="fw-bold mb-0" id="inv-ws-flujo-gan-margen">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Movs con pérdida</small><h4 class="text-danger fw-bold mb-0" id="inv-ws-flujo-gan-perdida">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Última venta</small><h6 class="fw-bold mb-0 small" id="inv-ws-flujo-gan-ultima">—</h6><small class="text-muted d-block" id="inv-ws-flujo-gan-ultima-val">—</small></div></div>
+                        </div>
+                        <div class="inv-chart-wrap">
+                            <canvas id="inv-ws-ganancias-chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>

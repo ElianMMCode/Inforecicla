@@ -166,6 +166,9 @@
         // Sin esto, los Select2 inicializados en bind() sobre paneles ocultos
         // muestran wrappers con width incorrecto (Select2 mide al init).
         if (pane) _reinitSelect2InPane(pane);
+        // Re-render de los charts del pane (canvas.clientWidth era 0 al
+        // render inicial porque el pane estaba oculto).
+        if (pane) setTimeout(() => _reinitChartsInPane(pane), 50);
     }
 
     function activarTab(tabId) {
@@ -176,6 +179,7 @@
         if (btn) btn.classList.add("active");
         if (pane) pane.classList.add("active");
         if (pane) _reinitSelect2InPane(pane);
+        if (pane) setTimeout(() => _reinitChartsInPane(pane), 50);
     }
 
     function _reinitSelect2InPane(pane) {
@@ -187,6 +191,21 @@
             const $el = $(this);
             if ($el.data("select2")) $el.select2("destroy");
             $el.select2(Object.assign({}, base));
+        });
+    }
+
+    function _reinitChartsInPane(pane) {
+        if (!pane) return;
+        // Re-renderiza todos los <canvas> del pane AHORA visible para que
+        // clientWidth refleje el ancho real (era 0 al render inicial
+        // porque el pane estaba oculto).
+        const canvases = pane.querySelectorAll("canvas");
+        canvases.forEach((canvas) => {
+            const id = canvas.id;
+            if (id === "inv-stock-time-chart") renderOvtabChart();
+            else if (id === "inv-ganancias-chart") renderOvGananciasChart();
+            else if (id === "stockTimeChart") renderWsChart();
+            else if (id === "inv-ws-ganancias-chart") renderWsGananciasChart();
         });
     }
 
@@ -1346,47 +1365,127 @@
         return serie;
     }
 
-    function renderChart(canvasId, materiales, gran, mostrarCap) {
+    function construirSerieGanancias(materiales, compras, ventas, desde, hasta, gran) {
+        // Retorna { ingresos: number[], costos: number[], profit: number[] }
+        // Un valor por bucket, acumulado en el tiempo. La primera fila
+        // contiene los ops del bucket 0; cada fila siguiente acumula el
+        // bucket anterior + el actual.
+        const buckets = generarBuckets(desde, hasta, gran);
+        const invIds = new Set(materiales.map((m) => String(m.inventarioId)));
+        const cs = compras.filter((c) => invIds.has(String(c.inventarioId)));
+        const vs = ventas.filter((v) => invIds.has(String(v.inventarioId)));
+        const ingresos = buckets.map(() => 0);
+        const costos = buckets.map(() => 0);
+        for (const c of cs) {
+            if (!c.fechaCompra) continue;
+            const idx = bucketIndexFor(new Date(c.fechaCompra), buckets, gran);
+            if (idx < 0) continue;
+            costos[idx] += Number(c.cantidad || 0) * Number(c.precioCompra || 0);
+        }
+        for (const v of vs) {
+            if (!v.fechaVenta) continue;
+            const idx = bucketIndexFor(new Date(v.fechaVenta), buckets, gran);
+            if (idx < 0) continue;
+            ingresos[idx] += Number(v.cantidad || 0) * Number(v.precioVenta || 0);
+        }
+        for (let i = 1; i < buckets.length; i++) {
+            ingresos[i] += ingresos[i - 1];
+            costos[i] += costos[i - 1];
+        }
+        const profit = buckets.map((_, i) => ingresos[i] - costos[i]);
+        return { ingresos, costos, profit, buckets };
+    }
+
+    function bucketIndexFor(fecha, buckets, gran) {
+        for (let i = 0; i < buckets.length; i++) {
+            const b = buckets[i];
+            const next = i + 1 < buckets.length ? buckets[i + 1] : (() => {
+                const x = new Date(b);
+                if (gran === "dia") x.setDate(x.getDate() + 1);
+                else if (gran === "semana") x.setDate(x.getDate() + 7);
+                else x.setMonth(x.getMonth() + 1);
+                return x;
+            })();
+            if (fecha >= b && fecha < next) return i;
+        }
+        return -1;
+    }
+
+    function formatearCOP(v) {
+        const n = Number(v) || 0;
+        const abs = Math.abs(n);
+        if (abs >= 1e9) return `$ ${(n / 1e9).toFixed(1)}B`;
+        if (abs >= 1e6) return `$ ${(n / 1e6).toFixed(1)}M`;
+        if (abs >= 1e3) return `$ ${(n / 1e3).toFixed(0)}K`;
+        return `$ ${n.toFixed(0)}`;
+    }
+
+    function renderChart(canvasId, opts) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
-        const W = canvas.clientWidth || 600;
-        const H = canvas.clientHeight || 300;
-        canvas.width = W * (window.devicePixelRatio || 1);
-        canvas.height = H * (window.devicePixelRatio || 1);
-        ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+        const W = canvas.clientWidth || 900;
+        const H = canvas.clientHeight || 450;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
         ctx.clearRect(0, 0, W, H);
-        if (!materiales.length) {
+        const modo = opts.modo || "stock";
+        if (modo === "stock" && !opts.materiales.length) {
             ctx.fillStyle = "#6c757d";
             ctx.font = "14px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("Selecciona al menos un material.", W / 2, H / 2);
             return;
         }
-        const hoy = new Date();
-        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        const desde = inicioMes;
-        const hasta = hoy;
-        const buckets = generarBuckets(desde, hasta, gran);
-        const labels = buckets.map((b) => formatearLabelBucket(b, gran));
-        const series = materiales.map((m) => ({
-            nombre: m.nombre,
-            color: PALETA[materiales.indexOf(m) % PALETA.length],
-            valores: construirSerieMaterial(m, comprasDB, ventasDB, desde, hasta, gran),
-            capacidad: Number(m.capacidadMaxima) || 0,
-        }));
+        if (modo === "ganancia" && !opts.materiales.length) {
+            ctx.fillStyle = "#6c757d";
+            ctx.font = "14px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Selecciona al menos un material para ver ganancias.", W / 2, H / 2);
+            return;
+        }
+        const buckets = opts.buckets;
+        const labels = buckets.map((b) => formatearLabelBucket(b, opts.gran));
+        // Construir series según modo
+        let series = [];
+        if (modo === "stock") {
+            series = opts.materiales.map((m, idx) => ({
+                nombre: m.nombre,
+                color: PALETA[idx % PALETA.length],
+                valores: construirSerieMaterial(m, comprasDB, ventasDB, opts.desde, opts.hasta, opts.gran),
+                capacidad: Number(m.capacidadMaxima) || 0,
+            }));
+        } else {
+            // modo === "ganancia"
+            const gan = construirSerieGanancias(opts.materiales, comprasDB, ventasDB, opts.desde, opts.hasta, opts.gran);
+            series = [
+                { nombre: "Ingresos", color: "#0d6efd", valores: gan.ingresos, capacidad: 0 },
+                { nombre: "Costos",   color: "#fd7e14", valores: gan.costos,   capacidad: 0 },
+                { nombre: "Profit",   color: "#198754", valores: gan.profit,   capacidad: 0, esProfit: true },
+            ];
+        }
         // Calcular rango Y
         let maxY = 0;
-        series.forEach((s) => s.valores.forEach((v) => { if (v > maxY) maxY = v; }));
-        if (mostrarCap) series.forEach((s) => { if (s.capacidad > maxY) maxY = s.capacidad; });
-        if (maxY === 0) maxY = 1;
-        const padL = 50, padR = 10, padT = 10, padB = 30;
+        let minY = 0;
+        series.forEach((s) => s.valores.forEach((v) => {
+            if (v > maxY) maxY = v;
+            if (v < minY) minY = v;
+        }));
+        if (opts.mostrarCap && modo === "stock") {
+            series.forEach((s) => { if (s.capacidad > maxY) maxY = s.capacidad; });
+        }
+        if (maxY === minY) maxY = minY + 1;
+        const padL = 70, padR = 20, padT = 10, padB = 30;
         const innerW = W - padL - padR;
         const innerH = H - padT - padB;
         // Grid
         ctx.strokeStyle = "#e9ecef";
         ctx.lineWidth = 1;
         for (let i = 0; i <= 4; i++) {
+            const t = i / 4;
             const y = padT + (innerH * i) / 4;
             ctx.beginPath();
             ctx.moveTo(padL, y);
@@ -1395,25 +1494,38 @@
             ctx.fillStyle = "#6c757d";
             ctx.font = "10px system-ui, sans-serif";
             ctx.textAlign = "right";
-            const val = maxY - (maxY * i) / 4;
-            ctx.fillText(val.toFixed(0), padL - 4, y + 3);
+            const val = maxY - (maxY - minY) * t;
+            const labelTxt = modo === "ganancia" ? formatearCOP(val) : val.toFixed(0);
+            ctx.fillText(labelTxt, padL - 6, y + 3);
         }
-        // Eje X labels (samplear)
+        // Línea de y=0 (referencia para profit)
+        if (modo === "ganancia" && minY < 0) {
+            const y0 = padT + innerH - (innerH * (0 - minY)) / (maxY - minY);
+            ctx.strokeStyle = "#dc3545";
+            ctx.setLineDash([3, 3]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padL, y0);
+            ctx.lineTo(W - padR, y0);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        // Eje X labels
         const stepX = Math.max(1, Math.floor(labels.length / 8));
         ctx.fillStyle = "#6c757d";
         ctx.textAlign = "center";
         labels.forEach((lbl, i) => {
-            if (i % stepX === 0) {
+            if (i % stepX === 0 || i === labels.length - 1) {
                 const x = padL + (innerW * i) / Math.max(1, buckets.length - 1);
                 ctx.fillText(lbl, x, H - 10);
             }
         });
         // Líneas
         const xAt = (i) => padL + (innerW * i) / Math.max(1, buckets.length - 1);
-        const yAt = (v) => padT + innerH - (innerH * v) / maxY;
+        const yAt = (v) => padT + innerH - (innerH * (v - minY)) / (maxY - minY);
         series.forEach((s) => {
-            // Capacidad (línea punteada)
-            if (mostrarCap && s.capacidad > 0) {
+            // Capacidad (línea punteada, solo modo stock)
+            if (opts.mostrarCap && modo === "stock" && s.capacidad > 0) {
                 ctx.strokeStyle = s.color + "55";
                 ctx.setLineDash([4, 4]);
                 ctx.lineWidth = 1;
@@ -1446,14 +1558,14 @@
         ctx.font = "11px system-ui, sans-serif";
         ctx.textAlign = "left";
         let lx = padL;
-        const ly = padT + 12;
+        const ly = padT + 14;
         series.forEach((s) => {
             const txt = s.nombre;
-            const tw = ctx.measureText(txt).width + 16;
+            const tw = ctx.measureText(txt).width + 18;
             ctx.fillStyle = s.color;
-            ctx.fillRect(lx, ly - 8, 10, 10);
+            ctx.fillRect(lx, ly - 9, 11, 11);
             ctx.fillStyle = "#212529";
-            ctx.fillText(txt, lx + 14, ly);
+            ctx.fillText(txt, lx + 16, ly);
             lx += tw;
             if (lx > W - 60) return;
         });
@@ -1463,9 +1575,15 @@
         const checks = document.querySelectorAll('#inv-flujo-materiales-list input[type="checkbox"]:checked');
         const ids = Array.from(checks).map((c) => c.value);
         const mats = materialesDB.filter((m) => ids.includes(String(m.inventarioId)));
-        const gran = document.getElementById("inv-flujo-granularidad")?.value || "dia";
-        const cap = document.getElementById("inv-flujo-cap")?.checked;
-        renderChart("inv-stock-time-chart", mats, gran, cap);
+        const gran = document.getElementById("inv-flujo-stock-granularidad")?.value || "dia";
+        const cap = document.getElementById("inv-flujo-stock-cap")?.checked;
+        const desde = _parseFecha("inv-flujo-stock-desde") || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const hasta = _parseFecha("inv-flujo-stock-hasta") || new Date();
+        const buckets = generarBuckets(desde, hasta, gran);
+        renderChart("inv-stock-time-chart", {
+            modo: "stock", materiales: mats, gran, mostrarCap: cap,
+            desde, hasta, buckets,
+        });
         const badge = document.getElementById("inv-flujo-badge");
         if (badge) badge.textContent = `${mats.length} material${mats.length === 1 ? "" : "es"}`;
         const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -1477,10 +1595,77 @@
             : 0;
         setKpi("inv-flujo-kpi-ocupacion", `${ocupacionPromedio}%`);
     }
+
+    function renderOvGananciasChart() {
+        const checks = document.querySelectorAll('#inv-flujo-gan-materiales-list input[type="checkbox"]:checked');
+        const ids = Array.from(checks).map((c) => c.value);
+        const mats = materialesDB.filter((m) => ids.includes(String(m.inventarioId)));
+        const gran = document.getElementById("inv-flujo-gan-granularidad")?.value || "dia";
+        const desde = _parseFecha("inv-flujo-gan-desde") || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const hasta = _parseFecha("inv-flujo-gan-hasta") || new Date();
+        const buckets = generarBuckets(desde, hasta, gran);
+        const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        const setKpiClass = (id, cls) => { const el = document.getElementById(id); if (el) el.className = `fw-bold mb-0 ${cls || ""}`.trim(); };
+        if (!mats.length) {
+            setKpi("inv-flujo-gan-kpi-ingresos", "—");
+            setKpi("inv-flujo-gan-kpi-costos", "—");
+            setKpi("inv-flujo-gan-kpi-profit", "—");
+            setKpi("inv-flujo-gan-kpi-margen", "—");
+            setKpi("inv-flujo-gan-kpi-top", "—");
+            setKpi("inv-flujo-gan-kpi-top-val", "—");
+            setKpi("inv-flujo-gan-kpi-perdida", "—");
+            const badge = document.getElementById("inv-flujo-gan-badge");
+            if (badge) badge.textContent = "0 materiales";
+            renderChart("inv-ganancias-chart", { modo: "ganancia", materiales: [], gran, desde, hasta, buckets });
+            return;
+        }
+        // Calcular stats por material
+        const invIds = new Set(mats.map((m) => String(m.inventarioId)));
+        const cs = comprasDB.filter((c) => invIds.has(String(c.inventarioId)));
+        const vs = ventasDB.filter((v) => invIds.has(String(v.inventarioId)));
+        const ingresosTotal = vs.reduce((s, v) => s + Number(v.cantidad || 0) * Number(v.precioVenta || 0), 0);
+        const costosTotal = cs.reduce((s, c) => s + Number(c.cantidad || 0) * Number(c.precioCompra || 0), 0);
+        const profitTotal = ingresosTotal - costosTotal;
+        const margen = ingresosTotal > 0 ? (profitTotal / ingresosTotal) * 100 : 0;
+        // Top material por profit
+        const profitPorMaterial = mats.map((m) => {
+            const cm = cs.filter((c) => String(c.inventarioId) === String(m.inventarioId));
+            const vm = vs.filter((v) => String(v.inventarioId) === String(m.inventarioId));
+            const ing = vm.reduce((s, v) => s + Number(v.cantidad || 0) * Number(v.precioVenta || 0), 0);
+            const cost = cm.reduce((s, c) => s + Number(c.cantidad || 0) * Number(c.precioCompra || 0), 0);
+            return { nombre: m.nombre, profit: ing - cost };
+        }).sort((a, b) => b.profit - a.profit);
+        const top = profitPorMaterial[0];
+        // Movs con pérdida: ventas donde precioVenta < precioCompra del material
+        const movsPerdida = vs.filter((v) => {
+            const compra = cs.find((c) => String(c.inventarioId) === String(v.inventarioId));
+            if (!compra) return false;
+            return Number(v.precioVenta || 0) < Number(compra.precioCompra || 0);
+        }).length;
+        setKpi("inv-flujo-gan-kpi-ingresos", formatearCOP(ingresosTotal));
+        setKpi("inv-flujo-gan-kpi-costos", formatearCOP(costosTotal));
+        setKpi("inv-flujo-gan-kpi-profit", formatearCOP(profitTotal));
+        setKpiClass("inv-flujo-gan-kpi-profit", profitTotal >= 0 ? "text-success" : "text-danger");
+        setKpi("inv-flujo-gan-kpi-margen", `${margen.toFixed(1)}%`);
+        setKpiClass("inv-flujo-gan-kpi-margen", margen >= 20 ? "text-success" : margen >= 10 ? "text-warning" : "text-danger");
+        setKpi("inv-flujo-gan-kpi-top", top ? top.nombre : "—");
+        setKpi("inv-flujo-gan-kpi-top-val", top ? formatearCOP(top.profit) : "—");
+        setKpi("inv-flujo-gan-kpi-perdida", movsPerdida);
+        const badge = document.getElementById("inv-flujo-gan-badge");
+        if (badge) badge.textContent = `${mats.length} material${mats.length === 1 ? "" : "es"}`;
+        renderChart("inv-ganancias-chart", { modo: "ganancia", materiales: mats, gran, desde, hasta, buckets });
+    }
+
     function renderWsChart() {
         if (!currentMaterial) return;
         const gran = "dia";
-        renderChart("stockTimeChart", [currentMaterial], gran, true);
+        const desde = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const hasta = new Date();
+        const buckets = generarBuckets(desde, hasta, gran);
+        renderChart("stockTimeChart", {
+            modo: "stock", materiales: [currentMaterial], gran, mostrarCap: true,
+            desde, hasta, buckets,
+        });
         const invId = currentMaterial.inventarioId;
         const cm = comprasDB.filter((c) => String(c.inventarioId) === String(invId));
         const vm = ventasDB.filter((v) => String(v.inventarioId) === String(invId));
@@ -1491,10 +1676,57 @@
         setKpi("inv-ws-flujo-ventas", vm.length);
     }
 
+    function renderWsGananciasChart() {
+        if (!currentMaterial) return;
+        const gran = "dia";
+        const desde = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const hasta = new Date();
+        const buckets = generarBuckets(desde, hasta, gran);
+        const invId = currentMaterial.inventarioId;
+        const cm = comprasDB.filter((c) => String(c.inventarioId) === String(invId));
+        const vm = ventasDB.filter((v) => String(v.inventarioId) === String(invId));
+        const ingresosTotal = vm.reduce((s, v) => s + Number(v.cantidad || 0) * Number(v.precioVenta || 0), 0);
+        const costosTotal = cm.reduce((s, c) => s + Number(c.cantidad || 0) * Number(c.precioCompra || 0), 0);
+        const profitTotal = ingresosTotal - costosTotal;
+        const margen = ingresosTotal > 0 ? (profitTotal / ingresosTotal) * 100 : 0;
+        const movsPerdida = vm.filter((v) => {
+            const compra = cm.find((c) => String(c.inventarioId) === String(v.inventarioId));
+            if (!compra) return false;
+            return Number(v.precioVenta || 0) < Number(compra.precioCompra || 0);
+        }).length;
+        const ultimaVenta = vm.length ? vm.slice().sort((a, b) => new Date(b.fechaVenta) - new Date(a.fechaVenta))[0] : null;
+        const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        const setKpiClass = (id, cls) => { const el = document.getElementById(id); if (el) el.className = `fw-bold mb-0 ${cls || ""}`.trim(); };
+        setKpi("inv-ws-flujo-gan-ingresos", formatearCOP(ingresosTotal));
+        setKpi("inv-ws-flujo-gan-costos", formatearCOP(costosTotal));
+        setKpi("inv-ws-flujo-gan-profit", formatearCOP(profitTotal));
+        setKpiClass("inv-ws-flujo-gan-profit", profitTotal >= 0 ? "text-success" : "text-danger");
+        setKpi("inv-ws-flujo-gan-margen", `${margen.toFixed(1)}%`);
+        setKpiClass("inv-ws-flujo-gan-margen", margen >= 20 ? "text-success" : margen >= 10 ? "text-warning" : "text-danger");
+        setKpi("inv-ws-flujo-gan-perdida", movsPerdida);
+        if (ultimaVenta) {
+            setKpi("inv-ws-flujo-gan-ultima", formatDateCO(ultimaVenta.fechaVenta));
+            setKpi("inv-ws-flujo-gan-ultima-val", formatearCOP(Number(ultimaVenta.cantidad || 0) * Number(ultimaVenta.precioVenta || 0)));
+        } else {
+            setKpi("inv-ws-flujo-gan-ultima", "—");
+            setKpi("inv-ws-flujo-gan-ultima-val", "—");
+        }
+        renderChart("inv-ws-ganancias-chart", {
+            modo: "ganancia", materiales: [currentMaterial], gran,
+            desde, hasta, buckets,
+        });
+    }
+
+    function _parseFecha(id) {
+        const v = document.getElementById(id)?.value;
+        if (!v) return null;
+        return new Date(v + "T00:00:00");
+    }
+
     function renderFlujoMaterialesList() {
         const cont = document.getElementById("inv-flujo-materiales-list");
-        if (!cont) return;
-        cont.innerHTML = materialesDB.map((m, i) => `
+        const contGan = document.getElementById("inv-flujo-gan-materiales-list");
+        const html = materialesDB.map((m, i) => `
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" value="${escapeHtml(m.inventarioId)}" id="inv-flujo-mat-${i}" checked>
                 <label class="form-check-label small" for="inv-flujo-mat-${i}">
@@ -1503,7 +1735,14 @@
                 </label>
             </div>
         `).join("") || '<small class="text-muted">No hay materiales en el inventario.</small>';
-        cont.querySelectorAll('input[type="checkbox"]').forEach((cb) => cb.addEventListener("change", renderOvtabChart));
+        if (cont) {
+            cont.innerHTML = html;
+            cont.querySelectorAll('input[type="checkbox"]').forEach((cb) => cb.addEventListener("change", renderOvtabChart));
+        }
+        if (contGan) {
+            contGan.innerHTML = html;
+            contGan.querySelectorAll('input[type="checkbox"]').forEach((cb) => cb.addEventListener("change", renderOvGananciasChart));
+        }
     }
 
     // ============================================================
@@ -1586,10 +1825,12 @@
             el.addEventListener("change", _wrapWithScope(_toggleCentroAcopioLock));
         });
 
-        // Chart ovtab
-        document.getElementById("inv-flujo-aplicar")?.addEventListener("click", renderOvtabChart);
-        document.getElementById("inv-flujo-granularidad")?.addEventListener("change", renderOvtabChart);
-        document.getElementById("inv-flujo-cap")?.addEventListener("change", renderOvtabChart);
+        // Chart ovtab — Stock
+        document.getElementById("inv-flujo-stock-aplicar")?.addEventListener("click", renderOvtabChart);
+        document.getElementById("inv-flujo-stock-granularidad")?.addEventListener("change", renderOvtabChart);
+        document.getElementById("inv-flujo-stock-cap")?.addEventListener("change", renderOvtabChart);
+        document.getElementById("inv-flujo-stock-desde")?.addEventListener("change", renderOvtabChart);
+        document.getElementById("inv-flujo-stock-hasta")?.addEventListener("change", renderOvtabChart);
         document.getElementById("inv-flujo-todos")?.addEventListener("click", () => {
             document.querySelectorAll('#inv-flujo-materiales-list input[type="checkbox"]').forEach((c) => { c.checked = true; });
             renderOvtabChart();
@@ -1597,6 +1838,49 @@
         document.getElementById("inv-flujo-ninguno")?.addEventListener("click", () => {
             document.querySelectorAll('#inv-flujo-materiales-list input[type="checkbox"]').forEach((c) => { c.checked = false; });
             renderOvtabChart();
+        });
+
+        // Chart ovtab — Ganancias
+        document.getElementById("inv-flujo-gan-aplicar")?.addEventListener("click", renderOvGananciasChart);
+        document.getElementById("inv-flujo-gan-granularidad")?.addEventListener("change", renderOvGananciasChart);
+        document.getElementById("inv-flujo-gan-desde")?.addEventListener("change", renderOvGananciasChart);
+        document.getElementById("inv-flujo-gan-hasta")?.addEventListener("change", renderOvGananciasChart);
+
+        // Sub-tabs internas del flujo (Stock / Ganancias)
+        document.querySelectorAll('#ovFlujoSubtabs [data-ovsub]').forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const sub = btn.dataset.ovsub;
+                document.querySelectorAll('#ovFlujoSubtabs .nav-link').forEach((b) => b.classList.remove("active"));
+                document.querySelectorAll(".ovsub-pane").forEach((p) => p.classList.remove("active"));
+                btn.classList.add("active");
+                const pane = document.getElementById(sub);
+                if (pane) {
+                    pane.classList.add("active");
+                    // Re-init Select2 y re-render del chart con clientWidth correcto
+                    _reinitSelect2InPane(pane);
+                    setTimeout(() => {
+                        if (sub === "ovstock") renderOvtabChart();
+                        else if (sub === "ovgan") renderOvGananciasChart();
+                    }, 50);
+                }
+            });
+        });
+        document.querySelectorAll('#wsFlujoSubtabs [data-wssub]').forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const sub = btn.dataset.wssub;
+                document.querySelectorAll('#wsFlujoSubtabs .nav-link').forEach((b) => b.classList.remove("active"));
+                document.querySelectorAll(".wssub-pane").forEach((p) => p.classList.remove("active"));
+                btn.classList.add("active");
+                const pane = document.getElementById(sub);
+                if (pane) {
+                    pane.classList.add("active");
+                    _reinitSelect2InPane(pane);
+                    setTimeout(() => {
+                        if (sub === "wsstock") renderWsChart();
+                        else if (sub === "wsgan") renderWsGananciasChart();
+                    }, 50);
+                }
+            });
         });
 
         // Render ovtab chart cuando se abre

@@ -242,8 +242,8 @@ class TestSeccionInventario(TestCase):
             # Filtros historial general (5)
             "inv-hfiltro-material", "inv-hfiltro-categoria", "inv-hfiltro-tipo-material",
             "inv-hfiltro-tipo", "inv-hfiltro-centro",
-            # Filtro chart (1)
-            "inv-flujo-granularidad",
+            # Filtros chart flujo (2 sub-tabs: Stock + Ganancias)
+            "inv-flujo-stock-granularidad", "inv-flujo-gan-granularidad",
             # Form inputs inline (2)
             "inv-crear-unidad-medida", "formSalidaCentro",
             # Form inputs en modales (5)
@@ -575,4 +575,205 @@ class TestHistorialWorkspace(TestCase):
         # El tbody de acciones debe incluir "inv-tablasHistorialBody" en la lista
         acciones_block = js.split("// Acciones en tablas (delegado)", 1)[1]
         self.assertIn('"inv-tablasHistorialBody"', acciones_block)
+
+
+class TestFlujoRefactor(TestCase):
+    """Tests del refactor de ovtab-flujo y tab-flujo con sub-tabs Stock/Ganancias
+    y fix de tamaño del chart (Decisiones 35-44)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.localidad = Localidad.objects.create(
+            localidad_id=uuid.uuid4(),
+            nombre="Bogotá",
+        )
+        cls.categoria = CategoriaMaterial.objects.create(
+            nombre="Plásticos",
+        )
+        cls.tipo = TipoMaterial.objects.create(
+            nombre="PET",
+        )
+        cls.material = Material.objects.create(
+            nombre="Botella PET",
+            categoria=cls.categoria,
+            tipo=cls.tipo,
+        )
+
+    def setUp(self):
+        self.client = Client()
+        self.user = _crear_usuario_gestor("flujo-refactor@example.com")
+        self.punto_eca = PuntoECA.objects.create(
+            gestor_eca=self.user,
+            nombre="Punto ECA Test",
+            telefono_punto="6012345678",
+            direccion="Calle Falsa 123",
+            ciudad="Bogotá",
+            email="flujo-refactor@example.com",
+            celular="3001234567",
+            latitud=4.6097,
+            longitud=-74.0817,
+            localidad=self.localidad,
+        )
+        Inventario.objects.create(
+            punto_eca=self.punto_eca,
+            material=self.material,
+            capacidad_maxima=100,
+            unidad_medida="KG",
+            stock_actual=50,
+            ocupacion_actual=50,
+            umbral_alerta=70,
+            umbral_critico=90,
+            precio_compra=2000,
+            precio_venta=3500,
+        )
+        self.client.force_login(self.user)
+
+    def test_ovtab_flujo_tiene_subtabs_stock_y_ganancias(self):
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        # Sub-tabs con data-ovsub
+        self.assertIn('id="ovFlujoSubtabs"', content)
+        self.assertIn('data-ovsub="ovstock"', content)
+        self.assertIn('data-ovsub="ovgan"', content)
+        # Sub-panes
+        self.assertIn('id="ovstock"', content)
+        self.assertIn('id="ovgan"', content)
+        # CSS para ocultar sub-pane inactivo
+        self.assertIn(".ovsub-pane", content)
+        self.assertIn(".ovsub-pane.active", content)
+
+    def test_ovtab_flujo_tiene_kpis_ganancias(self):
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        kpis = [
+            "inv-flujo-gan-kpi-ingresos",
+            "inv-flujo-gan-kpi-costos",
+            "inv-flujo-gan-kpi-profit",
+            "inv-flujo-gan-kpi-margen",
+            "inv-flujo-gan-kpi-top",
+            "inv-flujo-gan-kpi-top-val",
+            "inv-flujo-gan-kpi-perdida",
+            "inv-flujo-gan-badge",
+        ]
+        for kpi in kpis:
+            with self.subTest(kpi=kpi):
+                self.assertIn(f'id="{kpi}"', content)
+
+    def test_ovtab_flujo_tiene_filtros_independientes_stock_y_gan(self):
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        # Filtros Stock
+        for fid in [
+            "inv-flujo-stock-desde", "inv-flujo-stock-hasta",
+            "inv-flujo-stock-granularidad", "inv-flujo-stock-cap",
+            "inv-flujo-stock-aplicar",
+        ]:
+            with self.subTest(filtro=fid):
+                self.assertIn(f'id="{fid}"', content)
+        # Filtros Ganancias
+        for fid in [
+            "inv-flujo-gan-desde", "inv-flujo-gan-hasta",
+            "inv-flujo-gan-granularidad", "inv-flujo-gan-aplicar",
+            "inv-flujo-gan-materiales-list",
+        ]:
+            with self.subTest(filtro=fid):
+                self.assertIn(f'id="{fid}"', content)
+        # El chart de stock y el de ganancias
+        self.assertIn('id="inv-stock-time-chart"', content)
+        self.assertIn('id="inv-ganancias-chart"', content)
+
+    def test_workspace_tab_flujo_tiene_subtabs(self):
+        """El workspace del material también tiene las sub-tabs Stock/Ganancias."""
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        self.assertIn('id="wsFlujoSubtabs"', content)
+        self.assertIn('data-wssub="wsstock"', content)
+        self.assertIn('data-wssub="wsgan"', content)
+        self.assertIn('id="wsstock"', content)
+        self.assertIn('id="wsgan"', content)
+        # CSS
+        self.assertIn(".wssub-pane", content)
+        self.assertIn(".wssub-pane.active", content)
+
+    def test_workspace_tab_flujo_tiene_kpis_ganancias(self):
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        kpis = [
+            "inv-ws-flujo-gan-ingresos",
+            "inv-ws-flujo-gan-costos",
+            "inv-ws-flujo-gan-profit",
+            "inv-ws-flujo-gan-margen",
+            "inv-ws-flujo-gan-perdida",
+            "inv-ws-flujo-gan-ultima",
+            "inv-ws-flujo-gan-ultima-val",
+        ]
+        for kpi in kpis:
+            with self.subTest(kpi=kpi):
+                self.assertIn(f'id="{kpi}"', content)
+        # Charts
+        self.assertIn('id="stockTimeChart"', content)
+        self.assertIn('id="inv-ws-ganancias-chart"', content)
+
+    def test_chart_wrapper_css_presente(self):
+        """El wrapper .inv-chart-wrap define alto y ancho para que canvas
+        refleje clientWidth real (sin esto, chart queda con width=600 fallback)."""
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        self.assertIn(".inv-chart-wrap", content)
+        # height: 450px
+        self.assertIn("height: 450px", content)
+        # canvas width 100%
+        self.assertIn("width: 100% !important", content)
+
+    def test_js_construir_serie_ganancias_y_renderers(self):
+        """JS debe contener helpers de ganancias + listeners de sub-tabs."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # Funciones núcleo
+        for fn in [
+            "function construirSerieGanancias",
+            "function renderOvGananciasChart",
+            "function renderWsGananciasChart",
+            "function bucketIndexFor",
+            "function formatearCOP",
+            "function _reinitChartsInPane",
+        ]:
+            with self.subTest(fn=fn):
+                self.assertIn(fn, js)
+        # Listeners
+        for sel in [
+            '#ovFlujoSubtabs [data-ovsub]',
+            '#wsFlujoSubtabs [data-wssub]',
+            'inv-flujo-stock-aplicar',
+            'inv-flujo-gan-aplicar',
+            'inv-flujo-gan-granularidad',
+        ]:
+            with self.subTest(selector=sel):
+                self.assertIn(sel, js)
+        # _reinitChartsInPane llamado desde activarOvTab y activarTab
+        self.assertIn("_reinitChartsInPane(pane)", js)
+
+    def test_render_chart_soporta_modo_ganancia(self):
+        """renderChart recibe opts con 'modo' = 'stock' o 'ganancia'."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # ConstruirSerieGanancias retorna 3 series
+        self.assertIn("ingresos", js)
+        self.assertIn("costos", js)
+        self.assertIn("profit", js)
+        # formatearCOP con sufijos K/M/B
+        self.assertIn("formatearCOP", js)
+        # Modo ganancia con línea y=0 punteada si minY<0
+        self.assertIn('modo === "ganancia"', js)
 
