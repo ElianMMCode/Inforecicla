@@ -208,7 +208,8 @@
     // ============================================================
     // RENDER HISTORIAL / ENTRADAS / SALIDAS
     // ============================================================
-    function filaHistorial(mov, tipo) {
+    function filaHistorial(mov, tipo, opts) {
+        const showMaterial = !opts || opts.showMaterial !== false;
         const fecha = formatDateCO(mov.fechaCompra || mov.fechaVenta);
         const cantidad = mov.cantidad;
         const precio = tipo === "compra" ? mov.precioCompra : mov.precioVenta;
@@ -219,10 +220,13 @@
             ? '<span class="badge bg-danger-subtle text-danger">Compra</span>'
             : '<span class="badge bg-success-subtle text-success">Venta</span>';
         const centro = mov.nombreCentroAcopio || "—";
+        const materialCell = showMaterial
+            ? `<td class="small">${escapeHtml(material)}</td>`
+            : "";
         return `<tr>
             <td class="small">${escapeHtml(fecha)}</td>
             <td>${tipoBadge}</td>
-            <td class="small">${escapeHtml(material)}</td>
+            ${materialCell}
             <td class="small text-end">${formatQty(cantidad, "")}</td>
             <td class="small text-end">${formatCOP(precio)}</td>
             <td class="small">${formatCOP(total)}</td>
@@ -244,9 +248,9 @@
         const tbody = document.getElementById("tablasHistorialBody");
         if (!tbody) return;
         const rows = [];
-        comprasDB.filter((c) => String(c.inventarioId) === String(invId)).forEach((c) => rows.push(filaHistorial(c, "compra")));
-        ventasDB.filter((v) => String(v.inventarioId) === String(invId)).forEach((v) => rows.push(filaHistorial(v, "venta")));
-        tbody.innerHTML = rows.join("") || '<tr><td colspan="8" class="text-center text-muted py-3">Sin movimientos</td></tr>';
+        comprasDB.filter((c) => String(c.inventarioId) === String(invId)).forEach((c) => rows.push(filaHistorial(c, "compra", { showMaterial: false })));
+        ventasDB.filter((v) => String(v.inventarioId) === String(invId)).forEach((v) => rows.push(filaHistorial(v, "venta", { showMaterial: false })));
+        tbody.innerHTML = rows.join("") || '<tr><td colspan="7" class="text-center text-muted py-3">Sin movimientos</td></tr>';
         const p = document.getElementById("paginacionHistorial");
         if (p) p.textContent = `${rows.length} movimientos`;
     }
