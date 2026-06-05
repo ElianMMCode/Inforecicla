@@ -235,12 +235,9 @@
     }
 
     function renderHistorialGeneral() {
-        const tbody = document.getElementById("inv-tablasHistorialBody");
-        if (!tbody) return;
-        const rows = [];
-        comprasDB.forEach((c) => rows.push(filaHistorial(c, "compra")));
-        ventasDB.forEach((v) => rows.push(filaHistorial(v, "venta")));
-        tbody.innerHTML = rows.join("") || '<tr><td colspan="8" class="text-center text-muted py-3">Sin movimientos</td></tr>';
+        _poblarCentrosAcopio();
+        _toggleCentroAcopioLock();
+        renderHistorialGeneralPaged();
     }
 
     function renderHistorialMaterial(invId) {
@@ -860,38 +857,91 @@
     // ============================================================
     // EXPORTAR CON FILTROS APLICADOS
     // ============================================================
+    const PAGE_SIZE = 25;
+    let historialPage = 1;
+
+    function _lookupMaterialNombreByInventarioId(inventarioId) {
+        if (!inventarioId) return "";
+        const m = materialesDB.find((x) => String(x.inventarioId) === String(inventarioId));
+        if (m && m.nombreMaterial) return m.nombreMaterial;
+        const c = comprasDB.find((x) => String(x.inventarioId) === String(inventarioId));
+        if (c && c.nombreMaterial) return c.nombreMaterial;
+        const v = ventasDB.find((x) => String(x.inventarioId) === String(inventarioId));
+        return (v && v.nombreMaterial) || "";
+    }
+
     function buildExportQuery(base) {
         const params = new URLSearchParams();
-        const material = document.getElementById("inv-hfiltro-material")?.value;
+        const materialId = document.getElementById("inv-hfiltro-material")?.value;
+        const materialNombre = _lookupMaterialNombreByInventarioId(materialId);
+        const categoria = document.getElementById("inv-hfiltro-categoria")?.value;
+        const tipoMaterial = document.getElementById("inv-hfiltro-tipo-material")?.value;
         const tipo = document.getElementById("inv-hfiltro-tipo")?.value;
         const desde = document.getElementById("inv-hfiltro-desde")?.value;
         const hasta = document.getElementById("inv-hfiltro-hasta")?.value;
-        if (material) params.append("inventarioId", material);
-        if (tipo) params.append("tipo", tipo);
-        if (desde) params.append("desde", desde);
-        if (hasta) params.append("hasta", hasta);
+        const centro = document.getElementById("inv-hfiltro-centro")?.value;
+        const cantidadMin = document.getElementById("inv-hfiltro-cantidad-min")?.value;
+        const cantidadMax = document.getElementById("inv-hfiltro-cantidad-max")?.value;
+        const montoMin = document.getElementById("inv-hfiltro-monto-min")?.value;
+        const montoMax = document.getElementById("inv-hfiltro-monto-max")?.value;
+        if (materialNombre) params.append("material", materialNombre);
+        if (categoria) params.append("categoria", categoria);
+        if (tipoMaterial) params.append("tipo", tipoMaterial);
+        if (tipo) {
+            params.append("tipo_movimiento", tipo);
+        }
+        if (desde) params.append("fecha_desde", desde);
+        if (hasta) params.append("fecha_hasta", hasta);
+        if (centro) params.append("centro_acopio", centro);
+        if (cantidadMin) params.append("cantidad_min", cantidadMin);
+        if (cantidadMax) params.append("cantidad_max", cantidadMax);
+        if (montoMin) params.append("monto_min", montoMin);
+        if (montoMax) params.append("monto_max", montoMax);
         const qs = params.toString();
         return qs ? `${base}?${qs}` : base;
     }
+    function _exportarHistorialConSweetAlert(formato) {
+        const base = `/punto-eca/movimientos/exportar-historial-${formato}/`;
+        if (getCurrentHistorialRows().length === 0) {
+            if (globalThis.Swal?.fire) {
+                globalThis.Swal.fire({
+                    icon: "info",
+                    title: "Sin resultados",
+                    text: "No hay movimientos para exportar con los filtros aplicados.",
+                    confirmButtonColor: "#0d6efd",
+                });
+            } else {
+                alert("No hay movimientos para exportar con los filtros aplicados.");
+            }
+            return;
+        }
+        window.location.href = buildExportQuery(base);
+    }
     function exportarHistorialExcel() {
-        window.location.href = buildExportQuery("/punto-eca/movimientos/exportar-historial-excel/");
+        _exportarHistorialConSweetAlert("excel");
     }
     function exportarHistorialPdf() {
-        window.location.href = buildExportQuery("/punto-eca/movimientos/exportar-historial-pdf/");
+        _exportarHistorialConSweetAlert("pdf");
     }
 
     // ============================================================
     // FILTRO HISTORIAL GENERAL (landing)
     // ============================================================
-    function aplicarFiltrosHistorial() {
+    function getCurrentHistorialRows() {
         const materialId = document.getElementById("inv-hfiltro-material")?.value || "";
+        const categoria = document.getElementById("inv-hfiltro-categoria")?.value || "";
+        const tipoMaterial = document.getElementById("inv-hfiltro-tipo-material")?.value || "";
         const tipo = document.getElementById("inv-hfiltro-tipo")?.value || "";
         const desde = document.getElementById("inv-hfiltro-desde")?.value;
         const hasta = document.getElementById("inv-hfiltro-hasta")?.value;
+        const centro = document.getElementById("inv-hfiltro-centro")?.value || "";
+        const cantidadMin = parseFloat(document.getElementById("inv-hfiltro-cantidad-min")?.value);
+        const cantidadMax = parseFloat(document.getElementById("inv-hfiltro-cantidad-max")?.value);
+        const montoMin = parseFloat(document.getElementById("inv-hfiltro-monto-min")?.value);
+        const montoMax = parseFloat(document.getElementById("inv-hfiltro-monto-max")?.value);
         const desdeD = desde ? new Date(desde + "T00:00:00") : null;
         const hastaD = hasta ? new Date(hasta + "T23:59:59") : null;
 
-        const filas = [];
         const enRango = (iso) => {
             if (!desdeD && !hastaD) return true;
             const d = new Date(iso);
@@ -901,20 +951,166 @@
             return true;
         };
 
-        if (!tipo || tipo === "compra") {
-            comprasDB.filter((c) => !materialId || String(c.inventarioId) === String(materialId)).filter((c) => enRango(c.fechaCompra)).forEach((c) => filas.push(filaHistorial(c, "compra")));
+        const rows = [];
+        const aceptaCompra = !tipo || tipo === "compra";
+        const aceptaVenta = !tipo || tipo === "venta";
+
+        if (aceptaCompra) {
+            comprasDB.forEach((c) => {
+                if (materialId && String(c.inventarioId) !== String(materialId)) return;
+                if (categoria && c.nombreCategoria !== categoria) return;
+                if (tipoMaterial && c.nombreTipo !== tipoMaterial) return;
+                if (!enRango(c.fechaCompra)) return;
+                const cant = Number(c.cantidad || 0);
+                if (!isNaN(cantidadMin) && cant < cantidadMin) return;
+                if (!isNaN(cantidadMax) && cant > cantidadMax) return;
+                const monto = cant * Number(c.precioCompra || 0);
+                if (!isNaN(montoMin) && monto < montoMin) return;
+                if (!isNaN(montoMax) && monto > montoMax) return;
+                rows.push({ ...c, _tipo: "compra", _ts: c.fechaCompra });
+            });
         }
-        if (!tipo || tipo === "venta") {
-            ventasDB.filter((v) => !materialId || String(v.inventarioId) === String(materialId)).filter((v) => enRango(v.fechaVenta)).forEach((v) => filas.push(filaHistorial(v, "venta")));
+        if (aceptaVenta) {
+            ventasDB.forEach((v) => {
+                if (materialId && String(v.inventarioId) !== String(materialId)) return;
+                if (categoria && v.nombreCategoria !== categoria) return;
+                if (tipoMaterial && v.nombreTipo !== tipoMaterial) return;
+                if (centro && v.nombreCentroAcopio !== centro) return;
+                if (!enRango(v.fechaVenta)) return;
+                const cant = Number(v.cantidad || 0);
+                if (!isNaN(cantidadMin) && cant < cantidadMin) return;
+                if (!isNaN(cantidadMax) && cant > cantidadMax) return;
+                const monto = cant * Number(v.precioVenta || 0);
+                if (!isNaN(montoMin) && monto < montoMin) return;
+                if (!isNaN(montoMax) && monto > montoMax) return;
+                rows.push({ ...v, _tipo: "venta", _ts: v.fechaVenta });
+            });
         }
+        rows.sort((a, b) => new Date(b._ts) - new Date(a._ts));
+        return rows;
+    }
+
+    function _poblarCentrosAcopio() {
+        const sel = document.getElementById("inv-hfiltro-centro");
+        if (!sel) return;
+        const nombres = new Set();
+        ventasDB.forEach((v) => {
+            if (v.nombreCentroAcopio) nombres.add(v.nombreCentroAcopio);
+        });
+        const opts = ['<option value="">—</option>']
+            .concat(Array.from(nombres).sort().map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`));
+        sel.innerHTML = opts.join("");
+    }
+
+    function _toggleCentroAcopioLock() {
+        const tipo = document.getElementById("inv-hfiltro-tipo")?.value;
+        const sel = document.getElementById("inv-hfiltro-centro");
+        if (!sel) return;
+        const enabled = tipo === "venta";
+        sel.disabled = !enabled;
+        if (!enabled) sel.value = "";
+    }
+
+    function renderPager(total, current) {
+        const pager = document.getElementById("inv-hpager");
+        if (!pager) return;
+        if (total === 0) {
+            pager.innerHTML = "";
+            return;
+        }
+        const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        current = Math.min(Math.max(1, current), pages);
+        const parts = [];
+        const mkBtn = (label, page, opts = {}) => {
+            const disabled = opts.disabled ? " disabled" : "";
+            const active = opts.active ? " active" : "";
+            return `<li class="page-item${disabled}${active}"><a class="page-link" href="#" data-page="${page}">${label}</a></li>`;
+        };
+        parts.push(mkBtn("«", 1, { disabled: current === 1 }));
+        parts.push(mkBtn("‹", current - 1, { disabled: current === 1 }));
+        const max = pages;
+        const window = 2;
+        const start = Math.max(1, current - window);
+        const end = Math.min(max, current + window);
+        if (start > 1) {
+            parts.push(mkBtn("1", 1));
+            if (start > 2) parts.push('<li class="page-item disabled"><span class="page-link">…</span></li>');
+        }
+        for (let p = start; p <= end; p++) {
+            parts.push(mkBtn(String(p), p, { active: p === current }));
+        }
+        if (end < max) {
+            if (end < max - 1) parts.push('<li class="page-item disabled"><span class="page-link">…</span></li>');
+            parts.push(mkBtn(String(max), max));
+        }
+        parts.push(mkBtn("›", current + 1, { disabled: current === pages }));
+        parts.push(mkBtn("»", pages, { disabled: current === pages }));
+        pager.innerHTML = parts.join("");
+        pager.querySelectorAll("a.page-link").forEach((a) => {
+            a.addEventListener("click", (ev) => {
+                ev.preventDefault();
+                const p = parseInt(a.dataset.page, 10);
+                if (Number.isFinite(p) && p >= 1 && p <= pages) {
+                    historialPage = p;
+                    renderHistorialGeneralPaged();
+                }
+            });
+        });
+    }
+
+    function renderHistorialGeneralPaged() {
         const tbody = document.getElementById("inv-tablasHistorialBody");
-        if (tbody) tbody.innerHTML = filas.join("") || '<tr><td colspan="8" class="text-center text-muted py-3">Sin movimientos con los filtros aplicados</td></tr>';
-        const counter = document.getElementById("inv-hbadge-count");
-        if (counter) counter.textContent = `${filas.length} registros`;
+        const footer = document.getElementById("inv-hfooter-count");
+        const badge = document.getElementById("inv-hbadge-count");
+        if (!tbody) return;
+        const rows = getCurrentHistorialRows();
+        const total = rows.length;
+        const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (historialPage > pages) historialPage = pages;
+        const start = (historialPage - 1) * PAGE_SIZE;
+        const slice = rows.slice(start, start + PAGE_SIZE);
+        if (slice.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Sin movimientos con los filtros aplicados</td></tr>';
+        } else {
+            tbody.innerHTML = slice.map((r) => filaHistorial(r, r._tipo)).join("");
+        }
+        if (footer) {
+            const from = total === 0 ? 0 : start + 1;
+            const to = Math.min(start + PAGE_SIZE, total);
+            footer.textContent = total === 0
+                ? "Sin registros"
+                : `Mostrando ${from}–${to} de ${total}`;
+        }
+        if (badge) {
+            badge.textContent = `${total} registros`;
+        }
+        renderPager(total, historialPage);
+    }
+
+    function aplicarFiltrosHistorial() {
+        historialPage = 1;
+        renderHistorialGeneralPaged();
     }
     function limpiarFiltrosHistorial() {
-        ["inv-hfiltro-material", "inv-hfiltro-tipo", "inv-hfiltro-desde", "inv-hfiltro-hasta"].forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
-        renderHistorialGeneral();
+        [
+            "inv-hfiltro-material",
+            "inv-hfiltro-categoria",
+            "inv-hfiltro-tipo-material",
+            "inv-hfiltro-tipo",
+            "inv-hfiltro-desde",
+            "inv-hfiltro-hasta",
+            "inv-hfiltro-centro",
+            "inv-hfiltro-cantidad-min",
+            "inv-hfiltro-cantidad-max",
+            "inv-hfiltro-monto-min",
+            "inv-hfiltro-monto-max",
+        ].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+        });
+        _toggleCentroAcopioLock();
+        historialPage = 1;
+        renderHistorialGeneralPaged();
     }
 
     // ============================================================
@@ -1235,23 +1431,15 @@
         // Exportar historial con filtros
         document.getElementById("btnExportHistorialExcel")?.addEventListener("click", exportarHistorialExcel);
         document.getElementById("btnExportHistorialPdf")?.addEventListener("click", exportarHistorialPdf);
-        // Exportar historial general desde ovtab
-        document.querySelectorAll("#ovtab-historial a[href*='exportar-']").forEach((a) => {
-            a.addEventListener("click", (e) => {
-                e.preventDefault();
-                const href = a.getAttribute("href").split("?")[0];
-                const isHist = href.includes("historial");
-                if (isHist) {
-                    window.location.href = buildExportQuery(href);
-                } else {
-                    window.location.href = href;
-                }
-            });
-        });
+        // Exportar historial general desde ovtab (nuevos botones con ID)
+        document.getElementById("inv-btn-export-historial-excel")?.addEventListener("click", exportarHistorialExcel);
+        document.getElementById("inv-btn-export-historial-pdf")?.addEventListener("click", exportarHistorialPdf);
 
         // Filtros historial
         document.getElementById("inv-hfiltro-aplicar")?.addEventListener("click", aplicarFiltrosHistorial);
         document.getElementById("inv-hfiltro-limpiar")?.addEventListener("click", limpiarFiltrosHistorial);
+        // Centro de acopio se habilita sólo si tipo=venta
+        document.getElementById("inv-hfiltro-tipo")?.addEventListener("change", _toggleCentroAcopioLock);
 
         // Chart ovtab
         document.getElementById("inv-flujo-aplicar")?.addEventListener("click", renderOvtabChart);

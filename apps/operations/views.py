@@ -16,7 +16,8 @@ from django.utils.dateparse import parse_date
 from apps.inventory.models import Material
 from apps.ecas.models import PuntoECA
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, F, ExpressionWrapper, DecimalField
+from decimal import Decimal, InvalidOperation
 
 INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
 ERROR_METODO_NO_PERMITIDO = "Método no permitido"
@@ -313,6 +314,7 @@ def _aplicar_filtros_export(
     fecha_campo,
     incluir_centro_acopio=False,
     tipo_movimiento_bloqueado=None,
+    precio_attr=None,
 ):
     punto_eca_id = _obtener_punto_eca_id_export(request)
     if punto_eca_id:
@@ -325,6 +327,10 @@ def _aplicar_filtros_export(
     tipo_movimiento = _obtener_filtro_export(request, "tipo_movimiento").lower()
     fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
     fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
+    cantidad_min = _parse_decimal_export(_obtener_filtro_export(request, "cantidad_min"))
+    cantidad_max = _parse_decimal_export(_obtener_filtro_export(request, "cantidad_max"))
+    monto_min = _parse_decimal_export(_obtener_filtro_export(request, "monto_min"))
+    monto_max = _parse_decimal_export(_obtener_filtro_export(request, "monto_max"))
 
     if material:
         queryset = queryset.filter(inventario__material__nombre__iexact=material)
@@ -340,9 +346,33 @@ def _aplicar_filtros_export(
         queryset = queryset.filter(**{f"{fecha_campo}__date__gte": fecha_desde})
     if fecha_hasta:
         queryset = queryset.filter(**{f"{fecha_campo}__date__lte": fecha_hasta})
+    if cantidad_min is not None:
+        queryset = queryset.filter(cantidad__gte=cantidad_min)
+    if cantidad_max is not None:
+        queryset = queryset.filter(cantidad__lte=cantidad_max)
+    if (monto_min is not None or monto_max is not None) and precio_attr:
+        queryset = queryset.annotate(
+            _monto_total=ExpressionWrapper(
+                F("cantidad") * F(precio_attr),
+                output_field=DecimalField(max_digits=20, decimal_places=4),
+            )
+        )
+        if monto_min is not None:
+            queryset = queryset.filter(_monto_total__gte=monto_min)
+        if monto_max is not None:
+            queryset = queryset.filter(_monto_total__lte=monto_max)
     if tipo_movimiento_bloqueado and tipo_movimiento == tipo_movimiento_bloqueado:
         return queryset.none()
     return queryset
+
+
+def _parse_decimal_export(value):
+    if not value:
+        return None
+    try:
+        return Decimal(value)
+    except (InvalidOperation, ValueError):
+        return None
 
 
 def _filtrar_historial_compras_export(request, queryset):
@@ -351,6 +381,7 @@ def _filtrar_historial_compras_export(request, queryset):
         queryset,
         fecha_campo="fecha_compra",
         tipo_movimiento_bloqueado="venta",
+        precio_attr="precio_compra",
     )
 
 
@@ -361,6 +392,7 @@ def _filtrar_historial_ventas_export(request, queryset):
         fecha_campo="fecha_venta",
         incluir_centro_acopio=True,
         tipo_movimiento_bloqueado="compra",
+        precio_attr="precio_venta",
     )
 
 

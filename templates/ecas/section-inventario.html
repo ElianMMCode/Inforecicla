@@ -501,7 +501,7 @@ globalThis.getCSRFToken = function () {
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-material">Material</label>
                                     <select class="form-select form-select-sm" id="inv-hfiltro-material">
                                         <option value="">-- Todos --</option>
@@ -510,27 +510,70 @@ globalThis.getCSRFToken = function () {
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small" for="inv-hfiltro-tipo">Tipo movimiento</label>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-categoria">Categoría</label>
+                                    <select class="form-select form-select-sm" id="inv-hfiltro-categoria">
+                                        <option value="">-- Todas --</option>
+                                        {% for cat in categoria_inventario %}
+                                            <option value="{{ cat }}">{{ cat }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-tipo-material">Tipo material</label>
+                                    <select class="form-select form-select-sm" id="inv-hfiltro-tipo-material">
+                                        <option value="">-- Todos --</option>
+                                        {% for tip in tipo_inventario %}
+                                            <option value="{{ tip }}">{{ tip }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-tipo">Tipo mov.</label>
                                     <select class="form-select form-select-sm" id="inv-hfiltro-tipo">
                                         <option value="">Todos</option>
                                         <option value="compra">Compra</option>
                                         <option value="venta">Venta</option>
                                     </select>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-1">
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-desde">Desde</label>
                                     <input type="date" class="form-control form-control-sm" id="inv-hfiltro-desde">
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-1">
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-hasta">Hasta</label>
                                     <input type="date" class="form-control form-control-sm" id="inv-hfiltro-hasta">
                                 </div>
-                                <div class="col-md-12 d-flex align-items-end gap-2">
-                                    <button class="btn btn-primary btn-sm fw-semibold" type="button" id="inv-hfiltro-aplicar">
-                                        <i class="bi bi-search me-1"></i>Buscar
+                            </div>
+                            <div class="row g-3 mt-1">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-centro">Centro de acopio</label>
+                                    <select class="form-select form-select-sm" id="inv-hfiltro-centro" disabled>
+                                        <option value="">—</option>
+                                    </select>
+                                    <small class="form-text text-muted">Habilitado al elegir Venta</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-cantidad-min">Cantidad mín.</label>
+                                    <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-cantidad-min" placeholder="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-cantidad-max">Cantidad máx.</label>
+                                    <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-cantidad-max" placeholder="∞">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-monto-min">Monto mín.</label>
+                                    <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-monto-min" placeholder="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-monto-max">Monto máx.</label>
+                                    <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="inv-hfiltro-monto-max" placeholder="∞">
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end gap-1">
+                                    <button class="btn btn-primary btn-sm fw-semibold flex-grow-1" type="button" id="inv-hfiltro-aplicar" title="Aplicar filtros">
+                                        <i class="bi bi-search"></i>
                                     </button>
-                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="inv-hfiltro-limpiar">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="inv-hfiltro-limpiar" title="Limpiar filtros">
                                         <i class="bi bi-arrow-counterclockwise"></i>
                                     </button>
                                 </div>
@@ -542,12 +585,12 @@ globalThis.getCSRFToken = function () {
                         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-2">
                                 <h6 class="mb-0 fw-bold text-dark">Todos los movimientos</h6>
-                                <a class="btn btn-sm btn-outline-success fw-semibold ms-2" href="/punto-eca/movimientos/exportar-compras-excel/">
+                                <button class="btn btn-sm btn-outline-success fw-semibold ms-2" type="button" id="inv-btn-export-historial-excel">
                                     <i class="bi bi-file-earmark-excel me-1"></i>Excel
-                                </a>
-                                <a class="btn btn-sm btn-outline-danger fw-semibold" href="/punto-eca/movimientos/exportar-compras-pdf/">
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger fw-semibold" type="button" id="inv-btn-export-historial-pdf">
                                     <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-                                </a>
+                                </button>
                             </div>
                             <span class="badge bg-secondary rounded-pill" id="inv-hbadge-count">
                                 {{ historial_compras|length|add:historial_ventas|length }} registros
@@ -571,8 +614,11 @@ globalThis.getCSRFToken = function () {
                                 </tbody>
                             </table>
                         </div>
-                        <div class="card-footer bg-light border-top px-4 py-3 text-center">
+                        <div class="card-footer bg-light border-top px-4 py-3 d-flex justify-content-between align-items-center">
                             <small class="text-muted" id="inv-hfooter-count">—</small>
+                            <nav aria-label="Paginación historial">
+                                <ul class="pagination pagination-sm mb-0" id="inv-hpager"></ul>
+                            </nav>
                         </div>
                     </div>
                 </div>
