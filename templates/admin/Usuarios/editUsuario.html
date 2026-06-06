@@ -148,26 +148,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-{% if messages %}
-  {% for first_message in messages %}
-    {% if forloop.first %}
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      if (typeof Swal === "undefined") {
-        return;
-      }
-
-      Swal.fire({
-        icon: "{{ first_message.tags|default:'info' }}",
-        title: "{{ first_message.tags|capfirst|default:'Mensaje'|escapejs }}",
-        text: "{{ first_message|escapejs }}",
-        confirmButtonColor: "#198754",
-      });
-    });
-  </script>
-    {% endif %}
-  {% endfor %}
-{% endif %}
+{% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script src="{% static 'js/admin/editar_usuario.js' %}"></script>
 {% endblock %}
