@@ -79,6 +79,12 @@
         currentMaterial = inv;
         isWorkspaceHistorial = tabId === "tab-historial";
         poblarWorkspace(inv);
+        // Auto-rellenar campos readonly de material en forms de crear
+        // (sólo si vamos a un tab donde se usan, evita llenar en historial).
+        if (tabId === "tab-compra" || tabId === "tab-venta" || !tabId) {
+            poblarInfoMaterial("formEntrada");
+            poblarInfoMaterial("formSalida");
+        }
         document.getElementById("estado-landing")?.classList.remove("active");
         document.getElementById("estado-workspace")?.classList.add("active");
         if (tabId) activarTab(tabId);
@@ -614,6 +620,8 @@
 
     function bind() {
         _initSelect2InSection();
+        // Listeners de cálculo de total (cantidad × precio) en forms crear
+        _bindFormTotalListeners();
         // Tabs
         document.querySelectorAll("#otrasVistasTabs [data-ovtab]").forEach((btn) => {
             btn.addEventListener("click", () => activarOvTab(btn.dataset.ovtab));
@@ -740,6 +748,15 @@
         document.getElementById(`${prefix}-cantidad`).value = m.cantidad || "";
         document.getElementById(`${prefix}-precio`).value = (tipo === "compra" ? m.precioCompra : m.precioVenta) || "";
         document.getElementById(`${prefix}-observaciones`).value = m.observaciones || "";
+        // Hidden de validación de stock (Decisión de Commit 2): se usan
+        // para evitar que la edición deje el inventario en estado inválido
+        // (ej. venta que lleva el stock a negativo). El JS hace la validación
+        // y el backend la hace de nuevo de forma autoritativa.
+        if (currentMaterial) {
+            document.getElementById(`${prefix}-stock-actual`).value = currentMaterial.stockActual ?? "";
+            document.getElementById(`${prefix}-capacidad-maxima`).value = currentMaterial.capacidadMaxima ?? "";
+        }
+        document.getElementById(`${prefix}-cantidad-original`).value = m.cantidad ?? "";
         if (tipo === "venta") {
             const sel = document.getElementById(`${prefix}-centro`);
             if (sel) sel.value = m.centroAcopioId || "";
@@ -895,6 +912,76 @@
                 setTimeout(() => window.location.reload(), 1500);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+    }
+
+    // ============================================================
+    // INFO MATERIAL: poblar campos readonly (Tipo/Categoría/Unidad/Stock/Cap)
+    // y total auto-calculado (cantidad × precio) en tiempo real.
+    // Se invoca desde irWorkspace() y cada vez que se selecciona un material.
+    // ============================================================
+    function poblarInfoMaterial(prefix) {
+        if (!currentMaterial) return;
+        const inv = currentMaterial;
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
+        setVal(`${prefix}MaterialTipo`, inv.tipo);
+        setVal(`${prefix}MaterialCategoria`, inv.categoria);
+        setVal(`${prefix}MaterialUnidad`, inv.unidad);
+        setVal(`${prefix}StockActual`, inv.stockActual);
+        setVal(`${prefix}CapacidadMaxima`, inv.capacidadMaxima);
+        // Autorrellenar precio unitario desde el backend (el usuario puede
+        // sobrescribirlo). Es un buen default porque evita teclear el precio
+        // estándar del material y reduce errores.
+        if (prefix === "formEntrada") {
+            const precioEl = document.getElementById("formEntradaPrecio");
+            if (precioEl && inv.precioCompra != null && !precioEl.value) {
+                precioEl.value = inv.precioCompra;
+            }
+        } else if (prefix === "formSalida") {
+            const precioEl = document.getElementById("formSalidaPrecio");
+            if (precioEl && inv.precioVenta != null && !precioEl.value) {
+                precioEl.value = inv.precioVenta;
+            }
+        }
+        // Recalcular total con el precio recién autorrellenado
+        if (prefix === "formEntrada") actualizarTotalEntrada();
+        if (prefix === "formSalida") actualizarTotalVenta();
+    }
+    function poblarInfoMaterialEdicion(tipo) {
+        // Para los modales de edición: poblar los 3 hidden de validación
+        // de stock desde la fila del historial de la compra/venta seleccionada.
+        // `currentMaterial` tiene stockActual/capacidadMaxima, y la cantidad
+        // original se pasa en la firma de la función.
+        if (!currentMaterial) return;
+        const inv = currentMaterial;
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
+        const prefix = tipo === "compra" ? "inv-edit-compra" : "inv-edit-venta";
+        setVal(`${prefix}-stock-actual`, inv.stockActual);
+        setVal(`${prefix}-capacidad-maxima`, inv.capacidadMaxima);
+        // cantidadOriginal se setea desde editarMovimiento() al abrir el modal
+    }
+    function actualizarTotalEntrada() {
+        const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
+        const precio = Number(document.getElementById("formEntradaPrecio")?.value || 0);
+        const total = cant * precio;
+        const el = document.getElementById("formEntradaTotalCompra");
+        if (el) el.value = total > 0 ? total.toLocaleString("es-CO", { maximumFractionDigits: 0 }) : "";
+    }
+    function actualizarTotalVenta() {
+        const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
+        const precio = Number(document.getElementById("formSalidaPrecio")?.value || 0);
+        const total = cant * precio;
+        const el = document.getElementById("formSalidaTotalVenta");
+        if (el) el.value = total > 0 ? total.toLocaleString("es-CO", { maximumFractionDigits: 0 }) : "";
+    }
+    function _bindFormTotalListeners() {
+        const fECant = document.getElementById("formEntradaCantidad");
+        const fEPrecio = document.getElementById("formEntradaPrecio");
+        if (fECant) fECant.addEventListener("input", actualizarTotalEntrada);
+        if (fEPrecio) fEPrecio.addEventListener("input", actualizarTotalEntrada);
+        const fSCant = document.getElementById("formSalidaCantidad");
+        const fSPrecio = document.getElementById("formSalidaPrecio");
+        if (fSCant) fSCant.addEventListener("input", actualizarTotalVenta);
+        if (fSPrecio) fSPrecio.addEventListener("input", actualizarTotalVenta);
     }
 
     // ============================================================

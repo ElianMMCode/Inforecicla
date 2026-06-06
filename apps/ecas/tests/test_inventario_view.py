@@ -889,3 +889,148 @@ class TestFormsCrearCompraVentaPayload(TestCase):
         self.assertIn("materialId: currentMaterial?.materialId", block,
                       "submitSalida debe enviar materialId como fallback")
 
+
+class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
+    """`poblarInfoMaterial(prefix)` debe autorrellenar 5 readonly de material
+    (Tipo, Categoría, Unidad, Stock Actual, Capacidad Máxima) + el campo
+    `precio` (compra o venta según prefix) desde el objeto `currentMaterial`
+    que viene del backend. Esto evita que el usuario tenga que tipear el
+    precio estándar y reduce errores al registrar movimientos.
+    """
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+
+    def test_poblar_info_material_existe_y_usa_current_material(self):
+        self.assertIn("function poblarInfoMaterial", self.js)
+        block = self.js.split("function poblarInfoMaterial", 1)[1].split("function ", 1)[0]
+        self.assertIn("currentMaterial", block,
+                      "poblarInfoMaterial debe consultar `currentMaterial`")
+        # Debe setear los 5 readonly via setVal
+        for field in ["MaterialTipo", "MaterialCategoria", "MaterialUnidad",
+                      "StockActual", "CapacidadMaxima"]:
+            self.assertIn(field, block,
+                          f"poblarInfoMaterial debe setear readonly `{field}`")
+
+    def test_poblar_info_material_autorrellena_precio_compra(self):
+        """Para prefix='formEntrada' debe autorrellenar formEntradaPrecio con
+        currentMaterial.precioCompra."""
+        self.assertIn("function poblarInfoMaterial", self.js)
+        block = self.js.split("function poblarInfoMaterial", 1)[1].split("function ", 1)[0]
+        self.assertIn('prefix === "formEntrada"', block,
+                      "poblarInfoMaterial debe tener rama para formEntrada")
+        self.assertIn("formEntradaPrecio", block,
+                      "poblarInfoMaterial debe setear formEntradaPrecio")
+        self.assertIn("inv.precioCompra", block,
+                      "poblarInfoMaterial debe leer inv.precioCompra (viene del backend)")
+
+    def test_poblar_info_material_autorrellena_precio_venta(self):
+        """Para prefix='formSalida' debe autorrellenar formSalidaPrecio con
+        currentMaterial.precioVenta."""
+        self.assertIn("function poblarInfoMaterial", self.js)
+        block = self.js.split("function poblarInfoMaterial", 1)[1].split("function ", 1)[0]
+        self.assertIn('prefix === "formSalida"', block,
+                      "poblarInfoMaterial debe tener rama para formSalida")
+        self.assertIn("formSalidaPrecio", block,
+                      "poblarInfoMaterial debe setear formSalidaPrecio")
+        self.assertIn("inv.precioVenta", block,
+                      "poblarInfoMaterial debe leer inv.precioVenta (viene del backend)")
+
+    def test_poblar_info_material_recalcula_total_despues_de_autorrellenar(self):
+        """Después de setear el precio, debe recalcular el total para que se
+        vea inmediatamente aunque el usuario todavía no haya tocado nada."""
+        self.assertIn("function poblarInfoMaterial", self.js)
+        block = self.js.split("function poblarInfoMaterial", 1)[1].split("function ", 1)[0]
+        self.assertIn("actualizarTotalEntrada()", block)
+        self.assertIn("actualizarTotalVenta()", block)
+
+    def test_ir_workspace_llama_poblar_info_material(self):
+        """`irWorkspace` debe llamar poblarInfoMaterial('formEntrada') y
+        poblarInfoMaterial('formSalida') cuando se va a tabs de compra/venta
+        para que los readonly aparezcan llenos al instante."""
+        block = self.js.split("function irWorkspace", 1)[1].split("function ", 1)[0]
+        self.assertIn('poblarInfoMaterial("formEntrada")', block,
+                      "irWorkspace debe poblar formEntrada al ir al workspace")
+        self.assertIn('poblarInfoMaterial("formSalida")', block,
+                      "irWorkspace debe poblar formSalida al ir al workspace")
+
+
+class TestBindFormTotalListeners(TestCase):
+    """El cálculo del Total (cantidad × precio) en los forms de crear debe
+    actualizarse en tiempo real. Para eso `bind()` debe llamar
+    `_bindFormTotalListeners()` una vez al iniciar."""
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+
+    def test_bind_llama_bind_form_total_listeners(self):
+        """`bind()` debe invocar _bindFormTotalListeners() para enganchar
+        listeners de input sobre los campos de cantidad y precio de los
+        forms de crear."""
+        block = self.js.split("function bind()", 1)[1].split("function ", 1)[0]
+        self.assertIn("_bindFormTotalListeners()", block,
+                      "bind() debe llamar _bindFormTotalListeners() para enganchar listeners de cálculo de total")
+
+    def test_bind_form_total_listeners_escucha_cantidad_y_precio(self):
+        """La función _bindFormTotalListeners debe registrar listeners sobre
+        los inputs de cantidad y precio de ambos forms."""
+        self.assertIn("function _bindFormTotalListeners", self.js)
+        block = self.js.split("function _bindFormTotalListeners", 1)[1].split("function ", 1)[0]
+        # Debe enganchar listeners a formEntradaCantidad, formEntradaPrecio,
+        # formSalidaCantidad, formSalidaPrecio
+        for field in ["formEntradaCantidad", "formEntradaPrecio",
+                      "formSalidaCantidad", "formSalidaPrecio"]:
+            self.assertIn(field, block,
+                          f"_bindFormTotalListeners debe enganchar listener a `{field}`")
+        # Debe actualizar los totales correspondientes
+        self.assertIn("actualizarTotalEntrada", block)
+        self.assertIn("actualizarTotalVenta", block)
+
+
+class TestEditarMovimientoSeteaHiddenStock(TestCase):
+    """`editarMovimiento(tipo, id)` debe setear los 3 hidden de validación de
+    stock (`stock-actual`, `capacidad-maxima`, `cantidad-original`) en el modal
+    de edición. Estos hidden se usan para validar en JS que la edición no
+    deje el inventario en estado inválido (ej. venta que lleva stock a < 0).
+    """
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+
+    def test_editar_movimiento_setea_stock_actual_hidden(self):
+        """Debe setear ${prefix}-stock-actual con currentMaterial.stockActual."""
+        block = self.js.split("function editarMovimiento", 1)[1].split("function ", 1)[0]
+        self.assertIn("stock-actual", block,
+                      "editarMovimiento debe setear hidden stock-actual")
+        self.assertIn("currentMaterial.stockActual", block,
+                      "editarMovimiento debe leer currentMaterial.stockActual")
+
+    def test_editar_movimiento_setea_capacidad_maxima_hidden(self):
+        """Debe setear ${prefix}-capacidad-maxima con currentMaterial.capacidadMaxima."""
+        block = self.js.split("function editarMovimiento", 1)[1].split("function ", 1)[0]
+        self.assertIn("capacidad-maxima", block,
+                      "editarMovimiento debe setear hidden capacidad-maxima")
+        self.assertIn("currentMaterial.capacidadMaxima", block,
+                      "editarMovimiento debe leer currentMaterial.capacidadMaxima")
+
+    def test_editar_movimiento_setea_cantidad_original_hidden(self):
+        """Debe setear ${prefix}-cantidad-original con m.cantidad para que el
+        JS pueda calcular la diferencia y validar stock resultante."""
+        block = self.js.split("function editarMovimiento", 1)[1].split("function ", 1)[0]
+        self.assertIn("cantidad-original", block,
+                      "editarMovimiento debe setear hidden cantidad-original")
+        self.assertIn("m.cantidad", block,
+                      "editarMovimiento debe leer m.cantidad")
+
