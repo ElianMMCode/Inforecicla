@@ -206,6 +206,22 @@ class TestSeccionInventario(TestCase):
         self.assertEqual(float(bot["precioCompra"]), 2000.0)
         self.assertEqual(float(bot["precioVenta"]), 3500.0)
 
+    def test_readonly_stock_y_capacidad_tienen_step_decimal(self):
+        """Los inputs readonly de Stock Actual y Capacidad Máxima deben tener
+        step='0.01' para que el autorrellenado de poblarInfoMaterial muestre
+        stocks con decimales (ej. 50.5 KG) sin warning de step mismatch."""
+        self._login()
+        response = self.client.get("/punto-eca/inventario/")
+        body = response.content.decode("utf-8")
+        import re
+        for field in ["formEntradaStockActual", "formSalidaStockActual",
+                      "formEntradaCapacidadMaxima", "formSalidaCapacidadMaxima"]:
+            # Buscar el tag <input> cuyo id sea field y capturar step=...
+            m = re.search(rf'<input[^>]*id="{field}"[^>]*>', body)
+            self.assertIsNotNone(m, f"no se encontró input #{field} en el HTML")
+            self.assertIn('step="0.01"', m.group(0),
+                          f"input #{field} debe tener step='0.01' para soportar decimales")
+
     def test_contexto_incluye_punto_y_gestor(self):
         self._login()
         response = self.client.get("/punto-eca/inventario/")
