@@ -1006,13 +1006,13 @@ globalThis.getCSRFToken = function () {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formEntradaFecha">Fecha <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control form-control-sm border-primary border-2"
+                                <input type="datetime-local" class="form-control form-control-sm border-danger border-2"
                                        id="formEntradaFecha" name="fecha"
                                        value="{{ now|date:'Y-m-d\\TH:i' }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formEntradaCantidad">Cantidad <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control form-control-sm border-primary border-2"
+                                <input type="number" step="0.01" class="form-control form-control-sm border-danger border-2"
                                        id="formEntradaCantidad" name="cantidad" placeholder="0.00" min="0" max="99999.99"
                                        maxlength="8" data-numeric-decimal required>
                             </div>
@@ -1020,7 +1020,7 @@ globalThis.getCSRFToken = function () {
                                 <label class="form-label fw-semibold small" for="formEntradaPrecio">Precio Unitario <small class="text-muted fw-normal">(COP)</small> <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-sm has-validation">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="1" class="form-control form-control-sm border-primary border-2"
+                                    <input type="number" step="1" class="form-control form-control-sm border-danger border-2"
                                            id="formEntradaPrecio" name="precioCompra" placeholder="0" min="0" max="9999999"
                                            maxlength="7" data-numeric-decimal required>
                                     <span class="input-group-text">COP</span>
@@ -1132,13 +1132,13 @@ globalThis.getCSRFToken = function () {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaFecha">Fecha <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control form-control-sm border-primary border-2"
+                                <input type="datetime-local" class="form-control form-control-sm border-success border-2"
                                        id="formSalidaFecha" name="fecha"
                                        value="{{ now|date:'Y-m-d\\TH:i' }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaCantidad">Cantidad <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control form-control-sm border-primary border-2"
+                                <input type="number" step="0.01" class="form-control form-control-sm border-success border-2"
                                        id="formSalidaCantidad" name="cantidad" placeholder="0.00" min="0" max="99999.99"
                                        maxlength="8" data-numeric-decimal required>
                             </div>
@@ -1146,7 +1146,7 @@ globalThis.getCSRFToken = function () {
                                 <label class="form-label fw-semibold small" for="formSalidaPrecio">Precio Unitario <small class="text-muted fw-normal">(COP)</small> <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-sm has-validation">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="1" class="form-control form-control-sm border-primary border-2"
+                                    <input type="number" step="1" class="form-control form-control-sm border-success border-2"
                                            id="formSalidaPrecio" name="precioVenta" placeholder="0" min="0" max="9999999"
                                            maxlength="7" data-numeric-decimal required>
                                     <span class="input-group-text">COP</span>
@@ -1154,7 +1154,7 @@ globalThis.getCSRFToken = function () {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaCentro">Centro de Acopio <span class="text-danger">*</span></label>
-                                <select class="form-select form-select-sm border-primary border-2" id="formSalidaCentro" name="centroAcopioId" required>
+                                <select class="form-select form-select-sm border-success border-2" id="formSalidaCentro" name="centroAcopioId" required>
                                     <option value="">Selecciona un centro...</option>
                                     {% for c in centros %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
                                 </select>
@@ -1704,13 +1704,13 @@ globalThis.getCSRFToken = function () {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-compra-fecha">Fecha <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control form-control-sm border-primary border-2"
+                                <input type="datetime-local" class="form-control form-control-sm border-danger border-2"
                                        id="inv-edit-compra-fecha" name="fecha" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-compra-cantidad">Cantidad <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" min="0" max="99999.99" maxlength="8"
-                                       class="form-control form-control-sm border-primary border-2"
+                                       class="form-control form-control-sm border-danger border-2"
                                        id="inv-edit-compra-cantidad" name="cantidad" data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
@@ -1718,14 +1718,14 @@ globalThis.getCSRFToken = function () {
                                 <div class="input-group input-group-sm has-validation">
                                     <span class="input-group-text">$</span>
                                     <input type="number" step="1" min="0" max="9999999" maxlength="7"
-                                           class="form-control form-control-sm border-primary border-2"
+                                           class="form-control form-control-sm border-danger border-2"
                                            id="inv-edit-compra-precio" name="precioCompra" data-numeric-decimal required>
                                     <span class="input-group-text">COP</span>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold" for="inv-edit-compra-observaciones">Observaciones</label>
-                                <textarea class="form-control form-control-sm border-primary border-2" id="inv-edit-compra-observaciones" name="observaciones" rows="2"></textarea>
+                                <textarea class="form-control form-control-sm border-danger border-2" id="inv-edit-compra-observaciones" name="observaciones" rows="2"></textarea>
                             </div>
                         </div>
                     </form>
@@ -1765,13 +1765,13 @@ globalThis.getCSRFToken = function () {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-venta-fecha">Fecha <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control form-control-sm border-primary border-2"
+                                <input type="datetime-local" class="form-control form-control-sm border-success border-2"
                                        id="inv-edit-venta-fecha" name="fecha" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-venta-cantidad">Cantidad <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" min="0" max="99999.99" maxlength="8"
-                                       class="form-control form-control-sm border-primary border-2"
+                                       class="form-control form-control-sm border-success border-2"
                                        id="inv-edit-venta-cantidad" name="cantidad" data-numeric-decimal required>
                             </div>
                             <div class="col-md-6">
@@ -1779,21 +1779,21 @@ globalThis.getCSRFToken = function () {
                                 <div class="input-group input-group-sm has-validation">
                                     <span class="input-group-text">$</span>
                                     <input type="number" step="1" min="0" max="9999999" maxlength="7"
-                                           class="form-control form-control-sm border-primary border-2"
+                                           class="form-control form-control-sm border-success border-2"
                                            id="inv-edit-venta-precio" name="precioVenta" data-numeric-decimal required>
                                     <span class="input-group-text">COP</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" for="inv-edit-venta-centro">Centro de Acopio <span class="text-danger">*</span></label>
-                                <select class="form-select form-select-sm border-primary border-2" id="inv-edit-venta-centro" name="centroAcopioId" required>
+                                <select class="form-select form-select-sm border-success border-2" id="inv-edit-venta-centro" name="centroAcopioId" required>
                                     <option value="">Selecciona un centro...</option>
                                     {% for c in centros %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
                                 </select>
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold" for="inv-edit-venta-observaciones">Observaciones</label>
-                                <textarea class="form-control form-control-sm border-primary border-2" id="inv-edit-venta-observaciones" name="observaciones" rows="2"></textarea>
+                                <textarea class="form-control form-control-sm border-success border-2" id="inv-edit-venta-observaciones" name="observaciones" rows="2"></textarea>
                             </div>
                         </div>
                     </form>
