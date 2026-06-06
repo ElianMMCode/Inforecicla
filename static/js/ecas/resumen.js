@@ -363,20 +363,30 @@
             `;
             return;
         }
-        cont.innerHTML = cats.map((c, idx) => {
+        // Barra apilada horizontal: una sola fila con segmentos proporcionales
+        const segmentos = cats.map((c, idx) => {
+            const colorIdx = (idx % 6) + 1;
+            const width = Math.max(c.porcentaje, 0);
+            return `<div class="categoria-segment cat-color-${colorIdx}" style="width: ${width}%" title="${escapeHTML(c.nombre)}: ${c.porcentaje.toFixed(1)}%"></div>`;
+        }).join("");
+        // Leyenda en grid 2 columnas con dot + nombre + meta + porcentaje
+        const legend = cats.map((c, idx) => {
             const colorIdx = (idx % 6) + 1;
             return `
-                <div class="categoria-bar-wrapper">
-                    <div class="categoria-bar-header">
-                        <span class="categoria-bar-nombre">${escapeHTML(c.nombre)}</span>
-                        <span class="categoria-bar-stats">${fmtNum(c.kg, 0)} kg · ${c.porcentaje.toFixed(1)}%</span>
+                <div class="categoria-legend-item">
+                    <span class="categoria-legend-dot cat-color-${colorIdx}"></span>
+                    <div class="categoria-legend-info">
+                        <div class="categoria-legend-nombre" title="${escapeHTML(c.nombre)}">${escapeHTML(c.nombre)}</div>
+                        <div class="categoria-legend-meta">${fmtNum(c.kg, 0)} kg · ${c.items} it</div>
                     </div>
-                    <div class="categoria-bar-track">
-                        <div class="categoria-bar-fill cat-color-${colorIdx}" style="width: ${Math.min(c.porcentaje, 100)}%"></div>
-                    </div>
+                    <span class="categoria-legend-pct">${c.porcentaje.toFixed(1)}%</span>
                 </div>
             `;
         }).join("");
+        cont.innerHTML = `
+            <div class="categorias-stacked-bar">${segmentos}</div>
+            <div class="categorias-legend">${legend}</div>
+        `;
     }
 
     /* ------------------------------ Pintar: alertas ------------------------------ */
