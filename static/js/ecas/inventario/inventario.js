@@ -200,6 +200,11 @@
         if (pane) pane.classList.add("active");
         if (pane) _reinitSelect2InPane(pane);
         if (pane) setTimeout(() => _reinitChartsInPane(pane), 50);
+        // Re-poblar info de material (readonly + precio unitario) al entrar
+        // a los tabs de crear. Es idempotente: poblarInfoMaterial no
+        // sobrescribe precios que el usuario ya haya tipeado.
+        if (tabId === "tab-compra") poblarInfoMaterial("formEntrada");
+        if (tabId === "tab-venta") poblarInfoMaterial("formSalida");
     }
 
     function _reinitSelect2InPane(pane) {

@@ -958,6 +958,17 @@ class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
         self.assertIn('poblarInfoMaterial("formSalida")', block,
                       "irWorkspace debe poblar formSalida al ir al workspace")
 
+    def test_activar_tab_compra_re_pobla_info_material(self):
+        """Si el usuario hace click en una card → tab-datos (Hoja Técnica)
+        → tab-compra, el autorrellenado del precio debe dispararse igual.
+        Por eso `activarTab('tab-compra')` debe llamar poblarInfoMaterial.
+        Es idempotente: no sobrescribe precios tipeados por el usuario."""
+        block = self.js.split("function activarTab", 1)[1].split("function ", 1)[0]
+        self.assertIn('poblarInfoMaterial("formEntrada")', block,
+                      "activarTab('tab-compra') debe poblar formEntrada")
+        self.assertIn('poblarInfoMaterial("formSalida")', block,
+                      "activarTab('tab-venta') debe poblar formSalida")
+
 
 class TestBindFormTotalListeners(TestCase):
     """El cálculo del Total (cantidad × precio) en los forms de crear debe
