@@ -69,8 +69,8 @@
             </div>
             <div class="col-md-6">
               <label for="usuario_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
-              <input id="usuario_ciudad" type="text" name="ciudad" class="form-control" value="{{ usuario.ciudad|default:'' }}" required maxlength="15" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$" autocomplete="address-level2" placeholder="Ciudad">
-              <div class="invalid-feedback">La ciudad debe tener entre 1 y 15 caracteres y solo puede contener letras, espacios o guiones.</div>
+              <input id="usuario_ciudad" type="text" name="ciudad" class="form-control" value="{{ usuario.ciudad|default:'Bogotá' }}" readonly aria-readonly="true">
+              <div class="form-text">La ciudad está fija en Bogotá para este sistema y no puede modificarse desde este formulario.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_localidad" class="form-label fw-semibold">Localidad</label>

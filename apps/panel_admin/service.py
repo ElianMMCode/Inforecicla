@@ -34,6 +34,8 @@ DESCRIPCION_CATEGORIA_MAX_500_MSG = (
 )
 RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado"
 UTC_SUFFIX = "+00:00"
+INVENTARIO_NO_ENCONTRADO_PUNTO_MATERIAL_MSG = "Inventario no encontrado por punto y material."
+INVENTARIO_NO_ENCONTRADO_MSG = "Inventario no encontrado."
 
 
 def _obtener_localidad(valor_localidad):
@@ -65,6 +67,213 @@ def _parse_datetime_aware(valor, formato_alternativo="%Y-%m-%d %H:%M:%S"):
     return fecha_dt
 
 
+def _calcular_estado_alerta(ocupacion, umbral_critico, umbral_alerta):
+    if umbral_critico and ocupacion >= umbral_critico:
+        return "Crítico"
+    if umbral_alerta and ocupacion >= umbral_alerta:
+        return "Alerta"
+    return "OK"
+
+
+def _parse_float_coordinate(value):
+    if value is None:
+        return None
+    s = str(value).strip()
+    if not s:
+        return None
+    s = _normalizar_separador_decimal(s)
+    s = _limpiar_caracteres_coordenada(s)
+    if s in ('', '.', '-', '-.', '.-'):
+        return None
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _normalizar_separador_decimal(s):
+    s = s.replace(' ', '')
+    if '.' in s and ',' in s:
+        if s.rfind('.') < s.rfind(','):
+            s = s.replace('.', '').replace(',', '.')
+        else:
+            s = s.replace(',', '')
+    else:
+        s = s.replace(',', '.')
+    return s
+
+
+def _limpiar_caracteres_coordenada(s):
+    import re
+    return re.sub(r'[^0-9.\-]', '', s)
+
+
+CAMPOS_PUNTO_TEXTO = (
+    ("nombrePunto", "nombre"),
+    ("direccionPunto", "direccion"),
+    ("celularPunto", "celular"),
+    ("emailPunto", "email"),
+    ("telefonoPunto", "telefono_punto"),
+    ("sitioWebPunto", "sitio_web"),
+    ("descripcionPunto", "descripcion"),
+    ("logoUrlPunto", "logo_url_punto"),
+    ("horarioAtencion", "horario_atencion"),
+)
+
+
+def _aplicar_campos_punto(punto, data):
+    for campo_origen, atributo in CAMPOS_PUNTO_TEXTO:
+        setattr(punto, atributo, data.get(campo_origen, getattr(punto, atributo)))
+
+
+ESTADOS_PUNTO_VALIDOS = (
+    "ACTIVO",
+    "INACTIVO",
+    "SUSPENDIDO",
+    "BLOQUEADO",
+)
+
+
+def _aplicar_estado_punto(punto, estado):
+    estado_normalizado = (estado or "").strip().upper()
+    if estado_normalizado in ESTADOS_PUNTO_VALIDOS:
+        punto.estado = estado_normalizado
+
+
+def _aplicar_localidad_punto(punto, localidad_id):
+    if not localidad_id:
+        return
+    try:
+        punto.localidad = Localidad.objects.get(localidad_id=localidad_id)
+    except Localidad.DoesNotExist:
+        pass
+
+
+def _extraer_datos_categoria_publicacion(data):
+    tipo = (data.get("tipo") or "").strip()
+    tipo_otro = (data.get("tipo_otro") or "").strip()
+    if tipo == "__otro__":
+        tipo = tipo_otro
+    return {
+        "nombre": (data.get("nombre") or "").strip(),
+        "descripcion": (data.get("descripcion") or "").strip(),
+        "tipo": tipo,
+        "tipo_otro": tipo_otro,
+        "estado": (data.get("estado") or "").strip().upper(),
+    }
+
+
+def _validar_datos_categoria_publicacion(datos, tipos_validos, tipos_base, estados_validos):
+    if not datos["tipo"]:
+        return {"ok": False, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
+    if len(datos["tipo"]) > 30:
+        return {"ok": False, "message": "El tipo no puede superar 30 caracteres."}
+    if datos["tipo"] not in tipos_validos and datos["tipo"] != datos["tipo_otro"]:
+        return {"ok": False, "message": "Tipo de categoria invalido."}
+    if datos["estado"] not in estados_validos:
+        return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+    return None
+
+
+def _aplicar_campos_categoria_publicacion(categoria, datos):
+    campos_modelo = {f.name for f in categoria._meta.fields}
+    if "nombre" in campos_modelo:
+        if not datos["nombre"]:
+            return {"ok": False, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
+        if len(datos["nombre"]) > 30:
+            return {"ok": False, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
+        categoria.nombre = datos["nombre"]
+
+    if "descripcion" in campos_modelo:
+        if len(datos["descripcion"]) > 500:
+            return {"ok": False, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
+        categoria.descripcion = datos["descripcion"]
+    return None
+
+
+CAMPOS_PUNTO_ECA = (
+    ("nombre", True),
+    ("direccion", False),
+    ("email", False),
+    ("celular", False),
+    ("telefono_punto", False),
+    ("horario_atencion", False),
+    ("descripcion", False),
+    ("sitio_web", False),
+    ("logo_url_punto", False),
+)
+
+
+def _aplicar_datos_punto_eca(punto, data, estado):
+    for campo, mantener_actual in CAMPOS_PUNTO_ECA:
+        valor = (data.get(campo) or "").strip()
+        if not valor and mantener_actual:
+            continue
+        setattr(punto, campo, valor)
+    punto.estado = estado
+
+    latitud = data.get("latitud")
+    longitud = data.get("longitud")
+    punto.latitud = float(latitud) if latitud else None
+    punto.longitud = float(longitud) if longitud else None
+
+    _aplicar_localidad_por_id(punto, data.get("localidad_id"))
+
+
+def _aplicar_localidad_por_id(objeto, localidad_id):
+    if not localidad_id:
+        return
+    localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
+    if localidad:
+        objeto.localidad = localidad
+
+
+MAPA_ESTADO_PUNTO = {
+    "ACTIVO": "ACTIVO",
+    "INACTIVO": "INACTIVO",
+    "SUSPENDIDO": "SUSPENDIDO",
+    "BLOQUEADO": "BLOQUEADO",
+}
+
+
+def _aplicar_filtros_listar_puntos(puntos, filtros):
+    query = filtros.get("texto", "").strip()
+    estado = (filtros.get("estado") or "").strip().upper()
+    gestor = (filtros.get("gestor") or "").strip()
+
+    if query:
+        puntos = puntos.filter(
+            Q(nombre__icontains=query) | Q(direccion__icontains=query) | Q(email__icontains=query)
+        )
+    if estado:
+        estado_codigo = MAPA_ESTADO_PUNTO.get(estado)
+        if estado_codigo:
+            puntos = puntos.filter(estado=estado_codigo)
+    if gestor:
+        puntos = puntos.filter(
+            Q(gestor_eca__nombres__icontains=gestor)
+            | Q(gestor_eca__apellidos__icontains=gestor)
+            | Q(gestor_eca__email__icontains=gestor)
+        )
+    return puntos
+
+
+def _serializar_punto_listado(punto):
+    gestor = punto.gestor_eca
+    gestor_nombre = f"{gestor.nombres} {gestor.apellidos}".strip() if gestor else ""
+    return {
+        "id": str(punto.id),
+        "nombre": punto.nombre,
+        "gestor": gestor_nombre,
+        "direccion": punto.direccion,
+        "email": punto.email,
+        "estado": punto.estado,
+        "activo": punto.estado == cons.Estado.ACTIVO,
+        "localidad": punto.localidad.nombre if punto.localidad else "",
+        "telefono": punto.telefono_punto,
+    }
+
+
 def _obtener_inventario_operacion(data):
     inventario_id = data.get("inventarioId")
     if inventario_id:
@@ -83,13 +292,13 @@ def _obtener_inventario_operacion(data):
 
         return None, {
             "error": True,
-            "mensaje": "Inventario no encontrado por punto y material.",
+            "mensaje": INVENTARIO_NO_ENCONTRADO_PUNTO_MATERIAL_MSG,
             "status": 404,
         }
 
     return None, {
         "error": True,
-        "mensaje": "Inventario no encontrado.",
+        "mensaje": INVENTARIO_NO_ENCONTRADO_MSG,
         "status": 404,
     }
 
@@ -327,7 +536,7 @@ class AdminCatalogService:
         estados_validos = {value for value, _ in cons.Estado.choices}
 
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
         if estado not in estados_validos:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
@@ -354,7 +563,7 @@ class AdminCatalogService:
         estados_validos = {value for value, _ in cons.Estado.choices}
 
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
         if estado not in estados_validos:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
@@ -382,7 +591,7 @@ class AdminCatalogService:
         tipo_id = data.get("tipo_id")
 
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
@@ -430,28 +639,7 @@ class AdminCatalogService:
             return {"ok": False, "message": ESTADO_INVALIDO_MSG}
 
         try:
-            punto.nombre = (data.get("nombre") or "").strip() or punto.nombre
-            punto.direccion = (data.get("direccion") or "").strip()
-            punto.email = (data.get("email") or "").strip()
-            punto.celular = (data.get("celular") or "").strip()
-            punto.telefono_punto = (data.get("telefono_punto") or "").strip()
-            punto.horario_atencion = (data.get("horario_atencion") or "").strip()
-            punto.descripcion = (data.get("descripcion") or "").strip()
-            punto.sitio_web = (data.get("sitio_web") or "").strip()
-            punto.logo_url_punto = (data.get("logo_url_punto") or "").strip()
-            punto.estado = estado
-
-            latitud = data.get("latitud")
-            longitud = data.get("longitud")
-            punto.latitud = float(latitud) if latitud else None
-            punto.longitud = float(longitud) if longitud else None
-
-            localidad_id = data.get("localidad_id")
-            if localidad_id:
-                localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
-                if localidad:
-                    punto.localidad = localidad
-
+            _aplicar_datos_punto_eca(punto, data, estado)
             punto.full_clean()
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}
@@ -466,7 +654,7 @@ class AdminCatalogService:
         except Exception:
             return {
                 "ok": False,
-                "message": "El modulo de publicaciones no esta habilitado en la configuracion actual.",
+                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
             }
 
         publicacion = Publicacion.objects.filter(id=publicacion_id).first()
@@ -510,53 +698,30 @@ class AdminCatalogService:
         except Exception:
             return {
                 "ok": False,
-                "message": "El modulo de publicaciones no esta habilitado en la configuracion actual.",
+                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
             }
 
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
         if not categoria:
             return {"ok": False, "message": "Categoria de publicacion no encontrada."}
 
-        nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip()
-        tipo = (data.get("tipo") or "").strip()
-        tipo_otro = (data.get("tipo_otro") or "").strip()
-        estado = (data.get("estado") or "").strip().upper()
-
-        if tipo == "__otro__":
-            tipo = tipo_otro
-
-        if not tipo:
-            return {"ok": False, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
-        if len(tipo) > 30:
-            return {"ok": False, "message": "El tipo no puede superar 30 caracteres."}
-
+        datos = _extraer_datos_categoria_publicacion(data)
         tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
         tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         estados_validos = {value for value, _ in cons.Estado.choices}
-        if tipo not in tipos_validos and tipo != tipo_otro:
-            return {"ok": False, "message": "Tipo de categoria invalido."}
-        if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+
+        error = _validar_datos_categoria_publicacion(datos, tipos_validos, tipos_base, estados_validos)
+        if error:
+            return error
 
         try:
-            campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
+            error = _aplicar_campos_categoria_publicacion(categoria, datos)
+            if error:
+                return error
 
-            if "nombre" in campos_modelo:
-                if not nombre:
-                    return {"ok": False, "message": "El nombre de la categoría es obligatorio."}
-                if len(nombre) > 30:
-                    return {"ok": False, "message": "El nombre no puede exceder 30 caracteres."}
-                categoria.nombre = nombre
-
-            if "descripcion" in campos_modelo:
-                if len(descripcion) > 500:
-                    return {"ok": False, "message": "La descripción no puede exceder 500 caracteres."}
-                categoria.descripcion = descripcion
-
-            categoria.tipo = tipo
-            categoria.estado = estado
-            if tipo in tipos_base:
+            categoria.tipo = datos["tipo"]
+            categoria.estado = datos["estado"]
+            if datos["tipo"] in tipos_base:
                 categoria.full_clean()
             else:
                 categoria.clean_fields(exclude=["tipo"])
@@ -606,68 +771,16 @@ class AdminUserService:
 
         except Usuario.DoesNotExist:
             return None
-        except ValidationError:
-            raise
 
     @staticmethod
     def listar_todos_usuarios(filtros=None):
         """Listar todos los usuarios del sistema"""
         try:
             usuarios = Usuario.objects.all()
-
             if filtros:
-                query = filtros.get("texto", "").strip()
-                tipo = filtros.get('tipo', '').strip()
-                estado = filtros.get('estado', '').strip()
+                usuarios = _aplicar_filtros_listar_usuarios(usuarios, filtros)
 
-                q = Q()
-                if query:
-                    q &= (Q(nombres__icontains=query) | Q(apellidos__icontains=query) | Q(email__icontains=query))
-
-                # Mapear tipo legible a código interno (ADM/CIU/GECA)
-                tipo_code = None
-                if tipo:
-                    t = tipo.strip().upper()
-                    if t in ('ADM', 'ADMIN', 'ADMINISTRADOR'):
-                        tipo_code = cons.TipoUsuario.ADMIN
-                    elif t in ('CIU', 'CIUDADANO', 'CIUD'):
-                        tipo_code = cons.TipoUsuario.CIUDADANO
-                    elif t in ('GECA', 'GESTOR', 'GESTORECA', 'GESTOR_ECA'):
-                        tipo_code = cons.TipoUsuario.GESTOR_ECA
-                    else:
-                        # aceptar si ya se pasa el código
-                        if t in (c.value for c in cons.TipoUsuario):
-                            tipo_code = t
-                if tipo_code:
-                    q &= Q(tipo_usuario=tipo_code)
-
-                # Estado: mapear a is_active
-                if estado:
-                    e = estado.strip().upper()
-                    if e == 'ACTIVO':
-                        q &= Q(is_active=True)
-                    elif e in ('SUSPENDIDO', 'BLOQUEADO', 'INACTIVO'):
-                        q &= Q(is_active=False)
-
-                if q:
-                    usuarios = usuarios.filter(q)
-
-            resultados = []
-            for u in usuarios:
-                resultados.append({
-                    "id": str(u.id),
-                    "nombre": f"{u.nombres} {u.apellidos}",
-                    "nombres": u.nombres,
-                    "apellidos": u.apellidos,
-                    "email": u.email,
-                    "telefono": u.celular,
-                    "celular": u.celular,
-                    "tipo_usuario": u.tipo_usuario,
-                    "is_staff": u.is_staff,
-                    "is_active": u.is_active,
-                    "es_staff": u.is_staff,
-                    "activo": u.is_active,
-                })
+            resultados = [_serializar_usuario_listado(u) for u in usuarios]
             return {"error": False, "data": resultados}
         except Exception as e:
             return {"error": True, "mensaje": f"Error: {str(e)}", "status": 500}
@@ -686,61 +799,11 @@ class AdminPuntoService:
         try:
             punto = PuntoECA.objects.select_for_update().get(id=punto_id)
 
-            punto.nombre = data.get("nombrePunto", punto.nombre)
-            punto.direccion = data.get("direccionPunto", punto.direccion)
-            punto.celular = data.get("celularPunto", punto.celular)
-            punto.email = data.get("emailPunto", punto.email)
-            punto.telefono_punto = data.get("telefonoPunto", punto.telefono_punto)
-            punto.sitio_web = data.get("sitioWebPunto", punto.sitio_web)
-            punto.descripcion = data.get("descripcionPunto", punto.descripcion)
-            punto.logo_url_punto = data.get("logoUrlPunto", punto.logo_url_punto)
-            punto.horario_atencion = data.get("horarioAtencion", punto.horario_atencion)
-
-            estado = (data.get("estado") or "").strip().upper()
-            if estado in (cons.Estado.ACTIVO, cons.Estado.INACTIVO, cons.Estado.SUSPENDIDO, cons.Estado.BLOQUEADO):
-                punto.estado = estado
-
-            # Convertir coordenadas
-            lat = data.get("latitud")
-            lon = data.get("longitud")
-
-            def _parse_float_coordinate(value):
-                if value is None:
-                    return None
-                s = str(value).strip()
-                if not s:
-                    return None
-                # Normalizar separadores: casos como '4,5912' o '1.234,56'
-                s = s.replace(' ', '')
-                if '.' in s and ',' in s:
-                    # si hay punto antes de coma, asumimos punto como separador de miles
-                    if s.rfind('.') < s.rfind(','):
-                        s = s.replace('.', '')
-                        s = s.replace(',', '.')
-                    else:
-                        s = s.replace(',', '')
-                else:
-                    s = s.replace(',', '.')
-                # eliminar cualquier caracter inesperado
-                import re
-                s = re.sub(r'[^0-9\.\-]', '', s)
-                if s in ('', '.', '-', '-.', '.-'):
-                    return None
-                try:
-                    return float(s)
-                except Exception:
-                    return None
-
-            punto.latitud = _parse_float_coordinate(lat)
-            punto.longitud = _parse_float_coordinate(lon)
-
-            # Actualizar localidad
-            localidad_id = data.get("localidadPunto")
-            if localidad_id:
-                try:
-                    punto.localidad = Localidad.objects.get(localidad_id=localidad_id)
-                except Localidad.DoesNotExist:
-                    pass
+            _aplicar_campos_punto(punto, data)
+            _aplicar_estado_punto(punto, data.get("estado"))
+            punto.latitud = _parse_float_coordinate(data.get("latitud"))
+            punto.longitud = _parse_float_coordinate(data.get("longitud"))
+            _aplicar_localidad_punto(punto, data.get("localidadPunto"))
 
             # Validar modelo antes de guardar para obtener errores por campo
             punto.full_clean()
@@ -749,8 +812,6 @@ class AdminPuntoService:
 
         except PuntoECA.DoesNotExist:
             return None
-        except (ValidationError, IntegrityError):
-            raise
 
     @staticmethod
     @transaction.atomic
@@ -789,53 +850,10 @@ class AdminPuntoService:
         """Listar todos los puntos ECA"""
         try:
             puntos = PuntoECA.objects.select_related('gestor_eca', 'localidad').all()
-
             if filtros:
-                query = filtros.get("texto", "").strip()
-                estado = (filtros.get('estado') or '').strip().upper()
-                gestor = (filtros.get('gestor') or '').strip()
+                puntos = _aplicar_filtros_listar_puntos(puntos, filtros)
 
-                if query:
-                    puntos = puntos.filter(
-                        Q(nombre__icontains=query)
-                        | Q(direccion__icontains=query)
-                        | Q(email__icontains=query)
-                    )
-
-                if estado:
-                    estado_map = {
-                        'ACTIVO': cons.Estado.ACTIVO,
-                        'INACTIVO': cons.Estado.INACTIVO,
-                        'SUSPENDIDO': cons.Estado.SUSPENDIDO,
-                        'BLOQUEADO': cons.Estado.BLOQUEADO,
-                    }
-                    estado_codigo = estado_map.get(estado)
-                    if estado_codigo:
-                        puntos = puntos.filter(estado=estado_codigo)
-
-                if gestor:
-                    puntos = puntos.filter(
-                        Q(gestor_eca__nombres__icontains=gestor)
-                        | Q(gestor_eca__apellidos__icontains=gestor)
-                        | Q(gestor_eca__email__icontains=gestor)
-                    )
-
-            resultados = []
-            for p in puntos:
-                gestor_nombre = ''
-                if p.gestor_eca:
-                    gestor_nombre = f"{p.gestor_eca.nombres} {p.gestor_eca.apellidos}".strip()
-                resultados.append({
-                    "id": str(p.id),
-                    "nombre": p.nombre,
-                    "gestor": gestor_nombre,
-                    "direccion": p.direccion,
-                    "email": p.email,
-                    "estado": p.estado,
-                    "activo": p.estado == cons.Estado.ACTIVO,
-                    "localidad": p.localidad.nombre if p.localidad else '',
-                    "telefono": p.telefono_punto,
-                })
+            resultados = [_serializar_punto_listado(p) for p in puntos]
             return {"error": False, "data": resultados}
         except Exception as e:
             return {"error": True, "mensaje": f"Error: {str(e)}", "status": 500}
@@ -1117,150 +1135,31 @@ class AdminInventoryService:
     @staticmethod
     def buscar_materiales_dentro_inventario(data):
         try:
-            punto_id = data.get("puntoId", "").strip()
-            query = data.get("texto", "").strip()
-            categoria = data.get("categoria", "").strip()
-            tipo = data.get("tipo", "").strip()
-            unidad = data.get("unidad", "").strip()  # nuevo filtro
-            alerta = data.get("alerta", "").strip()  # nuevo filtro
-            ocupacion = data.get("ocupacion", "").strip()  # nuevo filtro
-            # if not request.user.is_authenticated:
-            #     return JsonResponse({"error": "Usuario no autenticado"})
-            if not punto_id:
-                return [
-                    {
-                        "error": True,
-                        "mensaje": "ID del punto ECA es requerido",
-                        "status": 400,
-                    }
-                ]
-            try:
-                punto_eca = get_object_or_404(PuntoECA, id=punto_id)
-                materiales_inventario = Inventario.objects.filter(
-                    punto_eca=punto_eca
-                ).select_related("material")
-            except Http404:
-                return [
-                    {
-                        "error": True,
-                        "mensaje": "PuntoECA o Material no encontrado",
-                        "status": 404,
-                    }
-                ]
-            if query:
-                materiales_inventario = materiales_inventario.filter(
-                    Q(material__nombre__unaccent__icontains=query)
-                )
-            if categoria:
-                materiales_inventario = materiales_inventario.filter(
-                    material__categoria__nombre__unaccent__icontains=categoria
-                )
+            filtros = _extraer_filtros_inventario(data)
+            if not filtros["punto_id"]:
+                return [_respuesta_error("ID del punto ECA es requerido", 400)]
 
-            if tipo:
-                materiales_inventario = materiales_inventario.filter(
-                    material__tipo__nombre__iexact=tipo
-                )
+            punto_error = _obtener_punto_inventario(filtros["punto_id"])
+            if punto_error:
+                return [punto_error]
 
-            if unidad:
-                materiales_inventario = materiales_inventario.filter(
-                    unidad_medida=unidad
-                )
-
-            materiales_inventario = materiales_inventario.order_by("fecha_modificacion")
+            materiales_inventario = _consultar_inventario(
+                filtros["punto_id"],
+                filtros["query"],
+                filtros["categoria"],
+                filtros["tipo"],
+                filtros["unidad"],
+            )
 
             resultados = []
-
             for item in materiales_inventario:
-                try:
-                    porcentaje_ocupacion = 0
-                    if item.capacidad_maxima and item.capacidad_maxima > 0:
-                        porcentaje_ocupacion = (
-                            item.stock_actual / item.capacidad_maxima
-                        ) * 100
-                    else:
-                        porcentaje_ocupacion = 0
-                    porcentaje_ocupacion = round(porcentaje_ocupacion, 2)
+                procesado = _procesar_item_inventario(item)
+                if procesado is not None:
+                    resultados.append(procesado)
 
-                    estado_alerta = "OK"
-                    # Mapping igual al template: Crítico si >= umbral_critico, Alerta si >= umbral_alerta, OK el resto
-                    if (
-                        item.umbral_critico
-                        and porcentaje_ocupacion >= item.umbral_critico
-                    ):
-                        estado_alerta = "Crítico"
-                    elif (
-                        item.umbral_alerta
-                        and porcentaje_ocupacion >= item.umbral_alerta
-                    ):
-                        estado_alerta = "Alerta"
-                    else:
-                        estado_alerta = "OK"
+            resultados = _aplicar_filtros_ocupacion(resultados, filtros["ocupacion"])
+            resultados = _aplicar_filtro_alerta(resultados, filtros["alerta"])
 
-                    resultados.append(
-                        {
-                            "inventarioId": str(item.id),
-                            "materialId": str(item.material.id),
-                            "nmbMaterial": item.material.nombre,
-                            "nmbCategoria": item.material.categoria.nombre
-                            if item.material.categoria
-                            else "General",
-                            "nmbTipo": item.material.tipo.nombre
-                            if item.material.tipo
-                            else "N/A",
-                            "dscMaterial": item.material.descripcion,
-                            "stockActual": item.stock_actual,
-                            "capacidadMaxima": item.capacidad_maxima,
-                            "unidadMedida": item.unidad_medida,
-                            "precioCompra": item.precio_compra,
-                            "precioVenta": item.precio_venta,
-                            "porcentaje_ocupacion": porcentaje_ocupacion,
-                            "umbral_alerta": item.umbral_alerta
-                            if hasattr(item, "umbral_alerta")
-                            else 0,
-                            "umbral_critico": item.umbral_critico
-                            if hasattr(item, "umbral_critico")
-                            else 0,
-                            "imagenUrl": item.material.imagen_url
-                            if item.material.imagen_url
-                            else "/static/img/materiales.png",
-                            "estado_alerta": estado_alerta,
-                        }
-                    )
-                except Exception:
-                    resultados.append(
-                        {
-                            "error": True,
-                            "mensaje": "Error procesando material en inventario, omitido.",
-                        }
-                    )
-                    continue
-            # Filtrado extra por ocupación y alerta
-            if ocupacion:
-                try:
-                    rango = ocupacion.split("-")
-                    minimo = float(rango[0]) if len(rango) > 0 else 0
-                    maximo = float(rango[1]) if len(rango) > 1 else 100
-                    resultados = [
-                        r
-                        for r in resultados
-                        if minimo <= r["porcentaje_ocupacion"] <= maximo
-                    ]
-                    print(
-                        f"Después de filtrar ocupacion '{ocupacion}': {len(resultados)} items"
-                    )
-                except Exception as e:
-                    print(f"Error filtrando por ocupacion: {e}")
-            if alerta:
-                try:
-                    # Validar alerta (OK, Alerta, Crítico)
-                    resultados = [r for r in resultados if r["estado_alerta"] == alerta]
-                    print(
-                        f"Después de filtrar alerta '{alerta}': {len(resultados)} items"
-                    )
-                except Exception as e:
-                    print(f"Error filtrando por alerta: {e}")
-
-            print(f"RESULTADOS: {len(resultados)}")
             return resultados
         except Exception as e:
             return [
@@ -1269,6 +1168,177 @@ class AdminInventoryService:
                     "error": True,
                 }
             ]
+
+
+def _extraer_filtros_inventario(data):
+    return {
+        "punto_id": (data.get("puntoId") or "").strip(),
+        "query": (data.get("texto") or "").strip(),
+        "categoria": (data.get("categoria") or "").strip(),
+        "tipo": (data.get("tipo") or "").strip(),
+        "unidad": (data.get("unidad") or "").strip(),
+        "alerta": (data.get("alerta") or "").strip(),
+        "ocupacion": (data.get("ocupacion") or "").strip(),
+    }
+
+
+def _respuesta_error(mensaje, status_code):
+    return {"error": True, "mensaje": mensaje, "status": status_code}
+
+
+def _obtener_punto_inventario(punto_id):
+    try:
+        get_object_or_404(PuntoECA, id=punto_id)
+        return None
+    except Http404:
+        return _respuesta_error("PuntoECA o Material no encontrado", 404)
+
+
+def _consultar_inventario(punto_id, query, categoria, tipo, unidad):
+    queryset = Inventario.objects.filter(punto_eca_id=punto_id).select_related("material")
+    if query:
+        queryset = queryset.filter(Q(material__nombre__unaccent__icontains=query))
+    if categoria:
+        queryset = queryset.filter(
+            material__categoria__nombre__unaccent__icontains=categoria
+        )
+    if tipo:
+        queryset = queryset.filter(material__tipo__nombre__iexact=tipo)
+    if unidad:
+        queryset = queryset.filter(unidad_medida=unidad)
+    return queryset.order_by("fecha_modificacion")
+
+
+def _calcular_porcentaje_ocupacion(item):
+    if item.capacidad_maxima and item.capacidad_maxima > 0:
+        return round((item.stock_actual / item.capacidad_maxima) * 100, 2)
+    return 0
+
+
+def _procesar_item_inventario(item):
+    try:
+        porcentaje_ocupacion = _calcular_porcentaje_ocupacion(item)
+        estado_alerta = _calcular_estado_alerta(
+            porcentaje_ocupacion,
+            item.umbral_critico,
+            item.umbral_alerta,
+        )
+        return {
+            "inventarioId": str(item.id),
+            "materialId": str(item.material.id),
+            "nmbMaterial": item.material.nombre,
+            "nmbCategoria": item.material.categoria.nombre
+            if item.material.categoria
+            else "General",
+            "nmbTipo": item.material.tipo.nombre if item.material.tipo else "N/A",
+            "dscMaterial": item.material.descripcion,
+            "stockActual": item.stock_actual,
+            "capacidadMaxima": item.capacidad_maxima,
+            "unidadMedida": item.unidad_medida,
+            "precioCompra": item.precio_compra,
+            "precioVenta": item.precio_venta,
+            "porcentaje_ocupacion": porcentaje_ocupacion,
+            "umbral_alerta": item.umbral_alerta if hasattr(item, "umbral_alerta") else 0,
+            "umbral_critico": item.umbral_critico if hasattr(item, "umbral_critico") else 0,
+            "imagenUrl": item.material.imagen_url
+            if item.material.imagen_url
+            else "/static/img/materiales.png",
+            "estado_alerta": estado_alerta,
+        }
+    except Exception:
+        return {
+            "error": True,
+            "mensaje": "Error procesando material en inventario, omitido.",
+        }
+
+
+def _aplicar_filtros_ocupacion(resultados, ocupacion):
+    if not ocupacion:
+        return resultados
+    try:
+        rango = ocupacion.split("-")
+        minimo = float(rango[0]) if len(rango) > 0 else 0
+        maximo = float(rango[1]) if len(rango) > 1 else 100
+        return [
+            r for r in resultados
+            if minimo <= r["porcentaje_ocupacion"] <= maximo
+        ]
+    except (ValueError, IndexError):
+        return resultados
+
+
+def _aplicar_filtro_alerta(resultados, alerta):
+    if not alerta:
+        return resultados
+    return [r for r in resultados if r["estado_alerta"] == alerta]
+
+
+def _aplicar_filtros_listar_usuarios(usuarios, filtros):
+    q = Q()
+    q &= _filtro_texto_usuarios(filtros.get("texto", "").strip())
+    q &= _filtro_tipo_usuario(filtros.get("tipo", "").strip())
+    q &= _filtro_estado_usuario(filtros.get("estado", "").strip())
+    if q:
+        return usuarios.filter(q)
+    return usuarios
+
+
+def _filtro_texto_usuarios(texto):
+    if not texto:
+        return Q()
+    return Q(nombres__icontains=texto) | Q(apellidos__icontains=texto) | Q(email__icontains=texto)
+
+
+def _filtro_tipo_usuario(tipo):
+    if not tipo:
+        return Q()
+    tipo_normalizado = tipo.strip().upper()
+    mapeo_tipos = {
+        "ADM": cons.TipoUsuario.ADMIN,
+        "ADMIN": cons.TipoUsuario.ADMIN,
+        "ADMINISTRADOR": cons.TipoUsuario.ADMIN,
+        "CIU": cons.TipoUsuario.CIUDADANO,
+        "CIUDADANO": cons.TipoUsuario.CIUDADANO,
+        "CIUD": cons.TipoUsuario.CIUDADANO,
+        "GECA": cons.TipoUsuario.GESTOR_ECA,
+        "GESTOR": cons.TipoUsuario.GESTOR_ECA,
+        "GESTORECA": cons.TipoUsuario.GESTOR_ECA,
+        "GESTOR_ECA": cons.TipoUsuario.GESTOR_ECA,
+    }
+    tipo_code = mapeo_tipos.get(tipo_normalizado)
+    if not tipo_code and tipo_normalizado in (c.value for c in cons.TipoUsuario):
+        tipo_code = tipo_normalizado
+    if tipo_code:
+        return Q(tipo_usuario=tipo_code)
+    return Q()
+
+
+def _filtro_estado_usuario(estado):
+    if not estado:
+        return Q()
+    estado_normalizado = estado.strip().upper()
+    if estado_normalizado == "ACTIVO":
+        return Q(is_active=True)
+    if estado_normalizado in ("SUSPENDIDO", "BLOQUEADO", "INACTIVO"):
+        return Q(is_active=False)
+    return Q()
+
+
+def _serializar_usuario_listado(usuario):
+    return {
+        "id": str(usuario.id),
+        "nombre": f"{usuario.nombres} {usuario.apellidos}",
+        "nombres": usuario.nombres,
+        "apellidos": usuario.apellidos,
+        "email": usuario.email,
+        "telefono": usuario.celular,
+        "celular": usuario.celular,
+        "tipo_usuario": usuario.tipo_usuario,
+        "is_staff": usuario.is_staff,
+        "is_active": usuario.is_active,
+        "es_staff": usuario.is_staff,
+        "activo": usuario.is_active,
+    }
 
     @staticmethod
     def categorias_tipos_posibles_para_punto(punto_id=None):
@@ -1330,7 +1400,7 @@ class AdminInventoryService:
                 "umbralCritico": inventario_item.umbral_critico,
             }
         except Http404:
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": RECURSO_NO_ENCONTRADO_MSG, "status": 404}
         except Exception as e:
             return {"mensaje": f"Error técnico: {str(e)}", "error": True, "status": 400}
 
@@ -1340,7 +1410,7 @@ class AdminInventoryService:
             material = get_object_or_404(Material, id=data.get("materialId"))
             punto = get_object_or_404(PuntoECA, id=data.get("puntoEcaId"))
 
-            nuevo_material = Inventario.objects.create(
+            Inventario.objects.create(
                 punto_eca=punto,
                 material=material,
                 stock_actual=float(data.get("stockActual", 0)),
@@ -1357,7 +1427,7 @@ class AdminInventoryService:
                 "error": False,
             }
         except (Http404, Material.DoesNotExist, PuntoECA.DoesNotExist):
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": RECURSO_NO_ENCONTRADO_MSG, "status": 404}
         except Exception as e:
             return {"mensaje": f"Error técnico: {str(e)}", "error": True, "status": 400}
 
@@ -1389,7 +1459,7 @@ class AdminInventoryService:
             inventario_item.save()
             return {"mensaje": "Inventario actualizado con éxito.", "error": False}
         except (Http404, Inventario.DoesNotExist):
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": RECURSO_NO_ENCONTRADO_MSG, "status": 404}
         except Exception as e:
             return {
                 "mensaje": f"Error técnico al actualizar: {str(e)}",
@@ -1401,18 +1471,13 @@ class AdminInventoryService:
     def eliminar_material_inventario(inventario_id):
         try:
             inventario_item = get_object_or_404(Inventario, id=inventario_id)
-            # # Validación de ownership/permiso: solo el gestor del punto puede borrar
-            # if not hasattr(request, "user") or not request.user.is_authenticated:
-            #     return JsonResponse({"error": "Usuario no autenticado."}, status=401)
-            # if inventario_item.punto_eca.gestor_eca != request.user:
-            #     return JsonResponse({"error": "No tiene permisos para borrar este inventario."}, status=403)
             inventario_item.delete()
             return {
                 "mensaje": "Material eliminado del inventario con éxito.",
                 "error": False,
             }
         except Inventario.DoesNotExist:
-            return {"error": "Recurso no encontrado", "status": 404}
+            return {"error": RECURSO_NO_ENCONTRADO_MSG, "status": 404}
         except Exception as e:
             return {"mensaje": f"Error técnico: {str(e)}", "error": True, "status": 400}
 
@@ -1467,14 +1532,20 @@ class AdminInventoryService:
 
             resultados = []
             for inv in inventarios:
+                ocupacion_actual = inv.ocupacion_actual or 0
+                estado_alerta = _calcular_estado_alerta(
+                    ocupacion_actual,
+                    inv.umbral_critico,
+                    inv.umbral_alerta,
+                )
                 resultados.append({
                     "id": str(inv.id),
                     "punto": inv.punto_eca.nombre,
                     "puntoId": str(inv.punto_eca.id),
                     "material": inv.material.nombre,
                     "stock": round(float(inv.stock_actual or 0), 2),
-                    "ocupacion": round(float(inv.ocupacion_actual or 0), 2),
-                    "estado_alerta": "Crítico" if inv.ocupacion_actual >= inv.umbral_critico else "Alerta" if inv.ocupacion_actual >= inv.umbral_alerta else "OK",
+                    "ocupacion": round(float(ocupacion_actual), 2),
+                    "estado_alerta": estado_alerta,
                 })
             return {"error": False, "data": resultados}
         except Exception as e:
@@ -1525,13 +1596,13 @@ class AdminCompraInventarioService:
                     except Inventario.DoesNotExist:
                         return {
                             "error": True,
-                            "mensaje": "Inventario no encontrado por punto y material.",
+                            "mensaje": INVENTARIO_NO_ENCONTRADO_PUNTO_MATERIAL_MSG,
                             "status": 404,
                         }
                 else:
                     return {
                         "error": True,
-                        "mensaje": "Inventario no encontrado.",
+                        "mensaje": INVENTARIO_NO_ENCONTRADO_MSG,
                         "status": 404,
                     }
 
@@ -1546,7 +1617,7 @@ class AdminCompraInventarioService:
                 try:
                     # Intentar parsear en formato ISO con o sin Z
                     fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_compra.replace("Z", "+00:00")
+                        fecha_compra.replace("Z", UTC_SUFFIX)
                     )
                 except Exception:
                     # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
@@ -1557,7 +1628,7 @@ class AdminCompraInventarioService:
                     fecha_dt = timezone.make_aware(fecha_dt)
                 fecha_compra = fecha_dt
 
-            entrada = models.CompraInventario.objects.create(
+            models.CompraInventario.objects.create(
                 inventario=inventario,
                 fecha_compra=fecha_compra,
                 cantidad=cantidad,
@@ -1589,9 +1660,9 @@ class AdminCompraInventarioService:
             }
 
     @staticmethod
-    def editar_compra(request, data, compra_id):
+    def editar_compra(request, data, compra_id_param):
         try:
-            compra_id = data.get("compraId")
+            compra_id = data.get("compraId") or compra_id_param
             if not compra_id:
                 return {
                     "error": True,
@@ -1624,7 +1695,7 @@ class AdminCompraInventarioService:
             if isinstance(fecha_compra, str):
                 try:
                     fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_compra.replace("Z", "+00:00")
+                        fecha_compra.replace("Z", UTC_SUFFIX)
                     )
                 except Exception:
                     try:
@@ -1794,13 +1865,13 @@ class AdminVentaInventarioService:
                 except Inventario.DoesNotExist:
                     return {
                         "error": True,
-                        "mensaje": "Inventario no encontrado por punto y material.",
+                        "mensaje": INVENTARIO_NO_ENCONTRADO_PUNTO_MATERIAL_MSG,
                         "status": 404,
                     }
             else:
                 return {
                     "error": True,
-                    "mensaje": "Inventario no encontrado.",
+                    "mensaje": INVENTARIO_NO_ENCONTRADO_MSG,
                     "status": 404,
                 }
 
@@ -1818,7 +1889,7 @@ class AdminVentaInventarioService:
             try:
                 # Intentar parsear en formato ISO con o sin Z
                 fecha_dt = datetime.datetime.fromisoformat(
-                    fecha_compra.replace("Z", "+00:00")
+                    fecha_compra.replace("Z", UTC_SUFFIX)
                 )
             except Exception:
                 # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
@@ -1840,7 +1911,7 @@ class AdminVentaInventarioService:
                     "status": 404,
                 }
 
-        salida = models.VentaInventario.objects.create(
+        models.VentaInventario.objects.create(
             inventario=inventario,
             fecha_venta=fecha_compra,
             cantidad=cantidad,
@@ -1860,9 +1931,9 @@ class AdminVentaInventarioService:
         }
 
     @staticmethod
-    def editar_venta(request, data, venta_id):
+    def editar_venta(request, data, venta_id_param):
         try:
-            venta_id = data.get("ventaId")
+            venta_id = data.get("ventaId") or venta_id_param
             if not venta_id:
                 return {
                     "error": True,
@@ -1895,7 +1966,7 @@ class AdminVentaInventarioService:
             if isinstance(fecha_venta, str):
                 try:
                     fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_venta.replace("Z", "+00:00")
+                        fecha_venta.replace("Z", UTC_SUFFIX)
                     )
                 except Exception:
                     try:

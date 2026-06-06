@@ -82,6 +82,16 @@ function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaxim
   return true;
 }
 
+function registrarValidacion(campo, handler) {
+  if (!campo) {
+    return;
+  }
+
+  const eventName = campo.tagName === "SELECT" ? "change" : "input";
+  campo.addEventListener(eventName, handler);
+  campo.addEventListener("blur", () => actualizarEstadoCampo(campo));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector(".needs-validation");
 
@@ -92,7 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const nombresInput = form.querySelector('[name="nombres"]');
   const apellidosInput = form.querySelector('[name="apellidos"]');
   const celularInput = form.querySelector('[name="celular"]');
-  const ciudadInput = form.querySelector('[name="ciudad"]');
   const localidadInput = form.querySelector('[name="localidad"]');
   const tipoDocumentoInput = form.querySelector('[name="tipoDocumento"]');
   const numeroDocumentoInput = form.querySelector('[name="numeroDocumento"]');
@@ -104,7 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
     nombresInput,
     apellidosInput,
     celularInput,
-    ciudadInput,
     localidadInput,
     tipoDocumentoInput,
     numeroDocumentoInput,
@@ -114,7 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
   ].filter(Boolean);
 
   const nombresRegex = /^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$/;
-  const ciudadRegex = /^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+$/;
   const numeroDocumentoRegex = /^\d{6,20}$/;
   const celularRegex = /^3\d{9}$/;
   const tiposDocumentoValidos = new Set(["CC", "TI", "CE", "PA", "NIT"]);
@@ -167,35 +174,6 @@ document.addEventListener("DOMContentLoaded", () => {
     celularInput.setCustomValidity(esValido ? "" : "Debe iniciar con 3 y tener exactamente 10 dígitos.");
     actualizarEstadoCampo(celularInput);
     return esValido;
-  }
-
-  function validarCiudad() {
-    if (!ciudadInput) {
-      return true;
-    }
-
-    const valor = ciudadInput.value.trim();
-    if (!valor) {
-      ciudadInput.setCustomValidity("La ciudad es obligatoria.");
-      actualizarEstadoCampo(ciudadInput);
-      return false;
-    }
-
-    if (valor.length > 15) {
-      ciudadInput.setCustomValidity("La ciudad no puede superar 15 caracteres.");
-      actualizarEstadoCampo(ciudadInput);
-      return false;
-    }
-
-    if (!ciudadRegex.test(valor)) {
-      ciudadInput.setCustomValidity("La ciudad solo puede contener letras, espacios o guiones.");
-      actualizarEstadoCampo(ciudadInput);
-      return false;
-    }
-
-    ciudadInput.setCustomValidity("");
-    actualizarEstadoCampo(ciudadInput);
-    return true;
   }
 
   function validarLocalidad() {
@@ -300,7 +278,6 @@ document.addEventListener("DOMContentLoaded", () => {
     validarNombres();
     validarApellidos();
     validarCelular();
-    validarCiudad();
     validarLocalidad();
     validarTipoDocumento();
     validarNumeroDocumento();
@@ -312,20 +289,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return form.checkValidity();
   }
 
-  function registrarValidacion(campo, handler) {
-    if (!campo) {
-      return;
-    }
-
-    const eventName = campo.tagName === "SELECT" ? "change" : "input";
-    campo.addEventListener(eventName, handler);
-    campo.addEventListener("blur", () => actualizarEstadoCampo(campo));
-  }
-
   registrarValidacion(nombresInput, validarNombres);
   registrarValidacion(apellidosInput, validarApellidos);
   registrarValidacion(celularInput, validarCelular);
-  registrarValidacion(ciudadInput, validarCiudad);
   registrarValidacion(localidadInput, validarLocalidad);
   registrarValidacion(tipoDocumentoInput, validarTipoDocumento);
   registrarValidacion(numeroDocumentoInput, validarNumeroDocumento);
