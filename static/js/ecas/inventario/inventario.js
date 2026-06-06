@@ -698,8 +698,25 @@
         });
 
         // Filtros landing
-        ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
-            .forEach((id) => document.getElementById(id)?.addEventListener("input", aplicarFiltrosCards));
+        // Los <select> de filtros están inicializados con Select2 (ver
+        // _initSelect2InSection). Cuando el usuario escoge una opción,
+        // Select2 dispara los eventos 'input'/'change' con
+        // jQuery.trigger(), que SOLO invoca handlers registrados vía
+        // jQuery.on() o el handler inline element.oninput — NO los
+        // listeners nativos de addEventListener. Por eso el filtro por
+        // nombre (input text) funcionaba pero los selects no: el browser
+        // dispara 'input' nativamente al tipear, pero Select2 nunca
+        // hace dispatchEvent nativo. Registramos con jQuery.on() para
+        // que el handler quede en el sistema de eventos de jQuery.
+        if (globalThis.jQuery) {
+            const $filtrosLanding = globalThis.jQuery(
+                "#inv-filter-nombre, #inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion"
+            );
+            $filtrosLanding.on("input change", aplicarFiltrosCards);
+        } else {
+            ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
+                .forEach((id) => document.getElementById(id)?.addEventListener("input", aplicarFiltrosCards));
+        }
         document.getElementById("inv-filter-limpiar")?.addEventListener("click", limpiarFiltrosCards);
         document.getElementById("inv-filter-limpiar-vacio")?.addEventListener("click", limpiarFiltrosCards);
 
