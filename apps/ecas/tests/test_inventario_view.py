@@ -1171,6 +1171,15 @@ class TestStockPreviewColorDinamico(TestCase):
         self.assertIn("formSalidaMaterialUnidad", block,
                       "preview de salida debe leer la unidad del material")
 
+    def test_actualizar_stock_preview_muestra_capacidad_maxima(self):
+        """El preview de stock debe mostrar la capacidad máxima como
+        referencia para que el usuario sepa el límite superior (ej. '/ máx. 100')."""
+        block = self.js.split("function actualizarStockPreviewEntrada", 1)[1].split("function ", 1)[0]
+        self.assertIn("formEntradaStockResultanteCap", block,
+                      "preview de entrada debe actualizar el span de capacidad máxima")
+        self.assertIn("máx.", block,
+                      "preview debe mostrar 'máx. X' como label del límite superior")
+
     def test_actualizar_total_llama_actualizar_stock_preview(self):
         """actualizarTotalEntrada/Venta deben disparar también el preview de
         stock, así se mantiene sincronizado en cada keystroke."""

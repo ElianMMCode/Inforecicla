@@ -996,6 +996,7 @@
     function actualizarStockPreviewEntrada() {
         const stockEl = document.getElementById("formEntradaStockResultante");
         const unidadEl = document.getElementById("formEntradaStockResultanteUnidad");
+        const capEl = document.getElementById("formEntradaStockResultanteCap");
         if (!stockEl) return;
         const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
         const capacidad = Number(document.getElementById("formEntradaCapacidadMaxima")?.value || 0);
@@ -1004,6 +1005,7 @@
         const resultante = stockBase + cant;
         stockEl.value = resultante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
         if (unidadEl) unidadEl.textContent = unidad || "unidades";
+        if (capEl) capEl.textContent = capacidad > 0 ? `/ máx. ${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })}` : "";
         if (capacidad > 0 && resultante > capacidad) {
             stockEl.style.backgroundColor = "#f8d7da";
             stockEl.style.color = "#58151c";
