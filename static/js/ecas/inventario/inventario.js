@@ -839,11 +839,18 @@
         if (e) e.preventDefault();
         const form = document.getElementById("formEntrada");
         if (!form.checkValidity()) { form.reportValidity(); return; }
-        const payload = Object.fromEntries(new FormData(form).entries());
-        payload.cantidad = Number(payload.cantidad);
-        payload.precioCompra = Number(payload.precioCompra);
-        payload.inventarioId = payload.inventarioId;
-        payload.puntoId = Number(payload.puntoId);
+        const raw = Object.fromEntries(new FormData(form).entries());
+        // Mapear nombres del form al contrato del servicio
+        // (servicio espera fechaCompra + puntoEcaId, no "fecha" + "puntoId").
+        const payload = {
+            inventarioId: raw.inventarioId,
+            materialId: currentMaterial?.materialId,
+            cantidad: Number(raw.cantidad),
+            fechaCompra: raw.fecha,
+            precioCompra: Number(raw.precioCompra),
+            observaciones: raw.observaciones || "",
+            puntoEcaId: raw.puntoId,
+        };
         fetch("/punto-eca/movimientos/registrar-compra/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
@@ -863,11 +870,19 @@
         if (!form.checkValidity()) { form.reportValidity(); return; }
         const centro = document.getElementById("formSalidaCentro");
         if (centro && !centro.value) { centro.reportValidity(); return; }
-        const payload = Object.fromEntries(new FormData(form).entries());
-        payload.cantidad = Number(payload.cantidad);
-        payload.precioVenta = Number(payload.precioVenta);
-        payload.centroAcopioId = payload.centroAcopioId;
-        payload.puntoId = Number(payload.puntoId);
+        const raw = Object.fromEntries(new FormData(form).entries());
+        // Mapear nombres del form al contrato del servicio
+        // (servicio espera fechaVenta + puntoEcaId, no "fecha" + "puntoId").
+        const payload = {
+            inventarioId: raw.inventarioId,
+            materialId: currentMaterial?.materialId,
+            cantidad: Number(raw.cantidad),
+            fechaVenta: raw.fecha,
+            precioVenta: Number(raw.precioVenta),
+            observaciones: raw.observaciones || "",
+            centroAcopioId: raw.centroAcopioId,
+            puntoEcaId: raw.puntoId,
+        };
         fetch("/punto-eca/movimientos/registrar-venta/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },

@@ -837,3 +837,55 @@ class TestFlujoRefactor(TestCase):
         self.assertIn('formatearCOP(costosTotal)', js)
         self.assertIn('formatearCOP(profitTotal)', js)
 
+
+class TestFormsCrearCompraVentaPayload(TestCase):
+    """El backend CompraInventarioService.registro_compra / VentaInventarioService.registrar_venta
+    esperan nombres de campo específicos (`fechaCompra`/`fechaVenta`, `puntoEcaId`).
+    El JS de los forms de crear debe mapear `fecha`→`fechaCompra`/`fechaVenta` y
+    `puntoId`→`puntoEcaId` antes de enviar el POST. Sin este mapeo, el servicio
+    tira `KeyError: 'fechaCompra'` o "Inventario no encontrado".
+    """
+
+    def setUp(self):
+        self.user = _crear_usuario_gestor("payload@example.com")
+
+    def test_submit_entrada_envia_payload_con_nombres_del_servicio(self):
+        """submitEntrada debe usar fechaCompra + puntoEcaId + materialId, no los nombres crudos del form."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        # Localizar bloque de submitEntrada
+        self.assertIn("function submitEntrada", js)
+        block = js.split("function submitEntrada", 1)[1].split("function submitSalida", 1)[0]
+        # Debe mapear los nombres crudos a los del servicio
+        self.assertIn("fechaCompra: raw.fecha", block,
+                      "submitEntrada debe mapear raw.fecha → fechaCompra (lo espera el servicio)")
+        self.assertIn("puntoEcaId: raw.puntoId", block,
+                      "submitEntrada debe mapear raw.puntoId → puntoEcaId (lo espera el servicio)")
+        self.assertIn("materialId: currentMaterial?.materialId", block,
+                      "submitEntrada debe enviar materialId como fallback para búsqueda de inventario")
+        # No debe enviar los nombres crudos al servicio
+        self.assertNotIn('payload.fecha = payload.fecha', block)
+        self.assertNotIn('payload.puntoId = Number(payload.puntoId)', block)
+
+    def test_submit_salida_envia_payload_con_nombres_del_servicio(self):
+        """submitSalida debe usar fechaVenta + puntoEcaId + materialId + centroAcopioId."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        self.assertIn("function submitSalida", js)
+        block = js.split("function submitSalida", 1)[1].split("// ===", 1)[0]
+        # Mapeos esperados
+        self.assertIn("fechaVenta: raw.fecha", block,
+                      "submitSalida debe mapear raw.fecha → fechaVenta")
+        self.assertIn("puntoEcaId: raw.puntoId", block,
+                      "submitSalida debe mapear raw.puntoId → puntoEcaId")
+        self.assertIn("centroAcopioId: raw.centroAcopioId", block,
+                      "submitSalida debe enviar centroAcopioId (lo espera el servicio)")
+        self.assertIn("materialId: currentMaterial?.materialId", block,
+                      "submitSalida debe enviar materialId como fallback")
+
