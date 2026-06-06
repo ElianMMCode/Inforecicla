@@ -17,21 +17,21 @@
         <div class="bg-white rounded-4 border shadow-sm p-4">
             <form class="row g-3" method="get">
                 <div class="col-12 col-lg-5">
-                    <label class="form-label small fw-semibold text-muted mb-1">
-                        <i class="fas fa-magnifying-glass me-1 text-success"></i>Buscar
+                    <label for="filtro-buscar" class="form-label small fw-semibold text-muted mb-1">
+                        <i class="fas fa-magnifying-glass me-1 text-success" aria-hidden="true"></i>Buscar
                     </label>
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0 text-success d-flex align-items-center justify-content-center" style="width:42px;">
-                            <i class="fas fa-search"></i>
+                            <i class="fas fa-search" aria-hidden="true"></i>
                         </span>
-                        <input type="text" class="form-control border-start-0 ps-1" placeholder="Buscar publicaciones..." name="q" value="{{ filtros.q }}">
+                        <input type="text" id="filtro-buscar" class="form-control border-start-0 ps-1" placeholder="Buscar publicaciones..." name="q" value="{{ filtros.q }}">
                     </div>
                 </div>
                 <div class="col-6 col-lg-3">
-                    <label class="form-label small fw-semibold text-muted mb-1">
-                        <i class="fas fa-tags me-1 text-success"></i>Categoría
+                    <label for="filtro-categoria" class="form-label small fw-semibold text-muted mb-1">
+                        <i class="fas fa-tags me-1 text-success" aria-hidden="true"></i>Categoría
                     </label>
-                    <select class="form-select" name="categoria">
+                    <select id="filtro-categoria" class="form-select" name="categoria">
                         <option value="">Todas las categorías</option>
                         {% for cat in categorias %}
                         <option value="{{ cat.id }}" {% if filtros.categoria == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.nombre|default:cat.get_tipo_display }}{% if cat.descripcion %} - {{ cat.descripcion|truncatechars:35 }}{% endif %}</option>
@@ -39,10 +39,10 @@
                     </select>
                 </div>
                 <div class="col-6 col-lg-2">
-                    <label class="form-label small fw-semibold text-muted mb-1">
-                        <i class="fas fa-arrow-down-wide-short me-1 text-success"></i>Ordenar
+                    <label for="filtro-orden" class="form-label small fw-semibold text-muted mb-1">
+                        <i class="fas fa-arrow-down-wide-short me-1 text-success" aria-hidden="true"></i>Ordenar
                     </label>
-                    <select class="form-select" name="orden">
+                    <select id="filtro-orden" class="form-select" name="orden">
                         <option value="recientes" {% if filtros.orden == 'recientes' %}selected{% endif %}>Más recientes</option>
                         <option value="valorados" {% if filtros.orden == 'valorados' %}selected{% endif %}>Mejor valorados</option>
                         <option value="comentados" {% if filtros.orden == 'comentados' %}selected{% endif %}>Más comentados</option>
@@ -50,7 +50,7 @@
                 </div>
                 <div class="col-12 col-lg-2 d-grid align-self-end">
                     <button class="btn btn-success fw-semibold" type="submit">
-                        <i class="fas fa-sliders me-1"></i>Filtrar
+                        <i class="fas fa-sliders me-1" aria-hidden="true"></i>Filtrar
                     </button>
                 </div>
             </form>
@@ -71,7 +71,7 @@
                             <div class="overflow-hidden">
                                 <div class="fw-semibold small text-truncate">{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</div>
                                 <div class="text-muted d-flex align-items-center gap-1 flex-wrap" style="font-size:.75rem;">
-                                    <i class="far fa-calendar"></i>{{ pub.fecha_creacion|date:"d M Y" }}
+                                    <i class="far fa-calendar" aria-hidden="true"></i>{{ pub.fecha_creacion|date:"d M Y" }}
                                     <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">{{ pub.categoria.nombre|default:pub.categoria.get_tipo_display }}</span>
                                 </div>
                             </div>
@@ -83,17 +83,17 @@
                         <div class="mt-auto">
                             <div class="d-flex align-items-center gap-2 mb-3">
                                 <span class="badge rounded-pill bg-success-subtle text-success d-inline-flex align-items-center gap-1 px-3 py-2">
-                                    <i class="fas fa-thumbs-up"></i>{{ pub.likes_count }}
+                                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>{{ pub.likes_count }}
                                 </span>
                                 <span class="badge rounded-pill bg-danger-subtle text-danger d-inline-flex align-items-center gap-1 px-3 py-2">
-                                    <i class="fas fa-thumbs-down"></i>{{ pub.dislikes_count }}
+                                    <i class="fas fa-thumbs-down" aria-hidden="true"></i>{{ pub.dislikes_count }}
                                 </span>
                                 <span class="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center gap-1 px-3 py-2">
-                                    <i class="fas fa-comment-dots"></i>{{ pub.comentarios_total }}
+                                    <i class="fas fa-comment-dots" aria-hidden="true"></i>{{ pub.comentarios_total }}
                                 </span>
                             </div>
                             <a class="btn btn-success w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" href="{% url 'publicacion:detalle_publicacion' pub.id %}">
-                                Ver publicación<i class="fas fa-arrow-right"></i>
+                                Ver publicación<i class="fas fa-arrow-right" aria-hidden="true"></i>
                             </a>
                         </div>
                     </div>
@@ -103,7 +103,7 @@
         </div>
 
         {% if publicaciones.has_other_pages %}
-        <nav class="mt-5 d-flex justify-content-center">
+        <nav class="mt-5 d-flex justify-content-center" aria-label="Paginación de publicaciones">
             <ul class="pagination shadow-sm rounded overflow-hidden">
                 {% if publicaciones.has_previous %}
                 <li class="page-item"><a class="page-link text-success" href="?page={{ publicaciones.previous_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">«</a></li>
@@ -129,7 +129,7 @@
         {% else %}
         <div class="text-center py-5">
             <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 90px; height: 90px;">
-                <i class="fas fa-newspaper text-success fs-1"></i>
+                <i class="fas fa-newspaper text-success fs-1" aria-hidden="true"></i>
             </div>
             <h3 class="fw-bold">No hay publicaciones disponibles</h3>
             <p class="text-muted mb-0">Aún no se han creado publicaciones. Vuelve pronto.</p>
