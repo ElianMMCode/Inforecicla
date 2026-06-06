@@ -1,75 +1,151 @@
 {% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Editar Publicación - InfoRecicla Admin{% endblock %}
-{% block body_class %}bg-light{% endblock %}
+{% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
 {% block content %}
 
-<main class="col offset-md-2 p-4">
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+<div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-pencil-square me-2"></i>Editar Publicación</h1>
+    <p class="text-muted mb-0">{{ publicacion.titulo|truncatechars:60 }}</p>
   </div>
-  {% endif %}
+  <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-success d-none d-sm-block">
+    <i class="bi bi-arrow-left me-1"></i> Volver a la lista
+  </a>
+</div>
 
-  <div class="mb-4 d-flex justify-content-between align-items-center">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-pencil me-2"></i>Editar Publicación</h1>
-      <p class="text-muted mb-0">{{ publicacion.titulo|truncatechars:60 }}</p>
-    </div>
-    <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Volver
-    </a>
-  </div>
+<div class="card border-success shadow-sm">
+  <div class="card-header bg-success text-white"><i class="bi bi-pencil-square me-1"></i> Formulario de Edición</div>
+  <div class="card-body bg-light p-4">
+    <form method="post" enctype="multipart/form-data" id="editPublicacionForm" class="needs-validation" novalidate>
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-12">
+          <label for="pub_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+          <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required maxlength="255" data-max-length="255" placeholder="Título de la publicación">
+          <div class="invalid-feedback">El título es obligatorio y debe tener máximo 255 caracteres.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
+          <select id="pub_categoria_id" name="categoria_id" class="form-select">
+            <option value="">Sin categoría</option>
+            {% for cat in categorias %}
+              <option value="{{ cat.id }}" {% if publicacion.categoria and publicacion.categoria.id == cat.id %}selected{% endif %}>{{ cat.nombre }} ({{ cat.get_tipo_display }})</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Selecciona una categoría válida o déjala en blanco.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="pub_estado" class="form-label fw-semibold">Estado</label>
+          <select id="pub_estado" name="estado" class="form-select">
+            {% for val, label in estados %}
+              <option value="{{ val }}" {% if publicacion.estado == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Selecciona un estado válido.</div>
+        </div>
+        <div class="col-12">
+          <label for="pub_contenido" class="form-label fw-semibold">Contenido</label>
+          <textarea id="pub_contenido" name="contenido" class="form-control" rows="8" maxlength="10000" data-max-length="10000" placeholder="Escribe el contenido de la publicación...">{{ publicacion.contenido }}</textarea>
+          <div class="invalid-feedback">Revisa el contenido de la publicación.</div>
+          <div class="form-text text-end small"><span id="pub_contenido_contador">0</span> / 10000</div>
+        </div>
 
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-success text-white"><i class="bi bi-pencil-square me-1"></i> Formulario</div>
-    <div class="card-body p-4">
-      <form method="post">
-        {% csrf_token %}
-        <div class="row g-3">
-          <div class="col-12">
-            <label for="pub_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
-            <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required maxlength="200">
+        <!-- Separador multimedia -->
+        <div class="col-12">
+          <hr class="my-1">
+          <p class="fw-semibold text-muted mb-0"><i class="bi bi-images me-1"></i>Contenido multimedia <span class="fw-normal">(opcional)</span></p>
+          <small class="text-muted">Puedes agregar más imágenes o reemplazar el video y su miniatura.</small>
+        </div>
+
+        <!-- Imágenes actuales -->
+        {% if publicacion.imagenes.exists %}
+        <div class="col-12">
+          <label class="form-label fw-semibold">Imágenes actuales</label>
+          <div id="galeriaImagenesActuales" class="d-flex flex-wrap gap-2">
+            {% for img in publicacion.imagenes.all %}
+              <div class="position-relative" data-imagen-id="{{ img.id }}">
+                <img src="{{ img.imagen.url }}" alt="Imagen {{ forloop.counter }}" class="rounded border" style="width: 120px; height: 120px; object-fit: cover;">
+              </div>
+            {% endfor %}
           </div>
-          <div class="col-md-6">
-            <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
-            <select id="pub_categoria_id" name="categoria_id" class="form-select">
-              <option value="">Sin categoría</option>
-              {% for cat in categorias %}
-                <option value="{{ cat.id }}" {% if publicacion.categoria and publicacion.categoria.id == cat.id %}selected{% endif %}>{{ cat.tipo }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label for="pub_estado" class="form-label fw-semibold">Estado</label>
-            <select id="pub_estado" name="estado" class="form-select">
-              {% for val, label in estados %}
-                <option value="{{ val }}" {% if publicacion.estado == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-12">
-            <label for="pub_contenido" class="form-label fw-semibold">Contenido</label>
-            <textarea id="pub_contenido" name="contenido" class="form-control" rows="8">{{ publicacion.contenido }}</textarea>
-          </div>
-          <div class="col-12">
-            <p class="form-label fw-semibold text-muted small mb-0">Autor: {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }} &bull; Creada: {{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</p>
-          </div>
-          <div class="col-12 pt-2">
-            <button type="submit" class="btn btn-success me-2">
-              <i class="bi bi-save me-1"></i> Guardar Cambios
-            </button>
-            <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-secondary">Cancelar</a>
+          <small class="text-muted">Las imágenes actuales se conservan. Sube nuevas imágenes para agregarlas a la publicación.</small>
+        </div>
+        {% endif %}
+
+        <!-- Nuevas imágenes -->
+        <div class="col-md-6">
+          <label for="inputImagenes" class="form-label fw-semibold">Agregar imágenes</label>
+          <input type="file" name="imagenes" id="inputImagenes" class="form-control" accept="image/jpeg,image/png,image/webp" multiple data-max-size="6291456" aria-describedby="imagenesHelp">
+          <div class="form-text">Formatos: JPG, PNG, WEBP. Puedes seleccionar varias. <strong>Máximo 6 MB por imagen.</strong></div>
+          <div id="alertImagenes" class="alert alert-danger py-2 small mt-2 d-none" role="alert"></div>
+          <div id="previewImagenes" class="d-flex flex-wrap gap-2 mt-2"></div>
+        </div>
+
+        <!-- Video actual -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Video actual</label>
+          {% if publicacion.video %}
+            <div id="videoActualWrapper" class="mb-2">
+              <video src="{{ publicacion.video.url }}" controls style="max-width: 240px; max-height: 160px;" class="rounded border"></video>
+              <small class="d-block text-muted">Subir un nuevo video reemplazará el actual.</small>
+            </div>
+          {% else %}
+            <p class="text-muted small mb-2">Esta publicación no tiene video.</p>
+          {% endif %}
+          <label for="inputVideo" class="form-label fw-semibold">Reemplazar video <span class="text-muted fw-normal">(opcional)</span></label>
+          <input id="inputVideo" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg" data-max-size="104857600">
+          <div class="form-text">Formatos: MP4, WEBM, OGG. Máximo 100 MB.</div>
+          <div id="previewVideo" class="mt-2"></div>
+        </div>
+
+        <!-- Miniatura -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Miniatura actual</label>
+          {% if publicacion.video_thumbnail %}
+            <div id="thumbnailActualWrapper" class="mb-2">
+              <img src="{{ publicacion.video_thumbnail.url }}" alt="Miniatura" class="rounded border" style="max-width: 200px; max-height: 120px; object-fit: cover;">
+              <small class="d-block text-muted">Subir una nueva miniatura reemplazará la actual.</small>
+            </div>
+          {% else %}
+            <p class="text-muted small mb-2">Esta publicación no tiene miniatura.</p>
+          {% endif %}
+          <label for="inputThumbnail" class="form-label fw-semibold">Reemplazar miniatura <span class="text-muted fw-normal">(opcional)</span></label>
+          <input id="inputThumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/jpeg,image/png,image/webp" data-max-size="6291456">
+          <div class="form-text">Imagen de portada que se muestra antes de reproducir el video.</div>
+          <div id="previewThumbnail" class="mt-2"></div>
+        </div>
+
+        <div class="col-12">
+          <div class="alert alert-secondary d-flex align-items-center mb-0" role="alert">
+            <i class="bi bi-info-circle-fill fs-5 me-2"></i>
+            <div>
+              <strong>Autor:</strong> {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }} &bull;
+              <strong>Creada:</strong> {{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}
+            </div>
           </div>
         </div>
-      </form>
-    </div>
+        <div class="col-12 pt-2 d-flex flex-wrap gap-2">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-save me-1"></i> Guardar Cambios
+          </button>
+          <button type="reset" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise me-1"></i> Deshacer Cambios
+          </button>
+          <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-danger ms-auto">
+            <i class="bi bi-x-circle me-1"></i> Cancelar
+          </a>
+        </div>
+      </div>
+    </form>
   </div>
-  </main>
+</div>
 
+{% endblock %}
+
+{% block extra_scripts %}
+{% include "admin/_messages_swal.html" %}
+<script src="{% static 'js/formularios/publicacion-form-comun.js' %}"></script>
+<script src="{% static 'js/formularios/publicacion-editar.js' %}"></script>
 {% endblock %}

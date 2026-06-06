@@ -451,9 +451,11 @@ class AdminCatalogService:
 
     @staticmethod
     @transaction.atomic
-    def actualizar_publicacion(publicacion_id, data):
+    def actualizar_publicacion(publicacion_id, data, files=None):
+        import os
+
         try:
-            from apps.publicaciones.models import Publicacion, CategoriaPublicacion
+            from apps.publicaciones.models import Publicacion, CategoriaPublicacion, ImagenPublicacion
         except Exception:
             return {
                 "ok": False,
@@ -469,6 +471,18 @@ class AdminCatalogService:
         categoria_id = data.get("categoria_id")
         if not titulo:
             return {"ok": False, "message": "El titulo es obligatorio."}
+        if len(titulo) > cons.PUBLICACION_TITULO_MAX_LENGTH:
+            return {
+                "ok": False,
+                "message": f"El titulo no puede superar {cons.PUBLICACION_TITULO_MAX_LENGTH} caracteres.",
+            }
+
+        contenido = data.get("contenido") or ""
+        if len(contenido) > cons.PUBLICACION_CONTENIDO_MAX_LENGTH:
+            return {
+                "ok": False,
+                "message": f"El contenido no puede superar {cons.PUBLICACION_CONTENIDO_MAX_LENGTH} caracteres.",
+            }
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
@@ -480,18 +494,58 @@ class AdminCatalogService:
             if not categoria:
                 return {"ok": False, "message": "Categoria de publicacion invalida."}
 
-        contenido = (data.get("contenido") or "").strip()
+        files = files or {}
+        video = files.get("video")
+        if video:
+            extension = os.path.splitext(video.name)[1].lstrip(".").lower()
+            if extension not in cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS:
+                return {
+                    "ok": False,
+                    "message": (
+                        f"Video '{video.name}': extension no permitida ({extension}). "
+                        f"Extensiones validas: {', '.join(cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS)}."
+                    ),
+                }
+            if video.size > cons.PUBLICACION_VIDEO_MAX_SIZE:
+                return {
+                    "ok": False,
+                    "message": f"El video '{video.name}' supera el limite de 100 MB.",
+                }
+
+        thumbnail = files.get("video_thumbnail")
+        if thumbnail and thumbnail.size > cons.PUBLICACION_IMAGE_MAX_SIZE:
+            return {
+                "ok": False,
+                "message": f"La miniatura '{thumbnail.name}' supera el limite de 6 MB.",
+            }
+
+        nuevas_imagenes = files.getlist("imagenes") if hasattr(files, "getlist") else []
+        for imagen in nuevas_imagenes:
+            if imagen.size > cons.PUBLICACION_IMAGE_MAX_SIZE:
+                return {
+                    "ok": False,
+                    "message": f"La imagen '{imagen.name}' supera el limite de 6 MB.",
+                }
 
         try:
             publicacion.titulo = titulo
             publicacion.contenido = contenido
             publicacion.estado = estado
             publicacion.categoria = categoria
+            if video is not None:
+                publicacion.video = video
+            if thumbnail is not None:
+                publicacion.video_thumbnail = thumbnail
             publicacion.full_clean()
             publicacion.save()
+
+            for imagen in nuevas_imagenes:
+                ImagenPublicacion.objects.create(publicacion=publicacion, imagen=imagen)
+
             return {"ok": True, "message": "Publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {e}"}
+            mensaje = "; ".join(e.messages) if hasattr(e, "messages") else str(e)
+            return {"ok": False, "message": f"No se pudo actualizar: {mensaje}"}
 
     @staticmethod
     @transaction.atomic

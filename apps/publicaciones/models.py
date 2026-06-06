@@ -1,5 +1,7 @@
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
+from apps.core.upload_validators import MaxFileSizeValidator, MimeTypeValidator
 from apps.users.models import Usuario
 from config import constants
 from config.base_models import CreacionModificacionModel, DescripcionModel
@@ -24,7 +26,10 @@ class CategoriaPublicacion(DescripcionModel):
 
 ##########################################################
 class Publicacion(CreacionModificacionModel):
-    titulo = models.CharField(max_length=255, null=False)
+    titulo = models.CharField(
+        max_length=constants.PUBLICACION_TITULO_MAX_LENGTH,
+        null=False,
+    )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -43,6 +48,19 @@ class Publicacion(CreacionModificacionModel):
         blank=True,
         null=True,
         verbose_name="Video",
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=list(constants.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS),
+            ),
+            MimeTypeValidator(
+                list(constants.PUBLICACION_VIDEO_ALLOWED_MIME_TYPES),
+                "El video",
+            ),
+            MaxFileSizeValidator(
+                constants.PUBLICACION_VIDEO_MAX_SIZE,
+                "El video",
+            ),
+        ],
     )
 
     video_thumbnail = models.ImageField(
@@ -50,6 +68,16 @@ class Publicacion(CreacionModificacionModel):
         blank=True,
         null=True,
         verbose_name="Miniatura del video",
+        validators=[
+            MimeTypeValidator(
+                list(constants.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES),
+                "La miniatura del video",
+            ),
+            MaxFileSizeValidator(
+                constants.PUBLICACION_IMAGE_MAX_SIZE,
+                "La miniatura del video",
+            ),
+        ],
     )
 
     # Relacion con la tabla de Usuarios (autor de la publicacion)
@@ -69,8 +97,23 @@ class ImagenPublicacion(models.Model):
         on_delete=models.CASCADE,
         related_name='imagenes',
     )
-    imagen = models.ImageField(upload_to='publicaciones/imagenes/')
-    descripcion = models.CharField(max_length=200, blank=True)
+    imagen = models.ImageField(
+        upload_to='publicaciones/imagenes/',
+        validators=[
+            MimeTypeValidator(
+                list(constants.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES),
+                "La imagen",
+            ),
+            MaxFileSizeValidator(
+                constants.PUBLICACION_IMAGE_MAX_SIZE,
+                "La imagen",
+            ),
+        ],
+    )
+    descripcion = models.CharField(
+        max_length=200,
+        blank=True,
+    )
 
     class Meta:
         db_table = 'imagen_publicacion'

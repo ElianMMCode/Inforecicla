@@ -477,46 +477,51 @@ def _procesar_creacion_publicacion_admin(request, categorias, publicaciones_habi
     from apps.publicaciones.models import CategoriaPublicacion, ImagenPublicacion, Publicacion
 
     titulo = _normalizar_texto(request.POST.get("titulo"))
-    contenido = _normalizar_texto(request.POST.get("contenido"))
+    contenido = request.POST.get("contenido") or ""
     categoria_id = _normalizar_texto(request.POST.get("categoria_id"))
 
     if not titulo:
         messages.error(request, "El titulo es obligatorio.")
         return None
+    if len(titulo) > cons.PUBLICACION_TITULO_MAX_LENGTH:
+        messages.error(
+            request,
+            f"El titulo no puede superar {cons.PUBLICACION_TITULO_MAX_LENGTH} caracteres.",
+        )
+        return _render_crear_publicacion_con_error(
+            request,
+            categorias,
+            publicaciones_habilitadas,
+        )
+    if len(contenido) > cons.PUBLICACION_CONTENIDO_MAX_LENGTH:
+        messages.error(
+            request,
+            f"El contenido no puede superar {cons.PUBLICACION_CONTENIDO_MAX_LENGTH} caracteres.",
+        )
+        return _render_crear_publicacion_con_error(
+            request,
+            categorias,
+            publicaciones_habilitadas,
+        )
 
     categoria = None
     if categoria_id:
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
         if not categoria:
             messages.error(request, "La categoria seleccionada no existe.")
-            return render(
+            return _render_crear_publicacion_con_error(
                 request,
-                ADMIN_CREATE_PUBLICACION_TEMPLATE,
-                {
-                    "publicaciones_habilitadas": publicaciones_habilitadas,
-                    "categorias": categorias,
-                    "form_data": request.POST,
-                    "active_tab": "publicaciones",
-                },
+                categorias,
+                publicaciones_habilitadas,
             )
 
-    limite_bytes = 6 * 1024 * 1024
-    imagenes = request.FILES.getlist("imagenes")
-    imagenes_grandes = [img.name for img in imagenes if img.size > limite_bytes]
-    if imagenes_grandes:
-        nombres = ", ".join(imagenes_grandes)
-        messages.error(
+    error_archivo = _validar_archivos_publicacion(request)
+    if error_archivo:
+        messages.error(request, error_archivo)
+        return _render_crear_publicacion_con_error(
             request,
-            f"Las siguientes imágenes superan el límite de 6 MB y no pueden subirse: {nombres}.",
-        )
-        return render(
-            request,
-            ADMIN_CREATE_PUBLICACION_TEMPLATE,
-            {
-                "publicaciones_habilitadas": publicaciones_habilitadas,
-                "categorias": categorias,
-                "form_data": request.POST,
-            },
+            categorias,
+            publicaciones_habilitadas,
         )
 
     publicacion = Publicacion(
@@ -529,11 +534,83 @@ def _procesar_creacion_publicacion_admin(request, categorias, publicaciones_habi
     )
     publicacion.save()
 
+    imagenes = request.FILES.getlist("imagenes")
     for imagen in imagenes:
         ImagenPublicacion.objects.create(publicacion=publicacion, imagen=imagen)
 
     messages.success(request, "Publicacion creada correctamente.")
     return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
+
+
+def _render_crear_publicacion_con_error(request, categorias, publicaciones_habilitadas):
+    return render(
+        request,
+        ADMIN_CREATE_PUBLICACION_TEMPLATE,
+        {
+            "publicaciones_habilitadas": publicaciones_habilitadas,
+            "categorias": categorias,
+            "form_data": request.POST,
+            "active_tab": "publicaciones",
+        },
+    )
+
+
+def _validar_archivos_publicacion(request):
+    import os
+
+    from apps.core.upload_validators import MaxFileSizeValidator, MimeTypeValidator
+
+    imagenes = request.FILES.getlist("imagenes")
+    if imagenes:
+        mime_validador = MimeTypeValidator(
+            list(cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES),
+            "La imagen",
+        )
+        for imagen in imagenes:
+            try:
+                mime_validador(imagen)
+            except ValidationError as e:
+                return f"Imagen '{imagen.name}': {e.messages[0]}"
+            try:
+                MaxFileSizeValidator(cons.PUBLICACION_IMAGE_MAX_SIZE, "La imagen")(imagen)
+            except ValidationError as e:
+                return f"Imagen '{imagen.name}': {e.messages[0]}"
+
+    video = request.FILES.get("video")
+    if video:
+        extension = os.path.splitext(video.name)[1].lstrip(".").lower()
+        if extension not in cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS:
+            return (
+                f"Video '{video.name}': extension no permitida ({extension}). "
+                f"Extensiones validas: {', '.join(cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS)}."
+            )
+        try:
+            MimeTypeValidator(
+                list(cons.PUBLICACION_VIDEO_ALLOWED_MIME_TYPES),
+                "El video",
+            )(video)
+        except ValidationError as e:
+            return f"Video '{video.name}': {e.messages[0]}"
+        try:
+            MaxFileSizeValidator(cons.PUBLICACION_VIDEO_MAX_SIZE, "El video")(video)
+        except ValidationError as e:
+            return f"Video '{video.name}': {e.messages[0]}"
+
+    thumbnail = request.FILES.get("video_thumbnail")
+    if thumbnail:
+        try:
+            MimeTypeValidator(
+                list(cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES),
+                "La miniatura del video",
+            )(thumbnail)
+        except ValidationError as e:
+            return f"Miniatura '{thumbnail.name}': {e.messages[0]}"
+        try:
+            MaxFileSizeValidator(cons.PUBLICACION_IMAGE_MAX_SIZE, "La miniatura del video")(thumbnail)
+        except ValidationError as e:
+            return f"Miniatura '{thumbnail.name}': {e.messages[0]}"
+
+    return None
 
 
 def _aplicar_datos_usuario_admin(usuario, data):
@@ -1251,7 +1328,11 @@ def editar_publicacion_admin(request, publicacion_id):
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     if request.method == "POST":
-        resultado = AdminCatalogService.actualizar_publicacion(publicacion_id, request.POST)
+        resultado = AdminCatalogService.actualizar_publicacion(
+            publicacion_id,
+            request.POST,
+            request.FILES,
+        )
         if resultado["ok"]:
             messages.success(request, resultado["message"])
             return redirect("panel_admin:editar_publicacion_admin", publicacion_id=publicacion_id)
