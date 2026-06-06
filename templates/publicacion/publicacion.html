@@ -6,8 +6,8 @@
 {% block hero %}
 <section class="page-hero py-4">
     <div class="container">
-        <a href="{% url 'publicacion:publicaciones' %}" class="text-white text-decoration-none small">
-            <i class="fas fa-arrow-left me-1"></i>Volver a publicaciones
+        <a href="{% url 'publicacion:publicaciones' %}" class="text-white text-decoration-none small d-inline-flex align-items-center gap-2">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>Volver a publicaciones
         </a>
     </div>
 </section>
@@ -20,25 +20,28 @@
 
             <div class="col-lg-8">
 
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white py-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 px-4">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5" style="width:52px;height:52px;">{{ publicacion.usuario.nombres|first }}</div>
+                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5 flex-shrink-0" style="width:52px;height:52px;">{{ publicacion.usuario.nombres|first }}</div>
                             <div>
-                                <div class="fw-semibold">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
-                                <div class="text-muted small">{{ publicacion.fecha_creacion|date:"d/m/Y H:i" }} · <span class="badge bg-success-subtle text-success">{{ publicacion.categoria.nombre|default:publicacion.categoria.get_tipo_display }}</span></div>
+                                <div class="fw-bold">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
+                                <div class="text-muted small d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="d-inline-flex align-items-center gap-1"><i class="far fa-clock" aria-hidden="true"></i>{{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">{{ publicacion.categoria.nombre|default:publicacion.categoria.get_tipo_display }}</span>
+                                </div>
                                 {% if publicacion.categoria and publicacion.categoria.descripcion %}
-                                <div class="text-muted small">{{ publicacion.categoria.descripcion }}</div>
+                                <div class="text-muted small mt-1">{{ publicacion.categoria.descripcion }}</div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
                     <div class="card-body px-4 py-4">
-                        <h1 class="fw-bold h2 mb-3">{{ publicacion.titulo }}</h1>
+                        <h1 class="fw-bold h2 mb-4">{{ publicacion.titulo }}</h1>
 
                         {% if publicacion.video %}
-                        <div class="mb-4 rounded overflow-hidden">
+                        <div class="mb-4 rounded overflow-hidden shadow-sm">
                             <video class="w-100 rounded" controls preload="metadata"
                                    aria-describedby="video-publicacion-desc"
                                    {% if publicacion.video_thumbnail %}poster="{{ publicacion.video_thumbnail.url }}"{% endif %}>
@@ -52,7 +55,7 @@
                         {% endif %}
 
                         {% if publicacion.imagenes.exists and not publicacion.video %}
-                        <div id="carruselPublicacion" class="carousel slide mb-4 rounded overflow-hidden" data-bs-ride="carousel">
+                        <div id="carruselPublicacion" class="carousel slide mb-3 rounded overflow-hidden shadow-sm" data-bs-ride="carousel">
 
                             {% if publicacion.imagenes.count > 1 %}
                             <div class="carousel-indicators">
@@ -67,9 +70,9 @@
                             <div class="carousel-inner">
                                 {% for img in publicacion.imagenes.all %}
                                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                     <img src="{{ img.imagen.url }}" class="d-block w-100 rounded"
+                                     <img src="{{ img.imagen.url }}" class="d-block w-100"
                                          alt="{{ img.descripcion|default:'Publicación' }}"
-                                         style="max-height:420px; object-fit:cover;">
+                                         style="max-height:440px; object-fit:cover;">
                                     {% if img.descripcion %}
                                     <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-1">
                                         <p class="mb-0 small">{{ img.descripcion }}</p>
@@ -91,55 +94,58 @@
                             {% endif %}
                         </div>
 
-                        <div class="text-muted small mb-3">
-                            <i class="fas fa-images me-1"></i>{{ publicacion.imagenes.count }} imagen{{ publicacion.imagenes.count|pluralize:"es" }}
+                        <div class="mb-3">
+                            <span class="badge rounded-pill bg-light text-muted border d-inline-flex align-items-center gap-1">
+                                <i class="fas fa-images text-success" aria-hidden="true"></i>{{ publicacion.imagenes.count }} imagen{{ publicacion.imagenes.count|pluralize:"es" }}
+                            </span>
                         </div>
                         {% endif %}
 
+                        <hr class="text-muted opacity-25 my-3">
                         <div class="fs-5 lh-lg">{{ publicacion.contenido|linebreaks }}</div>
                     </div>
 
-                    <div class="card-footer bg-white px-4 py-3 border-top">
-                        <div class="d-flex align-items-center gap-3 flex-wrap">
-                            <span class="fw-semibold small text-muted">Calificar publicación:</span>
+                    <div class="card-footer bg-light px-4 py-3 border-top">
+                        <div class="d-flex align-items-center gap-2 gap-md-3 flex-wrap">
+                            <span class="fw-semibold small text-muted me-1"><i class="fas fa-star text-warning me-1" aria-hidden="true"></i>Calificar:</span>
                             {% if user.is_authenticated %}
                             <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="valor" value="Like">
-                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_reaccion == 'Like' %}btn-success{% else %}btn-outline-success{% endif %}">
-                                    <i class="fas fa-thumbs-up"></i>
+                                <button type="submit" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_reaccion == 'Like' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                                     <span>Me gusta</span>
-                                    <span class="badge {% if mi_reaccion == 'Like' %}bg-white text-success{% else %}bg-success{% endif %}">{{ publicacion.likes_count }}</span>
+                                    <span class="badge rounded-pill {% if mi_reaccion == 'Like' %}bg-white text-success{% else %}bg-success{% endif %}">{{ publicacion.likes_count }}</span>
                                 </button>
                             </form>
                             <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="valor" value="Dislike">
-                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_reaccion == 'Dislike' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                                    <i class="fas fa-thumbs-down"></i>
+                                <button type="submit" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_reaccion == 'Dislike' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                    <i class="fas fa-thumbs-down" aria-hidden="true"></i>
                                     <span>No me gusta</span>
-                                    <span class="badge {% if mi_reaccion == 'Dislike' %}bg-white text-danger{% else %}bg-danger{% endif %}">{{ publicacion.dislikes_count }}</span>
+                                    <span class="badge rounded-pill {% if mi_reaccion == 'Dislike' %}bg-white text-danger{% else %}bg-danger{% endif %}">{{ publicacion.dislikes_count }}</span>
                                 </button>
                             </form>
                             {% if user.tipo_usuario == "CIU" %}
                             <form method="POST" action="{% url 'publicacion:toggle_guardado' publicacion.id %}" class="d-inline ms-auto">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm d-flex align-items-center gap-2 {% if mi_guardado %}btn-warning{% else %}btn-outline-warning{% endif %}">
-                                    <i class="fas fa-bookmark"></i>
+                                <button type="submit" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_guardado %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    <i class="{% if mi_guardado %}fas{% else %}far{% endif %} fa-bookmark" aria-hidden="true"></i>
                                     <span>{% if mi_guardado %}Guardado{% else %}Guardar{% endif %}</span>
                                 </button>
                             </form>
                             {% endif %}
                             {% else %}
-                            <a href="/login" class="btn btn-outline-success btn-sm d-flex align-items-center gap-2">
-                                <i class="fas fa-thumbs-up"></i>
+                            <a href="/login" class="btn btn-outline-success rounded-pill px-3 d-flex align-items-center gap-2">
+                                <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                                 <span>Me gusta</span>
-                                <span class="badge bg-success">{{ publicacion.likes_count }}</span>
+                                <span class="badge rounded-pill bg-success">{{ publicacion.likes_count }}</span>
                             </a>
-                            <a href="/login" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
-                                <i class="fas fa-thumbs-down"></i>
+                            <a href="/login" class="btn btn-outline-danger rounded-pill px-3 d-flex align-items-center gap-2">
+                                <i class="fas fa-thumbs-down" aria-hidden="true"></i>
                                 <span>No me gusta</span>
-                                <span class="badge bg-danger">{{ publicacion.dislikes_count }}</span>
+                                <span class="badge rounded-pill bg-danger">{{ publicacion.dislikes_count }}</span>
                             </a>
                             {% endif %}
                         </div>
@@ -147,12 +153,10 @@
                 </div>
 
                 <section class="pb-5">
-                    <div class="card shadow-sm">
+                    <div class="card shadow-sm border-0">
                         <div class="card-header bg-success text-white py-3 d-flex align-items-center justify-content-between">
-                            <span class="fw-semibold">
-                                <i class="fas fa-comments me-2"></i>Comentarios
-                            </span>
-                            <span class="badge bg-white text-success">{{ publicacion.comentarios.count }}</span>
+                            <span class="fw-semibold d-flex align-items-center gap-2"><i class="fas fa-comments" aria-hidden="true"></i>Comentarios</span>
+                            <span class="badge rounded-pill bg-white text-success">{{ publicacion.comentarios.count }}</span>
                         </div>
 
                         {% if messages %}
@@ -160,21 +164,26 @@
                             {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2 small" role="alert">
                                 {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                             </div>
                             {% endfor %}
                         </div>
                         {% endif %}
 
-                        <div class="card-body px-4 py-4">
-                            {% if user.is_authenticated %}
-                            <form method="POST" action="{% url 'publicacion:comentar_publicacion' publicacion.id %}" class="mb-4">
-                                {% csrf_token %}
-                                <div class="mb-3">
-                                    <textarea name="contenido" class="form-control" rows="3" placeholder="Escribe tu comentario..." required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-success">Comentar</button>
-                            </form>
+                        {% if user.is_authenticated %}
+                        <div class="card-body px-4 py-4 border-bottom">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:44px;height:44px;">{{ user.nombres|first }}</div>
+                                <form method="POST" action="{% url 'publicacion:comentar_publicacion' publicacion.id %}" class="flex-grow-1">
+                                    {% csrf_token %}
+                                    <div class="mb-2">
+                                        <textarea name="contenido" class="form-control" rows="3" placeholder="Comparte tu opinión..." required></textarea>
+                                    </div>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-success d-flex align-items-center gap-2 px-3"><i class="fas fa-paper-plane" aria-hidden="true"></i>Comentar</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                         {% else %}
                         <div class="card-body border-bottom px-4 py-3 text-center text-muted small">
@@ -182,35 +191,40 @@
                         </div>
                         {% endif %}
 
-                        <div class="list-group list-group-flush">
+                        <div class="card-body px-4 py-4 bg-light">
                             {% for comentario in publicacion.comentarios.all %}
-                            <div class="list-group-item px-4 py-3">
-                                <div class="d-flex gap-3 align-items-start">
-                                    <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;">{{ comentario.usuario.nombres|first }}</div>
-                                    <div class="flex-grow-1" style="min-width: 0;">
-                                        <div class="d-flex align-items-center justify-content-between mb-1">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="fw-semibold small">{{ comentario.usuario.nombres }} {{ comentario.usuario.apellidos }}</span>
-                                                <span class="text-muted" style="font-size:.75rem;">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</span>
-                                            </div>
-                                            {% if user.is_authenticated and comentario.usuario == user %}
-                                            <div class="d-flex gap-1">
-                                                <button class="btn btn-sm btn-outline-secondary py-0 px-2"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalEditar{{ comentario.id|slugify }}">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </button>
-                                                <form method="POST" action="{% url 'publicacion:eliminar_comentario' comentario.id %}"
-                                                      onsubmit="return confirm('¿Eliminar este comentario?');">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">
-                                                        <i class="fas fa-trash"></i>
+                            <div class="card border-0 shadow-sm mb-3">
+                                <div class="card-body p-3">
+                                    <div class="d-flex gap-3 align-items-start">
+                                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 shadow-sm" style="width:46px;height:46px;font-size:1.1rem;">{{ comentario.usuario.nombres|first }}</div>
+                                        <div class="flex-grow-1" style="min-width: 0;">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                    <span class="fw-bold small">{{ comentario.usuario.nombres }} {{ comentario.usuario.apellidos }}</span>
+                                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1" style="font-size:.7rem;">
+                                                        <i class="far fa-clock" aria-hidden="true"></i>{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}
+                                                    </span>
+                                                </div>
+                                                {% if user.is_authenticated and comentario.usuario == user %}
+                                                <div class="d-flex gap-1">
+                                                    <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalEditar{{ comentario.id|slugify }}"
+                                                            aria-label="Editar comentario">
+                                                        <i class="fas fa-pencil-alt" aria-hidden="true"></i>
                                                     </button>
-                                                </form>
+                                                    <form method="POST" action="{% url 'publicacion:eliminar_comentario' comentario.id %}"
+                                                          onsubmit="return confirm('¿Eliminar este comentario?');">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" aria-label="Eliminar comentario">
+                                                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                                {% endif %}
                                             </div>
-                                            {% endif %}
+                                            <p class="mb-0" style="white-space: pre-wrap; overflow-wrap: break-word;">{{ comentario.texto|urlize_blank }}</p>
                                         </div>
-                                        <p class="mb-0 small" style="white-space: pre-wrap; overflow-wrap: break-word;">{{ comentario.texto|urlize_blank }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -221,7 +235,7 @@
                                     <div class="modal-content">
                                         <div class="modal-header bg-success text-white">
                                             <h6 class="modal-title mb-0">Editar comentario</h6>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                         </div>
                                         <form method="POST" action="{% url 'publicacion:editar_comentario' comentario.id %}"
                                               novalidate class="form-editar">
@@ -246,8 +260,11 @@
                             {% endif %}
 
                             {% empty %}
-                            <div class="list-group-item px-4 py-4 text-center text-muted small">
-                                <i class="fas fa-comment-slash me-1"></i>Sé el primero en comentar.
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body px-4 py-5 text-center text-muted">
+                                    <i class="fas fa-comment-slash fs-3 mb-2 d-block opacity-50" aria-hidden="true"></i>
+                                    <span class="small">Sé el primero en comentar.</span>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -258,32 +275,43 @@
 
             <div class="col-lg-4">
 
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white py-2">
-                        <span class="fw-semibold small">Sobre el autor</span>
-                    </div>
-                    <div class="card-body text-center py-4">
-                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3 mx-auto mb-3" style="width:64px;height:64px;">{{ publicacion.usuario.nombres|first }}</div>
-                        <div class="fw-bold">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
+                <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                    <div class="bg-success" style="height:70px;"></div>
+                    <div class="card-body text-center pb-4" style="margin-top:-44px;">
+                        <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center p-1 shadow-sm mb-2">
+                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold fs-2" style="width:80px;height:80px;">{{ publicacion.usuario.nombres|first }}</div>
+                        </div>
+                        <div class="fw-bold fs-5">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
+                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle mt-1">
+                            <i class="fas fa-user" aria-hidden="true"></i> Miembro de la comunidad
+                        </span>
                     </div>
                 </div>
 
-                <div class="card shadow-sm">
-                    <div class="card-header bg-success text-white py-2">
-                        <span class="fw-semibold small">Publicaciones relacionadas</span>
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold small d-flex align-items-center gap-2"><i class="fas fa-layer-group" aria-hidden="true"></i>Publicaciones relacionadas</span>
+                        <span class="badge rounded-pill bg-white text-success">{{ publicaciones_relacionadas|length }}</span>
                     </div>
                     <div class="list-group list-group-flush">
                         {% for relacionada in publicaciones_relacionadas %}
-                        <a href="{% url 'publicacion:detalle_publicacion' relacionada.id %}" class="list-group-item list-group-item-action py-3">
-                            <span class="badge bg-success-subtle text-success mb-1">{{ relacionada.categoria.nombre|default:relacionada.categoria.get_tipo_display }}</span>
-                            {% if relacionada.categoria and relacionada.categoria.descripcion %}
-                            <div class="text-muted small mb-1">{{ relacionada.categoria.descripcion|truncatechars:80 }}</div>
-                            {% endif %}
-                            <div class="fw-semibold small">{{ relacionada.titulo }}</div>
-                            <div class="text-muted" style="font-size:.75rem;">{{ relacionada.fecha_creacion|date:"d/m/Y" }}</div>
+                        <a href="{% url 'publicacion:detalle_publicacion' relacionada.id %}" class="list-group-item list-group-item-action py-3 px-4">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:30px;height:30px;font-size:.85rem;">{{ forloop.counter }}</div>
+                                <div class="flex-grow-1" style="min-width:0;">
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle mb-1">{{ relacionada.categoria.nombre|default:relacionada.categoria.get_tipo_display }}</span>
+                                    {% if relacionada.categoria and relacionada.categoria.descripcion %}
+                                    <div class="text-muted small mb-1">{{ relacionada.categoria.descripcion|truncatechars:80 }}</div>
+                                    {% endif %}
+                                    <div class="fw-semibold small">{{ relacionada.titulo }}</div>
+                                    <div class="text-muted d-flex align-items-center gap-1" style="font-size:.75rem;"><i class="far fa-calendar" aria-hidden="true"></i>{{ relacionada.fecha_creacion|date:"d/m/Y" }}</div>
+                                </div>
+                            </div>
                         </a>
                         {% empty %}
-                        <div class="list-group-item text-muted small">No hay publicaciones relacionadas.</div>
+                        <div class="list-group-item text-muted small px-4 py-3 text-center">
+                            <i class="fas fa-folder-open d-block fs-4 mb-2 opacity-50" aria-hidden="true"></i>No hay publicaciones relacionadas.
+                        </div>
                         {% endfor %}
                     </div>
                 </div>
