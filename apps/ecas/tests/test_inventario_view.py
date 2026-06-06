@@ -2078,3 +2078,144 @@ class TestChartSeriesVisibilidad(TestCase):
                       "Debe iterar sobre TODOS los valores con forEach")
 
 
+class TestEjecutarCargaMasivaJS(TestCase):
+    """Verifica que el handler de 'Subir archivo' del modal de carga
+    masiva esté correctamente implementado y bindado.
+
+    El bug original era: el botón #inv-btn-ejecutar-carga no tenía
+    handler JS, por lo que el click no hacía nada. Estos tests
+    garantizan que el fix está en su lugar.
+    """
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+        with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
+            self.tpl = fh.read()
+
+    def test_handler_ejecutar_carga_esta_definido(self):
+        """La función ejecutarCargaMasiva() debe estar definida."""
+        self.assertIn("function ejecutarCargaMasiva()", self.js,
+                      "La función ejecutarCargaMasiva() debe existir en inventario.js")
+
+    def test_handler_ejecutar_carga_esta_bindado(self):
+        """El botón #inv-btn-ejecutar-carga debe tener un click handler
+        que invoque ejecutarCargaMasiva."""
+        # Buscar el binding en bindExtras
+        idx = self.js.find('"inv-btn-ejecutar-carga"')
+        self.assertGreater(idx, 0, "Binding del botón debe existir")
+        # La línea debe tener addEventListener + ejecutarCargaMasiva
+        line_end = self.js.find("\n", idx)
+        block = self.js[idx:line_end]
+        self.assertIn("addEventListener", block)
+        self.assertIn("ejecutarCargaMasiva", block)
+
+    def test_handler_ejecutar_carga_usa_formdata(self):
+        """El handler debe construir FormData con la key 'file'."""
+        idx = self.js.find("function ejecutarCargaMasiva()")
+        self.assertGreater(idx, 0)
+        # El bloque de la función debe usar FormData
+        block = self.js[idx:idx + 2000]
+        self.assertIn("new FormData()", block,
+                      "El handler debe crear un FormData")
+        self.assertIn('fd.append("file"', block,
+                      "El FormData debe tener la key 'file'")
+
+    def test_handler_ejecutar_carga_usa_withloading(self):
+        """El handler debe envolver la operación con withLoading para
+        feedback visual durante el procesamiento."""
+        idx = self.js.find("function ejecutarCargaMasiva()")
+        # Buscar la próxima 'function ' para delimitar el bloque completo
+        end_idx = self.js.find("\n    function ", idx + 1)
+        if end_idx < 0:
+            end_idx = idx + 5000
+        block = self.js[idx:end_idx]
+        self.assertIn("withLoading(btn,", block,
+                      "El handler debe usar withLoading(btn, ...)")
+
+    def test_handler_ejecutar_carga_usa_csrf(self):
+        """El fetch debe incluir el header X-CSRFToken."""
+        idx = self.js.find("function ejecutarCargaMasiva()")
+        block = self.js[idx:idx + 2000]
+        self.assertIn("X-CSRFToken", block,
+                      "El fetch debe incluir CSRF token")
+        self.assertIn("getCSRFToken()", block,
+                      "Debe llamar a getCSRFToken() para obtener el token")
+
+    def test_cards_tienen_data_bulk_tipo(self):
+        """Las 2 cards del landing deben tener data-bulk-tipo."""
+        # Card de compras
+        idx_compra = self.tpl.find("data-bulk-tipo=\"compra\"")
+        self.assertGreater(idx_compra, 0, "Card de compras debe tener data-bulk-tipo='compra'")
+        # Card de ventas
+        idx_venta = self.tpl.find("data-bulk-tipo=\"venta\"")
+        self.assertGreater(idx_venta, 0, "Card de ventas debe tener data-bulk-tipo='venta'")
+
+    def test_link_plantilla_template_tiene_id_para_js(self):
+        """El link de 'Descargar plantilla de ejemplo' en el modal debe
+        tener id y data-plantilla-url para que el JS pueda actualizarlo."""
+        idx = self.tpl.find('id="inv-link-plantilla-ejemplo"')
+        self.assertGreater(idx, 0, "El link debe tener id='inv-link-plantilla-ejemplo'")
+        # El data-plantilla-url puede estar en la misma línea o en una
+        # de las siguientes (la etiqueta <a> se extiende en varias líneas).
+        # Buscar en un bloque más amplio.
+        block = self.tpl[idx:idx + 400]
+        self.assertIn("data-plantilla-url=", block,
+                      "El link debe tener data-plantilla-url para el JS")
+
+    def test_handler_bind_data_bulk_tipo_existe(self):
+        """El JS debe tener un binding para los elementos [data-bulk-tipo]."""
+        self.assertIn("[data-bulk-tipo]", self.js,
+                      "Debe haber un querySelectorAll para [data-bulk-tipo]")
+        # Debe setear el select con el valor del data attribute
+        idx = self.js.find("[data-bulk-tipo]")
+        block = self.js[idx:idx + 500]
+        self.assertIn("dataset.bulkTipo", block,
+                      "El handler debe leer dataset.bulkTipo")
+        self.assertIn("sel.value = tipo", block,
+                      "El handler debe setear el select con el tipo")
+
+    def test_handler_actualizar_link_plantilla_definido(self):
+        """La función _actualizarLinkPlantilla debe existir y leer
+        data-plantilla-url del link."""
+        self.assertIn("function _actualizarLinkPlantilla()", self.js,
+                      "La función _actualizarLinkPlantilla() debe existir")
+        idx = self.js.find("function _actualizarLinkPlantilla()")
+        block = self.js[idx:idx + 800]
+        self.assertIn("data-plantilla-url", block,
+                      "Debe leer data-plantilla-url del link")
+        self.assertIn("inv-carga-tipo", block,
+                      "Debe leer el select inv-carga-tipo")
+
+    def test_links_plantilla_landing_tienen_url_real(self):
+        """Los 2 links del info del landing (plantilla de compras/ventas)
+        deben tener URLs reales (no href='#')."""
+        # Link de compras
+        idx_compra = self.tpl.find("plantilla de compras")
+        self.assertGreater(idx_compra, 0)
+        # Buscar el href anterior
+        href_idx = self.tpl.rfind('href="', 0, idx_compra)
+        href_end = self.tpl.find('"', href_idx + 6)
+        href = self.tpl[href_idx + 6:href_end]
+        self.assertNotEqual(href, "#",
+                            "El link 'plantilla de compras' debe tener URL real")
+        # El href contiene un template tag de Django que se renderea
+        # al URL real. Verificamos que el template tag es correcto.
+        self.assertIn("descargar_plantilla_bulk", href,
+                      "El link debe referenciar el endpoint descargar_plantilla_bulk")
+        self.assertIn("tipo=compra", href)
+
+        # Link de ventas
+        idx_venta = self.tpl.find("plantilla de ventas")
+        self.assertGreater(idx_venta, 0)
+        href_idx = self.tpl.rfind('href="', 0, idx_venta)
+        href_end = self.tpl.find('"', href_idx + 6)
+        href = self.tpl[href_idx + 6:href_end]
+        self.assertNotEqual(href, "#",
+                            "El link 'plantilla de ventas' debe tener URL real")
+        self.assertIn("descargar_plantilla_bulk", href)
+        self.assertIn("tipo=venta", href)
+

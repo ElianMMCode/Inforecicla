@@ -26,6 +26,11 @@ urlpatterns = [
         name="bulk_import_ventas",
     ),
     path(
+        "descargar-plantilla/",
+        views.descargar_plantilla_bulk,
+        name="descargar_plantilla_bulk",
+    ),
+    path(
         "editar-compra/<uuid:compra_id>/",
         views.editar_compra,
         name="editar_compra",

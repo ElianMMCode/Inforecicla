@@ -2354,6 +2354,27 @@
         document.querySelector('#workspaceTabs [data-tab="tab-flujo"]')?.addEventListener("click", () => {
             setTimeout(renderWsChart, 50);
         });
+
+        // Carga masiva CSV: bind del submit, cards pre-set tipo y link
+        // dinámico de plantilla según el select.
+        document.getElementById("inv-btn-ejecutar-carga")?.addEventListener("click", ejecutarCargaMasiva);
+        document.getElementById("inv-carga-tipo")?.addEventListener("change", _actualizarLinkPlantilla);
+        document.querySelectorAll("[data-bulk-tipo]").forEach((el) => {
+            el.addEventListener("click", () => {
+                const tipo = el.dataset.bulkTipo;
+                const sel = document.getElementById("inv-carga-tipo");
+                if (sel) {
+                    sel.value = tipo;
+                    // Si Select2 está inicializado, refrescar visual
+                    if (typeof $ === "function" && $(sel).data("select2")) {
+                        $(sel).trigger("change.select2");
+                    }
+                }
+                _actualizarLinkPlantilla();
+            });
+        });
+        // Inicializar el link de plantilla con el tipo por defecto
+        _actualizarLinkPlantilla();
     }
 
     // ============================================================
@@ -2431,6 +2452,101 @@
             restore();
             throw e;
         }
+    }
+
+    // ============================================================
+    // CARGA MASIVA CSV
+    // ============================================================
+    // Construye la URL del archivo plantilla según el tipo seleccionado
+    // en el modal de carga masiva. La URL base viene del atributo
+    // data-plantilla-url del modal (generado por Django en el template).
+    // Se llama al cambiar el select y al abrir el modal vía card.
+    function _actualizarLinkPlantilla() {
+        const link = document.getElementById("inv-link-plantilla-ejemplo");
+        if (!link) return;
+        const base = link.dataset.plantillaUrl || link.getAttribute("data-plantilla-url") || "";
+        if (!base) return;
+        const tipoEl = document.getElementById("inv-carga-tipo");
+        const tipo = (tipoEl && tipoEl.value) || "compra";
+        link.setAttribute("href", `${base}?tipo=${tipo}`);
+    }
+
+    // Lee el archivo CSV del input, lo envía por multipart/form-data al
+    // endpoint bulk_import correspondiente al tipo (compra/venta) y
+    // muestra un Swal con el resumen. Cierra el modal al terminar con éxito.
+    // Decisión: usar withLoading para evitar doble-click y dar feedback
+    // visual durante el procesamiento (puede tardar con 600 filas).
+    function ejecutarCargaMasiva() {
+        const fileEl = document.getElementById("inv-carga-archivo");
+        const tipoEl = document.getElementById("inv-carga-tipo");
+        const btn = document.getElementById("inv-btn-ejecutar-carga");
+        if (!fileEl || !fileEl.files || !fileEl.files.length) {
+            Swal.fire({
+                icon: "warning",
+                title: "Selecciona un archivo CSV",
+                confirmButtonColor: "#0d6efd",
+            });
+            return;
+        }
+        const file = fileEl.files[0];
+        if (!file.name.toLowerCase().endsWith(".csv")) {
+            Swal.fire({
+                icon: "warning",
+                title: "El archivo debe ser .csv",
+                confirmButtonColor: "#0d6efd",
+            });
+            return;
+        }
+        const tipo = (tipoEl && tipoEl.value) || "compra";
+        const url = `/punto-eca/movimientos/${tipo}s/bulk_import/`;
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const run = () => fetch(url, {
+            method: "POST",
+            headers: { "X-CSRFToken": getCSRFToken() },
+            body: fd,
+        })
+            .then((r) => r.json().then((data) => ({ ok: r.ok, status: r.status, data })))
+            .then(({ ok, status, data }) => {
+                if (!ok || data.status === "error") {
+                    const msg = data.mensaje || "Error al procesar el archivo";
+                    throw new Error(msg);
+                }
+                // Reset input para permitir re-subir el mismo archivo
+                fileEl.value = "";
+                // Cerrar modal
+                const modalEl = document.getElementById("inv-modalCargaMasiva");
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+                // Resumen
+                const r = data.resumen || {};
+                const exitosas = r.exitosas || 0;
+                const conErrores = r.con_errores || 0;
+                const total = r.total_filas || (exitosas + conErrores);
+                const color = conErrores > 0 ? "#fd7e14" : "#198754";
+                const primerError = (data.detalles || []).find((d) => d.status === "error");
+                const detalleHtml = primerError
+                    ? `<small class="text-muted d-block mt-2">Primer error: ${escapeHtml(primerError.mensaje)}</small>`
+                    : "";
+                Swal.fire({
+                    icon: conErrores > 0 ? "warning" : "success",
+                    title: "Carga masiva completada",
+                    html: `<p class="mb-1"><strong>${exitosas}</strong> exitosas de <strong>${total}</strong> totales</p>
+                           <p class="mb-0">${conErrores} con errores</p>${detalleHtml}`,
+                    confirmButtonText: "OK",
+                    confirmButtonColor: color,
+                });
+            })
+            .catch((err) => {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error en la carga",
+                    text: err.message,
+                    confirmButtonColor: "#dc3545",
+                });
+            });
+
+        withLoading(btn, run);
     }
 
     // --- Init ---

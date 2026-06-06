@@ -27,10 +27,66 @@ MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 MIME_PDF = "application/pdf"
 CSV_UTF8_ERROR_MESSAGE = "Error al leer el archivo. Verifique que sea UTF-8"
 TEXT_PLAIN = "text/plain"
+MIME_CSV = "text/csv; charset=utf-8"
+PLANTILLA_BULK_HEADERS_COMPRA = (
+    "nombreMaterial",
+    "cantidad",
+    "precioCompra",
+    "fechaCompra",
+    "observaciones",
+)
+PLANTILLA_BULK_HEADERS_VENTA = (
+    "nombreMaterial",
+    "cantidad",
+    "precioVenta",
+    "fechaVenta",
+    "observaciones",
+)
+PLANTILLA_BULK_EJEMPLOS_COMPRA = (
+    ("Botellas PET transparentes", "100.0", "1.50", "2026-06-15 09:00:00", "Compra de ejemplo"),
+    ("Chatarra férrica", "50.0", "2.30", "2026-06-15 14:30:00", "Lote inicial"),
+)
+PLANTILLA_BULK_EJEMPLOS_VENTA = (
+    ("Botellas PET transparentes", "25.0", "3.00", "2026-06-15 10:30:00", "Venta de ejemplo"),
+    ("Chatarra férrica", "15.0", "4.20", "2026-06-15 16:00:00", "Cliente habitual"),
+)
 
 
 def _responder_error_json(mensaje, status=400):
     return JsonResponse({"status": "error", "mensaje": mensaje}, status=status)
+
+
+@gestor_eca_or_admin_required
+def descargar_plantilla_bulk(request):
+    """
+    Genera y descarga un CSV de ejemplo para la carga masiva.
+
+    Query params:
+        tipo: "compra" (default) o "venta".
+
+    Retorna un archivo .csv con el header correcto y 2 filas de ejemplo.
+    """
+    tipo = (request.GET.get("tipo") or "compra").lower()
+    if tipo == "compra":
+        headers = PLANTILLA_BULK_HEADERS_COMPRA
+        ejemplos = PLANTILLA_BULK_EJEMPLOS_COMPRA
+    elif tipo == "venta":
+        headers = PLANTILLA_BULK_HEADERS_VENTA
+        ejemplos = PLANTILLA_BULK_EJEMPLOS_VENTA
+    else:
+        return _responder_error_json("tipo debe ser 'compra' o 'venta'", status=400)
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow(headers)
+    for fila in ejemplos:
+        writer.writerow(fila)
+
+    response = HttpResponse(buffer.getvalue(), content_type=MIME_CSV)
+    response["Content-Disposition"] = (
+        f'attachment; filename="plantilla_{tipo}_ejemplo.csv"'
+    )
+    return response
 
 
 def _responder_servicio_json(servicio_callable, *args, **kwargs):

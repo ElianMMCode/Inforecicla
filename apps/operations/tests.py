@@ -720,3 +720,362 @@ class TestFlujoEndToEndCompraInventario(TestCase):
         self.assertEqual(response.status_code, 201)
         venta = VentaInventario.objects.filter(centro_acopio=centro).first()
         self.assertIsNotNone(venta, "La venta con centro válido debe persistirse con la FK")
+
+
+def _csv_inline(nombre, contenido):
+    """Helper para crear un SimpleUploadedFile CSV en memoria."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    return SimpleUploadedFile(
+        nombre,
+        contenido.encode("utf-8"),
+        content_type="text/csv",
+    )
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"])
+class TestBulkImportEndpoint(TestCase):
+    """Tests del endpoint bulk_import (carga masiva CSV) y del endpoint
+    auxiliar descargar_plantilla_bulk.
+
+    Cubre:
+    - Validaciones de input (archivo, extensión, headers)
+    - Procesamiento exitoso con N filas (incluido el archivo real de 600 filas)
+    - Creación automática de Inventario para materiales nuevos
+    - Descarga de plantilla con header correcto
+    - Métodos no permitidos
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.localidad = Localidad.objects.create(
+            localidad_id=uuid.uuid4(), nombre="Bogotá"
+        )
+        cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
+        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
+        cls.user = _crear_gestor("bulk-test@example.com")
+        cls.punto = PuntoECA.objects.create(
+            nombre="Punto Bulk",
+            email=f"bulk-{uuid.uuid4().hex[:8]}@x.com",
+            celular="3005557777",
+            latitud=4.6,
+            longitud=-74.0,
+            localidad=cls.localidad,
+            gestor_eca=cls.user,
+        )
+        cls.mat = Material.objects.create(
+            nombre="Lata Bulk", categoria=cls.categoria, tipo=cls.tipo
+        )
+        cls.inv = Inventario.objects.create(
+            punto_eca=cls.punto,
+            material=cls.mat,
+            capacidad_maxima=10000,
+            unidad_medida="KG",
+            stock_actual=0,
+            umbral_alerta=70,
+            umbral_critico=90,
+            precio_compra=1000,
+            precio_venta=2000,
+        )
+
+    def setUp(self):
+        self.client = Client(enforce_csrf_checks=False)
+        self.client.force_login(self.user)
+
+    # --- Helpers ---
+
+    def _post_bulk_compra(self, archivo):
+        return self.client.post(
+            "/punto-eca/movimientos/compras/bulk_import/",
+            data={"file": archivo},
+            HTTP_X_CSRFTOKEN="x",
+            HTTP_ACCEPT="application/json",
+        )
+
+    def _post_bulk_venta(self, archivo):
+        return self.client.post(
+            "/punto-eca/movimientos/ventas/bulk_import/",
+            data={"file": archivo},
+            HTTP_X_CSRFTOKEN="x",
+            HTTP_ACCEPT="application/json",
+        )
+
+    # --- Validaciones de input ---
+
+    def test_bulk_compras_sin_archivo_retorna_400(self):
+        """POST sin campo 'file' debe retornar 400 con mensaje claro."""
+        response = self.client.post(
+            "/punto-eca/movimientos/compras/bulk_import/",
+            HTTP_X_CSRFTOKEN="x",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data.get("status"), "error")
+        self.assertIn("archivo", data.get("mensaje", "").lower())
+
+    def test_bulk_compras_archivo_no_csv_retorna_400(self):
+        """Un archivo .txt debe ser rechazado con 400."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        archivo = SimpleUploadedFile("not_csv.txt", b"hola", content_type="text/plain")
+        response = self._post_bulk_compra(archivo)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("csv", response.json().get("mensaje", "").lower())
+
+    def test_bulk_compras_headers_faltantes_retorna_400(self):
+        """CSV sin todas las columnas requeridas debe ser rechazado."""
+        csv_content = "nombreMaterial,cantidad\nLata Bulk,10\n"
+        response = self._post_bulk_compra(_csv_inline("mal.csv", csv_content))
+        self.assertEqual(response.status_code, 400, f"body={response.content!r}")
+        msg = response.json().get("mensaje", "")
+        self.assertIn("Faltan columnas", msg)
+        self.assertIn("precioCompra", msg)
+
+    def test_bulk_ventas_headers_faltantes_retorna_400(self):
+        """CSV ventas sin todas las columnas requeridas debe ser rechazado."""
+        csv_content = "nombreMaterial,cantidad,precioVenta\nLata Bulk,5,2000\n"
+        response = self._post_bulk_venta(_csv_inline("mal_ventas.csv", csv_content))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("fechaVenta", response.json().get("mensaje", ""))
+
+    def test_bulk_metodo_no_post_retorna_405(self):
+        """GET al endpoint debe retornar 405 (Method Not Allowed)."""
+        response = self.client.get("/punto-eca/movimientos/compras/bulk_import/")
+        self.assertEqual(response.status_code, 405)
+
+    # --- Procesamiento exitoso ---
+
+    def test_bulk_compras_archivo_valido_crea_todas_las_compras(self):
+        """CSV de 3 filas válidas debe crear 3 CompraInventario."""
+        csv_content = (
+            "nombreMaterial,cantidad,precioCompra,fechaCompra,observaciones\n"
+            "Lata Bulk,10.0,1000.00,2026-06-15 10:00:00,Primera\n"
+            "Lata Bulk,20.0,1100.00,2026-06-16 11:00:00,Segunda\n"
+            "Lata Bulk,5.0,1200.00,2026-06-17 12:00:00,Tercera\n"
+        )
+        response = self._post_bulk_compra(_csv_inline("compras.csv", csv_content))
+        self.assertEqual(response.status_code, 200,
+                         f"body={response.content!r}")
+        data = response.json()
+        self.assertEqual(data.get("status"), "success")
+        resumen = data.get("resumen", {})
+        self.assertEqual(resumen.get("exitosas"), 3)
+        self.assertEqual(resumen.get("con_errores"), 0)
+        self.assertEqual(resumen.get("total_filas"), 3)
+        # DB tiene 3 compras
+        self.assertEqual(CompraInventario.objects.count(), 3)
+        # Stock subió 35
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.stock_actual, 35)
+
+    def test_bulk_compras_material_nuevo_en_catalogo_crea_inventario(self):
+        """Si el material existe en el catálogo global pero NO en el
+        inventario de este PuntoECA, el endpoint crea automáticamente el
+        Inventario (a través de _buscar_o_crear_material_inventario) y
+        registra la compra."""
+        # Crear un material en el catálogo global que NO está en este punto
+        cat2 = CategoriaMaterial.objects.create(nombre="Plásticos")
+        tipo2 = TipoMaterial.objects.create(nombre="PET")
+        mat_nuevo = Material.objects.create(
+            nombre="Material Catalogo Nuevo", categoria=cat2, tipo=tipo2
+        )
+        self.assertFalse(
+            Inventario.objects.filter(punto_eca=self.punto, material=mat_nuevo).exists()
+        )
+        csv_content = (
+            "nombreMaterial,cantidad,precioCompra,fechaCompra,observaciones\n"
+            "Material Catalogo Nuevo,15.0,1500.00,2026-06-15 10:00:00,Nuevo material\n"
+        )
+        response = self._post_bulk_compra(_csv_inline("nuevo.csv", csv_content))
+        self.assertEqual(response.status_code, 200, f"body={response.content!r}")
+        data = response.json()
+        self.assertEqual(data.get("resumen", {}).get("exitosas"), 1)
+        # El Inventario fue creado automáticamente
+        self.assertTrue(
+            Inventario.objects.filter(
+                punto_eca=self.punto, material=mat_nuevo
+            ).exists()
+        )
+        # Compra persiste
+        self.assertEqual(CompraInventario.objects.count(), 1)
+
+    def test_bulk_compras_600_filas_junio_2026_procesa_mayoria_correctamente(self):
+        """Carga el CSV real de 600 filas (junio 2026). Debe procesar
+        exitosamente la gran mayoría (~588) y fallar las ~12 con materiales
+        inventados (2% de probabilidad en el script generador)."""
+        # Cargar materiales del CSV (los reales del fixture)
+        self._cargar_materiales_csv("docs/carga_masiva/test_compras_materiales_masivo.csv")
+        csv_path = "docs/carga_masiva/test_compras_materiales_masivo.csv"
+        with open(csv_path, "r", encoding="utf-8") as f:
+            csv_content = f.read()
+        response = self._post_bulk_compra(_csv_inline("masivo.csv", csv_content))
+        self.assertEqual(response.status_code, 200,
+                         f"body={response.content!r}")
+        data = response.json()
+        resumen = data.get("resumen", {})
+        total = resumen.get("total_filas", 0)
+        exitosas = resumen.get("exitosas", 0)
+        con_errores = resumen.get("con_errores", 0)
+        self.assertEqual(total, 600)
+        # La mayoría debe ser exitosa (>= 550 de 600)
+        self.assertGreaterEqual(
+            exitosas, 550,
+            f"esperaba >=550 exitosas, obtuve {exitosas} (errores: {con_errores})"
+        )
+        # La diferencia son los materiales inventados
+        self.assertGreater(con_errores, 0, "El CSV tiene ~2% inventados")
+        self.assertEqual(exitosas + con_errores, total)
+        # DB tiene 'exitosas' compras
+        self.assertEqual(CompraInventario.objects.count(), exitosas)
+
+    def test_bulk_ventas_600_filas_junio_2026_procesa_mayoria_correctamente(self):
+        """Carga el CSV real de 600 ventas (junio 2026). Carga compras
+        primero para tener stock, luego ventas. Verifica que la mayoría se
+        procesa correctamente."""
+        # Cargar materiales y crear stock con compras previas
+        self._cargar_materiales_csv("docs/carga_masiva/test_ventas_materiales_masivo.csv")
+        # Crear un Inventario por cada material con stock alto
+        nombres_unicos = set()
+        with open("docs/carga_masiva/test_ventas_materiales_masivo.csv", "r", encoding="utf-8") as f:
+            for line in f.readlines()[1:]:
+                nombre = line.split(",")[0].strip()
+                nombres_unicos.add(nombre)
+        for nombre in nombres_unicos:
+            mat = Material.objects.filter(nombre=nombre).first()
+            if mat and not Inventario.objects.filter(punto_eca=self.punto, material=mat).exists():
+                Inventario.objects.create(
+                    punto_eca=self.punto, material=mat,
+                    capacidad_maxima=100000, unidad_medida="KG",
+                    stock_actual=10000, umbral_alerta=70, umbral_critico=90,
+                    precio_compra=1000, precio_venta=2000,
+                )
+        csv_path = "docs/carga_masiva/test_ventas_materiales_masivo.csv"
+        with open(csv_path, "r", encoding="utf-8") as f:
+            csv_content = f.read()
+        response = self._post_bulk_venta(_csv_inline("masivo_ventas.csv", csv_content))
+        self.assertEqual(response.status_code, 200,
+                         f"body={response.content!r}")
+        data = response.json()
+        resumen = data.get("resumen", {})
+        total = resumen.get("total_filas", 0)
+        exitosas = resumen.get("exitosas", 0)
+        self.assertEqual(total, 600)
+        # Con stock suficiente, la mayoría debe ser exitosa
+        self.assertGreaterEqual(exitosas, 500,
+            f"esperaba >=500 ventas exitosas, obtuve {exitosas}")
+
+    def _cargar_materiales_csv(self, csv_path):
+        """Helper: lee la columna nombreMaterial de un CSV y crea los
+        materiales en el catálogo global (sin Inventario — eso lo hace el
+        endpoint). Usado por los tests del CSV masivo. NO crea los
+        materiales inventados (los que el script generador inserta con
+        ~2% de probabilidad para forzar errores)."""
+        import csv as csvmod
+        MATERIALES_INVENTADOS = {
+            "Material NoExistente",
+            "Material Inventado 019",
+            "Material Nuevo Test",
+        }
+        nombres = set()
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csvmod.DictReader(f)
+            for fila in reader:
+                nombre = fila["nombreMaterial"].strip()
+                if nombre in MATERIALES_INVENTADOS:
+                    continue
+                nombres.add(nombre)
+        cat = CategoriaMaterial.objects.first() or CategoriaMaterial.objects.create(nombre="Default")
+        tipo = TipoMaterial.objects.first() or TipoMaterial.objects.create(nombre="Default")
+        for nombre in nombres:
+            if not Material.objects.filter(nombre=nombre).exists():
+                Material.objects.create(nombre=nombre, categoria=cat, tipo=tipo)
+
+    # --- Endpoint descargar_plantilla_bulk ---
+
+    def test_descargar_plantilla_compra_retorna_csv_con_headers_correctos(self):
+        """GET ?tipo=compra debe retornar un CSV con el header de compras."""
+        response = self.client.get("/punto-eca/movimientos/descargar-plantilla/?tipo=compra")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn("plantilla_compra_ejemplo.csv", response["Content-Disposition"])
+        body = response.content.decode("utf-8")
+        # Header correcto
+        self.assertIn("nombreMaterial", body)
+        self.assertIn("precioCompra", body)
+        self.assertIn("fechaCompra", body)
+        # Al menos una fila de ejemplo
+        lines = body.strip().split("\n")
+        self.assertGreaterEqual(len(lines), 2)
+
+    def test_descargar_plantilla_venta_retorna_csv_con_headers_correctos(self):
+        """GET ?tipo=venta debe retornar un CSV con el header de ventas."""
+        response = self.client.get("/punto-eca/movimientos/descargar-plantilla/?tipo=venta")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("plantilla_venta_ejemplo.csv", response["Content-Disposition"])
+        body = response.content.decode("utf-8")
+        self.assertIn("precioVenta", body)
+        self.assertIn("fechaVenta", body)
+        self.assertNotIn("precioCompra", body)
+
+    def test_descargar_plantilla_sin_parametro_retorna_plantilla_compra(self):
+        """GET sin ?tipo debe usar el default 'compra'."""
+        response = self.client.get("/punto-eca/movimientos/descargar-plantilla/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("precioCompra", response.content.decode("utf-8"))
+
+    def test_descargar_plantilla_tipo_invalido_retorna_400(self):
+        """GET ?tipo=xyz debe retornar 400 con mensaje claro."""
+        response = self.client.get(
+            "/punto-eca/movimientos/descargar-plantilla/?tipo=xyz",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data.get("status"), "error")
+        self.assertIn("compra", data.get("mensaje", ""))
+        self.assertIn("venta", data.get("mensaje", ""))
+
+    def test_descargar_plantilla_usuario_no_gestor_redirige(self):
+        """Ciudadano (no gestor) no debe poder descargar plantilla.
+        El decorador redirige a /inicio/ (no 403)."""
+        U = get_user_model()
+        ciu = U.objects.create_user(
+            email="ciu@x.com",
+            numero_documento="9999" + uuid.uuid4().hex[:6],
+            password="x",
+            nombres="Ciu",
+            apellidos="Test",
+            tipo_documento="CC",
+            tipo_usuario="CIU",
+        )
+        client = Client(enforce_csrf_checks=False)
+        client.force_login(ciu)
+        response = client.get(
+            "/punto-eca/movimientos/descargar-plantilla/?tipo=compra",
+            HTTP_ACCEPT="application/json",
+        )
+        # El decorador redirige a /inicio/ (302)
+        self.assertIn(response.status_code, (302, 301))
+
+    def test_bulk_compras_usuario_no_gestor_redirige(self):
+        """Ciudadano no debe poder hacer bulk import (redirige)."""
+        U = get_user_model()
+        ciu = U.objects.create_user(
+            email="ciu2@x.com",
+            numero_documento="9999" + uuid.uuid4().hex[:6],
+            password="x",
+            nombres="Ciu2",
+            apellidos="Test",
+            tipo_documento="CC",
+            tipo_usuario="CIU",
+        )
+        client = Client(enforce_csrf_checks=False)
+        client.force_login(ciu)
+        csv_content = "nombreMaterial,cantidad,precioCompra,fechaCompra,observaciones\nLata Bulk,1,1,2026-06-15,x\n"
+        response = client.post(
+            "/punto-eca/movimientos/compras/bulk_import/",
+            data={"file": _csv_inline("c.csv", csv_content)},
+            HTTP_X_CSRFTOKEN="x",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertIn(response.status_code, (302, 301))

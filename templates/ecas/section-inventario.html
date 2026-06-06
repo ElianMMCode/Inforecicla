@@ -807,7 +807,7 @@ globalThis.getCSRFToken = function () {
                                 <i class="bi bi-arrow-down-circle text-danger" style="font-size:3rem"></i>
                                 <h5 class="mt-3 fw-bold">Cargar Compras</h5>
                                 <p class="text-muted small">Importa múltiples compras de material desde CSV</p>
-                                <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#inv-modalCargaMasiva">
+                                <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#inv-modalCargaMasiva" data-bulk-tipo="compra">
                                     <i class="bi bi-upload me-1"></i>Importar Compras
                                 </button>
                             </div>
@@ -817,7 +817,7 @@ globalThis.getCSRFToken = function () {
                                 <i class="bi bi-arrow-up-circle text-success" style="font-size:3rem"></i>
                                 <h5 class="mt-3 fw-bold">Cargar Ventas</h5>
                                 <p class="text-muted small">Importa múltiples ventas de material desde CSV</p>
-                                <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#inv-modalCargaMasiva">
+                                <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#inv-modalCargaMasiva" data-bulk-tipo="venta">
                                     <i class="bi bi-upload me-1"></i>Importar Ventas
                                 </button>
                             </div>
@@ -828,7 +828,8 @@ globalThis.getCSRFToken = function () {
                         <strong>Formato CSV requerido:</strong> columnas <code>nombreMaterial</code>,
                         <code>cantidad</code>, <code>precioCompra</code> o <code>precioVenta</code>,
                         <code>fechaCompra</code> o <code>fechaVenta</code>. Descarga la
-                        <a href="#">plantilla de compras</a> o la <a href="#">plantilla de ventas</a>.
+                        <a href="{% url 'punto-eca:movimientos:descargar_plantilla_bulk' %}?tipo=compra">plantilla de compras</a>
+                        o la <a href="{% url 'punto-eca:movimientos:descargar_plantilla_bulk' %}?tipo=venta">plantilla de ventas</a>.
                     </div>
                 </div>
                 {# === CHUNK 4 ANCHOR === #}
@@ -1661,7 +1662,10 @@ globalThis.getCSRFToken = function () {
                             <li><code>precioCompra</code> o <code>precioVenta</code> (obligatorio)</li>
                             <li><code>fechaCompra</code> o <code>fechaVenta</code> (YYYY-MM-DD)</li>
                         </ul>
-                        <a href="#">Descargar plantilla de ejemplo</a>
+                        <a href="{% url 'punto-eca:movimientos:descargar_plantilla_bulk' %}?tipo=compra"
+                           id="inv-link-plantilla-ejemplo"
+                           data-plantilla-url="{% url 'punto-eca:movimientos:descargar_plantilla_bulk' %}"
+                           target="_blank">Descargar plantilla de ejemplo</a>
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-top">
