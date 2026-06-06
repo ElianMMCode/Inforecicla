@@ -28,6 +28,18 @@
     //   - formatearCOP   -> alias largo (mismo formato), usado por los handlers del flujo.
     //   - formatearCOPCorto -> formato compacto con sufijos K/M/B: "$ 1.5M" (eje Y de chart).
     const formatCOP = (n) => "$ " + Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 });
+    // --- Helpers de fetch (centralizan CSRF + parseo + manejo de errores) ---
+    const _jsonHeaders = () => ({ "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() });
+    const _parseJsonResponse = (r) => r.json().then((d) => ({ ok: r.ok, d }));
+    const _showFetchError = (err) => Swal.fire({ icon: "error", title: "Error", text: err.message });
+    const _readFormAsObject = (formEl) => Object.fromEntries(new FormData(formEl).entries());
+    const _showSuccessSwal = (title, html, timerMs = 1200) => Swal.fire({
+        icon: "success",
+        title,
+        html,
+        timer: timerMs,
+        showConfirmButton: false,
+    });
     // Helper de stringificación segura: solo convierte a String si el valor
     // es un primitivo (string, number, boolean). Para objetos/arrays retorna
     // "" para evitar el "[object Object]" de String() sobre no-primitivos.
@@ -583,7 +595,7 @@
             return;
         }
         const form = document.getElementById("inv-form-crear-inventario");
-        const payload = Object.fromEntries(new FormData(form).entries());
+        const payload = _readFormAsObject(form);
         payload.stockActual = Number(payload.stockInicial);
         payload.capacidadMaxima = Number(payload.capacidadMaxima);
         payload.precioCompra = Number(payload.precioCompra);
@@ -597,7 +609,7 @@
 
         fetch("/punto-eca/inventario/agregar/", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
             body: JSON.stringify(payload),
         })
             .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
@@ -857,10 +869,10 @@
         };
         fetch(`/punto-eca/inventario/actualizar/${invId}/`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
             body: JSON.stringify(payload),
         })
-            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(_parseJsonResponse)
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || "Error al guardar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-inventario"))?.hide();
@@ -892,17 +904,17 @@
         const invId = currentMaterial.inventarioId;
         fetch(`/punto-eca/inventario/eliminar/${invId}/`, {
             method: "DELETE",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
             body: JSON.stringify({ puntoId: Number(document.querySelector("section[data-seccion='inventario']").dataset.puntoEcaId) }),
         })
-            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(_parseJsonResponse)
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || "Error al eliminar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-eliminar"))?.hide();
                 Swal.fire({ icon: "success", title: "Eliminado", text: "Material removido del inventario.", confirmButtonColor: "#dc3545" });
                 setTimeout(() => globalThis.location.reload(), 1200);
             })
-            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+            .catch(_showFetchError);
     });
 
     // ============================================================
@@ -913,7 +925,7 @@
         const form = document.getElementById("formEntrada");
         if (!_validateForm("formEntrada")) return;
         const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-entrada");
-        const raw = Object.fromEntries(new FormData(form).entries());
+        const raw = _readFormAsObject(form);
         // Mapear nombres del form al contrato del servicio
         // (servicio espera fechaCompra + puntoEcaId, no "fecha" + "puntoId").
         const payload = {
@@ -929,10 +941,10 @@
         const cant = Number(raw.cantidad);
         const promise = fetch("/punto-eca/movimientos/registrar-compra/", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
             body: JSON.stringify(payload),
         })
-            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(_parseJsonResponse)
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
                 // Mostrar comprobante con todos los campos de la compra.
@@ -968,7 +980,7 @@
                     globalThis.location.href = url.toString();
                 });
             })
-            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+            .catch(_showFetchError);
         withLoading(btn, () => promise);
     }
     function submitSalida(e) {
@@ -976,7 +988,7 @@
         if (!_validateForm("formSalida")) return;
         const form = document.getElementById("formSalida");
         const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-salida");
-        const raw = Object.fromEntries(new FormData(form).entries());
+        const raw = _readFormAsObject(form);
         // Mapear nombres del form al contrato del servicio
         // (servicio espera fechaVenta + puntoEcaId, no "fecha" + "puntoId").
         const payload = {
@@ -996,10 +1008,10 @@
         const centroNombre = centroSel?.options[centroSel.selectedIndex]?.text || "";
         const promise = fetch("/punto-eca/movimientos/registrar-venta/", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
             body: JSON.stringify(payload),
         })
-            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(_parseJsonResponse)
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
                 // Mostrar comprobante con todos los campos de la venta.
@@ -1035,7 +1047,7 @@
                     globalThis.location.href = url.toString();
                 });
             })
-            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+            .catch(_showFetchError);
         withLoading(btn, () => promise);
     }
 
@@ -1268,7 +1280,7 @@
         if (!_validateForm("inv-form-editar-compra")) return;
         const form = document.getElementById("inv-form-editar-compra");
         const btn = document.getElementById("inv-btn-guardar-editar-compra");
-        const raw = Object.fromEntries(new FormData(form).entries());
+        const raw = _readFormAsObject(form);
         // Validar stock resultante con la edición. El stock actual ya
         // incluye esta compra, así que el nuevo stock = actual - original + nuevo.
         const stockActual = Number(document.getElementById("inv-edit-compra-stock-actual")?.value || 0);
@@ -1294,24 +1306,24 @@
         };
         const promise = fetch(`/punto-eca/movimientos/editar-compra/${_safeStr(raw.id)}/`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
             body: JSON.stringify(payload),
         })
-            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(_parseJsonResponse)
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || "Error al editar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-compra"))?.hide();
-                Swal.fire({ icon: "success", title: "Compra actualizada", timer: 1500, showConfirmButton: false });
+                _showSuccessSwal("Compra actualizada", undefined, 1500);
                 setTimeout(() => globalThis.location.reload(), 1500);
             })
-            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+            .catch(_showFetchError);
         withLoading(btn, () => promise);
     }
     function submitEditarVenta() {
         if (!_validateForm("inv-form-editar-venta")) return;
         const form = document.getElementById("inv-form-editar-venta");
         const btn = document.getElementById("inv-btn-guardar-editar-venta");
-        const raw = Object.fromEntries(new FormData(form).entries());
+        const raw = _readFormAsObject(form);
         // Validar stock restante con la edición. El stock actual ya
         // incluye esta venta, así que el stock nuevo = actual + original - nuevo.
         const stockActual = Number(document.getElementById("inv-edit-venta-stock-actual")?.value || 0);
@@ -1338,17 +1350,17 @@
         if (centroSel?.value) payload.centroAcopioId = centroSel.value;
         const promise = fetch(`/punto-eca/movimientos/editar-venta/${_safeStr(raw.id)}/`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
             body: JSON.stringify(payload),
         })
-            .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+            .then(_parseJsonResponse)
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || "Error al editar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-venta"))?.hide();
-                Swal.fire({ icon: "success", title: "Venta actualizada", timer: 1500, showConfirmButton: false });
+                _showSuccessSwal("Venta actualizada", undefined, 1500);
                 setTimeout(() => globalThis.location.reload(), 1500);
             })
-            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+            .catch(_showFetchError);
         withLoading(btn, () => promise);
     }
 
@@ -1374,15 +1386,15 @@
     function _ejecutarEliminacion(url) {
         fetch(url, {
             method: "DELETE",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            headers: _jsonHeaders(),
         })
             .then((res) => res.json().then((d) => ({ ok: res.ok, d })))
             .then(_mostrarResultadoEliminacion)
-            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+            .catch(_showFetchError);
     }
     function _mostrarResultadoEliminacion({ ok, d }) {
         if (!ok) throw new Error(d?.mensaje || "Error al eliminar");
-        Swal.fire({ icon: "success", title: "Eliminado", timer: 1200, showConfirmButton: false });
+        _showSuccessSwal("Eliminado", undefined, 1200);
         setTimeout(() => globalThis.location.reload(), 1200);
     }
     function eliminarCompraActual() {

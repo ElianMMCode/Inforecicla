@@ -15,6 +15,7 @@ import json
 import re
 import uuid
 
+from django.contrib.staticfiles import finders
 from django.test import Client, TestCase, override_settings
 
 from apps.ecas.models import Localidad, PuntoECA
@@ -72,10 +73,28 @@ def _find_real_invocation(branch, pattern):
     return -1
 
 
+def _leer_inventario_js():
+    """Lee y retorna el contenido del archivo `js/ecas/inventario/inventario.js`.
 
-    if isinstance(value, dict):
-        return value
-    return json.loads(value)
+    Centraliza el patrón `finders.find(...) + open(...) + .read()` que se
+    repetía en múltiples tests, eliminando 22 ocurrencias del import
+    inline de `finders`.
+    """
+    js_path = finders.find("js/ecas/inventario/inventario.js")
+    assert js_path is not None, "static js/ecas/inventario/inventario.js no encontrado"
+    with open(js_path, encoding="utf-8") as fh:
+        return fh.read()
+
+
+def _extraer_bloque_funcion(js, fn_name):
+    """Extrae el cuerpo de la primera función con nombre `fn_name` en `js`.
+
+    Encapsula el patrón `js.split(f"function {fn_name}", 1)[1].split("function ", 1)[0]`
+    que se repetía en múltiples tests.
+    """
+    parts = js.split(f"function {fn_name}", 1)
+    assert len(parts) == 2, f"función {fn_name} no encontrada en el JS"
+    return parts[1].split("function ", 1)[0]
 
 
 def _crear_usuario_gestor(email, **kwargs):
@@ -256,7 +275,6 @@ class TestSeccionInventario(TestCase):
         self._login()
         response = self.client.get("/punto-eca/inventario/")
         body = response.content.decode("utf-8")
-        import re
         for field in ["formEntradaStockActual", "formSalidaStockActual",
                       "formEntradaCapacidadMaxima", "formSalidaCapacidadMaxima"]:
             # Buscar el tag <input> cuyo id sea field y capturar step=...
@@ -273,7 +291,6 @@ class TestSeccionInventario(TestCase):
         self._login()
         response = self.client.get("/punto-eca/inventario/")
         body = response.content.decode("utf-8")
-        import re
         for field in ["formEntradaFecha", "formSalidaFecha"]:
             m = re.search(rf'<input[^>]*id="{field}"[^>]*>', body)
             self.assertIsNotNone(m, f"no se encontró input #{field} en el HTML")
@@ -299,7 +316,6 @@ class TestSeccionInventario(TestCase):
         self._login()
         response = self.client.get("/punto-eca/inventario/")
         body = response.content.decode("utf-8")
-        import re
         # forms de crear
         for field, expected_max, expected_ml in [
             ("formEntradaCantidad", "99999.99", "8"),
@@ -423,11 +439,7 @@ class TestSeccionInventario(TestCase):
 
         # El JS de la sección se carga por <script src=...>, no inline.
         # Verificamos que el archivo estático declara y llama el helper.
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path, "static js/ecas/inventario/inventario.js no encontrado")
-        with open(js_path, encoding="utf-8") as fh:
-            js_src = fh.read()
+        js_src = _leer_inventario_js()
         self.assertIn("function _initSelect2InSection", js_src)
         self.assertIn("_initSelect2InSection()", js_src)  # llamada en bind()
 
@@ -630,16 +642,12 @@ class TestHistorialWorkspace(TestCase):
         """El JS de inventario debe contener la lógica que auto-filtra por
         currentMaterialId y propaga el material al export cuando se está en el
         workspace del historial."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # Flag de estado workspace
         self.assertIn("isWorkspaceHistorial", js)
         # renderHistorialMaterial debe llamar al mismo pipeline paginado
         self.assertIn("function renderHistorialMaterial", js)
-        self.assertIn("renderHistorialGeneralPaged", js.split("function renderHistorialMaterial", 1)[1].split("function ", 2)[0])
+        self.assertIn("renderHistorialGeneralPaged", js.split("function renderHistorialMaterial", 1)[1].split("function ", 1)[0])
         # getCurrentHistorialRows debe usar currentMaterialId cuando isWorkspaceHistorial
         self.assertIn("effectiveMaterialId", js)
         # buildExportQuery debe preferir currentMaterial sobre el filtro landing
@@ -650,14 +658,9 @@ class TestHistorialWorkspace(TestCase):
         como <select> nativo, sin Select2, para que el listener 'change'
         que activa/desactiva el centro de acopio dispare confiablemente
         cuando el usuario elige 'Venta' (en landing o workspace)."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # La línea exacta de apply() del historial NO debe incluir
         # 'inv-hfiltro-tipo' (sin el sufijo '-material').
-        import re
         match = re.search(r'apply\("(#inv-hfiltro-[^"]+)"\)', js)
         self.assertIsNotNone(match, "no se encontró la línea apply() del historial")
         historial_selector = match.group(1)
@@ -675,23 +678,19 @@ class TestHistorialWorkspace(TestCase):
         pane AHORA visible. Sin este re-init, los wrappers de Select2
         quedan con width incorrecto porque Select2 mide dimensiones al
         init time, y el pane estaba oculto."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # Helper de re-init debe existir
         self.assertIn("function _reinitSelect2InPane(pane)", js)
         # activarOvTab y activarTab deben llamarlo
         for fn in ("function activarOvTab", "function activarTab"):
             self.assertIn(fn, js)
-            fn_block = js.split(fn, 1)[1].split("function ", 2)[0]
+            fn_block = _extraer_bloque_funcion(js, fn.replace("function ", ""))
             self.assertIn("_reinitSelect2InPane(pane)", fn_block,
                           f"{fn} no llama a _reinitSelect2InPane")
         # El re-init NO debe tocar inv-hfiltro-tipo (queda nativo en ambos
         # panes: landing con id inv-hfiltro-tipo y workspace con id
         # inv-ws-hfiltro-tipo).
-        reinit_block = js.split("function _reinitSelect2InPane", 1)[1].split("function ", 2)[0]
+        reinit_block = js.split("function _reinitSelect2InPane", 1)[1].split("function ", 1)[0]
         self.assertIn('not("#inv-hfiltro-tipo")', reinit_block)
         self.assertIn('not("#inv-ws-hfiltro-tipo")', reinit_block)
 
@@ -702,11 +701,7 @@ class TestHistorialWorkspace(TestCase):
         traducción automática a prefijo `inv-ws-` en workspace).
         Esto evita el bug 'workspace muestra 0 registros' y los warnings de
         'Duplicate form field id' en el navegador."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # Helper _q debe existir
         self.assertIn("function _q(id)", js)
         # Helper _qsa (multi-prefix) debe existir para bindear listeners
@@ -731,11 +726,7 @@ class TestHistorialWorkspace(TestCase):
         los elementos con id inv-tablasHistorialBody (landing + workspace),
         no solo al primero, porque getElementById sólo resuelve al primero.
         Ver https://github.com/... (commit 5b349d6 y este fix)."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # El bloque de acciones debe usar querySelectorAll para inv-tablasHistorialBody
         self.assertIn('querySelectorAll(tbodySelector)', js)
         # El tbody de acciones debe incluir "inv-tablasHistorialBody" en la lista
@@ -899,11 +890,7 @@ class TestFlujoRefactor(TestCase):
 
     def test_js_construir_serie_ganancias_y_renderers(self):
         """JS debe contener helpers de ganancias + listeners de sub-tabs."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # Funciones núcleo (function declarations)
         for fn in [
             "function construirSerieGanancias",
@@ -937,10 +924,7 @@ class TestFlujoRefactor(TestCase):
 
     def test_render_chart_soporta_modo_ganancia(self):
         """renderChart recibe opts con 'modo' = 'stock' o 'ganancia'."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # ConstruirSerieGanancias retorna 3 series
         self.assertIn("ingresos", js)
         self.assertIn("costos", js)
@@ -973,10 +957,7 @@ class TestFlujoRefactor(TestCase):
         self.assertIn("Precio de Compra", content)
         self.assertIn("Precio de Venta", content)
         # 5) JS: formatearCOP (largo) y formatearCOPCorto (K/M/B) deben existir
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # formato largo: usa toLocaleString("es-CO") con máximo 0 decimales
         self.assertIn('"es-CO", { maximumFractionDigits: 0 }', js)
         # formato compacto: K, M, B
@@ -1005,11 +986,7 @@ class TestFormsCrearCompraVentaPayload(TestCase):
 
     def test_submit_entrada_envia_payload_con_nombres_del_servicio(self):
         """submitEntrada debe usar fechaCompra + puntoEcaId + materialId, no los nombres crudos del form."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         # Localizar bloque de submitEntrada
         self.assertIn("function submitEntrada", js)
         block = js.split("function submitEntrada", 1)[1].split("function submitSalida", 1)[0]
@@ -1026,11 +1003,7 @@ class TestFormsCrearCompraVentaPayload(TestCase):
 
     def test_submit_salida_envia_payload_con_nombres_del_servicio(self):
         """submitSalida debe usar fechaVenta + puntoEcaId + materialId + centroAcopioId."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(js_path)
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
+        js = _leer_inventario_js()
         self.assertIn("function submitSalida", js)
         block = js.split("function submitSalida", 1)[1].split("// ===", 1)[0]
         # Mapeos esperados
@@ -1049,11 +1022,8 @@ class TestFormsCrearCompraVentaPayload(TestCase):
         debe tener un check explícito que rechace ventas sin centro.
         Si el centro está vacío, simplemente no se envía al backend
         (centroAcopioId='' que el servicio trata como None)."""
-        from django.contrib.staticfiles import finders
-        js_path = finders.find("js/ecas/inventario/inventario.js")
-        with open(js_path, encoding="utf-8") as fh:
-            js = fh.read()
-        block = js.split("function submitSalida", 1)[1].split("function ", 1)[0]
+        js = _leer_inventario_js()
+        block = _extraer_bloque_funcion(js, "submitSalida")
         # NO debe haber un check `!centro.value` que rechace la venta
         self.assertNotIn('!centro.value', block,
                          "submitSalida NO debe rechazar ventas sin centro (es opcional)")
@@ -1073,11 +1043,7 @@ class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
     """
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
 
     def test_poblar_info_material_existe_y_usa_current_material(self):
         self.assertIn("function poblarInfoMaterial", self.js)
@@ -1179,11 +1145,7 @@ class TestComprobanteYDeepLink(TestCase):
     """
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
 
     def test_existe_funcion_render_comprobante_y_deeplink(self):
         self.assertIn("function renderComprobante", self.js)
@@ -1447,11 +1409,7 @@ class TestBindFormTotalListeners(TestCase):
     `_bindFormTotalListeners()` una vez al iniciar."""
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
 
     def test_bind_llama_bind_form_total_listeners(self):
         """`bind()` debe invocar _bindFormTotalListeners() para enganchar
@@ -1485,11 +1443,7 @@ class TestEditarMovimientoSeteaHiddenStock(TestCase):
     """
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
 
     def test_editar_movimiento_setea_stock_actual_hidden(self):
         """Debe setear ${prefix}-stock-actual con currentMaterial.stockActual."""
@@ -1529,11 +1483,7 @@ class TestStockPreviewColorDinamico(TestCase):
     """
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
 
     def test_template_tiene_stock_resultante_y_restante(self):
         """El template debe tener los inputs de preview de stock."""
@@ -1619,11 +1569,7 @@ class TestValidacionStockEnEditarModales(TestCase):
     """
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
 
     def test_submit_editar_compra_valida_stock_no_excede_capacidad(self):
         """submitEditarCompra debe calcular el stock resultante y bloquear
@@ -1675,11 +1621,7 @@ class TestValidacionEstandarizadaCV(TestCase):
     con mensaje institucional y color verde #198754."""
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
         with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
             self.tpl = fh.read()
 
@@ -1800,11 +1742,7 @@ class TestFiltrosFlujoWorkshop(TestCase):
     NO se incluye porque el workshop es de 1 solo material."""
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
         with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
             self.tpl = fh.read()
 
@@ -1896,7 +1834,6 @@ class TestFiltrosFlujoWorkshop(TestCase):
         enganchados a renderWsChart / renderWsGananciasChart. Los IDs
         van en arrays multilínea iterados con forEach() dentro de
         bindExtras()."""
-        import re
         # Buscamos la secuencia completa: array de IDs + .forEach(...) +
         # .addEventListener("change", renderWsChart) en una ventana de
         # 600 chars. Tolerante a whitespace y newlines.
@@ -1993,11 +1930,7 @@ class TestChartSeriesVisibilidad(TestCase):
     'Profit' paso a 'Ganancia neta'."""
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
         with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
             self.tpl = fh.read()
 
@@ -2106,11 +2039,7 @@ class TestEjecutarCargaMasivaJS(TestCase):
     """
 
     def setUp(self):
-        from django.contrib.staticfiles import finders
-        self.js_path = finders.find("js/ecas/inventario/inventario.js")
-        self.assertIsNotNone(self.js_path)
-        with open(self.js_path, encoding="utf-8") as fh:
-            self.js = fh.read()
+        self.js = _leer_inventario_js()
         with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
             self.tpl = fh.read()
 
