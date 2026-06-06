@@ -1126,3 +1126,63 @@ class TestStockPreviewColorDinamico(TestCase):
         self.assertIn("actualizarStockPreview", block,
                       "poblarInfoMaterial debe llamar actualizarStockPreview")
 
+
+class TestValidacionStockEnEditarModales(TestCase):
+    """Los modales de edición de compra/venta deben validar que la nueva
+    cantidad no deje el stock en estado inválido. Se hace client-side como
+    primer barrera (mejor UX) pero el backend re-valida de forma autoritativa.
+
+    - Editar compra: nuevo stock = stockActual - cantidadOriginal + nuevaCant.
+      Si supera la capacidad máxima → bloquear.
+    - Editar venta: nuevo stock = stockActual + cantidadOriginal - nuevaCant.
+      Si resultado < 0 → bloquear.
+    """
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+
+    def test_submit_editar_compra_valida_stock_no_excede_capacidad(self):
+        """submitEditarCompra debe calcular el stock resultante y bloquear
+        con un Swal.fire si supera la capacidad máxima."""
+        block = self.js.split("function submitEditarCompra", 1)[1].split("function ", 1)[0]
+        self.assertIn("inv-edit-compra-stock-actual", block,
+                      "submitEditarCompra debe leer hidden stock-actual")
+        self.assertIn("inv-edit-compra-capacidad-maxima", block,
+                      "submitEditarCompra debe leer hidden capacidad-maxima")
+        self.assertIn("inv-edit-compra-cantidad-original", block,
+                      "submitEditarCompra debe leer hidden cantidad-original")
+        self.assertIn("stockResultante > capacidad", block,
+                      "submitEditarCompra debe bloquear si stockResultante > capacidad")
+        self.assertIn("Swal.fire", block,
+                      "submitEditarCompra debe mostrar Swal de advertencia")
+
+    def test_submit_editar_compra_calcula_diferencia(self):
+        """El cálculo correcto: stockActual - original + nuevo."""
+        block = self.js.split("function submitEditarCompra", 1)[1].split("function ", 1)[0]
+        # Buscar la línea exacta del cálculo
+        self.assertIn("stockActual - cantOriginal + nuevaCant", block,
+                      "submitEditarCompra debe calcular stockActual - cantOriginal + nuevaCant")
+
+    def test_submit_editar_venta_valida_stock_no_negativo(self):
+        """submitEditarVenta debe calcular el stock resultante y bloquear
+        con un Swal.fire si el resultado es negativo."""
+        block = self.js.split("function submitEditarVenta", 1)[1].split("function ", 1)[0]
+        self.assertIn("inv-edit-venta-stock-actual", block,
+                      "submitEditarVenta debe leer hidden stock-actual")
+        self.assertIn("inv-edit-venta-cantidad-original", block,
+                      "submitEditarVenta debe leer hidden cantidad-original")
+        self.assertIn("stockResultante < 0", block,
+                      "submitEditarVenta debe bloquear si stockResultante < 0")
+        self.assertIn("Swal.fire", block,
+                      "submitEditarVenta debe mostrar Swal de advertencia")
+
+    def test_submit_editar_venta_calcula_diferencia(self):
+        """El cálculo correcto: stockActual + original - nuevo."""
+        block = self.js.split("function submitEditarVenta", 1)[1].split("function ", 1)[0]
+        self.assertIn("stockActual + cantOriginal - nuevaCant", block,
+                      "submitEditarVenta debe calcular stockActual + cantOriginal - nuevaCant")
+

@@ -1047,11 +1047,26 @@
         const form = document.getElementById("inv-form-editar-compra");
         if (!form.checkValidity()) { form.reportValidity(); return; }
         const raw = Object.fromEntries(new FormData(form).entries());
+        // Validar stock resultante con la edición. El stock actual ya
+        // incluye esta compra, así que el nuevo stock = actual - original + nuevo.
+        const stockActual = Number(document.getElementById("inv-edit-compra-stock-actual")?.value || 0);
+        const capacidad = Number(document.getElementById("inv-edit-compra-capacidad-maxima")?.value || 0);
+        const cantOriginal = Number(document.getElementById("inv-edit-compra-cantidad-original")?.value || 0);
+        const nuevaCant = Number(raw.cantidad);
+        const stockResultante = stockActual - cantOriginal + nuevaCant;
+        if (capacidad > 0 && stockResultante > capacidad) {
+            Swal.fire({
+                icon: "warning",
+                title: "Stock excede capacidad",
+                text: `El stock resultante (${stockResultante.toLocaleString("es-CO")}) supera la capacidad máxima (${capacidad.toLocaleString("es-CO")}). Ajustá la cantidad.`,
+            });
+            return;
+        }
         // Mapear nombres del form al contrato del servicio.
         const payload = {
             compraId: raw.id,
             fechaCompra: raw.fecha,
-            cantidad: Number(raw.cantidad),
+            cantidad: nuevaCant,
             precioCompra: Number(raw.precioCompra),
             observaciones: raw.observaciones || "",
         };
@@ -1075,11 +1090,25 @@
         const centro = document.getElementById("inv-edit-venta-centro");
         if (centro && !centro.value) { centro.reportValidity(); return; }
         const raw = Object.fromEntries(new FormData(form).entries());
+        // Validar stock restante con la edición. El stock actual ya
+        // incluye esta venta, así que el stock nuevo = actual + original - nuevo.
+        const stockActual = Number(document.getElementById("inv-edit-venta-stock-actual")?.value || 0);
+        const cantOriginal = Number(document.getElementById("inv-edit-venta-cantidad-original")?.value || 0);
+        const nuevaCant = Number(raw.cantidad);
+        const stockResultante = stockActual + cantOriginal - nuevaCant;
+        if (stockResultante < 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Stock insuficiente",
+                text: `El stock resultante (${stockResultante.toLocaleString("es-CO")}) sería negativo. Ajustá la cantidad.`,
+            });
+            return;
+        }
         // Mapear nombres del form al contrato del servicio.
         const payload = {
             ventaId: raw.id,
             fechaVenta: raw.fecha,
-            cantidad: Number(raw.cantidad),
+            cantidad: nuevaCant,
             precioVenta: Number(raw.precioVenta),
             observaciones: raw.observaciones || "",
         };
