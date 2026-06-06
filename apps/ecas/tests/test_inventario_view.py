@@ -1759,3 +1759,23 @@ class TestValidacionEstandarizadaCV(TestCase):
             self.assertIn("(opcional)", label_block,
                           f"El label de {input_id} debe marcar el campo como '(opcional)'")
 
+    def test_submit_editar_venta_no_referencia_centro_indefinido(self):
+        """Regression: bug 'centro is not defined' en submitEditarVenta.
+
+        Cuando el centro de acopio se hizo opcional en commit 180de66,
+        quedó una referencia huérfana a la variable `centro` que nunca
+        fue declarada. El handler lanzaba ReferenceError en consola y
+        el botón 'Guardar cambios' quedaba sin reaccionar. La solución
+        es leer el select via getElementById y chequear su `.value`."""
+        submit_block = self.js.split("function submitEditarVenta", 1)[1].split("function ", 1)[0]
+        # 1. La variable `centro` (suelta) NO debe aparecer como
+        #    identificador libre en el cuerpo de submitEditarVenta.
+        self.assertNotIn("if (centro)", submit_block,
+                         "submitEditarVenta NO debe referenciar 'centro' como variable libre "
+         "(ReferenceError: centro is not defined)")
+        self.assertNotIn("if(centro)", submit_block,
+                         "submitEditarVenta NO debe referenciar 'centro' como variable libre")
+        # 2. Sí debe leer el select por id y chequear su value.
+        self.assertIn('getElementById("inv-edit-venta-centro")', submit_block,
+                      "submitEditarVenta debe leer el select por id")
+

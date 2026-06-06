@@ -1304,7 +1304,8 @@
             precioVenta: Number(raw.precioVenta),
             observaciones: raw.observaciones || "",
         };
-        if (centro) payload.centroAcopioId = centro.value;
+        const centroSel = document.getElementById("inv-edit-venta-centro");
+        if (centroSel && centroSel.value) payload.centroAcopioId = centroSel.value;
         const promise = fetch(`/punto-eca/movimientos/editar-venta/${raw.id}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
