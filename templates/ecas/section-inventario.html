@@ -1007,7 +1007,8 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formEntradaFecha">Fecha <span class="text-danger">*</span></label>
                                 <input type="datetime-local" class="form-control form-control-sm border-danger border-2"
-                                       id="formEntradaFecha" name="fecha" required>
+                                       id="formEntradaFecha" name="fecha"
+                                       value="{{ now|date:'Y-m-d\\TH:i' }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formEntradaCantidad">Cantidad <span class="text-danger">*</span></label>
@@ -1132,7 +1133,8 @@ globalThis.getCSRFToken = function () {
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaFecha">Fecha <span class="text-danger">*</span></label>
                                 <input type="datetime-local" class="form-control form-control-sm border-success border-2"
-                                       id="formSalidaFecha" name="fecha" required>
+                                       id="formSalidaFecha" name="fecha"
+                                       value="{{ now|date:'Y-m-d\\TH:i' }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaCantidad">Cantidad <span class="text-danger">*</span></label>

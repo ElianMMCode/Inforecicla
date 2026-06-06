@@ -222,6 +222,28 @@ class TestSeccionInventario(TestCase):
             self.assertIn('step="0.01"', m.group(0),
                           f"input #{field} debe tener step='0.01' para soportar decimales")
 
+    def test_formularios_cv_tienen_fecha_autorrellenada(self):
+        """Los inputs `datetime-local` de los forms de crear compra/venta
+        deben venir autorrellenados con la fecha/hora actual del servidor
+        (en TZ America/Bogota), para que el usuario no tenga que tipearla
+        y así no rompa la validación `validar_fecha_operacion` del modelo."""
+        self._login()
+        response = self.client.get("/punto-eca/inventario/")
+        body = response.content.decode("utf-8")
+        import re
+        for field in ["formEntradaFecha", "formSalidaFecha"]:
+            m = re.search(rf'<input[^>]*id="{field}"[^>]*>', body)
+            self.assertIsNotNone(m, f"no se encontró input #{field} en el HTML")
+            # El formato datetime-local es YYYY-MM-DDTHH:MM (10 + 'T' + 5 = 16 chars)
+            v = re.search(r'value="(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})"', m.group(0))
+            self.assertIsNotNone(v,
+                                 f"#{field} debe tener value= con fecha actual formato 'YYYY-MM-DDTHH:MM'")
+        # Verificar que ambas fechas son iguales (mismo render del servidor)
+        m1 = re.search(r'id="formEntradaFecha"[^>]*value="([^"]+)"', body)
+        m2 = re.search(r'id="formSalidaFecha"[^>]*value="([^"]+)"', body)
+        self.assertEqual(m1.group(1), m2.group(1),
+                         "ambos forms deben tener la misma fecha actual (single render)")
+
     def test_contexto_incluye_punto_y_gestor(self):
         self._login()
         response = self.client.get("/punto-eca/inventario/")

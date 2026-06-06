@@ -861,6 +861,7 @@
         if (e) e.preventDefault();
         const form = document.getElementById("formEntrada");
         if (!form.checkValidity()) { form.reportValidity(); return; }
+        const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-entrada");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Mapear nombres del form al contrato del servicio
         // (servicio espera fechaCompra + puntoEcaId, no "fecha" + "puntoId").
@@ -873,7 +874,7 @@
             observaciones: raw.observaciones || "",
             puntoEcaId: raw.puntoId,
         };
-        fetch("/punto-eca/movimientos/registrar-compra/", {
+        const promise = fetch("/punto-eca/movimientos/registrar-compra/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -882,9 +883,12 @@
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
                 Swal.fire({ icon: "success", title: "Compra registrada", text: d.mensaje || "Operación exitosa", timer: 1500, showConfirmButton: false });
+                // Reset del form para que un nuevo registro no herede valores
+                form.reset();
                 setTimeout(() => window.location.reload(), 1500);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+        withLoading(btn, () => promise);
     }
     function submitSalida(e) {
         if (e) e.preventDefault();
@@ -892,6 +896,7 @@
         if (!form.checkValidity()) { form.reportValidity(); return; }
         const centro = document.getElementById("formSalidaCentro");
         if (centro && !centro.value) { centro.reportValidity(); return; }
+        const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-salida");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Mapear nombres del form al contrato del servicio
         // (servicio espera fechaVenta + puntoEcaId, no "fecha" + "puntoId").
@@ -905,7 +910,7 @@
             centroAcopioId: raw.centroAcopioId,
             puntoEcaId: raw.puntoId,
         };
-        fetch("/punto-eca/movimientos/registrar-venta/", {
+        const promise = fetch("/punto-eca/movimientos/registrar-venta/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -914,9 +919,11 @@
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
                 Swal.fire({ icon: "success", title: "Venta registrada", text: d.mensaje || "Operación exitosa", timer: 1500, showConfirmButton: false });
+                form.reset();
                 setTimeout(() => window.location.reload(), 1500);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+        withLoading(btn, () => promise);
     }
 
     // ============================================================
@@ -1053,6 +1060,7 @@
     function submitEditarCompra() {
         const form = document.getElementById("inv-form-editar-compra");
         if (!form.checkValidity()) { form.reportValidity(); return; }
+        const btn = document.getElementById("inv-btn-guardar-editar-compra");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Validar stock resultante con la edición. El stock actual ya
         // incluye esta compra, así que el nuevo stock = actual - original + nuevo.
@@ -1077,7 +1085,7 @@
             precioCompra: Number(raw.precioCompra),
             observaciones: raw.observaciones || "",
         };
-        fetch(`/punto-eca/movimientos/editar-compra/${raw.id}/`, {
+        const promise = fetch(`/punto-eca/movimientos/editar-compra/${raw.id}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -1090,12 +1098,14 @@
                 setTimeout(() => window.location.reload(), 1500);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+        withLoading(btn, () => promise);
     }
     function submitEditarVenta() {
         const form = document.getElementById("inv-form-editar-venta");
         if (!form.checkValidity()) { form.reportValidity(); return; }
         const centro = document.getElementById("inv-edit-venta-centro");
         if (centro && !centro.value) { centro.reportValidity(); return; }
+        const btn = document.getElementById("inv-btn-guardar-editar-venta");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Validar stock restante con la edición. El stock actual ya
         // incluye esta venta, así que el stock nuevo = actual + original - nuevo.
@@ -1120,7 +1130,7 @@
             observaciones: raw.observaciones || "",
         };
         if (centro) payload.centroAcopioId = centro.value;
-        fetch(`/punto-eca/movimientos/editar-venta/${raw.id}/`, {
+        const promise = fetch(`/punto-eca/movimientos/editar-venta/${raw.id}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -1133,6 +1143,7 @@
                 setTimeout(() => window.location.reload(), 1500);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+        withLoading(btn, () => promise);
     }
 
     // ============================================================
@@ -2112,6 +2123,39 @@
         document.querySelector('#workspaceTabs [data-tab="tab-flujo"]')?.addEventListener("click", () => {
             setTimeout(renderWsChart, 50);
         });
+    }
+
+    // ============================================================
+    // LOADING STATE en botones de submit
+    // ============================================================
+    // Reemplaza el contenido del botón con un spinner mientras la
+    // operación está en curso. Restaura el contenido original al
+    // terminar (éxito o error). Previene dobles clicks y da feedback
+    // visual al usuario.
+    function withLoading(btn, fn) {
+        if (!btn) return fn();
+        if (btn.disabled) return; // ya está procesando, ignorar
+        const original = btn.innerHTML;
+        const spinnerClass = btn.classList.contains("btn-sm") ? "spinner-border-sm" : "";
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border ${spinnerClass} me-2" role="status" aria-hidden="true"></span>Procesando...`;
+        const restore = () => {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        };
+        try {
+            const result = fn();
+            // Si devuelve una Promise, esperamos a que termine
+            if (result && typeof result.then === "function") {
+                return result.then((v) => { restore(); return v; },
+                                   (e) => { restore(); throw e; });
+            }
+            restore();
+            return result;
+        } catch (e) {
+            restore();
+            throw e;
+        }
     }
 
     // --- Init ---

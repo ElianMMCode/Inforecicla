@@ -1,5 +1,6 @@
 from django.http import Http404, JsonResponse
 from django.db.models import Q
+from django.utils import timezone
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect
@@ -480,6 +481,9 @@ def _build_inventario_context(punto):
         "historial_ventas": historial_ventas,
         # Dict para que el template lo serialice UNA sola vez con |json_script
         "inv_data_json": inv_data,
+        # Fecha/hora actual del servidor (TZ America/Bogota) para autorrellenar
+        # los campos `datetime-local` de los forms de crear compra/venta.
+        "now": timezone.now(),
     }
 
 
