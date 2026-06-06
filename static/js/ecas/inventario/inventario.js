@@ -200,7 +200,7 @@
         if (typeof window.jQuery === "undefined" || typeof window.jQuery.fn.select2 === "undefined") return;
         const $ = window.jQuery;
         const base = { theme: "bootstrap-5", language: "es", width: "100%" };
-        const $selects = $(pane).find("select").not("#inv-hfiltro-tipo");
+        const $selects = $(pane).find("select").not("#inv-hfiltro-tipo").not("#inv-ws-hfiltro-tipo");
         $selects.each(function () {
             const $el = $(this);
             if ($el.data("select2")) $el.select2("destroy");
@@ -665,10 +665,11 @@
 
         // Acciones en tablas (delegado). inv-tablasHistorialBody existe en
         // landing y workspace, por eso se bindea a TODOS los elementos.
+        // (workspace usa prefijo inv-ws- para evitar IDs duplicados).
         ["inv-tablasHistorialBody", "tablasEntradasBody", "tablasSalidasBody"]
             .forEach((tbodyId) => {
                 const tbodySelector = tbodyId.startsWith("inv-")
-                    ? `[id="${tbodyId}"]`
+                    ? `[id="${tbodyId}"], [id="inv-ws-${tbodyId.slice(4)}"]`
                     : `#${tbodyId}`;
                 document.querySelectorAll(tbodySelector).forEach((tbody) => {
                     tbody.addEventListener("click", (e) => {
@@ -1133,7 +1134,27 @@
 
     function _q(id) {
         const scope = isWorkspaceHistorial ? "#tab-historial" : "#ovtab-historial";
+        // En workspace los IDs llevan prefijo `inv-ws-` para evitar duplicados
+        // con landing. Traducimos automáticamente.
+        if (
+            isWorkspaceHistorial &&
+            id.startsWith("inv-") &&
+            !id.startsWith("inv-ws-")
+        ) {
+            id = "inv-ws-" + id.slice(4);
+        }
         return document.querySelector(`${scope} #${id}`);
+    }
+
+    // Selecciona todos los elementos con un id (soporta el par landing/workspace).
+    //   _qsa("inv-hfiltro-aplicar")
+    //     => [inv-hfiltro-aplicar (landing), inv-ws-hfiltro-aplicar (workspace)]
+    function _qsa(id) {
+        const selectors = [`[id="${id}"]`];
+        if (id.startsWith("inv-") && !id.startsWith("inv-ws-")) {
+            selectors.push(`[id="inv-ws-${id.slice(4)}"]`);
+        }
+        return document.querySelectorAll(selectors.join(", "));
     }
 
     function _wrapWithScope(handler) {
@@ -1810,26 +1831,24 @@
             detVentaFooter.prepend(btn);
         }
 
-        // Exportar historial (mismos botones reusados por landing y workspace;
-        // se bindea a TODOS los elementos con el mismo ID vía querySelectorAll
-        // porque landing y workspace comparten los mismos IDs y se debe
-        // respetar el scope del botón que disparó el evento).
-        document.querySelectorAll('[id="inv-btn-export-historial-excel"]').forEach((el) => {
+        // Exportar historial (landing y workspace con prefijo inv-ws-).
+        // _qsa() selecciona ambos.
+        _qsa("inv-btn-export-historial-excel").forEach((el) => {
             el.addEventListener("click", _wrapWithScope(exportarHistorialExcel));
         });
-        document.querySelectorAll('[id="inv-btn-export-historial-pdf"]').forEach((el) => {
+        _qsa("inv-btn-export-historial-pdf").forEach((el) => {
             el.addEventListener("click", _wrapWithScope(exportarHistorialPdf));
         });
 
         // Filtros historial
-        document.querySelectorAll('[id="inv-hfiltro-aplicar"]').forEach((el) => {
+        _qsa("inv-hfiltro-aplicar").forEach((el) => {
             el.addEventListener("click", _wrapWithScope(aplicarFiltrosHistorial));
         });
-        document.querySelectorAll('[id="inv-hfiltro-limpiar"]').forEach((el) => {
+        _qsa("inv-hfiltro-limpiar").forEach((el) => {
             el.addEventListener("click", _wrapWithScope(limpiarFiltrosHistorial));
         });
         // Centro de acopio se habilita sólo si tipo=venta
-        document.querySelectorAll('[id="inv-hfiltro-tipo"]').forEach((el) => {
+        _qsa("inv-hfiltro-tipo").forEach((el) => {
             el.addEventListener("change", _wrapWithScope(_toggleCentroAcopioLock));
         });
 

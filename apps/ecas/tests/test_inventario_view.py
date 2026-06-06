@@ -396,23 +396,27 @@ class TestHistorialWorkspace(TestCase):
         self.user.save()
         self.client.force_login(self.user)
 
-    def test_workspace_historial_reusa_ids_filtros_ovtab(self):
+    def test_workspace_historial_tiene_ids_filtros_con_prefijo_ws(self):
+        """Workspace usa prefijo `inv-ws-` para evitar IDs duplicados con
+        landing (que causa warnings de "Duplicate form field id" en navegador).
+        Antes reusaba los mismos IDs (Decisión 34), pero se cambió a IDs únicos.
+        """
         response = self.client.get("/punto-eca/inventario/")
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
         ids_filtros = [
-            "inv-hfiltro-categoria",
-            "inv-hfiltro-tipo-material",
-            "inv-hfiltro-tipo",
-            "inv-hfiltro-desde",
-            "inv-hfiltro-hasta",
-            "inv-hfiltro-centro",
-            "inv-hfiltro-cantidad-min",
-            "inv-hfiltro-cantidad-max",
-            "inv-hfiltro-monto-min",
-            "inv-hfiltro-monto-max",
-            "inv-hfiltro-aplicar",
-            "inv-hfiltro-limpiar",
+            "inv-ws-hfiltro-categoria",
+            "inv-ws-hfiltro-tipo-material",
+            "inv-ws-hfiltro-tipo",
+            "inv-ws-hfiltro-desde",
+            "inv-ws-hfiltro-hasta",
+            "inv-ws-hfiltro-centro",
+            "inv-ws-hfiltro-cantidad-min",
+            "inv-ws-hfiltro-cantidad-max",
+            "inv-ws-hfiltro-monto-min",
+            "inv-ws-hfiltro-monto-max",
+            "inv-ws-hfiltro-aplicar",
+            "inv-ws-hfiltro-limpiar",
         ]
         for fid in ids_filtros:
             with self.subTest(filtro=fid):
@@ -438,9 +442,9 @@ class TestHistorialWorkspace(TestCase):
         idx_tab = content.find('id="tab-historial"')
         idx_cierre = content.find('id="tab-flujo"')
         seccion = content[idx_tab:idx_cierre]
-        for id_ in ("inv-tablasHistorialBody", "inv-hpager",
-                    "inv-hfooter-count", "inv-hbadge-count",
-                    "inv-btn-export-historial-excel", "inv-btn-export-historial-pdf"):
+        for id_ in ("inv-ws-tablasHistorialBody", "inv-ws-hpager",
+                    "inv-ws-hfooter-count", "inv-ws-hbadge-count",
+                    "inv-btn-ws-export-historial-excel", "inv-btn-ws-export-historial-pdf"):
             with self.subTest(id=id_):
                 self.assertIn(f'id="{id_}"', seccion,
                               f"workspace tab-historial falta {id_}")
@@ -530,15 +534,20 @@ class TestHistorialWorkspace(TestCase):
             fn_block = js.split(fn, 1)[1].split("function ", 2)[0]
             self.assertIn("_reinitSelect2InPane(pane)", fn_block,
                           f"{fn} no llama a _reinitSelect2InPane")
-        # El re-init NO debe tocar inv-hfiltro-tipo (queda nativo)
+        # El re-init NO debe tocar inv-hfiltro-tipo (queda nativo en ambos
+        # panes: landing con id inv-hfiltro-tipo y workspace con id
+        # inv-ws-hfiltro-tipo).
         reinit_block = js.split("function _reinitSelect2InPane", 1)[1].split("function ", 2)[0]
         self.assertIn('not("#inv-hfiltro-tipo")', reinit_block)
+        self.assertIn('not("#inv-ws-hfiltro-tipo")', reinit_block)
 
     def test_js_funciones_historial_son_scope_aware(self):
         """Las funciones que leen/escriben del historial deben usar el helper
         _q() (scope-aware) en lugar de getElementById para soportar que el
-        landing y el workspace compartan los mismos IDs en el DOM.
-        Esto evita el bug 'workspace muestra 0 registros'."""
+        landing y el workspace tengan los mismos IDs en el DOM (con
+        traducción automática a prefijo `inv-ws-` en workspace).
+        Esto evita el bug 'workspace muestra 0 registros' y los warnings de
+        'Duplicate form field id' en el navegador."""
         from django.contrib.staticfiles import finders
         js_path = finders.find("js/ecas/inventario/inventario.js")
         self.assertIsNotNone(js_path)
@@ -546,6 +555,8 @@ class TestHistorialWorkspace(TestCase):
             js = fh.read()
         # Helper _q debe existir
         self.assertIn("function _q(id)", js)
+        # Helper _qsa (multi-prefix) debe existir para bindear listeners
+        self.assertIn("function _qsa(id)", js)
         # Las funciones del historial deben llamar a _q (no getElementById)
         # Verificamos por función específica
         for fn_name in ("renderHistorialGeneralPaged", "renderPager",
@@ -556,9 +567,10 @@ class TestHistorialWorkspace(TestCase):
                           f"función {fn_name} no encontrada")
         # Wrapper de scope para listeners
         self.assertIn("function _wrapWithScope", js)
-        # Listeners usan querySelectorAll (no getElementById) para soportar IDs duplicados
-        self.assertIn("querySelectorAll('[id=\"inv-hfiltro-aplicar\"]')", js)
-        self.assertIn("querySelectorAll('[id=\"inv-btn-export-historial-excel\"]')", js)
+        # Listeners usan _qsa (no querySelectorAll literal) para soportar
+        # los pares landing/workspace (inv-X + inv-ws-X).
+        self.assertIn('_qsa("inv-hfiltro-aplicar")', js)
+        self.assertIn('_qsa("inv-btn-export-historial-excel")', js)
 
     def test_js_listener_acciones_bindea_ambos_tbodys(self):
         """El listener delegado de botones ver/editar debe bindearse a TODOS
