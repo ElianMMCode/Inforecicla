@@ -2,8 +2,11 @@ from django.http import JsonResponse
 from django.db.models import Q
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_GET, require_POST
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
+from django.urls import reverse
 from apps.ecas.models import Localidad, CentroAcopio
 from apps.users.models import Usuario
 from config import constants as cons
@@ -25,7 +28,94 @@ TEMPLATE_SECTION_PERFIL = "ecas/section-perfil.html"
 
 
 @gestor_eca_or_admin_required
-def render_seccion(request, seccion="resumen"):
+@require_POST
+@csrf_protect
+def toggle_visible(request):
+    """
+    Endpoint POST-only para alternar la visibilidad del Punto ECA en el mapa.
+    Se usa desde el formulario de preferencias para evitar mezclar GET/POST en la misma vista.
+    """
+    punto = buscar_puntos_eca(request)
+    # Normalizar valor de checkbox
+    visible = request.POST.get("visible_en_mapa") in ("on", "1", "true", "True")
+    punto.visible_en_mapa = visible
+    punto.save(update_fields=["visible_en_mapa", "fecha_modificacion"])
+    messages.success(request, "Preferencias actualizadas correctamente.")
+    return redirect(reverse(CONSTANTE_RENDER, kwargs={"seccion": "perfil"}) + "?tab=configuracion")
+
+
+def _campo_pendiente(valor, valores_default=()):
+    if valor is None:
+        return True
+    if isinstance(valor, str):
+        valor_normalizado = valor.strip()
+        if not valor_normalizado:
+            return True
+        return valor_normalizado in valores_default
+    return False
+
+
+def _collect_pendientes(objeto, campos, valores_default_por_campo=None):
+    valores_default_por_campo = valores_default_por_campo or {}
+    pendientes = []
+    for campo, etiqueta in campos:
+        valor = getattr(objeto, campo, None)
+        valores_default = valores_default_por_campo.get(campo, ())
+        if _campo_pendiente(valor, valores_default=valores_default):
+            pendientes.append(etiqueta)
+    return pendientes
+
+
+def _build_perfil_pendientes(usuario, punto):
+    encargado_pendientes = _collect_pendientes(
+        usuario,
+        [
+            ("nombres", "Nombres"),
+            ("apellidos", "Apellidos"),
+            ("email", "Email"),
+            ("celular", "Celular"),
+            ("tipo_documento", "Tipo de documento"),
+            ("numero_documento", "Número de documento"),
+            ("fecha_nacimiento", "Fecha de nacimiento"),
+            ("localidad", "Localidad"),
+            ("biografia", "Biografía"),
+        ],
+    )
+
+    punto_pendientes = _collect_pendientes(
+        punto,
+        [
+            ("nombre", "Nombre del punto"),
+            ("descripcion", "Descripción"),
+            ("direccion", "Dirección"),
+            ("telefono_punto", "Teléfono del punto"),
+            ("email", "Email del punto"),
+            ("celular", "Celular del punto"),
+            ("localidad", "Localidad del punto"),
+            ("sitio_web", "Sitio web"),
+            ("horario_atencion", "Horario de atención"),
+            ("latitud", "Latitud"),
+            ("longitud", "Longitud"),
+        ],
+        valores_default_por_campo={"nombre": ("Punto ECA Sin Nombre",)},
+    )
+
+    if not (getattr(punto, "logo_imagen_punto", None) or getattr(punto, "logo_url_punto", None)):
+        punto_pendientes.append("Logo")
+    if not (getattr(punto, "foto_imagen_punto", None) or getattr(punto, "foto_url_punto", None)):
+        punto_pendientes.append("Foto")
+
+    return {
+        "encargado": encargado_pendientes,
+        "punto": punto_pendientes,
+        "hay_pendientes": bool(encargado_pendientes or punto_pendientes),
+        "total": len(encargado_pendientes) + len(punto_pendientes),
+    }
+
+
+@gestor_eca_or_admin_required
+@require_GET
+def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     """
     Vista principal que renderiza una sección del panel Punto ECA según el parámetro 'seccion'.
     - Selecciona la plantilla y los datos correctos para mostrar la sección indicada (perfil, materiales, movimientos, centros, calendario, resumen, etc).
@@ -41,7 +131,10 @@ def render_seccion(request, seccion="resumen"):
     punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
 
     if seccion == "perfil":
-        context = _build_perfil_context(punto)
+        perfil_tab = request.GET.get("tab", perfil_tab)
+
+    if seccion == "perfil":
+        context = _build_perfil_context(punto, perfil_tab=perfil_tab)
     elif seccion == "materiales":
         context = _build_materiales_context(punto)
     elif seccion == "movimientos":
@@ -58,19 +151,24 @@ def render_seccion(request, seccion="resumen"):
     return render(request, "ecas/puntoECA-layout.html", context)
 
 
-def _build_perfil_context(punto):
+def _build_perfil_context(punto, perfil_tab="punto"):
     """
     Construye el contexto para la sección 'perfil' del Punto ECA.
     Incluye información del gestor (usuario), el punto, catálogo de localidades y tipos de documento.
     Centraliza todo lo necesario para renderizar la UI de perfil.
     """
+    usuario = punto.gestor_eca
+    perfil_pendientes = _build_perfil_pendientes(usuario, punto)
+
     return {
         "seccion": "perfil",
         "section_template": SECTION_TEMPLATES["perfil"],
-        "usuario": punto.gestor_eca,
+        "usuario": usuario,
         "punto": punto,
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
+        "perfil_pendientes": perfil_pendientes,
+        "perfil_tab": perfil_tab,
     }
 
 
@@ -193,7 +291,19 @@ def _procesar_errores_perfil(errores, request):
             )
 
 
+def _actualizar_perfil_gestor(request, usuario, id):
+    resultado = UserService.editar_perfil(request, id)
+    errores = resultado.get("errores")
+    if errores:
+        _procesar_errores_perfil(errores, request)
+        return redirect(CONSTANTE_RENDER)
+    messages.success(request, "Perfil actualizado correctamente.")
+    usuario = resultado.get("usuario") or usuario
+    return redirect(CONSTANTE_PERFIL)
+
+
 @gestor_eca_or_admin_required
+@require_GET
 def editar_perfil_gestor(request, id):
     """
     Permite que un gestor ECA (o admin) edite el perfil de usuario asociado a un Punto ECA.
@@ -214,17 +324,8 @@ def editar_perfil_gestor(request, id):
 
     usuario = buscar_usuario(request)
 
-    if request.method == "POST":
-        resultado = UserService.editar_perfil(request, id)
-        errores = resultado.get("errores")
-        if errores:
-            _procesar_errores_perfil(errores, request)
-            return redirect(CONSTANTE_RENDER)
-        messages.success(request, "Perfil actualizado correctamente.")
-        usuario = resultado.get("usuario") or usuario
-        return redirect(CONSTANTE_PERFIL)
-
     punto = get_object_or_404(PuntoECA, gestor_eca=usuario)
+    perfil_pendientes = _build_perfil_pendientes(usuario, punto)
     context = {
         "seccion": "perfil",
         "section_template": SECTION_TEMPLATES["perfil"],
@@ -232,12 +333,22 @@ def editar_perfil_gestor(request, id):
         "punto": punto,
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
+        "perfil_pendientes": perfil_pendientes,
     }
 
     return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
 @gestor_eca_or_admin_required
+@require_POST
+@csrf_protect
+def actualizar_perfil_gestor(request, id):
+    usuario = buscar_usuario(request)
+    return _actualizar_perfil_gestor(request, usuario, id)
+
+
+@gestor_eca_or_admin_required
+@require_GET
 def editar_punto(request, id):
     """
     Permite a un gestor ECA o admin editar los datos del Punto ECA asociado al usuario.
@@ -261,12 +372,8 @@ def editar_punto(request, id):
         messages.error(request, "El Punto ECA que intenta editar no existe.")
         return redirect(CONSTANTE_RENDER, seccion="perfil")
 
-    if request.method == "POST":
-        punto = PuntoService.editar_punto(request, id)
-        messages.success(request, "Punto ECA actualizado correctamente.")
-        return redirect(CONSTANTE_PERFIL)
-
     usuario = punto.gestor_eca
+    perfil_pendientes = _build_perfil_pendientes(usuario, punto)
     context = {
         "seccion": "perfil",
         "section_template": SECTION_TEMPLATES["perfil"],
@@ -274,12 +381,52 @@ def editar_punto(request, id):
         "punto": punto,
         "localidades": Localidad.objects.all(),
         "tipos_documento": cons.TipoDocumento.choices,
+        "perfil_pendientes": perfil_pendientes,
     }
 
     return render(request, TEMPLATE_SECTION_PERFIL, context)
 
 
+def _actualizar_punto(request, id):
+    resultado = PuntoService.editar_punto(request, id)
+    es_peticion_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    if es_peticion_ajax:
+        if not resultado.get("ok"):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": resultado.get(
+                        "message", "No se pudo actualizar el punto ECA."
+                    ),
+                },
+                status=400,
+            )
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "message": "Punto ECA actualizado correctamente.",
+                "redirect_url": reverse(CONSTANTE_PERFIL),
+            }
+        )
+
+    if not resultado.get("ok"):
+        messages.error(request, resultado.get("message", "No se pudo actualizar el punto ECA."))
+        return redirect(CONSTANTE_RENDER)
+    messages.success(request, "Punto ECA actualizado correctamente.")
+    return redirect(CONSTANTE_PERFIL)
+
+
 @gestor_eca_or_admin_required
+@require_POST
+@csrf_protect
+def actualizar_punto(request, id):
+    return _actualizar_punto(request, id)
+
+
+@gestor_eca_or_admin_required
+@require_GET
 def editar_centro(request, id):
     """
     Permite a un gestor ECA o admin editar un centro de acopio (con visibilidad ECA) perteneciente a su punto ECA.
@@ -302,6 +449,46 @@ def editar_centro(request, id):
     punto = buscar_puntos_eca(request)
 
     try:
+        CentroAcopio.objects.get(
+            id=id, visibilidad=cons.Visibilidad.ECA, puntos_eca=punto
+        )
+    except CentroAcopio.DoesNotExist:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {"status": "error", "message": CONSTANTE_NO_ENCONTRADO}, status=404
+            )
+        from django.http import Http404
+
+        raise Http404(CONSTANTE_NO_ENCONTRADO)
+
+    context = _build_centros_context(punto)
+    return render(request, TEMPLATE_SECTION_PERFIL, context)
+
+
+def _actualizar_centro(request, centro):
+    centro.nombre = request.POST.get("nombreCentro", centro.nombre)
+    centro.tipo_centro = request.POST.get("tipoCentro", centro.tipo_centro)
+    centro.celular = request.POST.get("celularCentro", centro.celular)
+    centro.email = request.POST.get("emailCentro", centro.email)
+    centro.nombre_contacto = request.POST.get("nombreContacto", centro.nombre_contacto)
+    centro.nota = request.POST.get("nota", centro.nota)
+    localidad_id = request.POST.get("localidadCentro")
+    if localidad_id and (not centro.localidad or str(centro.localidad.localidad_id) != localidad_id):
+        try:
+            centro.localidad = Localidad.objects.get(localidad_id=localidad_id)
+        except Localidad.DoesNotExist:
+            pass
+    centro.save()
+    return centro
+
+
+@gestor_eca_or_admin_required
+@require_POST
+@csrf_protect
+def actualizar_centro(request, id):
+    punto = buscar_puntos_eca(request)
+
+    try:
         centro = CentroAcopio.objects.get(
             id=id, visibilidad=cons.Visibilidad.ECA, puntos_eca=punto
         )
@@ -314,40 +501,21 @@ def editar_centro(request, id):
 
         raise Http404(CONSTANTE_NO_ENCONTRADO)
 
-    if request.method == "POST":
-        centro.nombre = request.POST.get("nombreCentro", centro.nombre)
-        centro.tipo_centro = request.POST.get("tipoCentro", centro.tipo_centro)
-        centro.celular = request.POST.get("celularCentro", centro.celular)
-        centro.email = request.POST.get("emailCentro", centro.email)
-        centro.nombre_contacto = request.POST.get(
-            "nombreContacto", centro.nombre_contacto
+    centro = _actualizar_centro(request, centro)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "status": "ok",
+                "centro": centro_to_dict(centro),
+                "mensaje": "Centro editado correctamente",
+            }
         )
-        centro.nota = request.POST.get("nota", centro.nota)
-        localidad_id = request.POST.get("localidadCentro")
-        if localidad_id and (
-            not centro.localidad or str(centro.localidad.localidad_id) != localidad_id
-        ):
-            try:
-                centro.localidad = Localidad.objects.get(localidad_id=localidad_id)
-            except Localidad.DoesNotExist:
-                pass
-        centro.save()
-
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse(
-                {
-                    "status": "ok",
-                    "centro": centro_to_dict(centro),
-                    "mensaje": "Centro editado correctamente",
-                }
-            )
-        return redirect(CONSTANTE_RENDER, seccion="centros")
-
-    context = _build_centros_context(punto)
-    return render(request, TEMPLATE_SECTION_PERFIL, context)
+    return redirect(CONSTANTE_RENDER, seccion="centros")
 
 
 @gestor_eca_or_admin_required
+@require_GET
 def registrar_centro(request):
     """
     Permite a un gestor ECA o admin registrar un nuevo centro de acopio (solo visibilidad ECA) vinculado a su propio Punto ECA.
@@ -368,51 +536,56 @@ def registrar_centro(request):
     """
     punto = buscar_puntos_eca(request)
 
-    if request.method == "POST":
-        nombre = request.POST.get("nombreCentro")
-        tipo_centro = request.POST.get("tipoCentro")
-        celular = request.POST.get("celularCentro")
-        email = request.POST.get("emailCentro")
-        nombre_contacto = request.POST.get("nombreContacto")
-        nota = request.POST.get("nota")
-        localidad_id = request.POST.get("localidadCentro")
-
-        nuevo_centro = CentroAcopio.objects.create(
-            nombre=nombre,
-            tipo_centro=tipo_centro,
-            celular=celular,
-            email=email,
-            nombre_contacto=nombre_contacto,
-            nota=nota,
-            visibilidad=cons.Visibilidad.ECA,
-        )
-
-        if localidad_id:
-            try:
-                nuevo_centro.localidad = Localidad.objects.get(
-                    localidad_id=localidad_id
-                )
-                nuevo_centro.save()
-            except Localidad.DoesNotExist:
-                pass
-
-        nuevo_centro.puntos_eca.add(punto)
-
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse(
-                {
-                    "status": "ok",
-                    "centro": centro_to_dict(nuevo_centro),
-                    "mensaje": "Centro registrado correctamente",
-                }
-            )
-        return redirect(CONSTANTE_RENDER, seccion="centros")
-
     context = _build_centros_context(punto)
     return render(request, "ecas/registrar_centro.html", context)
 
 
 @gestor_eca_or_admin_required
+@require_POST
+@csrf_protect
+def crear_centro(request):
+    punto = buscar_puntos_eca(request)
+    nombre = request.POST.get("nombreCentro")
+    tipo_centro = request.POST.get("tipoCentro")
+    celular = request.POST.get("celularCentro")
+    email = request.POST.get("emailCentro")
+    nombre_contacto = request.POST.get("nombreContacto")
+    nota = request.POST.get("nota")
+    localidad_id = request.POST.get("localidadCentro")
+
+    nuevo_centro = CentroAcopio.objects.create(
+        nombre=nombre,
+        tipo_centro=tipo_centro,
+        celular=celular,
+        email=email,
+        nombre_contacto=nombre_contacto,
+        nota=nota,
+        visibilidad=cons.Visibilidad.ECA,
+    )
+
+    if localidad_id:
+        try:
+            nuevo_centro.localidad = Localidad.objects.get(localidad_id=localidad_id)
+            nuevo_centro.save()
+        except Localidad.DoesNotExist:
+            pass
+
+    nuevo_centro.puntos_eca.add(punto)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "status": "ok",
+                "centro": centro_to_dict(nuevo_centro),
+                "mensaje": "Centro registrado correctamente",
+            }
+        )
+    return redirect(CONSTANTE_RENDER, seccion="centros")
+
+
+@gestor_eca_or_admin_required
+@require_POST
+@csrf_protect
 def eliminar_centro(request, id):
     """
     Elimina un centro de acopio (visibilidad ECA) identificado por id, únicamente mediante peticiones DELETE.
@@ -426,24 +599,20 @@ def eliminar_centro(request, id):
 
     Pensado para operación vía AJAX/frontend admin. No manipula vistas, solo devuelve JSON.
     """
-    if request.method == "DELETE":
-        try:
-            centro = CentroAcopio.objects.get(id=id, visibilidad=cons.Visibilidad.ECA)
-            centro.delete()
-            return JsonResponse({"status": "ok", "mensaje": "Centro eliminado"})
-        except CentroAcopio.DoesNotExist:
-            return JsonResponse(
-                {"status": "error", "message": CONSTANTE_NO_ENCONTRADO}, status=404
-            )
-        except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    else:
+    try:
+        centro = CentroAcopio.objects.get(id=id, visibilidad=cons.Visibilidad.ECA)
+        centro.delete()
+        return JsonResponse({"status": "ok", "mensaje": "Centro eliminado"})
+    except CentroAcopio.DoesNotExist:
         return JsonResponse(
-            {"status": "error", "message": "Método no permitido"}, status=405
+            {"status": "error", "message": CONSTANTE_NO_ENCONTRADO}, status=404
         )
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 @login_required
+@require_GET
 def puntos_eca_json(request):
     """
     API endpoint que devuelve un listado de puntos ECA simplificado para autocompletado y mapas en el perfil ciudadano.

@@ -1,7 +1,10 @@
 from django.shortcuts import redirect
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from apps.ecas.models import Localidad
 from apps.ecas.models import PuntoECA
+from apps.core.upload_validators import validate_image_upload
+from config import constants as cons
 
 
 class PuntoService:
@@ -31,16 +34,15 @@ class PuntoService:
         try:
             punto = PuntoECA.objects.get(gestor_eca_id=id)
         except PuntoECA.DoesNotExist:
-            return Helper.redireccionar_con_error(
-                "base:inicio", "Punto ECA no encontrado."
-            )
+            return {"ok": False, "message": "Punto ECA no encontrado."}
 
         # Actualización campo a campo (si el dato no viene, deja el valor actual)
         punto.nombre = request.POST.get("nombrePunto", punto.nombre)
         punto.direccion = request.POST.get("direccionPunto", punto.direccion)
         punto.celular = request.POST.get("celularPunto", punto.celular)
         punto.email = request.POST.get("emailPunto", punto.email)
-        punto.telefono_punto = request.POST.get("telefonoPunto", punto.telefono_punto)
+        telefono_punto = request.POST.get("telefonoPunto", punto.telefono_punto)
+        punto.telefono_punto = telefono_punto.strip() if isinstance(telefono_punto, str) and telefono_punto.strip() else None
         punto.sitio_web = request.POST.get("sitioWebPunto", punto.sitio_web)
 
         # Latitud y longitud: convierte a float/None sólo si el dato viene y tiene valor
@@ -50,9 +52,33 @@ class PuntoService:
         punto.longitud = float(lon) if lon not in (None, "") else None
         punto.descripcion = request.POST.get("descripcionPunto", punto.descripcion)
         punto.logo_url_punto = request.POST.get("logoUrlPunto", punto.logo_url_punto)
+        punto.foto_url_punto = request.POST.get("fotoUrlPunto", punto.foto_url_punto)
         punto.horario_atencion = request.POST.get(
             "horarioAtencionPunto", punto.horario_atencion
         )
+
+        logo_punto = request.FILES.get("logoPunto")
+        foto_punto = request.FILES.get("fotoPunto")
+        try:
+            if logo_punto:
+                validate_image_upload(
+                    logo_punto,
+                    cons.POINT_LOGO_IMAGE_MAX_SIZE,
+                    "El logo del punto",
+                )
+                punto.logo_imagen_punto = logo_punto
+            if foto_punto:
+                validate_image_upload(
+                    foto_punto,
+                    cons.POINT_PHOTO_IMAGE_MAX_SIZE,
+                    "La foto del punto",
+                )
+                punto.foto_imagen_punto = foto_punto
+        except ValidationError as exc:
+            return {
+                "ok": False,
+                "message": getattr(exc, "message", str(exc)),
+            }
 
         # Si la localidad efectivamente cambió, la busca y actualiza. No la borra si no existe el id
         localidad_id = request.POST.get("localidadPunto")
@@ -64,12 +90,16 @@ class PuntoService:
 
         try:
             punto.save()
+        except ValidationError as e:
+            return {
+                "ok": False,
+                "message": getattr(e, "message", str(e)),
+            }
         except Exception as e:
-            # Loguea error y levanta para debug
             print(f"--- ERROR AL GUARDAR PUNTO ECA: {e}")
-            raise
+            return {"ok": False, "message": str(e)}
 
-        return punto
+        return {"ok": True, "punto": punto}
 
 
 class Helper:

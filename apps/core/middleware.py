@@ -61,6 +61,12 @@ class CustomErrorMiddleware:
 
     def _acepta_html(self, request):
         accept = request.META.get('HTTP_ACCEPT', '')
+        content_type = getattr(request, 'content_type', '') or ''
+
+        # No envolver respuestas de API/JSON con páginas HTML de error.
+        if 'application/json' in accept or content_type == 'application/json':
+            return False
+
         # Si no hay cabecera Accept o pide HTML explícitamente
         return not accept or 'text/html' in accept or '*/*' in accept
 

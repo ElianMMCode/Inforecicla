@@ -1,24 +1,26 @@
 {% extends "users/registro_base.html" %}
+{% load static %}
 
 {% block page_title %}Registro Ciudadano - InfoRecicla{% endblock %}
 {% block body_class %}bg-light{% endblock %}
 {% block container_class %}register-container--citizen{% endblock %}
 {% block extra_styles %}
-        body {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            padding: 2rem 0;
-        }
+    {% include "users/partials/register_common_styles.html" %}
 
         .register-container {
             max-width: 600px;
         }
 {% endblock %}
 
+{% block navbar %}
+    {% include "users/partials/navbar.html" with navbar_container_class="px-4" %}
+{% endblock %}
+
 {% block header_title %}Registro de Ciudadano{% endblock %}
 {% block header_subtitle %}Únete a InfoRecicla y participa en proyectos de reciclaje{% endblock %}
 
 {% block form_content %}
-        <form method="POST" action="/registro/ciudadano/">
+        <form id="form-registro-ciudadano" method="POST" action="/registro/ciudadano/" novalidate>
             {% csrf_token %}
 
             <!-- Nombres y Apellidos -->
@@ -27,12 +29,14 @@
                     <label for="nombres" class="form-label">Nombres</label>
                     <input type="text" class="form-control" id="nombres" name="nombres"
                            placeholder="Tu nombre" value="{{ nombres|default:'' }}" required>
+                    <div class="invalid-feedback">Ingresa tus nombres (mínimo 3 caracteres).</div>
                 </div>
 
                 <div class="form-group">
                     <label for="apellidos" class="form-label">Apellidos</label>
                     <input type="text" class="form-control" id="apellidos" name="apellidos"
                            placeholder="Tu apellido" value="{{ apellidos|default:'' }}" required>
+                    <div class="invalid-feedback">Ingresa tus apellidos (mínimo 3 caracteres).</div>
                 </div>
             </div>
 
@@ -42,6 +46,7 @@
                     <label for="email" class="form-label">Email</label>
                     <input type="email" class="form-control" id="email" name="email"
                            placeholder="tu@email.com" value="{{ email|default:'' }}" required>
+                    <div class="invalid-feedback">Ingresa un email válido.</div>
                 </div>
 
                 <div class="form-group">
@@ -49,166 +54,20 @@
                     <input type="text" class="form-control" id="celular" name="celular"
                            placeholder="3001234567" value="{{ celular|default:'' }}"
                            required pattern="3[0-9]{9}">
+                    <div class="invalid-feedback">El celular debe iniciar con 3 y tener 10 dígitos.</div>
                 </div>
             </div>
 
             <!-- Documento (opcional) -->
-            <div class="row-cols">
-                <div class="form-group">
-                    <label for="tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
-                    <select class="form-select" id="tipoDocumento" name="tipoDocumento">
-                        <option value="">Seleccionar...</option>
-                        <option value="CC" {% if tipoDocumento == "CC" %}selected{% endif %}>Cédula de Ciudadanía</option>
-                        <option value="CE" {% if tipoDocumento == "CE" %}selected{% endif %}>Cédula de Extranjería</option>
-                        <option value="PA" {% if tipoDocumento == "PA" %}selected{% endif %}>Pasaporte</option>
-                        <option value="NIT" {% if tipoDocumento == "NIT" %}selected{% endif %}>NIT</option>
-                        <option value="TI" {% if tipoDocumento == "TI" %}selected{% endif %}>Tarjeta de Identidad</option>
-                    </select>
-                </div>
+            <!-- Nota: campos opcionales movidos a completar perfil posterior -->
 
-                <div class="form-group">
-                    <label for="numeroDocumento" class="form-label">Número de Documento (Opcional)</label>
-                    <input type="text" class="form-control" id="numeroDocumento" name="numeroDocumento"
-                           placeholder="1234567890" value="{{ numeroDocumento|default:'' }}">
-                </div>
-            </div>
-
-            <!-- Localización -->
-            <div class="row-cols">
-                <div class="form-group">
-                    <label for="ciudad" class="form-label">Ciudad</label>
-                    <input type="text" class="form-control" id="ciudad" name="ciudad"
-                           placeholder="Bogotá" value="{{ ciudad|default:'Bogotá' }}" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="localidad" class="form-label">Localidad</label>
-                    <select class="form-select" id="localidad" name="localidad" required>
-                        <option value="">Seleccionar localidad...</option>
-                        {% for loc in localidades %}
-                            <option value="{{ loc.localidad_id }}"
-                                {% if localidad == loc.localidad_id|stringformat:'s' %}selected{% endif %}>
-                                {{ loc.nombre }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- Fecha Nacimiento -->
-            <div class="form-group">
-                <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento (Opcional)</label>
-                <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento"
-                       value="{{ fechaNacimiento|default:'' }}">
-            </div>
-
-            <!-- Información de Contraseña -->
-            {% include "users/partials/password_requirements.html" %}
-
-            <!-- Contraseña y Confirmación -->
-            <div class="row-cols">
-                <div class="form-group">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <div class="input-group">
-                        <input type="password" class="form-control" id="password" name="password"
-                               placeholder="Contraseña segura" required>
-                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                            <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
-                    <div class="input-group">
-                        <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm"
-                               placeholder="Repite tu contraseña" required>
-                        <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                            <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Términos y condiciones -->
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
-                <label class="form-check-label" for="terminos">
-                    Acepto los <a href="#" target="_blank">términos y condiciones</a> de InfoRecicla
-                </label>
-            </div>
-
-            <!-- Botón de registro -->
-            <button type="submit" class="btn-login">
-                <i class="bi bi-person-plus btn-icon" aria-hidden="true"></i>
-                Registrarse como Ciudadano
-            </button>
+            {% include "users/partials/registro_auth_section.html" with submit_icon="bi-person-plus" submit_label="Registrarse como Ciudadano" footer_primary_text="¿Ya tienes cuenta?" footer_primary_url="/login/" footer_primary_link_text="Inicia sesión aquí" footer_secondary_text="¿Eres un Punto ECA?" footer_secondary_url="/registro/eca/" footer_secondary_link_text="Regístrate como Punto ECA" %}
         </form>
 {% endblock %}
 
-{% block footer %}
-        <div class="register-footer">
-            <p>¿Ya tienes cuenta? <a href="/login/">Inicia sesión aquí</a></p>
-            <p class="mt-3">¿Eres un Punto ECA? <a href="/registro/eca/">Regístrate como Punto ECA</a></p>
-        </div>
-{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block extra_scripts %}
-        (function() {
-            'use strict';
-            window.addEventListener('load', function() {
-                const forms = document.querySelectorAll('form');
-                Array.from(forms).forEach(form => {
-                    form.addEventListener('submit', function(event) {
-                        const password = document.getElementById('password').value;
-                        const passwordConfirm = document.getElementById('passwordConfirm').value;
-
-                        if (password !== passwordConfirm) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            alert('Las contraseñas no coinciden');
-                            return;
-                        }
-
-                        if (!form.checkValidity()) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-            }, false);
-        })();
-
-        const pwdInput = document.getElementById('password');
-        if (pwdInput) {
-            const reqs = {
-                lower: document.getElementById('reqMinusculas'),
-                upper: document.getElementById('reqMayusculas'),
-                num: document.getElementById('reqNumeros'),
-                special: document.getElementById('reqEspeciales'),
-                len: document.getElementById('reqLongitud'),
-            };
-            function checkPwd(val) {
-                if (!reqs.lower) return;
-                const hasLower = /[a-z]/.test(val);
-                const hasUpper = /[A-Z]/.test(val);
-                const hasNum = /\d/.test(val);
-                const hasSpecial = /[@$!%*?&]/.test(val);
-                const longEnough = val.length >= 8;
-                reqs.lower.classList.toggle('text-success', hasLower);
-                reqs.upper.classList.toggle('text-success', hasUpper);
-                reqs.num.classList.toggle('text-success', hasNum);
-                reqs.special.classList.toggle('text-success', hasSpecial);
-                reqs.len.classList.toggle('text-success', longEnough);
-                reqs.lower.innerText = (hasLower ? '✅ ' : '❌ ') + 'Mínimo una letra minúscula (a-z)';
-                reqs.upper.innerText = (hasUpper ? '✅ ' : '❌ ') + 'Mínimo una letra mayúscula (A-Z)';
-                reqs.num.innerText = (hasNum ? '✅ ' : '❌ ') + 'Mínimo un número (0-9)';
-                reqs.special.innerText = (hasSpecial ? '✅ ' : '❌ ') + 'Mínimo un carácter especial (@$!%*?&)';
-                reqs.len.innerText = (longEnough ? '✅ ' : '❌ ') + 'Mínimo 8 caracteres';
-            }
-            pwdInput.addEventListener('input', function(e) { checkPwd(e.target.value); });
-            checkPwd(pwdInput.value || '');
-        }
+    <!-- Modular JS: registro_ciudadano module (ES6) -->
+    <script type="module" src="{% static 'js/formularios/registro_ciudadano.js' %}"></script>
 {% endblock %}

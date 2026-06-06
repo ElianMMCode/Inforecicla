@@ -247,6 +247,9 @@
         const loginForm = document.getElementById('loginForm');
         const resendActivationButton = document.getElementById('resendActivationButton');
         const loginActionInput = document.getElementById('loginAction');
+        const activationInline = document.querySelector('.activation-inline');
+        const loginEmailInput = document.getElementById('email');
+        const loginUrlEmail = new URLSearchParams(globalThis.location.search).get('email') || '';
 
         if (!loginForm) {
             return;
@@ -272,14 +275,93 @@
         });
 
         if (resendActivationButton && loginActionInput) {
-            resendActivationButton.addEventListener('click', () => {
-                loginActionInput.value = 'reenviar';
+            resendActivationButton.addEventListener('click', (ev) => {
+                ev.preventDefault();
 
-                if (loginForm.requestSubmit) {
-                    loginForm.requestSubmit();
-                } else {
-                    loginForm.submit();
+                const email = ((loginEmailInput?.value || activationInline?.dataset?.activationEmail || loginUrlEmail) || '').trim().toLowerCase();
+                if (!email) {
+                    const swal = globalThis.Swal;
+                    const message = 'Ingresa tu correo para reenviar el enlace de activación.';
+                    if (swal?.fire) {
+                        swal.fire({ icon: 'warning', title: 'Correo requerido', text: message });
+                    } else {
+                        alert(message);
+                    }
+                    loginEmailInput?.focus();
+                    return;
                 }
+
+                const submitForm = document.createElement('form');
+                submitForm.method = 'POST';
+                submitForm.action = loginForm.dataset.loginUrl || loginForm.getAttribute('action') || globalThis.location.pathname;
+                submitForm.style.display = 'none';
+
+                const csrfInput = loginForm.querySelector('input[name="csrfmiddlewaretoken"]');
+                if (csrfInput) {
+                    const csrfClone = document.createElement('input');
+                    csrfClone.type = 'hidden';
+                    csrfClone.name = 'csrfmiddlewaretoken';
+                    csrfClone.value = csrfInput.value;
+                    submitForm.appendChild(csrfClone);
+                }
+
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'reenviar';
+                submitForm.appendChild(actionInput);
+
+                const emailInput = document.createElement('input');
+                emailInput.type = 'hidden';
+                emailInput.name = 'email';
+                emailInput.value = email;
+                submitForm.appendChild(emailInput);
+
+                document.body.appendChild(submitForm);
+                submitForm.submit();
+            });
+        }
+
+        if (activationInline && loginEmailInput) {
+            const syncActivationEmailInline = () => {
+                const currentEmail = (loginEmailInput.value || '').trim().toLowerCase();
+                activationInline.dataset.activationEmail = currentEmail;
+            };
+
+            if (!loginEmailInput.value && loginUrlEmail) {
+                loginEmailInput.value = loginUrlEmail;
+            }
+
+            loginEmailInput.addEventListener('input', syncActivationEmailInline);
+            syncActivationEmailInline();
+        }
+
+        const activationInlineSubmit = document.getElementById('activationInlineSubmit');
+        const activationInlineCode = document.getElementById('activationInlineCode');
+        if (activationInlineSubmit && activationInline && activationInlineCode) {
+            activationInlineSubmit.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                const email = ((loginEmailInput?.value || activationInline?.dataset?.activationEmail || loginUrlEmail) || '').trim().toLowerCase();
+                const token = (activationInlineCode.value || '').trim();
+                const re = /^\d{6}$/;
+                if (!re.test(token)) {
+                    const swal = globalThis.Swal;
+                    if (swal?.fire) {
+                        swal.fire({ icon: 'warning', title: 'Código inválido', text: 'Ingresa un código de 6 dígitos.' });
+                    } else {
+                        alert('Ingresa un código de 6 dígitos.');
+                    }
+                    activationInlineCode.focus();
+                    return;
+                }
+                const url = new URL(globalThis.location.href);
+                const loginFormEl = document.querySelector('form#loginForm');
+                const loginPath = (loginFormEl?.dataset?.loginUrl) || (loginFormEl?.getAttribute('action')) || url.pathname;
+                const params = new URLSearchParams();
+                params.set('action', 'activar');
+                params.set('email', email);
+                params.set('token', token);
+                globalThis.location.href = `${loginPath}?${params.toString()}`;
             });
         }
     };

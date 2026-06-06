@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from apps.core.views import inicio, error_400, error_403, error_404, error_500
+from apps.core.views import inicio, error_400, error_403, error_404, error_500, favicon
 from apps.users import views
 from apps.ecas import views as ecas_views
 
@@ -28,14 +28,16 @@ from django.contrib.auth.views import LogoutView
 urlpatterns = [
     path("", inicio),  # Ruta raiz
     path("inicio/", inicio),  # Ruta landing page
+    path("favicon.ico", favicon, name="favicon"),
     path("admin/", admin.site.urls),
     # Urls Panel Administracion
     path("panel_admin/", include("apps.panel_admin.urls", namespace="panel_admin")),
     path("punto-eca/", include("apps.ecas.urls")),
-    path("login/", views.render_login, name="login"),
+    path("login/", views.LoginView.as_view(), name="login"),
     path("login/recuperar/enviar/", views.recuperar_contrasena_enviar, name="recuperar_contrasena_enviar"),
     path("login/recuperar/validar/", views.recuperar_contrasena_validar, name="recuperar_contrasena_validar"),
     path("login/recuperar/cambiar/", views.recuperar_contrasena_cambiar, name="recuperar_contrasena_cambiar"),
+    path("recuperar-contrasena/", views.recuperar_contrasena, name="recuperar_contrasena"),
     path("logout/", LogoutView.as_view(next_page="/login/"), name="logout"),
     path("perfil/", views.perfil_ciudadano, name="perfil_ciudadano"),
     path("perfil/comentarios/", views.perfil_ciudadano, {"tab": "comentarios"}, name="perfil_comentarios"),
@@ -51,6 +53,8 @@ urlpatterns = [
         views.cambiar_contrasena_ciudadano,
         name="cambiar_contrasena_ciudadano",
     ),
+    path("perfil/completar/", views.completar_perfil_ciudadano, name="perfil_completar"),
+    path("perfil/check-documento/", views.check_numero_documento, name="perfil_check_documento"),
     path("registro/", include("apps.users.urls")),
     path("mapa/", include("apps.map.urls")),
     path("publicaciones/", include("apps.publicaciones.urls", namespace="publicacion")),

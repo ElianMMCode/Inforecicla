@@ -7,528 +7,257 @@
 {% endblock %}
 {% block body_class %}bg-light{% endblock %}
 {% block extra_styles %}
-        body {
-            background: #198754;
-            min-height: 100vh;
-            padding-bottom: 2rem;
-        }
+    {% include "users/partials/register_common_styles.html" %}
 
         .register-container {
             max-width: 1100px;
         }
 
         #mapa {
-            height: 300px;
-            border-radius: 8px;
+            height: 320px;
+            border-radius: 12px;
             margin-bottom: 1rem;
             border: 2px solid #e0e0e0;
+            overflow: hidden;
         }
 
         .map-info {
             background-color: #f8f9fa;
             border-left: 4px solid #145c3a;
             padding: 1rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
+            border-radius: 6px;
+            font-size: 0.88rem;
             color: #4d4d4d;
             margin-bottom: 1rem;
+        }
+
+        .helper-link {
+            color: #145c3a;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .helper-link:hover {
+            text-decoration: underline;
         }
 {% endblock %}
 
 {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <img src="/static/img/logo.png"
-                     alt="Logo InfoRecicla"
-                     width="70"
-                     height="70"
-                     class="rounded" />
-                <span class="fs-5 fw-semibold">InfoRecicla</span>
-            </a>
-        </div>
-    </nav>
+    {% include "users/partials/navbar.html" with navbar_container_class="px-4" %}
 {% endblock %}
 
 {% block header_title %}Registro de Punto ECA{% endblock %}
-{% block header_subtitle %}Registra tu estación de reciclaje en InfoRecicla{% endblock %}
+{% block header_subtitle %}Crea tu cuenta y ubica tu punto en el mapa{% endblock %}
 
 {% block form_content %}
-        <form method="POST">
+        <form id="form-registro-eca" method="POST" action="/registro/eca/" novalidate>
             {% csrf_token %}
-            <!-- DATOS DEL PUNTO ECA -->
-            <div class="card mb-4 h-100" style="border-left: 4px solid #28a745; box-shadow: 0 2px 12px rgba(32,201,151,0.10)">
-                <div class="card-body">
-                    <h4 class="card-title mb-4" style="color:#145c3a; font-weight:700;">Datos del Punto ECA</h4>
-                    <div class="row">
-                        <div class="col-md-6">
-                    {% include "users/partials/password_requirements.html" %}
-                                       value="{{ nombres|default:'' }}">
-                                <small class="form-text text-muted">Obligatorio. Ingresa el nombre completo de la institución o punto ECA.</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="direccion" class="form-label">
-                                    Dirección <span class="required-asterisk" style="color:#dc3545;">*</span>
-                                </label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="direccion"
-                                       name="direccion"
-                                       placeholder="Calle 10 # 20 - 30"
-                                       required
-                                       value="{{ direccion|default:'' }}">
-                                <small class="form-text text-muted">Obligatorio. Ingresá la dirección completa del punto ECA.</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="telefono_punto" class="form-label">
-                                    Teléfono fijo del Punto ECA <span class="required-asterisk" style="color:#dc3545;">*</span>
-                                </label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="telefono_punto"
-                                       name="telefono_punto"
-                                       placeholder="6012345678"
-                                       required
-                                       pattern="60[0-9]{8}"
-                                       value="{{ telefono_punto|default:'' }}">
-                                <small class="form-text text-muted">Debe comenzar con 60 y tener 10 dígitos.</small>
-                                <div class="invalid-feedback" style="display:none;">Ingrese un teléfono fijo válido. Ejemplo: 6012345678</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="email" class="form-label">
-                                    Email Punto ECA <span class="required-asterisk" style="color:#dc3545;">*</span>
-                                </label>
-                                <input type="email"
-                                       class="form-control"
-                                       id="email"
-                                       name="email"
-                                       placeholder="punto@eca.com"
-                                       required
-                                       value="{{ email|default:'' }}">
-                                <small class="form-text text-muted">Obligatorio. Debe ser un correo válido. Se usará para comunicaciones con el punto ECA.</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="celular" class="form-label">Celular del Punto ECA</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="celular"
-                                       name="celular"
-                                       placeholder="3101234567"
-                                       required
-                                       pattern="3[0-9]{9}"
-                                       value="{{ celular|default:'' }}">
-                                <small class="form-text text-muted">Obligatorio. Debe comenzar con 3 y tener 10 dígitos.</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="logo_url_punto" class="form-label">Logo (URL)</label>
-                                <input type="url"
-                                       class="form-control"
-                                       id="logo_url_punto"
-                                       name="logo_url_punto"
-                                       placeholder="https://...logo.png"
-                                       value="{{ logo_url_punto|default:'' }}">
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="foto_url_punto" class="form-label">Foto del Punto (URL)</label>
-                                <input type="url"
-                                       class="form-control"
-                                       id="foto_url_punto"
-                                       name="foto_url_punto"
-                                       placeholder="https://...foto.jpg"
-                                       value="{{ foto_url_punto|default:'' }}">
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="sitio_web" class="form-label">Sitio Web</label>
-                                <input type="url"
-                                       class="form-control"
-                                       id="sitio_web"
-                                       name="sitio_web"
-                                       placeholder="https://tupunto.com"
-                                       value="{{ sitio_web|default:'' }}">
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="horario_atencion" class="form-label">Horario de Atención</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="horario_atencion"
-                                       name="horario_atencion"
-                                       placeholder="Lunes a Viernes 8:00-16:00"
-                                       value="{{ horario_atencion|default:'' }}">
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="descripcion" class="form-label">Descripción del Punto (Opcional)</label>
-                        <textarea class="form-control"
-                                  id="descripcion"
-                                  name="descripcion"
-                                  placeholder="Describe tu punto, servicios, horarios, etc."
-                                  rows="3">{{ descripcion|default:'' }}</textarea>
-                        <div class="invalid-feedback"></div>
-                    </div>
-                    <!-- Localización Punto ECA -->
-                    <h5 class="mb-3 mt-4">Localización</h5>
-                    <div class="map-info">
-                        <strong>Ubica tu Punto ECA en el mapa:</strong>
-                        <br>
-                        Haz clic en el mapa para seleccionar las coordenadas de tu estación.
-                    </div>
-                    <div id="mapa"></div>
-                    <div class="row-cols">
-                        <div class="form-group">
-                            <label for="latitud" class="form-label">Latitud</label>
-                            <input type="number"
-                                   class="form-control"
-                                   id="latitud"
-                                   name="latitud"
-                                   placeholder="4.7110"
-                                   step="0.0001"
-                                   required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="longitud" class="form-label">Longitud</label>
-                            <input type="number"
-                                   class="form-control"
-                                   id="longitud"
-                                   name="longitud"
-                                   placeholder="-74.0721"
-                                   step="0.0001"
-                                   required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                    </div>
-                    <div class="row-cols single">
-                        <div class="form-group">
-                            <label for="ciudad" class="form-label">
-                                Ciudad <span style="color:#dc3545;">*</span>
-                            </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="ciudad"
-                                   name="ciudad"
-                                   placeholder="Bogotá"
-                                   required
-                                   value="Bogotá">
-                        </div>
-                    </div>
-                    <div class="row-cols single">
-                        <div class="form-group">
-                            <label for="localidad" class="form-label">
-                                Localidad <span style="color:#dc3545;">*</span>
-                            </label>
-                            <select class="form-select" id="localidad" name="localidad" required>
-                                <option value="">Seleccionar localidad...</option>
-                                {% for loc in localidades %}
-                                    <option value="{{ loc.localidad_id }}"
-                                            {% if localidad == loc.localidad_id|stringformat:'s' %}selected{% endif %}>
-                                        {{ loc.nombre }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                    </div>
+
+            <div class="row-cols">
+                <div class="form-group">
+                    <label for="nombres" class="form-label">Nombre del Punto ECA / Institución</label>
+                    <input type="text"
+                           class="form-control"
+                           id="nombres"
+                           name="nombres"
+                           placeholder="Fundación Recicla Ya"
+                           value="{{ nombres|default:'' }}"
+                           required>
+                    <div class="invalid-feedback">Ingresa el nombre de la institución o punto ECA.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="apellidos" class="form-label">Nombre del Gestor</label>
+                    <input type="text"
+                           class="form-control"
+                           id="apellidos"
+                           name="apellidos"
+                           placeholder="Ej: Juan Pérez"
+                           value="{{ apellidos|default:'' }}"
+                           required>
+                    <div class="invalid-feedback">Ingresa el nombre completo del responsable.</div>
                 </div>
             </div>
-            <!-- DATOS DEL GESTOR -->
-            <div class="card mb-4 h-100" style="border-left: 4px solid #007bff; box-shadow: 0 2px 12px rgba(0,123,255,0.07)">
-                <div class="card-body">
-                    <h4 class="card-title mb-4" style="color:#007bff; font-weight:700;">Datos del Gestor</h4>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="apellidos" class="form-label">
-                                    Nombre del Gestor <span style="color:#dc3545;">*</span>
-                                </label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="apellidos"
-                                       name="apellidos"
-                                       placeholder="Ej: Juan Pérez"
-                                       required
-                                       value="{{ apellidos|default:'' }}">
-                                <small class="form-text text-muted">Obligatorio. Ingresá nombre y apellido del gestor.</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="celular_gestor" class="form-label">
-                                    Celular de Contacto <span style="color:#dc3545;">*</span>
-                                </label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="celular_gestor"
-                                       name="celular_gestor"
-                                       placeholder="3001234567"
-                                       required
-                                       pattern="3[0-9]{9}"
-                                       value="{{ celular_gestor|default:'' }}">
-                                <small class="form-text text-muted">Obligatorio. Debe comenzar con 3 y tener 10 dígitos.</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="email_gestor" class="form-label">
-                                    Email del Gestor <span style="color:#dc3545;">*</span>
-                                </label>
-                                <input type="email"
-                                       class="form-control"
-                                       id="email_gestor"
-                                       name="email_gestor"
-                                       placeholder="gestor@mail.com"
-                                       required
-                                       value="{{ email_gestor|default:'' }}">
-                                <small class="form-text text-muted">Este correo será tu usuario para iniciar sesión.</small>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="tipoDocumento" class="form-label">Tipo de Documento (Opcional)</label>
-                                <select class="form-select" id="tipoDocumento" name="tipoDocumento">
-                                    <option value="">Seleccionar...</option>
-                                    <option value="CC" {% if tipoDocumento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
-                                    <option value="CE" {% if tipoDocumento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
-                                    <option value="PA" {% if tipoDocumento == 'PA' %}selected{% endif %}>Pasaporte</option>
-                                    <option value="NIT" {% if tipoDocumento == 'NIT' %}selected{% endif %}>NIT</option>
-                                </select>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="numeroDocumento" class="form-label">Número de Documento</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="numeroDocumento"
-                                       name="numeroDocumento"
-                                       placeholder="123456789"
-                                       value="{{ numeroDocumento|default:'' }}">
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6"></div>
-                    </div>
-                    <!-- Contraseña dentro de gestión -->
-                    <div class="password-info">
-                        <strong>Requisitos de contraseña:</strong>
-                        <ul>
-                            <li id="reqMinusculas">❌ Mínimo una letra minúscula (a-z)</li>
-                            <li id="reqMayusculas">❌ Mínimo una letra mayúscula (A-Z)</li>
-                            <li id="reqNumeros">❌ Mínimo un número (0-9)</li>
-                            <li id="reqEspeciales">❌ Mínimo un carácter especial (@$!%*?&)</li>
-                            <li id="reqLongitud">❌ Mínimo 8 caracteres</li>
-                        </ul>
-                    </div>
-                    <h5 class="mb-3 mt-4">Contraseña de Acceso</h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="password" class="form-label">
-                                    Contraseña <span style="color:#dc3545;">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <input type="password"
-                                           class="form-control"
-                                           id="password"
-                                           name="password"
-                                           placeholder="Contraseña segura"
-                                           required>
-                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                        <i class="bi bi-eye toggle-password" data-target="#password" aria-hidden="true"></i>
-                                    </button>
-                                </div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="passwordConfirm" class="form-label">Confirmar Contraseña</label>
-                                <div class="input-group">
-                                    <input type="password"
-                                           class="form-control"
-                                           id="passwordConfirm"
-                                           name="passwordConfirm"
-                                           placeholder="Repite tu contraseña"
-                                           required>
-                                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
-                                        <i class="bi bi-eye toggle-password" data-target="#passwordConfirm" aria-hidden="true"></i>
-                                    </button>
-                                </div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               id="terminos"
-                               name="terminos"
-                               required>
-                        <label class="form-check-label" for="terminos">
-                            Acepto los <a href="#" target="_blank">términos y condiciones</a> de InfoRecicla
-                        </label>
-                    </div>
-                    <!-- Botón de registro -->
-                    <button type="submit" class="btn-login">
-                        <i class="bi bi-geo-alt-fill btn-icon" aria-hidden="true"></i>
-                        Registrar Punto ECA
-                    </button>
+
+            <div class="row-cols">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email de acceso</label>
+                    <input type="email"
+                           class="form-control"
+                           id="email"
+                           name="email"
+                           placeholder="gestor@mail.com"
+                           value="{{ email|default:'' }}"
+                           required>
+                    <div class="invalid-feedback">Ingresa un email válido.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="celular" class="form-label">Celular de contacto</label>
+                    <input type="text"
+                           class="form-control"
+                           id="celular"
+                           name="celular"
+                           placeholder="3001234567"
+                           value="{{ celular|default:'' }}"
+                           required
+                           pattern="3[0-9]{9}">
+                    <div class="invalid-feedback">El celular debe iniciar con 3 y tener 10 dígitos.</div>
                 </div>
             </div>
-            <div class="register-footer" style="background: #fff;">
-                <p>
-                    ¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a>
-                </p>
-                <p class="mt-3">
-                    ¿Eres Ciudadano? <a href="/registro/ciudadano">Regístrate aquí</a>
-                </p>
+
+            <div class="row-cols">
+                <div class="form-group">
+                    <label for="tipoDocumento" class="form-label">Tipo de documento (opcional)</label>
+                    <select class="form-select" id="tipoDocumento" name="tipoDocumento">
+                        <option value="">Seleccionar...</option>
+                        <option value="CC" {% if tipoDocumento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
+                        <option value="CE" {% if tipoDocumento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
+                        <option value="PA" {% if tipoDocumento == 'PA' %}selected{% endif %}>Pasaporte</option>
+                        <option value="NIT" {% if tipoDocumento == 'NIT' %}selected{% endif %}>NIT</option>
+                    </select>
+                    <div class="invalid-feedback"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="numeroDocumento" class="form-label">Número de documento (opcional)</label>
+                    <input type="text"
+                           class="form-control"
+                           id="numeroDocumento"
+                           name="numeroDocumento"
+                           placeholder="123456789"
+                           value="{{ numeroDocumento|default:'' }}">
+                    <div class="invalid-feedback"></div>
+                </div>
             </div>
+
+            <div class="form-group mb-3">
+                <h5 class="mb-3">Localización</h5>
+                <div class="map-info">
+                    <strong>Ubica tu Punto ECA en el mapa:</strong>
+                    <br>
+                    Haz clic en el mapa para seleccionar coordenadas. Estas se guardan automáticamente y no se editan manualmente.
+                </div>
+                <div id="mapa"></div>
+
+                <input type="hidden" id="latitud" name="latitud" value="{{ latitud|default:'' }}">
+                <input type="hidden" id="longitud" name="longitud" value="{{ longitud|default:'' }}">
+            </div>
+
+            {% include "users/partials/registro_auth_section.html" with submit_icon="bi-geo-alt-fill" submit_label="Registrar Punto ECA" footer_class="bg-white" footer_primary_text="¿Ya tienes cuenta?" footer_primary_url="/login/" footer_primary_link_text="Inicia sesión aquí" footer_secondary_text="¿Eres Ciudadano?" footer_secondary_url="/registro/ciudadano/" footer_secondary_link_text="Regístrate aquí" %}
         </form>
 {% endblock %}
 
 {% block extra_scripts %}
-        const mapa = L.map('mapa').setView([4.711, -74.0721], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(mapa);
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mapaElement = document.getElementById('mapa');
+            const latInput = document.getElementById('latitud');
+            const lngInput = document.getElementById('longitud');
+            let marcador = null;
 
-        let marcador = null;
+            if (mapaElement && typeof L !== 'undefined') {
+                const mapa = L.map('mapa').setView([4.711, -74.0721], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(mapa);
 
-        mapa.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
+                const latInicial = latInput && latInput.value ? Number.parseFloat(latInput.value) : Number.NaN;
+                const lngInicial = lngInput && lngInput.value ? Number.parseFloat(lngInput.value) : Number.NaN;
 
-            if (marcador) {
-                mapa.removeLayer(marcador);
-            }
-
-            marcador = L.marker([lat, lng]).addTo(mapa);
-            document.getElementById('latitud').value = lat.toFixed(4);
-            document.getElementById('longitud').value = lng.toFixed(4);
-        });
-
-        (function() {
-            'use strict';
-            window.addEventListener('load', function() {
-                const forms = document.querySelectorAll('form');
-                Array.from(forms).forEach(form => {
-                    form.addEventListener('submit', function(event) {
-                        const password = document.getElementById('password').value;
-                        const passwordConfirm = document.getElementById('passwordConfirm').value;
-                        const latitud = Number.parseFloat(document.getElementById('latitud').value);
-                        const longitud = Number.parseFloat(document.getElementById('longitud').value);
-
-                        if (password !== passwordConfirm) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            alert('Las contraseñas no coinciden');
-                            return;
-                        }
-
-                        if (Number.isNaN(latitud) || Number.isNaN(longitud)) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            alert('Por favor, selecciona una ubicación en el mapa');
-                            return;
-                        }
-
-                        if (!form.checkValidity()) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-            }, false);
-        })();
-
-        document.querySelectorAll('.toggle-password').forEach(function(icon){
-            icon.addEventListener('click', function(){
-                const targetSelector = icon.dataset.target;
-                const input = document.querySelector(targetSelector);
-                if (!input) return;
-                if (input.type === 'password'){
-                    input.type = 'text';
-                    icon.classList.remove('bi-eye');
-                    icon.classList.add('bi-eye-slash');
-                } else {
-                    input.type = 'password';
-                    icon.classList.remove('bi-eye-slash');
-                    icon.classList.add('bi-eye');
+                if (!Number.isNaN(latInicial) && !Number.isNaN(lngInicial)) {
+                    marcador = L.marker([latInicial, lngInicial]).addTo(mapa);
+                    mapa.setView([latInicial, lngInicial], 14);
                 }
-            });
-        });
 
-        const pwdInputEca = document.getElementById('password');
-        if (pwdInputEca) {
-            const reqs = {
-                lower: document.getElementById('reqMinusculas'),
-                upper: document.getElementById('reqMayusculas'),
-                num: document.getElementById('reqNumeros'),
-                special: document.getElementById('reqEspeciales'),
-                len: document.getElementById('reqLongitud'),
-            };
-            function checkPwdEca(val){
-                if (!reqs.lower) return;
-                const hasLower = /[a-z]/.test(val);
-                const hasUpper = /[A-Z]/.test(val);
-                const hasNum = /\d/.test(val);
-                const hasSpecial = /[@$!%*?&]/.test(val);
-                const longEnough = val.length >= 8;
-                reqs.lower.classList.toggle('text-success', hasLower);
-                reqs.upper.classList.toggle('text-success', hasUpper);
-                reqs.num.classList.toggle('text-success', hasNum);
-                reqs.special.classList.toggle('text-success', hasSpecial);
-                reqs.len.classList.toggle('text-success', longEnough);
-                reqs.lower.innerText = (hasLower ? '✅ ' : '❌ ') + 'Mínimo una letra minúscula (a-z)';
-                reqs.upper.innerText = (hasUpper ? '✅ ' : '❌ ') + 'Mínimo una letra mayúscula (A-Z)';
-                reqs.num.innerText = (hasNum ? '✅ ' : '❌ ') + 'Mínimo un número (0-9)';
-                reqs.special.innerText = (hasSpecial ? '✅ ' : '❌ ') + 'Mínimo un carácter especial (@$!%*?&)';
-                reqs.len.innerText = (longEnough ? '✅ ' : '❌ ') + 'Mínimo 8 caracteres';
+                mapa.on('click', function (e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+
+                    if (marcador) {
+                        mapa.removeLayer(marcador);
+                    }
+
+                    marcador = L.marker([lat, lng]).addTo(mapa);
+                    if (latInput) {
+                        latInput.value = lat.toFixed(4);
+                    }
+                    if (lngInput) {
+                        lngInput.value = lng.toFixed(4);
+                    }
+                });
             }
-            pwdInputEca.addEventListener('input', function(e){ checkPwdEca(e.target.value); });
-            checkPwdEca(pwdInputEca.value || '');
-        }
+
+            const form = document.getElementById('form-registro-eca');
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    const password = document.getElementById('password');
+                    const passwordConfirm = document.getElementById('passwordConfirm');
+                    const passwordValue = password ? password.value : '';
+                    const passwordConfirmValue = passwordConfirm ? passwordConfirm.value : '';
+                    const latitud = latInput && latInput.value ? Number.parseFloat(latInput.value) : Number.NaN;
+                    const longitud = lngInput && lngInput.value ? Number.parseFloat(lngInput.value) : Number.NaN;
+                    const hasLat = !Number.isNaN(latitud);
+                    const hasLng = !Number.isNaN(longitud);
+
+                    if (passwordValue !== passwordConfirmValue) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        alert('Las contraseñas no coinciden');
+                        return;
+                    }
+
+                    if (!hasLat || !hasLng) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        alert('Selecciona una ubicación en el mapa para continuar');
+                        return;
+                    }
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                }, false);
+            }
+
+            const pwdInputEca = document.getElementById('password');
+            if (pwdInputEca) {
+                const reqs = {
+                    lower: document.getElementById('reqMinusculas'),
+                    upper: document.getElementById('reqMayusculas'),
+                    num: document.getElementById('reqNumeros'),
+                    special: document.getElementById('reqEspeciales'),
+                    len: document.getElementById('reqLongitud'),
+                };
+
+                function checkPwdEca(val) {
+                    if (!reqs.lower) return;
+
+                    const hasLower = /[a-z]/.test(val);
+                    const hasUpper = /[A-Z]/.test(val);
+                    const hasNum = /\d/.test(val);
+                    const hasSpecial = /[@$!%*?&_]/.test(val);
+                    const longEnough = val.length >= 8;
+
+                    reqs.lower.classList.toggle('text-success', hasLower);
+                    reqs.upper.classList.toggle('text-success', hasUpper);
+                    reqs.num.classList.toggle('text-success', hasNum);
+                    reqs.special.classList.toggle('text-success', hasSpecial);
+                    reqs.len.classList.toggle('text-success', longEnough);
+
+                    reqs.lower.innerText = (hasLower ? '✅ ' : '❌ ') + 'Mínimo una letra minúscula (a-z)';
+                    reqs.upper.innerText = (hasUpper ? '✅ ' : '❌ ') + 'Mínimo una letra mayúscula (A-Z)';
+                    reqs.num.innerText = (hasNum ? '✅ ' : '❌ ') + 'Mínimo un número (0-9)';
+                    reqs.special.innerText = (hasSpecial ? '✅ ' : '❌ ') + 'Mínimo un carácter especial (@$!%*?&)';
+                    reqs.len.innerText = (longEnough ? '✅ ' : '❌ ') + 'Mínimo 8 caracteres';
+                }
+
+                pwdInputEca.addEventListener('input', function (e) {
+                    checkPwdEca(e.target.value);
+                });
+                checkPwdEca(pwdInputEca.value || '');
+            }
+        });
+    </script>
 {% endblock %}

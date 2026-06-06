@@ -3,10 +3,10 @@
 {% block page_title %}Publicaciones - InfoRecicla{% endblock %}
 {% block main_class %}py-0{% endblock %}
 {% block hero %}
-<section class="page-hero py-4">
+<section class="page-hero py-5">
     <div class="container">
-        <h1 class="fw-bold mb-1">Publicaciones</h1>
-        <p class="mb-0 opacity-75">Explora consejos, noticias y buenas prácticas de reciclaje compartidas por la comunidad.</p>
+        <h1 class="fw-bold display-5 mb-2 lh-1">Publicaciones</h1>
+        <p class="mb-0 opacity-75 fs-5 fw-light" style="max-width:640px;">Aprende, comparte y mejora tus hábitos de reciclaje con el conocimiento de toda la comunidad.</p>
     </div>
 </section>
 {% endblock %}
@@ -14,28 +14,44 @@
 {% block content %}
 <section class="py-4">
     <div class="container">
-        <div class="bg-white rounded border p-3">
-            <form class="row g-3 align-items-center" method="get">
-                <div class="col-md-5">
-                    <input type="text" class="form-control" placeholder="Buscar publicaciones..." name="q" value="{{ filtros.q }}">
+        <div class="bg-white rounded-4 border shadow-sm p-4">
+            <form class="row g-3" method="get">
+                <div class="col-12 col-lg-5">
+                    <label for="filtro-buscar" class="form-label small fw-semibold text-muted mb-1">
+                        <i class="fas fa-magnifying-glass me-1 text-success" aria-hidden="true"></i>Buscar
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-success d-flex align-items-center justify-content-center" style="width:42px;">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                        </span>
+                        <input type="text" id="filtro-buscar" class="form-control border-start-0 ps-1" placeholder="Buscar publicaciones..." name="q" value="{{ filtros.q }}">
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="categoria">
+                <div class="col-6 col-lg-3">
+                    <label for="filtro-categoria" class="form-label small fw-semibold text-muted mb-1">
+                        <i class="fas fa-tags me-1 text-success" aria-hidden="true"></i>Categoría
+                    </label>
+                    <select id="filtro-categoria" class="form-select" name="categoria">
                         <option value="">Todas las categorías</option>
                         {% for cat in categorias %}
                         <option value="{{ cat.id }}" {% if filtros.categoria == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.nombre|default:cat.get_tipo_display }}{% if cat.descripcion %} - {{ cat.descripcion|truncatechars:35 }}{% endif %}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select" name="orden">
+                <div class="col-6 col-lg-2">
+                    <label for="filtro-orden" class="form-label small fw-semibold text-muted mb-1">
+                        <i class="fas fa-arrow-down-wide-short me-1 text-success" aria-hidden="true"></i>Ordenar
+                    </label>
+                    <select id="filtro-orden" class="form-select" name="orden">
                         <option value="recientes" {% if filtros.orden == 'recientes' %}selected{% endif %}>Más recientes</option>
                         <option value="valorados" {% if filtros.orden == 'valorados' %}selected{% endif %}>Mejor valorados</option>
                         <option value="comentados" {% if filtros.orden == 'comentados' %}selected{% endif %}>Más comentados</option>
                     </select>
                 </div>
-                <div class="col-md-2 d-grid">
-                    <button class="btn btn-success" type="submit">Filtrar</button>
+                <div class="col-12 col-lg-2 d-grid align-self-end">
+                    <button class="btn btn-success fw-semibold" type="submit">
+                        <i class="fas fa-sliders me-1" aria-hidden="true"></i>Filtrar
+                    </button>
                 </div>
             </form>
         </div>
@@ -48,32 +64,38 @@
         <div class="row g-4">
             {% for pub in publicaciones %}
             <div class="col-md-6 col-xl-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:42px;height:42px;">{{ pub.usuario.nombres|first }}</div>
-                            <div>
-                                <div class="fw-semibold small">{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</div>
-                                <div class="text-muted" style="font-size:.78rem;">{{ pub.fecha_creacion|date:"d M Y" }} · <span class="badge bg-success-subtle text-success">{{ pub.categoria.nombre|default:pub.categoria.get_tipo_display }}</span></div>
-                                {% if pub.categoria and pub.categoria.descripcion %}
-                                <div class="text-muted" style="font-size:.78rem;">{{ pub.categoria.descripcion|truncatechars:80 }}</div>
-                                {% endif %}
+                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:46px;height:46px;font-size:1.1rem;">{{ pub.usuario.nombres|first }}</div>
+                            <div class="overflow-hidden">
+                                <div class="fw-semibold small text-truncate">{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</div>
+                                <div class="text-muted d-flex align-items-center gap-1 flex-wrap" style="font-size:.75rem;">
+                                    <i class="far fa-calendar" aria-hidden="true"></i>{{ pub.fecha_creacion|date:"d M Y" }}
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">{{ pub.categoria.nombre|default:pub.categoria.get_tipo_display }}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="fw-bold">{{ pub.titulo }}</h5>
-                        <p class="text-muted small">{{ pub.contenido|truncatewords:28 }}</p>
-                    </div>
-                    <div class="px-3 pb-2">
-                        <div class="d-flex align-items-center gap-3 small">
-                            <span><i class="fas fa-thumbs-up text-success me-1"></i>{{ pub.likes_count }}</span>
-                            <span><i class="fas fa-thumbs-down text-danger me-1"></i>{{ pub.dislikes_count }}</span>
-                            <span><i class="fas fa-comment-dots text-primary me-1"></i>{{ pub.comentarios_total }}</span>
+
+                        <h5 class="fw-bold mb-2">{{ pub.titulo }}</h5>
+                        <p class="text-muted small mb-3">{{ pub.contenido|truncatewords:28 }}</p>
+
+                        <div class="mt-auto">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="badge rounded-pill bg-success-subtle text-success d-inline-flex align-items-center gap-1 px-3 py-2">
+                                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>{{ pub.likes_count }}
+                                </span>
+                                <span class="badge rounded-pill bg-danger-subtle text-danger d-inline-flex align-items-center gap-1 px-3 py-2">
+                                    <i class="fas fa-thumbs-down" aria-hidden="true"></i>{{ pub.dislikes_count }}
+                                </span>
+                                <span class="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center gap-1 px-3 py-2">
+                                    <i class="fas fa-comment-dots" aria-hidden="true"></i>{{ pub.comentarios_total }}
+                                </span>
+                            </div>
+                            <a class="btn btn-success w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" href="{% url 'publicacion:detalle_publicacion' pub.id %}">
+                                Ver publicación<i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            </a>
                         </div>
-                    </div>
-                    <div class="px-3 pb-3">
-                        <a class="btn btn-success btn-sm w-100" href="{% url 'publicacion:detalle_publicacion' pub.id %}">Ver publicación</a>
                     </div>
                 </div>
             </div>
@@ -81,22 +103,22 @@
         </div>
 
         {% if publicaciones.has_other_pages %}
-        <nav class="mt-5 d-flex justify-content-center">
-            <ul class="pagination">
+        <nav class="mt-5 d-flex justify-content-center" aria-label="Paginación de publicaciones">
+            <ul class="pagination shadow-sm rounded overflow-hidden">
                 {% if publicaciones.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ publicaciones.previous_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">«</a></li>
+                <li class="page-item"><a class="page-link text-success" href="?page={{ publicaciones.previous_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">«</a></li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">«</span></li>
                 {% endif %}
 
                 {% for num in publicaciones.paginator.page_range %}
                 <li class="page-item {% if publicaciones.number == num %}active{% endif %}">
-                    <a class="page-link" href="?page={{ num }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">{{ num }}</a>
+                    <a class="page-link {% if publicaciones.number != num %}text-success{% endif %}" href="?page={{ num }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">{{ num }}</a>
                 </li>
                 {% endfor %}
 
                 {% if publicaciones.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ publicaciones.next_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">»</a></li>
+                <li class="page-item"><a class="page-link text-success" href="?page={{ publicaciones.next_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">»</a></li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">»</span></li>
                 {% endif %}
@@ -107,7 +129,7 @@
         {% else %}
         <div class="text-center py-5">
             <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 90px; height: 90px;">
-                <i class="fas fa-newspaper text-success fs-1"></i>
+                <i class="fas fa-newspaper text-success fs-1" aria-hidden="true"></i>
             </div>
             <h3 class="fw-bold">No hay publicaciones disponibles</h3>
             <p class="text-muted mb-0">Aún no se han creado publicaciones. Vuelve pronto.</p>

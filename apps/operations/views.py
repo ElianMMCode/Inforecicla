@@ -10,7 +10,6 @@ from apps.core.decorators import gestor_eca_or_admin_required
 from .resources import CompraInventarioResource, VentaInventarioResource
 from weasyprint import HTML
 from django.template.loader import render_to_string
-from django.views.decorators.csrf import csrf_exempt
 import logging
 import csv
 import io
@@ -660,6 +659,20 @@ def _build_movimientos_context(punto):
         centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
     centros_list = list(centros_map.values())
 
+    materiales_stock_data = [
+        {
+            "inventarioId": str(inv.id),
+            "materialId": str(inv.material.id),
+            "nombre": inv.material.nombre,
+            "categoria": getattr(inv.material.categoria, "nombre", ""),
+            "tipo": getattr(inv.material.tipo, "nombre", ""),
+            "unidadMedida": inv.unidad_medida,
+            "stockActual": float(inv.stock_actual or 0),
+            "capacidadMaxima": float(inv.capacidad_maxima or 0),
+        }
+        for inv in materiales_inventario
+    ]
+
     return {
         "seccion": "movimientos",
         "section_template": SECTION_TEMPLATES["movimientos"],
@@ -667,6 +680,7 @@ def _build_movimientos_context(punto):
         "punto": punto,
         "unidades_medida": cons.UnidadMedida.choices,
         "materiales_inventario": materiales_inventario,
+        "materiales_stock_data": materiales_stock_data,
         "categoria_inventario": (
             Inventario.objects.filter(punto_eca=punto)
             .select_related("material__categoria")
@@ -732,7 +746,6 @@ def editar_venta(request, venta_id):
     return _responder_servicio_json(VentaInventarioService.editar_venta, request, data, venta_id)
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_compra(request, compra_id):
     return _responder_borrado_json(
@@ -740,7 +753,6 @@ def borrar_compra(request, compra_id):
     )
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def borrar_venta(request, venta_id):
     return _responder_borrado_json(
@@ -803,7 +815,6 @@ def exportar_ventas_excel(request):
     return _generar_respuesta_xlsx(dataset, "ventas.xlsx")
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def bulk_import_compras(request):
     """
@@ -833,7 +844,6 @@ def bulk_import_compras(request):
     )
 
 
-@csrf_exempt
 @gestor_eca_or_admin_required
 def bulk_import_ventas(request):
     """

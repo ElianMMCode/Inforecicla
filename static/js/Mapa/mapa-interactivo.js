@@ -8,27 +8,28 @@
  */
 
 class MapaInteractivo {
+  // Estado inicial
+  mapa = null;
+  capaMarcadores = null;
+  marcadores = {};
+  puntosECA = [];
+  puntoSeleccionado = null;
+
+  // Coordenadas por defecto (Bogotá, Colombia)
+  coordenadasDefecto = {
+    latitud: 4.711,
+    longitud: -74.0721,
+    zoom: 11,
+  };
+
+  // Colores para marcadores (Bootstrap green - consistente con InfoRecicla)
+  colores = {
+    defecto: "#198754", // Verde Bootstrap (igual al navbar)
+    activo: "#0d6efd", // Azul Bootstrap
+    hover: "#dc3545", // Rojo Bootstrap
+  };
+
   constructor() {
-    this.mapa = null;
-    this.capaMarcadores = null;
-    this.marcadores = {};
-    this.puntosECA = [];
-    this.puntoSeleccionado = null;
-
-    // Coordenadas por defecto (Bogotá, Colombia)
-    this.coordenadasDefecto = {
-      latitud: 4.711,
-      longitud: -74.0721,
-      zoom: 11,
-    };
-
-    // Colores para marcadores (Bootstrap green - consistente con InfoRecicla)
-    this.colores = {
-      defecto: "#198754", // Verde Bootstrap (igual al navbar)
-      activo: "#0d6efd", // Azul Bootstrap
-      hover: "#dc3545", // Rojo Bootstrap
-    };
-
     this.inicializar();
   }
 
@@ -203,11 +204,10 @@ class MapaInteractivo {
     let color = this.colores.defecto;
     let iconoHtml = '<i class="fas fa-leaf"></i>';
     if (punto.source === "arcgis") {
-      color = "#0d6efd"; // Azul Bootstrap para ArcGIS
       iconoHtml = '<i class="fas fa-map-marker-alt"></i>';
     }
     const icono = L.divIcon({
-      html: `<div class=\"marcador-custom\" style=\"background-color: ${color};\">\n                        ${iconoHtml}\n                   </div>`,
+      html: `<div class="marcador-custom" style="background-color: ${color};">${iconoHtml}</div>`,
       className: "marcador-contenedor",
       iconSize: [40, 40],
       iconAnchor: [20, 40],
@@ -328,7 +328,7 @@ class MapaInteractivo {
                             : ""
                         }
                     </div>
-                    
+
                     <div class="tarjeta-detalles">
                         ${
                           punto.direccion
@@ -339,18 +339,18 @@ class MapaInteractivo {
                         `
                             : ""
                         }
-                        
+
                         ${
                           punto.celular
                             ? `
                             <small>
-                                <i class="fas fa-phone"></i> 
+                                <i class="fas fa-phone"></i>
                                 <a href="tel:${punto.celular}">${punto.celular}</a>
                             </small>
                         `
                             : ""
                         }
-                        
+
                         ${
                           punto.email
                             ? `
@@ -361,7 +361,7 @@ class MapaInteractivo {
                         `
                             : ""
                         }
-                        
+
                         ${
                           punto.horarioAtencion
                             ? `
@@ -421,9 +421,7 @@ class MapaInteractivo {
     if (marcador) {
       // Cambiar color del marcador
       const icono = L.divIcon({
-        html: `<div class="marcador-custom" style="background-color: ${this.colores.activo};">
-                            <i class="fas fa-leaf"></i>
-                       </div>`,
+        html: `<div class="marcador-custom" style="background-color: ${this.colores.activo};"><i class="fas fa-leaf"></i></div>`,
         className: "marcador-contenedor",
         iconSize: [40, 40],
         iconAnchor: [20, 40],
@@ -496,6 +494,62 @@ class MapaInteractivo {
       detalles.descripcion || "Sin descripción";
 
     // Teléfono
+    // Contacto (teléfono y email)
+    this._setContactLinks(detalles);
+
+    // Horario
+    document.getElementById("detalleHorario").textContent =
+      detalles.horarioAtencion || "No especificado";
+
+    // Imágenes: logo y foto — sólo para puntos de la plataforma (o cuando el API explicita 'eca')
+    try {
+      const imgsContainer = document.getElementById("detalleImagenes");
+      const logoImg = document.getElementById("detalleLogo");
+      const fotoImg = document.getElementById("detalleFoto");
+
+      const esPuntoPlataforma = (puntoId && !String(puntoId).startsWith("arcgis_")) || detalles?.source === "eca";
+
+      const hasLogo = esPuntoPlataforma && this._tieneImagenReal(detalles.logoUrl);
+      const hasFoto = esPuntoPlataforma && this._tieneImagenReal(detalles.fotoUrl);
+
+      if (hasLogo) {
+        logoImg.src = detalles.logoUrl;
+        logoImg.style.display = "inline-block";
+      } else {
+        logoImg.src = "";
+        logoImg.style.display = "none";
+      }
+
+      if (hasFoto) {
+        fotoImg.src = detalles.fotoUrl;
+        fotoImg.style.display = "block";
+      } else {
+        fotoImg.src = "";
+        fotoImg.style.display = "none";
+      }
+
+      imgsContainer.style.display = hasLogo || hasFoto ? "block" : "none";
+    } catch (e) {
+      console.warn("No se pudieron renderizar las imágenes del detalle:", e);
+    }
+
+    // Llenar tabla de materiales
+    this.llenarTablaMateriales(detalles.materiales);
+
+    // Configurar botón "Enviar mensaje"
+    this._configureMensajeBtn(puntoId);
+
+    // Mostrar modal
+    const modal = new bootstrap.Modal(
+      document.getElementById("modalDetallesPunto"),
+    );
+    modal.show();
+  }
+
+  /**
+   * Helper: asigna los enlaces de teléfono y email en el modal
+   */
+  _setContactLinks(detalles) {
     const telLink = document.getElementById("detalleTelefono");
     if (detalles.telefonoPunto) {
       telLink.href = `tel:${detalles.telefonoPunto}`;
@@ -507,7 +561,6 @@ class MapaInteractivo {
       telLink.textContent = "No disponible";
     }
 
-    // Email
     const emailLink = document.getElementById("detalleEmail");
     if (detalles.email) {
       emailLink.href = `mailto:${detalles.email}`;
@@ -515,32 +568,94 @@ class MapaInteractivo {
     } else {
       emailLink.textContent = "No disponible";
     }
+  }
 
-    // Horario
-    document.getElementById("detalleHorario").textContent =
-      detalles.horarioAtencion || "No especificado";
-
-    // Llenar tabla de materiales
-    this.llenarTablaMateriales(detalles.materiales);
-
-    // Botón "Enviar mensaje": solo para puntos de la plataforma (no arcgis)
-    const btnMensaje = document.getElementById("btnEnviarMensaje");
-    if (btnMensaje) {
-      const esPuntoPlataforma = puntoId && !String(puntoId).startsWith("arcgis_");
-      if (esPuntoPlataforma) {
-        btnMensaje.href = `/perfil/mensajes/?chat_punto=${puntoId}`;
-        btnMensaje.classList.remove("d-none");
-      } else {
-        btnMensaje.classList.add("d-none");
-        btnMensaje.href = "#";
-      }
+  /**
+   * Determina si una URL apunta a una imagen real y no al placeholder del sistema.
+   */
+  _tieneImagenReal(url) {
+    if (!url) {
+      return false;
     }
 
-    // Mostrar modal
-    const modal = new bootstrap.Modal(
-      document.getElementById("modalDetallesPunto"),
-    );
-    modal.show();
+    const valor = String(url).trim();
+    if (!valor) {
+      return false;
+    }
+
+    if (this._esImagenSistemaPorDefecto(valor)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Detecta las imágenes genéricas usadas como placeholder en el sistema.
+   */
+  _esImagenSistemaPorDefecto(url) {
+    const rutasSistema = [
+      "/static/img/logo.png",
+      "/static/img/eca-default.png",
+      "/images/eca-default.png",
+    ];
+
+    const normalizado = this._normalizarRutaImagen(url);
+    if (!normalizado) {
+      return false;
+    }
+
+    const origen = globalThis.location?.origin ? this._quitarSlashFinal(globalThis.location.origin) : "";
+
+    return rutasSistema.some((ruta) => {
+      const rutaNormalizada = this._quitarSlashFinal(ruta);
+      return normalizado.endsWith(rutaNormalizada) || (origen && normalizado === `${origen}${rutaNormalizada}`);
+    });
+  }
+
+  /**
+   * Normaliza una URL o ruta eliminando query/hash y slash final.
+   */
+  _normalizarRutaImagen(url) {
+    if (!url) {
+      return "";
+    }
+
+    const valor = String(url).trim();
+    if (!valor) {
+      return "";
+    }
+
+    const sinQuery = valor.split("?")[0];
+    const sinHash = sinQuery.split("#")[0];
+    return this._quitarSlashFinal(sinHash);
+  }
+
+  /**
+   * Elimina uno o más slash finales sin usar regex.
+   */
+  _quitarSlashFinal(valor) {
+    let resultado = String(valor || "");
+    while (resultado.endsWith("/")) {
+      resultado = resultado.slice(0, -1);
+    }
+    return resultado;
+  }
+
+  /**
+   * Helper: muestra/oculta y configura el botón "Enviar mensaje"
+   */
+  _configureMensajeBtn(puntoId) {
+    const btnMensaje = document.getElementById("btnEnviarMensaje");
+    if (!btnMensaje) return;
+    const esPuntoPlataforma = puntoId && !String(puntoId).startsWith("arcgis_");
+    if (esPuntoPlataforma) {
+      btnMensaje.href = `/perfil/mensajes/?chat_punto=${puntoId}`;
+      btnMensaje.classList.remove("d-none");
+    } else {
+      btnMensaje.classList.add("d-none");
+      btnMensaje.href = "#";
+    }
   }
 
   /**
@@ -572,9 +687,11 @@ class MapaInteractivo {
         `;
 
     materiales.forEach((material) => {
-      const porcentaje = material.porcentajeCapacidad.toFixed(1);
-      const colorBarra =
-        porcentaje > 80 ? "danger" : porcentaje > 50 ? "warning" : "success";
+      const porcentajeNum = Number(material.porcentajeCapacidad) || 0;
+      const porcentaje = porcentajeNum.toFixed(1);
+      let colorBarra = "success";
+      if (porcentajeNum > 80) colorBarra = "danger";
+      else if (porcentajeNum > 50) colorBarra = "warning";
 
       html += `
                 <tr>
@@ -616,21 +733,19 @@ class MapaInteractivo {
    */
   buscar(termino) {
     console.log(`🔎 Buscando: "${termino}"`);
-
-    const contenedorLista = document.getElementById("listaPuntos");
-
     if (!termino.trim()) {
       this.renderizarLista();
       return;
     }
 
+    const contenedorLista = document.getElementById("listaPuntos");
+
     const terminoLower = termino.toLowerCase();
     const puntosFiltrados = this.puntosECA.filter(
       (p) =>
         p.nombrePunto.toLowerCase().includes(terminoLower) ||
-        (p.localidadNombre &&
-          p.localidadNombre.toLowerCase().includes(terminoLower)) ||
-        (p.direccion && p.direccion.toLowerCase().includes(terminoLower)),
+        (p.localidadNombre?.toLowerCase().includes(terminoLower)) ||
+        (p.direccion?.toLowerCase().includes(terminoLower)),
     );
 
     console.log(`✅ Se encontraron ${puntosFiltrados.length} resultados`);
@@ -679,7 +794,7 @@ class MapaInteractivo {
                           punto.celular
                             ? `
                             <small>
-                                <i class="fas fa-phone"></i> 
+                                <i class="fas fa-phone"></i>
                                 <a href="tel:${punto.celular}">${punto.celular}</a>
                             </small>
                         `
@@ -837,12 +952,11 @@ class MapaInteractivo {
       .value.toLowerCase();
     const materialId = document.getElementById("selectMaterial").value;
 
-    if (!materialId) {
-      // Si no hay material seleccionado, filtrar solo por nombre
-      this.filtrarPorNombre(inputNombre);
-    } else {
-      // Si hay material seleccionado, obtener puntos que lo contengan
+    // Evitar condiciones negadas: si hay material seleccionado, priorizar filtrado por material
+    if (materialId) {
       this.filtrarPorMaterial(materialId, inputNombre);
+    } else {
+      this.filtrarPorNombre(inputNombre);
     }
   }
 
@@ -851,9 +965,6 @@ class MapaInteractivo {
    */
   filtrarPorNombre(termino) {
     console.log(`🔎 Filtrando por nombre: "${termino}"`);
-
-    const contenedorLista = document.getElementById("listaPuntos");
-
     if (!termino.trim()) {
       this.renderizarLista();
       this.actualizarMarcadores(this.puntosECA);
@@ -863,9 +974,8 @@ class MapaInteractivo {
     const puntosFiltrados = this.puntosECA.filter(
       (p) =>
         p.nombrePunto.toLowerCase().includes(termino) ||
-        (p.localidadNombre &&
-          p.localidadNombre.toLowerCase().includes(termino)) ||
-        (p.direccion && p.direccion.toLowerCase().includes(termino)),
+        (p.localidadNombre?.toLowerCase().includes(termino)) ||
+        (p.direccion?.toLowerCase().includes(termino)),
     );
 
     console.log(`✅ Se encontraron ${puntosFiltrados.length} resultados`);
@@ -898,8 +1008,7 @@ class MapaInteractivo {
           puntosFiltrados = puntosConMaterial.filter(
             (p) =>
               p.nombrePunto.toLowerCase().includes(terminoNombre) ||
-              (p.localidadNombre &&
-                p.localidadNombre.toLowerCase().includes(terminoNombre)),
+              (p.localidadNombre?.toLowerCase().includes(terminoNombre)),
           );
           console.log(
             `✅ Después de filtrar por nombre: ${puntosFiltrados.length} puntos`,
@@ -965,7 +1074,7 @@ class MapaInteractivo {
                           punto.celular
                             ? `
                             <small>
-                                <i class="fas fa-phone"></i> 
+                                <i class="fas fa-phone"></i>
                                 <a href="tel:${punto.celular}">${punto.celular}</a>
                             </small>
                         `
@@ -1029,37 +1138,7 @@ class MapaInteractivo {
     console.log(`✅ Mapa actualizado con ${puntos.length} marcadores`);
   }
 
-  /**
-   * Crea un marcador para un punto (helper)
-   */
-  crearMarcador(punto) {
-    const icono = L.divIcon({
-      html: `<div class="marcador-custom" style="background-color: ${this.colores.defecto};">
-                        <i class="fas fa-leaf"></i>
-                   </div>`,
-      className: "marcador-contenedor",
-      iconSize: [40, 40],
-      iconAnchor: [20, 40],
-      popupAnchor: [0, -40],
-    });
 
-    const popup = L.popup().setContent(`
-                <strong>${this.escaparHTML(punto.nombrePunto)}</strong><br>
-                ${punto.localidadNombre ? `<em>${this.escaparHTML(punto.localidadNombre)}</em><br>` : ""}
-                ${punto.direccion ? `<small>${this.escaparHTML(punto.direccion)}</small>` : ""}
-            `);
-
-    const marcador = L.marker([punto.latitud, punto.longitud], {
-      icon: icono,
-    }).bindPopup(popup);
-
-    marcador.on("click", () => {
-      this.seleccionarPunto(punto.puntoEcaID);
-    });
-
-    this.marcadores[punto.puntoEcaID] = marcador;
-    return marcador;
-  }
 
   /**
    * Centra el mapa en Bogotá
@@ -1120,5 +1199,5 @@ class MapaInteractivo {
 
 // Inicializar la aplicación cuando el DOM esté listo
 document.addEventListener("DOMContentLoaded", () => {
-  new MapaInteractivo();
+  globalThis.mapaInteractivo = new MapaInteractivo();
 });

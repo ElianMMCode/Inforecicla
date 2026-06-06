@@ -1,8 +1,11 @@
 from django.core.validators import RegexValidator
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.conf import settings
 from config.base_models import LocalizacionWebHorarioModel
 from config.constants import TipoCentroAcopio, Visibilidad
+from config import constants as cons
+from apps.core.upload_validators import MaxFileSizeValidator
 
 
 class PuntoECA(LocalizacionWebHorarioModel):
@@ -47,6 +50,7 @@ class PuntoECA(LocalizacionWebHorarioModel):
         max_length=10,
         unique=True,
         blank=True,
+        null=True,
         validators=[
             RegexValidator(
                 regex="^60\\d{8}",
@@ -61,6 +65,35 @@ class PuntoECA(LocalizacionWebHorarioModel):
     logo_url_punto = models.URLField("Logo URL punto", max_length=200, blank=True)
 
     foto_url_punto = models.URLField("Foto URL punto", max_length=200, blank=True)
+
+    logo_imagen_punto = models.ImageField(
+        "Logo del punto",
+        upload_to="puntos/logos/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=cons.IMAGE_UPLOAD_ALLOWED_EXTENSIONS),
+            MaxFileSizeValidator(cons.POINT_LOGO_IMAGE_MAX_SIZE, "El logo del punto"),
+        ],
+        help_text="Logo del punto cargado como archivo (opcional)",
+    )
+
+    foto_imagen_punto = models.ImageField(
+        "Foto del punto",
+        upload_to="puntos/fotos/",
+        null=True,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=cons.IMAGE_UPLOAD_ALLOWED_EXTENSIONS),
+            MaxFileSizeValidator(cons.POINT_PHOTO_IMAGE_MAX_SIZE, "La foto del punto"),
+        ],
+        help_text="Foto principal del punto cargada como archivo (opcional)",
+    )
+
+    visible_en_mapa = models.BooleanField(
+        default=True,
+        help_text="Indica si el punto ECA puede mostrarse en el mapa público",
+    )
 
     inventarios = models.ManyToManyField(
         "inventory.Inventario",

@@ -4,14 +4,59 @@ Utilidades para manejo de validación de usuarios, tokens y envío de emails.
 import secrets
 import string
 from urllib.parse import urlencode
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.contrib.staticfiles import finders
+from email.mime.image import MIMEImage
+import os
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
 from django.urls import reverse
 from apps.users.models import TokenValidacion
+
+# Nombre del archivo del logo usado en varios lugares del módulo
+LOGO_FILENAME = 'logo.png'
+
+
+def _find_logo(preferred_cid: str):
+    """Localiza el logo en static y devuelve información útil.
+
+    Devuelve un dict con keys: logo_path, logo_cid, logo_url
+    """
+    logo_path = None
+    try:
+        logo_path = finders.find(f'img/{LOGO_FILENAME}')
+    except Exception:
+        logo_path = None
+
+    if not logo_path:
+        possible = os.path.join(getattr(settings, 'BASE_DIR', ''), 'static', 'img', LOGO_FILENAME)
+        if os.path.exists(possible):
+            logo_path = possible
+
+    if logo_path:
+        return {'logo_path': logo_path, 'logo_cid': preferred_cid, 'logo_url': None}
+
+    static_url = getattr(settings, 'STATIC_URL', '/static/')
+    return {'logo_path': None, 'logo_cid': None, 'logo_url': f"{_get_site_url()}{static_url.rstrip('/')}/img/{LOGO_FILENAME}"}
+
+
+def _attach_logo_to_msg(msg: EmailMultiAlternatives, logo_path: str, logo_cid: str):
+    """Adjunta el logo al mensaje `msg` como imagen inline si `logo_path` existe."""
+    if not logo_path or not logo_cid:
+        return
+    try:
+        with open(logo_path, 'rb') as f:
+            img_data = f.read()
+        mime_img = MIMEImage(img_data)
+        mime_img.add_header('Content-ID', f'<{logo_cid}>')
+        mime_img.add_header('Content-Disposition', 'inline', filename=LOGO_FILENAME)
+        msg.attach(mime_img)
+    except Exception:
+        # No bloquear el envío si la imagen falla
+        pass
 
 
 def _get_site_url():
@@ -94,28 +139,37 @@ def enviar_email_recuperacion(email, token):
     """
     asunto = "Recuperación de Contraseña - InfoRecicla"
 
+    # Preparar contexto base
+    enlace = f"{_get_site_url()}{reverse('login')}?email={email}&recovery_step=codigo"
     contexto = {
         'email': email,
         'token': token,
         'minutos': 15,
-        # Enlace actualizado para abrir el modal de recuperación en la página de login
-        'enlace_validacion': f"{_get_site_url()}{reverse('login')}?email={email}&recovery_step=codigo"
+        'enlace_validacion': enlace,
     }
 
-    # Renderizar template HTML
+    # Obtener información del logo (ruta, cid o url)
+    logo_info = _find_logo('logo_recuperacion')
+    if logo_info.get('logo_path'):
+        contexto['logo_cid'] = logo_info.get('logo_cid')
+    else:
+        contexto['logo_url'] = logo_info.get('logo_url')
+
+    # Renderizar HTML
     html_mensaje = render_to_string('users/email/recuperar_contrasena.html', contexto)
     texto_plano = strip_tags(html_mensaje)
 
     try:
-        resultado = send_mail(
-            asunto,
-            texto_plano,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            html_message=html_mensaje,
-            fail_silently=False,
-        )
-        return resultado == 1
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to = [email]
+        msg = EmailMultiAlternatives(asunto, texto_plano, from_email, to)
+        msg.attach_alternative(html_mensaje, "text/html")
+
+        # Adjuntar logo inline si lo hay
+        _attach_logo_to_msg(msg, logo_info.get('logo_path'), logo_info.get('logo_cid'))
+
+        msg.send(fail_silently=False)
+        return True
     except Exception as e:
         print(f"Error enviando email a {email}: {str(e)}")
         return False
@@ -141,6 +195,7 @@ def enviar_email_verificacion(email, token):
     })
     enlace_activacion = f"{_get_site_url()}{reverse('login')}?{query}"
 
+    # Preparar contexto base
     contexto = {
         'email': email,
         'token': token,
@@ -148,20 +203,29 @@ def enviar_email_verificacion(email, token):
         'enlace_activacion': enlace_activacion,
     }
 
-    # Renderizar template HTML
+    # Obtener información del logo (ruta, cid o url)
+    logo_info = _find_logo('logo_activacion')
+    if logo_info.get('logo_path'):
+        contexto['logo_cid'] = logo_info.get('logo_cid')
+    else:
+        contexto['logo_url'] = logo_info.get('logo_url')
+
+    # Renderizar template HTML ahora que sabemos si usaremos CID
     html_mensaje = render_to_string('users/email/verificar_email.html', contexto)
     texto_plano = strip_tags(html_mensaje)
 
     try:
-        resultado = send_mail(
-            asunto,
-            texto_plano,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            html_message=html_mensaje,
-            fail_silently=False,
-        )
-        return resultado == 1
+        # Construir email multipart con alternativa HTML
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to = [email]
+        msg = EmailMultiAlternatives(asunto, texto_plano, from_email, to)
+        msg.attach_alternative(html_mensaje, "text/html")
+
+        # Adjuntar imagen inline si existe
+        _attach_logo_to_msg(msg, logo_info.get('logo_path'), logo_info.get('logo_cid'))
+
+        msg.send(fail_silently=False)
+        return True
     except Exception as e:
         print(f"Error enviando email a {email}: {str(e)}")
         return False
