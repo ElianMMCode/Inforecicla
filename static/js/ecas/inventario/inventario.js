@@ -874,6 +874,8 @@
             observaciones: raw.observaciones || "",
             puntoEcaId: raw.puntoId,
         };
+        const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
+        const cant = Number(raw.cantidad);
         const promise = fetch("/punto-eca/movimientos/registrar-compra/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
@@ -882,10 +884,31 @@
             .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
-                Swal.fire({ icon: "success", title: "Compra registrada", text: d.mensaje || "Operación exitosa", timer: 1500, showConfirmButton: false });
-                // Reset del form para que un nuevo registro no herede valores
+                // Mostrar comprobante con todos los campos de la compra.
+                // El usuario debe cerrarlo manualmente; NO recargamos la
+                // página, para que permanezca en el workspace.
+                Swal.fire({
+                    icon: null,
+                    title: null,
+                    html: renderComprobante("compra", {
+                        materialNombre: currentMaterial?.nombre || "—",
+                        materialTipo: document.getElementById("formEntradaMaterialTipo")?.value || "—",
+                        materialCategoria: document.getElementById("formEntradaMaterialCategoria")?.value || "—",
+                        unidad: document.getElementById("formEntradaMaterialUnidad")?.value || "",
+                        cantidad: cant,
+                        precioUnitario: Number(raw.precioCompra) || 0,
+                        total: cant * (Number(raw.precioCompra) || 0),
+                        stockResultante: stockBase + cant,
+                        observaciones: raw.observaciones || "",
+                        fechaLegible: formatDateCO(raw.fecha) || raw.fecha,
+                    }),
+                    showConfirmButton: true,
+                    confirmButtonText: "Cerrar",
+                    confirmButtonColor: "#dc3545",
+                    width: "480px",
+                });
                 form.reset();
-                setTimeout(() => window.location.reload(), 1500);
+                refrescarPostAccion("compra", payload);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
         withLoading(btn, () => promise);
@@ -910,6 +933,11 @@
             centroAcopioId: raw.centroAcopioId,
             puntoEcaId: raw.puntoId,
         };
+        const stockBase = Number(document.getElementById("formSalidaStockActual")?.value || 0);
+        const cant = Number(raw.cantidad);
+        // Buscar el nombre del centro seleccionado para mostrarlo en el comprobante
+        const centroSel = document.getElementById("formSalidaCentro");
+        const centroNombre = centroSel?.options[centroSel.selectedIndex]?.text || "";
         const promise = fetch("/punto-eca/movimientos/registrar-venta/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
@@ -918,9 +946,32 @@
             .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
-                Swal.fire({ icon: "success", title: "Venta registrada", text: d.mensaje || "Operación exitosa", timer: 1500, showConfirmButton: false });
+                // Mostrar comprobante con todos los campos de la venta.
+                // El usuario debe cerrarlo manualmente; NO recargamos la
+                // página, para que permanezca en el workspace.
+                Swal.fire({
+                    icon: null,
+                    title: null,
+                    html: renderComprobante("venta", {
+                        materialNombre: currentMaterial?.nombre || "—",
+                        materialTipo: document.getElementById("formSalidaMaterialTipo")?.value || "—",
+                        materialCategoria: document.getElementById("formSalidaMaterialCategoria")?.value || "—",
+                        unidad: document.getElementById("formSalidaMaterialUnidad")?.value || "",
+                        cantidad: cant,
+                        precioUnitario: Number(raw.precioVenta) || 0,
+                        total: cant * (Number(raw.precioVenta) || 0),
+                        stockResultante: stockBase - cant,
+                        observaciones: raw.observaciones || "",
+                        fechaLegible: formatDateCO(raw.fecha) || raw.fecha,
+                        centroNombre: centroNombre,
+                    }),
+                    showConfirmButton: true,
+                    confirmButtonText: "Cerrar",
+                    confirmButtonColor: "#198754",
+                    width: "480px",
+                });
                 form.reset();
-                setTimeout(() => window.location.reload(), 1500);
+                refrescarPostAccion("venta", payload);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
         withLoading(btn, () => promise);
@@ -2123,6 +2174,88 @@
         document.querySelector('#workspaceTabs [data-tab="tab-flujo"]')?.addEventListener("click", () => {
             setTimeout(renderWsChart, 50);
         });
+    }
+
+    // ============================================================
+    // COMPROBANTE POST-OPERACIÓN
+    // ============================================================
+    // Genera un resumen visual tipo "comprobante" con todos los campos
+    // de la compra o venta recién registrada. No es una factura legal;
+    // es un resumen para que el gestor confirme visualmente lo que
+    // acaba de registrar antes de cerrar el modal.
+    function renderComprobante(tipo, datos) {
+        const tituloTipo = tipo === "compra" ? "Compra registrada" : "Venta registrada";
+        const colorHeader = tipo === "compra" ? "#dc3545" : "#198754";
+        const esVenta = tipo === "venta";
+        const row = (label, value) => `
+            <tr>
+                <td class="text-muted text-start pe-2" style="width: 45%;">${label}</td>
+                <td class="fw-semibold text-end">${value}</td>
+            </tr>`;
+        const observaciones = datos.observaciones
+            ? row("Observaciones", `<span class="fst-italic text-muted">${escapeHtml(datos.observaciones)}</span>`)
+            : "";
+        const centro = esVenta && datos.centroNombre
+            ? row("Centro de acopio", escapeHtml(datos.centroNombre))
+            : "";
+        return `
+            <div class="text-start" style="font-size: 0.9rem;">
+                <div class="d-flex justify-content-between align-items-center pb-2 mb-2" style="border-bottom: 2px solid ${colorHeader};">
+                    <strong style="color: ${colorHeader};">${tituloTipo}</strong>
+                    <small class="text-muted">${escapeHtml(datos.fechaLegible)}</small>
+                </div>
+                <table class="table table-sm table-borderless mb-0">
+                    <tbody>
+                        ${row("Material", escapeHtml(datos.materialNombre))}
+                        ${row("Tipo", escapeHtml(datos.materialTipo))}
+                        ${row("Categoría", escapeHtml(datos.materialCategoria))}
+                        ${row("Cantidad", `${datos.cantidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${escapeHtml(datos.unidad)}`)}
+                        ${row("Precio unitario", formatearCOP(datos.precioUnitario))}
+                        ${row("Total", `<span style="color: ${colorHeader};">${formatearCOP(datos.total)}</span>`)}
+                        ${centro}
+                        ${row("Stock resultante", `${datos.stockResultante.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${escapeHtml(datos.unidad)}`)}
+                        ${observaciones}
+                    </tbody>
+                </table>
+            </div>`;
+    }
+
+    // Refresca el workspace después de una compra/venta exitosa sin
+    // recargar la página, para que el usuario permanezca en el
+    // workspace (no lo llevamos al inicio de la sección).
+    function refrescarPostAccion(tipo, payload) {
+        if (!currentMaterial) return;
+        const cant = Number(payload.cantidad) || 0;
+        // Actualizar stock en memoria y en la DB cacheada
+        if (tipo === "compra") currentMaterial.stockActual = Number(currentMaterial.stockActual || 0) + cant;
+        else if (tipo === "venta") currentMaterial.stockActual = Number(currentMaterial.stockActual || 0) - cant;
+        // Recalcular ocupación y estado
+        const ocupacionNum = currentMaterial.capacidadMaxima > 0
+            ? Math.round((currentMaterial.stockActual / currentMaterial.capacidadMaxima) * 100)
+            : 0;
+        currentMaterial.ocupacion = ocupacionNum;
+        currentMaterial.estado = ocupacionNum >= currentMaterial.umbralCritico ? "critico"
+            : ocupacionNum >= currentMaterial.umbralAlerta ? "alerta" : "ok";
+        // Re-poblar el workspace con el nuevo stock (header + readonly)
+        poblarWorkspace(currentMaterial);
+        // Re-poblar info material (readonly form + precio autorrellenado)
+        poblarInfoMaterial(tipo === "compra" ? "formEntrada" : "formSalida");
+        // Re-pintar la card del material en el landing (sin necesidad de reload)
+        const card = document.querySelector(`.inv-tarjeta-material[data-inv-id="${currentMaterial.inventarioId}"]`);
+        if (card) {
+            card.dataset.ocupacion = ocupacionNum;
+            card.dataset.estado = currentMaterial.estado;
+            const stockTxt = card.querySelector(".inv-card-stock");
+            if (stockTxt) stockTxt.textContent = formatQty(currentMaterial.stockActual, currentMaterial.unidad);
+            const progressBar = card.querySelector(".progress-bar");
+            if (progressBar) {
+                progressBar.style.width = Math.min(100, Math.max(0, ocupacionNum)) + "%";
+                progressBar.className = "progress-bar " + (currentMaterial.estado === "critico" ? "bg-danger"
+                    : currentMaterial.estado === "alerta" ? "bg-warning" : "bg-success");
+            }
+        }
+        // Si estamos en el tab-historial, re-renderizarlo
+        if (isWorkspaceHistorial) renderHistorialGeneralPaged();
     }
 
     // ============================================================

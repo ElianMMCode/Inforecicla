@@ -1092,6 +1092,120 @@ class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
                       "poblarInfoMaterial debe respetar la cantidad tipeada por el usuario")
 
 
+class TestComprobanteYRefrescarPostAccion(TestCase):
+    """El mensaje de éxito de submitEntrada/submitSalida debe:
+
+    1. Mostrar un comprobante con todos los campos de la compra/venta
+       (material, tipo, categoría, cantidad, precio unitario, total,
+       stock resultante, observaciones, centro de acopio para ventas).
+    2. NO decir "factura" (no es un documento legal).
+    3. NO recargar la página, para que el usuario permanezca en el
+       workspace (no lo llevamos al inicio de la sección).
+    4. Refrescar el workspace y la card del material en memoria.
+    """
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+
+    def test_existe_funcion_render_comprobante(self):
+        self.assertIn("function renderComprobante", self.js)
+        self.assertIn("function refrescarPostAccion", self.js)
+
+    def test_render_comprobante_incluye_todos_los_campos(self):
+        """El comprobante debe mostrar material, tipo, categoría, cantidad,
+        precio unitario, total, stock resultante, observaciones."""
+        block = self.js.split("function renderComprobante", 1)[1].split("function ", 1)[0]
+        for field in ["materialNombre", "materialTipo", "materialCategoria",
+                      "cantidad", "precioUnitario", "total",
+                      "stockResultante", "observaciones", "fechaLegible"]:
+            self.assertIn(field, block,
+                          f"renderComprobante debe mostrar el campo `{field}`")
+        # Etiquetas legibles en español (pasadas como argumento a row())
+        for label in ["Material", "Tipo", "Categoría", "Cantidad",
+                      "Precio unitario", "Total", "Stock resultante",
+                      "Observaciones"]:
+            self.assertIn(f'row("{label}"', block,
+                          f"renderComprobante debe invocar row(\"{label}\", ...)")
+
+    def test_render_comprobante_muestra_centro_solo_para_venta(self):
+        """Solo las ventas deben mostrar el centro de acopio en el comprobante."""
+        block = self.js.split("function renderComprobante", 1)[1].split("function ", 1)[0]
+        self.assertIn("esVenta", block,
+                      "renderComprobante debe condicionar el centro de acopio por tipo")
+        self.assertIn("centroNombre", block,
+                      "renderComprobante debe leer el nombre del centro de acopio")
+
+    def test_render_comprobante_no_dice_factura(self):
+        """El comprobante NO debe usar la palabra 'factura' (no es documento legal)."""
+        block = self.js.split("function renderComprobante", 1)[1].split("function ", 1)[0]
+        self.assertNotIn("factura", block.lower(),
+                         "renderComprobante no debe usar la palabra 'factura'")
+        # Sí debe usar "Comprobante" o "registrada" como label
+        self.assertTrue(
+            "Comprobante" in block or "registrada" in block,
+            "renderComprobante debe usar 'Comprobante' o 'registrada' como label",
+        )
+
+    def test_render_comprobante_usa_color_segun_tipo(self):
+        """El comprobante debe usar rojo para compra y verde para venta,
+        en línea con los colores del card-header y botón submit."""
+        block = self.js.split("function renderComprobante", 1)[1].split("function ", 1)[0]
+        self.assertIn("compra", block)
+        self.assertIn("venta", block)
+        self.assertIn("#dc3545", block,
+                      "renderComprobante debe usar rojo Bootstrap (#dc3545) para compra")
+        self.assertIn("#198754", block,
+                      "renderComprobante debe usar verde Bootstrap (#198754) para venta")
+
+    def test_submit_entrada_muestra_comprobante_y_no_recarga(self):
+        """submitEntrada debe mostrar el comprobante (NO un Swal simple) y
+        NO debe llamar window.location.reload (permanece en workspace)."""
+        block = self.js.split("function submitEntrada", 1)[1].split("function ", 1)[0]
+        self.assertIn("renderComprobante(\"compra\"", block,
+                      "submitEntrada debe llamar renderComprobante('compra', ...)")
+        self.assertIn("refrescarPostAccion(\"compra\"", block,
+                      "submitEntrada debe llamar refrescarPostAccion para actualizar workspace")
+        # Ya no debe haber location.reload (Decisión 53: permanecer en workspace)
+        self.assertNotIn("window.location.reload()", block,
+                         "submitEntrada NO debe recargar la página, el usuario se queda en workspace")
+
+    def test_submit_salida_muestra_comprobante_y_no_recarga(self):
+        block = self.js.split("function submitSalida", 1)[1].split("function ", 1)[0]
+        self.assertIn("renderComprobante(\"venta\"", block,
+                      "submitSalida debe llamar renderComprobante('venta', ...)")
+        self.assertIn("refrescarPostAccion(\"venta\"", block,
+                      "submitSalida debe llamar refrescarPostAccion para actualizar workspace")
+        self.assertNotIn("window.location.reload()", block,
+                         "submitSalida NO debe recargar la página, el usuario se queda en workspace")
+
+    def test_refrescar_post_accion_actualiza_stock_en_memoria(self):
+        """refrescarPostAccion debe sumar (compra) o restar (venta) la
+        cantidad al stock actual del currentMaterial."""
+        block = self.js.split("function refrescarPostAccion", 1)[1].split("function ", 1)[0]
+        self.assertIn("currentMaterial.stockActual", block,
+                      "refrescarPostAccion debe actualizar currentMaterial.stockActual")
+        # Verificar la lógica de suma vs resta
+        self.assertIn("+ cant", block,
+                      "refrescarPostAccion para compra debe sumar la cantidad")
+        self.assertIn("- cant", block,
+                      "refrescarPostAccion para venta debe restar la cantidad")
+
+    def test_refrescar_post_accion_re_pobla_workspace_y_card(self):
+        """refrescarPostAccion debe re-poblar el workspace, el form, y
+        actualizar la card del material en el landing."""
+        block = self.js.split("function refrescarPostAccion", 1)[1].split("function ", 1)[0]
+        self.assertIn("poblarWorkspace(currentMaterial)", block,
+                      "refrescarPostAccion debe re-poblar el header del workspace")
+        self.assertIn("poblarInfoMaterial", block,
+                      "refrescarPostAccion debe re-poblar readonlys y precio del form")
+        self.assertIn("inv-tarjeta-material", block,
+                      "refrescarPostAccion debe re-pintar la card en el landing")
+
+
 class TestBindFormTotalListeners(TestCase):
     """El cálculo del Total (cantidad × precio) en los forms de crear debe
     actualizarse en tiempo real. Para eso `bind()` debe llamar
