@@ -494,3 +494,159 @@ class TestEditarMovimiento(TestCase):
         self.assertTrue(response.json().get("error"))
         self.venta.refresh_from_db()
         self.assertEqual(self.venta.cantidad, 5)
+
+
+class TestFlujoEndToEndCompraInventario(TestCase):
+    """Test end-to-end del flujo CRUD de CompraInventario:
+
+    1. POST /registrar-compra/  → crea CompraInventario y actualiza stock.
+    2. PATCH /editar-compra/   → edita cantidad/precio/observaciones y
+                                 re-calcula el stock.
+    3. DELETE /borrar-compra/  → elimina CompraInventario y revierte stock.
+
+    Es la primera barrera de protección contra regresiones del flujo
+    completo. Si cualquiera de los 3 pasos rompe, el test lo detecta.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.localidad = Localidad.objects.create(
+            localidad_id=uuid.uuid4(), nombre="Bogotá"
+        )
+        cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
+        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
+        cls.user = _crear_gestor("e2e-compra@example.com")
+        cls.punto = PuntoECA.objects.create(
+            nombre="Punto E2E",
+            email=f"e2e-{uuid.uuid4().hex[:8]}@x.com",
+            celular="3005556666",
+            latitud=4.6,
+            longitud=-74.0,
+            localidad=cls.localidad,
+            gestor_eca=cls.user,
+        )
+        cls.mat = Material.objects.create(
+            nombre="Lata E2E", categoria=cls.categoria, tipo=cls.tipo
+        )
+        cls.inv = Inventario.objects.create(
+            punto_eca=cls.punto,
+            material=cls.mat,
+            capacidad_maxima=1000,
+            unidad_medida="KG",
+            stock_actual=500,
+            umbral_alerta=70,
+            umbral_critico=90,
+            precio_compra=1000,
+            precio_venta=2000,
+        )
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def _post_compra(self, payload):
+        import json
+        return self.client.post(
+            "/punto-eca/movimientos/registrar-compra/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN="x",
+        )
+
+    def _patch_compra(self, compra_id, payload):
+        import json
+        return self.client.patch(
+            f"/punto-eca/movimientos/editar-compra/{compra_id}/",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+    def _delete_compra(self, compra_id):
+        return self.client.delete(
+            f"/punto-eca/movimientos/borrar-compra/{compra_id}/"
+        )
+
+    def test_flujo_completo_crear_editar_eliminar(self):
+        # 1. CREAR: POST /registrar-compra/ con cantidad=20, precio=1500
+        # Stock inicial: 500. Después: 500 + 20 = 520
+        stock_inicial = self.inv.stock_actual
+        response = self._post_compra({
+            "inventarioId": str(self.inv.id),
+            "cantidad": "20.00",
+            "precioCompra": "1500.00",
+            "fechaCompra": "2025-06-15T10:00:00",
+            "observaciones": "compra inicial",
+        })
+        self.assertEqual(response.status_code, 201,
+                         f"POST crear debe retornar 201; body={response.content!r}")
+        self.assertFalse(response.json().get("error"))
+        self.assertEqual(CompraInventario.objects.count(), 1)
+        compra = CompraInventario.objects.first()
+        self.assertEqual(compra.cantidad, 20)
+        self.assertEqual(compra.precio_compra, 1500)
+        # Stock actualizado
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.stock_actual, stock_inicial + 20)
+
+        # 2. EDITAR: PATCH cantidad de 20 a 30 → stock debe subir +10
+        # Stock antes: 520. Después: 520 + 10 = 530
+        response = self._patch_compra(compra.id, {
+            "compraId": str(compra.id),
+            "cantidad": "30.00",
+            "precioCompra": "1500.00",
+            "fechaCompra": "2025-06-15T10:00:00",
+            "observaciones": "editada",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json().get("error"))
+        compra.refresh_from_db()
+        self.assertEqual(compra.cantidad, 30)
+        self.assertEqual(compra.observaciones, "editada")
+        # Stock re-calculado
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.stock_actual, stock_inicial + 30)
+
+        # 3. ELIMINAR: DELETE → stock revierte al inicial
+        response = self._delete_compra(compra.id)
+        self.assertIn(response.status_code, (200, 204),
+                      f"DELETE debe retornar 2xx; body={response.content!r}")
+        self.assertFalse(CompraInventario.objects.filter(id=compra.id).exists())
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.stock_actual, stock_inicial)
+
+    def test_crear_compra_con_fallback_por_punto_y_material(self):
+        """Si el JS no envía inventarioId, el servicio retorna 400 con
+        mensaje claro. El JS siempre envía inventarioId desde
+        formEntradaInventarioId, por lo que este caso solo se da si
+        alguien manipula el payload directamente."""
+        response = self._post_compra({
+            "puntoEcaId": str(self.punto.id),
+            "materialId": str(self.mat.id),
+            "cantidad": "5.00",
+            "precioCompra": "1000.00",
+            "fechaCompra": "2025-06-15T10:00:00",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.json().get("error"))
+        self.assertIn("inventarioId", response.json().get("mensaje", ""))
+        # No se creó la compra
+        self.assertEqual(CompraInventario.objects.count(), 0)
+        # Stock no cambió
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.stock_actual, 500)
+
+    def test_crear_compra_cantidad_negativa_retorna_400(self):
+        """No se debe poder registrar una compra con cantidad <= 0."""
+        response = self._post_compra({
+            "inventarioId": str(self.inv.id),
+            "cantidad": "-1.00",
+            "precioCompra": "1000.00",
+            "fechaCompra": "2025-06-15T10:00:00",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.json().get("error"))
+        # No se creó la compra
+        self.assertEqual(CompraInventario.objects.count(), 0)
+        # Stock no cambió
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.stock_actual, 500)

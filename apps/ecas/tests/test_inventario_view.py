@@ -244,6 +244,46 @@ class TestSeccionInventario(TestCase):
         self.assertEqual(m1.group(1), m2.group(1),
                          "ambos forms deben tener la misma fecha actual (single render)")
 
+    def test_forms_cv_tienen_limites_razonables_de_digitos(self):
+        """Los inputs de cantidad y precio de los forms CV (crear y editar)
+        deben tener max y maxlength razonables para evitar que el usuario
+        ingrese valores absurdos (ej. 999999999 COP) por error de tipeo.
+
+        Reglas aplicadas:
+        - cantidad: max=99999.99, maxlength=8  (5 dígitos + '.' + 2 decimales)
+        - precio:   max=9999999, maxlength=7   (7 dígitos COP enteros)
+        """
+        self._login()
+        response = self.client.get("/punto-eca/inventario/")
+        body = response.content.decode("utf-8")
+        import re
+        # forms de crear
+        for field, expected_max, expected_ml in [
+            ("formEntradaCantidad", "99999.99", "8"),
+            ("formEntradaPrecio",   "9999999",  "7"),
+            ("formSalidaCantidad",  "99999.99", "8"),
+            ("formSalidaPrecio",    "9999999",  "7"),
+        ]:
+            m = re.search(rf'<input[^>]*id="{field}"[^>]*>', body)
+            self.assertIsNotNone(m, f"no se encontró input #{field}")
+            self.assertIn(f'max="{expected_max}"', m.group(0),
+                          f"#{field} debe tener max={expected_max}")
+            self.assertIn(f'maxlength="{expected_ml}"', m.group(0),
+                          f"#{field} debe tener maxlength={expected_ml}")
+        # modales de edición
+        for field, expected_max, expected_ml in [
+            ("inv-edit-compra-cantidad", "99999.99", "8"),
+            ("inv-edit-compra-precio",   "9999999",  "7"),
+            ("inv-edit-venta-cantidad",  "99999.99", "8"),
+            ("inv-edit-venta-precio",    "9999999",  "7"),
+        ]:
+            m = re.search(rf'<input[^>]*id="{field}"[^>]*>', body)
+            self.assertIsNotNone(m, f"no se encontró input #{field}")
+            self.assertIn(f'max="{expected_max}"', m.group(0),
+                          f"#{field} debe tener max={expected_max}")
+            self.assertIn(f'maxlength="{expected_ml}"', m.group(0),
+                          f"#{field} debe tener maxlength={expected_ml}")
+
     def test_contexto_incluye_punto_y_gestor(self):
         self._login()
         response = self.client.get("/punto-eca/inventario/")
