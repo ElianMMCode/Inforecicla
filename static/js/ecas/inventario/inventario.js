@@ -677,6 +677,27 @@
     // EVENT LISTENERS (delegación + específicos)
     // ============================================================
 
+    // Helper: bind de eventos compatible con Select2.
+    // Los <select> de filtros están envueltos con Select2. Cuando el usuario
+    // escoge una opción, Select2 dispara 'input'/'change' con jQuery.trigger(),
+    // que SOLO invoca handlers registrados vía jQuery.on() o el handler inline
+    // element.oninput — NO los listeners nativos de addEventListener. Por eso
+    // un addEventListener('change', …) sobre un <select> Select2 nunca
+    // dispara cuando el usuario cambia el valor vía la UI de Select2.
+    // Esta función usa jQuery.on() (si está disponible) y cae a
+    // addEventListener como fallback si jQuery no está cargado (modo
+    // degradado sin Select2, donde el evento nativo sí funciona).
+    function _bindChange(selector, handler) {
+        if (globalThis.jQuery) {
+            const $els = globalThis.jQuery(selector);
+            $els.on("change input", handler);
+        } else {
+            document.querySelectorAll(selector).forEach((el) => {
+                el.addEventListener("change", handler);
+            });
+        }
+    }
+
     function bind() {
         _initSelect2InSection();
         // Listeners de cálculo de total (cantidad × precio) en forms crear
@@ -746,7 +767,12 @@
         // Picker
         document.getElementById("inv-btn-abrir-picker")?.addEventListener("click", (e) => { e.preventDefault(); abrirPicker(); });
         ["inv-picker-buscar"].forEach((id) => document.getElementById(id)?.addEventListener("input", renderPicker));
-        ["inv-picker-categoria", "inv-picker-mostrar"].forEach((id) => document.getElementById(id)?.addEventListener("change", renderPicker));
+        // inv-picker-categoria / inv-picker-mostrar están envueltos en Select2
+        // (ver _initSelect2InSection). Usar _bindChange para que jQuery.on()
+        // registre el handler en el sistema de eventos de jQuery (Select2
+        // dispara change/input vía jQuery.trigger(), que no llega a
+        // addEventListener nativo).
+        _bindChange("#inv-picker-categoria, #inv-picker-mostrar", renderPicker);
         document.getElementById("inv-picker-lista")?.addEventListener("click", (e) => {
             const btn = e.target.closest("button[data-mat-id]");
             if (btn) seleccionarMaterialPicker(btn.dataset.matId);
@@ -2368,7 +2394,10 @@
 
         // Chart ovtab — Stock
         document.getElementById("inv-flujo-stock-aplicar")?.addEventListener("click", renderOvtabChart);
-        document.getElementById("inv-flujo-stock-granularidad")?.addEventListener("change", renderOvtabChart);
+        // inv-flujo-stock-granularidad está envuelto en Select2 (ver
+        // _reinitSelect2InPane). _bindChange usa jQuery.on() para que el
+        // handler quede registrado en el sistema de eventos de jQuery.
+        _bindChange("#inv-flujo-stock-granularidad", renderOvtabChart);
         document.getElementById("inv-flujo-stock-cap")?.addEventListener("change", renderOvtabChart);
         document.getElementById("inv-flujo-stock-desde")?.addEventListener("change", renderOvtabChart);
         document.getElementById("inv-flujo-stock-hasta")?.addEventListener("change", renderOvtabChart);
@@ -2383,7 +2412,7 @@
 
         // Chart ovtab — Ganancias
         document.getElementById("inv-flujo-gan-aplicar")?.addEventListener("click", renderOvGananciasChart);
-        document.getElementById("inv-flujo-gan-granularidad")?.addEventListener("change", renderOvGananciasChart);
+        _bindChange("#inv-flujo-gan-granularidad", renderOvGananciasChart);
         document.getElementById("inv-flujo-gan-desde")?.addEventListener("change", renderOvGananciasChart);
         document.getElementById("inv-flujo-gan-hasta")?.addEventListener("change", renderOvGananciasChart);
 
@@ -2392,14 +2421,19 @@
         // cualquier input + botón Aplicar explícito por paridad. La sub-pane
         // es de UN solo material, por eso no hay picker de materiales.
         document.getElementById("inv-ws-flujo-stock-aplicar")?.addEventListener("click", renderWsChart);
-        ["inv-ws-flujo-stock-desde", "inv-ws-flujo-stock-hasta",
-         "inv-ws-flujo-stock-granularidad", "inv-ws-flujo-stock-cap"]
+        // inv-ws-flujo-stock-granularidad está envuelto en Select2
+        // (ver _reinitSelect2InPane). Select2 dispara 'change' vía
+        // jQuery.trigger() que no llega a addEventListener nativo, por
+        // eso usamos _bindChange (jQuery.on). Los demás son date/checkbox
+        // nativos, addEventListener funciona bien.
+        _bindChange("#inv-ws-flujo-stock-granularidad", renderWsChart);
+        ["inv-ws-flujo-stock-desde", "inv-ws-flujo-stock-hasta", "inv-ws-flujo-stock-cap"]
             .forEach((id) => document.getElementById(id)?.addEventListener("change", renderWsChart));
 
         // Chart workspace flujo — Ganancias
         document.getElementById("inv-ws-flujo-gan-aplicar")?.addEventListener("click", renderWsGananciasChart);
-        ["inv-ws-flujo-gan-desde", "inv-ws-flujo-gan-hasta",
-         "inv-ws-flujo-gan-granularidad"]
+        _bindChange("#inv-ws-flujo-gan-granularidad", renderWsGananciasChart);
+        ["inv-ws-flujo-gan-desde", "inv-ws-flujo-gan-hasta"]
             .forEach((id) => document.getElementById(id)?.addEventListener("change", renderWsGananciasChart));
 
         // Sub-tabs internas del flujo (Stock / Ganancias)
@@ -2422,7 +2456,10 @@
         // Carga masiva CSV: bind del submit, cards pre-set tipo y link
         // dinámico de plantilla según el select.
         document.getElementById("inv-btn-ejecutar-carga")?.addEventListener("click", ejecutarCargaMasiva);
-        document.getElementById("inv-carga-tipo")?.addEventListener("change", _actualizarLinkPlantilla);
+        // inv-carga-tipo está envuelto en Select2 (ver _initSelect2InSection).
+        // _bindChange usa jQuery.on() para que el handler quede registrado
+        // en el sistema de eventos de jQuery.
+        _bindChange("#inv-carga-tipo", _actualizarLinkPlantilla);
         document.querySelectorAll("[data-bulk-tipo]").forEach((el) => {
             el.addEventListener("click", () => {
                 const tipo = el.dataset.bulkTipo;
