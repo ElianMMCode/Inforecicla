@@ -947,6 +947,11 @@
                 precioEl.value = inv.precioVenta;
             }
         }
+        // Sugerir cantidad=1 como punto de partida, si el campo está vacío.
+        // El usuario lo sobrescribe; la idea es que vea el Total calculado
+        // (1 × precio) apenas entra al form, sin tener que tipear cantidad.
+        const cantEl = document.getElementById(`${prefix}Cantidad`);
+        if (cantEl && !cantEl.value) cantEl.value = 1;
         // Recalcular total con el precio recién autorrellenado
         if (prefix === "formEntrada") actualizarTotalEntrada();
         if (prefix === "formSalida") actualizarTotalVenta();

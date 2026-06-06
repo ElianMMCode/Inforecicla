@@ -1018,6 +1018,17 @@ class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
         self.assertIn('poblarInfoMaterial("formSalida")', block,
                       "activarTab('tab-venta') debe poblar formSalida")
 
+    def test_poblar_info_material_sugiere_cantidad_uno(self):
+        """Al poblar info material, si la cantidad está vacía, sugerir 1
+        como punto de partida para que el Total se vea calculado de entrada
+        (1 × precio_unitario = total). El usuario puede sobrescribir."""
+        block = self.js.split("function poblarInfoMaterial", 1)[1].split("function ", 1)[0]
+        self.assertIn("cantEl.value = 1", block,
+                      "poblarInfoMaterial debe sugerir cantidad=1 si el campo está vacío")
+        # Debe chequear que el campo está vacío antes de sobrescribir
+        self.assertIn("!cantEl.value", block,
+                      "poblarInfoMaterial debe respetar la cantidad tipeada por el usuario")
+
 
 class TestBindFormTotalListeners(TestCase):
     """El cálculo del Total (cantidad × precio) en los forms de crear debe
