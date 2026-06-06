@@ -1832,36 +1832,55 @@ class TestFiltrosFlujoWorkshop(TestCase):
     def test_bind_extras_engancha_filtros_ws(self):
         """Los inputs del workspace deben tener listeners de change
         enganchados a renderWsChart / renderWsGananciasChart. Los IDs
-        van en arrays multilínea iterados con forEach() dentro de
-        bindExtras()."""
-        # Buscamos la secuencia completa: array de IDs + .forEach(...) +
-        # .addEventListener("change", renderWsChart) en una ventana de
-        # 600 chars. Tolerante a whitespace y newlines.
-        stock_block = re.search(
-            r'\["inv-ws-flujo-stock-desde",\s*"inv-ws-flujo-stock-hasta",\s*'
-            r'"inv-ws-flujo-stock-granularidad",\s*"inv-ws-flujo-stock-cap"\].*?'
-            r'\.addEventListener\("change",\s*renderWsChart\)',
-            self.js,
-            re.DOTALL,
-        )
-        self.assertIsNotNone(stock_block,
-            "Debe existir un patrón que enganche 'change' -> renderWsChart "
-            "para los 4 IDs de stock en bindExtras()")
-        self.assertIn(".forEach(", stock_block.group(0),
-                      "El patrón debe iterar con forEach()")
+        nativos (date/checkbox) van en arrays iterados con forEach +
+        addEventListener; los Select2 (granularidad) se enlazan vía
+        _bindChange (jQuery.on) porque Select2 dispara 'change' vía
+        jQuery.trigger() que no llega a addEventListener nativo."""
+        for needle in (
+            'renderWsChart',
+            'renderWsGananciasChart',
+        ):
+            self.assertIn(needle, self.js,
+                          f"handler {needle} debe estar referenciado en bindExtras()")
 
-        gan_block = re.search(
-            r'\["inv-ws-flujo-gan-desde",\s*"inv-ws-flujo-gan-hasta",\s*'
-            r'"inv-ws-flujo-gan-granularidad"\].*?'
-            r'\.addEventListener\("change",\s*renderWsGananciasChart\)',
-            self.js,
-            re.DOTALL,
+        # Verifica que cada ID tenga un listener 'change' en un contexto
+        # de binding. Para los nativos (date/checkbox) buscamos la forma
+        # "<id>" dentro de un array seguido de forEach+addEventListener;
+        # para los Select2 buscamos la forma _bindChange("#<id>", ...).
+        stock_native = (
+            "inv-ws-flujo-stock-desde", "inv-ws-flujo-stock-hasta",
+            "inv-ws-flujo-stock-cap",
         )
-        self.assertIsNotNone(gan_block,
-            "Debe existir un patrón que enganche 'change' -> renderWsGananciasChart "
-            "para los 3 IDs de ganancias en bindExtras()")
-        self.assertIn(".forEach(", gan_block.group(0),
-                      "El patrón debe iterar con forEach()")
+        stock_select2 = ("inv-ws-flujo-stock-granularidad",)
+        gan_native = ("inv-ws-flujo-gan-desde", "inv-ws-flujo-gan-hasta")
+        gan_select2 = ("inv-ws-flujo-gan-granularidad",)
+
+        for sid in stock_native + stock_select2 + gan_native + gan_select2:
+            with self.subTest(id=sid):
+                if sid in stock_native + stock_select2:
+                    handler = "renderWsChart"
+                else:
+                    handler = "renderWsGananciasChart"
+
+                if sid in stock_native + gan_native:
+                    # Busca el array que contiene el ID y mira el window
+                    # después del array para verificar el forEach+addEventListener.
+                    pattern = (
+                        r'\[[^\]]*"' + re.escape(sid) + r'"[^\]]*\][^}]*'
+                        r'\.addEventListener\("change",\s*' + re.escape(handler)
+                    )
+                    self.assertRegex(self.js, pattern,
+                        f"id {sid} debe estar en array iterado con forEach + "
+                        f"addEventListener('change', {handler})")
+                else:
+                    # Select2: busca _bindChange("#<id>", <handler>).
+                    pattern = (
+                        r'_bindChange\("#' + re.escape(sid) + r'",\s*'
+                        + re.escape(handler)
+                    )
+                    self.assertRegex(self.js, pattern,
+                        f"id {sid} debe estar enganchado vía "
+                        f"_bindChange('#{sid}', {handler})")
 
     def test_boton_aplicar_enganchado_en_ambas_subpanes(self):
         """Los botones Aplicar explícitos deben estar enganchados
