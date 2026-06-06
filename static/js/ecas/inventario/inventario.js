@@ -950,6 +950,10 @@
         // Recalcular total con el precio recién autorrellenado
         if (prefix === "formEntrada") actualizarTotalEntrada();
         if (prefix === "formSalida") actualizarTotalVenta();
+        // Pintar el preview de stock resultante con el stock base del material
+        // (aunque el usuario todavía no haya tipeado cantidad, queremos ver
+        // el stock actual como punto de partida).
+        actualizarStockPreview(prefix);
     }
     function poblarInfoMaterialEdicion(tipo) {
         // Para los modales de edición: poblar los 3 hidden de validación
@@ -970,6 +974,7 @@
         const total = cant * precio;
         const el = document.getElementById("formEntradaTotalCompra");
         if (el) el.value = total > 0 ? total.toLocaleString("es-CO", { maximumFractionDigits: 0 }) : "";
+        actualizarStockPreviewEntrada();
     }
     function actualizarTotalVenta() {
         const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
@@ -977,6 +982,52 @@
         const total = cant * precio;
         const el = document.getElementById("formSalidaTotalVenta");
         if (el) el.value = total > 0 ? total.toLocaleString("es-CO", { maximumFractionDigits: 0 }) : "";
+        actualizarStockPreviewSalida();
+    }
+    // Preview de stock resultante: muestra en tiempo real cuánto stock
+    // quedará tras aplicar este movimiento. Color verde si el resultado
+    // es válido; rojo si excede la capacidad máxima (compra) o resulta
+    // negativo (venta). Es solo referencia visual; el backend re-valida.
+    function actualizarStockPreviewEntrada() {
+        const stockEl = document.getElementById("formEntradaStockResultante");
+        const unidadEl = document.getElementById("formEntradaStockResultanteUnidad");
+        if (!stockEl) return;
+        const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
+        const capacidad = Number(document.getElementById("formEntradaCapacidadMaxima")?.value || 0);
+        const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
+        const unidad = document.getElementById("formEntradaMaterialUnidad")?.value || "";
+        const resultante = stockBase + cant;
+        stockEl.value = resultante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        if (unidadEl) unidadEl.textContent = unidad || "unidades";
+        if (capacidad > 0 && resultante > capacidad) {
+            stockEl.style.backgroundColor = "#f8d7da";
+            stockEl.style.color = "#58151c";
+        } else {
+            stockEl.style.backgroundColor = "#d1e7dd";
+            stockEl.style.color = "#0a3622";
+        }
+    }
+    function actualizarStockPreviewSalida() {
+        const stockEl = document.getElementById("formSalidaStockRestante");
+        const unidadEl = document.getElementById("formSalidaStockRestanteUnidad");
+        if (!stockEl) return;
+        const stockBase = Number(document.getElementById("formSalidaStockActual")?.value || 0);
+        const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
+        const unidad = document.getElementById("formSalidaMaterialUnidad")?.value || "";
+        const restante = stockBase - cant;
+        stockEl.value = restante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        if (unidadEl) unidadEl.textContent = unidad || "unidades";
+        if (restante < 0) {
+            stockEl.style.backgroundColor = "#f8d7da";
+            stockEl.style.color = "#58151c";
+        } else {
+            stockEl.style.backgroundColor = "#d1e7dd";
+            stockEl.style.color = "#0a3622";
+        }
+    }
+    function actualizarStockPreview(prefix) {
+        if (prefix === "formEntrada") actualizarStockPreviewEntrada();
+        else if (prefix === "formSalida") actualizarStockPreviewSalida();
     }
     function _bindFormTotalListeners() {
         const fECant = document.getElementById("formEntradaCantidad");

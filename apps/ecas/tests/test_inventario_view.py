@@ -1045,3 +1045,84 @@ class TestEditarMovimientoSeteaHiddenStock(TestCase):
         self.assertIn("m.cantidad", block,
                       "editarMovimiento debe leer m.cantidad")
 
+
+class TestStockPreviewColorDinamico(TestCase):
+    """El preview de stock resultante en los forms de crear (entrada/salida)
+    debe:
+    - Mostrarse verde cuando el resultado es válido.
+    - Mostrarse rojo cuando excede la capacidad máxima (compra) o es
+      negativo (venta).
+    - Actualizarse en tiempo real al cambiar la cantidad.
+    - Actualizar el label de unidad dinámicamente.
+    Es solo referencia visual; el backend re-valida de forma autoritativa.
+    """
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+
+    def test_template_tiene_stock_resultante_y_restante(self):
+        """El template debe tener los inputs de preview de stock."""
+        from pathlib import Path
+        tmpl_path = Path(__file__).resolve().parents[3] / "templates" / "ecas" / "section-inventario.html"
+        self.assertTrue(tmpl_path.exists(), f"template no encontrado en {tmpl_path}")
+        with open(tmpl_path, encoding="utf-8") as fh:
+            tmpl = fh.read()
+        self.assertIn('id="formEntradaStockResultante"', tmpl,
+                      "template debe tener input formEntradaStockResultante")
+        self.assertIn('id="formSalidaStockRestante"', tmpl,
+                      "template debe tener input formSalidaStockRestante")
+
+    def test_actualizar_stock_preview_entrada_existe(self):
+        self.assertIn("function actualizarStockPreviewEntrada", self.js)
+        self.assertIn("function actualizarStockPreviewSalida", self.js)
+        self.assertIn("function actualizarStockPreview", self.js)
+
+    def test_actualizar_stock_preview_entrada_usa_color_rojo_si_excede(self):
+        """Para compra: si stockBase + cant > capacidadMaxima → rojo."""
+        block = self.js.split("function actualizarStockPreviewEntrada", 1)[1].split("function ", 1)[0]
+        # Debe leer stockBase, capacidad y cant
+        self.assertIn("formEntradaStockActual", block)
+        self.assertIn("formEntradaCapacidadMaxima", block)
+        self.assertIn("formEntradaCantidad", block)
+        # La lógica de color: capacidad > 0 && resultante > capacidad → rojo
+        self.assertIn("#f8d7da", block, "color rojo (#f8d7da) para alerta")
+        self.assertIn("#d1e7dd", block, "color verde (#d1e7dd) para OK")
+        self.assertIn("capacidad > 0 && resultante > capacidad", block,
+                      "compra se pinta rojo si resultante > capacidad")
+
+    def test_actualizar_stock_preview_salida_usa_color_rojo_si_negativo(self):
+        """Para venta: si stockBase - cant < 0 → rojo."""
+        block = self.js.split("function actualizarStockPreviewSalida", 1)[1].split("function ", 1)[0]
+        self.assertIn("formSalidaStockActual", block)
+        self.assertIn("formSalidaCantidad", block)
+        self.assertIn("restante < 0", block,
+                      "venta se pinta rojo si restante < 0")
+
+    def test_actualizar_stock_preview_actualiza_unidad_dinamica(self):
+        """El preview debe mostrar la unidad del material (no hardcodeado)."""
+        block = self.js.split("function actualizarStockPreviewEntrada", 1)[1].split("function ", 1)[0]
+        self.assertIn("formEntradaMaterialUnidad", block,
+                      "preview de entrada debe leer la unidad del material")
+        block = self.js.split("function actualizarStockPreviewSalida", 1)[1].split("function ", 1)[0]
+        self.assertIn("formSalidaMaterialUnidad", block,
+                      "preview de salida debe leer la unidad del material")
+
+    def test_actualizar_total_llama_actualizar_stock_preview(self):
+        """actualizarTotalEntrada/Venta deben disparar también el preview de
+        stock, así se mantiene sincronizado en cada keystroke."""
+        block = self.js.split("function actualizarTotalEntrada", 1)[1].split("function ", 1)[0]
+        self.assertIn("actualizarStockPreviewEntrada", block)
+        block = self.js.split("function actualizarTotalVenta", 1)[1].split("function ", 1)[0]
+        self.assertIn("actualizarStockPreviewSalida", block)
+
+    def test_poblar_info_material_pinta_preview_inicial(self):
+        """poblarInfoMaterial debe pintar el preview de stock aunque el
+        usuario no haya tipeado nada, así ve el stock base de partida."""
+        block = self.js.split("function poblarInfoMaterial", 1)[1].split("function ", 1)[0]
+        self.assertIn("actualizarStockPreview", block,
+                      "poblarInfoMaterial debe llamar actualizarStockPreview")
+
