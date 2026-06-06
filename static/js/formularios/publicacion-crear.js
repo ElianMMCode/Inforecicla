@@ -1,11 +1,107 @@
+const LIMITE_IMAGEN_MB = 6;
+const LIMITE_VIDEO_MB = 100;
+const MENSAJE_LIMITE_IMAGEN = `La imagen supera el límite de ${LIMITE_IMAGEN_MB} MB`;
+const MENSAJE_LIMITE_VIDEO = `El video supera el límite de ${LIMITE_VIDEO_MB} MB`;
+const MENSAJE_LIMITE_THUMBNAIL = `La miniatura supera el límite de ${LIMITE_IMAGEN_MB} MB`;
+
+function publicacionCrearMostrarErrorSwal(titulo, errores) {
+  if (typeof Swal === "undefined") {
+    return;
+  }
+  Swal.fire({
+    icon: "error",
+    title: titulo,
+    text: errores.join(" "),
+    confirmButtonColor: "#198754",
+  });
+}
+
+function publicacionCrearRechazarVideo(inputVideo, previewVideo, wrapperThumbnail, errores) {
+  inputVideo.value = "";
+  if (previewVideo) {
+    previewVideo.innerHTML = "";
+  }
+  if (wrapperThumbnail) {
+    wrapperThumbnail.style.display = "none";
+  }
+  publicacionCrearMostrarErrorSwal("Video no válido", errores);
+}
+
+function publicacionCrearRechazarThumbnail(inputThumbnail, previewThumbnail, errores) {
+  inputThumbnail.value = "";
+  if (previewThumbnail) {
+    previewThumbnail.innerHTML = "";
+  }
+  publicacionCrearMostrarErrorSwal("Miniatura no válida", errores);
+}
+
+function publicacionCrearRechazarImagenes(inputImagenes, alertImagenes, previewImagenes, errores) {
+  publicacionMostrarAlertaImagenes(alertImagenes, errores.join(" "));
+  inputImagenes.value = "";
+  previewImagenes.innerHTML = "";
+}
+
+function publicacionCrearValidarBloqueImagenes(inputImagenes, alertImagenes, previewImagenes) {
+  if (!inputImagenes?.files?.length) {
+    publicacionOcultarAlertaImagenes(alertImagenes);
+    return { valido: true, errores: [] };
+  }
+  const resultado = publicacionValidarArchivosImagen(
+    inputImagenes.files,
+    inputImagenes,
+    MENSAJE_LIMITE_IMAGEN,
+  );
+  if (!resultado.valido) {
+    publicacionCrearRechazarImagenes(inputImagenes, alertImagenes, previewImagenes, resultado.errores);
+    return resultado;
+  }
+  publicacionOcultarAlertaImagenes(alertImagenes);
+  return resultado;
+}
+
+function publicacionCrearValidarBloqueVideo(inputVideo, previewVideo, wrapperThumbnail) {
+  if (!inputVideo?.files?.length) {
+    return { valido: true, errores: [] };
+  }
+  const resultado = publicacionValidarArchivoUnico(
+    inputVideo.files[0],
+    inputVideo,
+    MENSAJE_LIMITE_VIDEO,
+  );
+  if (!resultado.valido) {
+    publicacionCrearRechazarVideo(inputVideo, previewVideo, wrapperThumbnail, resultado.errores);
+    return resultado;
+  }
+  return resultado;
+}
+
+function publicacionCrearValidarBloqueThumbnail(inputThumbnail, previewThumbnail) {
+  if (!inputThumbnail?.files?.length) {
+    return { valido: true, errores: [] };
+  }
+  const resultado = publicacionValidarArchivoUnico(
+    inputThumbnail.files[0],
+    inputThumbnail,
+    MENSAJE_LIMITE_THUMBNAIL,
+  );
+  if (!resultado.valido) {
+    publicacionCrearRechazarThumbnail(inputThumbnail, previewThumbnail, resultado.errores);
+    return resultado;
+  }
+  return resultado;
+}
+
+function publicacionCrearRecolectarErrores(bloques) {
+  return bloques.flatMap((bloque) => (bloque.valido ? [] : bloque.errores));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("createPublicacionForm");
   if (!form) {
     return;
   }
 
-  const LIMITE_BYTES = 6 * 1024 * 1024;
-  const LIMITE_VIDEO_BYTES = 100 * 1024 * 1024;
+  const LIMITE_BYTES = LIMITE_IMAGEN_MB * 1024 * 1024;
   const inputImagenes = document.getElementById("inputImagenes");
   const inputVideo = document.getElementById("inputVideo");
   const inputThumbnail = document.getElementById("inputThumbnail");
@@ -25,148 +121,42 @@ document.addEventListener("DOMContentLoaded", () => {
   publicacionEnlazarMaxlength(contenidoInput, "pub_contenido_contador");
 
   function validarArchivos() {
-    let errores = [];
-
-    if (inputImagenes && inputImagenes.files && inputImagenes.files.length > 0) {
-      const resultado = publicacionValidarArchivosImagen(
-        inputImagenes.files,
-        inputImagenes,
-        "La imagen supera el límite de 6 MB",
-      );
-      if (!resultado.valido) {
-        errores = errores.concat(resultado.errores);
-        publicacionMostrarAlertaImagenes(alertImagenes, resultado.errores.join(" "));
-        inputImagenes.value = "";
-        previewImagenes.innerHTML = "";
-      } else {
-        publicacionOcultarAlertaImagenes(alertImagenes);
-      }
-    } else {
-      publicacionOcultarAlertaImagenes(alertImagenes);
-    }
-
-    if (inputVideo && inputVideo.files && inputVideo.files.length > 0) {
-      const resultado = publicacionValidarArchivoUnico(
-        inputVideo.files[0],
-        inputVideo,
-        "El video supera el límite de 100 MB",
-      );
-      if (!resultado.valido) {
-        errores = errores.concat(resultado.errores);
-        inputVideo.value = "";
-        if (previewVideo) {
-          previewVideo.innerHTML = "";
-        }
-        if (wrapperThumbnail) {
-          wrapperThumbnail.style.display = "none";
-        }
-      }
-    }
-
-    if (inputThumbnail && inputThumbnail.files && inputThumbnail.files.length > 0) {
-      const resultado = publicacionValidarArchivoUnico(
-        inputThumbnail.files[0],
-        inputThumbnail,
-        "La miniatura supera el límite de 6 MB",
-      );
-      if (!resultado.valido) {
-        errores = errores.concat(resultado.errores);
-        inputThumbnail.value = "";
-        if (previewThumbnail) {
-          previewThumbnail.innerHTML = "";
-        }
-      }
-    }
-
+    const bloques = [
+      publicacionCrearValidarBloqueImagenes(inputImagenes, alertImagenes, previewImagenes),
+      publicacionCrearValidarBloqueVideo(inputVideo, previewVideo, wrapperThumbnail),
+      publicacionCrearValidarBloqueThumbnail(inputThumbnail, previewThumbnail),
+    ];
+    const errores = publicacionCrearRecolectarErrores(bloques);
     return { valido: errores.length === 0, errores };
   }
 
   if (inputImagenes) {
     inputImagenes.addEventListener("change", () => {
-      const archivosValidos = (inputImagenes.files || []).length === 0 ||
-        publicacionValidarArchivosImagen(
-          inputImagenes.files,
-          inputImagenes,
-          "La imagen supera el límite de 6 MB",
-        ).valido;
-      if (!archivosValidos) {
-        const res = publicacionValidarArchivosImagen(
-          inputImagenes.files,
-          inputImagenes,
-          "La imagen supera el límite de 6 MB",
-        );
-        publicacionMostrarAlertaImagenes(alertImagenes, res.errores.join(" "));
-        inputImagenes.value = "";
-        previewImagenes.innerHTML = "";
+      const bloque = publicacionCrearValidarBloqueImagenes(inputImagenes, alertImagenes, previewImagenes);
+      if (!bloque.valido) {
         return;
       }
-      publicacionOcultarAlertaImagenes(alertImagenes);
-      publicacionRenderPreviewImagenes(
-        inputImagenes.files,
-        previewImagenes,
-        LIMITE_BYTES,
-      );
+      publicacionRenderPreviewImagenes(inputImagenes.files, previewImagenes, LIMITE_BYTES);
     });
   }
 
   if (inputVideo) {
     inputVideo.addEventListener("change", () => {
-      const archivo = inputVideo.files && inputVideo.files[0];
-      if (archivo) {
-        const res = publicacionValidarArchivoUnico(
-          archivo,
-          inputVideo,
-          "El video supera el límite de 100 MB",
-        );
-        if (!res.valido) {
-          inputVideo.value = "";
-          if (previewVideo) {
-            previewVideo.innerHTML = "";
-          }
-          if (wrapperThumbnail) {
-            wrapperThumbnail.style.display = "none";
-          }
-          if (typeof Swal !== "undefined") {
-            Swal.fire({
-              icon: "error",
-              title: "Video no válido",
-              text: res.errores.join(" "),
-              confirmButtonColor: "#198754",
-            });
-          }
-          return;
-        }
+      const bloque = publicacionCrearValidarBloqueVideo(inputVideo, previewVideo, wrapperThumbnail);
+      if (!bloque.valido) {
+        return;
       }
-      publicacionRenderPreviewVideo(archivo, previewVideo, wrapperThumbnail);
+      publicacionRenderPreviewVideo(inputVideo.files[0], previewVideo, wrapperThumbnail);
     });
   }
 
   if (inputThumbnail) {
     inputThumbnail.addEventListener("change", () => {
-      const archivo = inputThumbnail.files && inputThumbnail.files[0];
-      if (archivo) {
-        const res = publicacionValidarArchivoUnico(
-          archivo,
-          inputThumbnail,
-          "La miniatura supera el límite de 6 MB",
-        );
-        if (!res.valido) {
-          inputThumbnail.value = "";
-          if (previewThumbnail) {
-            previewThumbnail.innerHTML = "";
-          }
-          if (typeof Swal !== "undefined") {
-            Swal.fire({
-              icon: "error",
-              title: "Miniatura no válida",
-              text: res.errores.join(" "),
-              confirmButtonColor: "#198754",
-            });
-          }
-          return;
-        }
+      const bloque = publicacionCrearValidarBloqueThumbnail(inputThumbnail, previewThumbnail);
+      if (!bloque.valido) {
+        return;
       }
-      publicacionRenderPreviewThumbnail(archivo, previewThumbnail);
+      publicacionRenderPreviewThumbnail(inputThumbnail.files[0], previewThumbnail);
     });
   }
 

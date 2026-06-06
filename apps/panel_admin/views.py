@@ -555,60 +555,70 @@ def _render_crear_publicacion_con_error(request, categorias, publicaciones_habil
     )
 
 
-def _validar_archivos_publicacion(request):
-    import os
-
+def _validar_mime_y_tamano(archivo, mimes_permitidos, limite_bytes, etiqueta):
     from apps.core.upload_validators import MaxFileSizeValidator, MimeTypeValidator
 
-    imagenes = request.FILES.getlist("imagenes")
-    if imagenes:
-        mime_validador = MimeTypeValidator(
-            list(cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES),
-            "La imagen",
+    try:
+        MimeTypeValidator(list(mimes_permitidos), etiqueta)(archivo)
+    except ValidationError as e:
+        return f"{etiqueta} '{archivo.name}': {e.messages[0]}"
+    try:
+        MaxFileSizeValidator(limite_bytes, etiqueta)(archivo)
+    except ValidationError as e:
+        return f"{etiqueta} '{archivo.name}': {e.messages[0]}"
+    return None
+
+
+def _validar_extension(archivo, extensiones_permitidas, etiqueta):
+    import os
+
+    extension = os.path.splitext(archivo.name)[1].lstrip(".").lower()
+    if extension not in extensiones_permitidas:
+        return (
+            f"{etiqueta} '{archivo.name}': extension no permitida ({extension}). "
+            f"Extensiones validas: {', '.join(extensiones_permitidas)}."
         )
-        for imagen in imagenes:
-            try:
-                mime_validador(imagen)
-            except ValidationError as e:
-                return f"Imagen '{imagen.name}': {e.messages[0]}"
-            try:
-                MaxFileSizeValidator(cons.PUBLICACION_IMAGE_MAX_SIZE, "La imagen")(imagen)
-            except ValidationError as e:
-                return f"Imagen '{imagen.name}': {e.messages[0]}"
+    return None
+
+
+def _validar_archivos_publicacion(request):
+    imagenes = request.FILES.getlist("imagenes")
+    for imagen in imagenes:
+        error = _validar_mime_y_tamano(
+            imagen,
+            cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES,
+            cons.PUBLICACION_IMAGE_MAX_SIZE,
+            "Imagen",
+        )
+        if error:
+            return error
 
     video = request.FILES.get("video")
     if video:
-        extension = os.path.splitext(video.name)[1].lstrip(".").lower()
-        if extension not in cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS:
-            return (
-                f"Video '{video.name}': extension no permitida ({extension}). "
-                f"Extensiones validas: {', '.join(cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS)}."
-            )
-        try:
-            MimeTypeValidator(
-                list(cons.PUBLICACION_VIDEO_ALLOWED_MIME_TYPES),
-                "El video",
-            )(video)
-        except ValidationError as e:
-            return f"Video '{video.name}': {e.messages[0]}"
-        try:
-            MaxFileSizeValidator(cons.PUBLICACION_VIDEO_MAX_SIZE, "El video")(video)
-        except ValidationError as e:
-            return f"Video '{video.name}': {e.messages[0]}"
+        error = _validar_extension(
+            video, cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS, "Video",
+        )
+        if error:
+            return error
+        error = _validar_mime_y_tamano(
+            video,
+            cons.PUBLICACION_VIDEO_ALLOWED_MIME_TYPES,
+            cons.PUBLICACION_VIDEO_MAX_SIZE,
+            "Video",
+        )
+        if error:
+            return error
 
     thumbnail = request.FILES.get("video_thumbnail")
     if thumbnail:
-        try:
-            MimeTypeValidator(
-                list(cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES),
-                "La miniatura del video",
-            )(thumbnail)
-        except ValidationError as e:
-            return f"Miniatura '{thumbnail.name}': {e.messages[0]}"
-        try:
-            MaxFileSizeValidator(cons.PUBLICACION_IMAGE_MAX_SIZE, "La miniatura del video")(thumbnail)
-        except ValidationError as e:
-            return f"Miniatura '{thumbnail.name}': {e.messages[0]}"
+        error = _validar_mime_y_tamano(
+            thumbnail,
+            cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES,
+            cons.PUBLICACION_IMAGE_MAX_SIZE,
+            "Miniatura del video",
+        )
+        if error:
+            return error
 
     return None
 

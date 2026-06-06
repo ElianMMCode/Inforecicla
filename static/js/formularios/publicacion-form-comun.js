@@ -58,7 +58,7 @@ function publicacionConfirmarEnvioSwal(mensaje) {
   };
   if (typeof Swal === "undefined") {
     return Promise.resolve({
-      isConfirmed: window.confirm(mensaje.text || mensaje.title || ""),
+      isConfirmed: globalThis.confirm(mensaje.text || mensaje.title || ""),
     });
   }
   return Swal.fire(configuracion);
@@ -173,7 +173,7 @@ function publicacionEnlazarMaxlength(campo, contadorId) {
   if (!campo) {
     return;
   }
-  const maximo = parseInt(campo.dataset.maxLength || campo.maxLength || "0", 10);
+  const maximo = Number.parseInt(campo.dataset.maxLength || campo.maxLength || "0", 10);
   const contador = contadorId ? document.getElementById(contadorId) : null;
   const actualizar = () => {
     if (campo.value.length > maximo) {
@@ -202,7 +202,7 @@ function publicacionValidarTipoArchivo(archivo, tiposPermitidos) {
 }
 
 function publicacionExtraerTiposAceptados(entradaArchivo) {
-  if (!entradaArchivo || !entradaArchivo.accept) {
+  if (!entradaArchivo?.accept) {
     return [];
   }
   return entradaArchivo.accept
@@ -215,7 +215,7 @@ function publicacionValidarArchivosImagen(archivos, entrada, mensajeLimite) {
   if (!archivos || archivos.length === 0) {
     return { valido: true, errores: [] };
   }
-  const limite = parseInt(entrada.dataset.maxSize || "0", 10);
+  const limite = Number.parseInt(entrada.dataset.maxSize || "0", 10);
   const tipos = publicacionExtraerTiposAceptados(entrada);
   const errores = [];
   Array.from(archivos).forEach((archivo) => {
@@ -233,7 +233,7 @@ function publicacionValidarArchivoUnico(archivo, entrada, mensajeLimite) {
   if (!archivo) {
     return { valido: true, errores: [] };
   }
-  const limite = parseInt(entrada.dataset.maxSize || "0", 10);
+  const limite = Number.parseInt(entrada.dataset.maxSize || "0", 10);
   const tipos = publicacionExtraerTiposAceptados(entrada);
   const errores = [];
   const tipo = publicacionValidarTipoArchivo(archivo, tipos);

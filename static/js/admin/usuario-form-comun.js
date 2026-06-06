@@ -178,7 +178,7 @@ function confirmarEnvioSwal(mensaje) {
   };
 
   if (typeof Swal === "undefined") {
-    return Promise.resolve({ isConfirmed: window.confirm(mensaje.text || mensaje.title) });
+    return Promise.resolve({ isConfirmed: globalThis.confirm(mensaje.text || mensaje.title) });
   }
 
   return Swal.fire(configuracion);

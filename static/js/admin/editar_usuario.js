@@ -8,6 +8,42 @@ function registrarValidacion(campo, handler) {
   campo.addEventListener("blur", () => actualizarEstadoCampo(campo));
 }
 
+function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaximo, mensajePatron) {
+  if (!campo) {
+    return true;
+  }
+
+  const valor = campo.value.trim();
+
+  if (!valor) {
+    campo.setCustomValidity(campo.required ? "Este campo es obligatorio." : "");
+    actualizarEstadoCampo(campo);
+    return !campo.required;
+  }
+
+  if (valor.length < minimo) {
+    campo.setCustomValidity(mensajeMinimo);
+    actualizarEstadoCampo(campo);
+    return false;
+  }
+
+  if (valor.length > maximo) {
+    campo.setCustomValidity(mensajeMaximo);
+    actualizarEstadoCampo(campo);
+    return false;
+  }
+
+  if (patron && !patron.test(valor)) {
+    campo.setCustomValidity(mensajePatron);
+    actualizarEstadoCampo(campo);
+    return false;
+  }
+
+  campo.setCustomValidity("");
+  actualizarEstadoCampo(campo);
+  return true;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector(".needs-validation");
 
@@ -47,42 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
   fechaMinima.setFullYear(fechaMinima.getFullYear() - 100);
   const fechaMaxima = new Date(hoy);
   fechaMaxima.setFullYear(fechaMaxima.getFullYear() - 18);
-
-  function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaximo, mensajePatron) {
-    if (!campo) {
-      return true;
-    }
-
-    const valor = campo.value.trim();
-
-    if (!valor) {
-      campo.setCustomValidity(campo.required ? "Este campo es obligatorio." : "");
-      actualizarEstadoCampo(campo);
-      return !campo.required;
-    }
-
-    if (valor.length < minimo) {
-      campo.setCustomValidity(mensajeMinimo);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    if (valor.length > maximo) {
-      campo.setCustomValidity(mensajeMaximo);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    if (patron && !patron.test(valor)) {
-      campo.setCustomValidity(mensajePatron);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    campo.setCustomValidity("");
-    actualizarEstadoCampo(campo);
-    return true;
-  }
 
   function validarNombres() {
     return validarTexto(

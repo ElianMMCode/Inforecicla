@@ -62,11 +62,11 @@
         <!-- Imágenes actuales -->
         {% if publicacion.imagenes.exists %}
         <div class="col-12">
-          <label class="form-label fw-semibold">Imágenes actuales</label>
+          <p class="form-label fw-semibold mb-1">Imágenes actuales</p>
           <div id="galeriaImagenesActuales" class="d-flex flex-wrap gap-2">
             {% for img in publicacion.imagenes.all %}
               <div class="position-relative" data-imagen-id="{{ img.id }}">
-                <img src="{{ img.imagen.url }}" alt="Imagen {{ forloop.counter }}" class="rounded border" style="width: 120px; height: 120px; object-fit: cover;">
+                <img src="{{ img.imagen.url }}" alt="Publicación {{ forloop.counter }}" class="rounded border" style="width: 120px; height: 120px; object-fit: cover;">
               </div>
             {% endfor %}
           </div>
@@ -85,10 +85,12 @@
 
         <!-- Video actual -->
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Video actual</label>
+          <p class="form-label fw-semibold mb-1">Video actual</p>
           {% if publicacion.video %}
             <div id="videoActualWrapper" class="mb-2">
-              <video src="{{ publicacion.video.url }}" controls style="max-width: 240px; max-height: 160px;" class="rounded border"></video>
+              <video src="{{ publicacion.video.url }}" controls style="max-width: 240px; max-height: 160px;" class="rounded border">
+                <track kind="captions" srclang="es" label="Español" default>
+              </video>
               <small class="d-block text-muted">Subir un nuevo video reemplazará el actual.</small>
             </div>
           {% else %}
@@ -102,7 +104,7 @@
 
         <!-- Miniatura -->
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Miniatura actual</label>
+          <p class="form-label fw-semibold mb-1">Miniatura actual</p>
           {% if publicacion.video_thumbnail %}
             <div id="thumbnailActualWrapper" class="mb-2">
               <img src="{{ publicacion.video_thumbnail.url }}" alt="Miniatura" class="rounded border" style="max-width: 200px; max-height: 120px; object-fit: cover;">

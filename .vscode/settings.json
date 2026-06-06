@@ -14,6 +14,8 @@
     "Especiales",
     "fecha",
     "Fecha",
+    "Formatos",
+    "formato",
     "Longitud",
     "Mayor",
     "Menor",
@@ -22,10 +24,15 @@
     "Mayusculas",
     "Numeros",
     "Obligatorios",
+    "permitido",
+    "puede",
     "Requisito",
+    "superar",
     "tiene",
     "texto",
     "valido",
+    "validos",
     "validar"
- }
+  ]
+}
 }
