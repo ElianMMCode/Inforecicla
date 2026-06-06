@@ -427,8 +427,8 @@ class InventoryService:
                 unidad_medida=data.get("unidadMedida"),
                 precio_compra=float(data.get("precioCompra", 0)),
                 precio_venta=float(data.get("precioVenta", 0)),
-                umbral_alerta=int(data.get("umbralAlerta", 20)),
-                umbral_critico=int(data.get("umbralCritico", 10)),
+                umbral_alerta=int(data.get("umbralAlerta", 70)),
+                umbral_critico=int(data.get("umbralCritico", 90)),
             )
 
             return {

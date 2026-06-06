@@ -13,13 +13,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.10/index.global.min.js" integrity="sha384-HdGuvrKCZygj8CCnVnDKEeLadUE5ewukD2gPhrTMa7mAwuv8XR42jzRjYTPHtgeH" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.10/index.global.min.js" integrity="sha384-Yb7nFdriTJd1ZxOdQUlCluc5Av1OO/YML77bcoOYqJTBBRmDLFHkeAJAcxrCPDGK" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales-all.global.min.js" integrity="sha384-b3nkyohRS8xPx7EZRccNSfbfWpwu3abgMRYUivIcdk9Nor6bMESVSYQh1A1LDSjo" crossorigin="anonymous"></script>
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ" crossorigin="anonymous" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" integrity="sha384-IrMr0LFnIMa9H6HhC5VVqVuWNEIwspnRLKQc0SUyPj4Cy4s02DiWDZEoJOo5WNK6" crossorigin="anonymous" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
+    <!-- Select2 CSS (vendor local) -->
+    <link rel="stylesheet" href="{% static 'vendor/select2/css/select2.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'vendor/select2/bootstrap-5-theme/select2-bootstrap-5-theme.min.css' %}" />
+    <!-- jQuery + Bootstrap JS + Select2 (vendor local) -->
+    <script src="{% static 'vendor/jquery/jquery-3.6.0.min.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js" integrity="sha384-UeeDJLxU9E9sJVeeJ8aoFWAfW2uB0Hggm59b4wtvZl8A1FnbmWnAaH4DlLdlnHKD" crossorigin="anonymous"></script>
+    <script src="{% static 'vendor/select2/js/select2.min.js' %}"></script>
+    <script src="{% static 'vendor/select2/js/i18n/es.js' %}"></script>
   </head>
   <body class="bg-light m-0">
     <div class="d-flex min-vh-100" style="min-height: 100vh;">

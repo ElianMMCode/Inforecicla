@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from config.base_models import CreacionModificacionModel, DescripcionModel
@@ -67,7 +68,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         verbose_name="Umbral de alerta (%)",
-        help_text="Porcentaje del stock que activará una alerta (0-100%). Debe ser mayor al umbral crítico",
+        help_text="Porcentaje de ocupación que activa alerta (0-100%). Debe ser MENOR al umbral crítico",
     )
 
     umbral_critico = models.SmallIntegerField(
@@ -80,7 +81,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         verbose_name="Umbral crítico (%)",
-        help_text="Porcentaje del stock que activará una alerta crítica (0-100%). Debe ser menor al umbral de alerta",
+        help_text="Porcentaje de ocupación que activa estado crítico (0-100%). Debe ser MAYOR al umbral de alerta",
     )
 
     alerta = models.CharField(
@@ -174,8 +175,40 @@ class Inventario(CreacionModificacionModel):
         else:
             self.ocupacion_actual = 0
 
+    def recalcular_alerta(self):
+        """Clasifica el estado de alerta según los umbrales configurados.
+
+        Lógica: el objetivo es acumular para luego vender, por lo que las
+        alertas se disparan cuando el inventario se está LLENANDO (no cuando
+        se está vaciando). Si la ocupación alcanza o supera `umbral_critico`
+        → CRITICO; si alcanza o supera `umbral_alerta` → ALERTA; en otro
+        caso → OK.
+        """
+        ocup = float(self.ocupacion_actual or 0)
+        if self.umbral_critico is not None and ocup >= float(self.umbral_critico):
+            self.alerta = Alerta.CRITICO
+        elif self.umbral_alerta is not None and ocup >= float(self.umbral_alerta):
+            self.alerta = Alerta.ALERTA
+        else:
+            self.alerta = Alerta.OK
+
+    def clean(self):
+        super().clean()
+        if (
+            self.umbral_alerta is not None
+            and self.umbral_critico is not None
+            and self.umbral_alerta >= self.umbral_critico
+        ):
+            raise ValidationError({
+                "umbral_alerta": (
+                    "El umbral de alerta debe ser MENOR al umbral crítico. "
+                    "La alerta se dispara ANTES que el estado crítico (a menor % de ocupación)."
+                ),
+            })
+
     def save(self, *args, **kwargs):
         self.recalcular_ocupacion()
+        self.recalcular_alerta()
         super().save(*args, **kwargs)
 
 

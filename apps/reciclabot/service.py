@@ -70,7 +70,7 @@ class AsistenteECAService:
 
         contexto += f"Inventario total: {total_inventario} unidades ({ocupacion_pct}% de capacidad; total máxima: {total_capacidad})\n"
         contexto += f"Cantidad de materiales: {materiales_count}\n"
-        contexto += f"Materiales (stock bajo): {materiales_alerta}, (críticos): {materiales_critico}\n"
+        contexto += f"Materiales (por llenarse): {materiales_alerta}, (llenos): {materiales_critico}\n"
         contexto += "\n"
 
         # -------------------
@@ -81,12 +81,12 @@ class AsistenteECAService:
             contexto += "- El inventario está vacío actualmente.\n"
         else:
             for item in items:
-                estado = "Óptimo"
+                estado = "Disponible"
                 if hasattr(item, "alerta") and item.alerta:
                     if item.alerta == "critico":
                         estado = "Crítico"
                     elif item.alerta == "alerta":
-                        estado = "Bajo"
+                        estado = "Por llenarse"
                 contexto += (
                     f"- {item.material.nombre}: {item.stock_actual}/{item.capacidad_maxima} {item.unidad_medida}, "
                     f"ocupación: {item.ocupacion_actual}%, precio compra: ${item.precio_compra}, precio venta: ${item.precio_venta} (Estado: {estado})\n"
