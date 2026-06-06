@@ -564,6 +564,20 @@ def _build_resumen_context(punto):
     }
 
 
+@gestor_eca_or_admin_required
+@require_GET
+def resumen_data_json(request):
+    """
+    Endpoint JSON para refrescar el resumen de forma asíncrona.
+    Devuelve los mismos datos que _build_resumen_context pero como JSON.
+    """
+    punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
+    asistente = AsistenteECAService()
+    datos = asistente.generar_datos_resumen(punto)
+    datos = _decimal_to_float_recursive(datos)
+    return JsonResponse(datos)
+
+
 def _build_default_context(punto, seccion):
     """
     Construye el contexto por defecto para las demás secciones.
