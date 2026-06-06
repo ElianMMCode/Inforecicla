@@ -217,6 +217,7 @@ class AsistenteECAService:
         from apps.operations.models import CompraInventario, VentaInventario
         from apps.ecas.models import CentroAcopio
         from config.constants import Visibilidad
+        from collections import defaultdict
         import datetime
 
         # -------------------
@@ -388,6 +389,193 @@ class AsistenteECAService:
                 'celular': getattr(gestor, 'celular', '')
             }
 
+        # -------------------
+        # 8. Valor total del inventario
+        # -------------------
+        valor_total_inventario = 0.0
+        for item in items:
+            precio = item.precio_compra or 0
+            if item.stock_actual and precio:
+                valor_total_inventario += float(item.stock_actual) * float(precio)
+        valor_total_inventario = round(valor_total_inventario, 2)
+
+        # -------------------
+        # 9. Salud general del punto
+        # -------------------
+        salud_punto = "OK"
+        if materiales_critico > 0 or (total_capacidad and (float(total_inventario) / float(total_capacidad)) > 0.9):
+            salud_punto = "CRITICO"
+        elif materiales_alerta > 0 or (total_capacidad and (float(total_inventario) / float(total_capacidad)) > 0.7):
+            salud_punto = "ATENCION"
+
+        # -------------------
+        # 10. Comparativa mes anterior
+        # -------------------
+        ultimo_dia_mes_anterior_dt = primero_mes - datetime.timedelta(seconds=1)
+        primer_dia_mes_anterior_dt = ultimo_dia_mes_anterior_dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        entradas_mes_anterior = CompraInventario.objects.filter(
+            inventario__punto_eca=punto_eca,
+            fecha_compra__gte=primer_dia_mes_anterior_dt,
+            fecha_compra__lt=primero_mes,
+        ).aggregate(total=Sum("cantidad"))["total"] or 0
+        salidas_mes_anterior = VentaInventario.objects.filter(
+            inventario__punto_eca=punto_eca,
+            fecha_venta__gte=primer_dia_mes_anterior_dt,
+            fecha_venta__lt=primero_mes,
+        ).aggregate(total=Sum("cantidad"))["total"] or 0
+
+        entradas_mes_f = float(entradas_mes)
+        salidas_mes_f = float(salidas_mes)
+        entradas_mes_anterior_f = float(entradas_mes_anterior)
+        salidas_mes_anterior_f = float(salidas_mes_anterior)
+
+        if entradas_mes_anterior_f > 0:
+            variacion_entradas = round(((entradas_mes_f - entradas_mes_anterior_f) / entradas_mes_anterior_f) * 100, 1)
+        elif entradas_mes_f > 0:
+            variacion_entradas = 100.0
+        else:
+            variacion_entradas = 0.0
+
+        if salidas_mes_anterior_f > 0:
+            variacion_salidas = round(((salidas_mes_f - salidas_mes_anterior_f) / salidas_mes_anterior_f) * 100, 1)
+        elif salidas_mes_f > 0:
+            variacion_salidas = 100.0
+        else:
+            variacion_salidas = 0.0
+
+        # -------------------
+        # 11. Transacciones y balance neto del mes
+        # -------------------
+        transacciones_mes = (
+            CompraInventario.objects.filter(
+                inventario__punto_eca=punto_eca, fecha_compra__gte=primero_mes
+            ).count()
+            + VentaInventario.objects.filter(
+                inventario__punto_eca=punto_eca, fecha_venta__gte=primero_mes
+            ).count()
+        )
+        balance_neto_mes = round(entradas_mes_f - salidas_mes_f, 2)
+
+        # -------------------
+        # 12. Top 3 materiales con más movimiento este mes
+        # -------------------
+        materiales_mov = defaultdict(lambda: {"kg": 0.0, "movimientos": 0})
+        for mov in CompraInventario.objects.filter(
+            inventario__punto_eca=punto_eca, fecha_compra__gte=primero_mes
+        ).select_related("inventario__material"):
+            mat_nombre = (
+                mov.inventario.material.nombre
+                if mov.inventario and mov.inventario.material
+                else "Desconocido"
+            )
+            materiales_mov[mat_nombre]["kg"] += float(mov.cantidad)
+            materiales_mov[mat_nombre]["movimientos"] += 1
+        for mov in VentaInventario.objects.filter(
+            inventario__punto_eca=punto_eca, fecha_venta__gte=primero_mes
+        ).select_related("inventario__material"):
+            mat_nombre = (
+                mov.inventario.material.nombre
+                if mov.inventario and mov.inventario.material
+                else "Desconocido"
+            )
+            materiales_mov[mat_nombre]["kg"] += float(mov.cantidad)
+            materiales_mov[mat_nombre]["movimientos"] += 1
+        top_materiales = [
+            {
+                "nombre": nombre,
+                "movimientos": data["movimientos"],
+                "totalKg": round(data["kg"], 2),
+            }
+            for nombre, data in sorted(
+                materiales_mov.items(), key=lambda x: x[1]["kg"], reverse=True
+            )[:3]
+        ]
+
+        # -------------------
+        # 13. Tendencia diaria últimos 7 días
+        # -------------------
+        inicio_7d = (ahora - datetime.timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+        dias_dict = {}
+        for i in range(7):
+            dia = inicio_7d + datetime.timedelta(days=i)
+            dias_dict[dia.date().isoformat()] = {
+                "fecha": dia.date().isoformat(),
+                "entradas": 0.0,
+                "salidas": 0.0,
+            }
+        for mov in CompraInventario.objects.filter(
+            inventario__punto_eca=punto_eca, fecha_compra__gte=inicio_7d
+        ):
+            clave = mov.fecha_compra.date().isoformat()
+            if clave in dias_dict:
+                dias_dict[clave]["entradas"] += float(mov.cantidad)
+        for mov in VentaInventario.objects.filter(
+            inventario__punto_eca=punto_eca, fecha_venta__gte=inicio_7d
+        ):
+            clave = mov.fecha_venta.date().isoformat()
+            if clave in dias_dict:
+                dias_dict[clave]["salidas"] += float(mov.cantidad)
+        tendencia_diaria = [
+            {
+                "fecha": d["fecha"],
+                "entradas": round(d["entradas"], 2),
+                "salidas": round(d["salidas"], 2),
+            }
+            for d in dias_dict.values()
+        ]
+
+        # -------------------
+        # 14. Distribución por categoría
+        # -------------------
+        categorias_dict = defaultdict(lambda: {"items": 0, "kg": 0.0})
+        for item in items:
+            cat_nombre = "Sin categoría"
+            if item.material and getattr(item.material, "categoria", None):
+                cat_nombre = item.material.categoria.nombre
+            categorias_dict[cat_nombre]["items"] += 1
+            categorias_dict[cat_nombre]["kg"] += float(item.stock_actual)
+        total_kg_cats = sum(c["kg"] for c in categorias_dict.values())
+        categoria_breakdown = []
+        for nombre, data in categorias_dict.items():
+            pct = round((data["kg"] / total_kg_cats) * 100, 1) if total_kg_cats else 0.0
+            categoria_breakdown.append(
+                {
+                    "nombre": nombre,
+                    "items": data["items"],
+                    "kg": round(data["kg"], 2),
+                    "porcentaje": pct,
+                }
+            )
+        categoria_breakdown.sort(key=lambda x: x["porcentaje"], reverse=True)
+
+        # -------------------
+        # 15. Días desde último movimiento
+        # -------------------
+        ultima_compra_dt = CompraInventario.objects.filter(
+            inventario__punto_eca=punto_eca
+        ).order_by("-fecha_compra").values_list("fecha_compra", flat=True).first()
+        ultima_venta_dt = VentaInventario.objects.filter(
+            inventario__punto_eca=punto_eca
+        ).order_by("-fecha_venta").values_list("fecha_venta", flat=True).first()
+        candidatos = [d for d in (ultima_compra_dt, ultima_venta_dt) if d is not None]
+        if candidatos:
+            ultimo_mov_dt = max(candidatos)
+            if ultimo_mov_dt.tzinfo is None:
+                ultimo_mov_dt = pytz.UTC.localize(ultimo_mov_dt)
+            if ahora.tzinfo is None:
+                ahora_tz = pytz.UTC.localize(ahora)
+            else:
+                ahora_tz = ahora
+            dias_ultimo_movimiento = (ahora_tz - ultimo_mov_dt).days
+        else:
+            dias_ultimo_movimiento = None
+
+        # -------------------
+        # 16. Timestamp de generación
+        # -------------------
+        ultima_actualizacion = datetime.datetime.now().isoformat()
+
         import logging
         # LOG Principal para debug completo de los datos enviados al template
         logging.warning(f"RESUMEN puntoECA={punto_eca.pk if hasattr(punto_eca,'pk') else punto_eca} KPIs: inventarioTotal={total_inventario}, capacidadTotal={total_capacidad}, ocupacion_pct={ocupacion_pct}, entradasMes={entradas_mes}, salidasMes={salidas_mes}, materialesCount={materiales_count}, materialesAlerta={materiales_alerta}, materialesCritico={materiales_critico}")
@@ -404,6 +592,18 @@ class AsistenteECAService:
             'materialesCount': materiales_count,
             'materialesAlerta': materiales_alerta,
             'materialesCritico': materiales_critico,
+            'valorTotalInventario': valor_total_inventario,
+            'transaccionesMes': transacciones_mes,
+            'balanceNetoMes': balance_neto_mes,
+            'saludPunto': salud_punto,
+
+            # Comparativa mes anterior
+            'mesAnterior': {
+                'entradas': entradas_mes_anterior,
+                'salidas': salidas_mes_anterior,
+                'variacionEntradas': variacion_entradas,
+                'variacionSalidas': variacion_salidas,
+            },
 
             # Datos detallados
             'movimientos': movimientos_formateados,
@@ -412,6 +612,11 @@ class AsistenteECAService:
             'materialesAlertas': materiales_alertas,
             'centrosAcopio': centros_info,
             'gestor': gestor_info,
+            'topMateriales': top_materiales,
+            'tendenciaDiaria': tendencia_diaria,
+            'categoriaBreakdown': categoria_breakdown,
+            'diasUltimoMovimiento': dias_ultimo_movimiento,
+            'ultimaActualizacion': ultima_actualizacion,
 
             # Información del punto
             'puntoEca': {
