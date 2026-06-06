@@ -1,3 +1,16 @@
+const PUBLICACION_LIMITE_IMAGEN_MB = 6;
+const PUBLICACION_LIMITE_VIDEO_MB = 100;
+const PUBLICACION_MENSAJE_LIMITE_IMAGEN = `La imagen supera el límite de ${PUBLICACION_LIMITE_IMAGEN_MB} MB`;
+const PUBLICACION_MENSAJE_LIMITE_VIDEO = `El video supera el límite de ${PUBLICACION_LIMITE_VIDEO_MB} MB`;
+const PUBLICACION_MENSAJE_LIMITE_THUMBNAIL = `La miniatura supera el límite de ${PUBLICACION_LIMITE_IMAGEN_MB} MB`;
+const PUBLICACION_BYTES_POR_MB = 1024 * 1024;
+const PUBLICACION_IMAGEN_PREVIEW_ESTILO = "position:relative;width:80px;height:80px;";
+const PUBLICACION_IMAGEN_PREVIEW_IMG_ESTILO =
+  "width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #198754;";
+const PUBLICACION_VIDEO_PREVIEW_ESTILO =
+  "width:100%;max-height:200px;border-radius:8px;border:2px solid #198754;";
+const PUBLICACION_COLOR_CONFIRMACION = "#198754";
+
 function publicacionSuprimirValidacionNativa(formulario) {
   if (!formulario) {
     return;
@@ -28,7 +41,7 @@ function publicacionMostrarErroresSwal(errores) {
     icon: "error",
     title: "Corrige los campos",
     html,
-    confirmButtonColor: "#198754",
+    confirmButtonColor: PUBLICACION_COLOR_CONFIRMACION,
   });
 }
 
@@ -53,7 +66,7 @@ function publicacionConfirmarEnvioSwal(mensaje) {
     showCancelButton: true,
     confirmButtonText: mensaje.confirmText || "Sí",
     cancelButtonText: "Cancelar",
-    confirmButtonColor: "#198754",
+    confirmButtonColor: PUBLICACION_COLOR_CONFIRMACION,
     cancelButtonColor: "#6c757d",
   };
   if (typeof Swal === "undefined") {
@@ -62,6 +75,18 @@ function publicacionConfirmarEnvioSwal(mensaje) {
     });
   }
   return Swal.fire(configuracion);
+}
+
+function publicacionMostrarErrorSwal(titulo, errores) {
+  if (typeof Swal === "undefined") {
+    return;
+  }
+  Swal.fire({
+    icon: "error",
+    title: titulo,
+    text: errores.join(" "),
+    confirmButtonColor: PUBLICACION_COLOR_CONFIRMACION,
+  });
 }
 
 function publicacionValidarTamanoArchivos(archivos, limiteBytes, mensajeLimite) {
@@ -93,20 +118,7 @@ function publicacionRenderPreviewImagenes(archivos, contenedor, limiteBytes) {
   if (!resultado.valido) {
     return resultado;
   }
-  Array.from(archivos).forEach((archivo) => {
-    const reader = new FileReader();
-    reader.onload = (evento) => {
-      const wrapper = document.createElement("div");
-      wrapper.style.cssText = "position:relative;width:80px;height:80px;";
-      const img = document.createElement("img");
-      img.src = evento.target.result;
-      img.style.cssText =
-        "width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #198754;";
-      wrapper.appendChild(img);
-      contenedor.appendChild(wrapper);
-    };
-    reader.readAsDataURL(archivo);
-  });
+  publicacionAgregarImagenesAPreview(archivos, contenedor);
   return resultado;
 }
 
@@ -121,13 +133,7 @@ function publicacionRenderPreviewVideo(archivo, contenedor, wrapperThumbnail) {
     }
     return;
   }
-  const url = URL.createObjectURL(archivo);
-  const video = document.createElement("video");
-  video.src = url;
-  video.controls = true;
-  video.style.cssText =
-    "width:100%;max-height:200px;border-radius:8px;border:2px solid #198754;";
-  contenedor.appendChild(video);
+  publicacionAgregarVideoAPreview(archivo, contenedor);
   if (wrapperThumbnail) {
     wrapperThumbnail.style.display = "";
   }
@@ -243,4 +249,160 @@ function publicacionValidarArchivoUnico(archivo, entrada, mensajeLimite) {
     errores.push(`"${archivo.name}": ${mensajeLimite} (${(archivo.size / 1048576).toFixed(2)} MB).`);
   }
   return { valido: errores.length === 0, errores };
+}
+
+function publicacionAgregarImagenesAPreview(archivos, contenedor) {
+  Array.from(archivos).forEach((archivo) => {
+    const reader = new FileReader();
+    reader.onload = (evento) => {
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = PUBLICACION_IMAGEN_PREVIEW_ESTILO;
+      const img = document.createElement("img");
+      img.src = evento.target.result;
+      img.style.cssText = PUBLICACION_IMAGEN_PREVIEW_IMG_ESTILO;
+      wrapper.appendChild(img);
+      contenedor.appendChild(wrapper);
+    };
+    reader.readAsDataURL(archivo);
+  });
+}
+
+function publicacionAgregarVideoAPreview(archivo, contenedor) {
+  const url = URL.createObjectURL(archivo);
+  const video = document.createElement("video");
+  video.src = url;
+  video.controls = true;
+  video.style.cssText = PUBLICACION_VIDEO_PREVIEW_ESTILO;
+  contenedor.appendChild(video);
+}
+
+function publicacionRechazarImagenes(inputImagenes, alertImagenes, previewImagenes, errores) {
+  publicacionMostrarAlertaImagenes(alertImagenes, errores.join(" "));
+  inputImagenes.value = "";
+  if (previewImagenes) {
+    previewImagenes.innerHTML = "";
+  }
+}
+
+function publicacionRechazarVideo(inputVideo, previewVideo, wrapperThumbnail, errores) {
+  inputVideo.value = "";
+  if (previewVideo) {
+    previewVideo.innerHTML = "";
+  }
+  if (wrapperThumbnail) {
+    wrapperThumbnail.style.display = "none";
+  }
+  publicacionMostrarErrorSwal("Video no válido", errores);
+}
+
+function publicacionRechazarThumbnail(inputThumbnail, previewThumbnail, errores) {
+  inputThumbnail.value = "";
+  if (previewThumbnail) {
+    previewThumbnail.innerHTML = "";
+  }
+  publicacionMostrarErrorSwal("Miniatura no válida", errores);
+}
+
+function publicacionValidarBloqueImagenes(inputImagenes, alertImagenes, previewImagenes) {
+  if (!inputImagenes?.files?.length) {
+    publicacionOcultarAlertaImagenes(alertImagenes);
+    return { valido: true, errores: [] };
+  }
+  const resultado = publicacionValidarArchivosImagen(
+    inputImagenes.files,
+    inputImagenes,
+    PUBLICACION_MENSAJE_LIMITE_IMAGEN,
+  );
+  if (!resultado.valido) {
+    publicacionRechazarImagenes(inputImagenes, alertImagenes, previewImagenes, resultado.errores);
+    return resultado;
+  }
+  publicacionOcultarAlertaImagenes(alertImagenes);
+  return resultado;
+}
+
+function publicacionValidarBloqueVideo(inputVideo, previewVideo, wrapperThumbnail) {
+  if (!inputVideo?.files?.length) {
+    return { valido: true, errores: [] };
+  }
+  const resultado = publicacionValidarArchivoUnico(
+    inputVideo.files[0],
+    inputVideo,
+    PUBLICACION_MENSAJE_LIMITE_VIDEO,
+  );
+  if (!resultado.valido) {
+    publicacionRechazarVideo(inputVideo, previewVideo, wrapperThumbnail, resultado.errores);
+    return resultado;
+  }
+  return resultado;
+}
+
+function publicacionValidarBloqueThumbnail(inputThumbnail, previewThumbnail) {
+  if (!inputThumbnail?.files?.length) {
+    return { valido: true, errores: [] };
+  }
+  const resultado = publicacionValidarArchivoUnico(
+    inputThumbnail.files[0],
+    inputThumbnail,
+    PUBLICACION_MENSAJE_LIMITE_THUMBNAIL,
+  );
+  if (!resultado.valido) {
+    publicacionRechazarThumbnail(inputThumbnail, previewThumbnail, resultado.errores);
+    return resultado;
+  }
+  return resultado;
+}
+
+function publicacionRecolectarErrores(bloques) {
+  return bloques.flatMap((bloque) => (bloque.valido ? [] : bloque.errores));
+}
+
+function publicacionEjecutarValidaciones(bloques) {
+  const errores = publicacionRecolectarErrores(bloques);
+  return { valido: errores.length === 0, errores };
+}
+
+function publicacionObtenerCamposValidacion(form, nombres) {
+  return nombres
+    .map((nombre) => form.querySelector(`[name="${nombre}"]`))
+    .filter(Boolean);
+}
+
+function publicacionInicializarControlesBasicos(form, titulo, contenido) {
+  publicacionSuprimirValidacionNativa(form);
+  publicacionEnlazarMaxlength(titulo, null);
+  publicacionEnlazarMaxlength(contenido, "pub_contenido_contador");
+}
+
+function publicacionManejarEnvioFormulario(form, configuracionSwal, camposValidacion) {
+  return form.addEventListener("submit", (evento) => {
+    if (configuracionSwal.validadorArchivos) {
+      const validacion = configuracionSwal.validadorArchivos();
+      if (!validacion.valido) {
+        evento.preventDefault();
+        evento.stopPropagation();
+        form.classList.add("was-validated");
+        publicacionMostrarErroresSwal(validacion.errores);
+        return;
+      }
+    }
+    if (!form.checkValidity()) {
+      evento.preventDefault();
+      evento.stopPropagation();
+      form.classList.add("was-validated");
+      publicacionMostrarErroresSwal(publicacionObtenerErroresFormulario(camposValidacion));
+      return;
+    }
+    evento.preventDefault();
+    form.classList.add("was-validated");
+    publicacionConfirmarEnvioSwal({
+      title: configuracionSwal.title,
+      text: configuracionSwal.text,
+      confirmText: configuracionSwal.confirmText,
+    }).then((resultado) => {
+      if (resultado.isConfirmed) {
+        form.submit();
+      }
+    });
+  });
 }

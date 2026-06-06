@@ -555,71 +555,10 @@ def _render_crear_publicacion_con_error(request, categorias, publicaciones_habil
     )
 
 
-def _validar_mime_y_tamano(archivo, mimes_permitidos, limite_bytes, etiqueta):
-    from apps.core.upload_validators import MaxFileSizeValidator, MimeTypeValidator
-
-    try:
-        MimeTypeValidator(list(mimes_permitidos), etiqueta)(archivo)
-    except ValidationError as e:
-        return f"{etiqueta} '{archivo.name}': {e.messages[0]}"
-    try:
-        MaxFileSizeValidator(limite_bytes, etiqueta)(archivo)
-    except ValidationError as e:
-        return f"{etiqueta} '{archivo.name}': {e.messages[0]}"
-    return None
-
-
-def _validar_extension(archivo, extensiones_permitidas, etiqueta):
-    import os
-
-    extension = os.path.splitext(archivo.name)[1].lstrip(".").lower()
-    if extension not in extensiones_permitidas:
-        return (
-            f"{etiqueta} '{archivo.name}': extension no permitida ({extension}). "
-            f"Extensiones validas: {', '.join(extensiones_permitidas)}."
-        )
-    return None
-
-
 def _validar_archivos_publicacion(request):
-    imagenes = request.FILES.getlist("imagenes")
-    for imagen in imagenes:
-        error = _validar_mime_y_tamano(
-            imagen,
-            cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES,
-            cons.PUBLICACION_IMAGE_MAX_SIZE,
-            "Imagen",
-        )
-        if error:
-            return error
-
-    video = request.FILES.get("video")
-    if video:
-        error = _validar_extension(
-            video, cons.PUBLICACION_VIDEO_ALLOWED_EXTENSIONS, "Video",
-        )
-        if error:
-            return error
-        error = _validar_mime_y_tamano(
-            video,
-            cons.PUBLICACION_VIDEO_ALLOWED_MIME_TYPES,
-            cons.PUBLICACION_VIDEO_MAX_SIZE,
-            "Video",
-        )
-        if error:
-            return error
-
-    thumbnail = request.FILES.get("video_thumbnail")
-    if thumbnail:
-        error = _validar_mime_y_tamano(
-            thumbnail,
-            cons.PUBLICACION_IMAGE_ALLOWED_MIME_TYPES,
-            cons.PUBLICACION_IMAGE_MAX_SIZE,
-            "Miniatura del video",
-        )
-        if error:
-            return error
-
+    _, error = AdminCatalogService._validar_archivos_publicacion(request.FILES)
+    if error:
+        return error["message"]
     return None
 
 
