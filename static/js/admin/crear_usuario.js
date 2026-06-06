@@ -1,22 +1,3 @@
-function formatDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function actualizarEstadoCampo(campo) {
-  if (!campo) {
-    return;
-  }
-
-  const valido = campo.checkValidity();
-  const tieneValor = campo.value !== "";
-
-  campo.classList.toggle("is-valid", valido && tieneValor);
-  campo.classList.toggle("is-invalid", !valido && (tieneValor || campo.required));
-}
-
 function actualizarRequisito(elemento, cumple, texto) {
   if (!elemento) {
     return;
@@ -28,35 +9,6 @@ function actualizarRequisito(elemento, cumple, texto) {
   elemento.innerHTML = cumple
     ? `✅ <span class="text-success">${texto}</span>`
     : `❌ <span class="text-danger">${texto}</span>`;
-}
-
-function escaparHtml(texto) {
-  return String(texto).replace(/[&<>"']/g, (caracter) => {
-    const mapa = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    };
-
-    return mapa[caracter] || caracter;
-  });
-}
-
-function mostrarErroresSwal(errores) {
-  if (typeof Swal === "undefined" || !errores || errores.length === 0) {
-    return;
-  }
-
-  Swal.fire({
-    icon: "error",
-    title: "Corrige los campos",
-    html: `<div class="text-start"><ul class="mb-0 ps-3">${errores
-      .map((error) => `<li>${escaparHtml(error)}</li>`)
-      .join("")}</ul></div>`,
-    confirmButtonColor: "#198754",
-  });
 }
 
 function initPasswordVisibilityToggle() {
@@ -95,19 +47,6 @@ function limitarUnSoloArroba(valor) {
   }
 
   return texto.slice(0, primerArroba + 1) + texto.slice(primerArroba + 1).replaceAll("@", "");
-}
-
-function normalizarSoloDigitos(campo) {
-  if (!campo) {
-    return;
-  }
-
-  const valor = campo.value;
-  const soloDigitos = valor.replace(/\D/g, "");
-
-  if (valor !== soloDigitos) {
-    campo.value = soloDigitos;
-  }
 }
 
 function validarLongitudTexto(campo, minimo, maximo, mensajeMinimo, mensajeMaximo) {
@@ -182,10 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const camposObligatorios = Array.from(form.querySelectorAll("[required]"));
   const camposValidacionRapida = [nombresInput, apellidosInput, emailInput, celularInput, tipoDocumentoInput, localidadInput, numeroDocumentoInput, fechaNacimientoInput, passwordInput, passwordConfirmInput].filter(Boolean);
   const today = new Date();
-  const fechaMaximaMenorEdad = new Date(today);
-
-  fechaMaximaMenorEdad.setFullYear(fechaMaximaMenorEdad.getFullYear() - 18);
-  fechaMaximaMenorEdad.setDate(fechaMaximaMenorEdad.getDate() - 1);
+  const fechaMaximaMenorEdad = formatDate(new Date(today.getFullYear() - 18, today.getMonth(), today.getDate() - 1));
 
   function actualizarEstadoCajaContrasena(cumpleTodo) {
     if (!passwordRequirementsBox) {
@@ -234,13 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const dominio = email.split("@").pop() || "";
-    const dominioValido =
-      dominio.endsWith(".com") ||
-      dominio.endsWith(".co") ||
-      dominio.endsWith(".edu.co") ||
-      dominio.endsWith(".com.co");
-
-    if (!dominioValido) {
+    if (!dominio.endsWith((".com", ".co", ".edu.co", ".com.co"))) {
       emailInput.setCustomValidity("El correo electrónico debe terminar en .com, .co, .edu.co o .com.co.");
       actualizarEstadoCampo(emailInput);
       return false;
@@ -249,81 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
     emailInput.setCustomValidity("");
     actualizarEstadoCampo(emailInput);
     return true;
-  }
-
-  function validarNumeroDocumento() {
-    if (!numeroDocumentoInput) {
-      return true;
-    }
-
-    normalizarSoloDigitos(numeroDocumentoInput);
-
-    if (!numeroDocumentoInput.value) {
-      numeroDocumentoInput.setCustomValidity("");
-      actualizarEstadoCampo(numeroDocumentoInput);
-      return true;
-    }
-
-    const esValido = /^\d{6,20}$/.test(numeroDocumentoInput.value);
-    numeroDocumentoInput.setCustomValidity(esValido ? "" : "El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.");
-    actualizarEstadoCampo(numeroDocumentoInput);
-    return esValido;
-  }
-
-  function validarLocalidad() {
-    if (!localidadInput) {
-      return true;
-    }
-
-    const tieneLocalidad = String(localidadInput.value || "").trim() !== "";
-    localidadInput.setCustomValidity(tieneLocalidad ? "" : "Selecciona una localidad.");
-    actualizarEstadoCampo(localidadInput);
-    return tieneLocalidad;
-  }
-
-  function obtenerErroresFormulario() {
-    return Array.from(new Set(
-      camposValidacionRapida
-        .map((campo) => campo.validationMessage)
-        .filter(Boolean),
-    ));
-  }
-
-  function validarFechaNacimiento() {
-    if (!fechaNacimientoInput) {
-      return true;
-    }
-
-    if (!fechaNacimientoInput.value) {
-      fechaNacimientoInput.setCustomValidity("");
-      actualizarEstadoCampo(fechaNacimientoInput);
-      return true;
-    }
-
-    const esMenor = fechaNacimientoInput.value <= formatDate(fechaMaximaMenorEdad);
-
-    if (!esMenor) {
-      fechaNacimientoInput.setCustomValidity("La fecha debe corresponder a un menor de edad.");
-      actualizarEstadoCampo(fechaNacimientoInput);
-      return false;
-    }
-
-    fechaNacimientoInput.setCustomValidity("");
-    actualizarEstadoCampo(fechaNacimientoInput);
-    return true;
-  }
-
-  function validarCelular() {
-    if (!celularInput) {
-      return true;
-    }
-
-    normalizarSoloDigitos(celularInput);
-
-    const esValido = /^3\d{9}$/.test(celularInput.value);
-    celularInput.setCustomValidity(esValido ? "" : "El celular debe iniciar con 3 y tener 10 dígitos.");
-    actualizarEstadoCampo(celularInput);
-    return esValido;
   }
 
   function actualizarCoincidenciaContrasena() {
@@ -404,19 +259,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (campo === fechaNacimientoInput) {
-        validarFechaNacimiento();
+        validarFechaNacimiento(fechaNacimientoInput, fechaMaximaMenorEdad);
       }
 
       if (campo === celularInput) {
-        validarCelular();
+        validarCelular(celularInput);
       }
 
       if (campo === numeroDocumentoInput) {
-        validarNumeroDocumento();
+        validarNumeroDocumento(numeroDocumentoInput);
       }
 
       if (campo === localidadInput) {
-        validarLocalidad();
+        validarLocalidad(localidadInput, "Selecciona una localidad.");
         return;
       }
 
@@ -452,20 +307,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (numeroDocumentoInput) {
-    numeroDocumentoInput.addEventListener("input", validarNumeroDocumento);
+    numeroDocumentoInput.addEventListener("input", () => validarNumeroDocumento(numeroDocumentoInput));
   }
 
   if (localidadInput) {
-    localidadInput.addEventListener("change", validarLocalidad);
-    localidadInput.addEventListener("input", validarLocalidad);
+    localidadInput.addEventListener("change", () => validarLocalidad(localidadInput, "Selecciona una localidad."));
+    localidadInput.addEventListener("input", () => validarLocalidad(localidadInput, "Selecciona una localidad."));
   }
 
   if (celularInput) {
-    celularInput.addEventListener("input", validarCelular);
+    celularInput.addEventListener("input", () => validarCelular(celularInput));
   }
 
   if (fechaNacimientoInput) {
-    fechaNacimientoInput.addEventListener("input", validarFechaNacimiento);
+    fechaNacimientoInput.addEventListener("input", () => validarFechaNacimiento(fechaNacimientoInput, fechaMaximaMenorEdad));
   }
 
   camposObligatorios.forEach((campo) => actualizarEstadoCampo(campo));
@@ -473,20 +328,20 @@ document.addEventListener("DOMContentLoaded", () => {
   validarNombreCompleto(nombresInput, 3, 30, "El nombre debe tener al menos 3 caracteres.", "El nombre no puede superar 30 caracteres.");
   validarNombreCompleto(apellidosInput, 3, 40, "Los apellidos deben tener al menos 3 caracteres.", "Los apellidos no pueden superar 40 caracteres.");
   validarEmail();
-  validarNumeroDocumento();
-  validarLocalidad();
-  validarCelular();
-  validarFechaNacimiento();
+  validarNumeroDocumento(numeroDocumentoInput);
+  validarLocalidad(localidadInput, "Selecciona una localidad.");
+  validarCelular(celularInput);
+  validarFechaNacimiento(fechaNacimientoInput, fechaMaximaMenorEdad);
 
   form.addEventListener("submit", (evento) => {
     validarNombreCompleto(nombresInput, 3, 30, "El nombre debe tener al menos 3 caracteres.", "El nombre no puede superar 30 caracteres.");
     validarNombreCompleto(apellidosInput, 3, 40, "Los apellidos deben tener al menos 3 caracteres.", "Los apellidos no pueden superar 40 caracteres.");
     validarEmail();
     actualizarCoincidenciaContrasena();
-    validarFechaNacimiento();
-    validarCelular();
-    validarNumeroDocumento();
-    validarLocalidad();
+    validarFechaNacimiento(fechaNacimientoInput, fechaMaximaMenorEdad);
+    validarCelular(celularInput);
+    validarNumeroDocumento(numeroDocumentoInput);
+    validarLocalidad(localidadInput, "Selecciona una localidad.");
 
     camposObligatorios.forEach((campo) => actualizarEstadoCampo(campo));
     actualizarEstadoCampo(passwordInput);
@@ -496,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
       evento.preventDefault();
       evento.stopPropagation();
       form.classList.add("was-validated");
-      mostrarErroresSwal(obtenerErroresFormulario());
+      mostrarErroresSwal(obtenerErroresFormulario(camposValidacionRapida));
 
       return;
     }
@@ -504,20 +359,10 @@ document.addEventListener("DOMContentLoaded", () => {
     evento.preventDefault();
     form.classList.add("was-validated");
 
-    if (typeof Swal === "undefined") {
-      form.submit();
-      return;
-    }
-
-    Swal.fire({
-      icon: "question",
+    confirmarEnvioSwal({
       title: "¿Crear usuario?",
       text: "El formulario está completo y listo para enviarse.",
-      showCancelButton: true,
-      confirmButtonText: "Sí, crear",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "#198754",
-      cancelButtonColor: "#6c757d",
+      confirmText: "Sí, crear",
     }).then((resultado) => {
       if (resultado.isConfirmed) {
         form.submit();

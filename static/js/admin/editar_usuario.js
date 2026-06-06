@@ -1,87 +1,3 @@
-function formatDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function actualizarEstadoCampo(campo) {
-  if (!campo) {
-    return;
-  }
-
-  const valido = campo.checkValidity();
-  const tieneValor = String(campo.value || "").trim() !== "";
-
-  campo.classList.toggle("is-valid", valido && tieneValor);
-  campo.classList.toggle("is-invalid", !valido && (tieneValor || campo.required));
-}
-
-function escaparHtml(texto) {
-  return String(texto).replace(/[&<>"']/g, (caracter) => {
-    const mapa = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    };
-
-    return mapa[caracter] || caracter;
-  });
-}
-
-function mostrarErroresSwal(errores) {
-  if (typeof Swal === "undefined" || !errores || errores.length === 0) {
-    return;
-  }
-
-  Swal.fire({
-    icon: "error",
-    title: "Corrige los campos",
-    html: `<div class="text-start"><ul class="mb-0 ps-3">${errores
-      .map((error) => `<li>${escaparHtml(error)}</li>`)
-      .join("")}</ul></div>`,
-    confirmButtonColor: "#198754",
-  });
-}
-
-function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaximo, mensajePatron) {
-  if (!campo) {
-    return true;
-  }
-
-  const valor = campo.value.trim();
-
-  if (!valor) {
-    campo.setCustomValidity(campo.required ? "Este campo es obligatorio." : "");
-    actualizarEstadoCampo(campo);
-    return !campo.required;
-  }
-
-  if (valor.length < minimo) {
-    campo.setCustomValidity(mensajeMinimo);
-    actualizarEstadoCampo(campo);
-    return false;
-  }
-
-  if (valor.length > maximo) {
-    campo.setCustomValidity(mensajeMaximo);
-    actualizarEstadoCampo(campo);
-    return false;
-  }
-
-  if (patron && !patron.test(valor)) {
-    campo.setCustomValidity(mensajePatron);
-    actualizarEstadoCampo(campo);
-    return false;
-  }
-
-  campo.setCustomValidity("");
-  actualizarEstadoCampo(campo);
-  return true;
-}
-
 function registrarValidacion(campo, handler) {
   if (!campo) {
     return;
@@ -122,8 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
   ].filter(Boolean);
 
   const nombresRegex = /^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$/;
-  const numeroDocumentoRegex = /^\d{6,20}$/;
-  const celularRegex = /^3\d{9}$/;
   const tiposDocumentoValidos = new Set(["CC", "TI", "CE", "PA", "NIT"]);
   const tiposUsuarioValidos = new Set(["ADM", "CIU", "GECA"]);
   const estadosValidos = new Set(["activo", "inactivo"]);
@@ -133,6 +47,42 @@ document.addEventListener("DOMContentLoaded", () => {
   fechaMinima.setFullYear(fechaMinima.getFullYear() - 100);
   const fechaMaxima = new Date(hoy);
   fechaMaxima.setFullYear(fechaMaxima.getFullYear() - 18);
+
+  function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaximo, mensajePatron) {
+    if (!campo) {
+      return true;
+    }
+
+    const valor = campo.value.trim();
+
+    if (!valor) {
+      campo.setCustomValidity(campo.required ? "Este campo es obligatorio." : "");
+      actualizarEstadoCampo(campo);
+      return !campo.required;
+    }
+
+    if (valor.length < minimo) {
+      campo.setCustomValidity(mensajeMinimo);
+      actualizarEstadoCampo(campo);
+      return false;
+    }
+
+    if (valor.length > maximo) {
+      campo.setCustomValidity(mensajeMaximo);
+      actualizarEstadoCampo(campo);
+      return false;
+    }
+
+    if (patron && !patron.test(valor)) {
+      campo.setCustomValidity(mensajePatron);
+      actualizarEstadoCampo(campo);
+      return false;
+    }
+
+    campo.setCustomValidity("");
+    actualizarEstadoCampo(campo);
+    return true;
+  }
 
   function validarNombres() {
     return validarTexto(
@@ -151,41 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
       apellidosInput,
       3,
       40,
-      apellidosInput ? nombresRegex : null,
+      nombresRegex,
       "Los apellidos deben tener al menos 3 caracteres.",
       "Los apellidos no pueden superar 40 caracteres.",
       "Los apellidos solo pueden contener letras, espacios, guiones o apóstrofes.",
     );
-  }
-
-  function validarCelular() {
-    if (!celularInput) {
-      return true;
-    }
-
-    const valor = celularInput.value.trim();
-    if (!valor) {
-      celularInput.setCustomValidity("El celular es obligatorio.");
-      actualizarEstadoCampo(celularInput);
-      return false;
-    }
-
-    const esValido = celularRegex.test(valor);
-    celularInput.setCustomValidity(esValido ? "" : "Debe iniciar con 3 y tener exactamente 10 dígitos.");
-    actualizarEstadoCampo(celularInput);
-    return esValido;
-  }
-
-  function validarLocalidad() {
-    if (!localidadInput) {
-      return true;
-    }
-
-    const valor = String(localidadInput.value || "").trim();
-    const esValido = valor === "" || Array.from(localidadInput.options).some((opcion) => opcion.value === valor);
-    localidadInput.setCustomValidity(esValido ? "" : "Selecciona una localidad válida o deja la opción en blanco.");
-    actualizarEstadoCampo(localidadInput);
-    return esValido;
   }
 
   function validarTipoDocumento() {
@@ -197,24 +117,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const esValido = valor === "" || tiposDocumentoValidos.has(valor);
     tipoDocumentoInput.setCustomValidity(esValido ? "" : "Selecciona un tipo de documento válido.");
     actualizarEstadoCampo(tipoDocumentoInput);
-    return esValido;
-  }
-
-  function validarNumeroDocumento() {
-    if (!numeroDocumentoInput) {
-      return true;
-    }
-
-    const valor = numeroDocumentoInput.value.trim();
-    if (!valor) {
-      numeroDocumentoInput.setCustomValidity("El número de documento es obligatorio.");
-      actualizarEstadoCampo(numeroDocumentoInput);
-      return false;
-    }
-
-    const esValido = numeroDocumentoRegex.test(valor);
-    numeroDocumentoInput.setCustomValidity(esValido ? "" : "Ingresa entre 6 y 20 dígitos, sin letras ni caracteres especiales.");
-    actualizarEstadoCampo(numeroDocumentoInput);
     return esValido;
   }
 
@@ -242,48 +144,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return esValido;
   }
 
-  function validarFechaNacimiento() {
-    if (!fechaNacimientoInput) {
-      return true;
-    }
-
-    const valor = String(fechaNacimientoInput.value || "").trim();
-    if (!valor) {
-      fechaNacimientoInput.setCustomValidity("");
-      actualizarEstadoCampo(fechaNacimientoInput);
-      return true;
-    }
-
-    const fecha = new Date(`${valor}T00:00:00`);
-    if (Number.isNaN(fecha.getTime())) {
-      fechaNacimientoInput.setCustomValidity("Formato de fecha inválido.");
-      actualizarEstadoCampo(fechaNacimientoInput);
-      return false;
-    }
-
-    const esMayor = fecha <= fechaMaxima;
-    const esMenorDeCien = fecha >= fechaMinima;
-    const esValida = esMayor && esMenorDeCien;
-
-    fechaNacimientoInput.setCustomValidity(esValida ? "" : "La fecha debe corresponder a una persona entre 18 y 100 años.");
-    actualizarEstadoCampo(fechaNacimientoInput);
-    return esValida;
-  }
-
-  function obtenerErroresFormulario() {
-    return Array.from(new Set(campos.map((campo) => campo.validationMessage).filter(Boolean)));
-  }
-
   function validarFormulario() {
     validarNombres();
     validarApellidos();
-    validarCelular();
-    validarLocalidad();
+    validarCelular(celularInput);
+    validarLocalidad(localidadInput, "Selecciona una localidad válida o deja la opción en blanco.");
     validarTipoDocumento();
-    validarNumeroDocumento();
+    validarNumeroDocumento(numeroDocumentoInput);
     validarTipoUsuario();
     validarEstadoUsuario();
-    validarFechaNacimiento();
+    validarFechaNacimientoRango(fechaNacimientoInput, fechaMinima, fechaMaxima, "La fecha debe corresponder a una persona entre 18 y 100 años.");
 
     campos.forEach((campo) => actualizarEstadoCampo(campo));
     return form.checkValidity();
@@ -291,13 +161,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   registrarValidacion(nombresInput, validarNombres);
   registrarValidacion(apellidosInput, validarApellidos);
-  registrarValidacion(celularInput, validarCelular);
-  registrarValidacion(localidadInput, validarLocalidad);
+  registrarValidacion(celularInput, () => validarCelular(celularInput));
+  registrarValidacion(localidadInput, () => validarLocalidad(localidadInput, "Selecciona una localidad válida o deja la opción en blanco."));
   registrarValidacion(tipoDocumentoInput, validarTipoDocumento);
-  registrarValidacion(numeroDocumentoInput, validarNumeroDocumento);
+  registrarValidacion(numeroDocumentoInput, () => validarNumeroDocumento(numeroDocumentoInput));
   registrarValidacion(tipoUsuarioInput, validarTipoUsuario);
   registrarValidacion(estadoUsuarioInput, validarEstadoUsuario);
-  registrarValidacion(fechaNacimientoInput, validarFechaNacimiento);
+  registrarValidacion(fechaNacimientoInput, () => validarFechaNacimientoRango(fechaNacimientoInput, fechaMinima, fechaMaxima, "La fecha debe corresponder a una persona entre 18 y 100 años."));
 
   form.addEventListener(
     "invalid",
@@ -316,27 +186,17 @@ document.addEventListener("DOMContentLoaded", () => {
       evento.preventDefault();
       evento.stopPropagation();
       form.classList.add("was-validated");
-      mostrarErroresSwal(obtenerErroresFormulario());
+      mostrarErroresSwal(obtenerErroresFormulario(campos));
       return;
     }
 
     evento.preventDefault();
     form.classList.add("was-validated");
 
-    if (typeof Swal === "undefined") {
-      form.submit();
-      return;
-    }
-
-    Swal.fire({
-      icon: "question",
+    confirmarEnvioSwal({
       title: "¿Guardar cambios?",
       text: "Los datos están completos y listos para actualizarse.",
-      showCancelButton: true,
-      confirmButtonText: "Sí, guardar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "#198754",
-      cancelButtonColor: "#6c757d",
+      confirmText: "Sí, guardar",
     }).then((resultado) => {
       if (resultado.isConfirmed) {
         form.submit();
