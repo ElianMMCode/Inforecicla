@@ -5,93 +5,85 @@
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
 {% block content %}
 
-<main class="col offset-md-2 p-4">
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+<div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-newspaper me-2"></i>Publicaciones</h1>
+    <p class="text-muted mb-0">Gestiona las publicaciones del sistema.</p>
   </div>
-  {% endif %}
+  <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-success">
+    <i class="bi bi-plus-circle me-1"></i> Nueva Publicación
+  </a>
+</div>
 
-  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-newspaper me-2"></i>Publicaciones</h1>
-      <p class="text-muted mb-0">Gestiona las publicaciones del sistema.</p>
-    </div>
-    <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-success">
-      <i class="bi bi-plus-circle me-1"></i> Nueva Publicación
-    </a>
+{% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
+
+{% if not publicaciones_habilitadas %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
+{% else %}
+
+<div class="card border-success mb-4 shadow-sm">
+  <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+  <div class="card-body bg-light">
+    <form method="get" class="row g-2">
+      <div class="col-md-10">
+        <label for="q_search" class="visually-hidden">Buscar publicaciones</label>
+        <input id="q_search" type="text" name="q" class="form-control" placeholder="Título, contenido o autor..." value="{{ search_query }}" aria-label="Buscar publicaciones">
+      </div>
+      <div class="col-md-2 d-grid">
+        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+      </div>
+    </form>
   </div>
+</div>
 
-  {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
-
-  {% if not publicaciones_habilitadas %}
-  <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
-  {% else %}
-
-  <div class="card border-success mb-4 shadow-sm">
-    <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
-    <div class="card-body">
-      <form method="get" class="row g-2">
-        <div class="col-md-10">
-          <label for="q_search" class="visually-hidden">Buscar publicaciones</label>
-          <input id="q_search" type="text" name="q" class="form-control" placeholder="Título, contenido o autor..." value="{{ search_query }}" aria-label="Buscar publicaciones">
-        </div>
-        <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
-        </div>
-      </form>
-    </div>
+<div class="card border-success shadow-sm">
+  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-table me-1"></i> Listado</span>
+    <span class="badge bg-light text-success">{{ publicaciones|length }} resultados</span>
   </div>
-
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-      <span><i class="bi bi-table me-1"></i> Listado</span>
-      <span class="badge bg-light text-success">{{ publicaciones|length }} resultados</span>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Título</th>
-            <th>Autor</th>
-            <th>Categoría</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for pub in publicaciones %}
-          <tr>
-            <td><strong>{{ pub.titulo|truncatechars:50 }}</strong></td>
-            <td>{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</td>
-            <td>{{ pub.categoria.tipo|default:"-" }}</td>
-            <td>
-              {% if pub.estado == "ACTIVO" %}
-                <span class="badge bg-success">Activo</span>
-              {% else %}
-                <span class="badge bg-secondary">{{ pub.estado }}</span>
-              {% endif %}
-            </td>
-            <td>{{ pub.fecha_creacion|date:"d/m/Y" }}</td>
-            <td class="text-center">
-              <a href="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron publicaciones.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Título</th>
+          <th>Autor</th>
+          <th>Categoría</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pub in publicaciones %}
+        <tr>
+          <td><strong>{{ pub.titulo|truncatechars:50 }}</strong></td>
+          <td>{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</td>
+          <td>{{ pub.categoria.tipo|default:"-" }}</td>
+          <td>
+            {% if pub.estado == "ACTIVO" %}
+              <span class="badge bg-success">Activo</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ pub.estado }}</span>
+            {% endif %}
+          </td>
+          <td>{{ pub.fecha_creacion|date:"d/m/Y" }}</td>
+          <td class="text-center">
+            <a href="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron publicaciones.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endif %}
-  </main>
+</div>
+{% endif %}
 
+{% endblock %}
+
+{% block extra_scripts %}
+{% include "admin/_messages_swal.html" %}
 {% endblock %}
