@@ -1779,3 +1779,302 @@ class TestValidacionEstandarizadaCV(TestCase):
         self.assertIn('getElementById("inv-edit-venta-centro")', submit_block,
                       "submitEditarVenta debe leer el select por id")
 
+
+class TestFiltrosFlujoWorkshop(TestCase):
+    """Verifica los filtros pertinentes del flujo (Stock / Ganancias)
+    que se replican en el workshop desde la sección ovtab-flujo del
+    inventario general. Filtros implementados: Desde, Hasta, Granularidad,
+    Línea de capacidad (solo Stock), botón Aplicar. La lista de materiales
+    NO se incluye porque el workshop es de 1 solo material."""
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+        with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
+            self.tpl = fh.read()
+
+    def test_template_ws_stock_tiene_inputs_filtro(self):
+        """La sub-pane Stock del workshop debe tener los 4 inputs
+        (Desde, Hasta, Granularidad, switch Cap) + botón Aplicar +
+        badge, todos con prefijo inv-ws-."""
+        for input_id in (
+            "inv-ws-flujo-stock-desde",
+            "inv-ws-flujo-stock-hasta",
+            "inv-ws-flujo-stock-granularidad",
+            "inv-ws-flujo-stock-cap",
+            "inv-ws-flujo-stock-aplicar",
+            "inv-ws-flujo-stock-badge",
+        ):
+            self.assertIn(f'id="{input_id}"', self.tpl,
+                          f"{input_id} debe existir en el template del workshop")
+
+    def test_template_ws_gan_tiene_inputs_filtro(self):
+        """La sub-pane Ganancias del workshop debe tener sus 3 inputs
+        (Desde, Hasta, Granularidad) + botón Aplicar + badge."""
+        for input_id in (
+            "inv-ws-flujo-gan-desde",
+            "inv-ws-flujo-gan-hasta",
+            "inv-ws-flujo-gan-granularidad",
+            "inv-ws-flujo-gan-aplicar",
+            "inv-ws-flujo-gan-badge",
+        ):
+            self.assertIn(f'id="{input_id}"', self.tpl,
+                          f"{input_id} debe existir en el template del workspace")
+
+    def test_template_kpi_movs_renombrado_en_rango(self):
+        """El KPI 'Movs del mes' (hardcoded al mes actual) se renombró
+        a 'Movs en rango' porque ahora el rango es user-controlled."""
+        self.assertIn("Movs en rango", self.tpl,
+                      "El KPI debe llamarse 'Movs en rango' (no 'Movs del mes')")
+        # Asegurarse de que NO quedó el label viejo en ningún lado.
+        self.assertNotIn("Movs del mes", self.tpl,
+                         "El label 'Movs del mes' no debe quedar en el template")
+
+    def test_switch_capacidad_arranca_checked(self):
+        """El switch de línea de capacidad debe arrancar checked (paridad
+        con la sección landing donde 'Mostrar línea de capacidad máxima'
+        también arranca checked)."""
+        idx = self.tpl.find('id="inv-ws-flujo-stock-cap"')
+        self.assertGreater(idx, 0, "switch de capacidad debe existir")
+        # Buscar el inicio del tag <input
+        start = self.tpl.rfind("<input", 0, idx)
+        end = self.tpl.find(">", idx)
+        tag = self.tpl[start:end + 1]
+        self.assertIn("checked", tag,
+                      "El switch de capacidad debe tener atributo 'checked'")
+
+    def test_render_ws_chart_lee_inputs(self):
+        """renderWsChart debe leer granularidad, Desde, Hasta y switch
+        de capacidad desde los inputs del DOM (no constantes hardcoded).
+        Desde/Hasta se leen vía _parseFecha('id'); Granularidad y Cap
+        vía document.getElementById('id')."""
+        block = self.js.split("function renderWsChart", 1)[1].split("function ", 1)[0]
+        for needle in (
+            'getElementById("inv-ws-flujo-stock-granularidad")',
+            'getElementById("inv-ws-flujo-stock-cap")',
+            '_parseFecha("inv-ws-flujo-stock-desde")',
+            '_parseFecha("inv-ws-flujo-stock-hasta")',
+        ):
+            self.assertIn(needle, block,
+                          f"renderWsChart debe leer el input {needle}")
+        # No debe quedar la constante hardcoded del mes actual.
+        self.assertNotIn('const gran = "dia";', block,
+                         "renderWsChart NO debe hardcodear gran='dia'")
+        # No debe hardcodear mostrarCap: true.
+        self.assertNotIn("mostrarCap: true", block,
+                         "renderWsChart NO debe hardcodear mostrarCap=true")
+
+    def test_render_ws_ganancias_chart_lee_inputs(self):
+        """renderWsGananciasChart debe leer sus 3 inputs (Desde, Hasta,
+        Granularidad) desde el DOM (vía _parseFecha y getElementById)."""
+        block = self.js.split("function renderWsGananciasChart", 1)[1].split("function ", 1)[0]
+        for needle in (
+            'getElementById("inv-ws-flujo-gan-granularidad")',
+            '_parseFecha("inv-ws-flujo-gan-desde")',
+            '_parseFecha("inv-ws-flujo-gan-hasta")',
+        ):
+            self.assertIn(needle, block,
+                          f"renderWsGananciasChart debe leer el input {needle}")
+
+    def test_bind_extras_engancha_filtros_ws(self):
+        """Los inputs del workspace deben tener listeners de change
+        enganchados a renderWsChart / renderWsGananciasChart. Los IDs
+        van en arrays multilínea iterados con forEach() dentro de
+        bindExtras()."""
+        import re
+        # Buscamos la secuencia completa: array de IDs + .forEach(...) +
+        # .addEventListener("change", renderWsChart) en una ventana de
+        # 600 chars. Tolerante a whitespace y newlines.
+        stock_block = re.search(
+            r'\["inv-ws-flujo-stock-desde",\s*"inv-ws-flujo-stock-hasta",\s*'
+            r'"inv-ws-flujo-stock-granularidad",\s*"inv-ws-flujo-stock-cap"\].*?'
+            r'\.addEventListener\("change",\s*renderWsChart\)',
+            self.js,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(stock_block,
+            "Debe existir un patrón que enganche 'change' -> renderWsChart "
+            "para los 4 IDs de stock en bindExtras()")
+        self.assertIn(".forEach(", stock_block.group(0),
+                      "El patrón debe iterar con forEach()")
+
+        gan_block = re.search(
+            r'\["inv-ws-flujo-gan-desde",\s*"inv-ws-flujo-gan-hasta",\s*'
+            r'"inv-ws-flujo-gan-granularidad"\].*?'
+            r'\.addEventListener\("change",\s*renderWsGananciasChart\)',
+            self.js,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(gan_block,
+            "Debe existir un patrón que enganche 'change' -> renderWsGananciasChart "
+            "para los 3 IDs de ganancias en bindExtras()")
+        self.assertIn(".forEach(", gan_block.group(0),
+                      "El patrón debe iterar con forEach()")
+
+    def test_boton_aplicar_enganchado_en_ambas_subpanes(self):
+        """Los botones Aplicar explícitos deben estar enganchados
+        (paridad con la sección landing)."""
+        for btn_id, fn in (
+            ("inv-ws-flujo-stock-aplicar", "renderWsChart"),
+            ("inv-ws-flujo-gan-aplicar", "renderWsGananciasChart"),
+        ):
+            pattern = f'getElementById("{btn_id}")'
+            idx = self.js.find(pattern)
+            self.assertGreater(idx, 0, f"botón {btn_id} debe estar referenciado")
+            window = self.js[idx:idx + 200]
+            self.assertIn("click", window,
+                          f"botón {btn_id} debe tener listener 'click'")
+            self.assertIn(fn, window,
+                          f"botón {btn_id} debe llamar a {fn} en click")
+
+    def test_activar_tab_resetea_url(self):
+        """activarTab debe llamar a history.replaceState para limpiar
+        el query string cuando el usuario cambia de tab en el workshop.
+        Esto consume el deep-link post-compra/venta: una vez que el
+        usuario interactúa navegando entre tabs, la URL vuelve al
+        estado base (un reload posterior lleva al landing)."""
+        block = self.js.split("function activarTab", 1)[1].split("function ", 1)[0]
+        self.assertIn("history.replaceState", block,
+                      "activarTab debe llamar a history.replaceState para resetear la URL")
+        self.assertIn("window.location.pathname", block,
+                      "activarTab debe usar window.location.pathname como nueva URL")
+
+    def test_ir_landing_hace_full_reload(self):
+        """irLanding debe hacer window.location.href = pathname (full
+        page reload), NO replaceState. El reload garantiza datos
+        frescos del backend al volver al inventario general."""
+        block = self.js.split("function irLanding", 1)[1].split("function ", 1)[0]
+        self.assertIn("window.location.href", block,
+                      "irLanding debe asignar a window.location.href")
+        self.assertIn("window.location.pathname", block,
+                      "irLanding debe apuntar a window.location.pathname")
+        # No debe usar replaceState (esa estrategia ahora vive en activarTab).
+        self.assertNotIn("history.replaceState", block,
+                         "irLanding NO debe usar replaceState (irLanding es full reload)")
+
+    def test_helper_en_rango_existe(self):
+        """El helper _enRango debe existir y manejar fechas string/Date."""
+        self.assertIn("function _enRango", self.js,
+                      "_enRango debe existir como helper")
+        block = self.js.split("function _enRango", 1)[1].split("function ", 1)[0]
+        # Debe convertir la fecha a timestamp
+        self.assertIn("getTime()", block,
+                      "_enRango debe usar getTime() para comparar timestamps")
+        # Debe retornar boolean
+        self.assertIn("return ", block,
+                      "_enRango debe retornar un booleano")
+
+
+class TestChartSeriesVisibilidad(TestCase):
+    """Verifica que los charts de flujo reflejen correctamente los
+    movimientos: stock sube con compras y baja con ventas; ganancias
+    muestra los valores diarios (no acumulativos). Tambien: el label
+    'Profit' paso a 'Ganancia neta'."""
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+        with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
+            self.tpl = fh.read()
+
+    def test_template_profit_neto_renombrado_a_ganancia_neta(self):
+        """El KPI 'Profit neto' (en landing y workspace flujo) paso a
+        'Ganancia neta' como pidio el usuario."""
+        # Debe existir el nuevo label en ambos lugares
+        idx_landing = self.tpl.find('id="inv-flujo-gan-kpi-profit"')
+        idx_ws = self.tpl.find('id="inv-ws-flujo-gan-profit"')
+        self.assertGreater(idx_landing, 0, "KPI de ganancia en landing debe existir")
+        self.assertGreater(idx_ws, 0, "KPI de ganancia en workspace debe existir")
+        # El <small> que precede a cada h4 debe decir 'Ganancia neta'
+        for idx in (idx_landing, idx_ws):
+            # Buscar el <small> anterior (hacia atrás desde el h4)
+            h4_start = self.tpl.rfind("<h4", 0, idx)
+            small_start = self.tpl.rfind("<small", 0, h4_start)
+            small_end = self.tpl.find("</small>", small_start)
+            small_block = self.tpl[small_start:small_end + len("</small>")]
+            self.assertIn("Ganancia neta", small_block,
+                          f"El label debe ser 'Ganancia neta', no 'Profit neto'")
+            self.assertNotIn("Profit neto", small_block,
+                              f"El label NO debe decir 'Profit neto'")
+
+    def test_chart_label_profit_renombrado_a_ganancia_neta(self):
+        """En el JS del chart, la tercera serie de modo ganancia paso
+        de llamarse 'Profit' a 'Ganancia neta'."""
+        # Buscamos la lista de series en modo ganancia
+        idx = self.js.find('nombre: "Ganancia neta"')
+        self.assertGreater(idx, 0,
+                           "Debe existir una serie llamada 'Ganancia neta' en el chart")
+        # La vieja clave 'Profit' no debe quedar como nombre de serie
+        # (cuidado: el ID del HTML sigue siendo -profit por no romper
+        # los bindings de los KPIs, pero el nombre visible de la serie
+        # en la leyenda del chart debe ser 'Ganancia neta').
+        # Verificamos que NO haya 'nombre: "Profit"' suelto.
+        self.assertNotIn('nombre: "Profit"', self.js,
+                          "El nombre de la serie en el chart NO debe ser 'Profit'")
+
+    def test_construir_serie_material_ancla_en_stock_actual(self):
+        """Regression: construirSerieMaterial debe anclar en stockActual
+        y restar ops hacia atras. La serie debe tener la misma longitud
+        que buckets y representar fin-de-bucket.
+
+        Bug original: el bloque 'Restar ops futuras al bucket mas
+        reciente' restaba de mas (capturaba ops del ULTIMO bucket, no
+        futuras a el), por lo que el primer valor de la serie quedaba
+        desfasado. La nueva implementacion NO contiene ese bloque."""
+        block = self.js.split("function construirSerieMaterial", 1)[1].split("function ", 1)[0]
+        # 1. Anclaje en stockActual
+        self.assertIn("stockActual", block,
+                      "Debe leer material.stockActual como ancla")
+        # 2. NO debe quedar el viejo bloque 'futuroMax' (el bug)
+        self.assertNotIn("futuroMax", block,
+                         "El bloque buggy 'futuroMax' debe estar eliminado")
+        self.assertNotIn("Restar ops futuras al bucket", block,
+                         "El comentario del bloque buggy debe estar eliminado")
+        # 3. Walk backwards correcto: serie[i] = stock; stock -= deltas[i]
+        self.assertIn("serie[i]", block,
+                      "La serie debe asignarse por indice en walk-backwards")
+        # 4. La longitud de la serie debe coincidir con buckets
+        self.assertIn("new Array(buckets.length)", block,
+                      "La serie debe inicializarse con new Array(buckets.length)")
+
+    def test_construir_serie_ganancias_es_diaria_no_acumulativa(self):
+        """Regression: construirSerieGanancias ahora retorna valores
+        DIARIOS (cada bucket = ops del dia), no acumulativos.
+
+        Bug original: la serie acumulaba con 'ingresos[i] += ingresos[i-1]',
+        por lo que la linea crecia monotonicamente y no reflejaba los
+        movimientos del dia. Ahora cada bucket es independiente."""
+        block = self.js.split("function construirSerieGanancias", 1)[1].split("function ", 1)[0]
+        # 1. NO debe quedar la acumulacion hacia atras
+        self.assertNotIn("ingresos[i] += ingresos[i - 1]", block,
+                         "NO debe acumular ingresos bucket a bucket")
+        self.assertNotIn("costos[i] += costos[i - 1]", block,
+                         "NO debe acumular costos bucket a bucket")
+        # 2. La clave retornada debe ser 'ganancia' (no 'profit')
+        self.assertIn("ganancia", block,
+                      "La serie de resultado debe llamarse 'ganancia'")
+        # 3. La formula de ganancia diaria es: ingresos[i] - costos[i]
+        self.assertIn("ingresos[i] - costos[i]", block,
+                      "La ganancia diaria es ingresos - costos del mismo bucket")
+
+    def test_chart_muestra_todos_los_puntos_no_solo_stepx(self):
+        """El render del chart debe dibujar TODOS los puntos de la serie,
+        no solo cada stepX (que era el bug que ocultaba los movimientos)."""
+        # Buscamos el bloque de puntos en renderChart
+        idx_puntos = self.js.find("// Puntos")
+        self.assertGreater(idx_puntos, 0, "Bloque de render de puntos debe existir")
+        # No debe quedar el filtro i % stepX
+        block = self.js[idx_puntos:idx_puntos + 600]
+        self.assertNotIn("i % stepX", block,
+                         "El filtro 'i % stepX' debe estar eliminado (ocultaba puntos)")
+        # Debe haber un forEach que itere sobre todos los valores
+        self.assertIn("s.valores.forEach", block,
+                      "Debe iterar sobre TODOS los valores con forEach")
+
+

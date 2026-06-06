@@ -60,13 +60,17 @@
     // NAVEGACIÓN ENTRE ESTADOS (landing ↔ workspace)
     // ============================================================
     function irLanding() {
-        document.getElementById("estado-landing")?.classList.add("active");
-        document.getElementById("estado-workspace")?.classList.remove("active");
-        currentMaterialId = null;
-        currentMaterial = null;
-        isWorkspaceHistorial = false;
+        // Full page reload a la URL base de la sección, sin query params.
+        // El reload garantiza datos frescos desde el backend (listas de
+        // materiales, KPIs, ocupaciones) — no nos quedamos con el snapshot
+        // cacheado en memoria del workspace. Es el equivalente a un "back
+        // físico" al inventario general, no un toggle de visibilidad.
+        //
+        // Antes de la navegación recargamos la ovtab a "ovtab-inventario"
+        // para que al recargar la URL limpia el server no devuelva otra
+        // sub-pane activa por defecto.
         activarOvTab("ovtab-inventario");
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.location.href = window.location.pathname;
     }
 
     function irWorkspace(invId, tabId) {
@@ -205,6 +209,16 @@
         // sobrescribe precios que el usuario ya haya tipeado.
         if (tabId === "tab-compra") poblarInfoMaterial("formEntrada");
         if (tabId === "tab-venta") poblarInfoMaterial("formSalida");
+        // Reset de URL: si el usuario llegó aquí via deep-link
+        // (?inv=&tab=) tras una compra/venta y ahora cambia de tab,
+        // la URL ya no debe mantener el snapshot de la tab anterior.
+        // replaceState limpia los query params sin recargar la página.
+        // El workspace sigue abierto via state JS, pero la URL queda
+        // en el "punto de entrada" — un reload posterior lleva al
+        // landing, no a la tab vieja.
+        if (window.location.search) {
+            window.history.replaceState(null, "", window.location.pathname);
+        }
     }
 
     function _reinitSelect2InPane(pane) {
@@ -1736,80 +1750,83 @@
     }
 
     /**
-     * Construye la serie histórica para un material anclando en stockActual
-     * y restando las operaciones FUTURAS al rango (delta inverso).
+     * Construye la serie histórica de STOCK (cantidad física) para un material.
+     *
+     * La serie representa el stock al FINAL de cada bucket (después de aplicar
+     * las ops que cayeron en ese bucket). Anclamos en `stockActual` (el stock
+     * de "ahora") y caminamos hacia atrás restando las ops de cada bucket.
+     *
+     * Ejemplo: stockActual=110, ops=[(+10, día2), (-5, día3), (+5, día5)]
+     *   - día5 (último bucket): serie[4] = 110; stock tras restar ops_día5 = 105
+     *   - día4: serie[3] = 105; sin ops en día4 → stock sigue 105
+     *   - día3: serie[2] = 105; restando ops_día3 (-5) → 110
+     *   - día2: serie[1] = 110; restando ops_día2 (+10) → 100
+     *   - día1: serie[0] = 100
+     * Serie final: [100, 110, 105, 105, 110]
+     *
+     * Así, una COMPRA eleva la línea en su bucket y una VENTA la baja, y los
+     * puntos reflejan fielmente cada movimiento del día.
      */
     function construirSerieMaterial(material, compras, ventas, desde, hasta, gran) {
-        const ops = [];
-        compras.filter((c) => String(c.inventarioId) === String(material.inventarioId)).forEach((c) => {
-            const f = c.fechaCompra ? new Date(c.fechaCompra) : null;
-            if (f) ops.push({ fecha: f, delta: Number(c.cantidad) || 0 });
-        });
-        ventas.filter((v) => String(v.inventarioId) === String(material.inventarioId)).forEach((v) => {
-            const f = v.fechaVenta ? new Date(v.fechaVenta) : null;
-            if (f) ops.push({ fecha: f, delta: -(Number(v.cantidad) || 0) });
-        });
         const buckets = generarBuckets(desde, hasta, gran);
-        const serie = [];
-        let stock = Number(material.stockActual) || 0;
-        // Restar ops futuras al bucket más reciente
-        const lastBucket = buckets[buckets.length - 1];
-        if (lastBucket) {
-            const futuroMax = new Date(lastBucket);
-            if (gran === "dia") futuroMax.setDate(futuroMax.getDate() + 1);
-            else if (gran === "semana") futuroMax.setDate(futuroMax.getDate() + 7);
-            else futuroMax.setMonth(futuroMax.getMonth() + 1);
-            ops.filter((o) => o.fecha >= lastBucket && o.fecha < futuroMax).forEach((o) => { stock -= o.delta; });
+        const invId = String(material.inventarioId);
+        // Calcular delta neto por bucket: compras suman, ventas restan.
+        const deltas = buckets.map(() => 0);
+        for (const c of compras) {
+            if (String(c.inventarioId) !== invId || !c.fechaCompra) continue;
+            const idx = bucketIndexFor(new Date(c.fechaCompra), buckets, gran);
+            if (idx >= 0) deltas[idx] += Number(c.cantidad || 0);
         }
-        // Walk backwards, acumulando deltas negativos
-        const opsIdx = [...ops].sort((a, b) => b.fecha - a.fecha);
+        for (const v of ventas) {
+            if (String(v.inventarioId) !== invId || !v.fechaVenta) continue;
+            const idx = bucketIndexFor(new Date(v.fechaVenta), buckets, gran);
+            if (idx >= 0) deltas[idx] -= Number(v.cantidad || 0);
+        }
+        // Walk backwards: empezamos con stockActual (fin del último bucket).
+        // Para cada bucket, serie[i] = stock al final del bucket.
+        // El stock al final del bucket i = stock al final del bucket i+1
+        // menos las ops que ocurrieron en el bucket i+1 (porque esas ops
+        // son las que cambiaron el stock entre i e i+1).
+        // Equivalentemente, tras emitir serie[i], restamos deltas[i] para
+        // preparar la siguiente iteración.
+        const serie = new Array(buckets.length);
+        let stock = Number(material.stockActual) || 0;
         for (let i = buckets.length - 1; i >= 0; i--) {
-            const b = buckets[i];
-            const bKey = bucketKey(b, gran);
-            const next = i + 1 < buckets.length ? buckets[i + 1] : (() => {
-                const x = new Date(b);
-                if (gran === "dia") x.setDate(x.getDate() + 1);
-                else if (gran === "semana") x.setDate(x.getDate() + 7);
-                else x.setMonth(x.getMonth() + 1);
-                return x;
-            })();
-            while (opsIdx.length && opsIdx[0].fecha >= b && opsIdx[0].fecha < next) {
-                stock -= opsIdx.shift().delta;
-            }
             serie[i] = Math.max(0, stock);
+            stock -= deltas[i];
         }
         return serie;
     }
 
     function construirSerieGanancias(materiales, compras, ventas, desde, hasta, gran) {
-        // Retorna { ingresos: number[], costos: number[], profit: number[] }
-        // Un valor por bucket, acumulado en el tiempo. La primera fila
-        // contiene los ops del bucket 0; cada fila siguiente acumula el
-        // bucket anterior + el actual.
+        // Retorna { ingresos: number[], costos: number[], ganancia: number[] }
+        //
+        // SEMÁNTICA: cada bucket muestra el VALOR DIARIO (no acumulado).
+        //   - ingresos[i] = suma de (cantidad * precioVenta) de las ventas del bucket i
+        //   - costos[i]   = suma de (cantidad * precioCompra) de las compras del bucket i
+        //   - ganancia[i] = ingresos[i] - costos[i]
+        //
+        // Esto refleja los movimientos del día: una línea que sube con las
+        // ventas, baja con las compras (costos) y la ganancia muestra el
+        // resultado neto del día. Si no hay ops, el punto queda en 0.
         const buckets = generarBuckets(desde, hasta, gran);
         const invIds = new Set(materiales.map((m) => String(m.inventarioId)));
-        const cs = compras.filter((c) => invIds.has(String(c.inventarioId)));
-        const vs = ventas.filter((v) => invIds.has(String(v.inventarioId)));
         const ingresos = buckets.map(() => 0);
         const costos = buckets.map(() => 0);
-        for (const c of cs) {
-            if (!c.fechaCompra) continue;
+        for (const c of compras) {
+            if (!invIds.has(String(c.inventarioId)) || !c.fechaCompra) continue;
             const idx = bucketIndexFor(new Date(c.fechaCompra), buckets, gran);
             if (idx < 0) continue;
             costos[idx] += Number(c.cantidad || 0) * Number(c.precioCompra || 0);
         }
-        for (const v of vs) {
-            if (!v.fechaVenta) continue;
+        for (const v of ventas) {
+            if (!invIds.has(String(v.inventarioId)) || !v.fechaVenta) continue;
             const idx = bucketIndexFor(new Date(v.fechaVenta), buckets, gran);
             if (idx < 0) continue;
             ingresos[idx] += Number(v.cantidad || 0) * Number(v.precioVenta || 0);
         }
-        for (let i = 1; i < buckets.length; i++) {
-            ingresos[i] += ingresos[i - 1];
-            costos[i] += costos[i - 1];
-        }
-        const profit = buckets.map((_, i) => ingresos[i] - costos[i]);
-        return { ingresos, costos, profit, buckets };
+        const ganancia = buckets.map((_, i) => ingresos[i] - costos[i]);
+        return { ingresos, costos, ganancia, buckets };
     }
 
     function bucketIndexFor(fecha, buckets, gran) {
@@ -1869,9 +1886,9 @@
             // modo === "ganancia"
             const gan = construirSerieGanancias(opts.materiales, comprasDB, ventasDB, opts.desde, opts.hasta, opts.gran);
             series = [
-                { nombre: "Ingresos", color: "#0d6efd", valores: gan.ingresos, capacidad: 0 },
-                { nombre: "Costos",   color: "#fd7e14", valores: gan.costos,   capacidad: 0 },
-                { nombre: "Profit",   color: "#198754", valores: gan.profit,   capacidad: 0, esProfit: true },
+                { nombre: "Ingresos",       color: "#0d6efd", valores: gan.ingresos, capacidad: 0 },
+                { nombre: "Costos",         color: "#fd7e14", valores: gan.costos,   capacidad: 0 },
+                { nombre: "Ganancia neta",  color: "#198754", valores: gan.ganancia, capacidad: 0, esProfit: true },
             ];
         }
         // Calcular rango Y
@@ -1908,7 +1925,7 @@
             const labelTxt = modo === "ganancia" ? formatearCOPCorto(val) : val.toFixed(0);
             ctx.fillText(labelTxt, padL - 6, y + 3);
         }
-        // Línea de y=0 (referencia para profit)
+        // Línea de y=0 (referencia para ganancia negativa)
         if (modo === "ganancia" && minY < 0) {
             const y0 = padT + innerH - (innerH * (0 - minY)) / (maxY - minY);
             ctx.strokeStyle = "#dc3545";
@@ -1955,12 +1972,15 @@
                 else ctx.lineTo(x, y);
             });
             ctx.stroke();
-            // Puntos
+            // Puntos: marcamos TODOS los buckets, no cada stepX. Así cada
+            // movimiento del día (compra que sube el stock, venta que lo baja,
+            // ingreso/costo del día) queda visible como un punto. Radio
+            // pequeño para no saturar el chart cuando hay muchos buckets.
             ctx.fillStyle = s.color;
+            const radio = s.valores.length > 60 ? 1.5 : 2.5;
             s.valores.forEach((v, i) => {
-                if (i % stepX !== 0 && i !== s.valores.length - 1) return;
                 ctx.beginPath();
-                ctx.arc(xAt(i), yAt(v), 3, 0, Math.PI * 2);
+                ctx.arc(xAt(i), yAt(v), radio, 0, Math.PI * 2);
                 ctx.fill();
             });
         });
@@ -2068,33 +2088,40 @@
 
     function renderWsChart() {
         if (!currentMaterial) return;
-        const gran = "dia";
-        const desde = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-        const hasta = new Date();
+        const gran = document.getElementById("inv-ws-flujo-stock-granularidad")?.value || "dia";
+        const desde = _parseFecha("inv-ws-flujo-stock-desde") || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const hasta = _parseFecha("inv-ws-flujo-stock-hasta") || new Date();
+        const cap = document.getElementById("inv-ws-flujo-stock-cap")?.checked ?? true;
         const buckets = generarBuckets(desde, hasta, gran);
         renderChart("stockTimeChart", {
-            modo: "stock", materiales: [currentMaterial], gran, mostrarCap: true,
+            modo: "stock", materiales: [currentMaterial], gran, mostrarCap: cap,
             desde, hasta, buckets,
         });
         const invId = currentMaterial.inventarioId;
-        const cm = comprasDB.filter((c) => String(c.inventarioId) === String(invId));
-        const vm = ventasDB.filter((v) => String(v.inventarioId) === String(invId));
+        const cm = comprasDB.filter((c) => String(c.inventarioId) === String(invId)
+            && _enRango(c.fechaCompra, desde, hasta));
+        const vm = ventasDB.filter((v) => String(v.inventarioId) === String(invId)
+            && _enRango(v.fechaVenta, desde, hasta));
         const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         setKpi("inv-ws-flujo-stock", `${Number(currentMaterial.stockActual).toLocaleString("es-CO")} ${currentMaterial.unidad}`);
         setKpi("inv-ws-flujo-movs", cm.length + vm.length);
         setKpi("inv-ws-flujo-compras", cm.length);
         setKpi("inv-ws-flujo-ventas", vm.length);
+        const badge = document.getElementById("inv-ws-flujo-stock-badge");
+        if (badge) badge.textContent = `${cm.length + vm.length} movs en rango`;
     }
 
     function renderWsGananciasChart() {
         if (!currentMaterial) return;
-        const gran = "dia";
-        const desde = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-        const hasta = new Date();
+        const gran = document.getElementById("inv-ws-flujo-gan-granularidad")?.value || "dia";
+        const desde = _parseFecha("inv-ws-flujo-gan-desde") || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const hasta = _parseFecha("inv-ws-flujo-gan-hasta") || new Date();
         const buckets = generarBuckets(desde, hasta, gran);
         const invId = currentMaterial.inventarioId;
-        const cm = comprasDB.filter((c) => String(c.inventarioId) === String(invId));
-        const vm = ventasDB.filter((v) => String(v.inventarioId) === String(invId));
+        const cm = comprasDB.filter((c) => String(c.inventarioId) === String(invId)
+            && _enRango(c.fechaCompra, desde, hasta));
+        const vm = ventasDB.filter((v) => String(v.inventarioId) === String(invId)
+            && _enRango(v.fechaVenta, desde, hasta));
         const ingresosTotal = vm.reduce((s, v) => s + Number(v.cantidad || 0) * Number(v.precioVenta || 0), 0);
         const costosTotal = cm.reduce((s, c) => s + Number(c.cantidad || 0) * Number(c.precioCompra || 0), 0);
         const profitTotal = ingresosTotal - costosTotal;
@@ -2125,6 +2152,19 @@
             modo: "ganancia", materiales: [currentMaterial], gran,
             desde, hasta, buckets,
         });
+        const badge = document.getElementById("inv-ws-flujo-gan-badge");
+        if (badge) badge.textContent = `${cm.length + vm.length} movs en rango`;
+    }
+
+    // Helper: true si la fecha (string o Date) cae dentro de [desde, hasta].
+    // Acepta strings ISO o timestamps que el backend devuelve. Usado por
+    // los renderers de flujo del workspace para aplicar el rango
+    // seleccionado en los inputs Desde/Hasta.
+    function _enRango(fecha, desde, hasta) {
+        if (!fecha) return false;
+        const t = new Date(fecha).getTime();
+        if (Number.isNaN(t)) return false;
+        return t >= desde.getTime() && t <= new Date(hasta.getTime() + 86400000 - 1).getTime();
     }
 
     function _parseFecha(id) {
@@ -2253,6 +2293,21 @@
         document.getElementById("inv-flujo-gan-granularidad")?.addEventListener("change", renderOvGananciasChart);
         document.getElementById("inv-flujo-gan-desde")?.addEventListener("change", renderOvGananciasChart);
         document.getElementById("inv-flujo-gan-hasta")?.addEventListener("change", renderOvGananciasChart);
+
+        // Chart workspace flujo — Stock
+        // Mismo patrón que el landing: auto-rerender en cada change de
+        // cualquier input + botón Aplicar explícito por paridad. La sub-pane
+        // es de UN solo material, por eso no hay picker de materiales.
+        document.getElementById("inv-ws-flujo-stock-aplicar")?.addEventListener("click", renderWsChart);
+        ["inv-ws-flujo-stock-desde", "inv-ws-flujo-stock-hasta",
+         "inv-ws-flujo-stock-granularidad", "inv-ws-flujo-stock-cap"]
+            .forEach((id) => document.getElementById(id)?.addEventListener("change", renderWsChart));
+
+        // Chart workspace flujo — Ganancias
+        document.getElementById("inv-ws-flujo-gan-aplicar")?.addEventListener("click", renderWsGananciasChart);
+        ["inv-ws-flujo-gan-desde", "inv-ws-flujo-gan-hasta",
+         "inv-ws-flujo-gan-granularidad"]
+            .forEach((id) => document.getElementById(id)?.addEventListener("change", renderWsGananciasChart));
 
         // Sub-tabs internas del flujo (Stock / Ganancias)
         document.querySelectorAll('#ovFlujoSubtabs [data-ovsub]').forEach((btn) => {

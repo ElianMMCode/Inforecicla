@@ -779,7 +779,7 @@ globalThis.getCSRFToken = function () {
                         <div class="row g-3 mb-4">
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Ingresos</small><h4 class="text-primary fw-bold mb-0" id="inv-flujo-gan-kpi-ingresos">—</h4></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Costos</small><h4 class="text-warning fw-bold mb-0" id="inv-flujo-gan-kpi-costos">—</h4></div></div>
-                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Profit neto</small><h4 class="fw-bold mb-0" id="inv-flujo-gan-kpi-profit">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Ganancia neta</small><h4 class="fw-bold mb-0" id="inv-flujo-gan-kpi-profit">—</h4></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Margen</small><h4 class="fw-bold mb-0" id="inv-flujo-gan-kpi-margen">—</h4></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Top material</small><h6 class="fw-bold mb-0 small" id="inv-flujo-gan-kpi-top">—</h6><small class="text-muted d-block" id="inv-flujo-gan-kpi-top-val">—</small></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Movs con pérdida</small><h4 class="text-danger fw-bold mb-0" id="inv-flujo-gan-kpi-perdida">—</h4></div></div>
@@ -1374,10 +1374,40 @@ globalThis.getCSRFToken = function () {
                     <div class="card-body">
                         <div class="row g-3 mb-3">
                             <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Stock hoy</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-stock">—</h4></div></div>
-                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Movs del mes</small><h4 class="text-info fw-bold mb-0" id="inv-ws-flujo-movs">—</h4></div></div>
+                            <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Movs en rango</small><h4 class="text-info fw-bold mb-0" id="inv-ws-flujo-movs">—</h4></div></div>
                             <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Compras</small><h4 class="text-primary fw-bold mb-0" id="inv-ws-flujo-compras">—</h4></div></div>
                             <div class="col-md-3"><div class="card text-center p-3 h-100"><small class="text-muted">Ventas</small><h4 class="text-success fw-bold mb-0" id="inv-ws-flujo-ventas">—</h4></div></div>
                         </div>
+                        <div class="row g-2 align-items-end mb-3 p-2 bg-light rounded">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold small mb-0 text-muted" for="inv-ws-flujo-stock-desde">Desde</label>
+                                <input type="date" class="form-control form-control-sm" id="inv-ws-flujo-stock-desde">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold small mb-0 text-muted" for="inv-ws-flujo-stock-hasta">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" id="inv-ws-flujo-stock-hasta">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold small mb-0 text-muted" for="inv-ws-flujo-stock-granularidad">Granularidad</label>
+                                <select class="form-select form-select-sm" id="inv-ws-flujo-stock-granularidad">
+                                    <option value="dia">Día</option>
+                                    <option value="semana">Semana</option>
+                                    <option value="mes">Mes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end pb-1">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" id="inv-ws-flujo-stock-cap" checked>
+                                    <label class="form-check-label small" for="inv-ws-flujo-stock-cap">Línea de capacidad</label>
+                                </div>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button class="btn btn-info btn-sm w-100" type="button" id="inv-ws-flujo-stock-aplicar" title="Aplicar filtros">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-2"><span class="badge bg-info rounded-pill" id="inv-ws-flujo-stock-badge">—</span></div>
                         <div class="inv-chart-wrap">
                             <canvas id="stockTimeChart"></canvas>
                         </div>
@@ -1397,11 +1427,36 @@ globalThis.getCSRFToken = function () {
                         <div class="row g-3 mb-3">
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Ingresos</small><h4 class="text-primary fw-bold mb-0" id="inv-ws-flujo-gan-ingresos">—</h4></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Costos</small><h4 class="text-warning fw-bold mb-0" id="inv-ws-flujo-gan-costos">—</h4></div></div>
-                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Profit neto</small><h4 class="fw-bold mb-0" id="inv-ws-flujo-gan-profit">—</h4></div></div>
+                            <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Ganancia neta</small><h4 class="fw-bold mb-0" id="inv-ws-flujo-gan-profit">—</h4></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Margen</small><h4 class="fw-bold mb-0" id="inv-ws-flujo-gan-margen">—</h4></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Movs con pérdida</small><h4 class="text-danger fw-bold mb-0" id="inv-ws-flujo-gan-perdida">—</h4></div></div>
                             <div class="col-md-2"><div class="card text-center p-3 h-100"><small class="text-muted">Última venta</small><h6 class="fw-bold mb-0 small" id="inv-ws-flujo-gan-ultima">—</h6><small class="text-muted d-block" id="inv-ws-flujo-gan-ultima-val">—</small></div></div>
                         </div>
+                        <div class="row g-2 align-items-end mb-3 p-2 bg-light rounded">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold small mb-0 text-muted" for="inv-ws-flujo-gan-desde">Desde</label>
+                                <input type="date" class="form-control form-control-sm" id="inv-ws-flujo-gan-desde">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold small mb-0 text-muted" for="inv-ws-flujo-gan-hasta">Hasta</label>
+                                <input type="date" class="form-control form-control-sm" id="inv-ws-flujo-gan-hasta">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold small mb-0 text-muted" for="inv-ws-flujo-gan-granularidad">Granularidad</label>
+                                <select class="form-select form-select-sm" id="inv-ws-flujo-gan-granularidad">
+                                    <option value="dia">Día</option>
+                                    <option value="semana">Semana</option>
+                                    <option value="mes">Mes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3"></div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button class="btn btn-success btn-sm w-100" type="button" id="inv-ws-flujo-gan-aplicar" title="Aplicar filtros">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-2"><span class="badge bg-success rounded-pill" id="inv-ws-flujo-gan-badge">—</span></div>
                         <div class="inv-chart-wrap">
                             <canvas id="inv-ws-ganancias-chart"></canvas>
                         </div>
