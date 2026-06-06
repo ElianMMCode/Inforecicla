@@ -635,7 +635,7 @@
             $els.each(function () {
                 const $el = $(this);
                 if ($el.data("select2")) $el.select2("destroy");
-                $el.select2({...base, ...(extra || {})});
+                $el.select2({...base, ...extra});
             });
         };
 

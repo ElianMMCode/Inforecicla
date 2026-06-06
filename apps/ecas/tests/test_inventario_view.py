@@ -12,6 +12,7 @@ Cubre:
 Estos tests son específicos de la Fase 5 del PLAN-INVENTARIO.md.
 """
 import json
+import re
 import uuid
 
 from django.test import Client, TestCase, override_settings
@@ -29,6 +30,49 @@ from config import constants as cons
 
 def _parse_inv_data(value):
     """Acepta dict o string JSON (compatibilidad con view antes/después del fix)."""
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except (ValueError, TypeError):
+            return None
+    return None
+
+
+def _ubicar_branches_init_deeplink(js):
+    """Retorna los índices (ready, else, end) del bloque if/else del init deep-link."""
+    ready_idx = js.rfind('document.readyState === "loading"')
+    assert ready_idx > 0
+    else_idx = js.find("} else {", ready_idx)
+    assert else_idx > 0
+    end_idx = js.find("})();", else_idx)
+    return ready_idx, else_idx, end_idx
+
+
+def _find_real_invocation(branch, pattern):
+    """Encuentra la primera invocación real de `pattern` en `branch`.
+
+    Ignora líneas comentadas (con `//`), declaraciones de función
+    (`function foo()`) y llamadas precedidas por `_` (ej. `_bind()`).
+    Retorna la posición del match, o -1 si no encuentra ninguno.
+    """
+    for m in re.finditer(pattern, branch):
+        line_start = branch.rfind("\n", 0, m.start()) + 1
+        line_prefix = branch[line_start:m.start()]
+        if "//" in line_prefix:
+            continue
+        if m.start() > 0 and branch[m.start() - 1] == "_":
+            continue
+        if "function" in line_prefix:
+            continue
+        return m.start()
+    return -1
+
+
+
     if isinstance(value, dict):
         return value
     return json.loads(value)
@@ -1279,40 +1323,12 @@ class TestComprobanteYDeepLink(TestCase):
         aparezca ya en el workspace. Si bind() corre primero, podría
         resetear algo de estado. Verificamos el orden de invocación en
         AMBOS branches del if (loading / not-loading)."""
-        import re
-        # Encontrar el ÚLTIMO bloque `if (document.readyState === "loading")`
-        # y el `} else {` que le sigue, porque el código tiene varios `} else {`
-        # anónimos (por ejemplo, en funciones anteriores).
-        ready_idx = self.js.rfind('document.readyState === "loading"')
-        self.assertGreater(ready_idx, 0)
-        else_idx = self.js.find("} else {", ready_idx)
-        self.assertGreater(else_idx, 0)
-        end_idx = self.js.find("})();", else_idx)  # fin del IIFE
-        # Branch 1: desde ready_idx hasta else_idx
+        ready_idx, else_idx, end_idx = _ubicar_branches_init_deeplink(self.js)
         branch1 = self.js[ready_idx:else_idx]
-        # Branch 2: desde else_idx hasta end_idx
         branch2 = self.js[else_idx:end_idx]
         for label, branch in (("DOMContentLoaded", branch1), ("else", branch2)):
-            # Buscamos invocaciones reales (no en comentarios, no precedidas por '_' o 'function ')
-            i_init = -1
-            for m in re.finditer(r"_initDeepLink\(\)", branch):
-                line_start = branch.rfind("\n", 0, m.start()) + 1
-                line_prefix = branch[line_start:m.start()]
-                if "//" not in line_prefix:
-                    i_init = m.start()
-                    break
-            i_bind = -1
-            for m in re.finditer(r"bind\(\)", branch):
-                line_start = branch.rfind("\n", 0, m.start()) + 1
-                line_prefix = branch[line_start:m.start()]
-                if "//" in line_prefix:
-                    continue
-                if m.start() > 0 and branch[m.start() - 1] == "_":
-                    continue
-                if "function" in line_prefix:
-                    continue
-                i_bind = m.start()
-                break
+            i_init = _find_real_invocation(branch, r"_initDeepLink\(\)")
+            i_bind = _find_real_invocation(branch, r"bind\(\)")
             self.assertGreater(i_init, -1,
                               f"En branch '{label}', debe haber invocación a _initDeepLink()")
             self.assertGreater(i_bind, -1,
