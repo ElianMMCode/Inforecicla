@@ -42,7 +42,7 @@
     const formatDateCO = (iso) => {
         if (!iso) return "—";
         const d = new Date(iso);
-        if (isNaN(d)) return iso;
+        if (Number.isNaN(d.getTime())) return iso;
         const pad = (x) => String(x).padStart(2, "0");
         return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
@@ -54,6 +54,26 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    };
+    const _estadoLabel = (e) => {
+        if (e === "critico") return "Crítico";
+        if (e === "alerta") return "Alerta";
+        return "OK";
+    };
+    const _estadoClass = (e) => {
+        if (e === "critico") return "bg-danger";
+        if (e === "alerta") return "bg-warning text-dark";
+        return "bg-success";
+    };
+    const _estadoClassShort = (e) => {
+        if (e === "critico") return "bg-danger";
+        if (e === "alerta") return "bg-warning";
+        return "bg-success";
+    };
+    const _margenClass = (margen) => {
+        if (margen >= 20) return "text-success";
+        if (margen >= 10) return "text-warning";
+        return "text-danger";
     };
 
     // ============================================================
@@ -70,7 +90,7 @@
         // para que al recargar la URL limpia el server no devuelva otra
         // sub-pane activa por defecto.
         activarOvTab("ovtab-inventario");
-        window.location.href = window.location.pathname;
+        globalThis.location.href = globalThis.location.pathname;
     }
 
     function irWorkspace(invId, tabId) {
@@ -98,15 +118,15 @@
             _toggleCentroAcopioLock();
             renderHistorialGeneralPaged();
         }
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        globalThis.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function poblarWorkspace(inv) {
         const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? "—"; };
         const nombre = inv.nombre;
         const estadoLower = inv.estado;
-        const estadoLabel = estadoLower === "critico" ? "Crítico" : estadoLower === "alerta" ? "Alerta" : "OK";
-        const estadoClass = estadoLower === "critico" ? "bg-danger" : estadoLower === "alerta" ? "bg-warning text-dark" : "bg-success";
+        const estadoLabel = _estadoLabel(estadoLower);
+        const estadoClass = _estadoClass(estadoLower);
         const ocupacionNum = Number(inv.ocupacion);
         setText("inv-ws-nombre", nombre);
         setText("inv-ws-categoria", inv.categoria);
@@ -124,7 +144,7 @@
         }
         const wsProgress = document.getElementById("inv-ws-progress");
         if (wsProgress) {
-            wsProgress.className = "progress-bar " + (estadoLower === "critico" ? "bg-danger" : estadoLower === "alerta" ? "bg-warning" : "bg-success");
+            wsProgress.className = "progress-bar " + _estadoClassShort(estadoLower);
             wsProgress.style.width = Math.min(100, Math.max(0, ocupacionNum)) + "%";
         }
         // Tab datos
@@ -216,20 +236,20 @@
         // El workspace sigue abierto via state JS, pero la URL queda
         // en el "punto de entrada" — un reload posterior lleva al
         // landing, no a la tab vieja.
-        if (window.location.search) {
-            window.history.replaceState(null, "", window.location.pathname);
+        if (globalThis.location.search) {
+            globalThis.history.replaceState(null, "", globalThis.location.pathname);
         }
     }
 
     function _reinitSelect2InPane(pane) {
-        if (typeof window.jQuery === "undefined" || typeof window.jQuery.fn.select2 === "undefined") return;
-        const $ = window.jQuery;
+        if (globalThis.jQuery === undefined || globalThis.jQuery.fn.select2 === undefined) return;
+        const $ = globalThis.jQuery;
         const base = { theme: "bootstrap-5", language: "es", width: "100%" };
         const $selects = $(pane).find("select").not("#inv-hfiltro-tipo").not("#inv-ws-hfiltro-tipo");
         $selects.each(function () {
             const $el = $(this);
             if ($el.data("select2")) $el.select2("destroy");
-            $el.select2(Object.assign({}, base));
+            $el.select2({...base});
         });
     }
 
@@ -295,13 +315,12 @@
     // RENDER HISTORIAL / ENTRADAS / SALIDAS
     // ============================================================
     function filaHistorial(mov, tipo, opts) {
-        const showMaterial = !opts || opts.showMaterial !== false;
+        const showMaterial = opts?.showMaterial !== false;
         const fecha = formatDateCO(mov.fechaCompra || mov.fechaVenta);
         const cantidad = mov.cantidad;
         const precio = tipo === "compra" ? mov.precioCompra : mov.precioVenta;
         const total = Number(cantidad || 0) * Number(precio || 0);
         const material = mov.nombreMaterial || "—";
-        const categoria = mov.nombreCategoria || "—";
         const tipoBadge = tipo === "compra"
             ? '<span class="badge bg-danger-subtle text-danger">Compra</span>'
             : '<span class="badge bg-success-subtle text-success">Venta</span>';
@@ -423,7 +442,7 @@
     function popularCategoriasPicker() {
         const sel = document.getElementById("inv-picker-categoria");
         if (!sel) return;
-        const cats = Array.from(new Set(pickerCatalogo.map((m) => m.nmbCategoria).filter(Boolean))).sort();
+        const cats = Array.from(new Set(pickerCatalogo.map((m) => m.nmbCategoria).filter(Boolean))).sort((a, b) => a.localeCompare(b, "es"));
         sel.innerHTML = '<option value="">Todas</option>' + cats.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     }
 
@@ -576,7 +595,7 @@
             .then(({ ok, data }) => {
                 if (!ok) throw new Error(data?.mensaje || data?.message || "Error al guardar");
                 Swal.fire({ icon: "success", title: "¡Material agregado!", text: data.mensaje || "Operación exitosa", confirmButtonColor: "#198754" });
-                setTimeout(() => window.location.reload(), 1500);
+                setTimeout(() => globalThis.location.reload(), 1500);
             })
             .catch((err) => {
                 const msg = document.getElementById("inv-crear-mensaje-estado");
@@ -594,11 +613,11 @@
     // ============================================================
 
     function _initSelect2InSection() {
-        if (typeof window.jQuery === "undefined" || typeof window.jQuery.fn.select2 === "undefined") {
+        if (globalThis.jQuery === undefined || globalThis.jQuery.fn.select2 === undefined) {
             console.warn("[inventario] Select2 no está cargado; los filtros quedan como <select> nativos.");
             return;
         }
-        const $ = window.jQuery;
+        const $ = globalThis.jQuery;
         const base = { theme: "bootstrap-5", language: "es", width: "100%" };
 
         const apply = (selector, extra) => {
@@ -607,7 +626,7 @@
             $els.each(function () {
                 const $el = $(this);
                 if ($el.data("select2")) $el.select2("destroy");
-                $el.select2(Object.assign({}, base, extra || {}));
+                $el.select2({...base, ...(extra || {})});
             });
         };
 
@@ -723,7 +742,7 @@
         bindExtras();
         renderFlujoMaterialesList();
         // Deep-link desde sidebar: ?ovtab=ovtab-xxx
-        const urlOvtab = new URLSearchParams(window.location.search).get("ovtab");
+        const urlOvtab = new URLSearchParams(globalThis.location.search).get("ovtab");
         if (urlOvtab) {
             const valid = ["ovtab-inventario", "ovtab-buscar", "ovtab-bulk", "ovtab-historial", "ovtab-flujo"];
             if (valid.includes(urlOvtab)) activarOvTab(urlOvtab);
@@ -836,7 +855,7 @@
                 if (!ok) throw new Error(d?.mensaje || "Error al guardar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-inventario"))?.hide();
                 Swal.fire({ icon: "success", title: "¡Cambios guardados!", text: "La hoja técnica se actualizó.", confirmButtonColor: "#0d6efd" });
-                setTimeout(() => window.location.reload(), 1200);
+                setTimeout(() => globalThis.location.reload(), 1200);
             })
             .catch((err) => {
                 const msg = document.getElementById("inv-edit-mensaje-estado");
@@ -871,7 +890,7 @@
                 if (!ok) throw new Error(d?.mensaje || "Error al eliminar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-eliminar"))?.hide();
                 Swal.fire({ icon: "success", title: "Eliminado", text: "Material removido del inventario.", confirmButtonColor: "#dc3545" });
-                setTimeout(() => window.location.reload(), 1200);
+                setTimeout(() => globalThis.location.reload(), 1200);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
     });
@@ -933,10 +952,10 @@
                     width: "480px",
                 }).then(() => {
                     if (!currentMaterial) return;
-                    const url = new URL(window.location.href);
+                    const url = new URL(globalThis.location.href);
                     url.searchParams.set("inv", currentMaterial.inventarioId);
                     url.searchParams.set("tab", "tab-compra");
-                    window.location.href = url.toString();
+                    globalThis.location.href = url.toString();
                 });
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
@@ -1000,10 +1019,10 @@
                     width: "480px",
                 }).then(() => {
                     if (!currentMaterial) return;
-                    const url = new URL(window.location.href);
+                    const url = new URL(globalThis.location.href);
                     url.searchParams.set("inv", currentMaterial.inventarioId);
                     url.searchParams.set("tab", "tab-venta");
-                    window.location.href = url.toString();
+                    globalThis.location.href = url.toString();
                 });
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
@@ -1052,19 +1071,6 @@
         // (aunque el usuario todavía no haya tipeado cantidad, queremos ver
         // el stock actual como punto de partida).
         actualizarStockPreview(prefix);
-    }
-    function poblarInfoMaterialEdicion(tipo) {
-        // Para los modales de edición: poblar los 3 hidden de validación
-        // de stock desde la fila del historial de la compra/venta seleccionada.
-        // `currentMaterial` tiene stockActual/capacidadMaxima, y la cantidad
-        // original se pasa en la firma de la función.
-        if (!currentMaterial) return;
-        const inv = currentMaterial;
-        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
-        const prefix = tipo === "compra" ? "inv-edit-compra" : "inv-edit-venta";
-        setVal(`${prefix}-stock-actual`, inv.stockActual);
-        setVal(`${prefix}-capacidad-maxima`, inv.capacidadMaxima);
-        // cantidadOriginal se setea desde editarMovimiento() al abrir el modal
     }
     function actualizarTotalEntrada() {
         const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
@@ -1270,13 +1276,13 @@
         }
         // Mapear nombres del form al contrato del servicio.
         const payload = {
-            compraId: raw.id,
+            compraId: String(raw.id),
             fechaCompra: raw.fecha,
             cantidad: nuevaCant,
             precioCompra: Number(raw.precioCompra),
             observaciones: raw.observaciones || "",
         };
-        const promise = fetch(`/punto-eca/movimientos/editar-compra/${raw.id}/`, {
+        const promise = fetch(`/punto-eca/movimientos/editar-compra/${String(raw.id)}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -1286,7 +1292,7 @@
                 if (!ok) throw new Error(d?.mensaje || "Error al editar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-compra"))?.hide();
                 Swal.fire({ icon: "success", title: "Compra actualizada", timer: 1500, showConfirmButton: false });
-                setTimeout(() => window.location.reload(), 1500);
+                setTimeout(() => globalThis.location.reload(), 1500);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
         withLoading(btn, () => promise);
@@ -1312,7 +1318,7 @@
         }
         // Mapear nombres del form al contrato del servicio.
         const payload = {
-            ventaId: raw.id,
+            ventaId: String(raw.id),
             fechaVenta: raw.fecha,
             cantidad: nuevaCant,
             precioVenta: Number(raw.precioVenta),
@@ -1320,7 +1326,7 @@
         };
         const centroSel = document.getElementById("inv-edit-venta-centro");
         if (centroSel && centroSel.value) payload.centroAcopioId = centroSel.value;
-        const promise = fetch(`/punto-eca/movimientos/editar-venta/${raw.id}/`, {
+        const promise = fetch(`/punto-eca/movimientos/editar-venta/${String(raw.id)}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -1330,7 +1336,7 @@
                 if (!ok) throw new Error(d?.mensaje || "Error al editar");
                 bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-venta"))?.hide();
                 Swal.fire({ icon: "success", title: "Venta actualizada", timer: 1500, showConfirmButton: false });
-                setTimeout(() => window.location.reload(), 1500);
+                setTimeout(() => globalThis.location.reload(), 1500);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
         withLoading(btn, () => promise);
@@ -1361,7 +1367,7 @@
                 .then(({ ok, d }) => {
                     if (!ok) throw new Error(d?.mensaje || "Error al eliminar");
                     Swal.fire({ icon: "success", title: "Eliminado", timer: 1200, showConfirmButton: false });
-                    setTimeout(() => window.location.reload(), 1200);
+                    setTimeout(() => globalThis.location.reload(), 1200);
                 })
                 .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
         });
@@ -1449,7 +1455,7 @@
             }
             return;
         }
-        window.location.href = buildExportQuery(base);
+        globalThis.location.href = buildExportQuery(base);
     }
     function exportarHistorialExcel() {
         _exportarHistorialConSweetAlert("excel");
@@ -1472,17 +1478,17 @@
         const desde = _q("inv-hfiltro-desde")?.value;
         const hasta = _q("inv-hfiltro-hasta")?.value;
         const centro = _q("inv-hfiltro-centro")?.value || "";
-        const cantidadMin = parseFloat(_q("inv-hfiltro-cantidad-min")?.value);
-        const cantidadMax = parseFloat(_q("inv-hfiltro-cantidad-max")?.value);
-        const montoMin = parseFloat(_q("inv-hfiltro-monto-min")?.value);
-        const montoMax = parseFloat(_q("inv-hfiltro-monto-max")?.value);
+        const cantidadMin = Number.parseFloat(_q("inv-hfiltro-cantidad-min")?.value);
+        const cantidadMax = Number.parseFloat(_q("inv-hfiltro-cantidad-max")?.value);
+        const montoMin = Number.parseFloat(_q("inv-hfiltro-monto-min")?.value);
+        const montoMax = Number.parseFloat(_q("inv-hfiltro-monto-max")?.value);
         const desdeD = desde ? new Date(desde + "T00:00:00") : null;
         const hastaD = hasta ? new Date(hasta + "T23:59:59") : null;
 
         const enRango = (iso) => {
             if (!desdeD && !hastaD) return true;
             const d = new Date(iso);
-            if (isNaN(d)) return false;
+            if (Number.isNaN(d.getTime())) return false;
             if (desdeD && d < desdeD) return false;
             if (hastaD && d > hastaD) return false;
             return true;
@@ -1499,11 +1505,11 @@
                 if (tipoMaterial && c.nombreTipo !== tipoMaterial) return;
                 if (!enRango(c.fechaCompra)) return;
                 const cant = Number(c.cantidad || 0);
-                if (!isNaN(cantidadMin) && cant < cantidadMin) return;
-                if (!isNaN(cantidadMax) && cant > cantidadMax) return;
+                if (!Number.isNaN(cantidadMin) && cant < cantidadMin) return;
+                if (!Number.isNaN(cantidadMax) && cant > cantidadMax) return;
                 const monto = cant * Number(c.precioCompra || 0);
-                if (!isNaN(montoMin) && monto < montoMin) return;
-                if (!isNaN(montoMax) && monto > montoMax) return;
+                if (!Number.isNaN(montoMin) && monto < montoMin) return;
+                if (!Number.isNaN(montoMax) && monto > montoMax) return;
                 rows.push({ ...c, _tipo: "compra", _ts: c.fechaCompra });
             });
         }
@@ -1515,11 +1521,11 @@
                 if (centro && v.nombreCentroAcopio !== centro) return;
                 if (!enRango(v.fechaVenta)) return;
                 const cant = Number(v.cantidad || 0);
-                if (!isNaN(cantidadMin) && cant < cantidadMin) return;
-                if (!isNaN(cantidadMax) && cant > cantidadMax) return;
+                if (!Number.isNaN(cantidadMin) && cant < cantidadMin) return;
+                if (!Number.isNaN(cantidadMax) && cant > cantidadMax) return;
                 const monto = cant * Number(v.precioVenta || 0);
-                if (!isNaN(montoMin) && monto < montoMin) return;
-                if (!isNaN(montoMax) && monto > montoMax) return;
+                if (!Number.isNaN(montoMin) && monto < montoMin) return;
+                if (!Number.isNaN(montoMax) && monto > montoMax) return;
                 rows.push({ ...v, _tipo: "venta", _ts: v.fechaVenta });
             });
         }
@@ -1573,9 +1579,9 @@
 
         // Re-init Select2 (idempotente): destroy antes, select2 después.
         // Solo aplica si Select2 está cargado y el <select> ya fue inicializado.
-        if (typeof window.jQuery !== "undefined" && typeof window.jQuery.fn.select2 !== "undefined" && window.jQuery(sel).data("select2")) {
-            window.jQuery(sel).select2("destroy");
-            window.jQuery(sel).select2({ theme: "bootstrap-5", language: "es", width: "100%" });
+        if (globalThis.jQuery !== undefined && globalThis.jQuery.fn.select2 !== undefined && globalThis.jQuery(sel).data("select2")) {
+            globalThis.jQuery(sel).select2("destroy");
+            globalThis.jQuery(sel).select2({ theme: "bootstrap-5", language: "es", width: "100%" });
         }
 
         // Re-aplicar estado disabled después de re-poblar (puede haber sido
@@ -1607,12 +1613,14 @@
             const active = opts.active ? " active" : "";
             return `<li class="page-item${disabled}${active}"><a class="page-link" href="#" data-page="${page}">${label}</a></li>`;
         };
-        parts.push(mkBtn("«", 1, { disabled: current === 1 }));
-        parts.push(mkBtn("‹", current - 1, { disabled: current === 1 }));
+        parts.push(
+            mkBtn("«", 1, { disabled: current === 1 }),
+            mkBtn("‹", current - 1, { disabled: current === 1 })
+        );
         const max = pages;
-        const window = 2;
-        const start = Math.max(1, current - window);
-        const end = Math.min(max, current + window);
+        const pagerWindow = 2;
+        const start = Math.max(1, current - pagerWindow);
+        const end = Math.min(max, current + pagerWindow);
         if (start > 1) {
             parts.push(mkBtn("1", 1));
             if (start > 2) parts.push('<li class="page-item disabled"><span class="page-link">…</span></li>');
@@ -1624,13 +1632,15 @@
             if (end < max - 1) parts.push('<li class="page-item disabled"><span class="page-link">…</span></li>');
             parts.push(mkBtn(String(max), max));
         }
-        parts.push(mkBtn("›", current + 1, { disabled: current === pages }));
-        parts.push(mkBtn("»", pages, { disabled: current === pages }));
+        parts.push(
+            mkBtn("›", current + 1, { disabled: current === pages }),
+            mkBtn("»", pages, { disabled: current === pages })
+        );
         pager.innerHTML = parts.join("");
         pager.querySelectorAll("a.page-link").forEach((a) => {
             a.addEventListener("click", (ev) => {
                 ev.preventDefault();
-                const p = parseInt(a.dataset.page, 10);
+                const p = Number.parseInt(a.dataset.page, 10);
                 if (Number.isFinite(p) && p >= 1 && p <= pages) {
                     historialPage = p;
                     renderHistorialGeneralPaged();
@@ -1702,10 +1712,6 @@
     // ============================================================
     const PALETA = ["#0d6efd", "#dc3545", "#198754", "#ffc107", "#6f42c1", "#fd7e14", "#20c997", "#d63384", "#0dcaf0", "#6c757d"];
     const MAX_PUNTOS = 60;
-    const chartState = {
-        ovtab: { data: [], labels: [], series: new Map(), capacidad: new Map() },
-        ws: { data: [], labels: [], series: new Map(), capacidad: new Map() },
-    };
 
     function toISODate(d) {
         const yyyy = d.getFullYear();
@@ -1723,11 +1729,6 @@
         if (gran === "dia") return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
         if (gran === "semana") return inicioDeSemana(fecha);
         return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
-    }
-    function bucketKey(fecha, gran) {
-        if (gran === "dia") return toISODate(fecha);
-        if (gran === "semana") return `W${toISODate(inicioDeSemana(fecha))}`;
-        return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
     }
     function generarBuckets(desde, hasta, gran) {
         const inicio = bucketDeFecha(desde, gran);
@@ -1850,7 +1851,7 @@
         const ctx = canvas.getContext("2d");
         const W = canvas.clientWidth || 900;
         const H = canvas.clientHeight || 450;
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = globalThis.devicePixelRatio || 1;
         canvas.width = W * dpr;
         canvas.height = H * dpr;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2003,8 +2004,8 @@
 
     function renderOvtabChart() {
         const checks = document.querySelectorAll('#inv-flujo-materiales-list input[type="checkbox"]:checked');
-        const ids = Array.from(checks).map((c) => c.value);
-        const mats = materialesDB.filter((m) => ids.includes(String(m.inventarioId)));
+        const ids = new Set(Array.from(checks).map((c) => c.value));
+        const mats = materialesDB.filter((m) => ids.has(String(m.inventarioId)));
         const gran = document.getElementById("inv-flujo-stock-granularidad")?.value || "dia";
         const cap = document.getElementById("inv-flujo-stock-cap")?.checked;
         const desde = _parseFecha("inv-flujo-stock-desde") || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -2028,8 +2029,8 @@
 
     function renderOvGananciasChart() {
         const checks = document.querySelectorAll('#inv-flujo-gan-materiales-list input[type="checkbox"]:checked');
-        const ids = Array.from(checks).map((c) => c.value);
-        const mats = materialesDB.filter((m) => ids.includes(String(m.inventarioId)));
+        const ids = new Set(Array.from(checks).map((c) => c.value));
+        const mats = materialesDB.filter((m) => ids.has(String(m.inventarioId)));
         const gran = document.getElementById("inv-flujo-gan-granularidad")?.value || "dia";
         const desde = _parseFecha("inv-flujo-gan-desde") || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         const hasta = _parseFecha("inv-flujo-gan-hasta") || new Date();
@@ -2077,7 +2078,7 @@
         setKpi("inv-flujo-gan-kpi-profit", formatearCOP(profitTotal));
         setKpiClass("inv-flujo-gan-kpi-profit", profitTotal >= 0 ? "text-success" : "text-danger");
         setKpi("inv-flujo-gan-kpi-margen", `${margen.toFixed(1)}%`);
-        setKpiClass("inv-flujo-gan-kpi-margen", margen >= 20 ? "text-success" : margen >= 10 ? "text-warning" : "text-danger");
+        setKpiClass("inv-flujo-gan-kpi-margen", _margenClass(margen));
         setKpi("inv-flujo-gan-kpi-top", top ? top.nombre : "—");
         setKpi("inv-flujo-gan-kpi-top-val", top ? formatearCOP(top.profit) : "—");
         setKpi("inv-flujo-gan-kpi-perdida", movsPerdida);
@@ -2139,7 +2140,7 @@
         setKpi("inv-ws-flujo-gan-profit", formatearCOP(profitTotal));
         setKpiClass("inv-ws-flujo-gan-profit", profitTotal >= 0 ? "text-success" : "text-danger");
         setKpi("inv-ws-flujo-gan-margen", `${margen.toFixed(1)}%`);
-        setKpiClass("inv-ws-flujo-gan-margen", margen >= 20 ? "text-success" : margen >= 10 ? "text-warning" : "text-danger");
+        setKpiClass("inv-ws-flujo-gan-margen", _margenClass(margen));
         setKpi("inv-ws-flujo-gan-perdida", movsPerdida);
         if (ultimaVenta) {
             setKpi("inv-ws-flujo-gan-ultima", formatDateCO(ultimaVenta.fechaVenta));
@@ -2464,7 +2465,7 @@
     function _actualizarLinkPlantilla() {
         const link = document.getElementById("inv-link-plantilla-ejemplo");
         if (!link) return;
-        const base = link.dataset.plantillaUrl || link.getAttribute("data-plantilla-url") || "";
+        const base = link.dataset.plantillaUrl || "";
         if (!base) return;
         const tipoEl = document.getElementById("inv-carga-tipo");
         const tipo = (tipoEl && tipoEl.value) || "compra";
@@ -2558,7 +2559,14 @@
         const el = document.getElementById("inv-deeplink");
         if (!el) return;
         let dl;
-        try { dl = JSON.parse(el.textContent); } catch (_) { return; }
+        try {
+            dl = JSON.parse(el.textContent);
+        } catch (parseErr) {
+            // Si el deep-link está malformado, simplemente no se navega
+            // (no queremos romper la carga de la página por un JSON inválido).
+            console.warn("[inv] deep-link JSON inválido:", parseErr);
+            return;
+        }
         if (!dl || !dl.inv || !dl.tab) return;
         // materialesDB se carga via inv-data (json_script) en el mismo
         // render del server, así que ya está disponible al ejecutar este

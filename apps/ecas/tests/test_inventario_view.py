@@ -15,7 +15,6 @@ import json
 import uuid
 
 from django.test import Client, TestCase, override_settings
-from django.urls import reverse
 
 from apps.ecas.models import Localidad, PuntoECA
 from apps.inventory.models import (
@@ -1206,8 +1205,8 @@ class TestComprobanteYDeepLink(TestCase):
                       "submitEntrada debe redirigir al tab-compra del workspace")
         self.assertIn("searchParams.set", block,
                       "submitEntrada debe usar searchParams.set para construir el deep-link")
-        self.assertIn("window.location.href", block,
-                      "submitEntrada debe asignar window.location.href para navegar")
+        self.assertIn("globalThis.location.href", block,
+                      "submitEntrada debe asignar globalThis.location.href para navegar")
         self.assertNotIn("window.location.reload()", block,
                          "submitEntrada NO debe usar location.reload(); debe redirigir al deep-link")
         self.assertNotIn("refrescarPostAccion", block,
@@ -1220,8 +1219,8 @@ class TestComprobanteYDeepLink(TestCase):
                       "submitSalida debe llamar renderComprobante('venta', ...)")
         self.assertIn("tab-venta", block,
                       "submitSalida debe redirigir al tab-venta del workspace")
-        self.assertIn("window.location.href", block,
-                      "submitSalida debe asignar window.location.href para navegar")
+        self.assertIn("globalThis.location.href", block,
+                      "submitSalida debe asignar globalThis.location.href para navegar")
         self.assertNotIn("window.location.reload()", block,
                          "submitSalida NO debe usar location.reload(); debe redirigir al deep-link")
         self.assertNotIn("refrescarPostAccion", block,
@@ -1665,9 +1664,6 @@ class TestValidacionEstandarizadaCV(TestCase):
         self.assertIsNotNone(self.js_path)
         with open(self.js_path, encoding="utf-8") as fh:
             self.js = fh.read()
-        from django.contrib.staticfiles import finders
-        tpl_path = finders.find("templates/ecas/section-inventario.html") or \
-                   "templates/ecas/section-inventario.html"
         with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
             self.tpl = fh.read()
 
@@ -1939,18 +1935,18 @@ class TestFiltrosFlujoWorkshop(TestCase):
         block = self.js.split("function activarTab", 1)[1].split("function ", 1)[0]
         self.assertIn("history.replaceState", block,
                       "activarTab debe llamar a history.replaceState para resetear la URL")
-        self.assertIn("window.location.pathname", block,
-                      "activarTab debe usar window.location.pathname como nueva URL")
+        self.assertIn("globalThis.location.pathname", block,
+                      "activarTab debe usar globalThis.location.pathname como nueva URL")
 
     def test_ir_landing_hace_full_reload(self):
-        """irLanding debe hacer window.location.href = pathname (full
+        """irLanding debe hacer globalThis.location.href = pathname (full
         page reload), NO replaceState. El reload garantiza datos
         frescos del backend al volver al inventario general."""
         block = self.js.split("function irLanding", 1)[1].split("function ", 1)[0]
-        self.assertIn("window.location.href", block,
-                      "irLanding debe asignar a window.location.href")
-        self.assertIn("window.location.pathname", block,
-                      "irLanding debe apuntar a window.location.pathname")
+        self.assertIn("globalThis.location.href", block,
+                      "irLanding debe asignar a globalThis.location.href")
+        self.assertIn("globalThis.location.pathname", block,
+                      "irLanding debe apuntar a globalThis.location.pathname")
         # No debe usar replaceState (esa estrategia ahora vive en activarTab).
         self.assertNotIn("history.replaceState", block,
                          "irLanding NO debe usar replaceState (irLanding es full reload)")
@@ -1999,9 +1995,9 @@ class TestChartSeriesVisibilidad(TestCase):
             small_end = self.tpl.find("</small>", small_start)
             small_block = self.tpl[small_start:small_end + len("</small>")]
             self.assertIn("Ganancia neta", small_block,
-                          f"El label debe ser 'Ganancia neta', no 'Profit neto'")
+                          "El label debe ser 'Ganancia neta', no 'Profit neto'")
             self.assertNotIn("Profit neto", small_block,
-                              f"El label NO debe decir 'Profit neto'")
+                              "El label NO debe decir 'Profit neto'")
 
     def test_chart_label_profit_renombrado_a_ganancia_neta(self):
         """En el JS del chart, la tercera serie de modo ganancia paso
@@ -2185,7 +2181,8 @@ class TestEjecutarCargaMasivaJS(TestCase):
                       "La función _actualizarLinkPlantilla() debe existir")
         idx = self.js.find("function _actualizarLinkPlantilla()")
         block = self.js[idx:idx + 800]
-        self.assertIn("data-plantilla-url", block,
+        # dataset.plantillaUrl es el equivalente moderno de getAttribute("data-plantilla-url")
+        self.assertIn("dataset.plantillaUrl", block,
                       "Debe leer data-plantilla-url del link")
         self.assertIn("inv-carga-tipo", block,
                       "Debe leer el select inv-carga-tipo")

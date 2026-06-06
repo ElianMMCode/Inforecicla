@@ -22,7 +22,7 @@ def _crear_gestor(email):
     return U.objects.create_user(
         email=email,
         numero_documento=f"9000{suffix}",
-        password="x",
+        password="x",  # NOSONAR - credencial dummy de tests, no es real
         nombres="Hist Test",
         apellidos="Apellido Test",
         tipo_documento="CC",
@@ -157,7 +157,7 @@ class TestExportHistorialFiltrosAvanzados(TestCase):
         self.assertEqual(self._contar_filas_xlsx(response), 2)
 
     def test_export_filtro_monto_min(self):
-        # Compra: 10 * 1000 = 10,000 (excluida); Venta: 50 * 5000 = 250,000
+        # Compra 10x1000=10000 queda excluida; venta 50x5000=250000 incluida.
         self._crear_compra(10, 1000)
         self._crear_venta(50, 5000, self.centro_a)
         response = self._exportar_excel(monto_min=100000)
@@ -323,18 +323,8 @@ class TestExportFilename(TestCase):
         self.assertRegex(fn, r"^compras_Lata_Plastico_\d{4}-\d{2}-\d{2}_\d{4}\.xlsx$")
 
     def test_filename_dos_export_seguidos_difieren_o_coinciden_legitimamente(self):
-        # Dos exports en el mismo segundo pueden coincidir, pero el formato
-        # siempre es válido. Esto valida que la fecha se incluye.
-        r1 = self.client.get(
-            "/punto-eca/movimientos/exportar-ventas-excel/",
-            HTTP_ACCEPT="application/json",
-        )
-        r2 = self.client.get(
-            "/punto-eca/movimientos/exportar-ventas-excel/",
-            HTTP_ACCEPT="application/json",
-        )
         # Sin ventas: 404 con cuerpo JSON, no se genera filename.
-        # Pero igual probamos con compras.
+        # Pero igual probamos con compras para validar el formato.
         r3 = self.client.get(
             "/punto-eca/movimientos/exportar-compras-excel/",
             HTTP_ACCEPT="application/json",
@@ -1042,7 +1032,7 @@ class TestBulkImportEndpoint(TestCase):
         ciu = U.objects.create_user(
             email="ciu@x.com",
             numero_documento="9999" + uuid.uuid4().hex[:6],
-            password="x",
+            password="x",  # NOSONAR - credencial dummy de tests, no es real
             nombres="Ciu",
             apellidos="Test",
             tipo_documento="CC",
@@ -1063,7 +1053,7 @@ class TestBulkImportEndpoint(TestCase):
         ciu = U.objects.create_user(
             email="ciu2@x.com",
             numero_documento="9999" + uuid.uuid4().hex[:6],
-            password="x",
+            password="x",  # NOSONAR - credencial dummy de tests, no es real
             nombres="Ciu2",
             apellidos="Test",
             tipo_documento="CC",

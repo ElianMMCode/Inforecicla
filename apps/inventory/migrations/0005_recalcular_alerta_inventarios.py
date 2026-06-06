@@ -17,10 +17,7 @@ def recalcular_alerta_inventarios(apps, schema_editor):
     NO podemos llamar a `recalcular_alerta()` del modelo actual. La
     lógica se duplica aquí a propósito.
     """
-    Inventario = apps.get_model("inventory", "Inventario")
-    Alerta = apps.get_model("inventory", "Alerta") if hasattr(
-        apps.get_app_config("inventory"), "Alerta"
-    ) else None
+    inventario = apps.get_model("inventory", "Inventario")
     # Las choices viven en config.constants; pero necesitamos strings
     # que el campo acepta. El campo alerta es CharField con choices
     # Alerta.OK/ALERTA/CRITICO -> "OK"/"ALERTA"/"CRITICO".
@@ -29,7 +26,7 @@ def recalcular_alerta_inventarios(apps, schema_editor):
     VALOR_CRITICO = "CRITICO"
 
     count = {"OK": 0, "ALERTA": 0, "CRITICO": 0}
-    for inv in Inventario.objects.all().iterator(chunk_size=200):
+    for inv in inventario.objects.all().iterator(chunk_size=200):
         ocup = float(inv.ocupacion_actual or 0)
         ua = inv.umbral_alerta
         uc = inv.umbral_critico
