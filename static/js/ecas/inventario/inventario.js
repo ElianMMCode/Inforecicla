@@ -885,8 +885,11 @@
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
                 // Mostrar comprobante con todos los campos de la compra.
-                // El usuario debe cerrarlo manualmente; NO recargamos la
-                // página, para que permanezca en el workspace.
+                // Al cerrarlo, redirigimos a la misma página con un deep-link
+                // (?inv=<id>&tab=tab-compra) para que el workspace se
+                // re-renderice con la nueva compra visible en el historial
+                // y el stock actualizado. La recarga es necesaria para que
+                // la lista de compras del backend se vuelva a pedir.
                 Swal.fire({
                     icon: null,
                     title: null,
@@ -906,9 +909,13 @@
                     confirmButtonText: "Cerrar",
                     confirmButtonColor: "#dc3545",
                     width: "480px",
+                }).then(() => {
+                    if (!currentMaterial) return;
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("inv", currentMaterial.inventarioId);
+                    url.searchParams.set("tab", "tab-compra");
+                    window.location.href = url.toString();
                 });
-                form.reset();
-                refrescarPostAccion("compra", payload);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
         withLoading(btn, () => promise);
@@ -947,8 +954,10 @@
             .then(({ ok, d }) => {
                 if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
                 // Mostrar comprobante con todos los campos de la venta.
-                // El usuario debe cerrarlo manualmente; NO recargamos la
-                // página, para que permanezca en el workspace.
+                // Al cerrarlo, redirigimos a la misma página con un deep-link
+                // (?inv=<id>&tab=tab-venta) para que el workspace se
+                // re-renderice con la nueva venta visible en el historial
+                // y el stock actualizado.
                 Swal.fire({
                     icon: null,
                     title: null,
@@ -969,9 +978,13 @@
                     confirmButtonText: "Cerrar",
                     confirmButtonColor: "#198754",
                     width: "480px",
+                }).then(() => {
+                    if (!currentMaterial) return;
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("inv", currentMaterial.inventarioId);
+                    url.searchParams.set("tab", "tab-venta");
+                    window.location.href = url.toString();
                 });
-                form.reset();
-                refrescarPostAccion("venta", payload);
             })
             .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
         withLoading(btn, () => promise);
@@ -1005,11 +1018,12 @@
                 precioEl.value = inv.precioVenta;
             }
         }
-        // Sugerir cantidad=1 como punto de partida, si el campo está vacío.
-        // El usuario lo sobrescribe; la idea es que vea el Total calculado
-        // (1 × precio) apenas entra al form, sin tener que tipear cantidad.
-        const cantEl = document.getElementById(`${prefix}Cantidad`);
-        if (cantEl && !cantEl.value) cantEl.value = 1;
+        // Sugerir cantidad=0 como punto de partida, si el campo está vacío.
+        // El usuario lo sobrescribe; con 0 el Total queda vacío y el
+        // stock preview muestra el stock base (sin cambio). Obliga al
+        // usuario a tipear la cantidad real, evitando registrar valores
+        // случайные (ej. 1) que el usuario podría olvidar cambiar.
+        if (cantEl && !cantEl.value) cantEl.value = 0;
         // Recalcular total con el precio recién autorrellenado
         if (prefix === "formEntrada") actualizarTotalEntrada();
         if (prefix === "formSalida") actualizarTotalVenta();
@@ -2220,44 +2234,6 @@
             </div>`;
     }
 
-    // Refresca el workspace después de una compra/venta exitosa sin
-    // recargar la página, para que el usuario permanezca en el
-    // workspace (no lo llevamos al inicio de la sección).
-    function refrescarPostAccion(tipo, payload) {
-        if (!currentMaterial) return;
-        const cant = Number(payload.cantidad) || 0;
-        // Actualizar stock en memoria y en la DB cacheada
-        if (tipo === "compra") currentMaterial.stockActual = Number(currentMaterial.stockActual || 0) + cant;
-        else if (tipo === "venta") currentMaterial.stockActual = Number(currentMaterial.stockActual || 0) - cant;
-        // Recalcular ocupación y estado
-        const ocupacionNum = currentMaterial.capacidadMaxima > 0
-            ? Math.round((currentMaterial.stockActual / currentMaterial.capacidadMaxima) * 100)
-            : 0;
-        currentMaterial.ocupacion = ocupacionNum;
-        currentMaterial.estado = ocupacionNum >= currentMaterial.umbralCritico ? "critico"
-            : ocupacionNum >= currentMaterial.umbralAlerta ? "alerta" : "ok";
-        // Re-poblar el workspace con el nuevo stock (header + readonly)
-        poblarWorkspace(currentMaterial);
-        // Re-poblar info material (readonly form + precio autorrellenado)
-        poblarInfoMaterial(tipo === "compra" ? "formEntrada" : "formSalida");
-        // Re-pintar la card del material en el landing (sin necesidad de reload)
-        const card = document.querySelector(`.inv-tarjeta-material[data-inv-id="${currentMaterial.inventarioId}"]`);
-        if (card) {
-            card.dataset.ocupacion = ocupacionNum;
-            card.dataset.estado = currentMaterial.estado;
-            const stockTxt = card.querySelector(".inv-card-stock");
-            if (stockTxt) stockTxt.textContent = formatQty(currentMaterial.stockActual, currentMaterial.unidad);
-            const progressBar = card.querySelector(".progress-bar");
-            if (progressBar) {
-                progressBar.style.width = Math.min(100, Math.max(0, ocupacionNum)) + "%";
-                progressBar.className = "progress-bar " + (currentMaterial.estado === "critico" ? "bg-danger"
-                    : currentMaterial.estado === "alerta" ? "bg-warning" : "bg-success");
-            }
-        }
-        // Si estamos en el tab-historial, re-renderizarlo
-        if (isWorkspaceHistorial) renderHistorialGeneralPaged();
-    }
-
     // ============================================================
     // LOADING STATE en botones de submit
     // ============================================================
@@ -2292,9 +2268,33 @@
     }
 
     // --- Init ---
+    function _initDeepLink() {
+        // Si el template inyectó un deep-link (porque la URL traía
+        // ?inv=<id>&tab=<tabId>), navegamos al workspace de ese material.
+        // Lo hacemos en el init, antes de que el usuario interactúe, para
+        // que la página "aparezca" ya en el contexto correcto.
+        const el = document.getElementById("inv-deeplink");
+        if (!el) return;
+        let dl;
+        try { dl = JSON.parse(el.textContent); } catch (_) { return; }
+        if (!dl || !dl.inv || !dl.tab) return;
+        // materialesDB se carga via inv-data (json_script) y está
+        // disponible al ejecutar este script (mismo render del server).
+        // Pero poblarInfoMaterial y poblarWorkspace asumen que el
+        // currentMaterial existe, así que las llamamos via irWorkspace.
+        setTimeout(() => {
+            const inv = materialesDB.find((m) => String(m.inventarioId) === String(dl.inv));
+            if (inv) {
+                irWorkspace(dl.inv, dl.tab);
+            } else {
+                console.warn("[inv] deep-link apunta a inventarioId inexistente:", dl.inv);
+            }
+        }, 0);
+    }
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", bind);
+        document.addEventListener("DOMContentLoaded", () => { bind(); _initDeepLink(); });
     } else {
         bind();
+        _initDeepLink();
     }
 })();

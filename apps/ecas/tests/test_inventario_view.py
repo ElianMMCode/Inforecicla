@@ -1080,19 +1080,30 @@ class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
         self.assertIn('poblarInfoMaterial("formSalida")', block,
                       "activarTab('tab-venta') debe poblar formSalida")
 
-    def test_poblar_info_material_sugiere_cantidad_uno(self):
-        """Al poblar info material, si la cantidad está vacía, sugerir 1
-        como punto de partida para que el Total se vea calculado de entrada
-        (1 × precio_unitario = total). El usuario puede sobrescribir."""
+    def test_poblar_info_material_sugiere_cantidad_cero(self):
+        """Al poblar info material, si la cantidad está vacía, sugerir 0
+        como punto de partida. Con 0 el Total queda vacío y el stock
+        preview muestra el stock base (sin cambio), obligando al usuario
+        a tipear la cantidad real. Evita registrar valores случайные
+        como 1 que el usuario podría olvidar cambiar."""
         block = self.js.split("function poblarInfoMaterial", 1)[1].split("function ", 1)[0]
-        self.assertIn("cantEl.value = 1", block,
-                      "poblarInfoMaterial debe sugerir cantidad=1 si el campo está vacío")
+        self.assertIn("cantEl.value = 0", block,
+                      "poblarInfoMaterial debe sugerir cantidad=0 si el campo está vacío")
         # Debe chequear que el campo está vacío antes de sobrescribir
         self.assertIn("!cantEl.value", block,
                       "poblarInfoMaterial debe respetar la cantidad tipeada por el usuario")
 
 
-class TestComprobanteYRefrescarPostAccion(TestCase):
+class TestComprobanteYDeepLink(TestCase):
+    """Decisión 53: el comprobante se muestra al usuario tras una
+    compra/venta exitosa. Al cerrarlo, la página se recarga con un
+    deep-link (?inv=<id>&tab=<tabId>) que restaura el workspace del
+    material con la nueva compra/venta visible en el historial y el
+    stock actualizado. Esta estrategia evita la complejidad de
+    re-pintar manualmente cards, workspace, historial y formularios
+    en JS (que era `refrescarPostAccion` en la versión anterior);
+    un reload trae data fresca del backend y el deep-link preserva
+    el contexto del usuario en el workspace."""
     """El mensaje de éxito de submitEntrada/submitSalida debe:
 
     1. Mostrar un comprobante con todos los campos de la compra/venta
@@ -1111,9 +1122,10 @@ class TestComprobanteYRefrescarPostAccion(TestCase):
         with open(self.js_path, encoding="utf-8") as fh:
             self.js = fh.read()
 
-    def test_existe_funcion_render_comprobante(self):
+    def test_existe_funcion_render_comprobante_y_deeplink(self):
         self.assertIn("function renderComprobante", self.js)
-        self.assertIn("function refrescarPostAccion", self.js)
+        self.assertIn("function _initDeepLink", self.js,
+                      "Debe existir la función _initDeepLink que lee el script inv-deeplink")
 
     def test_render_comprobante_incluye_todos_los_campos(self):
         """El comprobante debe mostrar material, tipo, categoría, cantidad,
@@ -1161,49 +1173,191 @@ class TestComprobanteYRefrescarPostAccion(TestCase):
         self.assertIn("#198754", block,
                       "renderComprobante debe usar verde Bootstrap (#198754) para venta")
 
-    def test_submit_entrada_muestra_comprobante_y_no_recarga(self):
-        """submitEntrada debe mostrar el comprobante (NO un Swal simple) y
-        NO debe llamar window.location.reload (permanece en workspace)."""
+    def test_submit_entrada_redirige_a_deeplink_en_vez_de_location_reload(self):
+        """submitEntrada debe mostrar el comprobante y al cerrarlo redirigir
+        a la misma página con ?inv=<id>&tab=tab-compra (deep-link al
+        workspace) en vez de hacer location.reload(). El reload es
+        necesario para que la lista de compras del backend se vuelva a
+        pedir; el deep-link preserva el contexto del workspace."""
         block = self.js.split("function submitEntrada", 1)[1].split("function ", 1)[0]
         self.assertIn("renderComprobante(\"compra\"", block,
                       "submitEntrada debe llamar renderComprobante('compra', ...)")
-        self.assertIn("refrescarPostAccion(\"compra\"", block,
-                      "submitEntrada debe llamar refrescarPostAccion para actualizar workspace")
-        # Ya no debe haber location.reload (Decisión 53: permanecer en workspace)
+        self.assertIn("tab-compra", block,
+                      "submitEntrada debe redirigir al tab-compra del workspace")
+        self.assertIn("searchParams.set", block,
+                      "submitEntrada debe usar searchParams.set para construir el deep-link")
+        self.assertIn("window.location.href", block,
+                      "submitEntrada debe asignar window.location.href para navegar")
         self.assertNotIn("window.location.reload()", block,
-                         "submitEntrada NO debe recargar la página, el usuario se queda en workspace")
+                         "submitEntrada NO debe usar location.reload(); debe redirigir al deep-link")
+        self.assertNotIn("refrescarPostAccion", block,
+                         "submitEntrada NO debe llamar refrescarPostAccion (ya no existe)")
 
-    def test_submit_salida_muestra_comprobante_y_no_recarga(self):
+    def test_submit_salida_redirige_a_deeplink_en_vez_de_location_reload(self):
+        """submitSalida debe redirigir a tab-venta del workspace."""
         block = self.js.split("function submitSalida", 1)[1].split("function ", 1)[0]
         self.assertIn("renderComprobante(\"venta\"", block,
                       "submitSalida debe llamar renderComprobante('venta', ...)")
-        self.assertIn("refrescarPostAccion(\"venta\"", block,
-                      "submitSalida debe llamar refrescarPostAccion para actualizar workspace")
+        self.assertIn("tab-venta", block,
+                      "submitSalida debe redirigir al tab-venta del workspace")
+        self.assertIn("window.location.href", block,
+                      "submitSalida debe asignar window.location.href para navegar")
         self.assertNotIn("window.location.reload()", block,
-                         "submitSalida NO debe recargar la página, el usuario se queda en workspace")
+                         "submitSalida NO debe usar location.reload(); debe redirigir al deep-link")
+        self.assertNotIn("refrescarPostAccion", block,
+                         "submitSalida NO debe llamar refrescarPostAccion (ya no existe)")
 
-    def test_refrescar_post_accion_actualiza_stock_en_memoria(self):
-        """refrescarPostAccion debe sumar (compra) o restar (venta) la
-        cantidad al stock actual del currentMaterial."""
-        block = self.js.split("function refrescarPostAccion", 1)[1].split("function ", 1)[0]
-        self.assertIn("currentMaterial.stockActual", block,
-                      "refrescarPostAccion debe actualizar currentMaterial.stockActual")
-        # Verificar la lógica de suma vs resta
-        self.assertIn("+ cant", block,
-                      "refrescarPostAccion para compra debe sumar la cantidad")
-        self.assertIn("- cant", block,
-                      "refrescarPostAccion para venta debe restar la cantidad")
+    def test_render_comprobante_y_deeplink_trabajan_en_conjunto(self):
+        """El comprobante es el body del Swal; el deep-link se ejecuta
+        en el .then() (al cerrar el Swal). Verifica que ambos están
+        conectados correctamente."""
+        block_e = self.js.split("function submitEntrada", 1)[1].split("function ", 1)[0]
+        # El .then() debe venir después del Swal.fire
+        self.assertIn("Swal.fire({", block_e)
+        self.assertIn(").then((", block_e,
+                          "El callback de Swal.fire debe disparar el deep-link al cerrarse")
+        # El deep-link usa el inventarioId del currentMaterial
+        self.assertIn("currentMaterial.inventarioId", block_e,
+                      "El deep-link debe construirse desde currentMaterial.inventarioId")
 
-    def test_refrescar_post_accion_re_pobla_workspace_y_card(self):
-        """refrescarPostAccion debe re-poblar el workspace, el form, y
-        actualizar la card del material en el landing."""
-        block = self.js.split("function refrescarPostAccion", 1)[1].split("function ", 1)[0]
-        self.assertIn("poblarWorkspace(currentMaterial)", block,
-                      "refrescarPostAccion debe re-poblar el header del workspace")
-        self.assertIn("poblarInfoMaterial", block,
-                      "refrescarPostAccion debe re-poblar readonlys y precio del form")
-        self.assertIn("inv-tarjeta-material", block,
-                      "refrescarPostAccion debe re-pintar la card en el landing")
+    def test_init_deeplink_existe_y_llama_ir_workspace(self):
+        """_initDeepLink debe leer el script #inv-deeplink y llamar
+        irWorkspace(inv, tab) para restaurar el workspace del material
+        tras un reload post-operación."""
+        self.assertIn("function _initDeepLink", self.js)
+        block = self.js.split("function _initDeepLink", 1)[1].split("function ", 1)[0]
+        self.assertIn("inv-deeplink", block,
+                      "_initDeepLink debe buscar el script por id 'inv-deeplink'")
+        self.assertIn("irWorkspace(", block,
+                      "_initDeepLink debe llamar irWorkspace(inv, tab) para navegar al workspace")
+        # Debe ser invocado desde bind() o en DOMContentLoaded
+        self.assertTrue(
+            "_initDeepLink()" in self.js,
+            "_initDeepLink() debe ser invocado al cargar la página (DOMContentLoaded o bind())"
+        )
+
+    def test_init_deeplink_ignora_si_no_hay_script(self):
+        """Si no hay script #inv-deeplink (caso normal sin ?inv en URL),
+        _initDeepLink debe retornar silenciosamente sin tirar error."""
+        block = self.js.split("function _initDeepLink", 1)[1].split("function ", 1)[0]
+        # Debe chequear existencia del elemento y retornar si no existe
+        self.assertIn("getElementById(\"inv-deeplink\")", block)
+        self.assertIn("if (!el) return", block,
+                      "_initDeepLink debe retornar sin error si no existe el script")
+
+    def test_init_deeplink_ignora_si_inventario_inexistente(self):
+        """Si el inventarioId del deep-link no existe en materialesDB
+        (ej. material eliminado entre la compra y el reload), debe
+        loggear warning y NO tirar error."""
+        block = self.js.split("function _initDeepLink", 1)[1].split("function ", 1)[0]
+        self.assertIn("materialesDB", block,
+                      "_initDeepLink debe buscar el material en materialesDB")
+        self.assertIn("console.warn", block,
+                      "_initDeepLink debe loggear warning si el material no existe")
+
+
+class TestDeepLinkViewYTemplate(TestCase):
+    """El deep-link es un query param `?inv=<id>&tab=<tabId>` que el view
+    lee y pasa al context como `deep_link` (dict). El template lo
+    inyecta via `json_script:"inv-deeplink"` para que el JS lo lea."""
+
+    def setUp(self):
+        from apps.ecas.models import PuntoECA
+        from apps.inventory.models import CategoriaMaterial, TipoMaterial, Material, Inventario
+        from decimal import Decimal
+
+        self.user = _crear_usuario_gestor("gestor-deeplink@x.com")
+        self.punto = PuntoECA.objects.create(
+            gestor_eca=self.user, nombre="Punto DeepLink",
+            telefono_punto="6012345678", direccion="Calle 1",
+            ciudad="Bogotá", email="punto-deeplink@example.com",
+            celular="3001234567", latitud=4.6097, longitud=-74.0817,
+        )
+        cat, _ = CategoriaMaterial.objects.get_or_create(
+            nombre="Plástico DeepLink", defaults={"descripcion": "cat"}
+        )
+        tipo, _ = TipoMaterial.objects.get_or_create(
+            nombre="Reciclable", defaults={"descripcion": "tipo"}
+        )
+        self.material = Material.objects.create(
+            nombre="PET", categoria=cat, tipo=tipo,
+        )
+        self.inv = Inventario.objects.create(
+            material=self.material, punto_eca=self.punto,
+            stock_actual=Decimal("10.00"), capacidad_maxima=Decimal("100.00"),
+            umbral_alerta=Decimal("20.00"), umbral_critico=Decimal("10.00"),
+            precio_compra=Decimal("500.00"), precio_venta=Decimal("1000.00"),
+        )
+
+    def _get(self, url, qs=""):
+        from django.test import Client
+        c = Client()
+        c.force_login(self.user)
+        return c.get(f"{url}?{qs}" if qs else url)
+
+    def test_view_sin_query_params_no_pasa_deeplink(self):
+        """Sin ?inv y ?tab en la URL, el context NO debe tener `deep_link`
+        (queda como None), y por lo tanto el template NO inyecta el
+        script inv-deeplink."""
+        resp = self._get("/punto-eca/inventario/")
+        self.assertEqual(resp.status_code, 200)
+        ctx = resp.context
+        self.assertIsNone(ctx.get("deep_link"),
+                          "Sin query params, deep_link debe ser None")
+
+    def test_view_con_query_params_pasa_deeplink_al_context(self):
+        """Con ?inv=<id>&tab=tab-compra en la URL, el view debe armar un
+        dict `{"inv": <id>, "tab": <tab>}` y pasarlo al context como
+        `deep_link`."""
+        resp = self._get(
+            "/punto-eca/inventario/",
+            qs=f"inv={self.inv.id}&tab=tab-compra",
+        )
+        self.assertEqual(resp.status_code, 200)
+        ctx = resp.context
+        self.assertIsNotNone(ctx.get("deep_link"),
+                             "Con query params, deep_link debe estar en el context")
+        self.assertEqual(ctx["deep_link"]["inv"], str(self.inv.id))
+        self.assertEqual(ctx["deep_link"]["tab"], "tab-compra")
+
+    def test_view_solo_inv_sin_tab_no_pasa_deeplink(self):
+        """Si solo viene `inv` pero no `tab` (o viceversa), el view
+        NO debe construir deep_link (se necesitan los dos para que
+        el JS sepa qué tab activar)."""
+        resp = self._get(
+            "/punto-eca/inventario/",
+            qs=f"inv={self.inv.id}",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.context.get("deep_link"),
+                          "Sin 'tab', deep_link debe ser None")
+
+    def test_template_inyecta_inv_deeplink_script_cuando_hay_deeplink(self):
+        """El template debe inyectar `{{ deep_link|json_script:"inv-deeplink" }}`
+        al lado de inv-data, para que el JS lo lea en _initDeepLink()."""
+        resp = self._get(
+            "/punto-eca/inventario/",
+            qs=f"inv={self.inv.id}&tab=tab-venta",
+        )
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        # El json_script de Django genera un <script id="inv-deeplink" type="application/json">
+        self.assertIn('id="inv-deeplink"', content,
+                      "El template debe inyectar el script #inv-deeplink cuando hay deep_link")
+        self.assertIn(str(self.inv.id), content,
+                      "El script debe contener el inventarioId del deep-link")
+        self.assertIn("tab-venta", content,
+                      "El script debe contener el tab del deep-link")
+
+    def test_template_NO_inyecta_inv_deeplink_sin_query_params(self):
+        """Sin deep_link, el template NO debe inyectar el script
+        inv-deeplink (el `{% if deep_link %}` debe ser False)."""
+        resp = self._get("/punto-eca/inventario/")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        # Verificar que NO existe el tag de script de deep-link
+        self.assertNotIn('id="inv-deeplink"', content,
+                         "Sin deep_link, el template NO debe inyectar el script inv-deeplink")
 
 
 class TestBindFormTotalListeners(TestCase):

@@ -22,6 +22,7 @@ globalThis.getCSRFToken = function () {
          data-punto-eca-id="{{ punto.id }}"
          data-gestor-id="{{ gestor.id }}">
     {{ inv_data_json|json_script:"inv-data" }}
+    {% if deep_link %}{{ deep_link|json_script:"inv-deeplink" }}{% endif %}
 
     <style>
     .inv-progress-thin { height: 8px; }

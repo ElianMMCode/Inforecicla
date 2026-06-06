@@ -142,7 +142,18 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     if seccion == "perfil":
         context = _build_perfil_context(punto, perfil_tab=perfil_tab)
     elif seccion == "inventario":
-        context = _build_inventario_context(punto)
+        # Deep-link opcional: ?inv=<inventarioId>&tab=<tabId>
+        # Si viene, se inyecta al context para que el JS navegue al
+        # workspace de ese material al cargar la página (usado tras
+        # registrar una compra/venta para permanecer en el workspace).
+        deep_inv = request.GET.get("inv")
+        deep_tab = request.GET.get("tab")
+        deep_link = (
+            {"inv": deep_inv, "tab": deep_tab}
+            if deep_inv and deep_tab
+            else None
+        )
+        context = _build_inventario_context(punto, deep_link=deep_link)
     elif seccion == "centros":
         context = _build_centros_context(punto)
     elif seccion == "calendario":
@@ -239,7 +250,7 @@ def _build_centros_context(punto):
     }
 
 
-def _build_inventario_context(punto):
+def _build_inventario_context(punto, deep_link=None):
     """
     Construye el contexto unificado para la nueva sección /inventario/.
 
@@ -484,6 +495,12 @@ def _build_inventario_context(punto):
         # Fecha/hora actual del servidor (TZ America/Bogota) para autorrellenar
         # los campos `datetime-local` de los forms de crear compra/venta.
         "now": timezone.now(),
+        # Deep-link opcional al workspace: cuando se pasa ?inv=<id>&tab=<tab>
+        # en la query string, el JS navega automáticamente al workspace de
+        # ese material y activa el tab indicado. Se usa tras registrar una
+        # compra/venta para que el usuario permanezca en su contexto sin
+        # tener que volver a hacer click en la card del material.
+        "deep_link": deep_link,
     }
 
 
