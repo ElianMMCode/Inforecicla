@@ -334,6 +334,8 @@ class VentaInventarioService:
             fecha_compra = fecha_dt
 
         centro_acopio_id = data.get("centroAcopioId")
+        # El centro de acopio es OPCIONAL en una venta (puede ser una venta
+        # interna o sin destino externo). Si viene, se valida que exista.
         centro_acopio_inst = None
         if centro_acopio_id:
             from apps.ecas.models import CentroAcopio

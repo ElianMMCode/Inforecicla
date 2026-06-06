@@ -650,3 +650,73 @@ class TestFlujoEndToEndCompraInventario(TestCase):
         # Stock no cambió
         self.inv.refresh_from_db()
         self.assertEqual(self.inv.stock_actual, 500)
+
+    def _post_venta(self, payload):
+        import json
+        return self.client.post(
+            "/punto-eca/movimientos/registrar-venta/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN="x",
+        )
+
+    def test_crear_venta_sin_centro_es_opcional_retorna_201(self):
+        """Una venta SIN centro de acopio debe ser ACEPTADA con 201
+        (el centro es opcional en ventas). Antes era rechazado como
+        defensa en profundidad, pero el negocio permite ventas internas
+        o sin destino externo. Se valida que la venta se cree con
+        centro_acopio=None y que el stock se descuente correctamente."""
+        from apps.operations.models import VentaInventario
+        # Caso 1: sin centro (key omitida)
+        response = self._post_venta({
+            "inventarioId": str(self.inv.id),
+            "cantidad": "5.00",
+            "precioVenta": "2000.00",
+            "fechaVenta": "2025-06-15T10:00:00",
+            "observaciones": "venta sin centro (interna)",
+        })
+        self.assertEqual(response.status_code, 201,
+                         f"Venta sin centro debe aceptarse; body={response.content!r}")
+        self.assertFalse(response.json().get("error"))
+        self.assertEqual(VentaInventario.objects.count(), 1)
+        venta = VentaInventario.objects.first()
+        self.assertIsNone(venta.centro_acopio,
+                          "La venta sin centro debe persistir con centro_acopio=None")
+        # Stock se descuenta correctamente
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.stock_actual, 500 - 5)
+        # Caso 2: centro vacío (cadena vacía) — también debe aceptarse
+        venta.delete()
+        self.inv.refresh_from_db()
+        self.inv.stock_actual = 500
+        self.inv.save()
+        response = self._post_venta({
+            "inventarioId": str(self.inv.id),
+            "cantidad": "3.00",
+            "precioVenta": "1500.00",
+            "fechaVenta": "2025-06-15T10:00:00",
+            "centroAcopioId": "",
+        })
+        self.assertEqual(response.status_code, 201,
+                         f"centroAcopioId='' también debe aceptarse; body={response.content!r}")
+        self.assertFalse(response.json().get("error"))
+        # Caso 3: con centro válido — también debe aceptarse
+        from apps.ecas.models import CentroAcopio
+        centro = CentroAcopio.objects.create(
+            nombre="Centro Test",
+            email=f"centro-{uuid.uuid4().hex[:8]}@x.com",
+            celular="3115556677",
+            latitud=4.6,
+            longitud=-74.0,
+            localidad=self.localidad,
+        )
+        response = self._post_venta({
+            "inventarioId": str(self.inv.id),
+            "cantidad": "2.00",
+            "precioVenta": "2500.00",
+            "fechaVenta": "2025-06-15T10:00:00",
+            "centroAcopioId": str(centro.id),
+        })
+        self.assertEqual(response.status_code, 201)
+        venta = VentaInventario.objects.filter(centro_acopio=centro).first()
+        self.assertIsNotNone(venta, "La venta con centro válido debe persistirse con la FK")

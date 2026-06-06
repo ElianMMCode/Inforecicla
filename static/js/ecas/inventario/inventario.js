@@ -627,6 +627,14 @@
         _initSelect2InSection();
         // Listeners de cálculo de total (cantidad × precio) en forms crear
         _bindFormTotalListeners();
+        // Validación estandarizada para los 4 formularios de Compra/Venta
+        // (crear y editar). Suprime globos nativos del navegador y
+        // activa el patrón Bootstrap 5 'was-validated' + .invalid-feedback
+        // + Swal de notificación global con color verde institucional.
+        _installFormValidation("formEntrada");
+        _installFormValidation("formSalida");
+        _installFormValidation("inv-form-editar-compra");
+        _installFormValidation("inv-form-editar-venta");
         // Tabs
         document.querySelectorAll("#otrasVistasTabs [data-ovtab]").forEach((btn) => {
             btn.addEventListener("click", () => activarOvTab(btn.dataset.ovtab));
@@ -860,7 +868,7 @@
     function submitEntrada(e) {
         if (e) e.preventDefault();
         const form = document.getElementById("formEntrada");
-        if (!form.checkValidity()) { form.reportValidity(); return; }
+        if (!_validateForm("formEntrada")) return;
         const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-entrada");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Mapear nombres del form al contrato del servicio
@@ -922,10 +930,8 @@
     }
     function submitSalida(e) {
         if (e) e.preventDefault();
+        if (!_validateForm("formSalida")) return;
         const form = document.getElementById("formSalida");
-        if (!form.checkValidity()) { form.reportValidity(); return; }
-        const centro = document.getElementById("formSalidaCentro");
-        if (centro && !centro.value) { centro.reportValidity(); return; }
         const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-salida");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Mapear nombres del form al contrato del servicio
@@ -1023,6 +1029,7 @@
         // stock preview muestra el stock base (sin cambio). Obliga al
         // usuario a tipear la cantidad real, evitando registrar valores
         // случайные (ej. 1) que el usuario podría olvidar cambiar.
+        const cantEl = document.getElementById(`${prefix}Cantidad`);
         if (cantEl && !cantEl.value) cantEl.value = 0;
         // Recalcular total con el precio recién autorrellenado
         if (prefix === "formEntrada") actualizarTotalEntrada();
@@ -1120,11 +1127,116 @@
     }
 
     // ============================================================
+    // VALIDACIÓN ESTANDARIZADA DE FORMULARIOS
+    // ============================================================
+    // Patrón uniforme para los 4 formularios de Compra/Venta (crear
+    // y editar). Cumple el contrato institucional:
+    //   1. Supresión de globos nativos: captura de 'invalid' en fase
+    //      de captura (useCapture=true) + preventDefault() bloquea los
+    //      tooltips por defecto de Chromium/WebKit.
+    //   2. Validación centralizada en submit con form.checkValidity().
+    //   3. Si inválido: preventDefault() + stopPropagation() para
+    //      abortar el submit de inmediato y no propagar al handler real.
+    //   4. Activación de 'was-validated' en el <form> para que
+    //      Bootstrap 5 pinte los bordes rojos y muestre los
+    //      <div class="invalid-feedback"> bajo cada campo.
+    //   5. Notificación global con Swal.fire() (color verde
+    //      institucional #198754) para que el usuario sepa que hay
+    //      campos pendientes, sin importar cuál sea.
+    //
+    // Uso:
+    //   const ok = _validateForm("formEntrada");
+    //   if (!ok) return;  // el form NO se envía
+    //   ...continuar con el submit real...
+    function _validateForm(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return false;
+        const valid = form.checkValidity();
+        if (!valid) {
+            // Disparar manualmente el evento 'invalid' en cada input/select
+            // con constraint violations, para que Bootstrap 5 aplique los
+            // estilos :invalid y muestre los .invalid-feedback.
+            form.querySelectorAll("input, select, textarea").forEach((el) => {
+                if (!el.checkValidity()) {
+                    el.dispatchEvent(new Event("invalid", { bubbles: false, cancelable: true }));
+                }
+            });
+            form.classList.add("was-validated");
+            _showMissingFieldsAlert(form);
+        }
+        return valid;
+    }
+
+    // Muestra un Swal genérico y amigable cuando faltan campos obligatorios
+    // en un formulario. Mensaje institucional (no técnico), botón verde
+    // (#198754), icono warning. Reutilizado por _validateForm y por el
+    // listener de submit de _installFormValidation.
+    function _showMissingFieldsAlert(form) {
+        if (!globalThis.Swal?.fire) return;
+        // Listar los labels de los campos pendientes para que el mensaje
+        // sea concreto y útil (no genérico).
+        const labels = [];
+        form.querySelectorAll("input, select, textarea").forEach((el) => {
+            if (!el.checkValidity() && el.required) {
+                const label = form.querySelector(`label[for="${el.id}"]`);
+                if (label) labels.push(label.textContent.trim().replace(/\*$/, "").trim());
+            }
+        });
+        const detalle = labels.length
+            ? `Pendientes: ${labels.join(", ")}.`
+            : "Revisa los campos marcados en rojo y completa la información.";
+        Swal.fire({
+            icon: "warning",
+            title: "Faltan campos obligatorios por diligenciar",
+            html: detalle,
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#198754",
+        });
+    }
+
+    // Instala los listeners de validación en un formulario:
+    //   - Captura 'invalid' en fase de captura (useCapture=true) para
+    //     bloquear los globos nativos del navegador.
+    //   - Captura 'submit' en fase de captura para abortar el envío
+    //     si el form es inválido (preventDefault + stopPropagation).
+    //
+    // Esta función se llama UNA VEZ en bind() para cada form de CV.
+    // NO interfiere con los handlers reales (submitEntrada, etc.) que
+    // están enganchados en el botón (no en el form), siempre que esos
+    // handlers llamen a _validateForm(formId) al inicio.
+    function _installFormValidation(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        // 1. Suprimir globos nativos del navegador (Chromium/WebKit)
+        //    capturando el evento 'invalid' en fase de captura.
+        form.addEventListener(
+            "invalid",
+            (e) => { e.preventDefault(); },
+            true, // useCapture: true → bloquea antes del bubble
+        );
+        // 2. Capturar el submit en fase de captura para abortar envío.
+        //    Si el form es inválido, preventDefault() + stopPropagation()
+        //    impide que el handler real reciba el evento.
+        form.addEventListener(
+            "submit",
+            (e) => {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    form.classList.add("was-validated");
+                    _showMissingFieldsAlert(form);
+                }
+            },
+            true, // useCapture: true → corre antes que handlers de submit
+        );
+    }
+
+    // ============================================================
     // SUBMIT: EDITAR COMPRA / VENTA (modales)
     // ============================================================
     function submitEditarCompra() {
+        if (!_validateForm("inv-form-editar-compra")) return;
         const form = document.getElementById("inv-form-editar-compra");
-        if (!form.checkValidity()) { form.reportValidity(); return; }
         const btn = document.getElementById("inv-btn-guardar-editar-compra");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Validar stock resultante con la edición. El stock actual ya
@@ -1166,10 +1278,8 @@
         withLoading(btn, () => promise);
     }
     function submitEditarVenta() {
+        if (!_validateForm("inv-form-editar-venta")) return;
         const form = document.getElementById("inv-form-editar-venta");
-        if (!form.checkValidity()) { form.reportValidity(); return; }
-        const centro = document.getElementById("inv-edit-venta-centro");
-        if (centro && !centro.value) { centro.reportValidity(); return; }
         const btn = document.getElementById("inv-btn-guardar-editar-venta");
         const raw = Object.fromEntries(new FormData(form).entries());
         // Validar stock restante con la edición. El stock actual ya
@@ -2278,23 +2388,21 @@
         let dl;
         try { dl = JSON.parse(el.textContent); } catch (_) { return; }
         if (!dl || !dl.inv || !dl.tab) return;
-        // materialesDB se carga via inv-data (json_script) y está
-        // disponible al ejecutar este script (mismo render del server).
-        // Pero poblarInfoMaterial y poblarWorkspace asumen que el
+        // materialesDB se carga via inv-data (json_script) en el mismo
+        // render del server, así que ya está disponible al ejecutar este
+        // script. Pero poblarInfoMaterial y poblarWorkspace asumen que el
         // currentMaterial existe, así que las llamamos via irWorkspace.
-        setTimeout(() => {
-            const inv = materialesDB.find((m) => String(m.inventarioId) === String(dl.inv));
-            if (inv) {
-                irWorkspace(dl.inv, dl.tab);
-            } else {
-                console.warn("[inv] deep-link apunta a inventarioId inexistente:", dl.inv);
-            }
-        }, 0);
+        const inv = materialesDB.find((m) => String(m.inventarioId) === String(dl.inv));
+        if (inv) {
+            irWorkspace(dl.inv, dl.tab);
+        } else {
+            console.warn("[inv] deep-link apunta a inventarioId inexistente:", dl.inv);
+        }
     }
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => { bind(); _initDeepLink(); });
+        document.addEventListener("DOMContentLoaded", () => { _initDeepLink(); bind(); });
     } else {
-        bind();
         _initDeepLink();
+        bind();
     }
 })();

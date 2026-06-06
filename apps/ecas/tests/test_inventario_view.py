@@ -1000,6 +1000,26 @@ class TestFormsCrearCompraVentaPayload(TestCase):
         self.assertIn("materialId: currentMaterial?.materialId", block,
                       "submitSalida debe enviar materialId como fallback")
 
+    def test_submit_salida_centro_es_opcional(self):
+        """El centro de acopio en formSalida es OPCIONAL: el negocio
+        permite ventas internas o sin destino externo. submitSalida NO
+        debe tener un check explícito que rechace ventas sin centro.
+        Si el centro está vacío, simplemente no se envía al backend
+        (centroAcopioId='' que el servicio trata como None)."""
+        from django.contrib.staticfiles import finders
+        js_path = finders.find("js/ecas/inventario/inventario.js")
+        with open(js_path, encoding="utf-8") as fh:
+            js = fh.read()
+        block = js.split("function submitSalida", 1)[1].split("function ", 1)[0]
+        # NO debe haber un check `!centro.value` que rechace la venta
+        self.assertNotIn('!centro.value', block,
+                         "submitSalida NO debe rechazar ventas sin centro (es opcional)")
+        self.assertNotIn("Centro de acopio requerido", block,
+                         "submitSalida NO debe mostrar Swal de 'Centro de acopio requerido'")
+        # El form debe seguir enviándose a /punto-eca/movimientos/registrar-venta/
+        self.assertIn("registrar-venta", block,
+                      "submitSalida debe hacer POST a /registrar-venta/")
+
 
 class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
     """`poblarInfoMaterial(prefix)` debe autorrellenar 5 readonly de material
@@ -1254,6 +1274,52 @@ class TestComprobanteYDeepLink(TestCase):
                       "_initDeepLink debe buscar el material en materialesDB")
         self.assertIn("console.warn", block,
                       "_initDeepLink debe loggear warning si el material no existe")
+
+    def test_init_deeplink_runa_antes_de_bind(self):
+        """El deep-link debe correr ANTES de bind() para que la página
+        aparezca ya en el workspace. Si bind() corre primero, podría
+        resetear algo de estado. Verificamos el orden de invocación en
+        AMBOS branches del if (loading / not-loading)."""
+        import re
+        # Encontrar el ÚLTIMO bloque `if (document.readyState === "loading")`
+        # y el `} else {` que le sigue, porque el código tiene varios `} else {`
+        # anónimos (por ejemplo, en funciones anteriores).
+        ready_idx = self.js.rfind('document.readyState === "loading"')
+        self.assertGreater(ready_idx, 0)
+        else_idx = self.js.find("} else {", ready_idx)
+        self.assertGreater(else_idx, 0)
+        end_idx = self.js.find("})();", else_idx)  # fin del IIFE
+        # Branch 1: desde ready_idx hasta else_idx
+        branch1 = self.js[ready_idx:else_idx]
+        # Branch 2: desde else_idx hasta end_idx
+        branch2 = self.js[else_idx:end_idx]
+        for label, branch in (("DOMContentLoaded", branch1), ("else", branch2)):
+            # Buscamos invocaciones reales (no en comentarios, no precedidas por '_' o 'function ')
+            i_init = -1
+            for m in re.finditer(r"_initDeepLink\(\)", branch):
+                line_start = branch.rfind("\n", 0, m.start()) + 1
+                line_prefix = branch[line_start:m.start()]
+                if "//" not in line_prefix:
+                    i_init = m.start()
+                    break
+            i_bind = -1
+            for m in re.finditer(r"bind\(\)", branch):
+                line_start = branch.rfind("\n", 0, m.start()) + 1
+                line_prefix = branch[line_start:m.start()]
+                if "//" in line_prefix:
+                    continue
+                if m.start() > 0 and branch[m.start() - 1] == "_":
+                    continue
+                if "function" in line_prefix:
+                    continue
+                i_bind = m.start()
+                break
+            self.assertGreater(i_init, -1,
+                              f"En branch '{label}', debe haber invocación a _initDeepLink()")
+            self.assertGreater(i_bind, -1,
+                              f"En branch '{label}', debe haber invocación a bind()")
+            self.assertLess(i_init, i_bind,
+                            f"En branch '{label}', _initDeepLink() debe ir ANTES de bind()")
 
 
 class TestDeepLinkViewYTemplate(TestCase):
@@ -1584,4 +1650,112 @@ class TestValidacionStockEnEditarModales(TestCase):
         block = self.js.split("function submitEditarVenta", 1)[1].split("function ", 1)[0]
         self.assertIn("stockActual + cantOriginal - nuevaCant", block,
                       "submitEditarVenta debe calcular stockActual + cantOriginal - nuevaCant")
+
+
+class TestValidacionEstandarizadaCV(TestCase):
+    """Contrato institucional de validación para los 4 formularios de
+    Compra/Venta (formEntrada, formSalida, inv-form-editar-compra,
+    inv-form-editar-venta). Verifica que se aplica el patrón uniforme:
+    supresión de globos nativos, checkValidity, was-validated, Swal
+    con mensaje institucional y color verde #198754."""
+
+    def setUp(self):
+        from django.contrib.staticfiles import finders
+        self.js_path = finders.find("js/ecas/inventario/inventario.js")
+        self.assertIsNotNone(self.js_path)
+        with open(self.js_path, encoding="utf-8") as fh:
+            self.js = fh.read()
+        from django.contrib.staticfiles import finders
+        tpl_path = finders.find("templates/ecas/section-inventario.html") or \
+                   "templates/ecas/section-inventario.html"
+        with open("templates/ecas/section-inventario.html", encoding="utf-8") as fh:
+            self.tpl = fh.read()
+
+    def test_existe_helper_validate_form(self):
+        """_validateForm debe existir y recibir un formId."""
+        self.assertIn("function _validateForm", self.js,
+                      "_validateForm debe existir como helper de validación")
+        block = self.js.split("function _validateForm", 1)[1].split("function ", 1)[0]
+        self.assertIn("form.checkValidity()", block,
+                      "_validateForm debe usar form.checkValidity()")
+        self.assertIn("was-validated", block,
+                      "_validateForm debe añadir la clase was-validated al form")
+
+    def test_existe_helper_install_form_validation(self):
+        """_installFormValidation debe existir e instalar listeners de
+        captura para 'invalid' y 'submit'."""
+        self.assertIn("function _installFormValidation", self.js,
+                      "_installFormValidation debe existir para instalar listeners de captura")
+        block = self.js.split("function _installFormValidation", 1)[1].split("function ", 1)[0]
+        # Captura 'invalid' en fase de captura
+        self.assertIn('"invalid"', block,
+                      "_installFormValidation debe escuchar 'invalid'")
+        self.assertIn("useCapture: true", block or "true", )
+        self.assertIn("preventDefault()", block,
+                      "_installFormValidation debe llamar preventDefault()")
+        # Captura 'submit'
+        self.assertIn('"submit"', block,
+                      "_installFormValidation debe escuchar 'submit'")
+        self.assertIn("stopPropagation()", block,
+                      "_installFormValidation debe llamar stopPropagation() al submit inválido")
+
+    def test_install_form_validation_aplicado_a_los_4_forms(self):
+        """_installFormValidation debe estar enganchado en los 4 forms
+        de CV desde bind()."""
+        for form_id in ("formEntrada", "formSalida",
+                        "inv-form-editar-compra", "inv-form-editar-venta"):
+            self.assertIn(f'_installFormValidation("{form_id}")', self.js,
+                          f"_installFormValidation debe estar aplicado a '{form_id}'")
+
+    def test_show_missing_fields_alert_es_amigable(self):
+        """El Swal debe tener un mensaje institucional amigable (no
+        técnico) con color verde institucional #198754."""
+        self.assertIn("function _showMissingFieldsAlert", self.js,
+                      "_showMissingFieldsAlert debe existir como helper")
+        block = self.js.split("function _showMissingFieldsAlert", 1)[1].split("function ", 1)[0]
+        self.assertIn("Faltan campos obligatorios", block,
+                      "El título del Swal debe ser 'Faltan campos obligatorios'")
+        self.assertIn("#198754", block,
+                      "El color del botón debe ser verde institucional #198754")
+        self.assertIn("warning", block,
+                      "El icono debe ser warning")
+        # NO debe usar mensajes técnicos como "Valores inválidos"
+        self.assertNotIn("Valores inválidos", block,
+                         "El mensaje NO debe ser 'Valores inválidos' (es hostil)")
+        self.assertNotIn("Valores invalidos", block,
+                         "El mensaje NO debe ser 'Valores invalidos' (es hostil)")
+
+    def test_validate_form_llama_show_alert(self):
+        """_validateForm debe delegar la notificación visual a
+        _showMissingFieldsAlert (no duplicar la lógica de Swal)."""
+        validate_block = self.js.split("function _validateForm", 1)[1].split("function ", 1)[0]
+        self.assertIn("_showMissingFieldsAlert(form)", validate_block,
+                      "_validateForm debe delegar a _showMissingFieldsAlert para el Swal")
+
+    def test_centro_acopio_es_opcional_en_venta(self):
+        """El centro de acopio en formSalida y en inv-form-editar-venta
+        NO debe tener el atributo `required` (es opcional). El label
+        asociado debe marcar el campo como '(opcional)'."""
+        for input_id, label_for in (
+            ("formSalidaCentro", "formSalidaCentro"),
+            ("inv-edit-venta-centro", "inv-edit-venta-centro"),
+        ):
+            # 1. El <select> NO debe tener required
+            idx_input = self.tpl.find(f'id="{input_id}"')
+            self.assertGreater(idx_input, 0, f"{input_id} debe existir en el template")
+            end_idx = self.tpl.find("</select>", idx_input) + len("</select>")
+            select_block = self.tpl[idx_input:end_idx]
+            self.assertNotIn(" required ", " " + select_block + " ",
+                             f"{input_id} NO debe tener atributo 'required' (es opcional)")
+            self.assertNotIn(' required>', " " + select_block + " ",
+                             f"{input_id} NO debe tener atributo 'required' (es opcional)")
+            # 2. El <label> asociado debe marcar el campo como '(opcional)'
+            label_pattern = f'for="{label_for}"'
+            idx_label = self.tpl.find(label_pattern)
+            self.assertGreater(idx_label, 0,
+                               f"label for='{label_for}' debe existir")
+            end_label = self.tpl.find("</label>", idx_label) + len("</label>")
+            label_block = self.tpl[idx_label:end_label]
+            self.assertIn("(opcional)", label_block,
+                          f"El label de {input_id} debe marcar el campo como '(opcional)'")
 
