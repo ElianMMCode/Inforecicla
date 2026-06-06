@@ -173,6 +173,39 @@ class TestSeccionInventario(TestCase):
         self.assertEqual(response.context["seccion"], "inventario")
         self.assertEqual(response.context["section_template"], "ecas/section-inventario.html")
 
+    def test_template_tiene_5_readonly_y_total_y_stock_preview(self):
+        """El template renderizado debe tener los 5 readonly de info material
+        + total + stock preview en ambos forms (entrada/salida)."""
+        self._login()
+        response = self.client.get("/punto-eca/inventario/")
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode("utf-8")
+        for field in [
+            "formEntradaMaterialTipo", "formEntradaMaterialCategoria", "formEntradaMaterialUnidad",
+            "formEntradaStockActual", "formEntradaCapacidadMaxima",
+            "formEntradaTotalCompra", "formEntradaStockResultante",
+            "formSalidaMaterialTipo", "formSalidaMaterialCategoria", "formSalidaMaterialUnidad",
+            "formSalidaStockActual", "formSalidaCapacidadMaxima",
+            "formSalidaTotalVenta", "formSalidaStockRestante",
+        ]:
+            self.assertIn(f'id="{field}"', body,
+                          f"template debe contener el campo `{field}` para Decisión 51-52")
+
+    def test_template_autorrellenado_precios_desde_backend_en_json(self):
+        """`inv_data_json` inyectado al template debe incluir precioCompra y
+        precioVenta del inventario (2000 y 3500) para que poblarInfoMaterial
+        pueda autorrellenar los forms de crear."""
+        self._login()
+        response = self.client.get("/punto-eca/inventario/")
+        inv = _parse_inv_data(response.context["inv_data_json"])
+        materiales = inv["materiales_inventario"]
+        self.assertGreater(len(materiales), 0, "debe haber al menos un material")
+        # Buscar nuestro material de test (materialId se serializa como string en JSON)
+        bot = next((m for m in materiales if str(m.get("materialId")) == str(self.material.id)), None)
+        self.assertIsNotNone(bot, f"material de test no encontrado en {materiales}")
+        self.assertEqual(float(bot["precioCompra"]), 2000.0)
+        self.assertEqual(float(bot["precioVenta"]), 3500.0)
+
     def test_contexto_incluye_punto_y_gestor(self):
         self._login()
         response = self.client.get("/punto-eca/inventario/")
