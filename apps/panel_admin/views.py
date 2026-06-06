@@ -238,12 +238,7 @@ def _validar_email_crear_usuario_admin(email, errores):
         return
 
     dominio = email.rsplit("@", 1)[-1].lower()
-    if not (
-        dominio.endswith(".com")
-        or dominio.endswith(".co")
-        or dominio.endswith(".edu.co")
-        or dominio.endswith(".com.co")
-    ):
+    if not dominio.endswith((".com", ".co", ".edu.co", ".com.co")):
         errores.append("El correo electrónico debe terminar en .com, .co, .edu.co o .com.co.")
 
 
