@@ -302,58 +302,12 @@ def _build_inventario_context(punto, deep_link=None):
     from apps.operations import models as ops_models
     from apps.ecas.models import CentroAcopio
 
-    # --- Inventario (cards + KPIs) ---
     materiales_inventario = list(
         Inventario.objects.filter(punto_eca=punto)
         .select_related("material__categoria", "material__tipo")
         .order_by("-fecha_modificacion")
     )
-
-    total_stock = sum(float(inv.stock_actual or 0) for inv in materiales_inventario)
-    total_capacidad = sum(float(inv.capacidad_maxima or 0) for inv in materiales_inventario)
-
-    total_ok = sum(
-        1
-        for inv in materiales_inventario
-        if float(inv.ocupacion_actual) < float(inv.umbral_alerta)
-    )
-    total_alerta = sum(
-        1
-        for inv in materiales_inventario
-        if float(inv.umbral_alerta) <= float(inv.ocupacion_actual) < float(inv.umbral_critico)
-    )
-    total_critico = sum(
-        1
-        for inv in materiales_inventario
-        if float(inv.ocupacion_actual) >= float(inv.umbral_critico)
-    )
-
-    ocupacion_porcentaje = (
-        round((total_stock / total_capacidad) * 100) if total_capacidad > 0 else 0
-    )
-
-    material_mayor_ocupacion = None
-    material_mas_caro = None
-    material_mas_barato = None
-    costo_total_inventario = 0
-    materiales_criticos = []
-    if materiales_inventario:
-        material_mayor_ocupacion = max(
-            materiales_inventario, key=lambda i: float(i.ocupacion_actual)
-        )
-        material_mas_caro = max(
-            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
-        )
-        material_mas_barato = min(
-            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
-        )
-        costo_total_inventario = sum(
-            float(i.stock_actual or 0) * float(i.precio_compra or 0)
-            for i in materiales_inventario
-        )
-        materiales_criticos = [
-            i for i in materiales_inventario if float(i.ocupacion_actual) >= float(i.umbral_critico)
-        ]
+    kpis = _calcular_kpis_inventario(materiales_inventario)
 
     categoria_inventario = (
         Inventario.objects.filter(punto_eca=punto)
@@ -368,97 +322,30 @@ def _build_inventario_context(punto, deep_link=None):
         .distinct()
     )
 
-    # --- Historial de compras ---
-    compras = (
-        ops_models.CompraInventario.objects.filter(inventario__punto_eca=punto)
+    historial_compras = [
+        _serializar_compra(c)
+        for c in ops_models.CompraInventario.objects.filter(inventario__punto_eca=punto)
         .select_related("inventario__material")
         .order_by("-fecha_compra")
-    )
-    historial_compras = [
-        {
-            "compraId": str(c.id),
-            "inventarioId": str(c.inventario.id),
-            "materialId": str(c.inventario.material.id),
-            "nombreMaterial": c.inventario.material.nombre,
-            "nombreCategoria": getattr(c.inventario.material.categoria, "nombre", ""),
-            "nombreTipo": getattr(c.inventario.material.tipo, "nombre", ""),
-            "cantidad": float(c.cantidad),
-            "fechaCompra": c.fecha_compra.isoformat(),
-            "precioCompra": float(c.precio_compra or 0),
-            "observaciones": c.observaciones or "",
-        }
-        for c in compras
     ]
-
-    # --- Historial de ventas ---
-    ventas = (
-        ops_models.VentaInventario.objects.filter(inventario__punto_eca=punto)
+    historial_ventas = [
+        _serializar_venta(v)
+        for v in ops_models.VentaInventario.objects.filter(inventario__punto_eca=punto)
         .select_related("inventario__material", "centro_acopio")
         .order_by("-fecha_venta")
-    )
-    historial_ventas = [
-        {
-            "ventaId": str(v.id),
-            "inventarioId": str(v.inventario.id),
-            "materialId": str(v.inventario.material.id),
-            "nombreMaterial": v.inventario.material.nombre,
-            "nombreCategoria": getattr(v.inventario.material.categoria, "nombre", ""),
-            "nombreTipo": getattr(v.inventario.material.tipo, "nombre", ""),
-            "cantidad": float(v.cantidad),
-            "fechaVenta": v.fecha_venta.isoformat(),
-            "precioVenta": float(v.precio_venta or 0),
-            "observaciones": v.observaciones or "",
-            "nombreCentroAcopio": getattr(v.centro_acopio, "nombre", "")
-            if getattr(v, "centro_acopio", None)
-            else "",
-            "centroAcopioId": str(v.centro_acopio.id)
-            if getattr(v, "centro_acopio", None)
-            else "",
-        }
-        for v in ventas
     ]
 
-    # --- Centros de acopio (globales + asociados al punto) ---
     centros_globales = list(
         CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
     )
     centros_locales = list(
         CentroAcopio.objects.filter(puntos_eca=punto, visibilidad=cons.Visibilidad.ECA)
     )
-    centros_map = {}
-    for c in centros_globales + centros_locales:
-        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
-    centros = list(centros_map.values())
+    centros = _consolidar_centros(centros_globales, centros_locales)
 
-    # --- Pre-serialización JSON-safe para el JS del template ---
     inv_data = {
         "materiales_inventario": [
-            {
-                "inventarioId": str(inv.id),
-                "materialId": str(inv.material.id),
-                "nombre": inv.material.nombre,
-                "categoria": getattr(inv.material.categoria, "nombre", ""),
-                "tipo": getattr(inv.material.tipo, "nombre", ""),
-                "unidad": inv.unidad_medida,
-                "stockActual": float(inv.stock_actual or 0),
-                "capacidadMaxima": float(inv.capacidad_maxima or 0),
-                "ocupacion": float(inv.ocupacion_actual),
-                "estado": (
-                    "critico"
-                    if float(inv.ocupacion_actual) >= float(inv.umbral_critico)
-                    else "alerta"
-                    if float(inv.ocupacion_actual) >= float(inv.umbral_alerta)
-                    else "ok"
-                ),
-                "umbralAlerta": float(inv.umbral_alerta or 0),
-                "umbralCritico": float(inv.umbral_critico or 0),
-                "precioCompra": float(inv.precio_compra or 0),
-                "precioVenta": float(inv.precio_venta or 0),
-                "fechaModificacion": inv.fecha_modificacion.isoformat()
-                if getattr(inv, "fecha_modificacion", None)
-                else "",
-            }
-            for inv in materiales_inventario
+            _serializar_inventario_para_json(inv) for inv in materiales_inventario
         ],
         "centros": centros,
         "historial_compras": historial_compras,
@@ -471,36 +358,177 @@ def _build_inventario_context(punto, deep_link=None):
         "gestor": punto.gestor_eca,
         "punto": punto,
         "unidades_medida": cons.UnidadMedida.choices,
-        # Inventario
         "materiales_inventario": materiales_inventario,
+        **kpis,
+        "categoria_inventario": categoria_inventario,
+        "tipo_inventario": tipo_inventario,
+        "centros": centros,
+        "historial_compras": historial_compras,
+        "historial_ventas": historial_ventas,
+        "inv_data_json": inv_data,
+        "now": timezone.now(),
+        "deep_link": deep_link,
+    }
+
+
+# --- Helpers de _build_inventario_context (extraídos para reducir su
+# complejidad cognitiva de 25 a ≤15). Cada uno tiene una sola
+# responsabilidad y son puros (sin side effects sobre el contexto).
+
+def _es_inventario_ok(inv):
+    """True si el inventario está en estado OK (por debajo del umbral de alerta)."""
+    return float(inv.ocupacion_actual) < float(inv.umbral_alerta)
+
+
+def _es_inventario_alerta(inv):
+    """True si el inventario está en estado ALERTA (entre umbral_alerta y umbral_critico)."""
+    ocupacion = float(inv.ocupacion_actual)
+    return float(inv.umbral_alerta) <= ocupacion < float(inv.umbral_critico)
+
+
+def _es_inventario_critico(inv):
+    """True si el inventario está en estado CRITICO (por encima del umbral crítico)."""
+    return float(inv.ocupacion_actual) >= float(inv.umbral_critico)
+
+
+def _estado_inventario(inv):
+    """Devuelve el estado del inventario: 'ok', 'alerta' o 'critico'."""
+    if _es_inventario_critico(inv):
+        return "critico"
+    if _es_inventario_alerta(inv):
+        return "alerta"
+    return "ok"
+
+
+def _kpis_inventario_vacios():
+    """KPIs/aggregados para cuando el punto no tiene materiales en su inventario."""
+    return {
+        "total_stock": 0,
+        "total_capacidad": 0,
+        "total_ok": 0,
+        "total_alerta": 0,
+        "total_critico": 0,
+        "ocupacion_porcentaje": 0,
+        "material_mayor_ocupacion": None,
+        "material_mas_caro": None,
+        "material_mas_barato": None,
+        "costo_total_inventario": 0,
+        "materiales_criticos": [],
+    }
+
+
+def _calcular_kpis_inventario(materiales_inventario):
+    """
+    Calcula totales, KPIs y agregados del inventario de un punto.
+
+    Devuelve un dict con las claves: total_stock, total_capacidad, total_ok,
+    total_alerta, total_critico, ocupacion_porcentaje, material_mayor_ocupacion,
+    material_mas_caro, material_mas_barato, costo_total_inventario,
+    materiales_criticos.
+    """
+    if not materiales_inventario:
+        return _kpis_inventario_vacios()
+
+    total_stock = sum(float(inv.stock_actual or 0) for inv in materiales_inventario)
+    total_capacidad = sum(float(inv.capacidad_maxima or 0) for inv in materiales_inventario)
+    total_ok = sum(1 for inv in materiales_inventario if _es_inventario_ok(inv))
+    total_alerta = sum(1 for inv in materiales_inventario if _es_inventario_alerta(inv))
+    total_critico = sum(1 for inv in materiales_inventario if _es_inventario_critico(inv))
+
+    ocupacion_porcentaje = (
+        round((total_stock / total_capacidad) * 100) if total_capacidad > 0 else 0
+    )
+    costo_total_inventario = sum(
+        float(inv.stock_actual or 0) * float(inv.precio_compra or 0)
+        for inv in materiales_inventario
+    )
+    materiales_criticos = [
+        inv for inv in materiales_inventario if _es_inventario_critico(inv)
+    ]
+
+    return {
         "total_stock": total_stock,
         "total_capacidad": total_capacidad,
         "total_ok": total_ok,
         "total_alerta": total_alerta,
         "total_critico": total_critico,
         "ocupacion_porcentaje": ocupacion_porcentaje,
-        "material_mayor_ocupacion": material_mayor_ocupacion,
-        "material_mas_caro": material_mas_caro,
-        "material_mas_barato": material_mas_barato,
+        "material_mayor_ocupacion": max(
+            materiales_inventario, key=lambda i: float(i.ocupacion_actual)
+        ),
+        "material_mas_caro": max(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        ),
+        "material_mas_barato": min(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        ),
         "costo_total_inventario": costo_total_inventario,
         "materiales_criticos": materiales_criticos,
-        "categoria_inventario": categoria_inventario,
-        "tipo_inventario": tipo_inventario,
-        # Movimientos
-        "centros": centros,
-        "historial_compras": historial_compras,
-        "historial_ventas": historial_ventas,
-        # Dict para que el template lo serialice UNA sola vez con |json_script
-        "inv_data_json": inv_data,
-        # Fecha/hora actual del servidor (TZ America/Bogota) para autorrellenar
-        # los campos `datetime-local` de los forms de crear compra/venta.
-        "now": timezone.now(),
-        # Deep-link opcional al workspace: cuando se pasa ?inv=<id>&tab=<tab>
-        # en la query string, el JS navega automáticamente al workspace de
-        # ese material y activa el tab indicado. Se usa tras registrar una
-        # compra/venta para que el usuario permanezca en su contexto sin
-        # tener que volver a hacer click en la card del material.
-        "deep_link": deep_link,
+    }
+
+
+def _serializar_compra(c):
+    """Convierte una CompraInventario al dict que consume el template y el JS."""
+    return {
+        "compraId": str(c.id),
+        "inventarioId": str(c.inventario.id),
+        "materialId": str(c.inventario.material.id),
+        "nombreMaterial": c.inventario.material.nombre,
+        "nombreCategoria": getattr(c.inventario.material.categoria, "nombre", ""),
+        "nombreTipo": getattr(c.inventario.material.tipo, "nombre", ""),
+        "cantidad": float(c.cantidad),
+        "fechaCompra": c.fecha_compra.isoformat(),
+        "precioCompra": float(c.precio_compra or 0),
+        "observaciones": c.observaciones or "",
+    }
+
+
+def _serializar_venta(v):
+    """Convierte una VentaInventario al dict que consume el template y el JS."""
+    tiene_centro = getattr(v, "centro_acopio", None) is not None
+    return {
+        "ventaId": str(v.id),
+        "inventarioId": str(v.inventario.id),
+        "materialId": str(v.inventario.material.id),
+        "nombreMaterial": v.inventario.material.nombre,
+        "nombreCategoria": getattr(v.inventario.material.categoria, "nombre", ""),
+        "nombreTipo": getattr(v.inventario.material.tipo, "nombre", ""),
+        "cantidad": float(v.cantidad),
+        "fechaVenta": v.fecha_venta.isoformat(),
+        "precioVenta": float(v.precio_venta or 0),
+        "observaciones": v.observaciones or "",
+        "nombreCentroAcopio": getattr(v.centro_acopio, "nombre", "") if tiene_centro else "",
+        "centroAcopioId": str(v.centro_acopio.id) if tiene_centro else "",
+    }
+
+
+def _consolidar_centros(centros_globales, centros_locales):
+    """Une y deduplica centros de acopio (globales + locales) por id."""
+    centros_map = {}
+    for c in centros_globales + centros_locales:
+        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
+    return list(centros_map.values())
+
+
+def _serializar_inventario_para_json(inv):
+    """Convierte un Inventario al dict que va al JSON del template."""
+    fecha_mod = getattr(inv, "fecha_modificacion", None)
+    return {
+        "inventarioId": str(inv.id),
+        "materialId": str(inv.material.id),
+        "nombre": inv.material.nombre,
+        "categoria": getattr(inv.material.categoria, "nombre", ""),
+        "tipo": getattr(inv.material.tipo, "nombre", ""),
+        "unidad": inv.unidad_medida,
+        "stockActual": float(inv.stock_actual or 0),
+        "capacidadMaxima": float(inv.capacidad_maxima or 0),
+        "ocupacion": float(inv.ocupacion_actual),
+        "estado": _estado_inventario(inv),
+        "umbralAlerta": float(inv.umbral_alerta or 0),
+        "umbralCritico": float(inv.umbral_critico or 0),
+        "precioCompra": float(inv.precio_compra or 0),
+        "precioVenta": float(inv.precio_venta or 0),
+        "fechaModificacion": fecha_mod.isoformat() if fecha_mod else "",
     }
 
 

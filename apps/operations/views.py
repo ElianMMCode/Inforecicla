@@ -1,5 +1,4 @@
 from apps.inventory.models import Inventario
-from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
 from django.http import JsonResponse, HttpResponse
@@ -379,53 +378,139 @@ def _aplicar_filtros_export(
     tipo_movimiento_bloqueado=None,
     precio_attr=None,
 ):
+    """
+    Aplica todos los filtros de export al queryset.
+
+    Es un orquestador delgado: extrae los parámetros del request en un dict
+    y delega la aplicación de cada grupo de filtros a un helper especializado.
+    La complejidad cognitiva se mantiene baja porque cada helper tiene una
+    sola responsabilidad.
+    """
     punto_eca_id = _obtener_punto_eca_id_export(request)
     if punto_eca_id:
         queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
 
-    material = _obtener_filtro_export(request, "material")
-    categoria = _obtener_filtro_export(request, "categoria")
-    tipo = _obtener_filtro_export(request, "tipo")
-    centro_acopio = _obtener_filtro_export(request, "centro_acopio")
-    tipo_movimiento = _obtener_filtro_export(request, "tipo_movimiento").lower()
-    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
-    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
-    cantidad_min = _parse_decimal_export(_obtener_filtro_export(request, "cantidad_min"))
-    cantidad_max = _parse_decimal_export(_obtener_filtro_export(request, "cantidad_max"))
-    monto_min = _parse_decimal_export(_obtener_filtro_export(request, "monto_min"))
-    monto_max = _parse_decimal_export(_obtener_filtro_export(request, "monto_max"))
+    filtros = _extraer_filtros_export(request)
+    queryset = _aplicar_filtros_inventario(queryset, filtros)
+    if incluir_centro_acopio:
+        queryset = _aplicar_filtro_centro(queryset, filtros)
+    queryset = _aplicar_filtros_fecha(queryset, fecha_campo, filtros)
+    queryset = _aplicar_filtros_cantidad(queryset, filtros)
+    queryset = _aplicar_filtros_monto(queryset, filtros, precio_attr)
 
-    if material:
-        queryset = queryset.filter(inventario__material__nombre__iexact=material)
-    if categoria:
-        queryset = queryset.filter(
-            inventario__material__categoria__nombre__iexact=categoria
-        )
-    if tipo:
-        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
-    if incluir_centro_acopio and centro_acopio:
-        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
-    if fecha_desde:
-        queryset = queryset.filter(**{f"{fecha_campo}__date__gte": fecha_desde})
-    if fecha_hasta:
-        queryset = queryset.filter(**{f"{fecha_campo}__date__lte": fecha_hasta})
-    if cantidad_min is not None:
-        queryset = queryset.filter(cantidad__gte=cantidad_min)
-    if cantidad_max is not None:
-        queryset = queryset.filter(cantidad__lte=cantidad_max)
-    if (monto_min is not None or monto_max is not None) and precio_attr:
-        queryset = queryset.annotate(
-            _monto_total=ExpressionWrapper(
-                F("cantidad") * F(precio_attr),
-                output_field=DecimalField(max_digits=20, decimal_places=4),
-            )
-        )
-        if monto_min is not None:
-            queryset = queryset.filter(_monto_total__gte=monto_min)
-        if monto_max is not None:
-            queryset = queryset.filter(_monto_total__lte=monto_max)
-    if tipo_movimiento_bloqueado and tipo_movimiento == tipo_movimiento_bloqueado:
+    if tipo_movimiento_bloqueado and filtros["tipo_movimiento"] == tipo_movimiento_bloqueado:
         return queryset.none()
+    return queryset
+
+
+# --- Helpers de _aplicar_filtros_export (extraídos para mantener su
+# complejidad cognitiva ≤15). Cada uno aplica un grupo de filtros.
+
+
+def _extraer_filtros_export(request):
+    """Lee y parsea todos los parámetros de filtro del request a un dict."""
+    return {
+        "material": _obtener_filtro_export(request, "material"),
+        "categoria": _obtener_filtro_export(request, "categoria"),
+        "tipo": _obtener_filtro_export(request, "tipo"),
+        "centro_acopio": _obtener_filtro_export(request, "centro_acopio"),
+        "tipo_movimiento": _obtener_filtro_export(request, "tipo_movimiento").lower(),
+        "fecha_desde": parse_date(_obtener_filtro_export(request, "fecha_desde")),
+        "fecha_hasta": parse_date(_obtener_filtro_export(request, "fecha_hasta")),
+        "cantidad_min": _parse_decimal_export(_obtener_filtro_export(request, "cantidad_min")),
+        "cantidad_max": _parse_decimal_export(_obtener_filtro_export(request, "cantidad_max")),
+        "monto_min": _parse_decimal_export(_obtener_filtro_export(request, "monto_min")),
+        "monto_max": _parse_decimal_export(_obtener_filtro_export(request, "monto_max")),
+    }
+
+
+def _aplicar_filtro_si_valor(queryset, valor, filter_kwargs):
+    """Aplica .filter(**filter_kwargs) si `valor` es truthy."""
+    if valor:
+        return queryset.filter(**filter_kwargs)
+    return queryset
+
+
+def _aplicar_filtros_inventario(queryset, filtros):
+    """Aplica filtros de material/categoría/tipo al queryset."""
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["material"],
+        {"inventario__material__nombre__iexact": filtros["material"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["categoria"],
+        {"inventario__material__categoria__nombre__iexact": filtros["categoria"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["tipo"],
+        {"inventario__material__tipo__nombre__iexact": filtros["tipo"]},
+    )
+    return queryset
+
+
+def _aplicar_filtro_centro(queryset, filtros):
+    """Aplica el filtro de centro de acopio (solo si hay valor)."""
+    return _aplicar_filtro_si_valor(
+        queryset, filtros["centro_acopio"],
+        {"centro_acopio__nombre__iexact": filtros["centro_acopio"]},
+    )
+
+
+def _aplicar_filtros_fecha(queryset, fecha_campo, filtros):
+    """Aplica los filtros de fecha_desde / fecha_hasta al queryset."""
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["fecha_desde"],
+        {f"{fecha_campo}__date__gte": filtros["fecha_desde"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["fecha_hasta"],
+        {f"{fecha_campo}__date__lte": filtros["fecha_hasta"]},
+    )
+    return queryset
+
+
+def _aplicar_filtros_cantidad(queryset, filtros):
+    """Aplica los filtros de cantidad_min / cantidad_max al queryset."""
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["cantidad_min"] is not None,
+        {"cantidad__gte": filtros["cantidad_min"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["cantidad_max"] is not None,
+        {"cantidad__lte": filtros["cantidad_max"]},
+    )
+    return queryset
+
+
+def _aplicar_filtros_monto(queryset, filtros, precio_attr):
+    """
+    Aplica los filtros de monto_min / monto_max al queryset.
+
+    Requiere anotar el queryset con `_monto_total = cantidad * precio_attr`
+    antes de aplicar los filtros, ya que la comparación es sobre el monto
+    total (no sobre el precio unitario).
+
+    Si no hay ni monto_min ni monto_max, o si no se proporcionó
+    `precio_attr`, no se aplica ningún filtro.
+    """
+    monto_min = filtros["monto_min"]
+    monto_max = filtros["monto_max"]
+    if monto_min is None and monto_max is None:
+        return queryset
+    if not precio_attr:
+        return queryset
+    queryset = queryset.annotate(
+        _monto_total=ExpressionWrapper(
+            F("cantidad") * F(precio_attr),
+            output_field=DecimalField(max_digits=20, decimal_places=4),
+        )
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, monto_min is not None, {"_monto_total__gte": monto_min}
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, monto_max is not None, {"_monto_total__lte": monto_max}
+    )
     return queryset
 
 

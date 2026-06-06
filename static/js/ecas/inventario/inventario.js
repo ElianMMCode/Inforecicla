@@ -28,6 +28,15 @@
     //   - formatearCOP   -> alias largo (mismo formato), usado por los handlers del flujo.
     //   - formatearCOPCorto -> formato compacto con sufijos K/M/B: "$ 1.5M" (eje Y de chart).
     const formatCOP = (n) => "$ " + Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: 0 });
+    // Helper de stringificación segura: solo convierte a String si el valor
+    // es un primitivo (string, number, boolean). Para objetos/arrays retorna
+    // "" para evitar el "[object Object]" de String() sobre no-primitivos.
+    const _safeStr = (v) => {
+        if (v == null) return "";
+        const t = typeof v;
+        if (t === "string" || t === "number" || t === "boolean") return String(v);
+        return "";
+    };
     const formatearCOP = (n) => formatCOP(n);
     const formatearCOPCorto = (n) => {
         const v = Number(n) || 0;
@@ -49,11 +58,11 @@
     const escapeHtml = (s) => {
         if (s == null) return "";
         return String(s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll("\"", "&quot;")
+            .replaceAll("'", "&#039;");
     };
     const _estadoLabel = (e) => {
         if (e === "critico") return "Crítico";
@@ -581,8 +590,8 @@
         payload.precioVenta = Number(payload.precioVenta);
         payload.umbralAlerta = Number(payload.umbralAlerta);
         payload.umbralCritico = Number(payload.umbralCritico);
-        payload.puntoEcaId = String(payload.puntoId || "");
-        payload.materialId = String(payload.materialId || "");
+        payload.puntoEcaId = _safeStr(payload.puntoId);
+        payload.materialId = _safeStr(payload.materialId);
         delete payload.puntoId;
         delete payload.stockInicial;
 
@@ -726,14 +735,7 @@
                     ? `[id="${tbodyId}"], [id="inv-ws-${tbodyId.slice(4)}"]`
                     : `#${tbodyId}`;
                 document.querySelectorAll(tbodySelector).forEach((tbody) => {
-                    tbody.addEventListener("click", (e) => {
-                        const btn = e.target.closest("button[data-accion]");
-                        if (!btn) return;
-                        const id = btn.dataset.id;
-                        const tipo = btn.dataset.tipo;
-                        if (btn.dataset.accion === "ver") verMovimiento(tipo, id);
-                        if (btn.dataset.accion === "editar") editarMovimiento(tipo, id);
-                    });
+                    tbody.addEventListener("click", _handleAccionTabla);
                 });
             });
 
@@ -762,6 +764,14 @@
         return list.find((m) => String(m.compraId || m.ventaId) === String(id));
     }
 
+    function _handleAccionTabla(e) {
+        const btn = e.target.closest("button[data-accion]");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const tipo = btn.dataset.tipo;
+        if (btn.dataset.accion === "ver") verMovimiento(tipo, id);
+        if (btn.dataset.accion === "editar") editarMovimiento(tipo, id);
+    }
     function verMovimiento(tipo, id) {
         const m = findMovimiento(tipo, id);
         if (!m) return;
@@ -1276,13 +1286,13 @@
         }
         // Mapear nombres del form al contrato del servicio.
         const payload = {
-            compraId: String(raw.id),
+            compraId: _safeStr(raw.id),
             fechaCompra: raw.fecha,
             cantidad: nuevaCant,
             precioCompra: Number(raw.precioCompra),
             observaciones: raw.observaciones || "",
         };
-        const promise = fetch(`/punto-eca/movimientos/editar-compra/${String(raw.id)}/`, {
+        const promise = fetch(`/punto-eca/movimientos/editar-compra/${_safeStr(raw.id)}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -1318,15 +1328,15 @@
         }
         // Mapear nombres del form al contrato del servicio.
         const payload = {
-            ventaId: String(raw.id),
+            ventaId: _safeStr(raw.id),
             fechaVenta: raw.fecha,
             cantidad: nuevaCant,
             precioVenta: Number(raw.precioVenta),
             observaciones: raw.observaciones || "",
         };
         const centroSel = document.getElementById("inv-edit-venta-centro");
-        if (centroSel && centroSel.value) payload.centroAcopioId = centroSel.value;
-        const promise = fetch(`/punto-eca/movimientos/editar-venta/${String(raw.id)}/`, {
+        if (centroSel?.value) payload.centroAcopioId = centroSel.value;
+        const promise = fetch(`/punto-eca/movimientos/editar-venta/${_safeStr(raw.id)}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
             body: JSON.stringify(payload),
@@ -1358,19 +1368,22 @@
             confirmButtonText: "Sí, eliminar",
             cancelButtonText: "Cancelar",
         }).then((r) => {
-            if (!r.isConfirmed) return;
-            fetch(url, {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
-            })
-                .then((res) => res.json().then((d) => ({ ok: res.ok, d })))
-                .then(({ ok, d }) => {
-                    if (!ok) throw new Error(d?.mensaje || "Error al eliminar");
-                    Swal.fire({ icon: "success", title: "Eliminado", timer: 1200, showConfirmButton: false });
-                    setTimeout(() => globalThis.location.reload(), 1200);
-                })
-                .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+            if (r.isConfirmed) _ejecutarEliminacion(url);
         });
+    }
+    function _ejecutarEliminacion(url) {
+        fetch(url, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+        })
+            .then((res) => res.json().then((d) => ({ ok: res.ok, d })))
+            .then(_mostrarResultadoEliminacion)
+            .catch((err) => Swal.fire({ icon: "error", title: "Error", text: err.message }));
+    }
+    function _mostrarResultadoEliminacion({ ok, d }) {
+        if (!ok) throw new Error(d?.mensaje || "Error al eliminar");
+        Swal.fire({ icon: "success", title: "Eliminado", timer: 1200, showConfirmButton: false });
+        setTimeout(() => globalThis.location.reload(), 1200);
     }
     function eliminarCompraActual() {
         const id = document.getElementById("inv-edit-compra-id")?.value;
@@ -1396,11 +1409,11 @@
     function _lookupMaterialNombreByInventarioId(inventarioId) {
         if (!inventarioId) return "";
         const m = materialesDB.find((x) => String(x.inventarioId) === String(inventarioId));
-        if (m && m.nombreMaterial) return m.nombreMaterial;
+        if (m?.nombreMaterial) return m.nombreMaterial;
         const c = comprasDB.find((x) => String(x.inventarioId) === String(inventarioId));
-        if (c && c.nombreMaterial) return c.nombreMaterial;
+        if (c?.nombreMaterial) return c.nombreMaterial;
         const v = ventasDB.find((x) => String(x.inventarioId) === String(inventarioId));
-        return (v && v.nombreMaterial) || "";
+        return v?.nombreMaterial || "";
     }
 
     function buildExportQuery(base) {
@@ -1409,36 +1422,32 @@
         const materialIdEfectivo = isWorkspaceHistorial && currentMaterialId
             ? String(currentMaterialId)
             : materialIdFiltro;
-        const materialNombre = materialIdEfectivo
-            ? (currentMaterial && String(currentMaterial.inventarioId) === String(materialIdEfectivo)
-                ? currentMaterial.nombre
-                : _lookupMaterialNombreByInventarioId(materialIdEfectivo))
-            : "";
-        const categoria = _q("inv-hfiltro-categoria")?.value;
-        const tipoMaterial = _q("inv-hfiltro-tipo-material")?.value;
-        const tipo = _q("inv-hfiltro-tipo")?.value;
-        const desde = _q("inv-hfiltro-desde")?.value;
-        const hasta = _q("inv-hfiltro-hasta")?.value;
-        const centro = _q("inv-hfiltro-centro")?.value;
-        const cantidadMin = _q("inv-hfiltro-cantidad-min")?.value;
-        const cantidadMax = _q("inv-hfiltro-cantidad-max")?.value;
-        const montoMin = _q("inv-hfiltro-monto-min")?.value;
-        const montoMax = _q("inv-hfiltro-monto-max")?.value;
-        if (materialNombre) params.append("material", materialNombre);
-        if (categoria) params.append("categoria", categoria);
-        if (tipoMaterial) params.append("tipo", tipoMaterial);
-        if (tipo) {
-            params.append("tipo_movimiento", tipo);
+        const materialNombre = _resolverNombreMaterialExport(materialIdEfectivo);
+        const filtros = [
+            ["material", materialNombre],
+            ["categoria", _q("inv-hfiltro-categoria")?.value],
+            ["tipo", _q("inv-hfiltro-tipo-material")?.value],
+            ["tipo_movimiento", _q("inv-hfiltro-tipo")?.value],
+            ["fecha_desde", _q("inv-hfiltro-desde")?.value],
+            ["fecha_hasta", _q("inv-hfiltro-hasta")?.value],
+            ["centro_acopio", _q("inv-hfiltro-centro")?.value],
+            ["cantidad_min", _q("inv-hfiltro-cantidad-min")?.value],
+            ["cantidad_max", _q("inv-hfiltro-cantidad-max")?.value],
+            ["monto_min", _q("inv-hfiltro-monto-min")?.value],
+            ["monto_max", _q("inv-hfiltro-monto-max")?.value],
+        ];
+        for (const [key, value] of filtros) {
+            if (value) params.append(key, value);
         }
-        if (desde) params.append("fecha_desde", desde);
-        if (hasta) params.append("fecha_hasta", hasta);
-        if (centro) params.append("centro_acopio", centro);
-        if (cantidadMin) params.append("cantidad_min", cantidadMin);
-        if (cantidadMax) params.append("cantidad_max", cantidadMax);
-        if (montoMin) params.append("monto_min", montoMin);
-        if (montoMax) params.append("monto_max", montoMax);
         const qs = params.toString();
         return qs ? `${base}?${qs}` : base;
+    }
+    function _resolverNombreMaterialExport(materialIdEfectivo) {
+        if (!materialIdEfectivo) return "";
+        if (currentMaterial && String(currentMaterial.inventarioId) === String(materialIdEfectivo)) {
+            return currentMaterial.nombre;
+        }
+        return _lookupMaterialNombreByInventarioId(materialIdEfectivo);
     }
     function _exportarHistorialConSweetAlert(formato) {
         const base = `/punto-eca/movimientos/exportar-historial-${formato}/`;
@@ -1468,69 +1477,93 @@
     // FILTRO HISTORIAL GENERAL (landing)
     // ============================================================
     function getCurrentHistorialRows() {
+        const filtros = _leerFiltrosHistorial();
+        const enRango = _crearPredicateEnRango(filtros.desdeD, filtros.hastaD);
+        const rows = [];
+        const aceptaCompra = !filtros.tipo || filtros.tipo === "compra";
+        const aceptaVenta = !filtros.tipo || filtros.tipo === "venta";
+
+        if (aceptaCompra) {
+            comprasDB.forEach((c) => {
+                if (_coincideFiltrosHistorial(c, "compra", filtros, enRango)) {
+                    rows.push({ ...c, _tipo: "compra", _ts: c.fechaCompra });
+                }
+            });
+        }
+        if (aceptaVenta) {
+            ventasDB.forEach((v) => {
+                if (_coincideFiltrosHistorial(v, "venta", filtros, enRango)) {
+                    rows.push({ ...v, _tipo: "venta", _ts: v.fechaVenta });
+                }
+            });
+        }
+        rows.sort((a, b) => new Date(b._ts) - new Date(a._ts));
+        return rows;
+    }
+    function _leerFiltrosHistorial() {
         const filtroMaterialId = _q("inv-hfiltro-material")?.value || "";
         const effectiveMaterialId = isWorkspaceHistorial && currentMaterialId
             ? String(currentMaterialId)
             : filtroMaterialId;
-        const categoria = _q("inv-hfiltro-categoria")?.value || "";
-        const tipoMaterial = _q("inv-hfiltro-tipo-material")?.value || "";
-        const tipo = _q("inv-hfiltro-tipo")?.value || "";
         const desde = _q("inv-hfiltro-desde")?.value;
         const hasta = _q("inv-hfiltro-hasta")?.value;
-        const centro = _q("inv-hfiltro-centro")?.value || "";
-        const cantidadMin = Number.parseFloat(_q("inv-hfiltro-cantidad-min")?.value);
-        const cantidadMax = Number.parseFloat(_q("inv-hfiltro-cantidad-max")?.value);
-        const montoMin = Number.parseFloat(_q("inv-hfiltro-monto-min")?.value);
-        const montoMax = Number.parseFloat(_q("inv-hfiltro-monto-max")?.value);
-        const desdeD = desde ? new Date(desde + "T00:00:00") : null;
-        const hastaD = hasta ? new Date(hasta + "T23:59:59") : null;
-
-        const enRango = (iso) => {
-            if (!desdeD && !hastaD) return true;
+        return {
+            effectiveMaterialId,
+            categoria: _q("inv-hfiltro-categoria")?.value || "",
+            tipoMaterial: _q("inv-hfiltro-tipo-material")?.value || "",
+            tipo: _q("inv-hfiltro-tipo")?.value || "",
+            centro: _q("inv-hfiltro-centro")?.value || "",
+            cantidadMin: Number.parseFloat(_q("inv-hfiltro-cantidad-min")?.value),
+            cantidadMax: Number.parseFloat(_q("inv-hfiltro-cantidad-max")?.value),
+            montoMin: Number.parseFloat(_q("inv-hfiltro-monto-min")?.value),
+            montoMax: Number.parseFloat(_q("inv-hfiltro-monto-max")?.value),
+            desdeD: desde ? new Date(desde + "T00:00:00") : null,
+            hastaD: hasta ? new Date(hasta + "T23:59:59") : null,
+        };
+    }
+    function _crearPredicateEnRango(desdeD, hastaD) {
+        if (!desdeD && !hastaD) return () => true;
+        return (iso) => {
             const d = new Date(iso);
             if (Number.isNaN(d.getTime())) return false;
             if (desdeD && d < desdeD) return false;
             if (hastaD && d > hastaD) return false;
             return true;
         };
-
-        const rows = [];
-        const aceptaCompra = !tipo || tipo === "compra";
-        const aceptaVenta = !tipo || tipo === "venta";
-
-        if (aceptaCompra) {
-            comprasDB.forEach((c) => {
-                if (effectiveMaterialId && String(c.inventarioId) !== String(effectiveMaterialId)) return;
-                if (categoria && c.nombreCategoria !== categoria) return;
-                if (tipoMaterial && c.nombreTipo !== tipoMaterial) return;
-                if (!enRango(c.fechaCompra)) return;
-                const cant = Number(c.cantidad || 0);
-                if (!Number.isNaN(cantidadMin) && cant < cantidadMin) return;
-                if (!Number.isNaN(cantidadMax) && cant > cantidadMax) return;
-                const monto = cant * Number(c.precioCompra || 0);
-                if (!Number.isNaN(montoMin) && monto < montoMin) return;
-                if (!Number.isNaN(montoMax) && monto > montoMax) return;
-                rows.push({ ...c, _tipo: "compra", _ts: c.fechaCompra });
-            });
-        }
-        if (aceptaVenta) {
-            ventasDB.forEach((v) => {
-                if (effectiveMaterialId && String(v.inventarioId) !== String(effectiveMaterialId)) return;
-                if (categoria && v.nombreCategoria !== categoria) return;
-                if (tipoMaterial && v.nombreTipo !== tipoMaterial) return;
-                if (centro && v.nombreCentroAcopio !== centro) return;
-                if (!enRango(v.fechaVenta)) return;
-                const cant = Number(v.cantidad || 0);
-                if (!Number.isNaN(cantidadMin) && cant < cantidadMin) return;
-                if (!Number.isNaN(cantidadMax) && cant > cantidadMax) return;
-                const monto = cant * Number(v.precioVenta || 0);
-                if (!Number.isNaN(montoMin) && monto < montoMin) return;
-                if (!Number.isNaN(montoMax) && monto > montoMax) return;
-                rows.push({ ...v, _tipo: "venta", _ts: v.fechaVenta });
-            });
-        }
-        rows.sort((a, b) => new Date(b._ts) - new Date(a._ts));
-        return rows;
+    }
+    function _coincideFiltrosHistorial(row, tipoMov, filtros, enRango) {
+        if (!_coincideIdentidad(row, filtros)) return false;
+        if (!_coincideCategoriaTipo(row, filtros)) return false;
+        if (tipoMov === "venta" && !_coincideCentro(row, filtros)) return false;
+        const fecha = tipoMov === "compra" ? row.fechaCompra : row.fechaVenta;
+        if (!enRango(fecha)) return false;
+        return _coincideCantidadYMonto(row, tipoMov, filtros);
+    }
+    function _coincideIdentidad(row, filtros) {
+        if (!filtros.effectiveMaterialId) return true;
+        return String(row.inventarioId) === String(filtros.effectiveMaterialId);
+    }
+    function _coincideCategoriaTipo(row, filtros) {
+        if (filtros.categoria && row.nombreCategoria !== filtros.categoria) return false;
+        if (filtros.tipoMaterial && row.nombreTipo !== filtros.tipoMaterial) return false;
+        return true;
+    }
+    function _coincideCentro(row, filtros) {
+        if (!filtros.centro) return true;
+        return row.nombreCentroAcopio === filtros.centro;
+    }
+    function _coincideCantidadYMonto(row, tipoMov, filtros) {
+        const cant = Number(row.cantidad || 0);
+        if (!_enRangoNumerico(cant, filtros.cantidadMin, filtros.cantidadMax)) return false;
+        const precio = tipoMov === "compra" ? row.precioCompra : row.precioVenta;
+        const monto = cant * Number(precio || 0);
+        if (!_enRangoNumerico(monto, filtros.montoMin, filtros.montoMax)) return false;
+        return true;
+    }
+    function _enRangoNumerico(valor, min, max) {
+        if (!Number.isNaN(min) && valor < min) return false;
+        if (!Number.isNaN(max) && valor > max) return false;
+        return true;
     }
 
     function _q(id) {
@@ -2199,6 +2232,36 @@
     // ============================================================
     // BIND EXTRA
     // ============================================================
+    function _handleOvSubTabClick(btn) {
+        const sub = btn.dataset.ovsub;
+        document.querySelectorAll('#ovFlujoSubtabs .nav-link').forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".ovsub-pane").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        const pane = document.getElementById(sub);
+        if (pane) {
+            pane.classList.add("active");
+            _reinitSelect2InPane(pane);
+            setTimeout(() => {
+                if (sub === "ovstock") renderOvtabChart();
+                else if (sub === "ovgan") renderOvGananciasChart();
+            }, 50);
+        }
+    }
+    function _handleWsSubTabClick(btn) {
+        const sub = btn.dataset.wssub;
+        document.querySelectorAll('#wsFlujoSubtabs .nav-link').forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".wssub-pane").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        const pane = document.getElementById(sub);
+        if (pane) {
+            pane.classList.add("active");
+            _reinitSelect2InPane(pane);
+            setTimeout(() => {
+                if (sub === "wsstock") renderWsChart();
+                else if (sub === "wsgan") renderWsGananciasChart();
+            }, 50);
+        }
+    }
     function bindExtras() {
         // Submit forms workspace
         document.getElementById("formEntrada")?.addEventListener("submit", submitEntrada);
@@ -2312,39 +2375,10 @@
 
         // Sub-tabs internas del flujo (Stock / Ganancias)
         document.querySelectorAll('#ovFlujoSubtabs [data-ovsub]').forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const sub = btn.dataset.ovsub;
-                document.querySelectorAll('#ovFlujoSubtabs .nav-link').forEach((b) => b.classList.remove("active"));
-                document.querySelectorAll(".ovsub-pane").forEach((p) => p.classList.remove("active"));
-                btn.classList.add("active");
-                const pane = document.getElementById(sub);
-                if (pane) {
-                    pane.classList.add("active");
-                    // Re-init Select2 y re-render del chart con clientWidth correcto
-                    _reinitSelect2InPane(pane);
-                    setTimeout(() => {
-                        if (sub === "ovstock") renderOvtabChart();
-                        else if (sub === "ovgan") renderOvGananciasChart();
-                    }, 50);
-                }
-            });
+            btn.addEventListener("click", () => _handleOvSubTabClick(btn));
         });
         document.querySelectorAll('#wsFlujoSubtabs [data-wssub]').forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const sub = btn.dataset.wssub;
-                document.querySelectorAll('#wsFlujoSubtabs .nav-link').forEach((b) => b.classList.remove("active"));
-                document.querySelectorAll(".wssub-pane").forEach((p) => p.classList.remove("active"));
-                btn.classList.add("active");
-                const pane = document.getElementById(sub);
-                if (pane) {
-                    pane.classList.add("active");
-                    _reinitSelect2InPane(pane);
-                    setTimeout(() => {
-                        if (sub === "wsstock") renderWsChart();
-                        else if (sub === "wsgan") renderWsGananciasChart();
-                    }, 50);
-                }
-            });
+            btn.addEventListener("click", () => _handleWsSubTabClick(btn));
         });
 
         // Render ovtab chart cuando se abre
@@ -2468,7 +2502,7 @@
         const base = link.dataset.plantillaUrl || "";
         if (!base) return;
         const tipoEl = document.getElementById("inv-carga-tipo");
-        const tipo = (tipoEl && tipoEl.value) || "compra";
+        const tipo = tipoEl?.value || "compra";
         link.setAttribute("href", `${base}?tipo=${tipo}`);
     }
 
@@ -2481,73 +2515,82 @@
         const fileEl = document.getElementById("inv-carga-archivo");
         const tipoEl = document.getElementById("inv-carga-tipo");
         const btn = document.getElementById("inv-btn-ejecutar-carga");
-        if (!fileEl || !fileEl.files || !fileEl.files.length) {
+        if (!_validarArchivoCargaMasiva(fileEl)) return;
+        const file = fileEl.files[0];
+        const tipo = tipoEl?.value || "compra";
+        const url = `/punto-eca/movimientos/${tipo}s/bulk_import/`;
+        const fd = new FormData();
+        fd.append("file", file);
+
+        withLoading(btn, () => fetch(url, {
+            method: "POST",
+            headers: { "X-CSRFToken": getCSRFToken() },
+            body: fd,
+        })
+            .then(_parsearJsonComoRespuestaBulk)
+            .then((res) => _procesarRespuestaCargaMasiva(res, fileEl))
+            .catch(_manejarErrorCargaMasiva));
+    }
+    function _parsearJsonComoRespuestaBulk(r) {
+        return r.json().then((data) => ({ ok: r.ok, status: r.status, data }));
+    }
+    function _validarArchivoCargaMasiva(fileEl) {
+        if (!fileEl?.files?.length) {
             Swal.fire({
                 icon: "warning",
                 title: "Selecciona un archivo CSV",
                 confirmButtonColor: "#0d6efd",
             });
-            return;
+            return false;
         }
-        const file = fileEl.files[0];
-        if (!file.name.toLowerCase().endsWith(".csv")) {
+        if (!fileEl.files[0].name.toLowerCase().endsWith(".csv")) {
             Swal.fire({
                 icon: "warning",
                 title: "El archivo debe ser .csv",
                 confirmButtonColor: "#0d6efd",
             });
-            return;
+            return false;
         }
-        const tipo = (tipoEl && tipoEl.value) || "compra";
-        const url = `/punto-eca/movimientos/${tipo}s/bulk_import/`;
-        const fd = new FormData();
-        fd.append("file", file);
-
-        const run = () => fetch(url, {
-            method: "POST",
-            headers: { "X-CSRFToken": getCSRFToken() },
-            body: fd,
-        })
-            .then((r) => r.json().then((data) => ({ ok: r.ok, status: r.status, data })))
-            .then(({ ok, status, data }) => {
-                if (!ok || data.status === "error") {
-                    const msg = data.mensaje || "Error al procesar el archivo";
-                    throw new Error(msg);
-                }
-                // Reset input para permitir re-subir el mismo archivo
-                fileEl.value = "";
-                // Cerrar modal
-                const modalEl = document.getElementById("inv-modalCargaMasiva");
-                bootstrap.Modal.getInstance(modalEl)?.hide();
-                // Resumen
-                const r = data.resumen || {};
-                const exitosas = r.exitosas || 0;
-                const conErrores = r.con_errores || 0;
-                const total = r.total_filas || (exitosas + conErrores);
-                const color = conErrores > 0 ? "#fd7e14" : "#198754";
-                const primerError = (data.detalles || []).find((d) => d.status === "error");
-                const detalleHtml = primerError
-                    ? `<small class="text-muted d-block mt-2">Primer error: ${escapeHtml(primerError.mensaje)}</small>`
-                    : "";
-                Swal.fire({
-                    icon: conErrores > 0 ? "warning" : "success",
-                    title: "Carga masiva completada",
-                    html: `<p class="mb-1"><strong>${exitosas}</strong> exitosas de <strong>${total}</strong> totales</p>
-                           <p class="mb-0">${conErrores} con errores</p>${detalleHtml}`,
-                    confirmButtonText: "OK",
-                    confirmButtonColor: color,
-                });
-            })
-            .catch((err) => {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error en la carga",
-                    text: err.message,
-                    confirmButtonColor: "#dc3545",
-                });
-            });
-
-        withLoading(btn, run);
+        return true;
+    }
+    function _procesarRespuestaCargaMasiva({ ok, status, data }, fileEl) {
+        if (!ok || data.status === "error") {
+            const msg = data?.mensaje || "Error al procesar el archivo";
+            throw new Error(msg);
+        }
+        // Reset input para permitir re-subir el mismo archivo
+        fileEl.value = "";
+        // Cerrar modal
+        const modalEl = document.getElementById("inv-modalCargaMasiva");
+        bootstrap.Modal.getInstance(modalEl)?.hide();
+        _mostrarResumenCargaMasiva(data);
+    }
+    function _mostrarResumenCargaMasiva(data) {
+        const r = data.resumen || {};
+        const exitosas = r.exitosas || 0;
+        const conErrores = r.con_errores || 0;
+        const total = r.total_filas || (exitosas + conErrores);
+        const color = conErrores > 0 ? "#fd7e14" : "#198754";
+        const primerError = (data.detalles || []).find((d) => d.status === "error");
+        const detalleHtml = primerError
+            ? `<small class="text-muted d-block mt-2">Primer error: ${escapeHtml(primerError.mensaje)}</small>`
+            : "";
+        Swal.fire({
+            icon: conErrores > 0 ? "warning" : "success",
+            title: "Carga masiva completada",
+            html: `<p class="mb-1"><strong>${exitosas}</strong> exitosas de <strong>${total}</strong> totales</p>
+                   <p class="mb-0">${conErrores} con errores</p>${detalleHtml}`,
+            confirmButtonText: "OK",
+            confirmButtonColor: color,
+        });
+    }
+    function _manejarErrorCargaMasiva(err) {
+        Swal.fire({
+            icon: "error",
+            title: "Error en la carga",
+            text: err.message,
+            confirmButtonColor: "#dc3545",
+        });
     }
 
     // --- Init ---
@@ -2564,10 +2607,10 @@
         } catch (parseErr) {
             // Si el deep-link está malformado, simplemente no se navega
             // (no queremos romper la carga de la página por un JSON inválido).
-            console.warn("[inv] deep-link JSON inválido:", parseErr);
+            console.warn("[inv] deep-link JSON inválido:", parseErr?.message || parseErr);
             return;
         }
-        if (!dl || !dl.inv || !dl.tab) return;
+        if (!dl?.inv || !dl?.tab) return;
         // materialesDB se carga via inv-data (json_script) en el mismo
         // render del server, así que ya está disponible al ejecutar este
         // script. Pero poblarInfoMaterial y poblarWorkspace asumen que el

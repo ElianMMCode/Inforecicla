@@ -1952,16 +1952,22 @@ class TestFiltrosFlujoWorkshop(TestCase):
                          "irLanding NO debe usar replaceState (irLanding es full reload)")
 
     def test_helper_en_rango_existe(self):
-        """El helper _enRango debe existir y manejar fechas string/Date."""
-        self.assertIn("function _enRango", self.js,
-                      "_enRango debe existir como helper")
-        block = self.js.split("function _enRango", 1)[1].split("function ", 1)[0]
-        # Debe convertir la fecha a timestamp
+        """El helper de rango de fechas debe existir y manejar fechas string/Date.
+
+        Tras el refactor de S3776, la lógica vive en `_crearPredicateEnRango`
+        que retorna un closure con la misma semántica que el antiguo
+        `_enRango(fecha, desde, hasta)`. Verificamos que el nuevo helper
+        existe y sigue usando `getTime()` para comparar timestamps."""
+        self.assertIn("function _crearPredicateEnRango", self.js,
+                      "_crearPredicateEnRango debe existir como helper")
+        idx = self.js.find("function _crearPredicateEnRango")
+        block = self.js[idx:idx + 600]
+        # Debe usar getTime() para comparar timestamps
         self.assertIn("getTime()", block,
-                      "_enRango debe usar getTime() para comparar timestamps")
-        # Debe retornar boolean
+                      "_crearPredicateEnRango debe usar getTime() para comparar timestamps")
+        # Debe retornar un booleano
         self.assertIn("return ", block,
-                      "_enRango debe retornar un booleano")
+                      "_crearPredicateEnRango debe retornar un booleano")
 
 
 class TestChartSeriesVisibilidad(TestCase):
