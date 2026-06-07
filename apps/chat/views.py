@@ -15,6 +15,7 @@ La lógica de permisos se basa en el usuario autenticado y la relación de perte
 
 from rest_framework import generics, permissions, serializers as drf_serializers
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 from django.http import Http404
 from apps.chat.models import Chat, Mensaje
 from apps.chat.serializers import ChatSerializer, MensajeSerializer
@@ -109,3 +110,18 @@ class PuntoChatListView(generics.ListAPIView):
             return Chat.objects.none()
         queryset = Chat.objects.filter(punto=punto)
         return queryset
+
+
+class MarcarLeidosView(generics.GenericAPIView):
+    """
+    Marca como leidos todos los mensajes de un chat cuyo remitente no es el usuario actual.
+    POST /mensajes/<chat_id>/leer/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, chat_id):
+        count = Mensaje.objects.filter(
+            chat_id=chat_id,
+            leido=False
+        ).exclude(remitente=request.user).update(leido=True)
+        return Response({"ok": True, "count": count})

@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+    "django.contrib.humanize",
     "apps.core.apps.CoreConfig",
     "apps.ecas.apps.EcasConfig",
     "apps.inventory.apps.InventoryConfig",

@@ -1,11 +1,8 @@
 from apps.inventory.models import Inventario
-from config import constants as cons
 from . import models
 from apps.operations.service import CompraInventarioService, VentaInventarioService
-from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse, HttpResponse
 import json
-from apps.ecas.models import CentroAcopio
 from apps.core.decorators import gestor_eca_or_admin_required
 from .resources import CompraInventarioResource, VentaInventarioResource
 from weasyprint import HTML
@@ -15,10 +12,13 @@ import csv
 import io
 import unicodedata
 from django.utils.dateparse import parse_date
+import datetime
+import re
 from apps.inventory.models import Material
 from apps.ecas.models import PuntoECA
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, F, ExpressionWrapper, DecimalField
+from decimal import Decimal, InvalidOperation
 
 INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
 ERROR_METODO_NO_PERMITIDO = "Método no permitido"
@@ -26,16 +26,77 @@ MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 MIME_PDF = "application/pdf"
 CSV_UTF8_ERROR_MESSAGE = "Error al leer el archivo. Verifique que sea UTF-8"
 TEXT_PLAIN = "text/plain"
+MIME_CSV = "text/csv; charset=utf-8"
+PLANTILLA_BULK_HEADERS_COMPRA = (
+    "nombreMaterial",
+    "cantidad",
+    "precioCompra",
+    "fechaCompra",
+    "observaciones",
+)
+PLANTILLA_BULK_HEADERS_VENTA = (
+    "nombreMaterial",
+    "cantidad",
+    "precioVenta",
+    "fechaVenta",
+    "observaciones",
+)
+PLANTILLA_BULK_EJEMPLOS_COMPRA = (
+    ("Botellas PET transparentes", "100.0", "1.50", "2026-06-15 09:00:00", "Compra de ejemplo"),
+    ("Chatarra férrica", "50.0", "2.30", "2026-06-15 14:30:00", "Lote inicial"),
+)
+PLANTILLA_BULK_EJEMPLOS_VENTA = (
+    ("Botellas PET transparentes", "25.0", "3.00", "2026-06-15 10:30:00", "Venta de ejemplo"),
+    ("Chatarra férrica", "15.0", "4.20", "2026-06-15 16:00:00", "Cliente habitual"),
+)
 
 
 def _responder_error_json(mensaje, status=400):
     return JsonResponse({"status": "error", "mensaje": mensaje}, status=status)
 
 
+@gestor_eca_or_admin_required
+def descargar_plantilla_bulk(request):
+    """
+    Genera y descarga un CSV de ejemplo para la carga masiva.
+
+    Query params:
+        tipo: "compra" (default) o "venta".
+
+    Retorna un archivo .csv con el header correcto y 2 filas de ejemplo.
+    """
+    tipo = (request.GET.get("tipo") or "compra").lower()
+    if tipo == "compra":
+        headers = PLANTILLA_BULK_HEADERS_COMPRA
+        ejemplos = PLANTILLA_BULK_EJEMPLOS_COMPRA
+    elif tipo == "venta":
+        headers = PLANTILLA_BULK_HEADERS_VENTA
+        ejemplos = PLANTILLA_BULK_EJEMPLOS_VENTA
+    else:
+        return _responder_error_json("tipo debe ser 'compra' o 'venta'", status=400)
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow(headers)
+    for fila in ejemplos:
+        writer.writerow(fila)
+
+    response = HttpResponse(buffer.getvalue(), content_type=MIME_CSV)
+    response["Content-Disposition"] = (
+        f'attachment; filename="plantilla_{tipo}_ejemplo.csv"'
+    )
+    return response
+
+
 def _responder_servicio_json(servicio_callable, *args, **kwargs):
     try:
         response = servicio_callable(*args, **kwargs)
-        return JsonResponse(response, safe=False)
+        # Propagar el "status" del body al HTTP status. Si el body
+        # no incluye "status" o no es un dict, usar 200 por defecto.
+        http_status = 200
+        if isinstance(response, dict):
+            http_status = response.pop("status", 200) or 200
+        return JsonResponse(response, safe=False, status=http_status)
     except Exception as exc:
         return JsonResponse(
             {"mensaje": f"Error técnico: {str(exc)}", "error": True}, status=400
@@ -315,36 +376,177 @@ def _aplicar_filtros_export(
     fecha_campo,
     incluir_centro_acopio=False,
     tipo_movimiento_bloqueado=None,
+    precio_attr=None,
 ):
+    """
+    Aplica todos los filtros de export al queryset.
+
+    Es un orquestador delgado: extrae los parámetros del request en un dict
+    y delega la aplicación de cada grupo de filtros a un helper especializado.
+    La complejidad cognitiva se mantiene baja porque cada helper tiene una
+    sola responsabilidad.
+    """
     punto_eca_id = _obtener_punto_eca_id_export(request)
     if punto_eca_id:
         queryset = queryset.filter(inventario__punto_eca__id=str(punto_eca_id))
 
-    material = _obtener_filtro_export(request, "material")
-    categoria = _obtener_filtro_export(request, "categoria")
-    tipo = _obtener_filtro_export(request, "tipo")
-    centro_acopio = _obtener_filtro_export(request, "centro_acopio")
-    tipo_movimiento = _obtener_filtro_export(request, "tipo_movimiento").lower()
-    fecha_desde = parse_date(_obtener_filtro_export(request, "fecha_desde"))
-    fecha_hasta = parse_date(_obtener_filtro_export(request, "fecha_hasta"))
+    filtros = _extraer_filtros_export(request)
+    queryset = _aplicar_filtros_inventario(queryset, filtros)
+    if incluir_centro_acopio:
+        queryset = _aplicar_filtro_centro(queryset, filtros)
+    queryset = _aplicar_filtros_fecha(queryset, fecha_campo, filtros)
+    queryset = _aplicar_filtros_cantidad(queryset, filtros)
+    queryset = _aplicar_filtros_monto(queryset, filtros, precio_attr)
 
-    if material:
-        queryset = queryset.filter(inventario__material__nombre__iexact=material)
-    if categoria:
-        queryset = queryset.filter(
-            inventario__material__categoria__nombre__iexact=categoria
-        )
-    if tipo:
-        queryset = queryset.filter(inventario__material__tipo__nombre__iexact=tipo)
-    if incluir_centro_acopio and centro_acopio:
-        queryset = queryset.filter(centro_acopio__nombre__iexact=centro_acopio)
-    if fecha_desde:
-        queryset = queryset.filter(**{f"{fecha_campo}__date__gte": fecha_desde})
-    if fecha_hasta:
-        queryset = queryset.filter(**{f"{fecha_campo}__date__lte": fecha_hasta})
-    if tipo_movimiento_bloqueado and tipo_movimiento == tipo_movimiento_bloqueado:
+    if tipo_movimiento_bloqueado and filtros["tipo_movimiento"] == tipo_movimiento_bloqueado:
         return queryset.none()
     return queryset
+
+
+# --- Helpers de _aplicar_filtros_export (extraídos para mantener su
+# complejidad cognitiva ≤15). Cada uno aplica un grupo de filtros.
+
+
+def _extraer_filtros_export(request):
+    """Lee y parsea todos los parámetros de filtro del request a un dict."""
+    return {
+        "material": _obtener_filtro_export(request, "material"),
+        "categoria": _obtener_filtro_export(request, "categoria"),
+        "tipo": _obtener_filtro_export(request, "tipo"),
+        "centro_acopio": _obtener_filtro_export(request, "centro_acopio"),
+        "tipo_movimiento": _obtener_filtro_export(request, "tipo_movimiento").lower(),
+        "fecha_desde": parse_date(_obtener_filtro_export(request, "fecha_desde")),
+        "fecha_hasta": parse_date(_obtener_filtro_export(request, "fecha_hasta")),
+        "cantidad_min": _parse_decimal_export(_obtener_filtro_export(request, "cantidad_min")),
+        "cantidad_max": _parse_decimal_export(_obtener_filtro_export(request, "cantidad_max")),
+        "monto_min": _parse_decimal_export(_obtener_filtro_export(request, "monto_min")),
+        "monto_max": _parse_decimal_export(_obtener_filtro_export(request, "monto_max")),
+    }
+
+
+def _aplicar_filtro_si_valor(queryset, valor, filter_kwargs):
+    """Aplica .filter(**filter_kwargs) si `valor` es truthy."""
+    if valor:
+        return queryset.filter(**filter_kwargs)
+    return queryset
+
+
+def _aplicar_filtros_inventario(queryset, filtros):
+    """Aplica filtros de material/categoría/tipo al queryset."""
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["material"],
+        {"inventario__material__nombre__iexact": filtros["material"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["categoria"],
+        {"inventario__material__categoria__nombre__iexact": filtros["categoria"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["tipo"],
+        {"inventario__material__tipo__nombre__iexact": filtros["tipo"]},
+    )
+    return queryset
+
+
+def _aplicar_filtro_centro(queryset, filtros):
+    """Aplica el filtro de centro de acopio (solo si hay valor)."""
+    return _aplicar_filtro_si_valor(
+        queryset, filtros["centro_acopio"],
+        {"centro_acopio__nombre__iexact": filtros["centro_acopio"]},
+    )
+
+
+def _aplicar_filtros_fecha(queryset, fecha_campo, filtros):
+    """Aplica los filtros de fecha_desde / fecha_hasta al queryset."""
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["fecha_desde"],
+        {f"{fecha_campo}__date__gte": filtros["fecha_desde"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["fecha_hasta"],
+        {f"{fecha_campo}__date__lte": filtros["fecha_hasta"]},
+    )
+    return queryset
+
+
+def _aplicar_filtros_cantidad(queryset, filtros):
+    """Aplica los filtros de cantidad_min / cantidad_max al queryset."""
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["cantidad_min"] is not None,
+        {"cantidad__gte": filtros["cantidad_min"]},
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, filtros["cantidad_max"] is not None,
+        {"cantidad__lte": filtros["cantidad_max"]},
+    )
+    return queryset
+
+
+def _aplicar_filtros_monto(queryset, filtros, precio_attr):
+    """
+    Aplica los filtros de monto_min / monto_max al queryset.
+
+    Requiere anotar el queryset con `_monto_total = cantidad * precio_attr`
+    antes de aplicar los filtros, ya que la comparación es sobre el monto
+    total (no sobre el precio unitario).
+
+    Si no hay ni monto_min ni monto_max, o si no se proporcionó
+    `precio_attr`, no se aplica ningún filtro.
+    """
+    monto_min = filtros["monto_min"]
+    monto_max = filtros["monto_max"]
+    if monto_min is None and monto_max is None:
+        return queryset
+    if not precio_attr:
+        return queryset
+    queryset = queryset.annotate(
+        _monto_total=ExpressionWrapper(
+            F("cantidad") * F(precio_attr),
+            output_field=DecimalField(max_digits=20, decimal_places=4),
+        )
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, monto_min is not None, {"_monto_total__gte": monto_min}
+    )
+    queryset = _aplicar_filtro_si_valor(
+        queryset, monto_max is not None, {"_monto_total__lte": monto_max}
+    )
+    return queryset
+
+
+def _parse_decimal_export(value):
+    if not value:
+        return None
+    try:
+        return Decimal(value)
+    except (InvalidOperation, ValueError):
+        return None
+
+
+def _sanitize_filename_component(s):
+    """Convierte un string en filename-safe (ASCII alfanumérico, '_' o '-').
+
+    - Quita acentos: 'Lata Plástico' → 'Lata_Plastico'.
+    - Reemplaza espacios y caracteres especiales por '_'.
+    - Vacío o None → 'general'.
+    """
+    if not s:
+        return "general"
+    s = unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("utf-8")
+    s = re.sub(r"[^A-Za-z0-9_-]+", "_", s).strip("_")
+    return s or "general"
+
+
+def _generar_filename_export(tipo, request, ext):
+    """Genera nombre de archivo de export: {tipo}_{material}_{YYYY-MM-DD_HHMM}.{ext}.
+
+    - material: nombre del filtro 'material' o 'general' si no hay.
+    - fecha: datetime.now() al momento de crear el archivo.
+    """
+    material = _obtener_filtro_export(request, "material")
+    material_safe = _sanitize_filename_component(material)
+    fecha = datetime.datetime.now().strftime("%Y-%m-%d_%H%M")
+    return f"{tipo}_{material_safe}_{fecha}.{ext}"
 
 
 def _filtrar_historial_compras_export(request, queryset):
@@ -353,6 +555,7 @@ def _filtrar_historial_compras_export(request, queryset):
         queryset,
         fecha_campo="fecha_compra",
         tipo_movimiento_bloqueado="venta",
+        precio_attr="precio_compra",
     )
 
 
@@ -363,6 +566,7 @@ def _filtrar_historial_ventas_export(request, queryset):
         fecha_campo="fecha_venta",
         incluir_centro_acopio=True,
         tipo_movimiento_bloqueado="compra",
+        precio_attr="precio_venta",
     )
 
 
@@ -587,123 +791,6 @@ def _buscar_o_crear_material_inventario(nombre_material, punto_eca):
 
 
 # Create your views here.
-def _build_movimientos_context(punto):
-    # ... (código existente de contexto) ...
-    materiales_inventario = list(
-        Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
-    )
-    compras = (
-        models.CompraInventario.objects.filter(inventario__punto_eca=punto)
-        .select_related("inventario__material")
-        .order_by("-fecha_compra")
-    )
-
-    compras_list = [
-        {
-            "compraId": str(compra.id),
-            "inventarioId": str(compra.inventario.id),
-            "materialId": str(compra.inventario.material.id),
-            "nombreMaterial": compra.inventario.material.nombre,
-            "nombreCategoria": getattr(
-                compra.inventario.material.categoria, "nombre", ""
-            ),
-            "nombreTipo": getattr(compra.inventario.material.tipo, "nombre", ""),
-            "cantidad": float(compra.cantidad),
-            "fechaCompra": compra.fecha_compra.isoformat(),
-            "precioCompra": float(compra.precio_compra or 0),
-            "observaciones": compra.observaciones or "",
-        }
-        for compra in compras
-    ]
-
-    ventas = (
-        models.VentaInventario.objects.filter(inventario__punto_eca=punto)
-        .select_related("inventario__material", "centro_acopio")
-        .order_by("-fecha_venta")
-    )
-
-    ventas_list = [
-        {
-            "ventaId": str(venta.id),
-            "inventarioId": str(venta.inventario.id),
-            "materialId": str(venta.inventario.material.id),
-            "nombreMaterial": venta.inventario.material.nombre,
-            "nombreCategoria": getattr(
-                venta.inventario.material.categoria, "nombre", ""
-            ),
-            "nombreTipo": getattr(venta.inventario.material.tipo, "nombre", ""),
-            "cantidad": float(venta.cantidad),
-            "fechaVenta": venta.fecha_venta.isoformat(),
-            "precioVenta": float(venta.precio_venta or 0),
-            "observaciones": venta.observaciones or "",
-            "nombreCentroAcopio": getattr(venta.centro_acopio, "nombre", "")
-            if getattr(venta, "centro_acopio", None)
-            else "",
-            "centroAcopioId": str(venta.centro_acopio.id)
-            if getattr(venta, "centro_acopio", None)
-            else "",
-        }
-        for venta in ventas
-    ]
-
-    # Centros de acopio (globales y asociados a este punto)
-    centros_globales = list(
-        CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
-    )
-    centros_locales = list(
-        CentroAcopio.objects.filter(puntos_eca=punto, visibilidad=cons.Visibilidad.ECA)
-    )
-    # Unificar por ID y convertir a lista de dicts simples para JS/JSON
-    centros_map = {}
-    for c in centros_globales + centros_locales:
-        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
-    centros_list = list(centros_map.values())
-
-    materiales_stock_data = [
-        {
-            "inventarioId": str(inv.id),
-            "materialId": str(inv.material.id),
-            "nombre": inv.material.nombre,
-            "categoria": getattr(inv.material.categoria, "nombre", ""),
-            "tipo": getattr(inv.material.tipo, "nombre", ""),
-            "unidadMedida": inv.unidad_medida,
-            "stockActual": float(inv.stock_actual or 0),
-            "capacidadMaxima": float(inv.capacidad_maxima or 0),
-        }
-        for inv in materiales_inventario
-    ]
-
-    return {
-        "seccion": "movimientos",
-        "section_template": SECTION_TEMPLATES["movimientos"],
-        "gestor": punto.gestor_eca,
-        "punto": punto,
-        "unidades_medida": cons.UnidadMedida.choices,
-        "materiales_inventario": materiales_inventario,
-        "materiales_stock_data": materiales_stock_data,
-        "categoria_inventario": (
-            Inventario.objects.filter(punto_eca=punto)
-            .select_related("material__categoria")
-            .values_list("material__categoria__nombre", flat=True)
-            .distinct()
-        ),
-        "tipo_inventario": (
-            Inventario.objects.filter(punto_eca=punto)
-            .select_related("material__tipo")
-            .values_list("material__tipo__nombre", flat=True)
-            .distinct()
-        ),
-        "centros": centros_list,
-        "entradas": compras_list,
-        "salidas": ventas_list,
-        "historial_compras": compras_list,
-        "historial_ventas": ventas_list,
-        "HISTORIAL_COMPRAS": compras_list,
-        "HISTORIAL_VENTAS": ventas_list,
-    }
-
-
-# (Código de views existentes continúa abajo...)
 
 
 @gestor_eca_or_admin_required
@@ -768,7 +855,7 @@ def exportar_compras_excel(request):
     )
     queryset = _filtrar_compras_export(request, queryset)
     dataset = CompraInventarioResource().export(queryset)
-    return _generar_respuesta_xlsx(dataset, "compras.xlsx")
+    return _generar_respuesta_xlsx(dataset, _generar_filename_export("compras", request, "xlsx"))
 
 
 # ============== EXPORT PDF =============
@@ -783,7 +870,7 @@ def exportar_compras_pdf(request):
         request,
         "operations/compras_pdf.html",
         {"compras": compras},
-        'inline; filename="compras.pdf"',
+        f'inline; filename="{_generar_filename_export("compras", request, "pdf")}"',
         "Error generando PDF de compras",
     )
 
@@ -800,7 +887,7 @@ def exportar_ventas_pdf(request):
         request,
         "operations/ventas_pdf.html",
         {"ventas": ventas, "total_ventas": total_ventas},
-        'inline; filename="ventas.pdf"',
+        f'inline; filename="{_generar_filename_export("ventas", request, "pdf")}"',
         "Error generando PDF de ventas",
     )
 
@@ -812,7 +899,7 @@ def exportar_ventas_excel(request):
     )
     queryset = _filtrar_ventas_export(request, queryset)
     dataset = VentaInventarioResource().export(queryset)
-    return _generar_respuesta_xlsx(dataset, "ventas.xlsx")
+    return _generar_respuesta_xlsx(dataset, _generar_filename_export("ventas", request, "xlsx"))
 
 
 @gestor_eca_or_admin_required
@@ -886,7 +973,7 @@ def exportar_historial_excel(request):
             status=404,
         )
     dataset = _crear_dataset_historial(rows)
-    return _generar_respuesta_xlsx(dataset, "historial_movimientos.xlsx")
+    return _generar_respuesta_xlsx(dataset, _generar_filename_export("historial", request, "xlsx"))
 
 
 @gestor_eca_or_admin_required
@@ -901,6 +988,6 @@ def exportar_historial_pdf(request):
         request,
         "operations/historial_pdf.html",
         {"historial": historial},
-        'inline; filename="historial.pdf"',
+        f'inline; filename="{_generar_filename_export("historial", request, "pdf")}"',
         "Error generando PDF de historial",
     )

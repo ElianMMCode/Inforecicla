@@ -2,117 +2,12 @@ from django.views.decorators.http import require_POST, require_http_methods, req
 from apps.inventory.models import Inventario
 from config import constants as cons
 from apps.inventory.service import InventoryService
-from apps.ecas.constants import SECTION_TEMPLATES
 from django.http import JsonResponse
 from apps.core.decorators import gestor_eca_or_admin_required
 import json
 
 
 INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
-
-
-def _build_materiales_context(punto):
-    """
-    Construye y retorna el contexto de negocio para el manejo de materiales en el inventario de un punto ECA.
-    Incluye KPIs, métricas agregadas y listas útiles para las secciones del frontend.
-
-    Args:
-        punto: Instancia de punto ECA.
-
-    Returns:
-        dict: Estructura con información detallada del inventario y métricas clave.
-
-    Lógica de negocio:
-        - Obtiene todos los materiales en inventario asociados al punto.
-        - Calcula el stock total, capacidad máxima y porcentajes de ocupación (seguridad, alerta, crítico).
-        - Identifica el material con mayor ocupación, el más caro, el más barato y los materiales críticos.
-        - Calcula KPIs globales de inventario (porcentaje de ocupación, costo total, etc).
-    """
-    materiales_inventario = list(
-        Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
-    )
-    total_stock = sum(float(inv.stock_actual) for inv in materiales_inventario)
-    total_capacidad = sum(float(inv.capacidad_maxima) for inv in materiales_inventario)
-
-    total_ok = sum(
-        1
-        for inv in materiales_inventario
-        if float(inv.ocupacion_actual) < float(inv.umbral_alerta)
-    )
-    total_alerta = sum(
-        1
-        for inv in materiales_inventario
-        if float(inv.ocupacion_actual) >= float(inv.umbral_alerta)
-        and float(inv.ocupacion_actual) < float(inv.umbral_critico)
-    )
-    total_critico = sum(
-        1
-        for inv in materiales_inventario
-        if float(inv.ocupacion_actual) >= float(inv.umbral_critico)
-    )
-
-    # Porcentaje de ocupación global
-    if total_capacidad > 0:
-        ocupacion_porcentaje = round((total_stock / total_capacidad) * 100)
-    else:
-        ocupacion_porcentaje = 0
-
-    material_mayor_ocupacion = None
-    material_mas_caro = None
-    material_mas_barato = None
-    costo_total_inventario = 0
-    materiales_criticos = []
-    if materiales_inventario:
-        material_mayor_ocupacion = max(
-            materiales_inventario, key=lambda i: float(i.ocupacion_actual)
-        )
-        material_mas_caro = max(
-            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
-        )
-        material_mas_barato = min(
-            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
-        )
-        costo_total_inventario = sum(
-            float(i.stock_actual) * float(i.precio_compra or 0)
-            for i in materiales_inventario
-        )
-        materiales_criticos = [
-            i
-            for i in materiales_inventario
-            if float(i.ocupacion_actual) >= float(i.umbral_critico)
-        ]
-
-    return {
-        "seccion": "materiales",
-        "section_template": SECTION_TEMPLATES["materiales"],
-        "gestor": punto.gestor_eca,
-        "punto": punto,
-        "unidades_medida": cons.UnidadMedida.choices,
-        "materiales_inventario": materiales_inventario,
-        "total_stock": total_stock,
-        "total_capacidad": total_capacidad,
-        "total_ok": total_ok,
-        "total_alerta": total_alerta,
-        "total_critico": total_critico,
-        "ocupacion_porcentaje": ocupacion_porcentaje,
-        "categoria_inventario": (
-            Inventario.objects.filter(punto_eca=punto)
-            .select_related("material__categoria")
-            .values_list("material__categoria__nombre", flat=True)
-            .distinct()
-        ),
-        "tipo_inventario": (
-            Inventario.objects.filter(punto_eca=punto)
-            .select_related("material__tipo")
-            .values_list("material__tipo__nombre", flat=True)
-            .distinct()
-        ),
-        "material_mayor_ocupacion": material_mayor_ocupacion,
-        "material_mas_caro": material_mas_caro,
-        "material_mas_barato": material_mas_barato,
-        "costo_total_inventario": costo_total_inventario,
-        "materiales_criticos": materiales_criticos,
-    }
 
 
 @require_GET
@@ -212,7 +107,6 @@ def actualizar_inventario_view(request, inventario_id):
         )
 
 
-@require_GET
 @require_GET
 def buscar_materiales_inventario_view(request):
     """

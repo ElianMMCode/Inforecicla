@@ -1,6 +1,4 @@
 {% load static %}
-{# Sidebar para Punto ECA - modular y fácilmente extendible.
-   Estilos en static/css/sidebar.css #}
 <div class="sidebar-menu sidebar-fixed">
     <div class="mb-3" style="margin-bottom: 1.5rem !important; padding-left:12px; padding-right:12px;">
         <a href="/" class="d-flex flex-column align-items-center justify-content-center text-decoration-none text-success" style="width:100%;">
@@ -20,26 +18,20 @@
             </a>
         </li>
         <li class="nav-item dropdown sidebar-dropdown">
-            <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'movimientos' %}active{% endif %} sidebar-dropdown-toggle"
-                           href="{% url 'punto-eca:movimientos'  %}">
-                <i class="bi bi-truck me-2"></i>Movimientos
+            <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'inventario' or request.resolver_match.url_name == 'movimientos' or request.resolver_match.url_name == 'materiales' %}active{% endif %} sidebar-dropdown-toggle"
+               href="{% url 'punto-eca:inventario' %}">
+                <i class="bi bi-boxes me-2"></i>Inventario
                 <i class="bi bi-chevron-down ms-auto small"></i>
             </a>
-            <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2" style="min-width: 180px;">
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:movimientos' %}#collapseEntradas" data-anchor="#collapseEntradas">Compra de Material</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:movimientos' %}#collapseSalidas" data-anchor="#collapseSalidas">Venta de Material</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:movimientos' %}#collapseHistorial" data-anchor="#collapseHistorial">Historial General</a></li>
-            </ul>
-        </li>
-        <li class="nav-item dropdown sidebar-dropdown">
-            <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'materiales' %}active{% endif %} sidebar-dropdown-toggle"
-               href="{% url 'punto-eca:materiales' %}">
-                <i class="bi bi-box-seam me-2"></i>Materiales
-                <i class="bi bi-chevron-down ms-auto small"></i>
-            </a>
-            <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2" style="min-width: 180px;">
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:materiales' %}#collapseAgregar" data-anchor="#collapseAgregar">Agregar Material</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:materiales' %}#collapseTarjetas" data-anchor="#collapseTarjetas">Materiales Inventario</a></li>
+            <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2" style="min-width: 220px;">
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:inventario' %}">Resumen</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:inventario' %}?ovtab=ovtab-buscar">Buscar Material</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:inventario' %}?ovtab=ovtab-bulk">Carga Masiva</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:inventario' %}?ovtab=ovtab-historial">Historial General</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'punto-eca:inventario' %}?ovtab=ovtab-flujo">Flujo de Stock</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="/punto-eca/movimientos/exportar-compras-excel/"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Compras (Excel)</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="/punto-eca/movimientos/exportar-ventas-excel/"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Ventas (Excel)</a></li>
             </ul>
         </li>
         <li class="nav-item">
