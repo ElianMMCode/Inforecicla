@@ -525,20 +525,20 @@
     return { isGrouped: isGrouped, thisDateKey: thisDateKey };
   }
 
-  function _appendBubble(panel, bubbleClass, justify, nombreLabel, remitenteStr, fecha, texto, isGrouped, thisDateKey) {
+  function _appendBubble(opts) {
     var wrapper = document.createElement('div');
-    wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
-    wrapper.dataset.dateKey = thisDateKey;
+    wrapper.className = 'd-flex ' + opts.justify + ' mb-0 msg-wrapper';
+    wrapper.dataset.dateKey = opts.thisDateKey;
     wrapper.innerHTML = `
-      <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}"
-           data-remitente="${remitenteStr}" data-enviado-en="${fecha}">
-        <div class="mensaje-texto">${texto}</div>
+      <div class="chat-bubble ${opts.bubbleClass} msg-animate${opts.isGrouped ? ' msg-group-continue' : ''}"
+           data-remitente="${opts.remitenteStr}" data-enviado-en="${opts.fecha}">
+        <div class="mensaje-texto">${opts.texto}</div>
         <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-          <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
-          <span class="text-muted">${formatRelativeTime(fecha)}</span>
+          <span class="fw-semibold msg-meta-name">${opts.nombreLabel}</span>
+          <span class="text-muted">${formatRelativeTime(opts.fecha)}</span>
         </div>
       </div>`;
-    panel.appendChild(wrapper);
+    opts.panel.appendChild(wrapper);
   }
 
   function anadirMensajeRealtimeEca(mensaje) {
@@ -551,7 +551,7 @@
     var nombreLabel = esGestor ? 'Tú' : (currentCiudadanoNombre || 'Ciudadano');
     var fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toISOString() : '';
     var result = _checkDateAndGrouping(panel, remitenteStr, fecha);
-    _appendBubble(panel, bubbleClass, justify, nombreLabel, remitenteStr, fecha, mensaje.texto, result.isGrouped, result.thisDateKey);
+    _appendBubble({ panel: panel, bubbleClass: bubbleClass, justify: justify, nombreLabel: nombreLabel, remitenteStr: remitenteStr, fecha: fecha, texto: mensaje.texto, isGrouped: result.isGrouped, thisDateKey: result.thisDateKey });
     panel.scrollTop = panel.scrollHeight;
   }
 
