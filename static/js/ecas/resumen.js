@@ -467,7 +467,7 @@
         }).join("") + "</div>";
     }
 
-    /* ------------------------------ Pintar: centros ------------------------------ */
+    /* ------------------------------ Pintar: centros (contact card) ------------------------------ */
     function pintarCentros(d) {
         const cont = document.getElementById("centrosAcopio");
         if (!cont) return;
@@ -483,77 +483,110 @@
             `;
             return;
         }
-        let html = "";
-        if (propios.length > 0) {
-            html += '<h6 class="fw-bold text-success mb-2 small"><i class="bi bi-building me-1"></i>Propios</h6>';
-            propios.forEach(c => {
-                html += `
-                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-success bg-opacity-10 rounded">
-                        <i class="bi bi-geo-alt text-success"></i>
-                        <div class="min-w-0">
-                            <small class="fw-semibold text-dark d-block text-truncate">${escapeHTML(c.nombre)}</small>
-                            <small class="text-muted">${escapeHTML(c.tipo || "")}</small>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        if (globales.length > 0) {
-            html += '<h6 class="fw-bold text-info mb-2 small mt-3"><i class="bi bi-globe me-1"></i>Globales</h6>';
-            globales.forEach(c => {
-                html += `
-                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-info bg-opacity-10 rounded">
-                        <i class="bi bi-geo-alt text-info"></i>
-                        <div class="min-w-0">
-                            <small class="fw-semibold text-dark d-block text-truncate">${escapeHTML(c.nombre)}</small>
-                            <small class="text-muted">${escapeHTML(c.tipo || "")}</small>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        cont.innerHTML = html;
+        cont.innerHTML =
+            renderSeccionCentros("Propios", "bi-building", "contact-card-propios", propios) +
+            renderSeccionCentros("Globales", "bi-globe-americas", "contact-card-globales", globales);
     }
 
-    /* ------------------------------ Pintar: info punto + gestor ------------------------------ */
+    function renderSeccionCentros(titulo, icono, cardClass, lista) {
+        if (lista.length === 0) return "";
+        const cards = lista.map(c => renderContactCard(c, cardClass)).join("");
+        return `
+            <div class="contact-cards-section mb-3">
+                <h6 class="contact-cards-section-title">
+                    <i class="bi ${icono} me-1"></i>${escapeHTML(titulo)}
+                    <span class="contact-cards-section-count">${lista.length}</span>
+                </h6>
+                <div class="contact-cards-grid">${cards}</div>
+            </div>
+        `;
+    }
+
+    function renderContactCard(c, variantClass) {
+        const tipo = (c.tipo || "Centro").replace(/_/g, " ");
+        const ubicacion = [c.ciudad, c.localidad].filter(Boolean).join(" · ");
+        const direccionFull = [c.direccion, ubicacion].filter(Boolean).join(", ");
+        const detalleDir = direccionFull
+            ? `<div class="contact-card-detail"><i class="bi bi-geo-alt"></i><span>${escapeHTML(direccionFull)}</span></div>`
+            : "";
+        const detalleTel = c.celular
+            ? `<div class="contact-card-detail"><i class="bi bi-telephone"></i><a href="tel:${escapeHTML(c.celular)}">${escapeHTML(c.celular)}</a></div>`
+            : "";
+        const detalleEmail = c.email
+            ? `<div class="contact-card-detail"><i class="bi bi-envelope"></i><a href="mailto:${escapeHTML(c.email)}">${escapeHTML(c.email)}</a></div>`
+            : "";
+        const detalleHorario = c.horario
+            ? `<div class="contact-card-detail"><i class="bi bi-clock"></i><span>${escapeHTML(c.horario)}</span></div>`
+            : "";
+        const detalleWeb = c.sitio_web
+            ? `<div class="contact-card-detail"><i class="bi bi-globe"></i><a href="${escapeHTML(c.sitio_web)}" target="_blank" rel="noopener noreferrer">${escapeHTML(c.sitio_web.replace(/^https?:\/\//, ""))}</a></div>`
+            : "";
+        const descripcion = c.descripcion
+            ? `<p class="contact-card-desc">${escapeHTML(c.descripcion)}</p>`
+            : "";
+        return `
+            <div class="contact-card ${variantClass}">
+                <div class="contact-card-header">
+                    <div class="contact-card-icon"><i class="bi bi-building"></i></div>
+                    <div class="contact-card-title">
+                        <h6 title="${escapeHTML(c.nombre)}">${escapeHTML(c.nombre)}</h6>
+                        <span class="contact-card-badge">${escapeHTML(tipo)}</span>
+                    </div>
+                </div>
+                ${descripcion}
+                <div class="contact-card-details">
+                    ${detalleDir}${detalleTel}${detalleEmail}${detalleHorario}${detalleWeb}
+                </div>
+            </div>
+        `;
+    }
+
+    /* ------------------------------ Pintar: info punto (compacto) ------------------------------ */
     function pintarInfoPunto(d) {
         const cont = document.getElementById("infoPuntoECA");
         if (!cont) return;
         const p = d.puntoEca || {};
         const g = d.gestor || {};
-        let html = "";
-        if (p.nombre) {
-            html += `
-                <div class="mb-3">
-                    <h6 class="fw-bold text-dark mb-2">${escapeHTML(p.nombre)}</h6>
-                    ${p.direccion ? `<p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>${escapeHTML(p.direccion)}</p>` : ""}
-                    ${p.telefono ? `<p class="text-muted small mb-1"><i class="bi bi-telephone me-1"></i>${escapeHTML(p.telefono)}</p>` : ""}
-                    ${p.horario ? `<p class="text-muted small mb-1"><i class="bi bi-clock me-1"></i>${escapeHTML(p.horario)}</p>` : ""}
-                    ${p.descripcion ? `<p class="text-muted small mb-0">${escapeHTML(p.descripcion)}</p>` : ""}
-                </div>
-            `;
-        }
-        if (g.nombre) {
-            html += `
-                <div class="border-top pt-3">
-                    <h6 class="fw-bold text-secondary mb-2 small">
-                        <i class="bi bi-person-circle me-1"></i>Responsable
-                    </h6>
-                    <p class="text-dark mb-1 small">${escapeHTML(g.nombre)}</p>
-                    ${g.email ? `<p class="text-muted small mb-1"><i class="bi bi-envelope me-1"></i>${escapeHTML(g.email)}</p>` : ""}
-                    ${g.celular ? `<p class="text-muted small mb-0"><i class="bi bi-phone me-1"></i>${escapeHTML(g.celular)}</p>` : ""}
-                </div>
-            `;
-        }
         if (!p.nombre && !g.nombre) {
-            html = `
-                <div class="text-center py-4">
-                    <i class="bi bi-info-circle text-muted" style="font-size: 1.8rem;"></i>
+            cont.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="bi bi-info-circle text-muted" style="font-size: 1.6rem;"></i>
                     <p class="text-muted small mt-2 mb-0">Información no disponible</p>
                 </div>
             `;
+            return;
         }
-        cont.innerHTML = html;
+        const nombreHTML = p.nombre
+            ? `<h6 class="info-punto-nombre">${escapeHTML(p.nombre)}</h6>`
+            : "";
+        const direccionHTML = p.direccion
+            ? `<div class="info-punto-line"><i class="bi bi-geo-alt"></i><span>${escapeHTML(p.direccion)}</span></div>`
+            : "";
+        const telefonoHTML = p.telefono
+            ? `<div class="info-punto-line"><i class="bi bi-telephone"></i><a href="tel:${escapeHTML(p.telefono)}">${escapeHTML(p.telefono)}</a></div>`
+            : "";
+        const responsableHTML = g.nombre
+            ? `<div class="info-punto-responsable">
+                    <i class="bi bi-person-circle"></i>
+                    <div>
+                        <span class="info-punto-resp-nombre">${escapeHTML(g.nombre)}</span>
+                        <span class="info-punto-resp-contacto">
+                            ${g.celular ? `<a href="tel:${escapeHTML(g.celular)}" title="Llamar"><i class="bi bi-telephone"></i></a>` : ""}
+                            ${g.email ? `<a href="mailto:${escapeHTML(g.email)}" title="Email"><i class="bi bi-envelope"></i></a>` : ""}
+                        </span>
+                    </div>
+                </div>`
+            : "";
+        cont.innerHTML = `
+            <div class="info-punto-compact">
+                ${nombreHTML}
+                <div class="info-punto-detalles">
+                    ${direccionHTML}${telefonoHTML}
+                    ${p.horario ? `<div class="info-punto-line info-punto-horario"><i class="bi bi-clock"></i><span>${escapeHTML(p.horario)}</span></div>` : ""}
+                </div>
+                ${responsableHTML}
+            </div>
+        `;
     }
 
     /* ------------------------------ Pintar: timeline de movimientos ------------------------------ */
