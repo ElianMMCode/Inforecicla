@@ -1443,7 +1443,11 @@ def crear_tipo_material(request):
             messages.error(request, resultado["message"])
         return redirect("/panel_admin/materiales/gestion/?tab=tipos")
 
-    return render(request, "admin/TiposMateriales/createTipoMaterial.html")
+    return render(
+        request,
+        "admin/TiposMateriales/createTipoMaterial.html",
+        {"estados": cons.Estado.choices},
+    )
 
 
 @login_required(login_url="/login/")
@@ -1457,7 +1461,11 @@ def crear_categoria_material(request):
             messages.error(request, resultado["message"])
         return redirect("/panel_admin/materiales/gestion/?tab=categorias")
 
-    return render(request, "admin/CategoriasMateriales/createCategoriaMaterial.html")
+    return render(
+        request,
+        "admin/CategoriasMateriales/createCategoriaMaterial.html",
+        {"estados": cons.Estado.choices},
+    )
 
 
 @login_required(login_url="/login/")
@@ -1469,7 +1477,17 @@ def crear_material_admin(request):
             messages.success(request, resultado["message"])
         else:
             messages.error(request, resultado["message"])
-    return redirect("/panel_admin/materiales/gestion/?tab=materiales")
+        return redirect("/panel_admin/materiales/gestion/?tab=materiales")
+
+    return render(
+        request,
+        "admin/Materiales/createMaterial.html",
+        {
+            "estados": cons.Estado.choices,
+            "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),
+            "todos_tipos": TipoMaterial.objects.all().order_by("nombre"),
+        },
+    )
 
 
 @login_required(login_url="/login/")

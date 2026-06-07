@@ -34,6 +34,32 @@ DESCRIPCION_CATEGORIA_MAX_500_MSG = (
 RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado"
 UTC_SUFFIX = "+00:00"
 
+
+def _aplanar_error(excepcion):
+    """Convierte un ValidationError/IntegrityError en un texto plano legible.
+
+    Django serializa los ValidationError como dicts/listas y eso termina
+    mostrando ``{'tipo': ['Este campo no puede estar en blanco.']}`` en
+    los SweetAlert. Esta funcion descarta la notacion tecnica y entrega
+    solo los mensajes, unidos con punto y separados del nombre del campo.
+    """
+    message_dict = getattr(excepcion, "message_dict", None)
+    if message_dict:
+        partes = []
+        for campo, errs in message_dict.items():
+            for err in errs:
+                err_texto = str(err).strip().rstrip(".")
+                if campo and campo != "__all__":
+                    partes.append(f"{campo}: {err_texto}")
+                else:
+                    partes.append(err_texto)
+        if partes:
+            return ". ".join(partes) + "."
+    messages = getattr(excepcion, "messages", None)
+    if messages:
+        return ". ".join(str(m).strip().rstrip(".") for m in messages) + "."
+    return str(excepcion).strip()
+
 def _obtener_localidad(valor_localidad):
     if not valor_localidad:
         return None
@@ -187,7 +213,7 @@ class AdminCatalogService:
             obj.save()
             return {"ok": True, "message": "Tipo de material creado correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo guardar: {e}"}
+            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -201,7 +227,7 @@ class AdminCatalogService:
             obj.save()
             return {"ok": True, "message": "Categoria de material creada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo guardar: {e}"}
+            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -242,7 +268,7 @@ class AdminCatalogService:
             obj.save()
             return {"ok": True, "message": "Material creado correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo guardar: {e}"}
+            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -302,7 +328,7 @@ class AdminCatalogService:
             obj.save()
             return {"ok": True, "message": "Categoria de publicacion creada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo guardar: {e}"}
+            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -329,7 +355,7 @@ class AdminCatalogService:
             tipo.save()
             return {"ok": True, "message": "Tipo de material actualizado correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {e}"}
+            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -356,7 +382,7 @@ class AdminCatalogService:
             categoria.save()
             return {"ok": True, "message": "Categoria de material actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {e}"}
+            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -405,7 +431,7 @@ class AdminCatalogService:
             material.save()
             return {"ok": True, "message": "Material actualizado correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {e}"}
+            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -447,7 +473,7 @@ class AdminCatalogService:
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}
         except (ValidationError, IntegrityError, ValueError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {e}"}
+            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -491,7 +517,7 @@ class AdminCatalogService:
             publicacion.save()
             return {"ok": True, "message": "Publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {e}"}
+            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -554,4 +580,4 @@ class AdminCatalogService:
             categoria.save()
             return {"ok": True, "message": "Categoria de publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {e}"}
+            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}

@@ -7,9 +7,20 @@
         return;
       }
 
+      const mapaTitulos = {
+        success: "Operación exitosa",
+        error: "No se pudo completar la operación",
+        danger: "No se pudo completar la operación",
+        warning: "Atención",
+        info: "Información",
+        debug: "Información",
+      };
+      const tag = "{{ first_message.tags|default:'info'|escapejs }}";
+      const titulo = mapaTitulos[tag] || "Notificación";
+
       Swal.fire({
-        icon: "{{ first_message.tags|default:'info' }}",
-        title: "{{ first_message.tags|capfirst|default:'Mensaje'|escapejs }}",
+        icon: tag === "danger" ? "error" : tag,
+        title: titulo,
         text: "{{ first_message|escapejs }}",
         confirmButtonColor: "#198754",
       });
