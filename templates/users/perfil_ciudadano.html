@@ -81,6 +81,22 @@
         }
         #chat-mensajes::-webkit-scrollbar { width: 5px; }
         #chat-mensajes::-webkit-scrollbar-thumb { background: #d0ead8; border-radius: 10px; }
+        .chat-bubble.msg-group-continue { margin-top: 1px !important; }
+        .chat-bubble.msg-group-continue .chat-meta { display: none; }
+        @keyframes chatFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-bubble.msg-animate { animation: chatFadeIn .25s ease-out; }
+        .date-separator {
+            display: flex; align-items: center; gap: .5rem;
+            padding: .5rem 0; margin: .25rem 0;
+            font-size: .68rem; font-weight: 600; color: #6b7d6b; text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+        .date-separator::before, .date-separator::after {
+            content: ''; flex: 1; height: 1px; background: #dce4dc;
+        }
 
     </style>
     {% include 'partials/password_styles.html' %}
@@ -680,6 +696,31 @@
     const chatMensajes = document.getElementById('chat-mensajes');
     let chatsCiudadano = [];
 
+    // --- Utilidades de formato ---
+    function formatRelativeTime(isoString) {
+        if (!isoString) return '';
+        const now = new Date(), date = new Date(isoString);
+        const s = Math.floor((now - date) / 1000);
+        if (s < 10) return 'ahora';
+        if (s < 60) return 'hace ' + s + 's';
+        const m = Math.floor(s / 60);
+        if (m < 60) return 'hace ' + m + ' min';
+        const h = Math.floor(m / 60);
+        if (h < 24) return 'hace ' + h + 'h';
+        const d = Math.floor(h / 24);
+        if (d === 1) return 'ayer';
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    }
+    function getDateKey(isoString) {
+        if (!isoString) return '';
+        var d = new Date(isoString);
+        return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    }
+    function getMinutesDiff(isoA, isoB) {
+        if (!isoA || !isoB) return Infinity;
+        return Math.abs(new Date(isoA) - new Date(isoB)) / 60000;
+    }
+
     // Renderiza el historial de chats en el sidebar
     function renderHistorialChats() {
         const sidebar = document.getElementById('chat-sidebar-list');
@@ -843,8 +884,7 @@
     // Variable para identificar si el usuario actual es el remitente
     globalThis.CIUDADANO_USER_ID = '{{ user.id|default:"" }}';
     function anadirMensajeRealtime(mensaje) {
-        // Si la lista está vacía o muestra el cartel de "no hay", reemplazar
-        if (chatMensajes.innerHTML.includes('no hay mensajes')) {
+        if (chatMensajes.querySelector('.no-mensajes-placeholder')) {
             chatMensajes.innerHTML = '';
         }
         const remitenteStr = mensaje.remitente !== undefined && mensaje.remitente !== null ? String(mensaje.remitente) : '';
@@ -853,15 +893,45 @@
         const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
         const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
         const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
-        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
+        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toISOString() : '';
+
+        const allWrappers = chatMensajes.querySelectorAll('.msg-wrapper');
+        const lastWrapper = allWrappers.length ? allWrappers[allWrappers.length - 1] : null;
+        const thisDateKey = getDateKey(fecha);
+        const lastDateKey = lastWrapper ? lastWrapper.dataset.dateKey : null;
+
+        if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
+            var sep = document.createElement('div');
+            sep.className = 'date-separator';
+            var d = new Date(fecha);
+            var today = new Date(), thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            var dayDiff = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - thatDay) / 86400000);
+            sep.textContent = dayDiff === 0 ? 'Hoy' : dayDiff === 1 ? 'Ayer' : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            chatMensajes.appendChild(sep);
+        }
+
+        var isGrouped = false;
+        if (lastWrapper) {
+            var lastBubble = lastWrapper.querySelector('.chat-bubble');
+            if (lastBubble) {
+                var lastRmt = lastBubble.dataset.remitente;
+                var lastTs = lastBubble.dataset.enviadoEn;
+                if (lastRmt === remitenteStr && getMinutesDiff(lastTs, fecha) < 2) {
+                    isGrouped = true;
+                }
+            }
+        }
+
         const wrapper = document.createElement('div');
-        wrapper.className = `d-flex ${justify} mb-1`;
+        wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
+        wrapper.dataset.dateKey = thisDateKey;
         wrapper.innerHTML = `
-            <div class="chat-bubble ${bubbleClass} position-relative">
+            <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}"
+                 data-remitente="${remitenteStr}" data-enviado-en="${fecha}">
                 <div class="mensaje-texto">${mensaje.texto}</div>
                 <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-                    <span class="fw-semibold">${nombreLabel}</span>
-                    <span class="text-muted">${fecha}</span>
+                    <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
+                    <span class="text-muted">${formatRelativeTime(fecha)}</span>
                 </div>
             </div>
         `;
@@ -869,21 +939,25 @@
         chatMensajes.scrollTop = chatMensajes.scrollHeight;
     }
 
-    function crearElementoMensaje(mensaje) {
+    function crearElementoMensaje(mensaje, opts) {
+        opts = opts || {};
+        var isGrouped = opts.isGrouped || false;
         const esCiudadano = String(mensaje.remitente) === String(globalThis.CIUDADANO_USER_ID);
         const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
         const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
         const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
-        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
+        const fecha = mensaje.enviado_en ? formatRelativeTime(mensaje.enviado_en) : '';
         const editadoBadge = mensaje.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
 
+        var thisDateKey = getDateKey(mensaje.enviado_en);
         const wrapper = document.createElement('div');
-        wrapper.className = `d-flex ${justify} mb-1`;
+        wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
+        wrapper.dataset.dateKey = thisDateKey;
         wrapper.innerHTML = `
-            <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${mensaje.id}">
+            <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${mensaje.id}" data-remitente="${mensaje.remitente || ''}" data-enviado-en="${mensaje.enviado_en || ''}">
                 <div class="mensaje-texto">${mensaje.texto}</div>
                 <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-                    <span class="fw-semibold">${nombreLabel}</span>
+                    <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
                     <span class="text-muted">${fecha}</span>
                     ${editadoBadge}
                     ${esCiudadano ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${mensaje.id}" title="Editar" style="font-size:.75rem;color:#145c3a;line-height:1;">
@@ -907,10 +981,10 @@
             const btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
             const btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
 
-            btnEditar.addEventListener('click', () => { formEditar.classList.remove('d-none'); inputEditar.focus(); });
-            btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
-            btnConfirmar.addEventListener('click', () => editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar));
-            inputEditar.addEventListener('keydown', e => {
+            btnEditar.addEventListener('click', function() { formEditar.classList.remove('d-none'); inputEditar.focus(); });
+            btnCancelar.addEventListener('click', function() { formEditar.classList.add('d-none'); });
+            btnConfirmar.addEventListener('click', function() { editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar); });
+            inputEditar.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar);
                 if (e.key === 'Escape') formEditar.classList.add('d-none');
             });
@@ -921,12 +995,34 @@
 
     function renderMensajes(mensajes) {
         if (mensajes.length === 0) {
-            chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
+            chatMensajes.innerHTML = '<div class="text-muted text-center small py-3 no-mensajes-placeholder">Todavía no hay mensajes.</div>';
             return;
         }
         chatMensajes.innerHTML = '';
-        mensajes.forEach(m => {
-            chatMensajes.appendChild(crearElementoMensaje(m));
+        var lastDateKey = null;
+        mensajes.forEach(function(m, i) {
+            var thisDateKey = getDateKey(m.enviado_en);
+            if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
+                var sep = document.createElement('div');
+                sep.className = 'date-separator';
+                var d = new Date(m.enviado_en);
+                var today = new Date();
+                var thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                var dayDiff = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - thatDay) / 86400000);
+                sep.textContent = dayDiff === 0 ? 'Hoy' : dayDiff === 1 ? 'Ayer' : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                chatMensajes.appendChild(sep);
+            }
+            lastDateKey = thisDateKey;
+
+            var isGrouped = false;
+            if (i > 0) {
+                var prev = mensajes[i - 1];
+                if (String(prev.remitente) === String(m.remitente) && getMinutesDiff(prev.enviado_en, m.enviado_en) < 2) {
+                    isGrouped = true;
+                }
+            }
+
+            chatMensajes.appendChild(crearElementoMensaje(m, { isGrouped: isGrouped }));
         });
         chatMensajes.scrollTop = chatMensajes.scrollHeight;
     }

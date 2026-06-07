@@ -108,6 +108,22 @@
   }
   #chat-mensajes-eca::-webkit-scrollbar { width: 5px; }
   #chat-mensajes-eca::-webkit-scrollbar-thumb { background: #d0ead8; border-radius: 10px; }
+  .chat-bubble.msg-group-continue { margin-top: 1px !important; }
+  .chat-bubble.msg-group-continue .chat-meta { display: none; }
+  @keyframes chatFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .chat-bubble.msg-animate { animation: chatFadeIn .25s ease-out; }
+  .date-separator {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .5rem 0; margin: .25rem 0;
+    font-size: .68rem; font-weight: 600; color: #6b7d6b; text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+  .date-separator::before, .date-separator::after {
+    content: ''; flex: 1; height: 1px; background: #dce4dc;
+  }
 </style>
 
 <script>
@@ -115,6 +131,31 @@
   window.GESTOR_USER_ID = '{{ request.user.id }}';
   let currentChatIdEca = null;
   let currentCiudadanoNombre = '';
+
+  // --- Utilidades de formato ---
+  function formatRelativeTime(isoString) {
+    if (!isoString) return '';
+    const now = new Date(), date = new Date(isoString);
+    const s = Math.floor((now - date) / 1000);
+    if (s < 10) return 'ahora';
+    if (s < 60) return 'hace ' + s + 's';
+    const m = Math.floor(s / 60);
+    if (m < 60) return 'hace ' + m + ' min';
+    const h = Math.floor(m / 60);
+    if (h < 24) return 'hace ' + h + 'h';
+    const d = Math.floor(h / 24);
+    if (d === 1) return 'ayer';
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+  }
+  function getDateKey(isoString) {
+    if (!isoString) return '';
+    var d = new Date(isoString);
+    return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  }
+  function getMinutesDiff(isoA, isoB) {
+    if (!isoA || !isoB) return Infinity;
+    return Math.abs(new Date(isoA) - new Date(isoB)) / 60000;
+  }
 
   // ----- Cargar lista de chats -----
   function cargarChatsEca() {
@@ -211,28 +252,54 @@
   }
   function anadirMensajeRealtimeEca(mensaje) {
     const panel = document.getElementById('chat-mensajes-eca');
-    if (panel.innerHTML.includes('no hay mensajes')) {
-      panel.innerHTML = '';
-    }
+    if (panel.querySelector('.no-mensajes-placeholder')) panel.innerHTML = '';
     const remitenteStr = mensaje.remitente ? String(mensaje.remitente) : '';
     const gestorIdStr = String(window.GESTOR_USER_ID);
     const esGestor = remitenteStr && remitenteStr === gestorIdStr;
     const bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
     const justify = esGestor ? 'justify-content-end' : 'justify-content-start';
     const nombreLabel = esGestor ? 'Tú' : (currentCiudadanoNombre || 'Ciudadano');
-    const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
-    // Crear burbuja clonando el render de mensajes históricos
+    const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toISOString() : '';
+
+    const allWrappers = panel.querySelectorAll('.msg-wrapper');
+    const lastWrapper = allWrappers.length ? allWrappers[allWrappers.length - 1] : null;
+    const thisDateKey = getDateKey(fecha);
+    const lastDateKey = lastWrapper ? lastWrapper.dataset.dateKey : null;
+
+    if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
+      const sep = document.createElement('div');
+      sep.className = 'date-separator';
+      var d = new Date(fecha);
+      var today = new Date(), thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      var dayDiff = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - thatDay) / 86400000);
+      sep.textContent = dayDiff === 0 ? 'Hoy' : dayDiff === 1 ? 'Ayer' : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      panel.appendChild(sep);
+    }
+
+    var isGrouped = false;
+    if (lastWrapper) {
+      var lastBubble = lastWrapper.querySelector('.chat-bubble');
+      if (lastBubble) {
+        var lastRmt = lastBubble.dataset.remitente;
+        var lastTs = lastBubble.dataset.enviadoEn;
+        if (lastRmt === remitenteStr && getMinutesDiff(lastTs, fecha) < 2) {
+          isGrouped = true;
+        }
+      }
+    }
+
     const wrapper = document.createElement('div');
-    wrapper.className = `d-flex ${justify} mb-1`;
+    wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
+    wrapper.dataset.dateKey = thisDateKey;
     wrapper.innerHTML = `
-      <div class="chat-bubble ${bubbleClass} position-relative">
+      <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}"
+           data-remitente="${remitenteStr}" data-enviado-en="${fecha}">
         <div class="mensaje-texto">${mensaje.texto}</div>
         <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-          <span class="fw-semibold">${nombreLabel}</span>
-          <span class="text-muted">${fecha}</span>
+          <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
+          <span class="text-muted">${formatRelativeTime(fecha)}</span>
         </div>
-      </div>
-    `;
+      </div>`;
     panel.appendChild(wrapper);
     panel.scrollTop = panel.scrollHeight;
   }
@@ -242,28 +309,51 @@
     const panel = document.getElementById('chat-mensajes-eca');
     if (!Array.isArray(mensajes) || !mensajes.length) {
       panel.innerHTML = `
-        <div class="text-center text-muted my-auto small">
+        <div class="text-center text-muted my-auto small no-mensajes-placeholder">
           <i class="bi bi-chat me-1"></i>Aún no hay mensajes en esta conversación.
         </div>`;
       return;
     }
     panel.innerHTML = '';
-    mensajes.forEach(msg => {
-      const esGestor = String(msg.remitente) === String(window.GESTOR_USER_ID);
-      const bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
-      const justify = esGestor ? 'justify-content-end' : 'justify-content-start';
-      const nombreLabel = esGestor ? 'Tú' : (msg.remitente_nombre || currentCiudadanoNombre || 'Ciudadano');
-      const fecha = msg.enviado_en ? new Date(msg.enviado_en).toLocaleString('es-ES') : '';
-      const editadoBadge = msg.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+    var lastDateKey = null;
+    mensajes.forEach(function(msg, i) {
+      var esGestor = String(msg.remitente) === String(window.GESTOR_USER_ID);
+      var bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
+      var justify = esGestor ? 'justify-content-end' : 'justify-content-start';
+      var nombreLabel = esGestor ? 'Tú' : (msg.remitente_nombre || currentCiudadanoNombre || 'Ciudadano');
+      var editadoBadge = msg.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+      var timestamp = msg.enviado_en ? formatRelativeTime(msg.enviado_en) : '';
 
-      const wrapper = document.createElement('div');
-      wrapper.className = `d-flex ${justify} mb-1`;
+      var thisDateKey = getDateKey(msg.enviado_en);
+      if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
+        var sep = document.createElement('div');
+        sep.className = 'date-separator';
+        var d = new Date(msg.enviado_en);
+        var today = new Date();
+        var thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        var dayDiff = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - thatDay) / 86400000);
+        sep.textContent = dayDiff === 0 ? 'Hoy' : dayDiff === 1 ? 'Ayer' : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        panel.appendChild(sep);
+      }
+      lastDateKey = thisDateKey;
+
+      var isGrouped = false;
+      if (i > 0) {
+        var prev = mensajes[i - 1];
+        if (String(prev.remitente) === String(msg.remitente) && getMinutesDiff(prev.enviado_en, msg.enviado_en) < 2) {
+          isGrouped = true;
+        }
+      }
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
+      wrapper.dataset.dateKey = thisDateKey;
       wrapper.innerHTML = `
-        <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${msg.id}">
+        <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${msg.id}" data-remitente="${msg.remitente || ''}" data-enviado-en="${msg.enviado_en || ''}">
           <div class="mensaje-texto">${msg.texto}</div>
           <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-            <span class="fw-semibold">${nombreLabel}</span>
-            <span class="text-muted">${fecha}</span>
+            <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
+            <span class="text-muted">${timestamp}</span>
             ${editadoBadge}
             ${esGestor ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${msg.id}" data-texto="${msg.texto.replace(/"/g,'&quot;')}" title="Editar" style="font-size:.75rem;color:#198754;line-height:1;">
               <i class="bi bi-pencil-fill"></i>
@@ -278,22 +368,21 @@
           </div>
         </div>`;
 
-      // Lógica de edición
-      const bubble = wrapper.querySelector('.chat-bubble');
-      const btnEditar = wrapper.querySelector('.btn-editar-msg');
-      const formEditar = wrapper.querySelector('.form-editar-msg');
-      const inputEditar = wrapper.querySelector('.input-editar');
-      const btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
-      const btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
+      if (esGestor) {
+        var bubble = wrapper.querySelector('.chat-bubble');
+        var btnEditar = wrapper.querySelector('.btn-editar-msg');
+        var formEditar = wrapper.querySelector('.form-editar-msg');
+        var inputEditar = wrapper.querySelector('.input-editar');
+        var btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
+        var btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
 
-      if (btnEditar) {
-        btnEditar.addEventListener('click', () => {
+        btnEditar.addEventListener('click', function() {
           formEditar.classList.remove('d-none');
           inputEditar.focus();
         });
-        btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
-        btnConfirmar.addEventListener('click', () => editarMensaje(msg.id, inputEditar, bubble, formEditar));
-        inputEditar.addEventListener('keydown', e => {
+        btnCancelar.addEventListener('click', function() { formEditar.classList.add('d-none'); });
+        btnConfirmar.addEventListener('click', function() { editarMensaje(msg.id, inputEditar, bubble, formEditar); });
+        inputEditar.addEventListener('keydown', function(e) {
           if (e.key === 'Enter') editarMensaje(msg.id, inputEditar, bubble, formEditar);
           if (e.key === 'Escape') formEditar.classList.add('d-none');
         });
