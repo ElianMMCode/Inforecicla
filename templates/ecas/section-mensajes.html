@@ -93,15 +93,8 @@
   </div>
 </div>
 
+{% include 'partials/chat_styles.html' %}
 <style>
-  .chat-bubble {
-    padding: 0.65rem 1rem;
-    border-radius: 1.1rem;
-    max-width: 72%;
-    word-break: break-word;
-    font-size: .9rem;
-    line-height: 1.4;
-  }
   .bubble-ciudadano {
     background: #fff;
     color: #333;
@@ -114,11 +107,6 @@
     color: #146c43;
     border-bottom-right-radius: 0.25rem;
     align-self: flex-end;
-  }
-  .chat-meta {
-    font-size: 0.7rem;
-    opacity: 0.65;
-    margin-top: 3px;
   }
   .chat-sidebar-item-eca {
     border-bottom: 1px solid #f0f0f0;
@@ -133,87 +121,6 @@
   }
   #chat-mensajes-eca::-webkit-scrollbar { width: 5px; }
   #chat-mensajes-eca::-webkit-scrollbar-thumb { background: #d0ead8; border-radius: 10px; }
-  .chat-bubble.msg-group-continue { margin-top: 1px !important; }
-  .chat-bubble.msg-group-continue .chat-meta { display: none; }
-  @keyframes chatFadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .chat-bubble.msg-animate { animation: chatFadeIn .25s ease-out; }
-  .date-separator {
-    display: flex; align-items: center; gap: .5rem;
-    padding: .5rem 0; margin: .25rem 0;
-    font-size: .68rem; font-weight: 600; color: #6b7d6b; text-transform: uppercase;
-    letter-spacing: .3px;
-  }
-  .date-separator::before, .date-separator::after {
-    content: ''; flex: 1; height: 1px; background: #dce4dc;
-  }
-  @keyframes skeletonShimmer {
-    0% { background-position: -200px 0; }
-    100% { background-position: 200px 0; }
-  }
-  .skeleton {
-    background: linear-gradient(90deg, #e9f0ec 25%, #dce8e1 50%, #e9f0ec 75%);
-    background-size: 200px 100%;
-    animation: skeletonShimmer 1.5s ease-in-out infinite;
-    border-radius: 8px;
-  }
-  .skeleton-bubble { height: 36px; margin-bottom: 10px; border-radius: 1.1rem; }
-  .skeleton-bubble.sk-right { width: 65%; margin-left: auto; }
-  .skeleton-bubble.sk-left { width: 55%; }
-  .skeleton-bubble.sk-wide { width: 80%; }
-  .skeleton-bubble.sk-narrow { width: 40%; }
-  .skeleton-sidebar-item { height: 50px; margin: 4px 12px; border-radius: 12px; }
-  .chat-empty-state, .chat-error-state { max-width: 280px; margin: 0 auto; }
-  .chat-textarea {
-    resize: none; overflow-y: hidden; min-height: 38px; max-height: 120px;
-    line-height: 1.5; padding: 8px 14px; font-size: .9rem;
-  }
-  .chat-char-count { font-size: .68rem; min-width: 42px; text-align: right; }
-  .chat-input-hint { font-size: .68rem; }
-  .chat-bubble.msg-sending { opacity: 0.7; }
-  .chat-bubble.msg-sending .msg-send-status { font-size: .65rem; color: #888; font-style: italic; }
-  .chat-bubble.msg-failed { opacity: 0.7; border-color: #dc3545 !important; background: #fff5f5 !important; }
-  .chat-bubble.msg-failed .msg-send-status { font-size: .65rem; color: #dc3545; cursor: pointer; }
-  .chat-bubble.msg-failed .msg-retry-btn { font-size: .65rem; color: #dc3545; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
-  .chat-typing-indicator {
-    font-size: .72rem; color: #4a5c4a; font-style: italic;
-    padding: 4px 16px; min-height: 26px; background: #f8faf9;
-  }
-  .chat-typing-dots { display: inline-flex; gap: 2px; margin-right: 4px; vertical-align: middle; }
-  .chat-typing-dots span {
-    display: inline-block; width: 5px; height: 5px; border-radius: 50%;
-    background: #4a5c4a; animation: typingBounce 1.4s infinite;
-  }
-  .chat-typing-dots span:nth-child(2) { animation-delay: .2s; }
-  .chat-typing-dots span:nth-child(3) { animation-delay: .4s; }
-  @keyframes typingBounce {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-4px); }
-  }
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes toastOut {
-    from { opacity: 1; }
-    to { opacity: 0; transform: translateY(16px); }
-  }
-  .chat-toast {
-    position: fixed; bottom: 20px; right: 20px; z-index: 9999;
-    padding: 10px 18px; border-radius: 8px; font-size: .85rem;
-    max-width: 360px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
-    animation: toastIn .3s ease-out, toastOut .3s ease-in 3.2s forwards;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .chat-toast.error { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
-  .chat-toast.success { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
-  .chat-unread-badge {
-    position: absolute; top: 8px; right: 10px; font-size: .65rem; font-weight: 600;
-    min-width: 18px; height: 18px; line-height: 18px; text-align: center;
-    background: #dc3545; color: #fff; border-radius: 50%;
-  }
 </style>
 
 <script>
@@ -226,13 +133,7 @@
   var _ecaOriginalTitle = document.title;
   var _ecaUnreadCount = 0;
 
-  function showChatToast(message, type) {
-    var toast = document.createElement('div');
-    toast.className = 'chat-toast ' + (type || 'error');
-    toast.innerHTML = '<i class="bi ' + (type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill') + '"></i>' + message;
-    document.body.appendChild(toast);
-    setTimeout(function() { toast.remove(); }, 3500);
-  }
+{% include 'partials/chat_utils.html' %}
 
   function updateUnreadTitleEca() {
     if (document.hidden) {
@@ -247,59 +148,6 @@
       _ecaUnreadCount = 0;
     }
   });
-
-  // --- Utilidades de formato ---
-  function formatRelativeTime(isoString) {
-    if (!isoString) return '';
-    const now = new Date(), date = new Date(isoString);
-    const s = Math.floor((now - date) / 1000);
-    if (s < 10) return 'ahora';
-    if (s < 60) return 'hace ' + s + 's';
-    const m = Math.floor(s / 60);
-    if (m < 60) return 'hace ' + m + ' min';
-    const h = Math.floor(m / 60);
-    if (h < 24) return 'hace ' + h + 'h';
-    const d = Math.floor(h / 24);
-    if (d === 1) return 'ayer';
-    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-  }
-  function getDateKey(isoString) {
-    if (!isoString) return '';
-    var d = new Date(isoString);
-    return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
-  }
-  function getMinutesDiff(isoA, isoB) {
-    if (!isoA || !isoB) return Infinity;
-    return Math.abs(new Date(isoA) - new Date(isoB)) / 60000;
-  }
-  function formatDateLabel(isoString) {
-    var d = new Date(isoString);
-    var today = new Date();
-    var thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    var dayDiff = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - thatDay) / 86400000);
-    if (dayDiff === 0) return 'Hoy';
-    if (dayDiff === 1) return 'Ayer';
-    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  }
-  function formatBadgeCount(count) {
-    return count > 99 ? '99+' : count;
-  }
-
-  // --- Skeleton loaders ---
-  function showSkeletonSidebar(container) {
-    var html = '';
-    for (var i = 0; i < 4; i++) { html += '<div class="skeleton skeleton-sidebar-item"></div>'; }
-    container.innerHTML = html;
-  }
-  function showSkeletonMessages(container) {
-    container.innerHTML =
-      '<div class="skeleton skeleton-bubble sk-left" style="width:55%;"></div>' +
-      '<div class="skeleton skeleton-bubble sk-left sk-wide" style="width:70%;height:60px;"></div>' +
-      '<div class="skeleton skeleton-bubble sk-right" style="width:65%;"></div>' +
-      '<div class="skeleton skeleton-bubble sk-right sk-narrow" style="width:45%;"></div>' +
-      '<div class="skeleton skeleton-bubble sk-left" style="width:50%;height:24px;"></div>' +
-      '<div class="skeleton skeleton-bubble sk-right" style="width:60%;height:48px;"></div>';
-  }
 
   function _chatClickHandler() {
     var sidebars = ['chat-sidebar-eca', 'chat-sidebar-eca-mobile'];

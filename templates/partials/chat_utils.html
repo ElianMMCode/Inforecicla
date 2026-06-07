@@ -1,0 +1,59 @@
+<script>
+  // --- Utilidades de formato compartidas ---
+  function formatRelativeTime(isoString) {
+    if (!isoString) return '';
+    const now = new Date(), date = new Date(isoString);
+    const s = Math.floor((now - date) / 1000);
+    if (s < 10) return 'ahora';
+    if (s < 60) return 'hace ' + s + 's';
+    const m = Math.floor(s / 60);
+    if (m < 60) return 'hace ' + m + ' min';
+    const h = Math.floor(m / 60);
+    if (h < 24) return 'hace ' + h + 'h';
+    const d = Math.floor(h / 24);
+    if (d === 1) return 'ayer';
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+  }
+  function getDateKey(isoString) {
+    if (!isoString) return '';
+    var d = new Date(isoString);
+    return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  }
+  function getMinutesDiff(isoA, isoB) {
+    if (!isoA || !isoB) return Infinity;
+    return Math.abs(new Date(isoA) - new Date(isoB)) / 60000;
+  }
+  function formatDateLabel(isoString) {
+    var d = new Date(isoString);
+    var today = new Date();
+    var thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var dayDiff = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - thatDay) / 86400000);
+    if (dayDiff === 0) return 'Hoy';
+    if (dayDiff === 1) return 'Ayer';
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  function formatBadgeCount(count) {
+    return count > 99 ? '99+' : count;
+  }
+  function showSkeletonSidebar(container) {
+    var html = '';
+    for (var i = 0; i < 4; i++) { html += '<div class="skeleton skeleton-sidebar-item"></div>'; }
+    container.innerHTML = html;
+  }
+  function showSkeletonMessages(container) {
+    container.innerHTML =
+      '<div class="skeleton skeleton-bubble sk-left" style="width:55%;"></div>' +
+      '<div class="skeleton skeleton-bubble sk-left sk-wide" style="width:70%;height:60px;"></div>' +
+      '<div class="skeleton skeleton-bubble sk-right" style="width:65%;"></div>' +
+      '<div class="skeleton skeleton-bubble sk-right sk-narrow" style="width:45%;"></div>' +
+      '<div class="skeleton skeleton-bubble sk-left" style="width:50%;height:24px;"></div>' +
+      '<div class="skeleton skeleton-bubble sk-right" style="width:60%;height:48px;"></div>';
+  }
+  function showChatToast(message, type) {
+    var toast = document.createElement('div');
+    toast.className = 'chat-toast ' + (type || 'error');
+    toast.innerHTML = '<i class="bi ' + (type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill') + '"></i>' + message;
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.remove(); }, 3500);
+  }
+</script>
