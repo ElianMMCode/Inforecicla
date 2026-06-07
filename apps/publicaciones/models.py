@@ -144,3 +144,24 @@ class Guardados(CreacionModificacionModel):
         verbose_name_plural = "Guardados"
         db_table = "tb_guardados"
         unique_together = ['usuario', 'publicacion']
+
+
+######################################################################
+class Notificacion(models.Model):
+    usuario = models.ForeignKey(
+        Usuario, on_delete=models.CASCADE, related_name="notificaciones"
+    )
+
+    publicacion = models.ForeignKey(
+        Publicacion, on_delete=models.CASCADE, related_name="notificaciones"
+    )
+
+    leido = models.BooleanField(default=False)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Notificacion"
+        verbose_name_plural = "Notificaciones"
+        db_table = "notificacion"
+        ordering = ["-fecha_creacion"]

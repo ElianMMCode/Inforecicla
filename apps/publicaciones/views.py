@@ -97,6 +97,25 @@ def eliminar_comentario(request, comentario_id):
 
 
 @login_required
+def abrir_notificacion(request, notificacion_id):
+    from .models import Notificacion
+    notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
+    if not notificacion.leido:
+        notificacion.leido = True
+        notificacion.save(update_fields=["leido"])
+    return redirect("publicacion:detalle_publicacion", publicacion_id=notificacion.publicacion_id)
+
+
+@login_required
+def eliminar_notificacion(request, notificacion_id):
+    if request.method == "POST":
+        from .models import Notificacion
+        notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
+        notificacion.delete()
+    return redirect("perfil_ciudadano")
+
+
+@login_required
 def votar_publicacion(request, publicacion_id):
     if request.method == "POST":
         from .models import Reaccion, Publicacion

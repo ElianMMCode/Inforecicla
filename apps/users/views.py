@@ -848,7 +848,7 @@ def _create_registro_ciudadano(fields):
 def perfil_ciudadano(request, tab="datos"):
     if request.user.is_staff or request.user.is_superuser:
         return redirect("/panel_admin/perfil/")
-    from apps.publicaciones.models import Comentario, Guardados
+    from apps.publicaciones.models import Comentario, Guardados, Notificacion
 
     localidades = Localidad.objects.all()
     perfil_pendientes = _get_perfil_pendientes(request.user)
@@ -862,6 +862,16 @@ def perfil_ciudadano(request, tab="datos"):
         .select_related("publicacion")
         .order_by("-fecha_creacion")
     )
+    mis_notificaciones = (
+        Notificacion.objects.filter(
+            usuario=request.user, publicacion__estado=cons.Estado.ACTIVO
+        )
+        .select_related("publicacion")
+        .order_by("-fecha_creacion")[:20]
+    )
+    notificaciones_no_leidas = Notificacion.objects.filter(
+        usuario=request.user, leido=False, publicacion__estado=cons.Estado.ACTIVO
+    ).count()
     return render(
         request,
         "users/perfil_ciudadano.html",
@@ -869,6 +879,8 @@ def perfil_ciudadano(request, tab="datos"):
             "localidades": localidades,
             "mis_comentarios": mis_comentarios,
             "mis_guardados": mis_guardados,
+            "mis_notificaciones": mis_notificaciones,
+            "notificaciones_no_leidas": notificaciones_no_leidas,
             "tab_activo": tab,
             "perfil_incompleto": perfil_incompleto(request.user),
             "perfil_pendientes": perfil_pendientes,

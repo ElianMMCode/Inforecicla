@@ -115,6 +115,60 @@
                     </div>
                     <div class="col-auto">
                         <div class="d-flex align-items-center gap-3">
+                            <div class="dropdown">
+                                <button class="btn btn-light text-success position-relative rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width:42px;height:42px;" type="button" id="notificacionesDropdown"
+                                        data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notificaciones">
+                                    <i class="bi bi-bell-fill fs-5"></i>
+                                    {% if notificaciones_no_leidas %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.65rem;">
+                                        {{ notificaciones_no_leidas }}
+                                        <span class="visually-hidden">notificaciones sin leer</span>
+                                    </span>
+                                    {% endif %}
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end shadow-sm p-0" aria-labelledby="notificacionesDropdown" style="width:340px; max-height:420px; overflow-y:auto;">
+                                    <div class="px-3 py-2 border-bottom bg-light">
+                                        <h6 class="mb-0 fw-bold text-success"><i class="bi bi-bell-fill me-2"></i>Notificaciones</h6>
+                                    </div>
+                                    {% if mis_notificaciones %}
+                                        {% for notificacion in mis_notificaciones %}
+                                        <div class="dropdown-item d-flex gap-2 align-items-start py-2 px-3 border-bottom {% if not notificacion.leido %}bg-success bg-opacity-10{% endif %}"
+                                             style="white-space:normal;">
+                                            <a href="{% url 'publicacion:abrir_notificacion' notificacion.id %}"
+                                               class="d-flex gap-2 align-items-start flex-grow-1 text-decoration-none text-reset">
+                                                <span class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width:32px;height:32px;">
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                </span>
+                                                <span class="flex-grow-1">
+                                                    <span class="d-block small {% if not notificacion.leido %}fw-semibold{% endif %} text-dark">
+                                                        Nueva publicación: {{ notificacion.publicacion.titulo }}
+                                                    </span>
+                                                    <span class="d-block text-muted" style="font-size:.72rem;">
+                                                        <i class="bi bi-clock me-1"></i>{{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}
+                                                    </span>
+                                                </span>
+                                                {% if not notificacion.leido %}
+                                                <span class="badge rounded-pill bg-success align-self-center" style="font-size:.55rem;">Nueva</span>
+                                                {% endif %}
+                                            </a>
+                                            <form method="POST" action="{% url 'publicacion:eliminar_notificacion' notificacion.id %}" class="ms-1 flex-shrink-0"
+                                                  onsubmit="return confirm('¿Eliminar esta notificación?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-link text-muted p-0 notificacion-eliminar-btn" title="Eliminar notificación" aria-label="Eliminar notificación">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center text-muted py-4 small">
+                                            <i class="bi bi-bell-slash d-block mb-2" style="font-size:1.5rem;"></i>
+                                            Sin notificaciones por ahora.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                             <div class="d-none d-md-flex align-items-center gap-2 pe-3 border-end">
                                 <div class="rounded-circle bg-success-subtle d-flex align-items-center justify-content-center" style="width:42px;height:42px;">
                                     <i class="bi bi-person-fill text-success fs-5"></i>
