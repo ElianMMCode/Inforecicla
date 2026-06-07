@@ -13,8 +13,8 @@
   <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
     <div class="row g-0" style="height: 440px;">
 
-      <!-- Columna izquierda: lista de chats -->
-      <div class="col-12 col-md-4 border-end d-flex flex-column" style="height: 440px;">
+      <!-- Columna izquierda: lista de chats (escritorio) -->
+      <div class="col-md-4 border-end d-none d-md-flex flex-column" style="height: 440px;">
         <div class="px-3 py-3 border-bottom" style="background: #f8faf9;">
           <h6 class="fw-bold mb-0 text-success">
             <i class="bi bi-people-fill me-2"></i>Conversaciones
@@ -30,8 +30,15 @@
 
       <!-- Columna derecha: mensajes + input -->
       <div class="col-12 col-md-8 d-flex flex-column" style="height: 440px;">
-        <!-- Cabecera del chat activo -->
-        <div class="px-4 py-3 border-bottom d-flex align-items-center gap-3" style="background: #f8faf9;">
+        <!-- Header movil con boton de sidebar -->
+        <div class="d-flex d-md-none align-items-center gap-2 px-3 py-2 border-bottom" style="background: #f8faf9;">
+          <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvasEca" aria-label="Conversaciones">
+            <i class="bi bi-list"></i>
+          </button>
+          <span class="fw-semibold text-success small text-truncate" id="chat-titulo-ciudadano-mobile">Selecciona una conversación</span>
+        </div>
+        <!-- Header escritorio -->
+        <div class="d-none d-md-flex px-4 py-3 border-bottom align-items-center gap-3" style="background: #f8faf9;">
           <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;">
             <i class="bi bi-person-fill text-white" style="font-size:.9rem;"></i>
           </div>
@@ -71,6 +78,17 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- Offcanvas sidebar movil -->
+    <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="chatOffcanvasEca" style="width:300px;">
+      <div class="offcanvas-header py-2" style="background:#f8faf9;">
+        <h6 class="fw-bold text-success mb-0"><i class="bi bi-people-fill me-2"></i>Conversaciones</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body p-0">
+        <div id="chat-sidebar-eca-mobile" class="flex-grow-1" style="overflow-y:auto;height:calc(100dvh - 56px);"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -276,18 +294,23 @@
     fetch('/punto-eca/mensajes/chats/', { credentials: 'same-origin' })
       .then(r => r.json())
       .then(data => {
-        const sidebar = document.getElementById('chat-sidebar-eca');
+        var sidebars = ['chat-sidebar-eca', 'chat-sidebar-eca-mobile'];
         if (!Array.isArray(data) || !data.length) {
-          sidebar.innerHTML = `
-            <div class="text-center text-muted py-5 px-3">
-              <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
-                <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
-              </div>
-              <p class="mb-0 small">Aún no tienes conversaciones.</p>
-            </div>`;
+          sidebars.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = `
+              <div class="text-center text-muted py-5 px-3">
+                <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
+                  <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
+                </div>
+                <p class="mb-0 small">Aún no tienes conversaciones.</p>
+              </div>`;
+          });
           return;
         }
-        sidebar.innerHTML = data.map(chat => `
+
+        var sidebarHtml = data.map(chat => `
           <div class="chat-sidebar-item-eca d-flex align-items-center gap-3 position-relative ${String(chat.id) === String(currentChatIdEca) ? 'active' : ''}"
                data-chat-id="${chat.id}" data-ciudadano-id="${chat.ciudadano}"
                data-ciudadano-nombre="${chat.ciudadano_nombre || 'Ciudadano'}" role="button">
@@ -303,22 +326,42 @@
           </div>
         `).join('');
 
-        sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
-          item.addEventListener('click', function () {
-            sidebar.querySelectorAll('[data-chat-id]').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            currentChatIdEca = item.dataset.chatId;
-            currentCiudadanoNombre = item.dataset.ciudadanoNombre;
-            document.getElementById('chat-titulo-ciudadano').textContent = currentCiudadanoNombre;
-            var badge = item.querySelector('.chat-unread-badge');
-            if (badge) badge.remove();
-            cargarMensajesEca(currentChatIdEca);
+        sidebars.forEach(function(id) {
+          var sidebar = document.getElementById(id);
+          if (!sidebar) return;
+          sidebar.innerHTML = sidebarHtml;
+
+          sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
+            item.addEventListener('click', function () {
+              sidebars.forEach(function(sid) {
+                var s = document.getElementById(sid);
+                if (!s) return;
+                s.querySelectorAll('[data-chat-id]').forEach(function(i) { i.classList.remove('active'); });
+              });
+              this.classList.add('active');
+              currentChatIdEca = this.dataset.chatId;
+              currentCiudadanoNombre = this.dataset.ciudadanoNombre;
+              var titulo = document.getElementById('chat-titulo-ciudadano');
+              var tituloMob = document.getElementById('chat-titulo-ciudadano-mobile');
+              if (titulo) titulo.textContent = currentCiudadanoNombre;
+              if (tituloMob) tituloMob.textContent = currentCiudadanoNombre;
+              var badge = this.querySelector('.chat-unread-badge');
+              if (badge) badge.remove();
+              var offcanvasEl = document.getElementById('chatOffcanvasEca');
+              if (offcanvasEl) {
+                var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                if (bsOffcanvas) bsOffcanvas.hide();
+              }
+              cargarMensajesEca(currentChatIdEca);
+            });
           });
         });
       })
       .catch(() => {
-        document.getElementById('chat-sidebar-eca').innerHTML =
-          '<div class="chat-error-state text-center py-4"><div class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Error al cargar conversaciones.</div><button class="btn btn-outline-success btn-sm" onclick="cargarChatsEca()"><i class="bi bi-arrow-repeat me-1"></i>Reintentar</button></div>';
+        ['chat-sidebar-eca', 'chat-sidebar-eca-mobile'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.innerHTML = '<div class="chat-error-state text-center py-4"><div class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Error al cargar conversaciones.</div><button class="btn btn-outline-success btn-sm" onclick="cargarChatsEca()"><i class="bi bi-arrow-repeat me-1"></i>Reintentar</button></div>';
+        });
       });
   }
 

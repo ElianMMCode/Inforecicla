@@ -217,7 +217,6 @@
                                     <small class="text-muted d-flex align-items-center gap-1" style="font-size:.72rem;">
                                         {{ user.get_full_name }}
                                         <span class="badge bg-success bg-opacity-10 text-light px-2 py-1 rounded-pill">Ciudadano</span>
-                                        <span class="badge bg-success bg-opacity-10 text-success px-2 py-0 rounded-pill">Ciudadano</span>
                                     </small>
                                 </div>
                             </div>
@@ -655,8 +654,8 @@
                     <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
                         <div class="row g-0" style="height: 520px;">
 
-                            <!-- Columna izquierda: conversaciones -->
-                            <div class="col-12 col-md-4 border-end d-flex flex-column" style="height: 520px;">
+                            <!-- Columna izquierda: conversaciones (escritorio) -->
+                            <div class="col-md-4 border-end d-none d-md-flex flex-column" style="height: 520px;">
                                 <div class="px-3 py-3 border-bottom" style="background: #f8faf9;">
                                     <h6 class="fw-bold mb-0 text-success">
                                         <i class="bi bi-chat-left-text me-2"></i>Conversaciones
@@ -672,8 +671,15 @@
 
                             <!-- Columna derecha: mensajes + input -->
                             <div class="col-12 col-md-8 d-flex flex-column" style="height: 520px;">
-                                <!-- Cabecera del chat activo -->
-                                <div class="px-4 py-3 border-bottom d-flex align-items-center gap-3" style="background: #f8faf9;">
+                                <!-- Header movil -->
+                                <div class="d-flex d-md-none align-items-center gap-2 px-3 py-2 border-bottom" style="background: #f8faf9;">
+                                    <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvasCiudadano" aria-label="Conversaciones">
+                                        <i class="bi bi-list"></i>
+                                    </button>
+                                    <span class="fw-semibold text-success small text-truncate" id="chat-titulo-punto-mobile">Selecciona un chat o busca un punto ECA</span>
+                                </div>
+                                <!-- Header escritorio -->
+                                <div class="d-none d-md-flex px-4 py-3 border-bottom align-items-center gap-3" style="background: #f8faf9;">
                                     <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;">
                                         <i class="bi bi-geo-alt-fill text-white" style="font-size:.9rem;"></i>
                                     </div>
@@ -712,6 +718,17 @@
                                 </div>
                             </div>
 
+                        </div>
+
+                        <!-- Offcanvas sidebar movil -->
+                        <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="chatOffcanvasCiudadano" style="width:300px;">
+                            <div class="offcanvas-header py-2" style="background:#f8faf9;">
+                                <h6 class="fw-bold text-success mb-0"><i class="bi bi-chat-left-text me-2"></i>Conversaciones</h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+                            </div>
+                            <div class="offcanvas-body p-0">
+                                <div id="chat-sidebar-list-mobile" class="flex-grow-1" style="overflow-y:auto;height:calc(100dvh - 56px);"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -811,13 +828,15 @@
 
     // Renderiza el historial de chats en el sidebar
     function renderHistorialChats() {
-        const sidebar = document.getElementById('chat-sidebar-list');
-        if (!sidebar) return;
+        var sidebars = ['chat-sidebar-list', 'chat-sidebar-list-mobile'];
         if (!chatsCiudadano.length) {
-            sidebar.innerHTML = '<div class="text-center text-muted py-3 small">Aún no tenés chats iniciados.</div>';
+            sidebars.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.innerHTML = '<div class="text-center text-muted py-3 small">Aún no tenés chats iniciados.</div>';
+            });
             return;
         }
-        sidebar.innerHTML = chatsCiudadano.map(chat => `
+        var sidebarHtml = chatsCiudadano.map(chat => `
             <div class="chat-sidebar-item d-flex align-items-center gap-3 position-relative"
                 data-chat-id="${chat.id}" data-punto-id="${chat.punto}" role="button">
                 <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
@@ -830,19 +849,34 @@
                 ${chat.no_leidos ? '<span class="chat-unread-badge" data-chat-id="' + chat.id + '">' + (chat.no_leidos > 99 ? '99+' : chat.no_leidos) + '</span>' : ''}
             </div>
         `).join('');
-        sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
-            if (item.dataset.chatId === String(currentChatId)) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-            item.onclick = function() {
-                sidebar.querySelectorAll('[data-chat-id]').forEach(b => b.classList.remove('active'));
-                item.classList.add('active');
-                var badge = item.querySelector('.chat-unread-badge');
-                if (badge) badge.remove();
-                cargarMensajesDePunto(item.dataset.puntoId);
-            };
+
+        sidebars.forEach(function(id) {
+            var sidebar = document.getElementById(id);
+            if (!sidebar) return;
+            sidebar.innerHTML = sidebarHtml;
+            sidebar.querySelectorAll('[data-chat-id]').forEach(function(item) {
+                if (item.dataset.chatId === String(currentChatId)) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+                item.onclick = function() {
+                    sidebars.forEach(function(sid) {
+                        var s = document.getElementById(sid);
+                        if (!s) return;
+                        s.querySelectorAll('[data-chat-id]').forEach(function(b) { b.classList.remove('active'); });
+                    });
+                    this.classList.add('active');
+                    var badge = this.querySelector('.chat-unread-badge');
+                    if (badge) badge.remove();
+                    var offcanvasEl = document.getElementById('chatOffcanvasCiudadano');
+                    if (offcanvasEl) {
+                        var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                        if (bsOffcanvas) bsOffcanvas.hide();
+                    }
+                    cargarMensajesDePunto(this.dataset.puntoId);
+                };
+            });
         });
     }
 
@@ -971,8 +1005,11 @@
             return;
         }
         currentChatId = chat.id;
-        const titulo = document.getElementById('chat-titulo-punto');
-        if (titulo) titulo.textContent = chat.punto_nombre || 'Punto ECA';
+        var titulo = document.getElementById('chat-titulo-punto');
+        var tituloMob = document.getElementById('chat-titulo-punto-mobile');
+        var nombre = chat.punto_nombre || 'Punto ECA';
+        if (titulo) titulo.textContent = nombre;
+        if (tituloMob) tituloMob.textContent = nombre;
         await cargarMensajesHistorial(chat.id);
         iniciarWS(chat.id);
     }
