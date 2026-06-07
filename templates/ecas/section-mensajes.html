@@ -151,6 +151,11 @@
   }
   .chat-char-count { font-size: .68rem; min-width: 42px; text-align: right; }
   .chat-input-hint { font-size: .68rem; }
+  .chat-bubble.msg-sending { opacity: 0.7; }
+  .chat-bubble.msg-sending .msg-send-status { font-size: .65rem; color: #888; font-style: italic; }
+  .chat-bubble.msg-failed { opacity: 0.7; border-color: #dc3545 !important; background: #fff5f5 !important; }
+  .chat-bubble.msg-failed .msg-send-status { font-size: .65rem; color: #dc3545; cursor: pointer; }
+  .chat-bubble.msg-failed .msg-retry-btn { font-size: .65rem; color: #dc3545; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
 </style>
 
 <script>
@@ -267,16 +272,30 @@
       });
   }
 
-  // --- WebSocket realtime ---
+  // --- WebSocket realtime con reconexion ---
+  var _wsEcaUrl = null;
+  var _wsEcaReconnectAttempt = 0;
+  var _wsEcaShouldReconnect = false;
+
   function iniciarWSEca(chatId) {
     cerrarWSEca();
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${window.location.host}/ws/chat/${chatId}/`;
-    currentWSEca = new WebSocket(url);
+    _wsEcaUrl = protocol + '://' + window.location.host + '/ws/chat/' + chatId + '/';
+    _wsEcaReconnectAttempt = 0;
+    _wsEcaShouldReconnect = true;
+    _connectWSEca();
+  }
+
+  function _connectWSEca() {
+    if (!_wsEcaUrl) return;
+    currentWSEca = new WebSocket(_wsEcaUrl);
     currentWSEca.onmessage = function(event) {
       try {
         const data = JSON.parse(event.data);
         if (data.message) {
+          if (String(data.user_id) === String(window.GESTOR_USER_ID)) {
+            removerBurbujasPendientesEca();
+          }
           anadirMensajeRealtimeEca({
             texto: data.message,
             remitente: data.user_id,
@@ -285,13 +304,58 @@
         }
       } catch (e) { /* ignore */ }
     };
-    currentWSEca.onclose = function() {/* opcional: reconectar here */};
+    currentWSEca.onclose = function() {
+      currentWSEca = null;
+      if (_wsEcaShouldReconnect) {
+        _wsEcaReconnectAttempt++;
+        var delay = Math.min(1000 * Math.pow(2, _wsEcaReconnectAttempt), 30000);
+        setTimeout(_connectWSEca, delay);
+      }
+    };
   }
+
   function cerrarWSEca() {
+    _wsEcaShouldReconnect = false;
     if (currentWSEca) {
       try { currentWSEca.close(); } catch(e){}
       currentWSEca = null;
     }
+  }
+
+  function removerBurbujasPendientesEca() {
+    var panel = document.getElementById('chat-mensajes-eca');
+    var pendientes = panel.querySelectorAll('.msg-sending, .msg-failed');
+    pendientes.forEach(function(el) { el.closest('.msg-wrapper').remove(); });
+  }
+
+  function crearBurbujaOptimistaEca(texto) {
+    var panel = document.getElementById('chat-mensajes-eca');
+    if (panel.querySelector('.no-mensajes-placeholder')) panel.innerHTML = '';
+    removerBurbujasPendientesEca();
+    var wrapper = document.createElement('div');
+    wrapper.className = 'd-flex justify-content-end mb-0 msg-wrapper';
+    wrapper.dataset.dateKey = getDateKey(new Date().toISOString());
+    wrapper.innerHTML = `
+      <div class="chat-bubble bubble-punto msg-sending msg-animate">
+        <div class="mensaje-texto">${texto}</div>
+        <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+          <span class="fw-semibold msg-meta-name">Tú</span>
+          <span class="msg-send-status"><i class="bi bi-clock me-1"></i>enviando...</span>
+        </div>
+      </div>`;
+    panel.appendChild(wrapper);
+    panel.scrollTop = panel.scrollHeight;
+    return wrapper;
+  }
+
+  function marcarOptimistaFallidoEca(wrapper) {
+    var bubble = wrapper.querySelector('.chat-bubble');
+    if (!bubble) return;
+    bubble.classList.remove('msg-sending');
+    bubble.classList.add('msg-failed');
+    bubble.style.border = '1px solid #dc3545';
+    var status = bubble.querySelector('.msg-send-status');
+    if (status) status.innerHTML = '<button class="msg-retry-btn" onclick="this.closest(\'.msg-wrapper\').remove(); document.getElementById(\'chat-form-eca\').querySelector(\'button[type=submit]\').click();"><i class="bi bi-exclamation-circle me-1"></i>falló &mdash; reintentar</button>';
   }
   function anadirMensajeRealtimeEca(mensaje) {
     const panel = document.getElementById('chat-mensajes-eca');
@@ -485,30 +549,28 @@
     });
   })();
 
-  // ----- Enviar mensaje (ahora con WebSocket optimista + fallback AJAX) -----
+  // ----- Enviar mensaje con envio optimista + fallback AJAX -----
   document.getElementById('chat-form-eca').addEventListener('submit', async function (e) {
     e.preventDefault();
     const input = document.getElementById('chat-input-eca');
     const msg = input.value.trim();
     if (!msg || !currentChatIdEca) return;
     input.disabled = true;
-    let errorMsg = '';
-    // Preferentemente usar WebSocket para enviar el mensaje
+    var errorMsg = '';
+    var optimista = crearBurbujaOptimistaEca(msg);
+    input.value = '';
+    input.style.height = '';
+    if (document.getElementById('chat-char-count-eca')) document.getElementById('chat-char-count-eca').textContent = '0/500';
+
     if (currentWSEca && currentWSEca.readyState === 1) {
       try {
         currentWSEca.send(JSON.stringify({ message: msg }));
-        input.value = '';
-        input.style.height = '';
-        input.disabled = false;
-        if (document.getElementById('chat-char-count-eca')) document.getElementById('chat-char-count-eca').textContent = '0/500';
       } catch (err) {
-        errorMsg = 'Error al enviar por WebSocket';
-        input.disabled = false;
+        marcarOptimistaFallidoEca(optimista);
       }
     } else {
-      // Fallback a fetch/AJAX si no hay WS
       try {
-        const resp = await fetch(`/mensajes/${currentChatIdEca}/mensajes/`, {
+        const resp = await fetch('/mensajes/' + currentChatIdEca + '/mensajes/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -518,11 +580,10 @@
           body: JSON.stringify({ texto: msg })
         });
         if (resp.ok) {
-          input.value = '';
-          input.style.height = '';
-          if (document.getElementById('chat-char-count-eca')) document.getElementById('chat-char-count-eca').textContent = '0/500';
+          removerBurbujasPendientesEca();
           cargarMensajesEca(currentChatIdEca);
         } else {
+          marcarOptimistaFallidoEca(optimista);
           try {
             const data = await resp.json();
             errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
@@ -531,16 +592,17 @@
           }
         }
       } catch (err) {
+        marcarOptimistaFallidoEca(optimista);
         errorMsg = 'Error al conectar con el servidor';
       }
-      input.disabled = false;
     }
+    input.disabled = false;
     if (errorMsg) {
-      const errorDiv = document.createElement('div');
+      var errorDiv = document.createElement('div');
       errorDiv.className = 'text-danger small mt-2';
       errorDiv.innerHTML = errorMsg;
       document.getElementById('chat-form-eca').appendChild(errorDiv);
-      setTimeout(()=>errorDiv.remove(), 3000);
+      setTimeout(function() { errorDiv.remove(); }, 3000);
     }
   });
 

@@ -120,6 +120,11 @@
         }
         .chat-char-count { font-size: .68rem; min-width: 42px; text-align: right; }
         .chat-input-hint { font-size: .68rem; }
+        .chat-bubble.msg-sending { opacity: 0.7; }
+        .chat-bubble.msg-sending .msg-send-status { font-size: .65rem; color: #888; font-style: italic; }
+        .chat-bubble.msg-failed { opacity: 0.7; border-color: #dc3545 !important; background: #fff5f5 !important; }
+        .chat-bubble.msg-failed .msg-send-status { font-size: .65rem; color: #dc3545; cursor: pointer; }
+        .chat-bubble.msg-failed .msg-retry-btn { font-size: .65rem; color: #dc3545; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
 
     </style>
     {% include 'partials/password_styles.html' %}
@@ -847,6 +852,30 @@
         });
     }
 
+    async function manejarSeleccionPuntoEca(puntoId, puntoNombre) {
+        await cargarChatsCiudadano();
+        var chat = chatsCiudadano.find(function(c) { return String(c.punto) === String(puntoId); });
+        if (!chat) {
+            try {
+                var resp = await fetch('/mensajes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ punto: puntoId })
+                });
+                if (resp.ok) {
+                    await cargarChatsCiudadano();
+                }
+            } catch (error) {
+                console.debug(error);
+            }
+        }
+        await cargarMensajesDePunto(puntoId);
+    }
+
     async function cargarChatsCiudadano() {
         const sidebar = document.getElementById('chat-sidebar-list');
         if (sidebar && !chatsCiudadano.length && !sidebar.querySelector('.chat-sidebar-item')) {
@@ -892,31 +921,48 @@
         }
     }
 
+    // --- WebSocket realtime con reconexion ---
+    var _wsUrl = null;
+    var _wsReconnectAttempt = 0;
+    var _wsShouldReconnect = false;
+
     function iniciarWS(chatId) {
         cerrarWS();
-        // Notar: ws:// si no está usando https, wss:// si el sitio es seguro
         const protocol = globalThis.location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${protocol}://${globalThis.location.host}/ws/chat/${chatId}/`;
-        currentWS = new WebSocket(url);
+        _wsUrl = protocol + '://' + globalThis.location.host + '/ws/chat/' + chatId + '/';
+        _wsReconnectAttempt = 0;
+        _wsShouldReconnect = true;
+        _connectWS();
+    }
 
+    function _connectWS() {
+        if (!_wsUrl) return;
+        currentWS = new WebSocket(_wsUrl);
         currentWS.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            // El backend puede enviar { message, user_id } al recibir un nuevo mensaje por el grupo
             if (data.message) {
-                // Convierte el formato del mensaje a lo que espera anadirMensajeRealtime
+                if (String(data.user_id) === String(globalThis.CIUDADANO_USER_ID)) {
+                    removerBurbujasPendientes();
+                }
                 anadirMensajeRealtime({
                     texto: data.message,
                     remitente: data.user_id,
-                    enviado_en: new Date().toISOString() // podés ajustar esto si querés poner la hora correcta
+                    enviado_en: new Date().toISOString()
                 });
             }
         };
         currentWS.onclose = function() {
-            // El canal se cerró
+            currentWS = null;
+            if (_wsShouldReconnect) {
+                _wsReconnectAttempt++;
+                var delay = Math.min(1000 * Math.pow(2, _wsReconnectAttempt), 30000);
+                setTimeout(_connectWS, delay);
+            }
         };
     }
 
     function cerrarWS() {
+        _wsShouldReconnect = false;
         if (currentWS) {
             try {
                 currentWS.close();
@@ -925,6 +971,43 @@
             }
             currentWS = null;
         }
+    }
+
+    function removerBurbujasPendientes() {
+        var pendientes = chatMensajes.querySelectorAll('.msg-sending, .msg-failed');
+        pendientes.forEach(function(el) { el.closest('.msg-wrapper').remove(); });
+    }
+
+    function crearBurbujaOptimista(texto) {
+        if (chatMensajes.querySelector('.no-mensajes-placeholder')) {
+            chatMensajes.innerHTML = '';
+        }
+        removerBurbujasPendientes();
+        var wrapper = document.createElement('div');
+        wrapper.className = 'd-flex justify-content-end mb-0 msg-wrapper';
+        wrapper.dataset.dateKey = getDateKey(new Date().toISOString());
+        wrapper.innerHTML = `
+            <div class="chat-bubble bubble-ciudadano msg-sending msg-animate">
+                <div class="mensaje-texto">${texto}</div>
+                <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+                    <span class="fw-semibold msg-meta-name">Tú</span>
+                    <span class="msg-send-status"><i class="bi bi-clock me-1"></i>enviando...</span>
+                </div>
+            </div>`;
+        chatMensajes.appendChild(wrapper);
+        chatMensajes.scrollTop = chatMensajes.scrollHeight;
+        return wrapper;
+    }
+
+    function marcarOptimistaFallido(wrapper) {
+        var bubble = wrapper.querySelector('.chat-bubble');
+        if (!bubble) return;
+        bubble.classList.remove('msg-sending');
+        bubble.classList.add('msg-failed');
+        bubble.style.background = '#fff5f5';
+        bubble.style.border = '1px solid #dc3545';
+        var status = bubble.querySelector('.msg-send-status');
+        if (status) status.innerHTML = '<button class="msg-retry-btn" onclick="var w=this.closest(\'.msg-wrapper\'); w.remove(); document.getElementById(\'chat-form\').querySelector(\'button[type=submit]\').click();"><i class="bi bi-exclamation-circle me-1"></i>falló &mdash; reintentar</button>';
     }
 
     // Variable para identificar si el usuario actual es el remitente
@@ -1135,7 +1218,7 @@
         });
     })();
 
-    // --- Submit de mensaje en chat ---
+    // --- Submit de mensaje con envio optimista + fallback AJAX ---
     const chatForm = document.getElementById('chat-form');
     if (chatForm) {
         chatForm.addEventListener('submit', async function(e) {
@@ -1144,18 +1227,17 @@
             const msg = input.value.trim();
             if (!msg || !currentChatId) return;
             input.disabled = true;
-            let errorMsg = '';
+            var errorMsg = '';
+            var optimista = crearBurbujaOptimista(msg);
+            input.value = '';
+            input.style.height = '';
+            if (document.getElementById('chat-char-count')) document.getElementById('chat-char-count').textContent = '0/500';
+
             if (currentWS && currentWS.readyState === 1) {
                 try {
                     currentWS.send(JSON.stringify({ message: msg }));
-                    input.value = '';
-                    input.style.height = '';
-                    input.disabled = false;
-                    if (document.getElementById('chat-char-count')) document.getElementById('chat-char-count').textContent = '0/500';
                 } catch (error) {
-                    console.error(error);
-                    errorMsg = 'Error al enviar por WebSocket';
-                    input.disabled = false;
+                    marcarOptimistaFallido(optimista);
                 }
             } else {
                 try {
@@ -1169,11 +1251,10 @@
                         body: JSON.stringify({ texto: msg })
                     });
                     if (resp.ok) {
-                        input.value = '';
-                        input.style.height = '';
-                        if (document.getElementById('chat-char-count')) document.getElementById('chat-char-count').textContent = '0/500';
+                        removerBurbujasPendientes();
                         await cargarMensajesHistorial(currentChatId);
                     } else {
+                        marcarOptimistaFallido(optimista);
                         try {
                             const data = await resp.json();
                             errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
@@ -1183,13 +1264,13 @@
                         }
                     }
                 } catch (error) {
-                    console.error(error);
+                    marcarOptimistaFallido(optimista);
                     errorMsg = 'Error al conectar con el servidor';
                 }
-                input.disabled = false;
             }
+            input.disabled = false;
             if (errorMsg) {
-                const errorDiv = document.createElement('div');
+                var errorDiv = document.createElement('div');
                 errorDiv.className = 'text-danger small mt-2';
                 errorDiv.innerHTML = errorMsg;
                 chatForm.appendChild(errorDiv);
