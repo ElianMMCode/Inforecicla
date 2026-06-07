@@ -1,151 +1,328 @@
 <style>
-    .chatbot-float-fixed {
-        position: fixed;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        z-index: 9999;
-            width: 350px;
-            max-width: 94vw;
-            height: 420px;
-            max-height: 92vh;
-            box-shadow: 0 2px 24px 2px rgba(44,62,80,0.14);
-            display: flex;
-            flex-direction: column;
-    }
-    .chatbot-float-hide {
-        display: none;
-    }
-    .chatbot-widget-transition {
-        transition: box-shadow 0.3s, opacity 0.2s;
-    }
+    /* === LAYOUT === */
     .chatbot-fab {
-        background: #2ed573;
-        box-shadow: 0 2px 12px rgba(80,170,114,0.18);
-        color: #fff;
-        border-radius: 999px;
-        height: 60px;
-        width: 60px;
-        border: 0;
-        outline: 0;
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        font-size: 2rem;
-        z-index: 9999;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
+        position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+        width: 56px; height: 56px; border-radius: 50%;
+        background: linear-gradient(135deg, #0c3a1d, #093418); color: #fff;
+        border: 0; font-size: 1.5rem; cursor: pointer;
+        box-shadow: 0 4px 20px rgba(12,58,29,0.35);
+        display: flex; align-items: center; justify-content: center;
+        transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s;
     }
-    .chatbot-fab:active {
-        background: #25ad5a;
+    .chatbot-fab:hover { transform: scale(1.08); }
+    .chatbot-fab:active { transform: scale(.95); }
+    .chatbot-fab-hidden { transform: scale(0); opacity: 0; pointer-events: none; }
+
+    .chatbot-float {
+        position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+        width: 360px; max-width: 94vw; height: 480px; max-height: 85vh;
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,.12);
+        display: flex; flex-direction: column; overflow: hidden;
+        transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s;
+        transform-origin: bottom right;
+    }
+    .chatbot-hide {
+        transform: scale(.85) translateY(20px);
+        opacity: 0; pointer-events: none;
+    }
+
+    /* === HEADER === */
+    .chatbot-header {
+        background: linear-gradient(135deg, #0c3a1d, #093418); color: #fff;
+        padding: .8rem 1rem; font-weight: 600; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .chatbot-header-title { display: flex; align-items: center; gap: .5rem; }
+    .chatbot-header-badge {
+        background: rgba(255,255,255,.18); font-size: .6rem;
+        padding: .15rem .5rem; border-radius: 6px; font-weight: 400;
     }
     .chatbot-min-btn {
-        position: absolute;
-        top: .35rem;
-        right: .75rem;
-        background: transparent;
-        border: none;
-        color: #fff;
-        font-size: 1.2em;
-        cursor: pointer;
-        opacity: .7;
+        background: transparent; border: 0; color: #fff;
+        font-size: 1.1rem; cursor: pointer; opacity: .7;
+        padding: .2rem; line-height: 1;
     }
-    .chatbot-min-btn:hover {
-        opacity: 1;
+    .chatbot-min-btn:hover { opacity: 1; }
+
+    /* === MESSAGES === */
+    .chatbot-messages {
+        flex: 1; overflow-y: auto; padding: 1rem;
+        display: flex; flex-direction: column; gap: .6rem;
+        background: #f8f9fa; scroll-behavior: smooth;
     }
-    /* CHAT VISUAL STYLES */
-    #chat-box {
-        display: flex;
-        flex-direction: column;
-        gap: .5rem;
+    .chatbot-messages::-webkit-scrollbar { width: 5px; }
+    .chatbot-messages::-webkit-scrollbar-thumb { background: #c8e6d9; border-radius: 10px; }
+    .chatbot-messages::-webkit-scrollbar-track { background: transparent; }
+
+    /* === WELCOME === */
+    .chat-welcome { text-align: center; padding: .8rem .5rem .2rem; color: #444; }
+    .chat-welcome-icon { font-size: 2.2rem; display: block; margin-bottom: .3rem; }
+    .chat-welcome p { margin: .25rem 0; font-size: .92rem; }
+    .chat-welcome strong { color: #0a3018; }
+
+    /* === CHIPS === */
+    .chat-chips {
+        display: flex; flex-wrap: wrap; gap: .4rem;
+        justify-content: center; margin-top: .6rem; padding-bottom: .3rem;
     }
-    .chat-msg-user {
-        align-self: flex-end;
-        background: #218cfa;
-        color: #fff;
-        border-radius: 16px 16px 4px 16px;
-        padding: .5rem .9rem;
-        max-width: 75%;
-        margin: 0 0 .1rem 0;
-        box-shadow: 0 1px 4px rgba(33,140,250,0.13);
-        font-size: .98em;
+    .chip {
+        background: #fff; border: 1.5px solid #c8e6d9; color: #198754;
+        padding: .35rem .8rem; border-radius: 20px; font-size: .78rem;
+        cursor: pointer; transition: all .15s; font-weight: 500;
+        font-family: inherit;
     }
-    .chat-msg-ai {
-        align-self: flex-start;
-        background: #f2f3f7;
-        color: #353b48;
-        border-radius: 16px 16px 16px 4px;
-        padding: .5rem .9rem;
-        max-width: 75%;
-        margin: 0;
-        box-shadow: 0 1px 3px rgba(44,62,80,.05);
-        font-size: .98em;
+    .chip:hover { background: #eafff2; border-color: #2ed573; transform: translateY(-1px); }
+    .chip:active { transform: translateY(0); }
+    .chat-chips-hidden { display: none !important; }
+
+    /* === MESSAGE BUBBLES === */
+    .chat-msg-user, .chat-msg-ai {
+        display: flex; align-items: flex-start; gap: .45rem;
+        max-width: 88%; animation: msg-in .2s ease-out;
     }
-    .chat-msg-system {
-        align-self: center;
-        font-style: italic;
-        font-size: .92em;
-        color: #283e3e99;
-        background: none;
-        margin-bottom: .3rem;
+    @keyframes msg-in {
+        0% { opacity: 0; transform: translateY(8px); }
+        100% { opacity: 1; transform: translateY(0); }
     }
+    .chat-msg-user { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-msg-ai { align-self: flex-start; }
+    .chat-msg-avatar {
+        width: 28px; height: 28px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: .8rem; flex-shrink: 0;
+    }
+    .chat-msg-avatar-user { background: #dbeafe; }
+    .chat-msg-avatar-ai { background: #e8f5e9; }
+    .chat-msg-bubble {
+        padding: .5rem .85rem; border-radius: 14px; font-size: .9rem;
+        line-height: 1.45; word-break: break-word;
+    }
+    .chat-msg-user .chat-msg-bubble {
+        background: #093268; color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+    .chat-msg-ai .chat-msg-bubble {
+        background: #fff; color: #333;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .chat-msg-time {
+        font-size: .6rem; opacity: .55; margin-top: 3px; text-align: right;
+    }
+    .chat-msg-user .chat-msg-time { color: rgba(255,255,255,.7); }
+
+    /* === MARKDOWN INSIDE BUBBLES === */
+    .chat-msg-bubble strong { font-weight: 700; }
+    .chat-msg-bubble em { font-style: italic; }
+    .chat-msg-bubble ul { margin: .3rem 0; padding-left: 1.2rem; }
+    .chat-msg-bubble li { margin: .1rem 0; }
+    .chat-msg-bubble a { color: #fff; text-decoration: underline; }
+    .chat-msg-ai .chat-msg-bubble a { color: #218cfa; }
+
+    /* === TYPING === */
+    .chatbot-typing {
+        padding: .4rem 1rem .3rem; flex-shrink: 0;
+        background: #f8f9fa;
+    }
+    .typing-dots { display: flex; align-items: center; gap: 4px; padding: .3rem .2rem; }
+    .typing-dot {
+        width: 8px; height: 8px; border-radius: 50%; background: #aaa;
+        animation: typing 1.4s ease-in-out infinite both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: .16s; }
+    .typing-dot:nth-child(3) { animation-delay: .32s; }
+    @keyframes typing {
+        0%, 60%, 100% { transform: translateY(0); opacity: .35; }
+        30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* === INPUT FORM === */
+    .chatbot-form {
+        display: flex; border-top: 1px solid #e5e5e5;
+        flex-shrink: 0; background: #fff; padding: .5rem; gap: .4rem;
+    }
+    .chatbot-form input {
+        flex: 1; border: 0; outline: 0; padding: .5rem .75rem;
+        font-size: .88rem; border-radius: 10px; background: #f0f0f0;
+    }
+    .chatbot-form input:focus { background: #e8f5e9; }
+    .chatbot-form button {
+        background: #0c3a1d; color: #fff; border: 0;
+        padding: .5rem 1rem; border-radius: 10px; font-weight: 600;
+        font-size: .83rem; cursor: pointer; transition: background .15s;
+    }
+    .chatbot-form button:hover { background: #093418; }
+    .chatbot-form button:disabled { opacity: .5; cursor: not-allowed; }
 </style>
+
 <button id="asistente-fab"
         class="chatbot-fab"
-        onclick="document.getElementById('asistente-float').classList.remove('chatbot-float-hide'); this.style.display='none';"
-        aria-label="Abrir chat">&#128172;</button>
+        aria-label="Abrir chat">🤖</button>
+
 <div id="asistente-float"
-     class="chatbot-float-fixed chatbot-widget-transition chatbot-float-hide">
-    <div class="p-3 bg-success text-white rounded-t-lg fw-bold"
-         style="position:relative;
-                flex: 0 0 auto">
-        Asistente Inforecicla
-        <button aria-label="Minimizar chat"
-                class="chatbot-min-btn"
-                onclick="document.getElementById('asistente-float').classList.add('chatbot-float-hide'); document.getElementById('asistente-fab').style.display='flex';">
-            &#10006;
-        </button>
+     class="chatbot-float chatbot-hide">
+    <div class="chatbot-header">
+        <span class="chatbot-header-title">
+            <span>🤖</span>
+            Asistente Inforecicla
+            <span class="chatbot-header-badge">IA</span>
+        </span>
+        <button class="chatbot-min-btn" aria-label="Minimizar chat">✕</button>
     </div>
-    <div id="chat-box"
-         style="flex:1 1 auto;
-                min-height:0;
-                overflow-y:auto;
-                padding:1rem;
-                background:#f8f9fa;
-                color:#222"
-         class="text-dark bg-light">
-        <p class="text-xs fst-italic">Hola, ¿en qué puedo ayudarte con el inventario de hoy?</p>
+
+    <div id="chat-box" class="chatbot-messages">
+        <div class="chat-welcome">
+            <span class="chat-welcome-icon">🤖</span>
+            <p>¡Hola <strong>{{ punto.gestor_eca.get_full_name|default:"Gestor" }}</strong>!</p>
+            <p>Soy tu asistente de InfoRecicla. Pregúntame sobre tu inventario, movimientos o próximos eventos.</p>
+        </div>
+        <div class="chat-chips" id="chat-chips">
+            <button class="chip" data-pregunta="¿Cómo va el inventario actualmente?">📊 Inventario</button>
+            <button class="chip" data-pregunta="¿Cuáles son los materiales críticos?">🔴 Críticos</button>
+            <button class="chip" data-pregunta="¿Qué actividades hay próximamente?">📅 Eventos</button>
+            <button class="chip" data-pregunta="¿Cómo van los movimientos del mes?">📦 Movimientos</button>
+        </div>
     </div>
+
+    <div id="chat-typing" class="chatbot-typing d-none">
+        <div class="typing-dots">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        </div>
+    </div>
+
     <form hx-post="{% url 'punto-eca:reciclabot:asistente_api' %}"
           hx-target="#chat-box"
           hx-swap="beforeend"
-          class="d-flex border-top"
-          htmx-on="htmx:afterSwap: document.getElementById('chat-user-input').value = ''; setTimeout(() => { var el = document.getElementById('chat-box'); if (el) el.scrollTop = el.scrollHeight; }, 20);"
-          style="flex:0 0 auto;
-                 background:#fff">
+          class="chatbot-form">
         {% csrf_token %}
         <input type="text"
                name="pregunta"
                id="chat-user-input"
                placeholder="Ej: ¿Cuánto cartón tengo?"
-               style="flex:1 1 auto;
-                      min-width:0;
-                      border:0;
-                      outline:none;
-                      padding:0.5rem"
-               class="p-2">
-        <button type="submit" class="bg-success px-4 py-2 text-white border-0">Enviar</button>
+               autocomplete="off">
+        <button type="submit">Enviar</button>
     </form>
-    <script>
-// Borra el input después de cada swap de htmx relacionado al chat
-document.body.addEventListener('htmx:afterSwap', function(evt) {
-  if (evt.target && evt.target.id === 'chat-box') {
-    var input = document.getElementById('chat-user-input');
-    if(input) input.value = '';
-    var el = document.getElementById('chat-box');
-    if(el) el.scrollTop = el.scrollHeight;
-  }
-});
-    </script>
 </div>
+
+<script>
+(function() {
+    var STORAGE_KEY = 'inforecicla_chat';
+    var chatBox = document.getElementById('chat-box');
+    var typingEl = document.getElementById('chat-typing');
+    var fabBtn = document.getElementById('asistente-fab');
+    var panel = document.getElementById('asistente-float');
+    var minBtn = panel && panel.querySelector('.chatbot-min-btn');
+    var form = panel && panel.querySelector('.chatbot-form');
+    var input = document.getElementById('chat-user-input');
+
+    if (!chatBox || !panel) return;
+
+    function restore() {
+        if (typeof sessionStorage === 'undefined') return;
+        var saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            chatBox.innerHTML = saved;
+            var hasMsgs = chatBox.querySelectorAll('.chat-msg-user, .chat-msg-ai').length > 0;
+            if (hasMsgs) hideChips();
+        }
+    }
+
+    function save() {
+        if (typeof sessionStorage === 'undefined') return;
+        sessionStorage.setItem(STORAGE_KEY, chatBox.innerHTML);
+    }
+
+    function md(text) {
+        var s = text
+            .replaceAll('&amp;', '&')
+            .replaceAll('&lt;', '<')
+            .replaceAll('&gt;', '>')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;');
+        s = s.replaceAll(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+        s = s.replaceAll(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        s = s.replaceAll(/\*(.+?)\*/g, '<em>$1</em>');
+        var lines = s.split('\n'), inList = false, out = [];
+        for (var l of lines) {
+            var m = l.match(/^-\s+(.+)/);
+            if (m) {
+                if (!inList) { out.push('<ul>'); inList = true; }
+                out.push('<li>' + m[1] + '</li>');
+            } else {
+                if (inList) { out.push('</ul>'); inList = false; }
+                out.push(l === '' ? '<br>' : l);
+            }
+        }
+        if (inList) out.push('</ul>');
+        return out.join('\n');
+    }
+
+    function processNew() {
+        var items = chatBox.querySelectorAll('.chat-msg-ai:not([data-p])');
+        for (var item of items) {
+            var bubble = item.querySelector('.chat-msg-bubble');
+            if (bubble) bubble.innerHTML = md(bubble.innerHTML);
+            var t = item.querySelector('.chat-msg-time');
+            if (t) t.textContent = new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+            item.dataset.p = '1';
+        }
+        var users = chatBox.querySelectorAll('.chat-msg-user:not([data-p])');
+        for (var user of users) {
+            var ut = user.querySelector('.chat-msg-time');
+            if (ut) ut.textContent = new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+            user.dataset.p = '1';
+        }
+    }
+
+    function scrollDown() {
+        setTimeout(function() { chatBox.scrollTop = chatBox.scrollHeight; }, 20);
+    }
+
+    function hideChips() {
+        var el = document.getElementById('chat-chips');
+        if (el) el.classList.add('chat-chips-hidden');
+    }
+
+    function openP() { panel.classList.remove('chatbot-hide'); fabBtn.classList.add('chatbot-fab-hidden'); }
+    function closeP() { panel.classList.add('chatbot-hide'); fabBtn.classList.remove('chatbot-fab-hidden'); }
+
+    restore();
+
+    if (fabBtn) fabBtn.addEventListener('click', openP);
+    if (minBtn) minBtn.addEventListener('click', closeP);
+
+    chatBox.addEventListener('click', function(e) {
+        var chip = e.target.closest('.chip');
+        if (chip && input && form) {
+            input.value = chip.dataset.pregunta || '';
+            hideChips();
+            form.dispatchEvent(new Event('submit', {cancelable: true}));
+        }
+    });
+
+    document.body.addEventListener('htmx:beforeRequest', function(e) {
+        if (!e.detail.elt || !e.detail.elt.closest('.chatbot-form')) return;
+        if (typingEl) typingEl.classList.remove('d-none');
+        if (input) input.disabled = true;
+        var btn = form && form.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+        hideChips();
+    });
+
+    document.body.addEventListener('htmx:afterSwap', function(e) {
+        if (!e.detail.target || e.detail.target.id !== 'chat-box') return;
+        if (typingEl) typingEl.classList.add('d-none');
+        if (input) { input.value = ''; input.disabled = false; input.focus(); }
+        var btn = form && form.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = false;
+        processNew();
+        save();
+        scrollDown();
+    });
+})();
+</script>

@@ -13,27 +13,32 @@
   <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
     <div class="row g-0" style="height: 440px;">
 
-      <!-- Columna izquierda: lista de chats -->
-      <div class="col-12 col-md-4 border-end d-flex flex-column" style="height: 440px;">
+      <!-- Columna izquierda: lista de chats (escritorio) -->
+      <div class="col-md-4 border-end d-none d-md-flex flex-column" style="height: 440px;">
         <div class="px-3 py-3 border-bottom" style="background: #f8faf9;">
           <h6 class="fw-bold mb-0 text-success">
             <i class="bi bi-people-fill me-2"></i>Conversaciones
           </h6>
         </div>
         <div id="chat-sidebar-eca" class="flex-grow-1" style="overflow-y: auto;">
-          <div class="text-center text-muted py-5 px-3">
-            <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
-              <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
-            </div>
-            <p class="mb-0 small">Cargando conversaciones...</p>
-          </div>
+          <div class="skeleton skeleton-sidebar-item" style="margin:8px 12px;"></div>
+          <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
+          <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
+          <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
         </div>
       </div>
 
       <!-- Columna derecha: mensajes + input -->
       <div class="col-12 col-md-8 d-flex flex-column" style="height: 440px;">
-        <!-- Cabecera del chat activo -->
-        <div class="px-4 py-3 border-bottom d-flex align-items-center gap-3" style="background: #f8faf9;">
+        <!-- Header movil con boton de sidebar -->
+        <div class="d-flex d-md-none align-items-center gap-2 px-3 py-2 border-bottom" style="background: #f8faf9;">
+          <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvasEca" aria-label="Conversaciones">
+            <i class="bi bi-list"></i>
+          </button>
+          <span class="fw-semibold text-success small text-truncate" id="chat-titulo-ciudadano-mobile">Selecciona una conversación</span>
+        </div>
+        <!-- Header escritorio -->
+        <div class="d-none d-md-flex px-4 py-3 border-bottom align-items-center gap-3" style="background: #f8faf9;">
           <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;">
             <i class="bi bi-person-fill text-white" style="font-size:.9rem;"></i>
           </div>
@@ -49,34 +54,47 @@
           </div>
         </div>
 
+        <!-- Indicador de escritura -->
+        <div class="chat-typing-indicator" id="chat-typing-indicator-eca"></div>
+
         <!-- Input de envío -->
         <div class="p-3 border-top bg-white">
-          <form id="chat-form-eca" class="d-flex align-items-center gap-2">
+          <form id="chat-form-eca" class="d-flex flex-column gap-1">
             {% csrf_token %}
-            <input type="text" id="chat-input-eca" class="form-control"
-                   placeholder="Escribe tu respuesta..." required maxlength="500" autocomplete="off"
-                   style="border-radius: 20px; border-color: #d0ead8;">
-            <button type="submit" class="btn btn-success d-flex align-items-center justify-content-center flex-shrink-0"
-                    style="width:40px;height:40px;padding:0;border-radius:50%;">
-              <i class="bi bi-send-fill"></i>
-            </button>
+            <div class="d-flex align-items-end gap-2">
+              <textarea id="chat-input-eca" class="form-control chat-textarea"
+                        placeholder="Escribe tu respuesta..." maxlength="500" rows="1"
+                        style="border-radius: 16px; border-color: #d0ead8;"></textarea>
+              <button type="submit" class="btn btn-success d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:40px;height:40px;padding:0;border-radius:50%;">
+                <i class="bi bi-send-fill"></i>
+              </button>
+            </div>
+            <div class="d-flex align-items-center gap-2 px-1">
+              <small class="text-muted chat-input-hint">Enter para enviar, Shift+Enter para nueva línea</small>
+              <small class="text-muted ms-auto chat-char-count" id="chat-char-count-eca">0/500</small>
+            </div>
           </form>
         </div>
       </div>
 
     </div>
+
+    <!-- Offcanvas sidebar movil -->
+    <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="chatOffcanvasEca" style="width:300px;">
+      <div class="offcanvas-header py-2" style="background:#f8faf9;">
+        <h6 class="fw-bold text-success mb-0"><i class="bi bi-people-fill me-2"></i>Conversaciones</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body p-0">
+        <div id="chat-sidebar-eca-mobile" class="flex-grow-1" style="overflow-y:auto;height:calc(100dvh - 56px);"></div>
+      </div>
+    </div>
   </div>
 </div>
 
+{% include 'partials/chat_styles.html' %}
 <style>
-  .chat-bubble {
-    padding: 0.65rem 1rem;
-    border-radius: 1.1rem;
-    max-width: 72%;
-    word-break: break-word;
-    font-size: .9rem;
-    line-height: 1.4;
-  }
   .bubble-ciudadano {
     background: #fff;
     color: #333;
@@ -89,11 +107,6 @@
     color: #146c43;
     border-bottom-right-radius: 0.25rem;
     align-self: flex-end;
-  }
-  .chat-meta {
-    font-size: 0.7rem;
-    opacity: 0.65;
-    margin-top: 3px;
   }
   .chat-sidebar-item-eca {
     border-bottom: 1px solid #f0f0f0;
@@ -112,28 +125,77 @@
 
 <script>
   // ID del gestor actual para distinguir burbujas
-  window.GESTOR_USER_ID = '{{ request.user.id }}';
+  globalThis.GESTOR_USER_ID = '{{ request.user.id }}';
   let currentChatIdEca = null;
   let currentCiudadanoNombre = '';
+  var _ecaTypingTimer = null;
+  var _ecaTypingHideTimer = null;
+  var _ecaOriginalTitle = document.title;
+  var _ecaUnreadCount = 0;
+
+{% include 'partials/chat_utils.html' %}
+
+  function updateUnreadTitleEca() {
+    if (document.hidden) {
+      _ecaUnreadCount++;
+      document.title = '(' + _ecaUnreadCount + ') ' + _ecaOriginalTitle;
+    }
+  }
+
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      document.title = _ecaOriginalTitle;
+      _ecaUnreadCount = 0;
+    }
+  });
+
+  function _chatClickHandler() {
+    var sidebars = ['chat-sidebar-eca', 'chat-sidebar-eca-mobile'];
+    sidebars.forEach(function(sid) {
+      var s = document.getElementById(sid);
+      if (!s) return;
+      s.querySelectorAll('[data-chat-id]').forEach(function(i) { i.classList.remove('active'); });
+    });
+    this.classList.add('active');
+    currentChatIdEca = this.dataset.chatId;
+    currentCiudadanoNombre = this.dataset.ciudadanoNombre;
+    var titulo = document.getElementById('chat-titulo-ciudadano');
+    var tituloMob = document.getElementById('chat-titulo-ciudadano-mobile');
+    if (titulo) titulo.textContent = currentCiudadanoNombre;
+    if (tituloMob) tituloMob.textContent = currentCiudadanoNombre;
+    var badge = this.querySelector('.chat-unread-badge');
+    if (badge) badge.remove();
+    var offcanvasEl = document.getElementById('chatOffcanvasEca');
+    if (offcanvasEl) {
+      var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+      if (bsOffcanvas) bsOffcanvas.hide();
+    }
+    cargarMensajesEca(currentChatIdEca);
+  }
 
   // ----- Cargar lista de chats -----
   function cargarChatsEca() {
     fetch('/punto-eca/mensajes/chats/', { credentials: 'same-origin' })
       .then(r => r.json())
       .then(data => {
-        const sidebar = document.getElementById('chat-sidebar-eca');
+        var sidebars = ['chat-sidebar-eca', 'chat-sidebar-eca-mobile'];
         if (!Array.isArray(data) || !data.length) {
-          sidebar.innerHTML = `
-            <div class="text-center text-muted py-5 px-3">
-              <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
-                <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
-              </div>
-              <p class="mb-0 small">Aún no tienes conversaciones.</p>
-            </div>`;
+          sidebars.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = `
+              <div class="text-center text-muted py-5 px-3">
+                <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
+                  <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
+                </div>
+                <p class="mb-0 small">Aún no tienes conversaciones.</p>
+              </div>`;
+          });
           return;
         }
-        sidebar.innerHTML = data.map(chat => `
-          <div class="chat-sidebar-item-eca d-flex align-items-center gap-3 ${String(chat.id) === String(currentChatIdEca) ? 'active' : ''}"
+
+        var sidebarHtml = data.map(chat => `
+          <div class="chat-sidebar-item-eca d-flex align-items-center gap-3 position-relative ${String(chat.id) === String(currentChatIdEca) ? 'active' : ''}"
                data-chat-id="${chat.id}" data-ciudadano-id="${chat.ciudadano}"
                data-ciudadano-nombre="${chat.ciudadano_nombre || 'Ciudadano'}" role="button">
             <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0"
@@ -144,23 +206,25 @@
               <div class="fw-semibold small text-truncate">${chat.ciudadano_nombre || 'Ciudadano'}</div>
               <div class="text-muted" style="font-size:.7rem;">${chat.created_at ? new Date(chat.created_at).toLocaleDateString('es-ES') : ''}</div>
             </div>
+            ${chat.no_leidos ? '<span class="chat-unread-badge" data-chat-id="' + chat.id + '">' + formatBadgeCount(chat.no_leidos) + '</span>' : ''}
           </div>
         `).join('');
 
-        sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
-          item.addEventListener('click', function () {
-            sidebar.querySelectorAll('[data-chat-id]').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            currentChatIdEca = item.dataset.chatId;
-            currentCiudadanoNombre = item.dataset.ciudadanoNombre;
-            document.getElementById('chat-titulo-ciudadano').textContent = currentCiudadanoNombre;
-            cargarMensajesEca(currentChatIdEca);
+        sidebars.forEach(function(id) {
+          var sidebar = document.getElementById(id);
+          if (!sidebar) return;
+          sidebar.innerHTML = sidebarHtml;
+
+          sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
+            item.addEventListener('click', _chatClickHandler);
           });
         });
       })
       .catch(() => {
-        document.getElementById('chat-sidebar-eca').innerHTML =
-          '<div class="text-danger text-center py-4 small">Error al cargar conversaciones.</div>';
+        ['chat-sidebar-eca', 'chat-sidebar-eca-mobile'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.innerHTML = '<div class="chat-error-state text-center py-4"><div class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Error al cargar conversaciones.</div><button class="btn btn-outline-success btn-sm" onclick="cargarChatsEca()"><i class="bi bi-arrow-repeat me-1"></i>Reintentar</button></div>';
+        });
       });
   }
 
@@ -171,135 +235,248 @@
   function cargarMensajesEca(chatId) {
     cerrarWSEca();
     const panel = document.getElementById('chat-mensajes-eca');
-    panel.innerHTML = '<div class="text-muted text-center small py-3">Cargando mensajes...</div>';
+    showSkeletonMessages(panel);
     fetch(`/mensajes/${chatId}/mensajes/`, { credentials: 'same-origin' })
       .then(r => r.json())
       .then(msgs => {
         renderMensajesEca(msgs);
+        marcarLeidosEca(chatId);
         iniciarWSEca(chatId);
       })
       .catch(() => {
-        panel.innerHTML = '<div class="text-danger text-center small py-3">Error al cargar mensajes.</div>';
+        panel.innerHTML = '<div class="chat-error-state text-center py-4"><div class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Error al cargar mensajes.</div><button class="btn btn-outline-success btn-sm" onclick="cargarMensajesEca(\'' + chatId + '\')"><i class="bi bi-arrow-repeat me-1"></i>Reintentar</button></div>';
       });
   }
 
-  // --- WebSocket realtime ---
+  // --- WebSocket realtime con reconexion ---
+  var _wsEcaUrl = null;
+  var _wsEcaReconnectAttempt = 0;
+  var _wsEcaShouldReconnect = false;
+
   function iniciarWSEca(chatId) {
     cerrarWSEca();
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${window.location.host}/ws/chat/${chatId}/`;
-    currentWSEca = new WebSocket(url);
+    const protocol = globalThis.location.protocol === 'https:' ? 'wss' : 'ws';
+    _wsEcaUrl = protocol + '://' + globalThis.location.host + '/ws/chat/' + chatId + '/';
+    _wsEcaReconnectAttempt = 0;
+    _wsEcaShouldReconnect = true;
+    _connectWSEca();
+  }
+
+  function _connectWSEca() {
+    if (!_wsEcaUrl) return;
+    currentWSEca = new WebSocket(_wsEcaUrl);
     currentWSEca.onmessage = function(event) {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === 'typing') {
+          if (String(data.user_id) !== String(globalThis.GESTOR_USER_ID)) {
+            var el = document.getElementById('chat-typing-indicator-eca');
+            if (el) {
+              el.innerHTML = '<span class="chat-typing-dots"><span></span><span></span><span></span></span> ' + (data.user_name || currentCiudadanoNombre || 'Ciudadano') + ' está escribiendo...';
+              clearTimeout(_ecaTypingHideTimer);
+              _ecaTypingHideTimer = setTimeout(function() { el.innerHTML = ''; }, 2500);
+            }
+          }
+          return;
+        }
         if (data.message) {
+          if (String(data.user_id) === String(globalThis.GESTOR_USER_ID)) {
+            removerBurbujasPendientesEca();
+          } else {
+            updateUnreadTitleEca();
+          }
           anadirMensajeRealtimeEca({
             texto: data.message,
             remitente: data.user_id,
             enviado_en: new Date().toISOString()
           });
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) { console.debug(e); }
     };
-    currentWSEca.onclose = function() {/* opcional: reconectar here */};
+    currentWSEca.onclose = function() {
+      currentWSEca = null;
+      if (_wsEcaShouldReconnect) {
+        _wsEcaReconnectAttempt++;
+        var delay = Math.min(1000 * Math.pow(2, _wsEcaReconnectAttempt), 30000);
+        setTimeout(_connectWSEca, delay);
+      }
+    };
   }
+
   function cerrarWSEca() {
+    _wsEcaShouldReconnect = false;
     if (currentWSEca) {
-      try { currentWSEca.close(); } catch(e){}
+      try { currentWSEca.close(); } catch(e){ console.debug(e); }
       currentWSEca = null;
     }
   }
-  function anadirMensajeRealtimeEca(mensaje) {
-    const panel = document.getElementById('chat-mensajes-eca');
-    if (panel.innerHTML.includes('no hay mensajes')) {
-      panel.innerHTML = '';
-    }
-    const remitenteStr = mensaje.remitente ? String(mensaje.remitente) : '';
-    const gestorIdStr = String(window.GESTOR_USER_ID);
-    const esGestor = remitenteStr && remitenteStr === gestorIdStr;
-    const bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
-    const justify = esGestor ? 'justify-content-end' : 'justify-content-start';
-    const nombreLabel = esGestor ? 'Tú' : (currentCiudadanoNombre || 'Ciudadano');
-    const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
-    // Crear burbuja clonando el render de mensajes históricos
-    const wrapper = document.createElement('div');
-    wrapper.className = `d-flex ${justify} mb-1`;
+
+  function removerBurbujasPendientesEca() {
+    var panel = document.getElementById('chat-mensajes-eca');
+    var pendientes = panel.querySelectorAll('.msg-sending, .msg-failed');
+    pendientes.forEach(function(el) { el.closest('.msg-wrapper').remove(); });
+  }
+
+  function crearBurbujaOptimistaEca(texto) {
+    var panel = document.getElementById('chat-mensajes-eca');
+    if (panel.querySelector('.no-mensajes-placeholder')) panel.innerHTML = '';
+    removerBurbujasPendientesEca();
+    var wrapper = document.createElement('div');
+    wrapper.className = 'd-flex justify-content-end mb-0 msg-wrapper';
+    wrapper.dataset.dateKey = getDateKey(new Date().toISOString());
     wrapper.innerHTML = `
-      <div class="chat-bubble ${bubbleClass} position-relative">
-        <div class="mensaje-texto">${mensaje.texto}</div>
+      <div class="chat-bubble bubble-punto msg-sending msg-animate">
+        <div class="mensaje-texto">${texto}</div>
         <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-          <span class="fw-semibold">${nombreLabel}</span>
-          <span class="text-muted">${fecha}</span>
+          <span class="fw-semibold msg-meta-name">Tú</span>
+          <span class="msg-send-status"><i class="bi bi-clock me-1"></i>enviando...</span>
         </div>
-      </div>
-    `;
+      </div>`;
     panel.appendChild(wrapper);
     panel.scrollTop = panel.scrollHeight;
+    return wrapper;
+  }
+
+  function marcarOptimistaFallidoEca(wrapper) {
+    var bubble = wrapper.querySelector('.chat-bubble');
+    if (!bubble) return;
+    bubble.classList.remove('msg-sending');
+    bubble.classList.add('msg-failed');
+    bubble.style.border = '1px solid #dc3545';
+    var status = bubble.querySelector('.msg-send-status');
+    if (status) status.innerHTML = '<button class="msg-retry-btn" onclick="this.closest(\'.msg-wrapper\').remove(); document.getElementById(\'chat-form-eca\').querySelector(\'button[type=submit]\').click();"><i class="bi bi-exclamation-circle me-1"></i>falló &mdash; reintentar</button>';
+  }
+  function _checkDateAndGrouping(panel, remitenteStr, fecha) {
+    var allWrappers = panel.querySelectorAll('.msg-wrapper');
+    var lastWrapper = allWrappers.length ? allWrappers[allWrappers.length - 1] : null;
+    var thisDateKey = getDateKey(fecha);
+    var lastDateKey = lastWrapper ? lastWrapper.dataset.dateKey : null;
+
+    if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
+      var sep = document.createElement('div');
+      sep.className = 'date-separator';
+      sep.textContent = formatDateLabel(fecha);
+      panel.appendChild(sep);
+    }
+
+    var isGrouped = false;
+    if (lastWrapper) {
+      var lastBubble = lastWrapper.querySelector('.chat-bubble');
+      if (lastBubble) {
+        var lastRmt = lastBubble.dataset.remitente;
+        var lastTs = lastBubble.dataset.enviadoEn;
+        if (lastRmt === remitenteStr && getMinutesDiff(lastTs, fecha) < 2) {
+          isGrouped = true;
+        }
+      }
+    }
+    return { isGrouped: isGrouped, thisDateKey: thisDateKey };
+  }
+
+  function _appendBubble(opts) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'd-flex ' + opts.justify + ' mb-0 msg-wrapper';
+    wrapper.dataset.dateKey = opts.thisDateKey;
+    wrapper.innerHTML = `
+      <div class="chat-bubble ${opts.bubbleClass} msg-animate${opts.isGrouped ? ' msg-group-continue' : ''}"
+           data-remitente="${opts.remitenteStr}" data-enviado-en="${opts.fecha}">
+        <div class="mensaje-texto">${opts.texto}</div>
+        <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+          <span class="fw-semibold msg-meta-name">${opts.nombreLabel}</span>
+          <span class="text-muted">${formatRelativeTime(opts.fecha)}</span>
+        </div>
+      </div>`;
+    opts.panel.appendChild(wrapper);
+  }
+
+  function anadirMensajeRealtimeEca(mensaje) {
+    var panel = document.getElementById('chat-mensajes-eca');
+    if (panel.querySelector('.no-mensajes-placeholder')) panel.innerHTML = '';
+    var remitenteStr = mensaje.remitente ? String(mensaje.remitente) : '';
+    var esGestor = remitenteStr && remitenteStr === String(globalThis.GESTOR_USER_ID);
+    var bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
+    var justify = esGestor ? 'justify-content-end' : 'justify-content-start';
+    var nombreLabel = esGestor ? 'Tú' : (currentCiudadanoNombre || 'Ciudadano');
+    var fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toISOString() : '';
+    var result = _checkDateAndGrouping(panel, remitenteStr, fecha);
+    _appendBubble({ panel: panel, bubbleClass: bubbleClass, justify: justify, nombreLabel: nombreLabel, remitenteStr: remitenteStr, fecha: fecha, texto: mensaje.texto, isGrouped: result.isGrouped, thisDateKey: result.thisDateKey });
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  function _renderMessageItem(msg, i, mensajes, panel, lastDateKeyResult) {
+    var esGestor = String(msg.remitente) === String(globalThis.GESTOR_USER_ID);
+    var bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
+    var justify = esGestor ? 'justify-content-end' : 'justify-content-start';
+    var nombreLabel = esGestor ? 'Tú' : (msg.remitente_nombre || currentCiudadanoNombre || 'Ciudadano');
+    var timestamp = msg.enviado_en ? formatRelativeTime(msg.enviado_en) : '';
+    var editadoBadge = msg.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+
+    var thisDateKey = getDateKey(msg.enviado_en);
+    if (lastDateKeyResult.last && thisDateKey && lastDateKeyResult.last !== thisDateKey) {
+      var sep = document.createElement('div');
+      sep.className = 'date-separator';
+      sep.textContent = formatDateLabel(msg.enviado_en);
+      panel.appendChild(sep);
+    }
+    lastDateKeyResult.last = thisDateKey;
+
+    var isGrouped = false;
+    if (i > 0) {
+      var prev = mensajes[i - 1];
+      if (String(prev.remitente) === String(msg.remitente) && getMinutesDiff(prev.enviado_en, msg.enviado_en) < 2) {
+        isGrouped = true;
+      }
+    }
+    var wrapper = document.createElement('div');
+    wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
+    wrapper.dataset.dateKey = thisDateKey;
+    wrapper.innerHTML = `
+      <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${msg.id}" data-remitente="${msg.remitente || ''}" data-enviado-en="${msg.enviado_en || ''}">
+        <div class="mensaje-texto">${msg.texto}</div>
+        <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+          <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
+          <span class="text-muted">${timestamp}</span>
+          ${editadoBadge}
+          ${esGestor ? '<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="' + msg.id + '" data-texto="' + msg.texto.replaceAll('"','&quot;') + '" title="Editar" style="font-size:.75rem;color:#198754;line-height:1;"><i class="bi bi-pencil-fill"></i></button>' : ''}
+        </div>
+        <div class="form-editar-msg d-none mt-2">
+          <div class="d-flex gap-1">
+            <input type="text" class="form-control form-control-sm input-editar" value="${msg.texto.replaceAll('"','&quot;')}" maxlength="500" style="border-radius:12px;">
+            <button class="btn btn-success btn-sm btn-confirmar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-check-lg"></i></button>
+            <button class="btn btn-secondary btn-sm btn-cancelar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-x-lg"></i></button>
+          </div>
+        </div>
+      </div>`;
+
+    if (esGestor) {
+      var bubble = wrapper.querySelector('.chat-bubble');
+      var btnEditar = wrapper.querySelector('.btn-editar-msg');
+      var formEditar = wrapper.querySelector('.form-editar-msg');
+      var inputEditar = wrapper.querySelector('.input-editar');
+      var btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
+      var btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
+      btnEditar.addEventListener('click', function() { formEditar.classList.remove('d-none'); inputEditar.focus(); });
+      btnCancelar.addEventListener('click', function() { formEditar.classList.add('d-none'); });
+      btnConfirmar.addEventListener('click', function() { editarMensaje(msg.id, inputEditar, bubble, formEditar); });
+      inputEditar.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') editarMensaje(msg.id, inputEditar, bubble, formEditar);
+        if (e.key === 'Escape') formEditar.classList.add('d-none');
+      });
+    }
+    panel.appendChild(wrapper);
   }
 
   // ----- Renderizar mensajes -----
   function renderMensajesEca(mensajes) {
     const panel = document.getElementById('chat-mensajes-eca');
     if (!Array.isArray(mensajes) || !mensajes.length) {
-      panel.innerHTML = `
-        <div class="text-center text-muted my-auto small">
-          <i class="bi bi-chat me-1"></i>Aún no hay mensajes en esta conversación.
-        </div>`;
+      panel.innerHTML = '<div class="text-center text-muted my-auto small no-mensajes-placeholder"><i class="bi bi-chat me-1"></i>Aún no hay mensajes en esta conversación.</div>';
       return;
     }
     panel.innerHTML = '';
-    mensajes.forEach(msg => {
-      const esGestor = String(msg.remitente) === String(window.GESTOR_USER_ID);
-      const bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
-      const justify = esGestor ? 'justify-content-end' : 'justify-content-start';
-      const nombreLabel = esGestor ? 'Tú' : (msg.remitente_nombre || currentCiudadanoNombre || 'Ciudadano');
-      const fecha = msg.enviado_en ? new Date(msg.enviado_en).toLocaleString('es-ES') : '';
-      const editadoBadge = msg.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
-
-      const wrapper = document.createElement('div');
-      wrapper.className = `d-flex ${justify} mb-1`;
-      wrapper.innerHTML = `
-        <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${msg.id}">
-          <div class="mensaje-texto">${msg.texto}</div>
-          <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-            <span class="fw-semibold">${nombreLabel}</span>
-            <span class="text-muted">${fecha}</span>
-            ${editadoBadge}
-            ${esGestor ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${msg.id}" data-texto="${msg.texto.replace(/"/g,'&quot;')}" title="Editar" style="font-size:.75rem;color:#198754;line-height:1;">
-              <i class="bi bi-pencil-fill"></i>
-            </button>` : ''}
-          </div>
-          <div class="form-editar-msg d-none mt-2">
-            <div class="d-flex gap-1">
-              <input type="text" class="form-control form-control-sm input-editar" value="${msg.texto.replace(/"/g,'&quot;')}" maxlength="500" style="border-radius:12px;">
-              <button class="btn btn-success btn-sm btn-confirmar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-check-lg"></i></button>
-              <button class="btn btn-secondary btn-sm btn-cancelar-edicion px-2" style="border-radius:50%;width:32px;height:32px;padding:0;"><i class="bi bi-x-lg"></i></button>
-            </div>
-          </div>
-        </div>`;
-
-      // Lógica de edición
-      const bubble = wrapper.querySelector('.chat-bubble');
-      const btnEditar = wrapper.querySelector('.btn-editar-msg');
-      const formEditar = wrapper.querySelector('.form-editar-msg');
-      const inputEditar = wrapper.querySelector('.input-editar');
-      const btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
-      const btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
-
-      if (btnEditar) {
-        btnEditar.addEventListener('click', () => {
-          formEditar.classList.remove('d-none');
-          inputEditar.focus();
-        });
-        btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
-        btnConfirmar.addEventListener('click', () => editarMensaje(msg.id, inputEditar, bubble, formEditar));
-        inputEditar.addEventListener('keydown', e => {
-          if (e.key === 'Enter') editarMensaje(msg.id, inputEditar, bubble, formEditar);
-          if (e.key === 'Escape') formEditar.classList.add('d-none');
-        });
-      }
-
-      panel.appendChild(wrapper);
+    var dateKeyTracker = { last: null };
+    mensajes.forEach(function(msg, i) {
+      _renderMessageItem(msg, i, mensajes, panel, dateKeyTracker);
     });
     panel.scrollTop = panel.scrollHeight;
   }
@@ -329,66 +506,116 @@
           meta.appendChild(badge);
         }
       } else {
-        r.json().then(d => alert(d.texto || d.detail || 'Error al editar.'));
+        r.json().then(function(d) { showChatToast(d.texto || d.detail || 'Error al editar.', 'error'); });
       }
-    }).catch(() => alert('Error de conexión.'));
+    }).catch(function() { showChatToast('Error de conexión.', 'error'); });
   }
 
-  // ----- Enviar mensaje (ahora con WebSocket optimista + fallback AJAX) -----
+  // --- Setup textarea ---
+  (function() {
+    var textarea = document.getElementById('chat-input-eca');
+    var charCount = document.getElementById('chat-char-count-eca');
+    var form = document.getElementById('chat-form-eca');
+    if (!textarea) return;
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    });
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      if (charCount) charCount.textContent = (this.value.length || 0) + '/500';
+      if (currentWSEca && currentWSEca.readyState === 1) {
+        clearTimeout(_ecaTypingTimer);
+        _ecaTypingTimer = setTimeout(function() {
+          if (currentWSEca && currentWSEca.readyState === 1) {
+            currentWSEca.send(JSON.stringify({ type: 'typing' }));
+          }
+        }, 300);
+      }
+    });
+  })();
+
+  async function _enviarAjaxFallbackEca(msg, optimista, input) {
+    var errorMsg = '';
+    try {
+      var resp = await fetch('/mensajes/' + currentChatIdEca + '/mensajes/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ texto: msg })
+      });
+      if (resp.ok) {
+        removerBurbujasPendientesEca();
+        cargarMensajesEca(currentChatIdEca);
+      } else {
+        marcarOptimistaFallidoEca(optimista);
+        try {
+          var data = await resp.json();
+          errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
+        } catch (e) {
+          console.debug(e);
+          errorMsg = 'Error al enviar mensaje';
+        }
+      }
+    } catch (err) {
+      console.debug(err);
+      marcarOptimistaFallidoEca(optimista);
+      errorMsg = 'Error al conectar con el servidor';
+    }
+    return errorMsg;
+  }
+
+  function _mostrarErrorEnvioEca(errorMsg) {
+    var errorDiv = document.createElement('div');
+    errorDiv.className = 'text-danger small mt-2';
+    errorDiv.innerHTML = errorMsg;
+    document.getElementById('chat-form-eca').appendChild(errorDiv);
+    setTimeout(function() { errorDiv.remove(); }, 3000);
+  }
+
+  // ----- Enviar mensaje con envio optimista + fallback AJAX -----
   document.getElementById('chat-form-eca').addEventListener('submit', async function (e) {
     e.preventDefault();
-    const input = document.getElementById('chat-input-eca');
-    const msg = input.value.trim();
+    var input = document.getElementById('chat-input-eca');
+    var msg = input.value.trim();
     if (!msg || !currentChatIdEca) return;
     input.disabled = true;
-    let errorMsg = '';
-    // Preferentemente usar WebSocket para enviar el mensaje
+    var errorMsg = '';
+    var optimista = crearBurbujaOptimistaEca(msg);
+    input.value = '';
+    input.style.height = '';
+    if (document.getElementById('chat-char-count-eca')) document.getElementById('chat-char-count-eca').textContent = '0/500';
+
     if (currentWSEca && currentWSEca.readyState === 1) {
       try {
         currentWSEca.send(JSON.stringify({ message: msg }));
-        input.value = '';
-        input.disabled = false;
-        // El mensaje vendrá por onmessage (pero podríamos hacer optimista si necesitás UX+)
       } catch (err) {
-        errorMsg = 'Error al enviar por WebSocket';
-        input.disabled = false;
+        console.debug(err);
+        marcarOptimistaFallidoEca(optimista);
       }
     } else {
-      // Fallback a fetch/AJAX si no hay WS
-      try {
-        const resp = await fetch(`/mensajes/${currentChatIdEca}/mensajes/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify({ texto: msg })
-        });
-        if (resp.ok) {
-          input.value = '';
-          cargarMensajesEca(currentChatIdEca);
-        } else {
-          try {
-            const data = await resp.json();
-            errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
-          } catch {
-            errorMsg = 'Error al enviar mensaje';
-          }
-        }
-      } catch (err) {
-        errorMsg = 'Error al conectar con el servidor';
-      }
-      input.disabled = false;
+      errorMsg = await _enviarAjaxFallbackEca(msg, optimista, input);
     }
-    if (errorMsg) {
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'text-danger small mt-2';
-      errorDiv.innerHTML = errorMsg;
-      input.parentElement.appendChild(errorDiv);
-      setTimeout(()=>errorDiv.remove(), 3000);
-    }
+    input.disabled = false;
+    if (errorMsg) _mostrarErrorEnvioEca(errorMsg);
   });
+
+  function marcarLeidosEca(chatId) {
+    fetch('/mensajes/' + chatId + '/leer/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+      },
+      credentials: 'same-origin',
+    }).catch(function(e) { console.debug(e); });
+  }
 
   // ----- Inicializar al cargar -----
   cargarChatsEca();

@@ -1,5 +1,6 @@
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.db.models import Q
+from django.utils import timezone
 from apps.ecas.models import PuntoECA
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect
@@ -13,9 +14,7 @@ from config import constants as cons
 from apps.core.service import UserService
 from apps.ecas.service import PuntoService, Helper
 from apps.ecas.constants import SECTION_TEMPLATES
-from apps.operations.views import _build_movimientos_context
 from apps.scheduling.views import _build_calendario_context
-from apps.inventory.views import _build_materiales_context
 from apps.core.decorators import gestor_eca_or_admin_required
 from apps.reciclabot.service import AsistenteECAService
 import decimal
@@ -118,11 +117,18 @@ def _build_perfil_pendientes(usuario, punto):
 def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     """
     Vista principal que renderiza una sección del panel Punto ECA según el parámetro 'seccion'.
-    - Selecciona la plantilla y los datos correctos para mostrar la sección indicada (perfil, materiales, movimientos, centros, calendario, resumen, etc).
+    - Selecciona la plantilla y los datos correctos para mostrar la sección indicada (perfil, centros, calendario, resumen, etc).
     - Controla acceso de usuario.
     - Decide de forma centralizada qué builder de contexto invocar para la sección.
     - Usa helpers para construir el contexto específico de cada sección (modularidad, clean arch).
     """
+    # Secciones legacy /materiales/ y /movimientos/ fueron consolidadas en /inventario/
+    # (Fase 6 — decisión 2). Devolver 404 duro en lugar de redirect para que los usuarios
+    # con URLs guardadas vean claramente que la ruta ya no existe. El check va ANTES del
+    # fallback a "resumen" para que no se enmascare como sección válida.
+    if seccion in ("materiales", "movimientos"):
+        raise Http404("Sección consolidada en /inventario/")
+
     if seccion not in SECTION_TEMPLATES:
         seccion = "resumen"
 
@@ -135,10 +141,19 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
 
     if seccion == "perfil":
         context = _build_perfil_context(punto, perfil_tab=perfil_tab)
-    elif seccion == "materiales":
-        context = _build_materiales_context(punto)
-    elif seccion == "movimientos":
-        context = _build_movimientos_context(punto)
+    elif seccion == "inventario":
+        # Deep-link opcional: ?inv=<inventarioId>&tab=<tabId>
+        # Si viene, se inyecta al context para que el JS navegue al
+        # workspace de ese material al cargar la página (usado tras
+        # registrar una compra/venta para permanecer en el workspace).
+        deep_inv = request.GET.get("inv")
+        deep_tab = request.GET.get("tab")
+        deep_link = (
+            {"inv": deep_inv, "tab": deep_tab}
+            if deep_inv and deep_tab
+            else None
+        )
+        context = _build_inventario_context(punto, deep_link=deep_link)
     elif seccion == "centros":
         context = _build_centros_context(punto)
     elif seccion == "calendario":
@@ -235,6 +250,288 @@ def _build_centros_context(punto):
     }
 
 
+def _build_inventario_context(punto, deep_link=None):
+    """
+    Construye el contexto unificado para la nueva sección /inventario/.
+
+    Consolida los datos de inventario, KPIs, historial de movimientos y
+    centros de acopio en un único dict listo para alimentar el template
+    section-inventario.html. Es la única fuente de datos de la sección
+    tras la Fase 7 (los builders legacy _build_materiales_context y
+    _build_movimientos_context fueron eliminados al consolidar las
+    secciones /materiales/ y /movimientos/ en /inventario/).
+
+    Args:
+        punto: Instancia de PuntoECA.
+
+    Returns:
+        dict con la forma:
+        {
+            "seccion": "inventario",
+            "section_template": "ecas/section-inventario.html",
+            "punto": punto,
+            "gestor": punto.gestor_eca,
+            "unidades_medida": [...],
+
+            # === Inventario (KPIs y cards) ===
+            "materiales_inventario": [...],
+            "total_stock": float,
+            "total_capacidad": float,
+            "total_ok": int,
+            "total_alerta": int,
+            "total_critico": int,
+            "ocupacion_porcentaje": int,
+            "material_mayor_ocupacion": Inventario|None,
+            "material_mas_caro": Inventario|None,
+            "material_mas_barato": Inventario|None,
+            "costo_total_inventario": float,
+            "materiales_criticos": [...],
+            "categoria_inventario": [...],
+            "tipo_inventario": [...],
+
+            # === Movimientos (historial y stock chart) ===
+            "centros": [...],
+            "historial_compras": [...],
+            "historial_ventas": [...],
+
+            # === Pre-serializado para el JS del template ===
+            "inv_data_json": str (JSON),
+        }
+    """
+    from apps.inventory.models import Inventario
+    from apps.operations import models as ops_models
+    from apps.ecas.models import CentroAcopio
+
+    materiales_inventario = list(
+        Inventario.objects.filter(punto_eca=punto)
+        .select_related("material__categoria", "material__tipo")
+        .order_by("-fecha_modificacion")
+    )
+    kpis = _calcular_kpis_inventario(materiales_inventario)
+
+    categoria_inventario = (
+        Inventario.objects.filter(punto_eca=punto)
+        .select_related("material__categoria")
+        .values_list("material__categoria__nombre", flat=True)
+        .distinct()
+    )
+    tipo_inventario = (
+        Inventario.objects.filter(punto_eca=punto)
+        .select_related("material__tipo")
+        .values_list("material__tipo__nombre", flat=True)
+        .distinct()
+    )
+
+    historial_compras = [
+        _serializar_compra(c)
+        for c in ops_models.CompraInventario.objects.filter(inventario__punto_eca=punto)
+        .select_related("inventario__material")
+        .order_by("-fecha_compra")
+    ]
+    historial_ventas = [
+        _serializar_venta(v)
+        for v in ops_models.VentaInventario.objects.filter(inventario__punto_eca=punto)
+        .select_related("inventario__material", "centro_acopio")
+        .order_by("-fecha_venta")
+    ]
+
+    centros_globales = list(
+        CentroAcopio.objects.filter(visibilidad=cons.Visibilidad.GLOBAL)
+    )
+    centros_locales = list(
+        CentroAcopio.objects.filter(puntos_eca=punto, visibilidad=cons.Visibilidad.ECA)
+    )
+    centros = _consolidar_centros(centros_globales, centros_locales)
+
+    inv_data = {
+        "materiales_inventario": [
+            _serializar_inventario_para_json(inv) for inv in materiales_inventario
+        ],
+        "centros": centros,
+        "historial_compras": historial_compras,
+        "historial_ventas": historial_ventas,
+    }
+
+    return {
+        "seccion": "inventario",
+        "section_template": SECTION_TEMPLATES["inventario"],
+        "gestor": punto.gestor_eca,
+        "punto": punto,
+        "unidades_medida": cons.UnidadMedida.choices,
+        "materiales_inventario": materiales_inventario,
+        **kpis,
+        "categoria_inventario": categoria_inventario,
+        "tipo_inventario": tipo_inventario,
+        "centros": centros,
+        "historial_compras": historial_compras,
+        "historial_ventas": historial_ventas,
+        "inv_data_json": inv_data,
+        "now": timezone.now(),
+        "deep_link": deep_link,
+    }
+
+
+# --- Helpers de _build_inventario_context (extraídos para reducir su
+# complejidad cognitiva de 25 a ≤15). Cada uno tiene una sola
+# responsabilidad y son puros (sin side effects sobre el contexto).
+
+def _es_inventario_ok(inv):
+    """True si el inventario está en estado OK (por debajo del umbral de alerta)."""
+    return float(inv.ocupacion_actual) < float(inv.umbral_alerta)
+
+
+def _es_inventario_alerta(inv):
+    """True si el inventario está en estado ALERTA (entre umbral_alerta y umbral_critico)."""
+    ocupacion = float(inv.ocupacion_actual)
+    return float(inv.umbral_alerta) <= ocupacion < float(inv.umbral_critico)
+
+
+def _es_inventario_critico(inv):
+    """True si el inventario está en estado CRITICO (por encima del umbral crítico)."""
+    return float(inv.ocupacion_actual) >= float(inv.umbral_critico)
+
+
+def _estado_inventario(inv):
+    """Devuelve el estado del inventario: 'ok', 'alerta' o 'critico'."""
+    if _es_inventario_critico(inv):
+        return "critico"
+    if _es_inventario_alerta(inv):
+        return "alerta"
+    return "ok"
+
+
+def _kpis_inventario_vacios():
+    """KPIs/aggregados para cuando el punto no tiene materiales en su inventario."""
+    return {
+        "total_stock": 0,
+        "total_capacidad": 0,
+        "total_ok": 0,
+        "total_alerta": 0,
+        "total_critico": 0,
+        "ocupacion_porcentaje": 0,
+        "material_mayor_ocupacion": None,
+        "material_mas_caro": None,
+        "material_mas_barato": None,
+        "costo_total_inventario": 0,
+        "materiales_criticos": [],
+    }
+
+
+def _calcular_kpis_inventario(materiales_inventario):
+    """
+    Calcula totales, KPIs y agregados del inventario de un punto.
+
+    Devuelve un dict con las claves: total_stock, total_capacidad, total_ok,
+    total_alerta, total_critico, ocupacion_porcentaje, material_mayor_ocupacion,
+    material_mas_caro, material_mas_barato, costo_total_inventario,
+    materiales_criticos.
+    """
+    if not materiales_inventario:
+        return _kpis_inventario_vacios()
+
+    total_stock = sum(float(inv.stock_actual or 0) for inv in materiales_inventario)
+    total_capacidad = sum(float(inv.capacidad_maxima or 0) for inv in materiales_inventario)
+    total_ok = sum(1 for inv in materiales_inventario if _es_inventario_ok(inv))
+    total_alerta = sum(1 for inv in materiales_inventario if _es_inventario_alerta(inv))
+    total_critico = sum(1 for inv in materiales_inventario if _es_inventario_critico(inv))
+
+    ocupacion_porcentaje = (
+        round((total_stock / total_capacidad) * 100) if total_capacidad > 0 else 0
+    )
+    costo_total_inventario = sum(
+        float(inv.stock_actual or 0) * float(inv.precio_compra or 0)
+        for inv in materiales_inventario
+    )
+    materiales_criticos = [
+        inv for inv in materiales_inventario if _es_inventario_critico(inv)
+    ]
+
+    return {
+        "total_stock": total_stock,
+        "total_capacidad": total_capacidad,
+        "total_ok": total_ok,
+        "total_alerta": total_alerta,
+        "total_critico": total_critico,
+        "ocupacion_porcentaje": ocupacion_porcentaje,
+        "material_mayor_ocupacion": max(
+            materiales_inventario, key=lambda i: float(i.ocupacion_actual)
+        ),
+        "material_mas_caro": max(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        ),
+        "material_mas_barato": min(
+            materiales_inventario, key=lambda i: float(i.precio_compra or 0)
+        ),
+        "costo_total_inventario": costo_total_inventario,
+        "materiales_criticos": materiales_criticos,
+    }
+
+
+def _serializar_compra(c):
+    """Convierte una CompraInventario al dict que consume el template y el JS."""
+    return {
+        "compraId": str(c.id),
+        "inventarioId": str(c.inventario.id),
+        "materialId": str(c.inventario.material.id),
+        "nombreMaterial": c.inventario.material.nombre,
+        "nombreCategoria": getattr(c.inventario.material.categoria, "nombre", ""),
+        "nombreTipo": getattr(c.inventario.material.tipo, "nombre", ""),
+        "cantidad": float(c.cantidad),
+        "fechaCompra": c.fecha_compra.isoformat(),
+        "precioCompra": float(c.precio_compra or 0),
+        "observaciones": c.observaciones or "",
+    }
+
+
+def _serializar_venta(v):
+    """Convierte una VentaInventario al dict que consume el template y el JS."""
+    tiene_centro = getattr(v, "centro_acopio", None) is not None
+    return {
+        "ventaId": str(v.id),
+        "inventarioId": str(v.inventario.id),
+        "materialId": str(v.inventario.material.id),
+        "nombreMaterial": v.inventario.material.nombre,
+        "nombreCategoria": getattr(v.inventario.material.categoria, "nombre", ""),
+        "nombreTipo": getattr(v.inventario.material.tipo, "nombre", ""),
+        "cantidad": float(v.cantidad),
+        "fechaVenta": v.fecha_venta.isoformat(),
+        "precioVenta": float(v.precio_venta or 0),
+        "observaciones": v.observaciones or "",
+        "nombreCentroAcopio": getattr(v.centro_acopio, "nombre", "") if tiene_centro else "",
+        "centroAcopioId": str(v.centro_acopio.id) if tiene_centro else "",
+    }
+
+
+def _consolidar_centros(centros_globales, centros_locales):
+    """Une y deduplica centros de acopio (globales + locales) por id."""
+    centros_map = {}
+    for c in centros_globales + centros_locales:
+        centros_map[str(c.id)] = {"id": str(c.id), "nombre": c.nombre}
+    return list(centros_map.values())
+
+
+def _serializar_inventario_para_json(inv):
+    """Convierte un Inventario al dict que va al JSON del template."""
+    fecha_mod = getattr(inv, "fecha_modificacion", None)
+    return {
+        "inventarioId": str(inv.id),
+        "materialId": str(inv.material.id),
+        "nombre": inv.material.nombre,
+        "categoria": getattr(inv.material.categoria, "nombre", ""),
+        "tipo": getattr(inv.material.tipo, "nombre", ""),
+        "unidad": inv.unidad_medida,
+        "stockActual": float(inv.stock_actual or 0),
+        "capacidadMaxima": float(inv.capacidad_maxima or 0),
+        "ocupacion": float(inv.ocupacion_actual),
+        "estado": _estado_inventario(inv),
+        "umbralAlerta": float(inv.umbral_alerta or 0),
+        "umbralCritico": float(inv.umbral_critico or 0),
+        "precioCompra": float(inv.precio_compra or 0),
+        "precioVenta": float(inv.precio_venta or 0),
+        "fechaModificacion": fecha_mod.isoformat() if fecha_mod else "",
+    }
+
+
 def _decimal_to_float_recursive(obj):
     """
     Recorre de forma recursiva dicts/lists y convierte cualquier decimal.Decimal en float,
@@ -265,6 +562,20 @@ def _build_resumen_context(punto):
         "section_template": SECTION_TEMPLATES["resumen"],
         "datos_resumen": json.dumps(datos_resumen),  # Serializar para el template
     }
+
+
+@gestor_eca_or_admin_required
+@require_GET
+def resumen_data_json(request):
+    """
+    Endpoint JSON para refrescar el resumen de forma asíncrona.
+    Devuelve los mismos datos que _build_resumen_context pero como JSON.
+    """
+    punto = get_object_or_404(PuntoECA, gestor_eca=request.user)
+    asistente = AsistenteECAService()
+    datos = asistente.generar_datos_resumen(punto)
+    datos = _decimal_to_float_recursive(datos)
+    return JsonResponse(datos)
 
 
 def _build_default_context(punto, seccion):

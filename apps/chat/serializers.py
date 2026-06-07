@@ -22,6 +22,7 @@ class ChatSerializer(serializers.ModelSerializer):
     """
     punto_nombre = serializers.CharField(source='punto.nombre', read_only=True)
     ciudadano_nombre = serializers.SerializerMethodField()
+    no_leidos = serializers.SerializerMethodField()
 
     def get_ciudadano_nombre(self, obj):
         """
@@ -33,9 +34,15 @@ class ChatSerializer(serializers.ModelSerializer):
             return nombre or str(obj.ciudadano)
         return "Ciudadano"
 
+    def get_no_leidos(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.mensajes.filter(leido=False).exclude(remitente=request.user).count()
+        return 0
+
     class Meta:
         model = Chat
-        fields = ['id', 'punto', 'punto_nombre', 'ciudadano', 'ciudadano_nombre', 'created_at']
+        fields = ['id', 'punto', 'punto_nombre', 'ciudadano', 'ciudadano_nombre', 'no_leidos', 'created_at']
         read_only_fields = ['ciudadano']
 
 

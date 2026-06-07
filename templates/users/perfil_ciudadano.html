@@ -36,15 +36,9 @@
             color: #145c3a !important;
         }
 
-        /* Chat bubble styles */
-        .chat-bubble {
-            padding: 0.65rem 1rem;
-            border-radius: 1.1rem;
-            max-width: 72%;
-            word-break: break-word;
-            font-size: .9rem;
-            line-height: 1.4;
-        }
+    </style>
+    {% include 'partials/chat_styles.html' %}
+    <style>
         .bubble-ciudadano {
             background: linear-gradient(135deg, #d2f4e5 0%, #afe6ce 100%);
             color: #146c43;
@@ -57,11 +51,6 @@
             border-bottom-left-radius: 0.25rem;
             border: 1px solid #e5e5e5;
             align-self: flex-start;
-        }
-        .chat-meta {
-            font-size: 0.7rem;
-            opacity: 0.65;
-            margin-top: 3px;
         }
         .chat-sidebar-item {
             border: none !important;
@@ -81,7 +70,6 @@
         }
         #chat-mensajes::-webkit-scrollbar { width: 5px; }
         #chat-mensajes::-webkit-scrollbar-thumb { background: #d0ead8; border-radius: 10px; }
-
     </style>
     {% include 'partials/password_styles.html' %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ" crossorigin="anonymous">
@@ -136,7 +124,6 @@
                                     <small class="text-muted d-flex align-items-center gap-1" style="font-size:.72rem;">
                                         {{ user.get_full_name }}
                                         <span class="badge bg-success bg-opacity-10 text-light px-2 py-1 rounded-pill">Ciudadano</span>
-                                        <span class="badge bg-success bg-opacity-10 text-success px-2 py-0 rounded-pill">Ciudadano</span>
                                     </small>
                                 </div>
                             </div>
@@ -574,27 +561,32 @@
                     <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
                         <div class="row g-0" style="height: 520px;">
 
-                            <!-- Columna izquierda: conversaciones -->
-                            <div class="col-12 col-md-4 border-end d-flex flex-column" style="height: 520px;">
+                            <!-- Columna izquierda: conversaciones (escritorio) -->
+                            <div class="col-md-4 border-end d-none d-md-flex flex-column" style="height: 520px;">
                                 <div class="px-3 py-3 border-bottom" style="background: #f8faf9;">
                                     <h6 class="fw-bold mb-0 text-success">
                                         <i class="bi bi-chat-left-text me-2"></i>Conversaciones
                                     </h6>
                                 </div>
                                 <div id="chat-sidebar-list" class="flex-grow-1" style="overflow-y: auto;">
-                                    <div class="text-center text-muted py-5 small px-3">
-                                        <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
-                                            <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
-                                        </div>
-                                        <p class="mb-0">Aún no tienes chats iniciados.<br>Busca un punto ECA arriba.</p>
-                                    </div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:8px 12px;"></div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
                                 </div>
                             </div>
 
                             <!-- Columna derecha: mensajes + input -->
                             <div class="col-12 col-md-8 d-flex flex-column" style="height: 520px;">
-                                <!-- Cabecera del chat activo -->
-                                <div class="px-4 py-3 border-bottom d-flex align-items-center gap-3" style="background: #f8faf9;">
+                                <!-- Header movil -->
+                                <div class="d-flex d-md-none align-items-center gap-2 px-3 py-2 border-bottom" style="background: #f8faf9;">
+                                    <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvasCiudadano" aria-label="Conversaciones">
+                                        <i class="bi bi-list"></i>
+                                    </button>
+                                    <span class="fw-semibold text-success small text-truncate" id="chat-titulo-punto-mobile">Selecciona un chat o busca un punto ECA</span>
+                                </div>
+                                <!-- Header escritorio -->
+                                <div class="d-none d-md-flex px-4 py-3 border-bottom align-items-center gap-3" style="background: #f8faf9;">
                                     <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;">
                                         <i class="bi bi-geo-alt-fill text-white" style="font-size:.9rem;"></i>
                                     </div>
@@ -610,20 +602,40 @@
                                     </div>
                                 </div>
 
+                                <!-- Indicador de escritura -->
+                                <div class="chat-typing-indicator" id="chat-typing-indicator"></div>
+
                                 <!-- Input de envío -->
                                 <div class="p-3 border-top bg-white">
-                                    <form id="chat-form" class="d-flex align-items-center gap-2">
-                                        <input type="text" id="chat-input" class="form-control"
-                                               placeholder="Escribe tu mensaje..." required maxlength="500" autocomplete="off"
-                                               style="border-radius: 20px; border-color: #d0ead8;">
-                                        <button type="submit" class="btn btn-success d-flex align-items-center justify-content-center flex-shrink-0"
-                                                style="width:40px;height:40px;padding:0;border-radius:50%;">
-                                            <i class="bi bi-send-fill"></i>
-                                        </button>
+                                    <form id="chat-form" class="d-flex flex-column gap-1">
+                                        <div class="d-flex align-items-end gap-2">
+                                            <textarea id="chat-input" class="form-control chat-textarea"
+                                                      placeholder="Escribe tu mensaje..." maxlength="500" rows="1"
+                                                      style="border-radius: 16px; border-color: #d0ead8;"></textarea>
+                                            <button type="submit" class="btn btn-success d-flex align-items-center justify-content-center flex-shrink-0"
+                                                    style="width:40px;height:40px;padding:0;border-radius:50%;">
+                                                <i class="bi bi-send-fill"></i>
+                                            </button>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 px-1">
+                                            <small class="text-muted chat-input-hint">Enter para enviar, Shift+Enter para nueva línea</small>
+                                            <small class="text-muted ms-auto chat-char-count" id="chat-char-count">0/500</small>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
 
+                        </div>
+
+                        <!-- Offcanvas sidebar movil -->
+                        <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="chatOffcanvasCiudadano" style="width:300px;">
+                            <div class="offcanvas-header py-2" style="background:#f8faf9;">
+                                <h6 class="fw-bold text-success mb-0"><i class="bi bi-chat-left-text me-2"></i>Conversaciones</h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+                            </div>
+                            <div class="offcanvas-body p-0">
+                                <div id="chat-sidebar-list-mobile" class="flex-grow-1" style="overflow-y:auto;height:calc(100dvh - 56px);"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -680,16 +692,20 @@
     const chatMensajes = document.getElementById('chat-mensajes');
     let chatsCiudadano = [];
 
+    {% include 'partials/chat_utils.html' %}
+
     // Renderiza el historial de chats en el sidebar
     function renderHistorialChats() {
-        const sidebar = document.getElementById('chat-sidebar-list');
-        if (!sidebar) return;
+        var sidebars = ['chat-sidebar-list', 'chat-sidebar-list-mobile'];
         if (!chatsCiudadano.length) {
-            sidebar.innerHTML = '<div class="text-center text-muted py-3 small">Aún no tenés chats iniciados.</div>';
+            sidebars.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.innerHTML = '<div class="text-center text-muted py-3 small">Aún no tenés chats iniciados.</div>';
+            });
             return;
         }
-        sidebar.innerHTML = chatsCiudadano.map(chat => `
-            <div class="chat-sidebar-item d-flex align-items-center gap-3"
+        var sidebarHtml = chatsCiudadano.map(chat => `
+            <div class="chat-sidebar-item d-flex align-items-center gap-3 position-relative"
                 data-chat-id="${chat.id}" data-punto-id="${chat.punto}" role="button">
                 <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
                     <i class="bi bi-geo-alt-fill text-white" style="font-size:.8rem;"></i>
@@ -698,20 +714,37 @@
                     <div class="fw-semibold small text-truncate">${chat.punto_nombre || ('Punto #' + chat.punto)}</div>
                     <div class="text-muted" style="font-size:.7rem;">${chat.created_at ? (new Date(chat.created_at)).toLocaleDateString('es-ES') : ''}</div>
                 </div>
+                ${chat.no_leidos ? '<span class="chat-unread-badge" data-chat-id="' + chat.id + '">' + formatBadgeCount(chat.no_leidos) + '</span>' : ''}
             </div>
         `).join('');
-        // Marca el chat activo si corresponde
-        sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
-            if (item.dataset.chatId === String(currentChatId)) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-            item.onclick = function() {
-                sidebar.querySelectorAll('[data-chat-id]').forEach(b => b.classList.remove('active'));
-                item.classList.add('active');
-                cargarMensajesDePunto(item.dataset.puntoId);
-            };
+
+        sidebars.forEach(function(id) {
+            var sidebar = document.getElementById(id);
+            if (!sidebar) return;
+            sidebar.innerHTML = sidebarHtml;
+            sidebar.querySelectorAll('[data-chat-id]').forEach(function(item) {
+                if (item.dataset.chatId === String(currentChatId)) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+                item.onclick = function() {
+                    sidebars.forEach(function(sid) {
+                        var s = document.getElementById(sid);
+                        if (!s) return;
+                        s.querySelectorAll('[data-chat-id]').forEach(function(b) { b.classList.remove('active'); });
+                    });
+                    this.classList.add('active');
+                    var badge = this.querySelector('.chat-unread-badge');
+                    if (badge) badge.remove();
+                    var offcanvasEl = document.getElementById('chatOffcanvasCiudadano');
+                    if (offcanvasEl) {
+                        var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                        if (bsOffcanvas) bsOffcanvas.hide();
+                    }
+                    cargarMensajesDePunto(this.dataset.puntoId);
+                };
+            });
         });
     }
 
@@ -763,20 +796,64 @@
         });
     }
 
+    async function manejarSeleccionPuntoEca(puntoId, puntoNombre) {
+        await cargarChatsCiudadano();
+        var chat = chatsCiudadano.find(function(c) { return String(c.punto) === String(puntoId); });
+        if (!chat) {
+            try {
+                var resp = await fetch('/mensajes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ punto: puntoId })
+                });
+                if (resp.ok) {
+                    await cargarChatsCiudadano();
+                }
+            } catch (error) {
+                console.debug(error);
+            }
+        }
+        await cargarMensajesDePunto(puntoId);
+    }
+
     async function cargarChatsCiudadano() {
-        // Carga todos los chats del ciudadano (necesitamos su relación punto)
-        // NOTA: ajustar la URL base si se monta diferente
+        const sidebar = document.getElementById('chat-sidebar-list');
+        if (sidebar && !chatsCiudadano.length && !sidebar.querySelector('.chat-sidebar-item')) {
+            showSkeletonSidebar(sidebar);
+        }
         const res = await fetch('/mensajes/', { credentials: 'same-origin' });
         if(res.ok) {
             chatsCiudadano = await res.json();
         } else {
             chatsCiudadano = [];
         }
-        renderHistorialChats(); // <-- Actualiza el sidebar
+        renderHistorialChats();
     }
 
     let currentChatId = null;
     let currentWS = null;
+    var _typingTimer = null;
+    var _typingHideTimer = null;
+    var _originalTitle = document.title;
+    var _unreadCount = 0;
+
+    function updateUnreadTitle() {
+        if (document.hidden) {
+            _unreadCount++;
+            document.title = '(' + _unreadCount + ') ' + _originalTitle;
+        }
+    }
+
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            document.title = _originalTitle;
+            _unreadCount = 0;
+        }
+    });
 
     async function cargarMensajesDePunto(puntoId) {
         await cargarChatsCiudadano();
@@ -788,48 +865,83 @@
             return;
         }
         currentChatId = chat.id;
-        const titulo = document.getElementById('chat-titulo-punto');
-        if (titulo) titulo.textContent = chat.punto_nombre || 'Punto ECA';
+        var titulo = document.getElementById('chat-titulo-punto');
+        var tituloMob = document.getElementById('chat-titulo-punto-mobile');
+        var nombre = chat.punto_nombre || 'Punto ECA';
+        if (titulo) titulo.textContent = nombre;
+        if (tituloMob) tituloMob.textContent = nombre;
         await cargarMensajesHistorial(chat.id);
         iniciarWS(chat.id);
     }
 
     async function cargarMensajesHistorial(chatId) {
-        const url = `/mensajes/${chatId}/mensajes/`;
+        const url = '/mensajes/' + chatId + '/mensajes/';
+        showSkeletonMessages(chatMensajes);
         const res = await fetch(url, { credentials: 'same-origin' });
         if(res.ok) {
             const mensajes = await res.json();
             renderMensajes(mensajes);
+            marcarLeidos(chatId);
         } else {
-            chatMensajes.innerHTML = '<div class="text-danger small">No se pudo cargar el historial de mensajes.</div>';
+            chatMensajes.innerHTML = '<div class="chat-error-state text-center py-4"><div class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>No se pudo cargar el historial de mensajes.</div><button class="btn btn-outline-success btn-sm" onclick="cargarMensajesHistorial(' + chatId + ')"><i class="bi bi-arrow-repeat me-1"></i>Reintentar</button></div>';
         }
     }
 
+    // --- WebSocket realtime con reconexion ---
+    var _wsUrl = null;
+    var _wsReconnectAttempt = 0;
+    var _wsShouldReconnect = false;
+
     function iniciarWS(chatId) {
         cerrarWS();
-        // Notar: ws:// si no está usando https, wss:// si el sitio es seguro
         const protocol = globalThis.location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${protocol}://${globalThis.location.host}/ws/chat/${chatId}/`;
-        currentWS = new WebSocket(url);
+        _wsUrl = protocol + '://' + globalThis.location.host + '/ws/chat/' + chatId + '/';
+        _wsReconnectAttempt = 0;
+        _wsShouldReconnect = true;
+        _connectWS();
+    }
 
+    function _connectWS() {
+        if (!_wsUrl) return;
+        currentWS = new WebSocket(_wsUrl);
         currentWS.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            // El backend puede enviar { message, user_id } al recibir un nuevo mensaje por el grupo
+            if (data.type === 'typing') {
+                if (String(data.user_id) !== String(globalThis.CIUDADANO_USER_ID)) {
+                    var el = document.getElementById('chat-typing-indicator');
+                    if (el) {
+                        el.innerHTML = '<span class="chat-typing-dots"><span></span><span></span><span></span></span> Gestor ECA está escribiendo...';
+                        clearTimeout(_typingHideTimer);
+                        _typingHideTimer = setTimeout(function() { el.innerHTML = ''; }, 2500);
+                    }
+                }
+                return;
+            }
             if (data.message) {
-                // Convierte el formato del mensaje a lo que espera anadirMensajeRealtime
+                if (String(data.user_id) === String(globalThis.CIUDADANO_USER_ID)) {
+                    removerBurbujasPendientes();
+                } else {
+                    updateUnreadTitle();
+                }
                 anadirMensajeRealtime({
                     texto: data.message,
                     remitente: data.user_id,
-                    enviado_en: new Date().toISOString() // podés ajustar esto si querés poner la hora correcta
+                    enviado_en: new Date().toISOString()
                 });
             }
         };
         currentWS.onclose = function() {
-            // El canal se cerró
+            currentWS = null;
+            if (_wsShouldReconnect) {
+                _wsReconnectAttempt++;
+                var delay = Math.min(1000 * Math.pow(2, _wsReconnectAttempt), 30000);
+                setTimeout(_connectWS, delay);
+            }
         };
     }
 
     function cerrarWS() {
+        _wsShouldReconnect = false;
         if (currentWS) {
             try {
                 currentWS.close();
@@ -840,11 +952,47 @@
         }
     }
 
+    function removerBurbujasPendientes() {
+        var pendientes = chatMensajes.querySelectorAll('.msg-sending, .msg-failed');
+        pendientes.forEach(function(el) { el.closest('.msg-wrapper').remove(); });
+    }
+
+    function crearBurbujaOptimista(texto) {
+        if (chatMensajes.querySelector('.no-mensajes-placeholder')) {
+            chatMensajes.innerHTML = '';
+        }
+        removerBurbujasPendientes();
+        var wrapper = document.createElement('div');
+        wrapper.className = 'd-flex justify-content-end mb-0 msg-wrapper';
+        wrapper.dataset.dateKey = getDateKey(new Date().toISOString());
+        wrapper.innerHTML = `
+            <div class="chat-bubble bubble-ciudadano msg-sending msg-animate">
+                <div class="mensaje-texto">${texto}</div>
+                <div class="chat-meta d-flex align-items-center gap-2 mt-1">
+                    <span class="fw-semibold msg-meta-name">Tú</span>
+                    <span class="msg-send-status"><i class="bi bi-clock me-1"></i>enviando...</span>
+                </div>
+            </div>`;
+        chatMensajes.appendChild(wrapper);
+        chatMensajes.scrollTop = chatMensajes.scrollHeight;
+        return wrapper;
+    }
+
+    function marcarOptimistaFallido(wrapper) {
+        var bubble = wrapper.querySelector('.chat-bubble');
+        if (!bubble) return;
+        bubble.classList.remove('msg-sending');
+        bubble.classList.add('msg-failed');
+        bubble.style.background = '#fff5f5';
+        bubble.style.border = '1px solid #dc3545';
+        var status = bubble.querySelector('.msg-send-status');
+        if (status) status.innerHTML = '<button class="msg-retry-btn" onclick="var w=this.closest(\'.msg-wrapper\'); w.remove(); document.getElementById(\'chat-form\').querySelector(\'button[type=submit]\').click();"><i class="bi bi-exclamation-circle me-1"></i>falló &mdash; reintentar</button>';
+    }
+
     // Variable para identificar si el usuario actual es el remitente
     globalThis.CIUDADANO_USER_ID = '{{ user.id|default:"" }}';
     function anadirMensajeRealtime(mensaje) {
-        // Si la lista está vacía o muestra el cartel de "no hay", reemplazar
-        if (chatMensajes.innerHTML.includes('no hay mensajes')) {
+        if (chatMensajes.querySelector('.no-mensajes-placeholder')) {
             chatMensajes.innerHTML = '';
         }
         const remitenteStr = mensaje.remitente !== undefined && mensaje.remitente !== null ? String(mensaje.remitente) : '';
@@ -853,15 +1001,42 @@
         const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
         const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
         const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
-        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
+        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toISOString() : '';
+
+        const allWrappers = chatMensajes.querySelectorAll('.msg-wrapper');
+        const lastWrapper = allWrappers.length ? allWrappers[allWrappers.length - 1] : null;
+        const thisDateKey = getDateKey(fecha);
+        const lastDateKey = lastWrapper ? lastWrapper.dataset.dateKey : null;
+
+        if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
+            var sep = document.createElement('div');
+            sep.className = 'date-separator';
+            sep.textContent = formatDateLabel(fecha);
+            chatMensajes.appendChild(sep);
+        }
+
+        var isGrouped = false;
+        if (lastWrapper) {
+            var lastBubble = lastWrapper.querySelector('.chat-bubble');
+            if (lastBubble) {
+                var lastRmt = lastBubble.dataset.remitente;
+                var lastTs = lastBubble.dataset.enviadoEn;
+                if (lastRmt === remitenteStr && getMinutesDiff(lastTs, fecha) < 2) {
+                    isGrouped = true;
+                }
+            }
+        }
+
         const wrapper = document.createElement('div');
-        wrapper.className = `d-flex ${justify} mb-1`;
+        wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
+        wrapper.dataset.dateKey = thisDateKey;
         wrapper.innerHTML = `
-            <div class="chat-bubble ${bubbleClass} position-relative">
+            <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}"
+                 data-remitente="${remitenteStr}" data-enviado-en="${fecha}">
                 <div class="mensaje-texto">${mensaje.texto}</div>
                 <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-                    <span class="fw-semibold">${nombreLabel}</span>
-                    <span class="text-muted">${fecha}</span>
+                    <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
+                    <span class="text-muted">${formatRelativeTime(fecha)}</span>
                 </div>
             </div>
         `;
@@ -869,21 +1044,25 @@
         chatMensajes.scrollTop = chatMensajes.scrollHeight;
     }
 
-    function crearElementoMensaje(mensaje) {
+    function crearElementoMensaje(mensaje, opts) {
+        opts = opts || {};
+        var isGrouped = opts.isGrouped || false;
         const esCiudadano = String(mensaje.remitente) === String(globalThis.CIUDADANO_USER_ID);
         const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
         const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
         const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
-        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toLocaleString('es-ES') : '';
+        const fecha = mensaje.enviado_en ? formatRelativeTime(mensaje.enviado_en) : '';
         const editadoBadge = mensaje.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
 
+        var thisDateKey = getDateKey(mensaje.enviado_en);
         const wrapper = document.createElement('div');
-        wrapper.className = `d-flex ${justify} mb-1`;
+        wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
+        wrapper.dataset.dateKey = thisDateKey;
         wrapper.innerHTML = `
-            <div class="chat-bubble ${bubbleClass} position-relative" data-msg-id="${mensaje.id}">
+            <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${mensaje.id}" data-remitente="${mensaje.remitente || ''}" data-enviado-en="${mensaje.enviado_en || ''}">
                 <div class="mensaje-texto">${mensaje.texto}</div>
                 <div class="chat-meta d-flex align-items-center gap-2 mt-1">
-                    <span class="fw-semibold">${nombreLabel}</span>
+                    <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
                     <span class="text-muted">${fecha}</span>
                     ${editadoBadge}
                     ${esCiudadano ? `<button class="btn-editar-msg btn btn-link p-0 ms-1" data-msg-id="${mensaje.id}" title="Editar" style="font-size:.75rem;color:#145c3a;line-height:1;">
@@ -907,10 +1086,10 @@
             const btnConfirmar = wrapper.querySelector('.btn-confirmar-edicion');
             const btnCancelar = wrapper.querySelector('.btn-cancelar-edicion');
 
-            btnEditar.addEventListener('click', () => { formEditar.classList.remove('d-none'); inputEditar.focus(); });
-            btnCancelar.addEventListener('click', () => formEditar.classList.add('d-none'));
-            btnConfirmar.addEventListener('click', () => editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar));
-            inputEditar.addEventListener('keydown', e => {
+            btnEditar.addEventListener('click', function() { formEditar.classList.remove('d-none'); inputEditar.focus(); });
+            btnCancelar.addEventListener('click', function() { formEditar.classList.add('d-none'); });
+            btnConfirmar.addEventListener('click', function() { editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar); });
+            inputEditar.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') editarMensajeCiudadano(mensaje.id, inputEditar, bubble, formEditar);
                 if (e.key === 'Escape') formEditar.classList.add('d-none');
             });
@@ -921,12 +1100,30 @@
 
     function renderMensajes(mensajes) {
         if (mensajes.length === 0) {
-            chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Todavía no hay mensajes.</div>';
+            chatMensajes.innerHTML = '<div class="text-muted text-center small py-3 no-mensajes-placeholder">Todavía no hay mensajes.</div>';
             return;
         }
         chatMensajes.innerHTML = '';
-        mensajes.forEach(m => {
-            chatMensajes.appendChild(crearElementoMensaje(m));
+        var lastDateKey = null;
+        mensajes.forEach(function(m, i) {
+            var thisDateKey = getDateKey(m.enviado_en);
+            if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
+                var sep = document.createElement('div');
+                sep.className = 'date-separator';
+                sep.textContent = formatDateLabel(m.enviado_en);
+                chatMensajes.appendChild(sep);
+            }
+            lastDateKey = thisDateKey;
+
+            var isGrouped = false;
+            if (i > 0) {
+                var prev = mensajes[i - 1];
+                if (String(prev.remitente) === String(m.remitente) && getMinutesDiff(prev.enviado_en, m.enviado_en) < 2) {
+                    isGrouped = true;
+                }
+            }
+
+            chatMensajes.appendChild(crearElementoMensaje(m, { isGrouped: isGrouped }));
         });
         chatMensajes.scrollTop = chatMensajes.scrollHeight;
     }
@@ -955,11 +1152,21 @@
                     meta.appendChild(badge);
                 }
             } else {
-                r.json().then(d => alert(d.texto || d.detail || 'Error al editar.'));
+                r.json().then(function(d) { showChatToast(d.texto || d.detail || 'Error al editar.', 'error'); });
             }
-        }).catch(() => alert('Error de conexión.'));
+        }).catch(function() { showChatToast('Error de conexión.', 'error'); });
     }
 
+    function marcarLeidos(chatId) {
+        fetch('/mensajes/' + chatId + '/leer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+            },
+            credentials: 'same-origin',
+        }).catch(function() {});
+    }
 
     if(chatSelect) {
         chatSelect.addEventListener('change', function() {
@@ -974,7 +1181,34 @@
         chatMensajes.innerHTML = '<div class="text-muted text-center small py-3">Seleccioná un punto ECA para ver el chat.</div>';
     }
 
-    // --- Submit de mensaje en chat ---
+    // --- Setup textarea ---
+    (function() {
+        var textarea = document.getElementById('chat-input');
+        var charCount = document.getElementById('chat-char-count');
+        var form = document.getElementById('chat-form');
+        if (!textarea) return;
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+        });
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            if (charCount) charCount.textContent = (this.value.length || 0) + '/500';
+            if (currentWS && currentWS.readyState === 1) {
+                clearTimeout(_typingTimer);
+                _typingTimer = setTimeout(function() {
+                    if (currentWS && currentWS.readyState === 1) {
+                        currentWS.send(JSON.stringify({ type: 'typing' }));
+                    }
+                }, 300);
+            }
+        });
+    })();
+
+    // --- Submit de mensaje con envio optimista + fallback AJAX ---
     const chatForm = document.getElementById('chat-form');
     if (chatForm) {
         chatForm.addEventListener('submit', async function(e) {
@@ -983,25 +1217,21 @@
             const msg = input.value.trim();
             if (!msg || !currentChatId) return;
             input.disabled = true;
-            let errorMsg = '';
-            // Preferentemente usar WebSocket para enviar el mensaje
+            var errorMsg = '';
+            var optimista = crearBurbujaOptimista(msg);
+            input.value = '';
+            input.style.height = '';
+            if (document.getElementById('chat-char-count')) document.getElementById('chat-char-count').textContent = '0/500';
+
             if (currentWS && currentWS.readyState === 1) {
                 try {
-                    currentWS.send(JSON.stringify({
-                                            message: msg
-                    }));
-                    input.value = '';
-                    input.disabled = false;
-                    // El mensaje se mostrará cuando lo recibas vía onmessage (evita duplicidad)
+                    currentWS.send(JSON.stringify({ message: msg }));
                 } catch (error) {
-                    console.error(error);
-                    errorMsg = 'Error al enviar por WebSocket';
-                    input.disabled = false;
+                    marcarOptimistaFallido(optimista);
                 }
             } else {
-                // Fallback a fetch/AJAX si no hay WS
                 try {
-                    const resp = await fetch(`/mensajes/${currentChatId}/mensajes/`, {
+                    const resp = await fetch('/mensajes/' + currentChatId + '/mensajes/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1011,9 +1241,10 @@
                         body: JSON.stringify({ texto: msg })
                     });
                     if (resp.ok) {
-                        input.value = '';
+                        removerBurbujasPendientes();
                         await cargarMensajesHistorial(currentChatId);
                     } else {
+                        marcarOptimistaFallido(optimista);
                         try {
                             const data = await resp.json();
                             errorMsg = data.texto || data.detail || 'Error al enviar mensaje';
@@ -1023,17 +1254,17 @@
                         }
                     }
                 } catch (error) {
-                    console.error(error);
+                    marcarOptimistaFallido(optimista);
                     errorMsg = 'Error al conectar con el servidor';
                 }
-                input.disabled = false;
             }
+            input.disabled = false;
             if (errorMsg) {
-                const errorDiv = document.createElement('div');
+                var errorDiv = document.createElement('div');
                 errorDiv.className = 'text-danger small mt-2';
                 errorDiv.innerHTML = errorMsg;
-                input.parentElement.appendChild(errorDiv);
-                setTimeout(()=>errorDiv.remove(), 3000);
+                chatForm.appendChild(errorDiv);
+                setTimeout(function() { errorDiv.remove(); }, 3000);
             }
         });
     }
