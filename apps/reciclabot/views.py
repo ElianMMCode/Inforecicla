@@ -27,6 +27,20 @@ def asistente_api_view(request):
     respuesta = asistente.consultar(punto_eca, pregunta)
     # Devuelvo ambos: primero el mensaje del usuario, luego el del asistente
 
-    user_msg = f'<div class="chat-msg-user alert alert-success bg-success text-white" role="alert">{escape(pregunta)}</div>'
-    ai_msg = f'<div class="chat-msg-ai ">{respuesta}</div>'
+    user_msg = (
+        '<div class="chat-msg-user">'
+        '<div class="chat-msg-avatar chat-msg-avatar-user">👤</div>'
+        '<div class="chat-msg-bubble">'
+        + escape(pregunta) +
+        '<div class="chat-msg-time"></div>'
+        '</div></div>'
+    )
+    ai_msg = (
+        '<div class="chat-msg-ai">'
+        '<div class="chat-msg-avatar chat-msg-avatar-ai">🤖</div>'
+        '<div class="chat-msg-bubble">'
+        + escape(respuesta) +
+        '<div class="chat-msg-time"></div>'
+        '</div></div>'
+    )
     return HttpResponse(user_msg + ai_msg)
