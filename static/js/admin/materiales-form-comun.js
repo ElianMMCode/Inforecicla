@@ -16,6 +16,7 @@
 //   - materialesConfirmarEnvioSwal(mensaje)
 //   - materialesValidarTamanoImagen(archivo, limiteBytes)
 //   - materialesBindEnvio({ formulario, camposValidacion, confirmar, antesDeEnviar })
+//   - materialesInicializarFormulario(opciones)  ← punto de entrada unificado
 
 const MATERIALES_COLOR_CONFIRMAR = "#198754";
 const MATERIALES_COLOR_CANCELAR = "#6c757d";
@@ -190,5 +191,94 @@ function materialesBindEnvio({ formulario, camposValidacion, confirmar, antesDeE
         formulario.submit();
       }
     });
+  });
+}
+
+function materialesValidarCampo(campo) {
+  if (!campo) {
+    return true;
+  }
+  return campo.esSelect
+    ? materialesValidarSelect(campo.elemento, campo.mensaje || "")
+    : materialesValidarTexto(
+        campo.elemento,
+        campo.maxLength,
+        campo.mensaje || "",
+        campo.mensajeOpcional || "",
+      );
+}
+
+function materialesCrearValidadorImagen(imagen) {
+  if (!imagen) {
+    return null;
+  }
+  const inputImagen = document.getElementById(imagen.inputId);
+  const alertaImagen = document.getElementById(imagen.alertaId);
+  if (!inputImagen) {
+    return null;
+  }
+  return () => {
+    if (!inputImagen.files || inputImagen.files.length === 0) {
+      if (alertaImagen) {
+        alertaImagen.classList.add("d-none");
+        alertaImagen.textContent = "";
+      }
+      materialesActualizarEstadoCampo(inputImagen);
+      return true;
+    }
+    const archivo = inputImagen.files[0];
+    const resultado = materialesValidarTamanoImagen(archivo, imagen.maxBytes);
+    if (!resultado.valido) {
+      if (alertaImagen) {
+        alertaImagen.textContent = resultado.mensaje;
+        alertaImagen.classList.remove("d-none");
+      }
+      inputImagen.value = "";
+      materialesActualizarEstadoCampo(inputImagen);
+      return false;
+    }
+    if (alertaImagen) {
+      alertaImagen.classList.add("d-none");
+      alertaImagen.textContent = "";
+    }
+    materialesActualizarEstadoCampo(inputImagen);
+    return true;
+  };
+}
+
+function materialesInicializarFormulario(opciones) {
+  const form = document.getElementById(opciones.formularioId);
+  if (!form) {
+    return;
+  }
+  const campos = (opciones.campos || [])
+    .map((cfg) => ({ ...cfg, elemento: form.querySelector(`[name="${cfg.name}"]`) }))
+    .filter((campo) => campo.elemento);
+  const camposValidacion = campos.map((campo) => campo.elemento);
+
+  materialesSuprimirValidacionNativa(form);
+  campos.forEach((campo) => {
+    materialesRegistrarValidacionCampo(campo.elemento, () => materialesValidarCampo(campo));
+  });
+
+  const validarImagen = materialesCrearValidadorImagen(opciones.imagen);
+  if (validarImagen) {
+    const inputImagen = document.getElementById(opciones.imagen.inputId);
+    inputImagen.addEventListener("change", validarImagen);
+  }
+
+  const antesDeEnviar = opciones.antesDeEnviar || (() => {
+    campos.forEach((campo) => materialesValidarCampo(campo));
+    camposValidacion.forEach(materialesActualizarEstadoCampo);
+    return validarImagen ? validarImagen() : true;
+  });
+
+  camposValidacion.forEach(materialesActualizarEstadoCampo);
+
+  materialesBindEnvio({
+    formulario: form,
+    camposValidacion,
+    confirmar: opciones.confirmar,
+    antesDeEnviar,
   });
 }
