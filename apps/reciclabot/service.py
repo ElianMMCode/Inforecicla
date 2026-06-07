@@ -372,9 +372,30 @@ class AsistenteECAService:
             puntos_eca=punto_eca, visibilidad=Visibilidad.ECA
         )
 
+        def _centro_to_dict(c):
+            """Convierte un CentroAcopio a dict enriquecido para contact card."""
+            ciudad = ""
+            if getattr(c, "ciudad", None):
+                ciudad = str(c.ciudad)
+            localidad = ""
+            if getattr(c, "localidad", None):
+                localidad = str(c.localidad)
+            return {
+                "nombre": c.nombre,
+                "tipo": c.tipo_centro,
+                "descripcion": getattr(c, "descripcion", "") or "",
+                "direccion": getattr(c, "direccion", "") or "",
+                "ciudad": ciudad,
+                "localidad": localidad,
+                "email": getattr(c, "email", "") or "",
+                "celular": getattr(c, "celular", "") or "",
+                "horario": getattr(c, "horario_atencion", "") or "",
+                "sitio_web": getattr(c, "sitio_web", "") or "",
+            }
+
         centros_info = {
-            'propios': [{'nombre': c.nombre, 'tipo': c.tipo_centro} for c in centros_propios],
-            'globales': [{'nombre': c.nombre, 'tipo': c.tipo_centro} for c in centros_globales]
+            "propios": [_centro_to_dict(c) for c in centros_propios],
+            "globales": [_centro_to_dict(c) for c in centros_globales],
         }
 
         # -------------------
