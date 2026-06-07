@@ -85,10 +85,10 @@
         </div>
     </div>
 
-    <!-- Distribución por categoría + Alertas -->
+    <!-- Distribución por categoría - FULL WIDTH -->
     <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-5">
-            <div class="card border-0 shadow-sm hover-lift h-100">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm hover-lift">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-pie-chart text-success"></i>
@@ -104,8 +104,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-lg-7" id="seccionAlertas" style="display: none;">
-            <div class="card border-0 shadow-sm border-start border-danger border-3 hover-lift h-100">
+    </div>
+
+    <!-- Alertas de inventario - propia fila, full width -->
+    <div class="row g-3 mb-4" id="seccionAlertas" style="display: none;">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm border-start border-danger border-3 hover-lift">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-exclamation-triangle text-danger"></i>
@@ -132,9 +136,9 @@
         </div>
     </div>
 
-    <!-- Información del Punto y Próximos Eventos -->
+    <!-- Información del Punto (compacta) + Próximos Eventos -->
     <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-lg-5">
             <div class="card border-0 shadow-sm hover-lift h-100">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center gap-2">
@@ -151,7 +155,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-lg-7">
             <div class="card border-0 shadow-sm hover-lift h-100">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center justify-content-between">
@@ -175,27 +179,10 @@
         </div>
     </div>
 
-    <!-- Centros de Acopio y Últimos Movimientos -->
-    <div class="row g-3">
-        <div class="col-12 col-lg-4">
-            <div class="card border-0 shadow-sm hover-lift h-100">
-                <div class="card-header bg-white border-bottom">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-geo-alt text-info"></i>
-                        <h6 class="mb-0 fw-bold">Centros de Acopio</h6>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div id="centrosAcopio">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-info"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-lg-8">
-            <div class="card border-0 shadow-sm hover-lift h-100">
+    <!-- Últimos Movimientos - raised, full width -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm hover-lift">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-2">
@@ -211,6 +198,27 @@
                     <div id="ultimosMovimientos">
                         <div class="text-center py-3">
                             <div class="spinner-border spinner-border-sm text-success"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Centros de Acopio - al final, full width, contact card -->
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm hover-lift">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt text-info"></i>
+                        <h6 class="mb-0 fw-bold">Centros de Acopio</h6>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="centrosAcopio">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-info"></div>
                         </div>
                     </div>
                 </div>
