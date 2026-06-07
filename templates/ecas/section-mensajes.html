@@ -47,6 +47,9 @@
           </div>
         </div>
 
+        <!-- Indicador de escritura -->
+        <div class="chat-typing-indicator" id="chat-typing-indicator-eca"></div>
+
         <!-- Input de envío -->
         <div class="p-3 border-top bg-white">
           <form id="chat-form-eca" class="d-flex flex-column gap-1">
@@ -156,6 +159,21 @@
   .chat-bubble.msg-failed { opacity: 0.7; border-color: #dc3545 !important; background: #fff5f5 !important; }
   .chat-bubble.msg-failed .msg-send-status { font-size: .65rem; color: #dc3545; cursor: pointer; }
   .chat-bubble.msg-failed .msg-retry-btn { font-size: .65rem; color: #dc3545; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
+  .chat-typing-indicator {
+    font-size: .72rem; color: #6b7d6b; font-style: italic;
+    padding: 4px 16px; min-height: 26px; background: #f8faf9;
+  }
+  .chat-typing-dots { display: inline-flex; gap: 2px; margin-right: 4px; vertical-align: middle; }
+  .chat-typing-dots span {
+    display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+    background: #6b7d6b; animation: typingBounce 1.4s infinite;
+  }
+  .chat-typing-dots span:nth-child(2) { animation-delay: .2s; }
+  .chat-typing-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-4px); }
+  }
   .chat-unread-badge {
     position: absolute; top: 8px; right: 10px; font-size: .65rem; font-weight: 600;
     min-width: 18px; height: 18px; line-height: 18px; text-align: center;
@@ -168,6 +186,8 @@
   window.GESTOR_USER_ID = '{{ request.user.id }}';
   let currentChatIdEca = null;
   let currentCiudadanoNombre = '';
+  var _ecaTypingTimer = null;
+  var _ecaTypingHideTimer = null;
 
   // --- Utilidades de formato ---
   function formatRelativeTime(isoString) {
@@ -301,6 +321,17 @@
     currentWSEca.onmessage = function(event) {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === 'typing') {
+          if (String(data.user_id) !== String(window.GESTOR_USER_ID)) {
+            var el = document.getElementById('chat-typing-indicator-eca');
+            if (el) {
+              el.innerHTML = '<span class="chat-typing-dots"><span></span><span></span><span></span></span> ' + (data.user_name || currentCiudadanoNombre || 'Ciudadano') + ' está escribiendo...';
+              clearTimeout(_ecaTypingHideTimer);
+              _ecaTypingHideTimer = setTimeout(function() { el.innerHTML = ''; }, 2500);
+            }
+          }
+          return;
+        }
         if (data.message) {
           if (String(data.user_id) === String(window.GESTOR_USER_ID)) {
             removerBurbujasPendientesEca();
@@ -555,6 +586,14 @@
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
       if (charCount) charCount.textContent = (this.value.length || 0) + '/500';
+      if (currentWSEca && currentWSEca.readyState === 1) {
+        clearTimeout(_ecaTypingTimer);
+        _ecaTypingTimer = setTimeout(function() {
+          if (currentWSEca && currentWSEca.readyState === 1) {
+            currentWSEca.send(JSON.stringify({ type: 'typing' }));
+          }
+        }, 300);
+      }
     });
   })();
 
