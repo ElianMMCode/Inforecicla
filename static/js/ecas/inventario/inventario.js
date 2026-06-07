@@ -432,12 +432,7 @@
     function abrirPicker() {
         const modalEl = document.getElementById("inv-modal-picker");
         if (!modalEl) return;
-        document.getElementById("inv-picker-buscar").value = "";
-        document.getElementById("inv-picker-categoria").value = "";
-        document.getElementById("inv-picker-mostrar").value = "todos";
-        cargarCatalogo();
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        setTimeout(() => document.getElementById("inv-picker-buscar")?.focus(), 300);
     }
 
     function cargarCatalogo() {
@@ -766,6 +761,34 @@
 
         // Picker
         document.getElementById("inv-btn-abrir-picker")?.addEventListener("click", (e) => { e.preventDefault(); abrirPicker(); });
+        // Cualquier botón con data-bs-target="#inv-modal-picker" (incluido el
+        // verde "Agregar material nuevo" de la pestaña Inventario) abre el
+        // modal vía atributos data-*, pero Bootstrap NO llama a cargarCatalogo.
+        // Interceptamos el click para garantizar que se cargue el catálogo y
+        // se reseteen los filtros sin importar qué botón lo dispara.
+        document.querySelector("section[data-seccion='inventario']")?.addEventListener("click", (e) => {
+            const trigger = e.target.closest('[data-bs-target="#inv-modal-picker"]');
+            if (!trigger) return;
+            e.preventDefault();
+            abrirPicker();
+        });
+        // Reset + carga del catálogo cada vez que el modal se muestra,
+        // cubriendo también aperturas vía show.bs.modal (ej. JS imperativo).
+        const pickerModalEl = document.getElementById("inv-modal-picker");
+        if (pickerModalEl) {
+            pickerModalEl.addEventListener("show.bs.modal", () => {
+                const buscar = document.getElementById("inv-picker-buscar");
+                const cat = document.getElementById("inv-picker-categoria");
+                const mostrar = document.getElementById("inv-picker-mostrar");
+                if (buscar) buscar.value = "";
+                if (cat) cat.value = "";
+                if (mostrar) mostrar.value = "todos";
+                cargarCatalogo();
+            });
+            pickerModalEl.addEventListener("shown.bs.modal", () => {
+                setTimeout(() => document.getElementById("inv-picker-buscar")?.focus(), 50);
+            });
+        }
         ["inv-picker-buscar"].forEach((id) => document.getElementById(id)?.addEventListener("input", renderPicker));
         // inv-picker-categoria / inv-picker-mostrar están envueltos en Select2
         // (ver _initSelect2InSection). Usar _bindChange para que jQuery.on()
