@@ -160,3 +160,27 @@ function publicacionMostrarAlertaImagenes(alerta, mensaje) {
   alerta.classList.remove("d-none");
   alerta.scrollIntoView({ behavior: "smooth", block: "center" });
 }
+
+function publicacionBindEnvio({ formulario, camposValidacion, confirmar, antesDeEnviar }) {
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    evento.stopPropagation();
+    if (typeof antesDeEnviar === "function") {
+      const resultado = antesDeEnviar(formulario);
+      if (resultado === false) {
+        return;
+      }
+    }
+    if (!formulario.checkValidity()) {
+      formulario.classList.add("was-validated");
+      publicacionMostrarErroresSwal(publicacionObtenerErroresFormulario(camposValidacion));
+      return;
+    }
+    formulario.classList.add("was-validated");
+    publicacionConfirmarEnvioSwal(confirmar).then((resultado) => {
+      if (resultado.isConfirmed) {
+        formulario.submit();
+      }
+    });
+  });
+}

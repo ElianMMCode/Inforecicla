@@ -1,16 +1,5 @@
-function registrarValidacion(campo, handler) {
-  if (!campo) {
-    return;
-  }
-
-  const eventName = campo.tagName === "SELECT" ? "change" : "input";
-  campo.addEventListener(eventName, handler);
-  campo.addEventListener("blur", () => actualizarEstadoCampo(campo));
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector(".needs-validation");
-
   if (!form) {
     return;
   }
@@ -37,59 +26,17 @@ document.addEventListener("DOMContentLoaded", () => {
     fechaNacimientoInput,
   ].filter(Boolean);
 
-  const nombresRegex = /^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$/;
-  const tiposDocumentoValidos = new Set(["CC", "TI", "CE", "PA", "NIT"]);
-  const tiposUsuarioValidos = new Set(["ADM", "CIU", "GECA"]);
-  const estadosValidos = new Set(["activo", "inactivo"]);
-
-  const hoy = new Date();
-  const fechaMinima = new Date(hoy);
+  const fechaMinima = new Date();
   fechaMinima.setFullYear(fechaMinima.getFullYear() - 100);
-  const fechaMaxima = new Date(hoy);
+  const fechaMaxima = new Date();
   fechaMaxima.setFullYear(fechaMaxima.getFullYear() - 18);
-
-  function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaximo, mensajePatron) {
-    if (!campo) {
-      return true;
-    }
-
-    const valor = campo.value.trim();
-
-    if (!valor) {
-      campo.setCustomValidity(campo.required ? "Este campo es obligatorio." : "");
-      actualizarEstadoCampo(campo);
-      return !campo.required;
-    }
-
-    if (valor.length < minimo) {
-      campo.setCustomValidity(mensajeMinimo);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    if (valor.length > maximo) {
-      campo.setCustomValidity(mensajeMaximo);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    if (patron && !patron.test(valor)) {
-      campo.setCustomValidity(mensajePatron);
-      actualizarEstadoCampo(campo);
-      return false;
-    }
-
-    campo.setCustomValidity("");
-    actualizarEstadoCampo(campo);
-    return true;
-  }
 
   function validarNombres() {
     return validarTexto(
       nombresInput,
-      3,
-      30,
-      nombresRegex,
+      USUARIO_LIMITE_NOMBRES_MIN,
+      USUARIO_LIMITE_NOMBRES_MAX,
+      USUARIO_PATTERN_NOMBRES,
       "Los nombres deben tener al menos 3 caracteres.",
       "Los nombres no pueden superar 30 caracteres.",
       "Los nombres solo pueden contener letras, espacios, guiones o apóstrofes.",
@@ -99,49 +46,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function validarApellidos() {
     return validarTexto(
       apellidosInput,
-      3,
-      40,
-      nombresRegex,
+      USUARIO_LIMITE_APELLIDOS_MIN,
+      USUARIO_LIMITE_APELLIDOS_MAX,
+      USUARIO_PATTERN_NOMBRES,
       "Los apellidos deben tener al menos 3 caracteres.",
       "Los apellidos no pueden superar 40 caracteres.",
       "Los apellidos solo pueden contener letras, espacios, guiones o apóstrofes.",
     );
-  }
-
-  function validarTipoDocumento() {
-    if (!tipoDocumentoInput) {
-      return true;
-    }
-
-    const valor = String(tipoDocumentoInput.value || "").trim();
-    const esValido = valor === "" || tiposDocumentoValidos.has(valor);
-    tipoDocumentoInput.setCustomValidity(esValido ? "" : "Selecciona un tipo de documento válido.");
-    actualizarEstadoCampo(tipoDocumentoInput);
-    return esValido;
-  }
-
-  function validarTipoUsuario() {
-    if (!tipoUsuarioInput) {
-      return true;
-    }
-
-    const valor = String(tipoUsuarioInput.value || "").trim();
-    const esValido = valor === "" || tiposUsuarioValidos.has(valor);
-    tipoUsuarioInput.setCustomValidity(esValido ? "" : "Selecciona un tipo de usuario válido.");
-    actualizarEstadoCampo(tipoUsuarioInput);
-    return esValido;
-  }
-
-  function validarEstadoUsuario() {
-    if (!estadoUsuarioInput) {
-      return true;
-    }
-
-    const valor = String(estadoUsuarioInput.value || "").trim().toLowerCase();
-    const esValido = estadosValidos.has(valor);
-    estadoUsuarioInput.setCustomValidity(esValido ? "" : "Selecciona un estado válido.");
-    actualizarEstadoCampo(estadoUsuarioInput);
-    return esValido;
   }
 
   function validarFormulario() {
@@ -149,25 +60,57 @@ document.addEventListener("DOMContentLoaded", () => {
     validarApellidos();
     validarCelular(celularInput);
     validarLocalidad(localidadInput, "Selecciona una localidad válida o deja la opción en blanco.");
-    validarTipoDocumento();
+    validarOpcionSeleccion(
+      tipoDocumentoInput,
+      USUARIO_TIPOS_DOCUMENTO_VALIDOS,
+      "Selecciona un tipo de documento válido.",
+    );
     validarNumeroDocumento(numeroDocumentoInput);
-    validarTipoUsuario();
-    validarEstadoUsuario();
-    validarFechaNacimientoRango(fechaNacimientoInput, fechaMinima, fechaMaxima, "La fecha debe corresponder a una persona entre 18 y 100 años.");
-
+    validarOpcionSeleccion(
+      tipoUsuarioInput,
+      USUARIO_TIPOS_USUARIO_VALIDOS,
+      "Selecciona un tipo de usuario válido.",
+    );
+    validarOpcionSeleccion(
+      estadoUsuarioInput,
+      USUARIO_ESTADOS_VALIDOS,
+      "Selecciona un estado válido.",
+      { caseSensitive: false },
+    );
+    validarFechaNacimientoRango(
+      fechaNacimientoInput,
+      fechaMinima,
+      fechaMaxima,
+      "La fecha debe corresponder a una persona entre 18 y 100 años.",
+    );
     campos.forEach((campo) => actualizarEstadoCampo(campo));
     return form.checkValidity();
   }
 
-  registrarValidacion(nombresInput, validarNombres);
-  registrarValidacion(apellidosInput, validarApellidos);
-  registrarValidacion(celularInput, () => validarCelular(celularInput));
-  registrarValidacion(localidadInput, () => validarLocalidad(localidadInput, "Selecciona una localidad válida o deja la opción en blanco."));
-  registrarValidacion(tipoDocumentoInput, validarTipoDocumento);
-  registrarValidacion(numeroDocumentoInput, () => validarNumeroDocumento(numeroDocumentoInput));
-  registrarValidacion(tipoUsuarioInput, validarTipoUsuario);
-  registrarValidacion(estadoUsuarioInput, validarEstadoUsuario);
-  registrarValidacion(fechaNacimientoInput, () => validarFechaNacimientoRango(fechaNacimientoInput, fechaMinima, fechaMaxima, "La fecha debe corresponder a una persona entre 18 y 100 años."));
+  registrarValidacionCampo(nombresInput, validarNombres);
+  registrarValidacionCampo(apellidosInput, validarApellidos);
+  registrarValidacionCampo(celularInput, () => validarCelular(celularInput));
+  registrarValidacionCampo(localidadInput, () =>
+    validarLocalidad(localidadInput, "Selecciona una localidad válida o deja la opción en blanco."),
+  );
+  registrarValidacionCampo(tipoDocumentoInput, () =>
+    validarOpcionSeleccion(tipoDocumentoInput, USUARIO_TIPOS_DOCUMENTO_VALIDOS, "Selecciona un tipo de documento válido."),
+  );
+  registrarValidacionCampo(numeroDocumentoInput, () => validarNumeroDocumento(numeroDocumentoInput));
+  registrarValidacionCampo(tipoUsuarioInput, () =>
+    validarOpcionSeleccion(tipoUsuarioInput, USUARIO_TIPOS_USUARIO_VALIDOS, "Selecciona un tipo de usuario válido."),
+  );
+  registrarValidacionCampo(estadoUsuarioInput, () =>
+    validarOpcionSeleccion(estadoUsuarioInput, USUARIO_ESTADOS_VALIDOS, "Selecciona un estado válido.", { caseSensitive: false }),
+  );
+  registrarValidacionCampo(fechaNacimientoInput, () =>
+    validarFechaNacimientoRango(
+      fechaNacimientoInput,
+      fechaMinima,
+      fechaMaxima,
+      "La fecha debe corresponder a una persona entre 18 y 100 años.",
+    ),
+  );
 
   form.addEventListener(
     "invalid",
@@ -181,26 +124,19 @@ document.addEventListener("DOMContentLoaded", () => {
   campos.forEach((campo) => actualizarEstadoCampo(campo));
   validarFormulario();
 
-  form.addEventListener("submit", (evento) => {
-    if (!validarFormulario()) {
-      evento.preventDefault();
-      evento.stopPropagation();
-      form.classList.add("was-validated");
-      mostrarErroresSwal(obtenerErroresFormulario(campos));
-      return;
-    }
-
-    evento.preventDefault();
-    form.classList.add("was-validated");
-
-    confirmarEnvioSwal({
+  bindSubmitUsuario({
+    formulario: form,
+    camposValidacion: campos,
+    confirmar: {
       title: "¿Guardar cambios?",
       text: "Los datos están completos y listos para actualizarse.",
       confirmText: "Sí, guardar",
-    }).then((resultado) => {
-      if (resultado.isConfirmed) {
-        form.submit();
+    },
+    antesDeEnviar: () => {
+      if (!validarFormulario()) {
+        return false;
       }
-    });
+      return true;
+    },
   });
 });
