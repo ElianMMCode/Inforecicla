@@ -49,15 +49,21 @@
 
         <!-- Input de envío -->
         <div class="p-3 border-top bg-white">
-          <form id="chat-form-eca" class="d-flex align-items-center gap-2">
+          <form id="chat-form-eca" class="d-flex flex-column gap-1">
             {% csrf_token %}
-            <input type="text" id="chat-input-eca" class="form-control"
-                   placeholder="Escribe tu respuesta..." required maxlength="500" autocomplete="off"
-                   style="border-radius: 20px; border-color: #d0ead8;">
-            <button type="submit" class="btn btn-success d-flex align-items-center justify-content-center flex-shrink-0"
-                    style="width:40px;height:40px;padding:0;border-radius:50%;">
-              <i class="bi bi-send-fill"></i>
-            </button>
+            <div class="d-flex align-items-end gap-2">
+              <textarea id="chat-input-eca" class="form-control chat-textarea"
+                        placeholder="Escribe tu respuesta..." maxlength="500" rows="1"
+                        style="border-radius: 16px; border-color: #d0ead8;"></textarea>
+              <button type="submit" class="btn btn-success d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:40px;height:40px;padding:0;border-radius:50%;">
+                <i class="bi bi-send-fill"></i>
+              </button>
+            </div>
+            <div class="d-flex align-items-center gap-2 px-1">
+              <small class="text-muted chat-input-hint">Enter para enviar, Shift+Enter para nueva línea</small>
+              <small class="text-muted ms-auto chat-char-count" id="chat-char-count-eca">0/500</small>
+            </div>
           </form>
         </div>
       </div>
@@ -139,6 +145,12 @@
   .skeleton-bubble.sk-narrow { width: 40%; }
   .skeleton-sidebar-item { height: 50px; margin: 4px 12px; border-radius: 12px; }
   .chat-empty-state, .chat-error-state { max-width: 280px; margin: 0 auto; }
+  .chat-textarea {
+    resize: none; overflow-y: hidden; min-height: 38px; max-height: 120px;
+    line-height: 1.5; padding: 8px 14px; font-size: .9rem;
+  }
+  .chat-char-count { font-size: .68rem; min-width: 42px; text-align: right; }
+  .chat-input-hint { font-size: .68rem; }
 </style>
 
 <script>
@@ -454,6 +466,25 @@
     }).catch(() => alert('Error de conexión.'));
   }
 
+  // --- Setup textarea ---
+  (function() {
+    var textarea = document.getElementById('chat-input-eca');
+    var charCount = document.getElementById('chat-char-count-eca');
+    var form = document.getElementById('chat-form-eca');
+    if (!textarea) return;
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    });
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      if (charCount) charCount.textContent = (this.value.length || 0) + '/500';
+    });
+  })();
+
   // ----- Enviar mensaje (ahora con WebSocket optimista + fallback AJAX) -----
   document.getElementById('chat-form-eca').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -467,8 +498,9 @@
       try {
         currentWSEca.send(JSON.stringify({ message: msg }));
         input.value = '';
+        input.style.height = '';
         input.disabled = false;
-        // El mensaje vendrá por onmessage (pero podríamos hacer optimista si necesitás UX+)
+        if (document.getElementById('chat-char-count-eca')) document.getElementById('chat-char-count-eca').textContent = '0/500';
       } catch (err) {
         errorMsg = 'Error al enviar por WebSocket';
         input.disabled = false;
@@ -487,6 +519,8 @@
         });
         if (resp.ok) {
           input.value = '';
+          input.style.height = '';
+          if (document.getElementById('chat-char-count-eca')) document.getElementById('chat-char-count-eca').textContent = '0/500';
           cargarMensajesEca(currentChatIdEca);
         } else {
           try {
@@ -505,7 +539,7 @@
       const errorDiv = document.createElement('div');
       errorDiv.className = 'text-danger small mt-2';
       errorDiv.innerHTML = errorMsg;
-      input.parentElement.appendChild(errorDiv);
+      document.getElementById('chat-form-eca').appendChild(errorDiv);
       setTimeout(()=>errorDiv.remove(), 3000);
     }
   });
