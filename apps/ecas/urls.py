@@ -8,6 +8,7 @@ from apps.ecas.views import (
     toggle_visible,
     crear_centro,
     actualizar_centro,
+    resumen_data_json,
 )
 from apps.inventory.views import (
     buscar_materiales_catalogo_view,
@@ -40,6 +41,7 @@ urlpatterns = [
     path("perfil/", render_seccion, {"seccion": "perfil"}, name="perfil"),
     path("inventario/", render_seccion, {"seccion": "inventario"}, name="inventario"),
     path("resumen/", render_seccion, {"seccion": "resumen"}, name="resumen"),
+    path("resumen/data/", resumen_data_json, name="resumen_data_json"),
     path("<str:seccion>/", render_seccion, name="render_seccion"),
     path("editar-perfil/<str:id>/", editar_perfil_gestor, name="editar_perfil"),
     path("editar-perfil/<str:id>/guardar/", actualizar_perfil_gestor, name="actualizar_perfil"),
