@@ -49,8 +49,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         Paso 3: Recepcion de mensajes.
         - Valida payload y autenticacion.
-        - Persiste el mensaje en la base de datos usando user/contexto actual y el chat_id.
-        - Emite un broadcast a todo el grupo (todos los conectados al chat), desacoplando logica de frontend.
+        - Delega en _handle_typing o _handle_message segun el tipo de evento.
         - Soporta eventos de typing indicador.
         """
         try:
@@ -63,44 +62,52 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
 
             if data.get('type') == 'typing':
-                user = self.scope.get('user', None)
-                if user and getattr(user, 'is_authenticated', False):
-                    if hasattr(self, 'room_group_name') and self.room_group_name:
-                        await self.channel_layer.group_send(
-                            self.room_group_name,
-                            {
-                                'type': 'chat_typing',
-                                'user_id': str(getattr(user, 'id', None)),
-                                'user_name': str(getattr(user, 'nombres', '')),
-                            }
-                        )
+                await self._handle_typing(data)
                 return
 
-            message = data.get('message')
-            if not message:
-                await self.send(text_data=json.dumps({
-                    'error': 'message-required',
-                    'detail': 'No message provided.'
-                }))
-                return
-            user = self.scope.get('user', None)
-            if not user or not getattr(user, 'is_authenticated', False):
-                await self.send(text_data=json.dumps({'error': 'not-authenticated'}))
-                return
-            chat_id = getattr(self, 'chat_id', None)
-            if chat_id:
-                await self.save_message(chat_id, user, message)
-            if hasattr(self, 'room_group_name') and self.room_group_name:
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        'type': 'chat_message',
-                        'message': message,
-                        'user_id': str(getattr(user, 'id', None)),
-                    }
-                )
+            await self._handle_message(data)
         except Exception as exc:
             await self.send(text_data=json.dumps({'error': 'receive-error', 'detail': str(exc)}))
+
+    async def _handle_typing(self, data):
+        user = self.scope.get('user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return
+        if not hasattr(self, 'room_group_name') or not self.room_group_name:
+            return
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_typing',
+                'user_id': str(getattr(user, 'id', None)),
+                'user_name': str(getattr(user, 'nombres', '')),
+            }
+        )
+
+    async def _handle_message(self, data):
+        message = data.get('message')
+        if not message:
+            await self.send(text_data=json.dumps({
+                'error': 'message-required',
+                'detail': 'No message provided.'
+            }))
+            return
+        user = self.scope.get('user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            await self.send(text_data=json.dumps({'error': 'not-authenticated'}))
+            return
+        chat_id = getattr(self, 'chat_id', None)
+        if chat_id:
+            await self.save_message(chat_id, user, message)
+        if hasattr(self, 'room_group_name') and self.room_group_name:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': message,
+                    'user_id': str(getattr(user, 'id', None)),
+                }
+            )
 
     async def chat_message(self, event):
         """
