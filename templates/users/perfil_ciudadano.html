@@ -125,6 +125,11 @@
         .chat-bubble.msg-failed { opacity: 0.7; border-color: #dc3545 !important; background: #fff5f5 !important; }
         .chat-bubble.msg-failed .msg-send-status { font-size: .65rem; color: #dc3545; cursor: pointer; }
         .chat-bubble.msg-failed .msg-retry-btn { font-size: .65rem; color: #dc3545; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
+        .chat-unread-badge {
+            position: absolute; top: 8px; right: 10px; font-size: .65rem; font-weight: 600;
+            min-width: 18px; height: 18px; line-height: 18px; text-align: center;
+            background: #dc3545; color: #fff; border-radius: 50%;
+        }
 
     </style>
     {% include 'partials/password_styles.html' %}
@@ -778,7 +783,7 @@
             return;
         }
         sidebar.innerHTML = chatsCiudadano.map(chat => `
-            <div class="chat-sidebar-item d-flex align-items-center gap-3"
+            <div class="chat-sidebar-item d-flex align-items-center gap-3 position-relative"
                 data-chat-id="${chat.id}" data-punto-id="${chat.punto}" role="button">
                 <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
                     <i class="bi bi-geo-alt-fill text-white" style="font-size:.8rem;"></i>
@@ -787,9 +792,9 @@
                     <div class="fw-semibold small text-truncate">${chat.punto_nombre || ('Punto #' + chat.punto)}</div>
                     <div class="text-muted" style="font-size:.7rem;">${chat.created_at ? (new Date(chat.created_at)).toLocaleDateString('es-ES') : ''}</div>
                 </div>
+                ${chat.no_leidos ? '<span class="chat-unread-badge" data-chat-id="' + chat.id + '">' + (chat.no_leidos > 99 ? '99+' : chat.no_leidos) + '</span>' : ''}
             </div>
         `).join('');
-        // Marca el chat activo si corresponde
         sidebar.querySelectorAll('[data-chat-id]').forEach(item => {
             if (item.dataset.chatId === String(currentChatId)) {
                 item.classList.add('active');
@@ -799,6 +804,8 @@
             item.onclick = function() {
                 sidebar.querySelectorAll('[data-chat-id]').forEach(b => b.classList.remove('active'));
                 item.classList.add('active');
+                var badge = item.querySelector('.chat-unread-badge');
+                if (badge) badge.remove();
                 cargarMensajesDePunto(item.dataset.puntoId);
             };
         });

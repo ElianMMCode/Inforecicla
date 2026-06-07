@@ -156,6 +156,11 @@
   .chat-bubble.msg-failed { opacity: 0.7; border-color: #dc3545 !important; background: #fff5f5 !important; }
   .chat-bubble.msg-failed .msg-send-status { font-size: .65rem; color: #dc3545; cursor: pointer; }
   .chat-bubble.msg-failed .msg-retry-btn { font-size: .65rem; color: #dc3545; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
+  .chat-unread-badge {
+    position: absolute; top: 8px; right: 10px; font-size: .65rem; font-weight: 600;
+    min-width: 18px; height: 18px; line-height: 18px; text-align: center;
+    background: #dc3545; color: #fff; border-radius: 50%;
+  }
 </style>
 
 <script>
@@ -222,7 +227,7 @@
           return;
         }
         sidebar.innerHTML = data.map(chat => `
-          <div class="chat-sidebar-item-eca d-flex align-items-center gap-3 ${String(chat.id) === String(currentChatIdEca) ? 'active' : ''}"
+          <div class="chat-sidebar-item-eca d-flex align-items-center gap-3 position-relative ${String(chat.id) === String(currentChatIdEca) ? 'active' : ''}"
                data-chat-id="${chat.id}" data-ciudadano-id="${chat.ciudadano}"
                data-ciudadano-nombre="${chat.ciudadano_nombre || 'Ciudadano'}" role="button">
             <div class="rounded-circle bg-success d-flex align-items-center justify-content-center flex-shrink-0"
@@ -233,6 +238,7 @@
               <div class="fw-semibold small text-truncate">${chat.ciudadano_nombre || 'Ciudadano'}</div>
               <div class="text-muted" style="font-size:.7rem;">${chat.created_at ? new Date(chat.created_at).toLocaleDateString('es-ES') : ''}</div>
             </div>
+            ${chat.no_leidos ? '<span class="chat-unread-badge" data-chat-id="' + chat.id + '">' + (chat.no_leidos > 99 ? '99+' : chat.no_leidos) + '</span>' : ''}
           </div>
         `).join('');
 
@@ -243,6 +249,8 @@
             currentChatIdEca = item.dataset.chatId;
             currentCiudadanoNombre = item.dataset.ciudadanoNombre;
             document.getElementById('chat-titulo-ciudadano').textContent = currentCiudadanoNombre;
+            var badge = item.querySelector('.chat-unread-badge');
+            if (badge) badge.remove();
             cargarMensajesEca(currentChatIdEca);
           });
         });
