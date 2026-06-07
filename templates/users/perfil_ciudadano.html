@@ -97,6 +97,23 @@
         .date-separator::before, .date-separator::after {
             content: ''; flex: 1; height: 1px; background: #dce4dc;
         }
+        @keyframes skeletonShimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: 200px 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #e9f0ec 25%, #dce8e1 50%, #e9f0ec 75%);
+            background-size: 200px 100%;
+            animation: skeletonShimmer 1.5s ease-in-out infinite;
+            border-radius: 8px;
+        }
+        .skeleton-bubble { height: 36px; margin-bottom: 10px; border-radius: 1.1rem; }
+        .skeleton-bubble.sk-right { width: 65%; margin-left: auto; }
+        .skeleton-bubble.sk-left { width: 55%; }
+        .skeleton-bubble.sk-wide { width: 80%; }
+        .skeleton-bubble.sk-narrow { width: 40%; }
+        .skeleton-sidebar-item { height: 50px; margin: 4px 12px; border-radius: 12px; }
+        .chat-empty-state, .chat-error-state { max-width: 280px; margin: 0 auto; }
 
     </style>
     {% include 'partials/password_styles.html' %}
@@ -598,12 +615,10 @@
                                     </h6>
                                 </div>
                                 <div id="chat-sidebar-list" class="flex-grow-1" style="overflow-y: auto;">
-                                    <div class="text-center text-muted py-5 small px-3">
-                                        <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:48px;height:48px;">
-                                            <i class="bi bi-chat-dots text-success" style="font-size:1.4rem;"></i>
-                                        </div>
-                                        <p class="mb-0">Aún no tienes chats iniciados.<br>Busca un punto ECA arriba.</p>
-                                    </div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:8px 12px;"></div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
+                                    <div class="skeleton skeleton-sidebar-item" style="margin:4px 12px;"></div>
                                 </div>
                             </div>
 
@@ -721,6 +736,22 @@
         return Math.abs(new Date(isoA) - new Date(isoB)) / 60000;
     }
 
+    // --- Skeleton loaders ---
+    function showSkeletonSidebar(container) {
+        var html = '';
+        for (var i = 0; i < 4; i++) { html += '<div class="skeleton skeleton-sidebar-item"></div>'; }
+        container.innerHTML = html;
+    }
+    function showSkeletonMessages(container) {
+        container.innerHTML =
+            '<div class="skeleton skeleton-bubble sk-left" style="width:55%;"></div>' +
+            '<div class="skeleton skeleton-bubble sk-left sk-wide" style="width:70%;height:60px;"></div>' +
+            '<div class="skeleton skeleton-bubble sk-right" style="width:65%;"></div>' +
+            '<div class="skeleton skeleton-bubble sk-right sk-narrow" style="width:45%;"></div>' +
+            '<div class="skeleton skeleton-bubble sk-left" style="width:50%;height:24px;"></div>' +
+            '<div class="skeleton skeleton-bubble sk-right" style="width:60%;height:48px;"></div>';
+    }
+
     // Renderiza el historial de chats en el sidebar
     function renderHistorialChats() {
         const sidebar = document.getElementById('chat-sidebar-list');
@@ -805,15 +836,17 @@
     }
 
     async function cargarChatsCiudadano() {
-        // Carga todos los chats del ciudadano (necesitamos su relación punto)
-        // NOTA: ajustar la URL base si se monta diferente
+        const sidebar = document.getElementById('chat-sidebar-list');
+        if (sidebar && !chatsCiudadano.length && !sidebar.querySelector('.chat-sidebar-item')) {
+            showSkeletonSidebar(sidebar);
+        }
         const res = await fetch('/mensajes/', { credentials: 'same-origin' });
         if(res.ok) {
             chatsCiudadano = await res.json();
         } else {
             chatsCiudadano = [];
         }
-        renderHistorialChats(); // <-- Actualiza el sidebar
+        renderHistorialChats();
     }
 
     let currentChatId = null;
@@ -836,13 +869,14 @@
     }
 
     async function cargarMensajesHistorial(chatId) {
-        const url = `/mensajes/${chatId}/mensajes/`;
+        const url = '/mensajes/' + chatId + '/mensajes/';
+        showSkeletonMessages(chatMensajes);
         const res = await fetch(url, { credentials: 'same-origin' });
         if(res.ok) {
             const mensajes = await res.json();
             renderMensajes(mensajes);
         } else {
-            chatMensajes.innerHTML = '<div class="text-danger small">No se pudo cargar el historial de mensajes.</div>';
+            chatMensajes.innerHTML = '<div class="chat-error-state text-center py-4"><div class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>No se pudo cargar el historial de mensajes.</div><button class="btn btn-outline-success btn-sm" onclick="cargarMensajesHistorial(' + chatId + ')"><i class="bi bi-arrow-repeat me-1"></i>Reintentar</button></div>';
         }
     }
 
