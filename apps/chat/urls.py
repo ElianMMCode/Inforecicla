@@ -4,12 +4,14 @@ from .views import (
     MensajeListCreateView,
     MensajeUpdateView,
     PuntoChatListView,
+    MarcarLeidosView,
 )
 
 # Patrones de URL para la app de chat:
 # - "" (GET, POST): Lista y crea chats.
 # - "<int:chat_id>/mensajes/" (GET, POST): Lista y crea mensajes para un chat específico.
 # - "<int:chat_id>/mensajes/<int:mensaje_id>/editar/" (PUT, PATCH): Actualiza un mensaje específico de un chat.
+# - "<int:chat_id>/leer/" (POST): Marca mensajes como leídos.
 # - "punto/" (GET): Lista puntos de chat.
 
 urlpatterns = [
@@ -23,6 +25,11 @@ urlpatterns = [
         "<int:chat_id>/mensajes/<int:mensaje_id>/editar/",
         MensajeUpdateView.as_view(),
         name="mensaje-update",
+    ),
+    path(
+        "<int:chat_id>/leer/",
+        MarcarLeidosView.as_view(),
+        name="marcar-leidos",
     ),
     path("punto/", PuntoChatListView.as_view(), name="punto-chat-list"),
 ]
