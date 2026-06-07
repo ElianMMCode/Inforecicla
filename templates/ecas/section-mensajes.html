@@ -265,6 +265,7 @@
       .then(r => r.json())
       .then(msgs => {
         renderMensajesEca(msgs);
+        marcarLeidosEca(chatId);
         iniciarWSEca(chatId);
       })
       .catch(() => {
@@ -605,6 +606,17 @@
       setTimeout(function() { errorDiv.remove(); }, 3000);
     }
   });
+
+  function marcarLeidosEca(chatId) {
+    fetch('/mensajes/' + chatId + '/leer/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+      },
+      credentials: 'same-origin',
+    }).catch(function() {});
+  }
 
   // ----- Inicializar al cargar -----
   cargarChatsEca();

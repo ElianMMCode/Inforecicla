@@ -916,6 +916,7 @@
         if(res.ok) {
             const mensajes = await res.json();
             renderMensajes(mensajes);
+            marcarLeidos(chatId);
         } else {
             chatMensajes.innerHTML = '<div class="chat-error-state text-center py-4"><div class="text-danger small mb-2"><i class="bi bi-exclamation-triangle me-1"></i>No se pudo cargar el historial de mensajes.</div><button class="btn btn-outline-success btn-sm" onclick="cargarMensajesHistorial(' + chatId + ')"><i class="bi bi-arrow-repeat me-1"></i>Reintentar</button></div>';
         }
@@ -1185,6 +1186,16 @@
         }).catch(() => alert('Error de conexión.'));
     }
 
+    function marcarLeidos(chatId) {
+        fetch('/mensajes/' + chatId + '/leer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': (document.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '',
+            },
+            credentials: 'same-origin',
+        }).catch(function() {});
+    }
 
     if(chatSelect) {
         chatSelect.addEventListener('change', function() {
