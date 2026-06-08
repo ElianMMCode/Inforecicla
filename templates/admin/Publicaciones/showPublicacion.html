@@ -70,6 +70,7 @@
                         <video class="w-100 rounded" controls preload="metadata"
                                {% if publicacion.video_thumbnail %}poster="{{ publicacion.video_thumbnail.url }}"{% endif %}>
                             <source src="{{ publicacion.video.url }}">
+                            <track kind="captions" label="No disponible" srclang="es">
                         </video>
                     </div>
                     {% endif %}
@@ -78,7 +79,7 @@
                     <div class="mb-4">
                         <div class="d-flex flex-wrap gap-2">
                             {% for img in publicacion.imagenes.all %}
-                            <img src="{{ img.imagen.url }}" alt="{{ img.descripcion|default:'Imagen' }}" class="img-thumbnail" style="max-height:200px;object-fit:cover;">
+                            <img src="{{ img.imagen.url }}" alt="{{ img.descripcion }}" class="img-thumbnail" style="max-height:200px;object-fit:cover;">
                             {% endfor %}
                         </div>
                     </div>
