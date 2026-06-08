@@ -44,6 +44,64 @@ function mostrarErroresSwal(errores) {
     });
 }
 
+function _recolectarErrores(form) {
+    var errores = [];
+    var invalidFields = [];
+    var campos = form.querySelectorAll('[required], [pattern], [minlength]');
+    for (var i = 0; i < campos.length; i++) {
+        if (!campos[i].checkValidity()) {
+            var msg = _mensajeValidacionES(campos[i]);
+            if (msg) {
+                errores.push(msg);
+                invalidFields.push({ field: campos[i], msg: msg });
+            }
+        }
+    }
+    return { errores: errores, invalidFields: invalidFields };
+}
+
+function _marcarCamposInvalidos(invalidFields) {
+    for (var j = 0; j < invalidFields.length; j++) {
+        var item = invalidFields[j];
+        item.field.classList.add('is-invalid');
+        var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
+        if (contenedor) {
+            var fb = contenedor.querySelector('.invalid-feedback');
+            if (fb) fb.textContent = item.msg;
+        }
+    }
+}
+
+function _mostrarErroresYMarcar(form, invalidFields) {
+    var result = _recolectarErrores(form);
+    if (result.errores.length === 0) return false;
+    var prom = mostrarErroresSwal(result.errores);
+    if (prom && prom.then) {
+        (function (inv) { prom.then(function () { _marcarCamposInvalidos(inv); }); })(result.invalidFields);
+    }
+    return true;
+}
+
+function _vincularValidacionEnVivo(form) {
+    form.addEventListener('invalid', function (e) { e.preventDefault(); }, true);
+    var campos = form.querySelectorAll('input, select, textarea');
+    for (var i = 0; i < campos.length; i++) {
+        (function (campo) {
+            var eventName = campo.tagName === 'SELECT' ? 'change' : 'input';
+            campo.addEventListener(eventName, function () {
+                var valido = _validarCampo(campo);
+                campo.classList.toggle('is-valid', valido);
+                campo.classList.toggle('is-invalid', !valido && (campo.value.trim() !== '' || campo.required));
+            });
+            campo.addEventListener('blur', function () {
+                var valido = _validarCampo(campo);
+                campo.classList.toggle('is-valid', valido);
+                campo.classList.toggle('is-invalid', !valido && (campo.value.trim() !== '' || campo.required));
+            });
+        })(campos[i]);
+    }
+}
+
 function initModalForm(formId, validarFn) {
     var form = document.getElementById(formId);
     if (!form) return;
@@ -55,68 +113,14 @@ function initModalForm(formId, validarFn) {
         if (typeof validarFn === 'function') {
             if (!validarFn(form)) {
                 form.classList.add('was-validated');
-                var errores = [];
-                var invalidFields = [];
-                var campos = form.querySelectorAll('[required], [pattern], [minlength]');
-                for (var i = 0; i < campos.length; i++) {
-                    if (!campos[i].checkValidity()) {
-                        var msg = _mensajeValidacionES(campos[i]);
-                        if (msg) {
-                            errores.push(msg);
-                            invalidFields.push({ field: campos[i], msg: msg });
-                        }
-                    }
-                }
-                var prom = mostrarErroresSwal(errores);
-                if (prom && prom.then) {
-                    (function (inv) {
-                        prom.then(function () {
-                            for (var j = 0; j < inv.length; j++) {
-                                var item = inv[j];
-                                item.field.classList.add('is-invalid');
-                                var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
-                                if (contenedor) {
-                                    var fb = contenedor.querySelector('.invalid-feedback');
-                                    if (fb) fb.textContent = item.msg;
-                                }
-                            }
-                        });
-                    })(invalidFields);
-                }
+                _mostrarErroresYMarcar(form);
                 return;
             }
         }
 
         if (!form.checkValidity()) {
             form.classList.add('was-validated');
-            var errores2 = [];
-            var invalidFields2 = [];
-            var campos2 = form.querySelectorAll('[required], [pattern], [minlength]');
-            for (var i = 0; i < campos2.length; i++) {
-                if (!campos2[i].checkValidity()) {
-                    var msg2 = _mensajeValidacionES(campos2[i]);
-                    if (msg2) {
-                        errores2.push(msg2);
-                        invalidFields2.push({ field: campos2[i], msg: msg2 });
-                    }
-                }
-            }
-            var prom2 = mostrarErroresSwal(errores2);
-            if (prom2 && prom2.then) {
-                (function (inv) {
-                    prom2.then(function () {
-                        for (var j = 0; j < inv.length; j++) {
-                            var item = inv[j];
-                            item.field.classList.add('is-invalid');
-                            var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
-                            if (contenedor) {
-                                var fb = contenedor.querySelector('.invalid-feedback');
-                                if (fb) fb.textContent = item.msg;
-                            }
-                        }
-                    });
-                })(invalidFields2);
-            }
+            _mostrarErroresYMarcar(form);
             return;
         }
 
@@ -138,24 +142,7 @@ function initModalForm(formId, validarFn) {
         });
     });
 
-    form.addEventListener('invalid', function (e) { e.preventDefault(); }, true);
-
-    var campos = form.querySelectorAll('input, select, textarea');
-    for (var i = 0; i < campos.length; i++) {
-        (function (campo) {
-            var eventName = campo.tagName === 'SELECT' ? 'change' : 'input';
-            campo.addEventListener(eventName, function () {
-                var valido = _validarCampo(campo);
-                campo.classList.toggle('is-valid', valido);
-                campo.classList.toggle('is-invalid', !valido && (campo.value.trim() !== '' || campo.required));
-            });
-            campo.addEventListener('blur', function () {
-                var valido = _validarCampo(campo);
-                campo.classList.toggle('is-valid', valido);
-                campo.classList.toggle('is-invalid', !valido && (campo.value.trim() !== '' || campo.required));
-            });
-        })(campos[i]);
-    }
+    _vincularValidacionEnVivo(form);
 }
 
 var MARCAR_ERRORES = {
@@ -270,34 +257,7 @@ function initModalFormAjax(formId, redirectUrl, validarFn) {
 
         if (!form.checkValidity()) {
             form.classList.add('was-validated');
-            var errores = [];
-            var invalidFields = [];
-            var campos = form.querySelectorAll('[required], [pattern], [minlength]');
-            for (var i = 0; i < campos.length; i++) {
-                if (!campos[i].checkValidity()) {
-                    var msg = _mensajeValidacionES(campos[i]);
-                    if (msg) {
-                        errores.push(msg);
-                        invalidFields.push({ field: campos[i], msg: msg });
-                    }
-                }
-            }
-            var prom = mostrarErroresSwal(errores);
-            if (prom && prom.then) {
-                (function (inv) {
-                    prom.then(function () {
-                        for (var j = 0; j < inv.length; j++) {
-                            var item = inv[j];
-                            item.field.classList.add('is-invalid');
-                            var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
-                            if (contenedor) {
-                                var fb = contenedor.querySelector('.invalid-feedback');
-                                if (fb) fb.textContent = item.msg;
-                            }
-                        }
-                    });
-                })(invalidFields);
-            }
+            _mostrarErroresYMarcar(form);
             return;
         }
 
@@ -402,24 +362,7 @@ function initModalFormAjax(formId, redirectUrl, validarFn) {
         submitBtn.setAttribute('data-original-text', submitBtn.innerHTML);
     }
 
-    form.addEventListener('invalid', function (e) { e.preventDefault(); }, true);
-
-    var campos = form.querySelectorAll('input, select, textarea');
-    for (var i = 0; i < campos.length; i++) {
-        (function (campo) {
-            var eventName = campo.tagName === 'SELECT' ? 'change' : 'input';
-            campo.addEventListener(eventName, function () {
-                var valido = _validarCampo(campo);
-                campo.classList.toggle('is-valid', valido);
-                campo.classList.toggle('is-invalid', !valido && (campo.value.trim() !== '' || campo.required));
-            });
-            campo.addEventListener('blur', function () {
-                var valido = _validarCampo(campo);
-                campo.classList.toggle('is-valid', valido);
-                campo.classList.toggle('is-invalid', !valido && (campo.value.trim() !== '' || campo.required));
-            });
-        })(campos[i]);
-    }
+    _vincularValidacionEnVivo(form);
 }
 
 function setupEditModal(btnSelector, modalId, fieldMapping) {
