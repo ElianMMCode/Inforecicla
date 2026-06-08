@@ -26,6 +26,7 @@ ADMIN_LISTAR_PUBLICACIONES_URL = "panel_admin:listar_publicaciones_admin"
 ADMIN_PERFIL_URL = "panel_admin:perfil_admin"
 ADMIN_CREATE_PUBLICACION_TEMPLATE = "admin/Publicaciones/createPublicacion.html"
 ADMIN_CREATE_USUARIO_TEMPLATE = "admin/Usuarios/createUsuario.html"
+ADMIN_EDIT_USUARIO_TEMPLATE = "admin/Usuarios/editUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
@@ -1407,14 +1408,14 @@ def editar_usuario_admin(request, usuario_id):
         "tipos_usuario": cons.TipoUsuario.choices,
     }
     if request.method != "POST":
-        return render(request, "admin/Usuarios/editUsuario.html", contexto)
+        return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
 
     error = _aplicar_datos_usuario_admin(usuario, request.POST)
     if error:
         if is_ajax:
             return JsonResponse({"ok": False, "errors": [error], "message": error})
         messages.error(request, error)
-        return render(request, "admin/Usuarios/editUsuario.html", contexto)
+        return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
 
     try:
         usuario.full_clean()
@@ -1434,7 +1435,7 @@ def editar_usuario_admin(request, usuario_id):
             return JsonResponse({"ok": False, "errors": [str(e)], "message": str(e)})
         messages.error(request, f"No se pudo actualizar el usuario: {e}")
 
-    return render(request, "admin/Usuarios/editUsuario.html", contexto)
+    return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
 
 
 @login_required(login_url="/login/")
