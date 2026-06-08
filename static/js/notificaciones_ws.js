@@ -26,11 +26,11 @@ function initNotificacionesWS(dropdownId, iconMap, defaultIcon = 'bi-bell-fill')
         const empty = menu.querySelector('.text-center.text-muted');
         if (empty) empty.remove();
 
-        const icon = (iconMap && iconMap[data.tipo]) || defaultIcon;
+        const icon = iconMap?.[data.tipo] || defaultIcon;
         const item = document.createElement('div');
         item.className = 'dropdown-item d-flex gap-2 align-items-start py-2 px-3 border-bottom bg-warning-subtle';
         item.style.whiteSpace = 'normal';
-        item.setAttribute('data-notif-id', data.id);
+        item.dataset.notifId = data.id;
         item.innerHTML = `
             <a href="${data.url}" class="d-flex gap-2 align-items-start flex-grow-1 text-decoration-none text-reset">
                 <span class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width:32px;height:32px;">
@@ -44,7 +44,7 @@ function initNotificacionesWS(dropdownId, iconMap, defaultIcon = 'bi-bell-fill')
             </a>`;
 
         const header = menu.querySelector('.px-3.py-2.border-bottom.bg-light');
-        if (header && header.nextSibling) {
+        if (header?.nextSibling) {
             menu.insertBefore(item, header.nextSibling);
         } else {
             menu.prepend(item);
