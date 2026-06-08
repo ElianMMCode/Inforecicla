@@ -1,111 +1,261 @@
+{% extends "admin/base.html" %}
 {% load static %}
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Categorías de Publicaciones - InfoRecicla Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-</head>
-<body class="bg-light">
+{% block page_title %}Categorías de Publicaciones - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="cat_publicaciones" %}{% endblock %}
 
-{% include "admin/partials/sidebar.html" with active="cat_publicaciones" %}
+{% block content %}
 
-<main class="col offset-md-2 p-4">
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+<div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-folder-fill me-2"></i>Categorías de Publicaciones</h1>
+    <p class="text-muted mb-0">Organiza las publicaciones por categorías.</p>
   </div>
-  {% endif %}
-
-  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-folder-fill me-2"></i>Categorías de Publicaciones</h1>
-      <p class="text-muted mb-0">Organiza las publicaciones por categorías.</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-        <i class="bi bi-file-earmark-excel me-1"></i> Excel
-      </a>
-      <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-      </a>
-      <a href="{% url 'panel_admin:crear_categoria_publicacion' %}" class="btn btn-success">
-        <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
-      </a>
-    </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
+      <i class="bi bi-file-earmark-excel me-1"></i> Excel
+    </a>
+    <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
+      <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+    </a>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoriaPublicacion">
+      <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
+    </button>
   </div>
+</div>
 
-  {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'categorias_publicacion' %}
+{% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'categorias_publicacion' %}
 
-  {% if not publicaciones_habilitadas %}
-  <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
-  {% else %}
+{% if not publicaciones_habilitadas %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
+{% else %}
 
-  <div class="card border-success mb-4 shadow-sm">
-    <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
-    <div class="card-body">
-      <form method="get" class="row g-2">
-        <div class="col-md-10">
-          <input type="text" name="q" class="form-control" placeholder="Nombre, tipo o descripción..." value="{{ search_query }}">
+<div class="card border-success mb-4 shadow-sm">
+  <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-10">
+        <input type="text" name="q" class="form-control" placeholder="Nombre, tipo o descripción..." value="{{ search_query }}">
+      </div>
+      <div class="col-md-2 d-grid">
+        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-table me-1"></i> Listado</span>
+    <span class="badge bg-light text-success">{{ categorias|length }} resultados</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in categorias %}
+        <tr>
+          <td class="fw-semibold">{{ cat.nombre|default:cat.tipo }}</td>
+          <td><span class="badge bg-primary">{{ cat.get_tipo_display }}</span></td>
+          <td>{{ cat.descripcion|truncatechars:60|default:"-" }}</td>
+          <td>
+            {% if cat.estado == "ACTIVO" %}
+              <span class="badge bg-success">Activo</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ cat.estado }}</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-pub"
+                    title="Editar"
+                    data-id="{{ cat.id }}"
+                    data-nombre="{{ cat.nombre|default:'' }}"
+                    data-descripcion="{{ cat.descripcion|default:'' }}"
+                    data-tipo="{{ cat.tipo|default:'' }}"
+                    data-estado="{{ cat.estado|default:'ACTIVO' }}"
+                    data-action="{% url 'panel_admin:editar_categoria_publicacion_admin' categoria_id=cat.id %}">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No se encontraron categorías.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_modals %}
+
+<!-- ===== MODAL CREAR CATEGORÍA PUBLICACIÓN ===== -->
+<div class="modal fade" id="modalCrearCategoriaPublicacion" tabindex="-1" aria-labelledby="labelCrearCatPub" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelCrearCatPub"><i class="bi bi-plus-circle me-2"></i>Nueva Categoría de Publicación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{% url 'panel_admin:crear_categoria_publicacion' %}" novalidate id="formCrearCatPub">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="ccp_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="ccp_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Educación Ambiental, Noticias..." required maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+              <div class="invalid-feedback">Debe contener al menos una letra (máx. 30 caracteres).</div>
+          </div>
+          <div class="mb-3">
+            <label for="ccp_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+            <textarea id="ccp_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Describe el propósito de esta categoría..."></textarea>
+            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+          </div>
+          <div class="mb-3">
+            <label for="ccp_tipo" class="form-label fw-semibold">Tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <select id="ccp_tipo" name="tipo" class="form-select" required>
+              <option value="">Seleccionar tipo...</option>
+              {% for value, label in tipos_publicacion %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+              <option value="__otro__">Otro tipo...</option>
+            </select>
+            <div class="invalid-feedback">Selecciona un tipo.</div>
+          </div>
+          <div class="mb-3" id="ccp_tipo_otro_wrapper" style="display:none;">
+            <label for="ccp_tipo_otro" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="ccp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
+          </div>
+          <div class="mb-3">
+            <label for="ccp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
+            <select id="ccp_estado" name="estado" class="form-select">
+              {% for val, label in estados %}
+              <option value="{{ val }}" {% if val == 'ACTIVO' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
-        <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Crear Categoría</button>
         </div>
       </form>
     </div>
   </div>
+</div>
 
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-      <span><i class="bi bi-table me-1"></i> Listado</span>
-      <span class="badge bg-light text-success">{{ categorias|length }} resultados</span>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Nombre</th>
-            <th>Tipo</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for cat in categorias %}
-          <tr>
-            <td class="fw-semibold">{{ cat.nombre|default:cat.tipo }}</td>
-            <td><span class="badge bg-primary">{{ cat.get_tipo_display }}</span></td>
-            <td>{{ cat.descripcion|truncatechars:60|default:"-" }}</td>
-            <td>
-              {% if cat.estado == "ACTIVO" %}
-                <span class="badge bg-success">Activo</span>
-              {% else %}
-                <span class="badge bg-secondary">{{ cat.estado }}</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              <a href="{% url 'panel_admin:editar_categoria_publicacion_admin' categoria_id=cat.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="5" class="text-center text-muted py-4">No se encontraron categorías.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<!-- ===== MODAL EDITAR CATEGORÍA PUBLICACIÓN ===== -->
+<div class="modal fade" id="modalEditarCategoriaPublicacion" tabindex="-1" aria-labelledby="labelEditarCatPub" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelEditarCatPub"><i class="bi bi-pencil me-2"></i>Editar Categoría de Publicación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" novalidate id="formEditarCatPub">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="ecp_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="ecp_nombre" type="text" name="nombre" class="form-control" required maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+              <div class="invalid-feedback">Debe contener al menos una letra (máx. 30 caracteres).</div>
+          </div>
+          <div class="mb-3">
+            <label for="ecp_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+            <textarea id="ecp_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
+            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+          </div>
+          <div class="mb-3">
+            <label for="ecp_tipo" class="form-label fw-semibold">Tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <select id="ecp_tipo" name="tipo" class="form-select" required>
+              {% for value, label in tipos_publicacion %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+              <option value="__otro__">Otro tipo...</option>
+            </select>
+            <div class="invalid-feedback">Selecciona un tipo.</div>
+          </div>
+          <div class="mb-3" id="ecp_tipo_otro_wrapper" style="display:none;">
+            <label for="ecp_tipo_otro" class="form-label fw-semibold">Nuevo tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="ecp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+          </div>
+          <div class="mb-3">
+            <label for="ecp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
+            <select id="ecp_estado" name="estado" class="form-select">
+              {% for val, label in estados %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
+        </div>
+      </form>
     </div>
   </div>
-  {% endif %}
-</main>
+</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+(function() {
+  function initTipoOtro(selectId, wrapperId, inputId) {
+    var sel = document.getElementById(selectId);
+    var wrapper = document.getElementById(wrapperId);
+    var inp = document.getElementById(inputId);
+    if (!sel || !wrapper || !inp) return;
+    function toggle() {
+      var esOtro = sel.value === '__otro__';
+      wrapper.style.display = esOtro ? 'block' : 'none';
+      inp.required = esOtro;
+      if (!esOtro) inp.value = '';
+    }
+    sel.addEventListener('change', toggle);
+    return toggle;
+  }
+
+  // Pre-populate tipo_otro on edit modal open
+  var editModal = document.getElementById('modalEditarCategoriaPublicacion');
+  var editSel = document.getElementById('ecp_tipo');
+  var editWrapper = document.getElementById('ecp_tipo_otro_wrapper');
+  var editInput = document.getElementById('ecp_tipo_otro');
+
+  if (editModal && editSel) {
+    editModal.addEventListener('show.bs.modal', function() {
+      // The tipo was already set by setupEditModal; check if it's not a known value
+      var known = [{% for value, label in tipos_publicacion %}'{{ value }}',{% endfor %}];
+      if (editSel.value && known.indexOf(editSel.value) === -1 && editSel.value !== '__otro__') {
+        editInput.value = editSel.value;
+        editSel.value = '__otro__';
+      }
+      toggleEditTipo();
+    });
+  }
+  var toggleEditTipo = initTipoOtro('ecp_tipo', 'ecp_tipo_otro_wrapper', 'ecp_tipo_otro');
+
+  initTipoOtro('ccp_tipo', 'ccp_tipo_otro_wrapper', 'ccp_tipo_otro');
+
+  initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
+  initModalFormAjax('formEditarCatPub', window.location.href);
+
+  setupEditModal('.btn-editar-cat-pub', 'modalEditarCategoriaPublicacion', {
+    nombre: 'ecp_nombre', descripcion: 'ecp_descripcion',
+    tipo: 'ecp_tipo', estado: 'ecp_estado'
+  });
+})();
+</script>
+{% include "admin/_messages_swal.html" %}
+{% endblock %}

@@ -94,7 +94,7 @@ class TipoRepeticion(models.TextChoices):
 
 
 class TipoUsuario(models.TextChoices):
-    ADMIN = "ADM", _("Admnisitrador")
+    ADMIN = "ADM", _("Administrador")
     CIUDADANO = "CIU", _("Ciudadano")
     GESTOR_ECA = "GECA", _("Gestor ECA")
 
