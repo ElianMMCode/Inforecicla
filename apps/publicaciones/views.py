@@ -5,9 +5,6 @@ from django.contrib.auth.decorators import login_required
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
 
-# Create your views here.
-def publicacion(request):
-    return render(request, "publicacion/panel_publicaciones.html")
 from .service import PublicacionService
 
 
