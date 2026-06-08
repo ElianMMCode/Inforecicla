@@ -34,7 +34,7 @@
 /* ─── Benefits list (CTA) ────────────────────────────── */
 .benefit-item {
   border-left: 4px solid #218838;
-  background: rgba(255,255,255,.08);
+  background: rgba(0,0,0,.025);
   border-radius: 0 6px 6px 0;
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
@@ -45,8 +45,28 @@
 .benefit-item .bi {
   margin-right: 0.75rem;
   font-size: 1.25rem;
-  color: #fff;
+  color: #198754;
   flex-shrink: 0;
+}
+
+/* ─── CTA row cards (mitad verde / mitad blanca) ──── */
+.cta-row {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.cta-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  min-height: 320px;
+}
+.cta-benefits {
+  padding: 2rem 1.5rem;
+}
+.cta-btn {
+  min-width: 220px;
 }
 
 /* ─── Fade-in animation (testimonials) ──────────────── */
