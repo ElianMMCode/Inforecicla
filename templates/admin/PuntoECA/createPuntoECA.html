@@ -256,29 +256,47 @@
 {% block extra_scripts %}
 <script>
 (function() {
+  function insertCss(href, integrity) {
+    if (document.querySelector('link[href="' + href + '"]')) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.integrity = integrity;
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+  }
+
+  function loadScript(src, integrity, cb) {
+    if (globalThis.L) return cb();
+    var s = document.createElement('script');
+    s.src = src;
+    s.integrity = integrity;
+    s.crossOrigin = 'anonymous';
+    s.onload = cb;
+    document.body.appendChild(s);
+  }
+
+  function initTogglePassword() {
+    document.querySelectorAll('.toggle-password-button').forEach(function(btn) {
+      if (btn.dataset.togglePasswordBound === '1') return;
+      btn.dataset.togglePasswordBound = '1';
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var targetSelector = btn.dataset.target || btn.querySelector('.toggle-password')?.dataset.target;
+        if (!targetSelector) return;
+        var input = document.querySelector(targetSelector);
+        if (!input) return;
+        var isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        var icon = btn.querySelector('.bi');
+        if (icon) { icon.classList.toggle('bi-eye', !isPassword); icon.classList.toggle('bi-eye-slash', isPassword); }
+      });
+    });
+  }
+
   function loadLeafletAndInit() {
     var cssHref = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
     var jsSrc = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
-
-    function insertCss(href, integrity) {
-      if (document.querySelector('link[href="' + href + '"]')) return;
-      var link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = href;
-      link.integrity = integrity;
-      link.crossOrigin = 'anonymous';
-      document.head.appendChild(link);
-    }
-
-    function loadScript(src, integrity, cb) {
-      if (globalThis.L) return cb();
-      var s = document.createElement('script');
-      s.src = src;
-      s.integrity = integrity;
-      s.crossOrigin = 'anonymous';
-      s.onload = cb;
-      document.body.appendChild(s);
-    }
 
     insertCss(cssHref, 'sha384-b8ANgTJvdlAnWM5YGMpKn7Kodm+1k7NYNG9zdjTCcZcKatzYHwZ0RLdWarbJJVzU');
     loadScript(jsSrc, 'sha384-u5N8qJeJOO2iqNjIKTdl6KeKsEikMAmCUBPc6sC6uGpgL34aPJ4VgNhuhumedpEk', function() {
@@ -303,23 +321,6 @@
       });
     });
 
-    function initTogglePassword() {
-      document.querySelectorAll('.toggle-password-button').forEach(function(btn) {
-        if (btn.dataset.togglePasswordBound === '1') return;
-        btn.dataset.togglePasswordBound = '1';
-        btn.addEventListener('click', function(e) {
-          e.preventDefault();
-          var targetSelector = btn.dataset.target || btn.querySelector('.toggle-password')?.dataset.target;
-          if (!targetSelector) return;
-          var input = document.querySelector(targetSelector);
-          if (!input) return;
-          var isPassword = input.type === 'password';
-          input.type = isPassword ? 'text' : 'password';
-          var icon = btn.querySelector('.bi');
-          if (icon) { icon.classList.toggle('bi-eye', !isPassword); icon.classList.toggle('bi-eye-slash', isPassword); }
-        });
-      });
-    }
     initTogglePassword();
   }
   loadLeafletAndInit();
