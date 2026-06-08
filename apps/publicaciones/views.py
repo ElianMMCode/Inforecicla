@@ -3,10 +3,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 
+from .service import PublicacionService
+
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
-
-from .service import PublicacionService
+_DETALLE_PUBLICACION = _DETALLE_PUBLICACION
 
 
 def panel_publicaciones(request):
@@ -45,7 +46,7 @@ def toggle_guardado(request, publicacion_id):
             guardado.delete()
         else:
             Guardados.objects.create(usuario=request.user, publicacion=pub)
-    return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
 
 
 @login_required
@@ -65,7 +66,7 @@ def agregar_comentario(request, publicacion_id):
                 texto=texto,
             )
             messages.success(request, "Tu comentario ha sido publicado con éxito.")
-    return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
 
 
 @login_required
@@ -73,7 +74,7 @@ def editar_comentario(request, comentario_id):
     from .models import Comentario
     comentario = get_object_or_404(Comentario, pk=comentario_id)
     if comentario.usuario != request.user:
-        return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
     if request.method == "POST":
         texto = request.POST.get("texto", "").strip()
         if not texto or len(texto) < _COMENTARIO_MIN:
@@ -83,7 +84,7 @@ def editar_comentario(request, comentario_id):
         else:
             comentario.texto = texto
             comentario.save()
-    return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
 
 
 @login_required
@@ -91,12 +92,12 @@ def eliminar_comentario(request, comentario_id):
     from .models import Comentario
     comentario = get_object_or_404(Comentario, pk=comentario_id)
     if comentario.usuario != request.user:
-        return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
     if request.method == "POST":
         publicacion_id = comentario.publicacion_id
         comentario.delete()
-        return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
-    return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
 
 
 @login_required
@@ -116,4 +117,4 @@ def votar_publicacion(request, publicacion_id):
                     reaccion.save()
             else:
                 Reaccion.objects.create(publicacion=pub, usuario=request.user, valor=valor)
-    return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
