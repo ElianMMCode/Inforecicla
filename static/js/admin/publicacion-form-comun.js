@@ -12,7 +12,7 @@ function publicacionSuprimirValidacionNativa(formulario) {
 }
 
 function _mensajePublicacionES(campo) {
-  var etiqueta = '';
+  let etiqueta = '';
   if (campo.name === 'titulo') etiqueta = 'T\u00edtulo';
   else if (campo.name === 'contenido') etiqueta = 'Contenido';
   else if (campo.name === 'categoria_id') etiqueta = 'Categor\u00eda';
@@ -78,7 +78,7 @@ function publicacionConfirmarEnvioSwal(mensaje) {
   };
   if (typeof Swal === "undefined") {
     return Promise.resolve({
-      isConfirmed: window.confirm(mensaje.text || mensaje.title || ""),
+      isConfirmed: globalThis.confirm(mensaje.text || mensaje.title || ""),
     });
   }
   return Swal.fire(configuracion);
@@ -181,6 +181,34 @@ function publicacionMostrarAlertaImagenes(alerta, mensaje) {
   alerta.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+function _recolectarErroresValidacion(camposValidacion) {
+  const errs = [];
+  const invalidFields = [];
+  for (const campo of camposValidacion) {
+    if (campo && !campo.checkValidity()) {
+      const msg = _mensajePublicacionES(campo);
+      if (msg) {
+        errs.push(msg);
+        invalidFields.push({ field: campo, msg: msg });
+      }
+    }
+  }
+  return { errs, invalidFields };
+}
+
+function _marcarCamposInvalidos(prom, invalidFields) {
+  prom.then(function () {
+    for (const item of invalidFields) {
+      item.field.classList.add('is-invalid');
+      const contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
+      if (contenedor) {
+        const fb = contenedor.querySelector('.invalid-feedback');
+        if (fb) fb.textContent = item.msg;
+      }
+    }
+  });
+}
+
 function publicacionBindEnvio({ formulario, camposValidacion, confirmar, antesDeEnviar }) {
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
@@ -193,33 +221,10 @@ function publicacionBindEnvio({ formulario, camposValidacion, confirmar, antesDe
     }
     if (!formulario.checkValidity()) {
       formulario.classList.add("was-validated");
-      var errs = [];
-      var invalidFields = [];
-      for (var pi = 0; pi < camposValidacion.length; pi++) {
-        var campo = camposValidacion[pi];
-        if (campo && !campo.checkValidity()) {
-          var msg = _mensajePublicacionES(campo);
-          if (msg) {
-            errs.push(msg);
-            invalidFields.push({ field: campo, msg: msg });
-          }
-        }
-      }
-      var prom = publicacionMostrarErroresSwal(errs);
-      if (prom && prom.then) {
-        (function(inv) {
-          prom.then(function () {
-            for (var j = 0; j < inv.length; j++) {
-              var item = inv[j];
-              item.field.classList.add('is-invalid');
-              var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
-              if (contenedor) {
-                var fb = contenedor.querySelector('.invalid-feedback');
-                if (fb) fb.textContent = item.msg;
-              }
-            }
-          });
-        })(invalidFields);
+      const { errs, invalidFields } = _recolectarErroresValidacion(camposValidacion);
+      const prom = publicacionMostrarErroresSwal(errs);
+      if (prom?.then) {
+        _marcarCamposInvalidos(prom, invalidFields);
       }
       return;
     }
