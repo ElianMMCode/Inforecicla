@@ -30,6 +30,9 @@ const USUARIO_REQUISITOS_PASSWORD = [
     { id: "reqLongitud", patron: null, textoBase: "Mínimo 8 caracteres" },
 ];
 
+const RE_FECHA_DD = /^(\d{2})-(\d{2})-(\d{4})$/;
+const RE_FECHA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 function formatDate(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -46,10 +49,10 @@ function formatDateDDMMYYYY(date) {
 
 function parsearFechaNacimiento(valor) {
     if (!valor || String(valor).trim() === '') return null;
-    var limpio = String(valor).trim();
-    var matchDD = limpio.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    const limpio = String(valor).trim();
+    const matchDD = RE_FECHA_DD.exec(limpio);
     if (matchDD) return new Date(+matchDD[3], +matchDD[2] - 1, +matchDD[1]);
-    var matchISO = limpio.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const matchISO = RE_FECHA_ISO.exec(limpio);
     if (matchISO) return new Date(+matchISO[1], +matchISO[2] - 1, +matchISO[3]);
     return null;
 }
@@ -59,17 +62,17 @@ function fechaEsValida(dateObj) {
 }
 
 function normalizarCaracteresFecha(campo) {
-    if (!campo || !campo.value) return;
-    var normalizado = campo.value.replace(/[\/\\\.\s]+/g, '-');
+    if (!campo?.value) return;
+    const normalizado = campo.value.replace(/[/\\.\s]+/g, '-');
     if (normalizado !== campo.value) {
         campo.value = normalizado;
     }
 }
 
 function normalizarFechaNacimientoInput(campo) {
-    if (!campo || !campo.value) return;
+    if (!campo?.value) return;
     normalizarCaracteresFecha(campo);
-    var fecha = parsearFechaNacimiento(campo.value);
+    const fecha = parsearFechaNacimiento(campo.value);
     if (fecha && fechaEsValida(fecha)) {
         campo.value = formatDate(fecha);
     }
@@ -78,34 +81,34 @@ function normalizarFechaNacimientoInput(campo) {
 function validarNormalizarFechaNacimiento(campo, edadMinima) {
     if (!campo) return true;
     normalizarCaracteresFecha(campo);
-    var valor = String(campo.value || '').trim();
+    const valor = String(campo.value || '').trim();
     if (!valor) {
         campo.setCustomValidity('');
         actualizarEstadoCampo(campo);
         return true;
     }
-    var soloDigitosGuiones = /^[\d\-]+$/.test(valor);
+    const soloDigitosGuiones = /^[\d-]+$/.test(valor);
     if (!soloDigitosGuiones) {
         campo.setCustomValidity('Solo se permiten números y guiones.');
         actualizarEstadoCampo(campo);
         return false;
     }
-    var fecha = parsearFechaNacimiento(valor);
+    const fecha = parsearFechaNacimiento(valor);
     if (!fecha || !fechaEsValida(fecha)) {
         campo.setCustomValidity('Formato de fecha inválido. Usa DD-MM-AAAA o AAAA-MM-DD.');
         actualizarEstadoCampo(campo);
         return false;
     }
-    var hoy = new Date();
+    const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     if (fecha > hoy) {
         campo.setCustomValidity('La fecha de nacimiento no puede ser futura.');
         actualizarEstadoCampo(campo);
         return false;
     }
-    var edadMin = edadMinima || 18;
-    var edad = hoy.getFullYear() - fecha.getFullYear();
-    var m = hoy.getMonth() - fecha.getMonth();
+    const edadMin = edadMinima || 18;
+    let edad = hoy.getFullYear() - fecha.getFullYear();
+    const m = hoy.getMonth() - fecha.getMonth();
     if (m < 0 || (m === 0 && hoy.getDate() < fecha.getDate())) edad--;
     if (edad < edadMin) {
         campo.setCustomValidity('Debes ser mayor de ' + edadMin + ' años.');
@@ -296,34 +299,38 @@ function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaxim
     return true;
 }
 
+function _obtenerEtiquetaCampo(campo) {
+    const mapa = {
+        nombres: 'Nombres',
+        apellidos: 'Apellidos',
+        celular: 'Celular',
+        email: 'Correo electrónico',
+        password: 'Contraseña', // NOSONAR - field label, not credential
+        passwordConfirm: 'Confirmar contraseña',
+        tipo_documento: 'Tipo de documento',
+        numero_documento: 'Número de documento',
+        ciudad: 'Ciudad',
+        localidad: 'Localidad',
+        tipo_usuario: 'Tipo de usuario',
+        estado_usuario: 'Estado del usuario',
+        fechaNacimiento: 'Fecha de nacimiento',
+        fecha_nacimiento: 'Fecha de nacimiento',
+    };
+    return mapa[campo.name] || campo.name.charAt(0).toUpperCase() + campo.name.slice(1);
+}
+
+function _mensajePatternMismatch(campo, etiqueta) {
+    if (campo.name === 'nombres' || campo.name === 'apellidos') return etiqueta + ': Solo se permiten letras, espacios, guiones o apóstrofes.';
+    if (campo.name === 'celular') return etiqueta + ': Debe iniciar con 3 y tener exactamente 10 dígitos.';
+    if (campo.name === 'fechaNacimiento' || campo.name === 'fecha_nacimiento') return etiqueta + ': Usa el formato DD-MM-AAAA o AAAA-MM-DD.';
+    return etiqueta + ': El formato ingresado no es válido.';
+}
+
 function _mensajeValidacionES(campo) {
-    var etiqueta = function () {
-        var mapa = {
-            nombres: 'Nombres',
-            apellidos: 'Apellidos',
-            celular: 'Celular',
-            email: 'Correo electrónico',
-            password: 'Contraseña', // NOSONAR - field label, not credential
-            passwordConfirm: 'Confirmar contraseña',
-            tipo_documento: 'Tipo de documento',
-            numero_documento: 'Número de documento',
-            ciudad: 'Ciudad',
-            localidad: 'Localidad',
-            tipo_usuario: 'Tipo de usuario',
-            estado_usuario: 'Estado del usuario',
-            fechaNacimiento: 'Fecha de nacimiento',
-            fecha_nacimiento: 'Fecha de nacimiento',
-        };
-        return mapa[campo.name] || campo.name.charAt(0).toUpperCase() + campo.name.slice(1);
-    }();
+    const etiqueta = _obtenerEtiquetaCampo(campo);
     if (campo.validity.valid && !campo.validity.customError) return '';
     if (campo.validity.valueMissing) return etiqueta + ' es obligatorio.';
-    if (campo.validity.patternMismatch) {
-        if (campo.name === 'nombres' || campo.name === 'apellidos') return etiqueta + ': Solo se permiten letras, espacios, guiones o apóstrofes.';
-        if (campo.name === 'celular') return etiqueta + ': Debe iniciar con 3 y tener exactamente 10 dígitos.';
-        if (campo.name === 'fechaNacimiento' || campo.name === 'fecha_nacimiento') return etiqueta + ': Usa el formato DD-MM-AAAA o AAAA-MM-DD.';
-        return etiqueta + ': El formato ingresado no es válido.';
-    }
+    if (campo.validity.patternMismatch) return _mensajePatternMismatch(campo, etiqueta);
     if (campo.validity.tooShort) return etiqueta + ': Debe tener al menos ' + campo.minLength + ' caracteres.';
     if (campo.validity.tooLong) return etiqueta + ': Debe tener máximo ' + campo.maxLength + ' caracteres.';
     if (campo.validity.typeMismatch) return etiqueta + ': El formato no es correcto.';
@@ -335,7 +342,7 @@ function _mensajeValidacionES(campo) {
 
 function obtenerErroresFormulario(campos) {
     return Array.from(new Set(campos.map(function (campo) {
-        var msg = _mensajeValidacionES(campo);
+        const msg = _mensajeValidacionES(campo);
         return msg || null;
     }).filter(Boolean)));
 }
@@ -361,7 +368,7 @@ function confirmarEnvioSwal(mensaje) {
         cancelButtonColor: USUARIO_COLOR_CANCELAR,
     };
     if (typeof Swal === "undefined") {
-        return Promise.resolve({ isConfirmed: window.confirm(mensaje.text || mensaje.title) });
+        return Promise.resolve({ isConfirmed: globalThis.confirm(mensaje.text || mensaje.title) });
     }
     return Swal.fire(configuracion);
 }
@@ -450,32 +457,30 @@ function actualizarRequisito(elemento, cumple, texto) {
         : `❌ <span class="text-danger">${escaparHtml(texto)}</span>`;
 }
 
-function contrasenaCumpleReglas(valor) {
-    const v = valor || "";
-    return USUARIO_PATTERN_MINUSCULA.test(v)
-        && USUARIO_PATTERN_MAYUSCULA.test(v)
-        && USUARIO_PATTERN_NUMERO.test(v)
-        && USUARIO_PATTERN_ESPECIAL.test(v)
-        && v.length >= USUARIO_LIMITE_PASSWORD_MIN;
+function contrasenaCumpleReglas(valor = "") {
+    return USUARIO_PATTERN_MINUSCULA.test(valor)
+        && USUARIO_PATTERN_MAYUSCULA.test(valor)
+        && USUARIO_PATTERN_NUMERO.test(valor)
+        && USUARIO_PATTERN_ESPECIAL.test(valor)
+        && valor.length >= USUARIO_LIMITE_PASSWORD_MIN;
 }
 
-function actualizarRequisitosPasswordUI(valor) {
-    const v = valor || "";
+function actualizarRequisitosPasswordUI(valor = "") {
     USUARIO_REQUISITOS_PASSWORD.forEach((requisito) => {
         const elemento = document.getElementById(requisito.id);
         if (!elemento) {
             return;
         }
-        let cumple;
         if (requisito.id === "reqLongitud") {
-            cumple = v.length >= USUARIO_LIMITE_PASSWORD_MIN;
-            const textoFinal = cumple
-                ? requisito.textoBase
-                : `${requisito.textoBase}${v.length > 0 ? ` (${v.length}/${USUARIO_LIMITE_PASSWORD_MIN})` : ""}`;
+            const cumple = valor.length >= USUARIO_LIMITE_PASSWORD_MIN;
+            let textoFinal = requisito.textoBase;
+            if (!cumple && valor.length > 0) {
+                textoFinal += ` (${valor.length}/${USUARIO_LIMITE_PASSWORD_MIN})`;
+            }
             actualizarRequisito(elemento, cumple, textoFinal);
             return;
         }
-        cumple = requisito.patron.test(v);
+        const cumple = requisito.patron.test(valor);
         actualizarRequisito(elemento, cumple, requisito.texto);
     });
 }
@@ -532,8 +537,8 @@ function bindSubmitUsuario({ formulario, camposValidacion, confirmar, antesDeEnv
         }
         if (!formulario.checkValidity()) {
             formulario.classList.add("was-validated");
-            var promesa = mostrarErroresSwal(obtenerErroresFormulario(camposValidacion));
-            if (promesa && promesa.then) {
+            const promesa = mostrarErroresSwal(obtenerErroresFormulario(camposValidacion));
+            if (promesa?.then) {
                 promesa.then(function () {
                     camposValidacion.forEach(function (c) {
                         if (c && !c.checkValidity()) c.classList.add("is-invalid");
