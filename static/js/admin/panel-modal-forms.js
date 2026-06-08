@@ -218,6 +218,15 @@ function limpiarErroresModal(modalEl) {
     }
 }
 
+function _trimPuntos(texto) {
+    var s = String(texto);
+    var i = 0;
+    while (i < s.length && (s[i] === '.' || s[i] === ' ' || s[i] === '\t' || s[i] === '\n' || s[i] === '\r')) i++;
+    var j = s.length;
+    while (j > i && (s[j-1] === '.' || s[j-1] === ' ' || s[j-1] === '\t' || s[j-1] === '\n' || s[j-1] === '\r')) j--;
+    return s.slice(i, j);
+}
+
 function marcarErroresForm(form, fieldErrors) {
     if (!form || !fieldErrors) return;
     for (var key in fieldErrors) {
@@ -230,7 +239,7 @@ function marcarErroresForm(form, fieldErrors) {
         if (contenedor) {
             var feedback = contenedor.querySelector('.invalid-feedback');
             if (feedback) {
-                feedback.textContent = fieldErrors[key].replace(/^[\.\s]+/, '').replace(/[\.\s]+$/, '');
+                feedback.textContent = _trimPuntos(fieldErrors[key]);
             }
         }
     }
@@ -342,7 +351,7 @@ function initModalFormAjax(formId, redirectUrl, validarFn) {
                             for (var key in data.errors) {
                                 if (!data.errors.hasOwnProperty(key) || key === '_general') continue;
                                 var label = MARCAR_ERRORES[key] || key.charAt(0).toUpperCase() + key.slice(1);
-                                var msg = String(data.errors[key]).replace(/^[\.\s]+/, '').replace(/[\.\s]+$/, '');
+                                var msg = _trimPuntos(String(data.errors[key]));
                                 errorList.push(label + ': ' + msg);
                                 fieldErrors[key] = msg;
                             }
