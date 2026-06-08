@@ -173,9 +173,9 @@ class AdminDashboardService:
             resumen["total_materiales"] = Material.objects.count()
             resumen["total_categorias_materiales"] = CategoriaMaterial.objects.count()
             resumen["total_tipos_material"] = TipoMaterial.objects.count()
-            resumen["total_ciudadanos"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.CIU).count()
-            resumen["total_gestores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.GECA).count()
-            resumen["total_administradores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.ADM).count()
+            resumen["total_ciudadanos"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.CIUDADANO).count()
+            resumen["total_gestores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.GESTOR_ECA).count()
+            resumen["total_administradores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.ADMIN).count()
             resumen["total_usuarios_activos"] = Usuario.objects.filter(is_active=True).count()
             resumen["total_usuarios_inactivos"] = resumen["total_usuarios"] - resumen["total_usuarios_activos"]
             ultimos_usuarios = Usuario.objects.order_by("-date_joined")[:5]

@@ -202,7 +202,7 @@
                                 <div class="text-muted" style="font-size:.72rem;">{{ usuario.email|truncatechars:30 }}</div>
                             </div>
                             <div class="text-end flex-shrink-0">
-                                <span class="badge {% if usuario.tipo_usuario == 'Administrador' %}bg-danger{% elif usuario.tipo_usuario == 'Gestor ECA' %}bg-warning text-dark{% else %}bg-success{% endif %} rounded-pill" style="font-size:.65rem;">{{ usuario.tipo_usuario }}</span>
+                                <span class="badge {% if usuario.tipo_usuario == 'Administrador' %}bg-danger{% elif usuario.tipo_usuario == 'Gestor ECA' %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill" style="font-size:.65rem;">{{ usuario.tipo_usuario }}</span>
                                 <div class="text-muted mt-1" style="font-size:.65rem;">{{ usuario.date_joined|date:"d/m/Y" }}</div>
                             </div>
                         </div>
@@ -228,22 +228,22 @@
                 <div class="card-body">
                     <div class="row text-center g-3">
                         <div class="col-md-4">
-                            <div class="border rounded-3 p-3 bg-success bg-opacity-10 h-100">
-                                <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:56px;height:56px;">
+                            <div class="border rounded-3 p-3 bg-warning bg-opacity-10 h-100">
+                                <div class="bg-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:56px;height:56px;">
                                     <i class="bi bi-person-fill text-white fs-4"></i>
                                 </div>
-                                <div class="h2 fw-bold text-success mb-1">{{ resumen_general.total_ciudadanos }}</div>
-                                <div class="fw-semibold small">Ciudadanos</div>
+                                <div class="h2 fw-bold text-dark mb-1">{{ resumen_general.total_ciudadanos }}</div>
+                                <div class="fw-semibold small text-dark">Ciudadanos</div>
                                 <div class="text-muted" style="font-size:.72rem;">Usuarios regulares</div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="border rounded-3 p-3 bg-warning bg-opacity-10 h-100">
-                                <div class="bg-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:56px;height:56px;">
-                                    <i class="bi bi-building text-dark fs-4"></i>
+                            <div class="border rounded-3 p-3 bg-success bg-opacity-10 h-100">
+                                <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:56px;height:56px;">
+                                    <i class="bi bi-building text-white fs-4"></i>
                                 </div>
-                                <div class="h2 fw-bold text-warning mb-1">{{ resumen_general.total_gestores }}</div>
-                                <div class="fw-semibold small">Gestores ECA</div>
+                                <div class="h2 fw-bold text-dark mb-1">{{ resumen_general.total_gestores }}</div>
+                                <div class="fw-semibold small text-dark">Gestores ECA</div>
                                 <div class="text-muted" style="font-size:.72rem;">Encargados de estaciones</div>
                             </div>
                         </div>
