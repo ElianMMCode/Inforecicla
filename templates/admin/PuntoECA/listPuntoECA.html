@@ -401,7 +401,7 @@
   }
 
   initModalFormAjax('formCrearPuntoECA', '{% url "panel_admin:listar_puntos_eca_admin" %}', validarPasswordsECA);
-  initModalFormAjax('formEditarPuntoECA', window.location.href);
+  initModalFormAjax('formEditarPuntoECA', globalThis.location.href);
 
   setupEditModal('.btn-editar-punto', 'modalEditarPuntoECA', {
     nombre: 'edit_eca_nombre', direccion: 'edit_eca_direccion',
@@ -429,6 +429,21 @@
   }
   initTogglePassword();
 
+  function _initLeafletMapaCrear() {
+    var latInp = document.getElementById('crear_eca_latitud');
+    var lngInp = document.getElementById('crear_eca_longitud');
+    var mapa = L.map('mapa-crear').setView([4.711, -74.072], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
+    var marcador = null;
+    mapa.on('click', function(e) {
+      if (marcador) mapa.removeLayer(marcador);
+      marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
+      if (latInp) latInp.value = e.latlng.lat.toFixed(4);
+      if (lngInp) lngInp.value = e.latlng.lng.toFixed(4);
+    });
+    setTimeout(function() { mapa.invalidateSize(); }, 200);
+  }
+
   var crearModal = document.getElementById('modalCrearPuntoECA');
   var mapaInicializado = false;
   if (crearModal) {
@@ -442,20 +457,7 @@
       var jsScript = document.createElement('script');
       jsScript.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
       jsScript.onload = function() {
-        setTimeout(function() {
-          var latInp = document.getElementById('crear_eca_latitud');
-          var lngInp = document.getElementById('crear_eca_longitud');
-          var mapa = L.map('mapa-crear').setView([4.711, -74.072], 12);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
-          var marcador = null;
-          mapa.on('click', function(e) {
-            if (marcador) mapa.removeLayer(marcador);
-            marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
-            if (latInp) latInp.value = e.latlng.lat.toFixed(4);
-            if (lngInp) lngInp.value = e.latlng.lng.toFixed(4);
-          });
-          setTimeout(function() { mapa.invalidateSize(); }, 200);
-        }, 100);
+        setTimeout(function() { _initLeafletMapaCrear(); }, 100);
       };
       document.body.appendChild(jsScript);
     });
