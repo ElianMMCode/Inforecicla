@@ -27,6 +27,10 @@ DESCRIPCION_CATEGORIA_MAX_500_MSG = (
     "La descripción no puede exceder 500 caracteres."
 )
 RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado"
+NOMBRE_SIN_LETRA_MSG = "El nombre debe contener al menos una letra."
+TIPO_DUPLICADO_MSG = "Ya existe un tipo con ese nombre."
+CATEGORIA_DUPLICADA_MSG = "Ya existe una categoría con ese nombre."
+TIPO_OBLIGATORIO_MSG = "Debe seleccionar un tipo o escribir uno nuevo."
 UTC_SUFFIX = "+00:00"
 
 
@@ -187,7 +191,7 @@ class AdminCatalogService:
             errores["nombre"] = NOMBRE_MAX_30_MSG
 
         if not errores.get("nombre") and not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
-            errores["nombre"] = "El nombre debe contener al menos una letra."
+            errores["nombre"] = NOMBRE_SIN_LETRA_MSG
         if descripcion and len(descripcion) > 500:
             errores["descripcion"] = DESCRIPCION_MAX_500_MSG
         if estado not in estados_validos:
@@ -234,7 +238,7 @@ class AdminCatalogService:
         if error:
             return error
         if TipoMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
-            return {"ok": False, "errors": {"nombre": "Ya existe un tipo con ese nombre."}, "message": "Ya existe un tipo con ese nombre."}
+            return {"ok": False, "errors": {"nombre": TIPO_DUPLICADO_MSG}, "message": TIPO_DUPLICADO_MSG}
         try:
             obj = TipoMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
             obj.full_clean()
@@ -250,7 +254,7 @@ class AdminCatalogService:
         if error:
             return error
         if CategoriaMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
-            return {"ok": False, "errors": {"nombre": "Ya existe una categoría con ese nombre."}, "message": "Ya existe una categoría con ese nombre."}
+            return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
         try:
             obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
             obj.full_clean()
@@ -330,7 +334,7 @@ class AdminCatalogService:
 
         errores = {}
         if not tipo:
-            errores["tipo"] = "Debe seleccionar un tipo o escribir uno nuevo."
+            errores["tipo"] = TIPO_OBLIGATORIO_MSG
         elif len(tipo) > 30:
             errores["tipo"] = TIPO_MAX_30_MSG
 
@@ -387,11 +391,11 @@ class AdminCatalogService:
         if len(nombre) < 3:
             return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
         if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
-            return {"ok": False, "errors": {"nombre": "El nombre debe contener al menos una letra."}, "message": "El nombre debe contener al menos una letra."}
+            return {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
         if estado not in estados_validos:
             return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
         if TipoMaterial.objects.filter(nombre__iexact=nombre).exclude(id=tipo_id).exists():
-            return {"ok": False, "errors": {"nombre": "Ya existe un tipo con ese nombre."}, "message": "Ya existe un tipo con ese nombre."}
+            return {"ok": False, "errors": {"nombre": TIPO_DUPLICADO_MSG}, "message": TIPO_DUPLICADO_MSG}
 
         try:
             tipo.nombre = nombre
@@ -420,11 +424,11 @@ class AdminCatalogService:
         if len(nombre) < 3:
             return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
         if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
-            return {"ok": False, "errors": {"nombre": "El nombre debe contener al menos una letra."}, "message": "El nombre debe contener al menos una letra."}
+            return {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
         if estado not in estados_validos:
             return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
         if CategoriaMaterial.objects.filter(nombre__iexact=nombre).exclude(id=categoria_id).exists():
-            return {"ok": False, "errors": {"nombre": "Ya existe una categoría con ese nombre."}, "message": "Ya existe una categoría con ese nombre."}
+            return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
 
         try:
             categoria.nombre = nombre
@@ -537,7 +541,7 @@ class AdminCatalogService:
         except Exception:
             return {
                 "ok": False,
-                "message": "El modulo de publicaciones no esta habilitado en la configuracion actual.",
+                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
             }
 
         publicacion = Publicacion.objects.filter(id=publicacion_id).first()
@@ -581,7 +585,7 @@ class AdminCatalogService:
         except Exception:
             return {
                 "ok": False,
-                "message": "El modulo de publicaciones no esta habilitado en la configuracion actual.",
+                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
             }
 
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
@@ -598,7 +602,7 @@ class AdminCatalogService:
             tipo = tipo_otro
 
         if not tipo:
-            return {"ok": False, "errors": {"tipo": "Debe seleccionar un tipo o escribir uno nuevo."}, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
+            return {"ok": False, "errors": {"tipo": TIPO_OBLIGATORIO_MSG}, "message": TIPO_OBLIGATORIO_MSG}
         if len(tipo) > 30:
             return {"ok": False, "errors": {"tipo": "El tipo no puede superar 30 caracteres."}, "message": "El tipo no puede superar 30 caracteres."}
 
