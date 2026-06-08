@@ -623,6 +623,7 @@ def admin_redirect_no_autorizado(request):
     return render(request, "base/inicio.html")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def admin(request):
@@ -633,6 +634,7 @@ def admin(request):
     return render(request, "admin/admin.html", contexto)
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def listar_usuarios(request):
@@ -664,6 +666,7 @@ def listar_usuarios(request):
     return render(request, "admin/Usuarios/listUsuario.html", contexto)
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_usuarios_pdf(request):
@@ -676,6 +679,7 @@ def exportar_usuarios_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "usuarios.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_usuarios_excel(request):
@@ -796,6 +800,7 @@ def crear_usuario_admin(request):
     })
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def listar_publicaciones_admin(request):
@@ -858,6 +863,7 @@ def crear_publicacion_admin(request):
     )
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_puntos_eca_pdf(request):
@@ -870,6 +876,7 @@ def exportar_puntos_eca_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "puntos_eca.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_puntos_eca_excel(request):
@@ -936,6 +943,7 @@ def crear_punto_eca_admin(request):
     })
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def listar_puntos_eca_admin(request):
@@ -950,6 +958,7 @@ def listar_puntos_eca_admin(request):
     return render(request, "admin/PuntoECA/listPuntoECA.html", {"puntos": puntos, "search_query": q})
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_materiales_pdf(request):
@@ -962,6 +971,7 @@ def exportar_materiales_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "materiales.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_materiales_excel(request):
@@ -1000,6 +1010,7 @@ def exportar_materiales_excel(request):
     return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "materiales.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def listar_materiales_admin(request):
@@ -1014,6 +1025,7 @@ def listar_materiales_admin(request):
     return render(request, "admin/Materiales/listMaterial.html", {"materiales": materiales, "search_query": q})
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_categorias_material_pdf(request):
@@ -1026,6 +1038,7 @@ def exportar_categorias_material_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_material.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_categorias_material_excel(request):
@@ -1061,6 +1074,7 @@ def exportar_categorias_material_excel(request):
     return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_material.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def listar_categorias_material_admin(request):
@@ -1074,6 +1088,7 @@ def listar_categorias_material_admin(request):
     return render(request, "admin/CategoriasMateriales/listCategoriaMaterial.html", {"categorias": categorias, "search_query": q})
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_categorias_publicacion_pdf(request):
@@ -1090,6 +1105,7 @@ def exportar_categorias_publicacion_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_publicacion.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_categorias_publicacion_excel(request):
@@ -1131,6 +1147,7 @@ def exportar_categorias_publicacion_excel(request):
     return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_publicacion.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def listar_categorias_publicacion_admin(request):
@@ -1162,6 +1179,7 @@ def listar_categorias_publicacion_admin(request):
     )
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_tipos_material_pdf(request):
@@ -1174,6 +1192,7 @@ def exportar_tipos_material_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_material.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def exportar_tipos_material_excel(request):
@@ -1209,6 +1228,7 @@ def exportar_tipos_material_excel(request):
     return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "tipos_material.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def listar_tipos_material_admin(request):
@@ -1502,6 +1522,7 @@ def crear_material_admin(request):
     return redirect("/panel_admin/materiales/gestion/?tab=materiales")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def gestion_materiales(request):
@@ -1575,6 +1596,7 @@ _PASSWORD_COMP = _re.compile(
 )
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def perfil_admin(request):
