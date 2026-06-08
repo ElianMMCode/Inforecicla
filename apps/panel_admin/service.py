@@ -390,9 +390,9 @@ class AdminCatalogService:
         estados_validos = {value for value, _ in cons.Estado.choices}
 
         if not nombre:
-            return {"ok": False, "errors": {"nombre": "El nombre es obligatorio."}, "message": "El nombre es obligatorio."}
+            return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
         if len(nombre) < 3:
-            return {"ok": False, "errors": {"nombre": "El nombre debe tener al menos 3 caracteres."}, "message": "El nombre debe tener al menos 3 caracteres."}
+            return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
         if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
             return {"ok": False, "errors": {"nombre": "El nombre debe contener al menos una letra."}, "message": "El nombre debe contener al menos una letra."}
         if estado not in estados_validos:
@@ -423,9 +423,9 @@ class AdminCatalogService:
         estados_validos = {value for value, _ in cons.Estado.choices}
 
         if not nombre:
-            return {"ok": False, "errors": {"nombre": "El nombre es obligatorio."}, "message": "El nombre es obligatorio."}
+            return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
         if len(nombre) < 3:
-            return {"ok": False, "errors": {"nombre": "El nombre debe tener al menos 3 caracteres."}, "message": "El nombre debe tener al menos 3 caracteres."}
+            return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
         if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
             return {"ok": False, "errors": {"nombre": "El nombre debe contener al menos una letra."}, "message": "El nombre debe contener al menos una letra."}
         if estado not in estados_validos:
@@ -457,7 +457,7 @@ class AdminCatalogService:
         tipo_id = data.get("tipo_id")
 
         if not nombre:
-            return {"ok": False, "errors": {"nombre": "El nombre es obligatorio."}, "message": "El nombre es obligatorio."}
+            return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
@@ -622,14 +622,14 @@ class AdminCatalogService:
 
             if "nombre" in campos_modelo:
                 if not nombre:
-                    return {"ok": False, "errors": {"nombre": "El nombre de la categoría es obligatorio."}, "message": "El nombre de la categoría es obligatorio."}
+                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
                 if len(nombre) > 30:
-                    return {"ok": False, "errors": {"nombre": "El nombre no puede exceder 30 caracteres."}, "message": "El nombre no puede exceder 30 caracteres."}
+                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_MAX_30_MSG}, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
                 categoria.nombre = nombre
 
             if "descripcion" in campos_modelo:
                 if len(descripcion) > 500:
-                    return {"ok": False, "errors": {"descripcion": "La descripción no puede exceder 500 caracteres."}, "message": "La descripción no puede exceder 500 caracteres."}
+                    return {"ok": False, "errors": {"descripcion": DESCRIPCION_CATEGORIA_MAX_500_MSG}, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
                 categoria.descripcion = descripcion
 
             categoria.tipo = tipo

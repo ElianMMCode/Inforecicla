@@ -42,69 +42,69 @@
                     </h5>
                     <div class="row g-3">
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-person-badge me-1 text-success"></i>Nombres
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.nombres }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-person me-1 text-success"></i>Apellidos
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.apellidos }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-envelope me-1 text-success"></i>Correo Electrónico
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.email }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-telephone me-1 text-success"></i>Celular
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.celular|default:"No registrado" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-geo-alt me-1 text-success"></i>Ciudad
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.ciudad|default:"Bogotá" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-map me-1 text-success"></i>Localidad
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.localidad.nombre|default:"No registrada" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-card-text me-1 text-success"></i>Tipo de Documento
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.get_tipo_documento_display }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-hash me-1 text-success"></i>N° Documento
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.numero_documento|default:"No registrado" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-calendar me-1 text-success"></i>Fecha de Nacimiento
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-calendar-check me-1 text-success"></i>Miembro Desde
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-shield me-1 text-danger"></i>Rol
-                            </label>
+                            </span>
                             <p class="mb-0">
                                 <span class="badge bg-danger rounded-pill px-3 py-2">Administrador</span>
                             </p>

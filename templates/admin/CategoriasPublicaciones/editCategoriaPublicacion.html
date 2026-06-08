@@ -23,17 +23,17 @@
     <form method="post" novalidate id="editCatPubForm" class="needs-validation">
       {% csrf_token %}
       <div class="mb-3">
-        <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-<input type="text" name="nombre" class="form-control" value="{{ form_data.nombre }}" minlength="3" maxlength="30" required pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+        <label for="nombreInput" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+<input id="nombreInput" type="text" name="nombre" class="form-control" value="{{ form_data.nombre }}" minlength="3" maxlength="30" required pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
               <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir letras (máx. 30).</div>
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-          <textarea name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required>{{ form_data.descripcion }}</textarea>
+        <label for="descripcionInput" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+          <textarea id="descripcionInput" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required>{{ form_data.descripcion }}</textarea>
           <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+        <label for="tipoSelect" class="form-label fw-semibold">Tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
         <select id="tipoSelect" name="tipo" class="form-select" required>
           {% for val, label in tipos_publicacion %}
             <option value="{{ val }}" {% if form_data.tipo == val %}selected{% endif %}>{{ label }}</option>
@@ -43,13 +43,13 @@
         <div class="invalid-feedback">Selecciona un tipo.</div>
       </div>
       <div class="mb-3" id="tipoOtroWrapper" style="display: none;">
-        <label class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+        <label for="tipoOtroInput" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
         <input id="tipoOtroInput" type="text" name="tipo_otro" class="form-control" maxlength="30" value="{{ form_data.tipo_otro }}" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
         <div class="invalid-feedback">El nuevo tipo es obligatorio.</div>
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
-        <select name="estado" class="form-select">
+        <label for="estadoSelect" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
+        <select id="estadoSelect" name="estado" class="form-select">
           {% for val, label in estados %}
             <option value="{{ val }}" {% if form_data.estado == val %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
