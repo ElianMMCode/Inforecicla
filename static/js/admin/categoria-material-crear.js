@@ -1,7 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
-  var form = document.getElementById("createCategoriaMaterialForm") || document.getElementById("editCategoriaMaterialForm");
+  var CATEGORIA_IDS = ["createCategoriaMaterialForm", "editCategoriaMaterialForm"];
+  var TIPO_IDS = ["createTipoMaterialForm", "editTipoMaterialForm"];
+  var todos = CATEGORIA_IDS.concat(TIPO_IDS);
+  var form = null;
+  var esCategoria = false;
+  for (var i = 0; i < todos.length; i++) {
+    var f = document.getElementById(todos[i]);
+    if (f) { form = f; esCategoria = CATEGORIA_IDS.indexOf(todos[i]) !== -1; break; }
+  }
   if (!form) return;
-  var esCrear = form.id === "createCategoriaMaterialForm";
+  var esCrear = form.id.indexOf("create") === 0;
+  var entidad = esCategoria ? "categoría" : "tipo";
   materialesInicializarFormulario({
     formularioId: form.id,
     campos: [
@@ -19,8 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
       { name: "estado", esSelect: true, mensaje: "Selecciona un estado." },
     ],
     confirmar: {
-      title: esCrear ? "¿Crear categoría de material?" : "¿Guardar cambios?",
-      text: esCrear ? "El formulario está completo y listo para enviarse." : "Se actualizará la información de la categoría.",
+      title: esCrear ? "¿Crear " + entidad + " de material?" : "¿Guardar cambios?",
+      text: esCrear ? "El formulario está completo y listo para enviarse." : "Se actualizará la información del " + entidad + ".",
       confirmText: esCrear ? "Sí, crear" : "Sí, guardar",
     },
   });

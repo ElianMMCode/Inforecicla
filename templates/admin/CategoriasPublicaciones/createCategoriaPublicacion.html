@@ -20,46 +20,7 @@
   <div class="card-header bg-success text-white"><i class="bi bi-folder me-1"></i> Formulario</div>
   <div class="card-body p-4">
     <form method="post" novalidate id="createCatPubForm" class="needs-validation">
-      {% csrf_token %}
-      <div class="mb-3">
-        <label for="nombreInput" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-<input id="nombreInput" type="text" name="nombre" class="form-control" placeholder="Ej: Educación Ambiental, Noticias..." value="{{ form_data.nombre }}" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir letras (máx. 30).</div>
-      </div>
-      <div class="mb-3">
-        <label for="descripcionInput" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-          <textarea id="descripcionInput" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Describe el propósito de esta categoría...">{{ form_data.descripcion }}</textarea>
-          <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
-      </div>
-      <div class="mb-3">
-        <label for="tipoSelect" class="form-label fw-semibold">Tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-        <select id="tipoSelect" name="tipo" class="form-select" required>
-          <option value="">Seleccionar tipo...</option>
-          {% for value, label in tipos_publicacion %}
-          <option value="{{ value }}" {% if form_data.tipo == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-          <option value="__otro__" {% if form_data.tipo == '__otro__' %}selected{% endif %}>Otro tipo...</option>
-        </select>
-        <div class="invalid-feedback">Selecciona un tipo.</div>
-      </div>
-      <div class="mb-3" id="tipoOtroWrapper" style="display: none;">
-        <label for="tipoOtroInput" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-        <input id="tipoOtroInput" type="text" name="tipo_otro" class="form-control" maxlength="30" value="{{ form_data.tipo_otro }}" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
-        <div class="invalid-feedback">El nuevo tipo es obligatorio.</div>
-      </div>
-      <div class="mb-3">
-        <label for="estadoSelect" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
-        <select id="estadoSelect" name="estado" class="form-select">
-          <option value="ACTIVO" {% if form_data.estado == 'ACTIVO' %}selected{% endif %}>Activo</option>
-          <option value="INACTIVO" {% if form_data.estado == 'INACTIVO' %}selected{% endif %}>Inactivo</option>
-        </select>
-      </div>
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-success">
-          <i class="bi bi-save me-1"></i> Crear Categoría
-        </button>
-        <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
+      {% include "admin/CategoriasPublicaciones/_form_body.html" with mode="create" submit_text="Crear Categoría" %}
     </form>
   </div>
 </div>
@@ -67,27 +28,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
-<script>
-(function () {
-  var tipoSelect = document.getElementById("tipoSelect");
-  var tipoOtroWrapper = document.getElementById("tipoOtroWrapper");
-  var tipoOtroInput = document.getElementById("tipoOtroInput");
-
-  function toggleTipoOtro() {
-    var esOtro = tipoSelect && tipoSelect.value === "__otro__";
-    if (tipoOtroWrapper) tipoOtroWrapper.style.display = esOtro ? "block" : "none";
-    if (tipoOtroInput) tipoOtroInput.required = esOtro;
-    if (!esOtro && tipoOtroInput) tipoOtroInput.value = "";
-  }
-
-  if (tipoSelect) {
-    tipoSelect.addEventListener("change", toggleTipoOtro);
-    toggleTipoOtro();
-  }
-
-  initModalFormAjax('createCatPubForm', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
-})();
-</script>
-{% include "admin/_messages_swal.html" %}
+{% include "admin/CategoriasPublicaciones/_form_scripts.html" with form_id="createCatPubForm" %}
 {% endblock %}
