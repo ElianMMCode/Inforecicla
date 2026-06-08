@@ -264,36 +264,36 @@ class AdminCatalogService:
             return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
-    @transaction.atomic
-    def crear_material(data, files=None):
+    def _validar_material_data(data):
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip() or None
         estado = (data.get("estado") or "ACTIVO").strip().upper()
-        categoria_id = data.get("categoria_id")
-        tipo_id = data.get("tipo_id")
+        estado_valido = estado in {value for value, _ in cons.Estado.choices}
 
         errores = {}
-        estados_validos = {value for value, _ in cons.Estado.choices}
-
         if not nombre:
             errores["nombre"] = NOMBRE_OBLIGATORIO_MSG
         elif len(nombre) > 30:
             errores["nombre"] = NOMBRE_MAX_30_MSG
-
-        if estado not in estados_validos:
+        if not estado_valido:
             errores["estado"] = ESTADO_INVALIDO_MSG
 
-        categoria = None
-        if categoria_id:
-            categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
-            if not categoria:
-                errores["categoria_id"] = "Categoría de material inválida."
+        categoria_id = data.get("categoria_id")
+        categoria = CategoriaMaterial.objects.filter(id=categoria_id).first() if categoria_id else None
+        if categoria_id and not categoria:
+            errores["categoria_id"] = "Categoría de material inválida."
 
-        tipo = None
-        if tipo_id:
-            tipo = TipoMaterial.objects.filter(id=tipo_id).first()
-            if not tipo:
-                errores["tipo_id"] = "Tipo de material inválido."
+        tipo_id = data.get("tipo_id")
+        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else None
+        if tipo_id and not tipo:
+            errores["tipo_id"] = "Tipo de material inválido."
+
+        return nombre, descripcion, estado, categoria, tipo, errores
+
+    @staticmethod
+    @transaction.atomic
+    def crear_material(data, files=None):
+        nombre, descripcion, estado, categoria, tipo, errores = AdminCatalogService._validar_material_data(data)
 
         if errores:
             msg = next(iter(errores.values()))
