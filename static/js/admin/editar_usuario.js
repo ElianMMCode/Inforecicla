@@ -117,11 +117,6 @@ document.addEventListener("DOMContentLoaded", () => {
       text: "Los datos están completos y listos para actualizarse.",
       confirmText: "Sí, guardar",
     },
-    antesDeEnviar: () => {
-      if (!validarFormulario()) {
-        return false;
-      }
-      return true;
-    },
+    antesDeEnviar: () => validarFormulario(),
   });
 });
