@@ -312,63 +312,62 @@ class AdminCatalogService:
                     "errors": {"_general": f"No se pudo guardar: {_aplanar_error(e)}"}}
 
     @staticmethod
-    @transaction.atomic
-    def crear_categoria_publicacion(data):
-        try:
-            from apps.publicaciones.models import CategoriaPublicacion
-        except Exception:
-            return {
-                "ok": False,
-                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
-            }
-
+    def _validar_categoria_publicacion(data, campos_modelo):
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip()
         tipo = (data.get("tipo") or "").strip()
         tipo_otro = (data.get("tipo_otro") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
 
-        # Si el usuario selecciona "Otro tipo", tomar el valor del input libre.
         if tipo == "__otro__":
             tipo = tipo_otro
 
-        errores = {}
         if not tipo:
-            errores["tipo"] = TIPO_OBLIGATORIO_MSG
-        elif len(tipo) > 30:
-            errores["tipo"] = TIPO_MAX_30_MSG
+            return None, {"ok": False, "errors": {"tipo": TIPO_OBLIGATORIO_MSG}, "message": TIPO_OBLIGATORIO_MSG}
+        if len(tipo) > 30:
+            return None, {"ok": False, "errors": {"tipo": TIPO_MAX_30_MSG}, "message": TIPO_MAX_30_MSG}
 
-        if errores:
-            return {"ok": False, "errors": errores, "message": next(iter(errores.values()))}
-
-        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
-            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
+            return None, {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
+
+        payload = {"tipo": tipo, "estado": estado}
+
+        if "nombre" in campos_modelo:
+            if not nombre:
+                return None, {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
+            if len(nombre) > 30:
+                return None, {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_MAX_30_MSG}, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
+            payload["nombre"] = nombre
+
+        if "descripcion" in campos_modelo:
+            if len(descripcion) > 500:
+                return None, {"ok": False, "errors": {"descripcion": DESCRIPCION_CATEGORIA_MAX_500_MSG}, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
+            payload["descripcion"] = descripcion
+
+        return payload, None
+
+    @staticmethod
+    @transaction.atomic
+    def crear_categoria_publicacion(data):
+        try:
+            from apps.publicaciones.models import CategoriaPublicacion
+        except Exception:
+            return {"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_MSG}
+
+        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
+        campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
+
+        payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
+        if error:
+            return error
 
         try:
-            campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
-            payload = {"tipo": tipo, "estado": estado}
-
-            if "nombre" in campos_modelo:
-                if not nombre:
-                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
-                if len(nombre) > 30:
-                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_MAX_30_MSG}, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
-                payload["nombre"] = nombre
-
-            if "descripcion" in campos_modelo:
-                if len(descripcion) > 500:
-                    return {"ok": False, "errors": {"descripcion": DESCRIPCION_CATEGORIA_MAX_500_MSG}, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
-                payload["descripcion"] = descripcion
-
             obj = CategoriaPublicacion(**payload)
-
-            if tipo in tipos_base:
+            if payload["tipo"] in tipos_base:
                 obj.full_clean()
             else:
                 obj.clean_fields(exclude=["tipo"])
-
             obj.save()
             return {"ok": True, "message": "Categoria de publicacion creada correctamente."}
         except (ValidationError, IntegrityError) as e:
