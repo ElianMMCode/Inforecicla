@@ -536,7 +536,7 @@
   }
 
   initModalFormAjax('formCrearPuntoECA', '{% url "panel_admin:listar_puntos_eca_admin" %}', validarPasswordsECA);
-  initModalFormAjax('formEditarPuntoECA', window.location.href, validarPasswordsEditECA);
+  initModalFormAjax('formEditarPuntoECA', globalThis.location.href, validarPasswordsEditECA);
 
   setupEditModal('.btn-editar-punto', 'modalEditarPuntoECA', {
     nombre: 'edit_eca_nombre', direccion: 'edit_eca_direccion',
@@ -585,30 +585,34 @@
     var jsScript = document.createElement('script');
     jsScript.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
     jsScript.onload = function() {
-      setTimeout(function() {
-        var latInp = document.getElementById(latInputId);
-        var lngInp = document.getElementById(lngInputId);
-        var initLat = lat || Number.parseFloat(latInp && latInp.value) || 4.711;
-        var initLng = lng || Number.parseFloat(lngInp && lngInp.value) || -74.072;
-        var container = document.getElementById(containerId);
-        if (!container || container.dataset.mapInitialized) return;
-        container.dataset.mapInitialized = '1';
-        var mapa = L.map(containerId).setView([initLat, initLng], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
-        var marcador = null;
-        if (latInp && latInp.value && lngInp && lngInp.value) {
-          marcador = L.marker([Number.parseFloat(latInp.value), Number.parseFloat(lngInp.value)]).addTo(mapa);
-        }
-        mapa.on('click', function(e) {
-          if (marcador) mapa.removeLayer(marcador);
-          marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
-          if (latInp) latInp.value = e.latlng.lat.toFixed(4);
-          if (lngInp) lngInp.value = e.latlng.lng.toFixed(4);
-        });
-        setTimeout(function() { mapa.invalidateSize(); }, 200);
-      }, 100);
+      setTimeout(initMapaDelayed.bind(null, containerId, latInputId, lngInputId, lat, lng), 100);
     };
     document.body.appendChild(jsScript);
+  }
+
+  function initMapaDelayed(containerId, latInputId, lngInputId, lat, lng) {
+    var latInp = document.getElementById(latInputId);
+    var lngInp = document.getElementById(lngInputId);
+    var initLat = lat || Number.parseFloat(latInp && latInp.value) || 4.711;
+    var initLng = lng || Number.parseFloat(lngInp && lngInp.value) || -74.072;
+    var container = document.getElementById(containerId);
+    if (!container || container.dataset.mapInitialized) return;
+    container.dataset.mapInitialized = '1';
+    var mapa = L.map(containerId).setView([initLat, initLng], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
+    var marcador = null;
+    if (latInp && latInp.value && lngInp && lngInp.value) {
+      marcador = L.marker([Number.parseFloat(latInp.value), Number.parseFloat(lngInp.value)]).addTo(mapa);
+    }
+    mapa.on('click', onMapClick.bind(null, mapa, marcador, latInp, lngInp));
+    setTimeout(function() { mapa.invalidateSize(); }, 200);
+  }
+
+  function onMapClick(mapa, marcador, latInp, lngInp, e) {
+    if (marcador) mapa.removeLayer(marcador);
+    marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
+    if (latInp) latInp.value = e.latlng.lat.toFixed(4);
+    if (lngInp) lngInp.value = e.latlng.lng.toFixed(4);
   }
 
   var crearModal = document.getElementById('modalCrearPuntoECA');

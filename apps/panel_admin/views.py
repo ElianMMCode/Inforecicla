@@ -1002,6 +1002,22 @@ def exportar_puntos_eca_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "puntos_eca.pdf")
 
 
+def _fila_punto_eca_excel(punto):
+    gestor = ""
+    if punto.gestor_eca:
+        gestor = f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}"
+    localidad = punto.localidad.nombre if punto.localidad else ""
+    return [
+        punto.nombre, punto.direccion or "",
+        localidad,
+        punto.ciudad or "", punto.telefono_punto or "",
+        punto.email or "", punto.celular or "",
+        gestor, punto.horario_atencion or "",
+        punto.sitio_web or "", punto.descripcion or "",
+        punto.logo_url_punto or "", punto.foto_url_punto or "",
+        punto.estado or "", punto.latitud or "", punto.longitud or "",
+    ]
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_safe
@@ -1010,19 +1026,7 @@ def exportar_puntos_eca_excel(request):
                "Celular", "Gestor", "Horario", "Sitio Web", "Descripción",
                "Logo URL", "Foto URL", "Estado", "Latitud", "Longitud"]
     puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
-    rows = []
-    for punto in puntos:
-        gestor = f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else ""
-        rows.append([
-            punto.nombre, punto.direccion or "",
-            punto.localidad.nombre if punto.localidad else "",
-            punto.ciudad or "", punto.telefono_punto or "",
-            punto.email or "", punto.celular or "",
-            gestor, punto.horario_atencion or "",
-            punto.sitio_web or "", punto.descripcion or "",
-            punto.logo_url_punto or "", punto.foto_url_punto or "",
-            punto.estado or "", punto.latitud or "", punto.longitud or "",
-        ])
+    rows = [_fila_punto_eca_excel(p) for p in puntos]
     data = _crear_libro_excel(headers, rows, "Puntos ECA")
     return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "puntos_eca.xlsx")
 

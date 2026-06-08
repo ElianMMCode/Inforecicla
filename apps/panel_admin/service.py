@@ -509,6 +509,29 @@ class AdminCatalogService:
             punto.localidad = localidad
 
     @staticmethod
+    def _actualizar_gestor_punto_eca(gestor, data):
+        gestor_nombres = (data.get("gestor_nombres") or "").strip()
+        if gestor_nombres:
+            gestor.nombres = gestor_nombres
+        gestor_apellidos = (data.get("gestor_apellidos") or "").strip()
+        if gestor_apellidos:
+            gestor.apellidos = gestor_apellidos
+        gestor_email = (data.get("gestor_email") or "").strip()
+        if gestor_email:
+            gestor.email = gestor_email
+        gestor_tipo_doc = (data.get("gestor_tipo_documento") or "").strip()
+        if gestor_tipo_doc:
+            gestor.tipo_documento = gestor_tipo_doc
+        gestor_num_doc = (data.get("gestor_numero_documento") or "").strip()
+        if gestor_num_doc:
+            gestor.numero_documento = gestor_num_doc
+        gestor_password = data.get("gestor_password", "")
+        if gestor_password:
+            gestor.set_password(gestor_password)
+        gestor.full_clean()
+        gestor.save()
+
+    @staticmethod
     @transaction.atomic
     def actualizar_punto_eca(punto_id, data):
         punto = PuntoECA.objects.select_related("gestor_eca").filter(id=punto_id).first()
@@ -521,30 +544,8 @@ class AdminCatalogService:
 
         try:
             AdminCatalogService._aplicar_campos_punto_eca(punto, data, estado)
-
-            gestor = punto.gestor_eca
-            if gestor:
-                gestor_nombres = (data.get("gestor_nombres") or "").strip()
-                if gestor_nombres:
-                    gestor.nombres = gestor_nombres
-                gestor_apellidos = (data.get("gestor_apellidos") or "").strip()
-                if gestor_apellidos:
-                    gestor.apellidos = gestor_apellidos
-                gestor_email = (data.get("gestor_email") or "").strip()
-                if gestor_email:
-                    gestor.email = gestor_email
-                gestor_tipo_doc = (data.get("gestor_tipo_documento") or "").strip()
-                if gestor_tipo_doc:
-                    gestor.tipo_documento = gestor_tipo_doc
-                gestor_num_doc = (data.get("gestor_numero_documento") or "").strip()
-                if gestor_num_doc:
-                    gestor.numero_documento = gestor_num_doc
-                gestor_password = data.get("gestor_password", "")
-                if gestor_password:
-                    gestor.set_password(gestor_password)
-                gestor.full_clean()
-                gestor.save()
-
+            if punto.gestor_eca:
+                AdminCatalogService._actualizar_gestor_punto_eca(punto.gestor_eca, data)
             punto.full_clean()
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}
