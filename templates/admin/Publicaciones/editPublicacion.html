@@ -83,7 +83,9 @@
             {% if publicacion.video and publicacion.video.url %}
             <div class="border rounded p-2 bg-white" style="max-width:200px;">
               <small class="d-block text-muted mb-1">Video actual:</small>
-              <!-- NOSONAR:S4084 --><video src="{{ publicacion.video.url }}" style="max-height:80px;" controls class="w-100 rounded"></video>
+              <video src="{{ publicacion.video.url }}" style="max-height:80px;" controls class="w-100 rounded">
+                <track kind="captions" label="No disponible" srclang="es">
+              </video>
               <div class="form-check mt-1">
                 <input type="checkbox" name="eliminar_video" value="1" class="form-check-input" id="elim_video">
                 <label class="form-check-label small text-danger" for="elim_video">Eliminar video</label>
