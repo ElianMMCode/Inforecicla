@@ -1,13 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
 
-# Create your views here.
-def publicacion(request):
-    return render(request, "publicacion/panel_publicaciones.html")
 from .service import PublicacionService
 
 
@@ -17,6 +15,11 @@ def panel_publicaciones(request):
         "publicacion/panel_publicaciones.html",
         PublicacionService.list_for_panel(request),
     )
+
+
+def panel_publicaciones_ajax(request):
+    data = PublicacionService.ajax_cards(request)
+    return JsonResponse(data)
 
 
 def publicacion(request, publicacion_id):

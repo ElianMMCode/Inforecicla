@@ -78,6 +78,7 @@
                     data-contenido="{{ pub.contenido|default:'' }}"
                     data-resumen="{{ pub.resumen|default:'' }}"
                     data-destacado="{% if pub.destacado %}1{% endif %}"
+                    data-video_url="{{ pub.video_url|default:'' }}"
                     data-categoria_id="{{ pub.categoria.id|default:'' }}"
                     data-estado="{{ pub.estado|default:'ACTIVO' }}"
                     data-action="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}">
@@ -284,6 +285,7 @@
   setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
     titulo: 'ep_titulo', contenido: 'ep_contenido',
     resumen: 'ep_resumen', destacado: 'ep_destacado',
+    video_url: 'ep_video_url',
     categoria_id: 'ep_categoria', estado: 'ep_estado'
   });
 })();

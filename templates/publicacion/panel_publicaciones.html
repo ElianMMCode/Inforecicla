@@ -3,6 +3,9 @@
 
 {% block page_title %}Publicaciones - InfoRecicla{% endblock %}
 {% block main_class %}py-0{% endblock %}
+{% block extra_head %}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+{% endblock %}
 {% block hero %}
 <section class="page-hero py-5">
     <div class="container">
@@ -15,7 +18,7 @@
 {% block content %}
 
 {% if publicaciones_destacadas %}
-<section class="py-4">
+<section class="py-4" data-aos="fade-down" data-aos-duration="600">
     <div class="container">
         <h2 class="fw-bold h4 mb-3 d-flex align-items-center gap-2">
             <i class="fas fa-star text-warning" aria-hidden="true"></i>Publicaciones destacadas
@@ -77,11 +80,11 @@
 </section>
 {% endif %}
 
-<section class="py-4">
+<section class="py-4" data-aos="fade-up" data-aos-duration="600">
     <div class="container">
         <div class="bg-white rounded-4 border shadow-sm p-4">
-            <form class="row g-3" method="get">
-                <div class="col-12 col-lg-5">
+            <form class="row g-3" method="get" id="form-filtros">
+                <div class="col-12 col-lg-4">
                     <label for="filtro-buscar" class="form-label small fw-semibold text-muted mb-1">
                         <i class="fas fa-magnifying-glass me-1 text-success" aria-hidden="true"></i>Buscar
                     </label>
@@ -92,7 +95,7 @@
                         <input type="text" id="filtro-buscar" class="form-control border-start-0 ps-1" placeholder="Buscar publicaciones..." name="q" value="{{ filtros.q }}">
                     </div>
                 </div>
-                <div class="col-6 col-lg-3">
+                <div class="col-6 col-lg-2">
                     <label for="filtro-categoria" class="form-label small fw-semibold text-muted mb-1">
                         <i class="fas fa-tags me-1 text-success" aria-hidden="true"></i>Categoría
                     </label>
@@ -109,11 +112,20 @@
                     </label>
                     <select id="filtro-orden" class="form-select" name="orden">
                         <option value="recientes" {% if filtros.orden == 'recientes' %}selected{% endif %}>Más recientes</option>
+                        <option value="destacados" {% if filtros.orden == 'destacados' %}selected{% endif %}>Destacados primero</option>
                         <option value="valorados" {% if filtros.orden == 'valorados' %}selected{% endif %}>Mejor valorados</option>
                         <option value="comentados" {% if filtros.orden == 'comentados' %}selected{% endif %}>Más comentados</option>
                     </select>
                 </div>
-                <div class="col-12 col-lg-2 d-grid align-self-end">
+                <div class="col-6 col-lg-2 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="filtro-destacados" name="destacados" value="1" {% if filtros.destacados == '1' %}checked{% endif %}>
+                        <label class="form-check-label small fw-semibold text-muted" for="filtro-destacados">
+                            <i class="fas fa-star text-warning me-1" aria-hidden="true"></i>Solo destacados
+                        </label>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-2 d-grid align-self-end">
                     <button class="btn btn-success fw-semibold" type="submit">
                         <i class="fas fa-sliders me-1" aria-hidden="true"></i>Filtrar
                     </button>
@@ -126,83 +138,24 @@
 <section class="pb-5">
     <div class="container">
         {% if publicaciones %}
-        <div class="row g-4">
-            {% for pub in publicaciones %}
-            <div class="col-md-6 col-xl-4">
-                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:46px;height:46px;font-size:1.1rem;">{{ pub.usuario.nombres|first }}</div>
-                            <div class="overflow-hidden">
-                                <div class="fw-semibold small text-truncate">{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</div>
-                                <div class="text-muted d-flex align-items-center gap-1 flex-wrap" style="font-size:.75rem;">
-                                    <i class="far fa-calendar" aria-hidden="true"></i>{{ pub.fecha_creacion|date:"d M Y" }}
-                                    {% if pub.categoria %}
-                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">{{ pub.categoria.nombre|default:pub.categoria.get_tipo_display }}</span>
-                                    {% endif %}
-                                    {% if pub.destacado %}
-                                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle"><i class="fas fa-star" aria-hidden="true"></i> Destacado</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <h5 class="fw-bold mb-2">{{ pub.titulo }}</h5>
-                        <p class="text-muted small mb-3">{{ pub.resumen|truncatechars:150 }}</p>
-
-                        <div class="mt-auto">
-                            <div class="d-flex align-items-center gap-2 mb-3">
-                                <span class="badge rounded-pill bg-success-subtle text-success d-inline-flex align-items-center gap-1 px-3 py-2">
-                                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>{{ pub.likes_count }}
-                                </span>
-                                <span class="badge rounded-pill bg-danger-subtle text-danger d-inline-flex align-items-center gap-1 px-3 py-2">
-                                    <i class="fas fa-thumbs-down" aria-hidden="true"></i>{{ pub.dislikes_count }}
-                                </span>
-                                <span class="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center gap-1 px-3 py-2">
-                                    <i class="fas fa-comment-dots" aria-hidden="true"></i>{{ pub.comentarios_total }}
-                                </span>
-                                {% if pub.video or pub.video_url %}
-                                <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle px-2 py-2" title="Contiene video">
-                                    <i class="fas fa-video" aria-hidden="true"></i>
-                                </span>
-                                {% endif %}
-                            </div>
-                            <a class="btn btn-success w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" href="{% url 'publicacion:detalle_publicacion' pub.id %}">
-                                Ver publicación<i class="fas fa-arrow-right" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="row g-4" id="grid-publicaciones">
+            {% include "publicacion/_publicacion_cards.html" %}
         </div>
 
-        {% if publicaciones.has_other_pages %}
-        <nav class="mt-5 d-flex justify-content-center" aria-label="Paginación de publicaciones">
-            <ul class="pagination shadow-sm rounded overflow-hidden">
-                {% if publicaciones.has_previous %}
-                <li class="page-item"><a class="page-link text-success" href="?page={{ publicaciones.previous_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">«</a></li>
-                {% else %}
-                <li class="page-item disabled"><span class="page-link">«</span></li>
-                {% endif %}
-
-                {% for num in publicaciones.paginator.page_range %}
-                <li class="page-item {% if publicaciones.number == num %}active{% endif %}">
-                    <a class="page-link {% if publicaciones.number != num %}text-success{% endif %}" href="?page={{ num }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">{{ num }}</a>
-                </li>
-                {% endfor %}
-
-                {% if publicaciones.has_next %}
-                <li class="page-item"><a class="page-link text-success" href="?page={{ publicaciones.next_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.categoria %}&categoria={{ filtros.categoria }}{% endif %}{% if filtros.orden %}&orden={{ filtros.orden }}{% endif %}">»</a></li>
-                {% else %}
-                <li class="page-item disabled"><span class="page-link">»</span></li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
+        <div id="carga-mas-container" class="mt-5 text-center" data-total-pages="{{ total_pages }}" data-current-page="{{ publicaciones.number }}">
+            {% if publicaciones.has_next %}
+            <button id="btn-cargar-mas" class="btn btn-outline-success fw-semibold px-5 py-2 rounded-pill shadow-sm" type="button">
+                <i class="fas fa-plus me-2" aria-hidden="true"></i>Cargar más publicaciones
+            </button>
+            {% endif %}
+            <div id="spinner-carga" class="spinner-border text-success d-none" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p id="fin-publicaciones" class="text-muted small mt-3 d-none">Ya no hay más publicaciones</p>
+        </div>
 
         {% else %}
-        <div class="text-center py-5">
+        <div class="text-center py-5" data-aos="fade-up" data-aos-duration="600">
             <div class="bg-success-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 90px; height: 90px;">
                 <i class="fas fa-newspaper text-success fs-1" aria-hidden="true"></i>
             </div>
@@ -212,4 +165,68 @@
         {% endif %}
     </div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+(function() {
+    AOS.init({
+        once: true,
+        duration: 600,
+        easing: 'ease-out-cubic',
+    });
+
+    var btn = document.getElementById('btn-cargar-mas');
+    if (!btn) return;
+
+    var container = document.getElementById('carga-mas-container');
+    var grid = document.getElementById('grid-publicaciones');
+    var spinner = document.getElementById('spinner-carga');
+    var fin = document.getElementById('fin-publicaciones');
+    var currentPage = parseInt(container.dataset.currentPage, 10);
+    var totalPages = parseInt(container.dataset.totalPages, 10);
+
+    function buildUrl(page) {
+        var params = new URLSearchParams(window.location.search);
+        params.set('page', page);
+        return window.location.pathname.replace(/\/$/, '') + '/ajax/cards/?' + params.toString();
+    }
+
+    btn.addEventListener('click', function() {
+        var nextPage = currentPage + 1;
+        if (nextPage > totalPages) return;
+
+        btn.classList.add('d-none');
+        spinner.classList.remove('d-none');
+
+        var url = buildUrl(nextPage);
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                spinner.classList.add('d-none');
+                if (data.html) {
+                    var tmp = document.createElement('div');
+                    tmp.innerHTML = data.html;
+                    while (tmp.firstChild) {
+                        grid.appendChild(tmp.firstChild);
+                    }
+                    currentPage = data.page;
+                    AOS.refresh();
+
+                    if (!data.has_next) {
+                        fin.classList.remove('d-none');
+                    } else {
+                        btn.classList.remove('d-none');
+                    }
+                }
+            })
+            .catch(function() {
+                spinner.classList.add('d-none');
+                btn.classList.remove('d-none');
+            });
+    });
+})();
+</script>
 {% endblock %}

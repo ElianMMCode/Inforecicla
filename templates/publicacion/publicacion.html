@@ -55,6 +55,11 @@
                             <div class="ratio ratio-16x9">
                                 <iframe src="{{ publicacion.video_url|video_embed_url }}" title="Video de la publicación" allowfullscreen></iframe>
                             </div>
+                            <div class="p-2 text-center bg-light border-top">
+                                <a href="{{ publicacion.video_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
+                                    <i class="fab fa-youtube me-1" aria-hidden="true"></i>Ver en YouTube
+                                </a>
+                            </div>
                         </div>
                         {% elif publicacion.video %}
                         <div class="mb-4 rounded overflow-hidden shadow-sm">
