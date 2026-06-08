@@ -422,6 +422,9 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{{ tendencia_usuarios_json|json_script:"tendencia-usuarios-data" }}
+{{ dist_puntos_eca_json|json_script:"puntos-eca-data" }}
+{{ dist_materiales_json|json_script:"materiales-data" }}
 <script>
 (function() {
     const COLORS = {
@@ -434,7 +437,7 @@
     };
 
     // 1. Tendencia de usuarios (Line)
-    const datosTendencia = {{ tendencia_usuarios_json|safe }};  {# safe: conteos agregados desde DB, sin input de usuario #}
+    const datosTendencia = JSON.parse(document.getElementById('tendencia-usuarios-data').textContent);
     if (datosTendencia.length) {
         new Chart(document.getElementById('chartTendenciaUsuarios'), {
             type: 'line',
@@ -485,7 +488,7 @@
     });
 
     // 3. Puntos ECA por localidad (Horizontal Bar)
-    const datosPuntos = {{ dist_puntos_eca_json|safe }};  {# safe: nombres de localidad del catalogo, sin input de usuario #}
+    const datosPuntos = JSON.parse(document.getElementById('puntos-eca-data').textContent);
     if (datosPuntos.length) {
         new Chart(document.getElementById('chartPuntosECA'), {
             type: 'bar',
@@ -513,7 +516,7 @@
 
     // 4. Materiales por categoría (Doughnut)
     const catColors = ['#198754','#0dcaf0','#ffc107','#0d6efd','#6f42c1','#fd7e14','#20c997','#d63384','#6610f2','#dc3545'];
-    const datosMateriales = {{ dist_materiales_json|safe }};  {# safe: nombres de categoria del catalogo, sin input de usuario #}
+    const datosMateriales = JSON.parse(document.getElementById('materiales-data').textContent);
     if (datosMateriales.length) {
         new Chart(document.getElementById('chartMateriales'), {
             type: 'doughnut',
