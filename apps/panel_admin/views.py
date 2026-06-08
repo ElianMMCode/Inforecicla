@@ -1,4 +1,4 @@
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST, require_safe
 import io
 import re as _re
 
@@ -728,6 +728,7 @@ def admin_redirect_no_autorizado(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def admin(request):
     contexto = {
         "mensaje": "Bienvenido al panel de control de Inforecicla",
@@ -738,6 +739,7 @@ def admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def listar_usuarios(request):
     usuarios = Usuario.objects.all()
     q = request.GET.get('q', '').strip()
@@ -772,6 +774,7 @@ def listar_usuarios(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_usuarios_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -784,6 +787,7 @@ def exportar_usuarios_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_usuarios_excel(request):
     import openpyxl
     from openpyxl.styles import Alignment, Font, PatternFill
@@ -829,9 +833,8 @@ def exportar_usuarios_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_POST
 def importar_usuarios_csv(request):
-    if request.method != "POST":
-        return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
     archivo = request.FILES.get("archivo_csv")
     if not archivo:
@@ -855,6 +858,7 @@ def importar_usuarios_csv(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def crear_usuario_admin(request):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     localidades = Localidad.objects.all().order_by("nombre")
@@ -912,6 +916,7 @@ def crear_usuario_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def listar_publicaciones_admin(request):
     publicaciones = []
     publicaciones_habilitadas = True
@@ -947,6 +952,7 @@ def listar_publicaciones_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def crear_publicacion_admin(request):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     publicaciones_habilitadas = True
@@ -984,6 +990,7 @@ def crear_publicacion_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_puntos_eca_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1090,6 +1097,7 @@ def listar_puntos_eca_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_materiales_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1102,6 +1110,7 @@ def exportar_materiales_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_materiales_excel(request):
     import io
     import openpyxl
@@ -1140,6 +1149,7 @@ def exportar_materiales_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def listar_materiales_admin(request):
     materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1154,6 +1164,7 @@ def listar_materiales_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_categorias_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1166,6 +1177,7 @@ def exportar_categorias_material_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_categorias_material_excel(request):
     import io
     import openpyxl
@@ -1201,6 +1213,7 @@ def exportar_categorias_material_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def listar_categorias_material_admin(request):
     categorias = CategoriaMaterial.objects.all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1214,6 +1227,7 @@ def listar_categorias_material_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_categorias_publicacion_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1230,6 +1244,7 @@ def exportar_categorias_publicacion_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_categorias_publicacion_excel(request):
     import io
     import openpyxl
@@ -1271,6 +1286,7 @@ def exportar_categorias_publicacion_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def listar_categorias_publicacion_admin(request):
     categorias = []
     publicaciones_habilitadas = True
@@ -1304,6 +1320,7 @@ def listar_categorias_publicacion_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_tipos_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1316,6 +1333,7 @@ def exportar_tipos_material_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_tipos_material_excel(request):
     import io
     import openpyxl
@@ -1351,6 +1369,7 @@ def exportar_tipos_material_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def listar_tipos_material_admin(request):
     tipos = TipoMaterial.objects.all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1364,6 +1383,7 @@ def listar_tipos_material_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def editar_usuario_admin(request, usuario_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     usuario = Usuario.objects.filter(id=usuario_id).first()
@@ -1416,6 +1436,7 @@ def editar_usuario_admin(request, usuario_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def editar_publicacion_admin(request, publicacion_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     try:
@@ -1457,6 +1478,7 @@ def editar_publicacion_admin(request, publicacion_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def editar_punto_eca_admin(request, punto_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     punto = PuntoECA.objects.select_related("localidad", "gestor_eca").filter(id=punto_id).first()
@@ -1489,6 +1511,7 @@ def editar_punto_eca_admin(request, punto_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def editar_material_admin(request, material_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     material = Material.objects.select_related("categoria", "tipo").filter(id=material_id).first()
@@ -1522,6 +1545,7 @@ def editar_material_admin(request, material_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def editar_categoria_material_admin(request, categoria_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
@@ -1553,6 +1577,7 @@ def editar_categoria_material_admin(request, categoria_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def editar_categoria_publicacion_admin(request, categoria_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     try:
@@ -1615,6 +1640,7 @@ def editar_categoria_publicacion_admin(request, categoria_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def editar_tipo_material_admin(request, tipo_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     tipo = TipoMaterial.objects.filter(id=tipo_id).first()
@@ -1646,6 +1672,7 @@ def editar_tipo_material_admin(request, tipo_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def crear_tipo_material(request):
     if request.method == "POST":
         resultado = AdminCatalogService.crear_tipo_material(request.POST)
@@ -1666,6 +1693,7 @@ def crear_tipo_material(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def crear_categoria_material(request):
     if request.method == "POST":
         resultado = AdminCatalogService.crear_categoria_material(request.POST)
@@ -1686,6 +1714,7 @@ def crear_categoria_material(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def crear_material_admin(request):
     if request.method == "POST":
         resultado = AdminCatalogService.crear_material(request.POST, request.FILES)
@@ -1710,6 +1739,7 @@ def crear_material_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def gestion_materiales(request):
     q_mat = request.GET.get('q_mat', '').strip()
     q_tipo = request.GET.get('q_tipo', '').strip()
@@ -1744,6 +1774,7 @@ def gestion_materiales(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def crear_categoria_publicacion(request):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     context = {
@@ -1786,6 +1817,7 @@ _PASSWORD_COMP = _re.compile(
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def perfil_admin(request):
     localidades = Localidad.objects.all()
     tipos_documento = cons.TipoDocumento.choices
@@ -1797,9 +1829,8 @@ def perfil_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_POST
 def actualizar_datos_admin(request):
-    if request.method != "POST":
-        return redirect(ADMIN_PERFIL_URL)
 
     is_ajax_request = (
         request.headers.get("x-requested-with") == "XMLHttpRequest"
