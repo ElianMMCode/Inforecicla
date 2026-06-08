@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Puntos ECA - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
@@ -65,11 +65,17 @@
             data-sitio_web="{{ punto.sitio_web|default:'' }}"
             data-horario_atencion="{{ punto.horario_atencion|default:'' }}"
             data-logo_url_punto="{{ punto.logo_url_punto|default:'' }}"
+            data-foto_url_punto="{{ punto.foto_url_punto|default:'' }}"
             data-descripcion="{{ punto.descripcion|default:'' }}"
             data-latitud="{{ punto.latitud|default:'' }}"
             data-longitud="{{ punto.longitud|default:'' }}"
             data-localidad_id="{{ punto.localidad.localidad_id|default:'' }}"
-            data-estado="{{ punto.estado|default:'ACTIVO' }}">
+            data-estado="{{ punto.estado|default:'ACTIVO' }}"
+            data-gestor_nombres="{{ punto.gestor_eca.nombres|default:'' }}"
+            data-gestor_apellidos="{{ punto.gestor_eca.apellidos|default:'' }}"
+            data-gestor_email="{{ punto.gestor_eca.email|default:'' }}"
+            data-gestor_tipo_documento="{{ punto.gestor_eca.tipo_documento|default:'' }}"
+            data-gestor_numero_documento="{{ punto.gestor_eca.numero_documento|default:'' }}">
           <td><strong>{{ punto.nombre }}</strong></td>
           <td>{{ punto.direccion|default:"-" }}</td>
           <td>{{ punto.localidad.nombre|default:"-" }}</td>
@@ -101,11 +107,17 @@
                     data-sitio_web="{{ punto.sitio_web|default:'' }}"
                     data-horario_atencion="{{ punto.horario_atencion|default:'' }}"
                     data-logo_url_punto="{{ punto.logo_url_punto|default:'' }}"
+                    data-foto_url_punto="{{ punto.foto_url_punto|default:'' }}"
                     data-descripcion="{{ punto.descripcion|default:'' }}"
                     data-latitud="{{ punto.latitud|default:'' }}"
                     data-longitud="{{ punto.longitud|default:'' }}"
                     data-localidad_id="{{ punto.localidad.localidad_id|default:'' }}"
                     data-estado="{{ punto.estado|default:'ACTIVO' }}"
+                    data-gestor_nombres="{{ punto.gestor_eca.nombres|default:'' }}"
+                    data-gestor_apellidos="{{ punto.gestor_eca.apellidos|default:'' }}"
+                    data-gestor_email="{{ punto.gestor_eca.email|default:'' }}"
+                    data-gestor_tipo_documento="{{ punto.gestor_eca.tipo_documento|default:'' }}"
+                    data-gestor_numero_documento="{{ punto.gestor_eca.numero_documento|default:'' }}"
                     data-action="{% url 'panel_admin:editar_punto_eca_admin' punto_id=punto.id %}">
               <i class="bi bi-pencil"></i>
             </button>
@@ -298,7 +310,7 @@
 
 <!-- ===== MODAL EDITAR PUNTO ECA ===== -->
 <div class="modal fade" id="modalEditarPuntoECA" tabindex="-1" aria-labelledby="labelEditarPuntoECA" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title" id="labelEditarPuntoECA"><i class="bi bi-pencil me-2"></i>Editar Punto ECA</h5>
@@ -307,71 +319,175 @@
       <form method="POST" novalidate id="formEditarPuntoECA">
         {% csrf_token %}
         <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="edit_eca_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="edit_eca_nombre" type="text" name="nombre" class="form-control" required maxlength="100" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-              <div class="invalid-feedback">Debe contener al menos una letra.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_direccion" class="form-label fw-semibold">Dirección <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_direccion" type="text" name="direccion" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_email" class="form-label fw-semibold">Email <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_email" type="email" name="email" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_celular" class="form-label fw-semibold">Celular <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_celular" type="text" name="celular" class="form-control" pattern="3[0-9]{9}" maxlength="10">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_telefono" class="form-label fw-semibold">Teléfono Fijo <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_telefono" type="text" name="telefono_punto" class="form-control" pattern="60[0-9]{8}" maxlength="10" placeholder="60XXXXXXXX">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_sitio_web" class="form-label fw-semibold">Sitio Web <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_sitio_web" type="text" name="sitio_web" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_horario" class="form-label fw-semibold">Horario de Atención <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_horario" type="text" name="horario_atencion" class="form-control" placeholder="L-V 8am-6pm">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_logo" class="form-label fw-semibold">URL Logo <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_logo" type="text" name="logo_url_punto" class="form-control">
-            </div>
-            <div class="col-12">
-              <label for="edit_eca_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-              <textarea id="edit_eca_descripcion" name="descripcion" class="form-control" rows="2" data-letters-required></textarea>
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_latitud" class="form-label fw-semibold">Latitud <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_latitud" type="text" name="latitud" class="form-control" placeholder="4.6097">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_longitud" class="form-label fw-semibold">Longitud <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="edit_eca_longitud" type="text" name="longitud" class="form-control" placeholder="-74.0817">
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_localidad" class="form-label fw-semibold">Localidad <small class="text-muted fw-normal">(opcional)</small></label>
-              <select id="edit_eca_localidad" name="localidad_id" class="form-select">
-                <option value="">Sin localidad</option>
-                {% for loc in localidades %}
-                <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="edit_eca_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="edit_eca_estado" name="estado" class="form-select" required>
-                {% for val, label in estados %}
-                <option value="{{ val }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un estado.</div>
+
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-success text-white"><i class="bi bi-building me-1"></i> Datos del Punto ECA</div>
+            <div class="card-body p-3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="edit_eca_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_nombre" type="text" name="nombre" class="form-control" required maxlength="100" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Centro Ambiental San Felipe">
+                  <div class="invalid-feedback">Debe contener al menos una letra.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_direccion" class="form-label fw-semibold">Dirección <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_direccion" type="text" name="direccion" class="form-control" required placeholder="Calle 10 # 20 - 30">
+                  <div class="invalid-feedback">La dirección es obligatoria.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_telefono" class="form-label fw-semibold">Teléfono Fijo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_telefono" type="text" name="telefono_punto" class="form-control" required pattern="60[0-9]{8}" maxlength="10" placeholder="6012345678">
+                  <div class="invalid-feedback">Debe comenzar con 60 y tener 10 dígitos.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_email" class="form-label fw-semibold">Email <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_email" type="text" name="email" class="form-control" required placeholder="punto@eca.com">
+                  <div class="invalid-feedback">Ingresa un email válido.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_celular" type="text" name="celular" class="form-control" required pattern="3[0-9]{9}" maxlength="10" placeholder="3101234567">
+                  <div class="invalid-feedback">Debe iniciar con 3 y tener 10 dígitos.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_horario" class="form-label fw-semibold">Horario de Atención <small class="text-muted fw-normal">(opcional)</small></label>
+                  <input id="edit_eca_horario" type="text" name="horario_atencion" class="form-control" placeholder="Lunes a Viernes 8:00-16:00">
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_sitio_web" class="form-label fw-semibold">Sitio Web <small class="text-muted fw-normal">(opcional)</small></label>
+                  <input id="edit_eca_sitio_web" type="url" name="sitio_web" class="form-control" placeholder="https://tupunto.com">
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_logo" class="form-label fw-semibold">Logo (URL) <small class="text-muted fw-normal">(opcional)</small></label>
+                  <input id="edit_eca_logo" type="url" name="logo_url_punto" class="form-control" placeholder="https://...logo.png">
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_foto" class="form-label fw-semibold">Foto (URL) <small class="text-muted fw-normal">(opcional)</small></label>
+                  <input id="edit_eca_foto" type="url" name="foto_url_punto" class="form-control" placeholder="https://...foto.jpg">
+                </div>
+                <div class="col-12">
+                  <label for="edit_eca_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+                  <textarea id="edit_eca_descripcion" name="descripcion" class="form-control" rows="2" data-letters-required placeholder="Describe el punto ECA..."></textarea>
+                </div>
+              </div>
             </div>
           </div>
+
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-success text-white"><i class="bi bi-geo-alt me-1"></i> Localización</div>
+            <div class="card-body p-3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="edit_eca_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_ciudad" type="text" name="ciudad" class="form-control" required value="Bogotá" readonly aria-readonly="true">
+                  <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <select id="edit_eca_localidad" name="localidad_id" class="form-select" required>
+                    <option value="">Seleccionar localidad...</option>
+                    {% for loc in localidades %}
+                    <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="invalid-feedback">Selecciona una localidad.</div>
+                </div>
+              </div>
+              <div class="form-text mb-2"><i class="bi bi-info-circle me-1"></i>Haz clic en el mapa para seleccionar coordenadas.</div>
+              <div id="mapa-editar" style="height:250px; border-radius:8px; border:1px solid #dee2e6;" class="mb-2"></div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="edit_eca_latitud" class="form-label fw-semibold">Latitud <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input type="number" name="latitud" id="edit_eca_latitud" class="form-control" required step="0.0001" placeholder="4.7110">
+                  <div class="invalid-feedback">La latitud es obligatoria.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_longitud" class="form-label fw-semibold">Longitud <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input type="number" name="longitud" id="edit_eca_longitud" class="form-control" required step="0.0001" placeholder="-74.0721">
+                  <div class="invalid-feedback">La longitud es obligatoria.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-primary text-white"><i class="bi bi-person-badge me-1"></i> Datos del Gestor</div>
+            <div class="card-body p-3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="edit_eca_gestor_nombres" class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_gestor_nombres" type="text" name="gestor_nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Ej: Juan Carlos" autocomplete="given-name">
+                  <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_gestor_apellidos" class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_gestor_apellidos" type="text" name="gestor_apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Ej: Pérez García" autocomplete="family-name">
+                  <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_gestor_email" class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <input id="edit_eca_gestor_email" type="text" name="gestor_email" class="form-control" required placeholder="gestor@mail.com">
+                  <div class="invalid-feedback">El email del gestor es obligatorio.</div>
+                  <div class="form-text">Este correo es el usuario de acceso al sistema.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_gestor_tipo_doc" class="form-label fw-semibold">Tipo de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+                  <select id="edit_eca_gestor_tipo_doc" name="gestor_tipo_documento" class="form-select">
+                    <option value="">Seleccionar...</option>
+                    {% for val, label in tipos_documento %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_gestor_num_doc" class="form-label fw-semibold">Número de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+                  <input id="edit_eca_gestor_num_doc" type="text" name="gestor_numero_documento" class="form-control" placeholder="123456789">
+                </div>
+              </div>
+              <hr class="my-3">
+              <h6 class="fw-semibold mb-3">Cambiar Contraseña <small class="text-muted fw-normal">(dejar en blanco para mantener)</small></h6>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="edit_eca_gestor_password" class="form-label fw-semibold">Nueva Contraseña <small class="text-muted fw-normal">(opcional)</small></label>
+                  <div class="input-group">
+                    <input type="password" name="gestor_password" id="edit_eca_gestor_password" class="form-control" minlength="8" placeholder="Mínimo 8 caracteres">
+                    <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#edit_eca_gestor_password">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                  <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="edit_eca_gestor_password2" class="form-label fw-semibold">Confirmar Contraseña <small class="text-muted fw-normal">(opcional)</small></label>
+                  <div class="input-group">
+                    <input type="password" name="gestor_password_confirm" id="edit_eca_gestor_password2" class="form-control" minlength="8" placeholder="Repite la contraseña">
+                    <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#edit_eca_gestor_password2">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                  <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-success text-white"><i class="bi bi-shield me-1"></i> Estado</div>
+            <div class="card-body p-3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="edit_eca_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+                  <select id="edit_eca_estado" name="estado" class="form-select" required>
+                    {% for val, label in estados %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="invalid-feedback">Selecciona un estado.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -400,17 +516,42 @@
     return true;
   }
 
+  function validarPasswordsEditECA(form) {
+    var p1 = document.getElementById('edit_eca_gestor_password');
+    var p2 = document.getElementById('edit_eca_gestor_password2');
+    if (!p1 || !p2) return true;
+    if (p1.value === '' && p2.value === '') return true;
+    if (p1.value !== p2.value) {
+      Swal.fire({ icon: 'error', title: 'Las contraseñas no coinciden', confirmButtonColor: '#198754' });
+      p1.classList.add('is-invalid');
+      p2.classList.add('is-invalid');
+      return false;
+    }
+    if (p1.value.length > 0 && p1.value.length < 8) {
+      Swal.fire({ icon: 'error', title: 'La contraseña debe tener al menos 8 caracteres', confirmButtonColor: '#198754' });
+      p1.classList.add('is-invalid');
+      return false;
+    }
+    return true;
+  }
+
   initModalFormAjax('formCrearPuntoECA', '{% url "panel_admin:listar_puntos_eca_admin" %}', validarPasswordsECA);
-  initModalFormAjax('formEditarPuntoECA', globalThis.location.href);
+  initModalFormAjax('formEditarPuntoECA', globalThis.location.href, validarPasswordsEditECA);
 
   setupEditModal('.btn-editar-punto', 'modalEditarPuntoECA', {
     nombre: 'edit_eca_nombre', direccion: 'edit_eca_direccion',
     email: 'edit_eca_email', celular: 'edit_eca_celular',
     telefono_punto: 'edit_eca_telefono', sitio_web: 'edit_eca_sitio_web',
     horario_atencion: 'edit_eca_horario', logo_url_punto: 'edit_eca_logo',
+    foto_url_punto: 'edit_eca_foto',
     descripcion: 'edit_eca_descripcion', latitud: 'edit_eca_latitud',
     longitud: 'edit_eca_longitud', localidad_id: 'edit_eca_localidad',
-    estado: 'edit_eca_estado'
+    estado: 'edit_eca_estado',
+    gestor_nombres: 'edit_eca_gestor_nombres',
+    gestor_apellidos: 'edit_eca_gestor_apellidos',
+    gestor_email: 'edit_eca_gestor_email',
+    gestor_tipo_documento: 'edit_eca_gestor_tipo_doc',
+    gestor_numero_documento: 'edit_eca_gestor_num_doc'
   });
 
   function initTogglePassword() {
@@ -429,37 +570,71 @@
   }
   initTogglePassword();
 
-  function _initLeafletMapaCrear() {
-    var latInp = document.getElementById('crear_eca_latitud');
-    var lngInp = document.getElementById('crear_eca_longitud');
-    var mapa = L.map('mapa-crear').setView([4.711, -74.072], 12);
+  var cssInserted = false;
+  function insertLeafletCSS() {
+    if (cssInserted) return;
+    cssInserted = true;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
+    document.head.appendChild(link);
+  }
+
+  function initMapa(containerId, latInputId, lngInputId, lat, lng) {
+    insertLeafletCSS();
+    var jsScript = document.createElement('script');
+    jsScript.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
+    jsScript.onload = function() {
+      setTimeout(initMapaDelayed.bind(null, containerId, latInputId, lngInputId, lat, lng), 100);
+    };
+    document.body.appendChild(jsScript);
+  }
+
+  function initMapaDelayed(containerId, latInputId, lngInputId, lat, lng) {
+    var latInp = document.getElementById(latInputId);
+    var lngInp = document.getElementById(lngInputId);
+    var initLat = lat || Number.parseFloat(latInp && latInp.value) || 4.711;
+    var initLng = lng || Number.parseFloat(lngInp && lngInp.value) || -74.072;
+    var container = document.getElementById(containerId);
+    if (!container || container.dataset.mapInitialized) return;
+    container.dataset.mapInitialized = '1';
+    var mapa = L.map(containerId).setView([initLat, initLng], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
-    var marcador = null;
-    mapa.on('click', function(e) {
-      if (marcador) mapa.removeLayer(marcador);
-      marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
-      if (latInp) latInp.value = e.latlng.lat.toFixed(4);
-      if (lngInp) lngInp.value = e.latlng.lng.toFixed(4);
-    });
+    if (latInp && latInp.value && lngInp && lngInp.value) {
+      L.marker([Number.parseFloat(latInp.value), Number.parseFloat(lngInp.value)]).addTo(mapa);
+    }
+    mapa.on('click', onMapClick.bind(null, mapa, latInp, lngInp));
     setTimeout(function() { mapa.invalidateSize(); }, 200);
   }
 
+  function onMapClick(mapa, latInp, lngInp, e) {
+    mapa.eachLayer(function(layer) {
+      if (layer instanceof L.Marker) mapa.removeLayer(layer);
+    });
+    L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
+    if (latInp) latInp.value = e.latlng.lat.toFixed(4);
+    if (lngInp) lngInp.value = e.latlng.lng.toFixed(4);
+  }
+
   var crearModal = document.getElementById('modalCrearPuntoECA');
-  var mapaInicializado = false;
   if (crearModal) {
     crearModal.addEventListener('shown.bs.modal', function() {
-      if (mapaInicializado) return;
-      mapaInicializado = true;
-      var cssLink = document.createElement('link');
-      cssLink.rel = 'stylesheet';
-      cssLink.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
-      document.head.appendChild(cssLink);
-      var jsScript = document.createElement('script');
-      jsScript.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
-      jsScript.onload = function() {
-        setTimeout(function() { _initLeafletMapaCrear(); }, 100);
-      };
-      document.body.appendChild(jsScript);
+      if (document.getElementById('mapa-crear') && !document.getElementById('mapa-crear').dataset.mapInitialized) {
+        initMapa('mapa-crear', 'crear_eca_latitud', 'crear_eca_longitud');
+      }
+    });
+  }
+
+  var editarModal = document.getElementById('modalEditarPuntoECA');
+  if (editarModal) {
+    editarModal.addEventListener('shown.bs.modal', function() {
+      if (document.getElementById('mapa-editar') && !document.getElementById('mapa-editar').dataset.mapInitialized) {
+        var lat = document.getElementById('edit_eca_latitud');
+        var lng = document.getElementById('edit_eca_longitud');
+        initMapa('mapa-editar', 'edit_eca_latitud', 'edit_eca_longitud',
+          lat ? Number.parseFloat(lat.value) : 4.711,
+          lng ? Number.parseFloat(lng.value) : -74.072);
+      }
     });
   }
 })();
