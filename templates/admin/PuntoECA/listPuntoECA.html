@@ -600,17 +600,18 @@
     container.dataset.mapInitialized = '1';
     var mapa = L.map(containerId).setView([initLat, initLng], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
-    var marcador = null;
     if (latInp && latInp.value && lngInp && lngInp.value) {
-      marcador = L.marker([Number.parseFloat(latInp.value), Number.parseFloat(lngInp.value)]).addTo(mapa);
+      L.marker([Number.parseFloat(latInp.value), Number.parseFloat(lngInp.value)]).addTo(mapa);
     }
-    mapa.on('click', onMapClick.bind(null, mapa, marcador, latInp, lngInp));
+    mapa.on('click', onMapClick.bind(null, mapa, latInp, lngInp));
     setTimeout(function() { mapa.invalidateSize(); }, 200);
   }
 
-  function onMapClick(mapa, marcador, latInp, lngInp, e) {
-    if (marcador) mapa.removeLayer(marcador);
-    marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
+  function onMapClick(mapa, latInp, lngInp, e) {
+    mapa.eachLayer(function(layer) {
+      if (layer instanceof L.Marker) mapa.removeLayer(layer);
+    });
+    L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
     if (latInp) latInp.value = e.latlng.lat.toFixed(4);
     if (lngInp) lngInp.value = e.latlng.lng.toFixed(4);
   }
