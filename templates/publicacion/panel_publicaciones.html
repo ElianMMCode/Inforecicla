@@ -4,7 +4,7 @@
 {% block page_title %}Publicaciones - InfoRecicla{% endblock %}
 {% block main_class %}py-0{% endblock %}
 {% block extra_head %}
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" crossorigin="anonymous" integrity="sha384-/rJKQnzOkEo+daG0jMjU1IwwY9unxt1NBw3Ef2fmOJ3PW/TfAg2KXVoWwMZQZtw9">
 {% endblock %}
 {% block hero %}
 <section class="page-hero py-5">
@@ -148,7 +148,7 @@
                 <i class="fas fa-plus me-2" aria-hidden="true"></i>Cargar más publicaciones
             </button>
             {% endif %}
-            <div id="spinner-carga" class="spinner-border text-success d-none" role="status">
+            <output id="spinner-carga" class="spinner-border text-success d-none">
                 <span class="visually-hidden">Cargando...</span>
             </div>
             <p id="fin-publicaciones" class="text-muted small mt-3 d-none">Ya no hay más publicaciones</p>
@@ -168,7 +168,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js" crossorigin="anonymous" integrity="sha384-wziAfh6b/qT+3LrqebF9WeK4+J5sehS6FA10J1t3a866kJ/fvU5UwofWnQyzLtwu"></script>
 <script>
 (function() {
     AOS.init({
@@ -184,13 +184,13 @@
     var grid = document.getElementById('grid-publicaciones');
     var spinner = document.getElementById('spinner-carga');
     var fin = document.getElementById('fin-publicaciones');
-    var currentPage = parseInt(container.dataset.currentPage, 10);
-    var totalPages = parseInt(container.dataset.totalPages, 10);
+    var currentPage = Number.parseInt(container.dataset.currentPage, 10);
+    var totalPages = Number.parseInt(container.dataset.totalPages, 10);
 
     function buildUrl(page) {
-        var params = new URLSearchParams(window.location.search);
+        var params = new URLSearchParams(globalThis.location.search);
         params.set('page', page);
-        return window.location.pathname.replace(/\/$/, '') + '/ajax/cards/?' + params.toString();
+        return globalThis.location.pathname.replace(/\/$/, '') + '/ajax/cards/?' + params.toString();
     }
 
     btn.addEventListener('click', function() {
@@ -215,10 +215,10 @@
                     currentPage = data.page;
                     AOS.refresh();
 
-                    if (!data.has_next) {
-                        fin.classList.remove('d-none');
-                    } else {
+                    if (data.has_next) {
                         btn.classList.remove('d-none');
+                    } else {
+                        fin.classList.remove('d-none');
                     }
                 }
             })
