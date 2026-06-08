@@ -1,14 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET
 
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
-_DETALLE_PUBLICACION = _DETALLE_PUBLICACION
+_DETALLE_PUBLICACION = "publicacion:detalle_publicacion"
 
 from .service import PublicacionService
 
 
+@require_GET
 def panel_publicaciones(request):
     return render(
         request,
@@ -17,6 +19,7 @@ def panel_publicaciones(request):
     )
 
 
+@require_GET
 def publicacion(request, publicacion_id):
     from .models import Reaccion, Guardados
     context = PublicacionService.get_detail_context(publicacion_id)
@@ -95,6 +98,7 @@ def eliminar_comentario(request, comentario_id):
 
 
 @login_required
+@require_GET
 def abrir_notificacion(request, notificacion_id):
     from .models import Notificacion
     from config.constants import TipoUsuario
