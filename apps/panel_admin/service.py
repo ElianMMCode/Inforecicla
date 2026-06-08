@@ -156,24 +156,62 @@ class AdminDashboardService:
             "total_categorias_materiales": 0,
             "total_categorias_publicaciones": 0,
             "total_tipos_material": 0,
+            "total_ciudadanos": 0,
+            "total_gestores": 0,
+            "total_administradores": 0,
+            "total_usuarios_activos": 0,
+            "total_usuarios_inactivos": 0,
+            "total_publicaciones_activas": 0,
+            "total_publicaciones_inactivas": 0,
+            "ultimas_publicaciones": [],
+            "ultimos_usuarios": [],
         }
 
-        # Conteos de apps siempre disponibles en la configuracion actual.
         try:
             resumen["total_usuarios"] = Usuario.objects.count()
             resumen["total_puntos_eca"] = PuntoECA.objects.count()
             resumen["total_materiales"] = Material.objects.count()
             resumen["total_categorias_materiales"] = CategoriaMaterial.objects.count()
             resumen["total_tipos_material"] = TipoMaterial.objects.count()
+            resumen["total_ciudadanos"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.CIU).count()
+            resumen["total_gestores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.GECA).count()
+            resumen["total_administradores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.ADM).count()
+            resumen["total_usuarios_activos"] = Usuario.objects.filter(is_active=True).count()
+            resumen["total_usuarios_inactivos"] = resumen["total_usuarios"] - resumen["total_usuarios_activos"]
+            ultimos_usuarios = Usuario.objects.order_by("-date_joined")[:5]
+            resumen["ultimos_usuarios"] = [
+                {
+                    "nombres": u.nombres,
+                    "apellidos": u.apellidos,
+                    "email": u.email,
+                    "tipo_usuario": u.get_tipo_usuario_display(),
+                    "is_active": u.is_active,
+                    "date_joined": u.date_joined,
+                }
+                for u in ultimos_usuarios
+            ]
         except Exception:
             return resumen
 
-        # Publicaciones puede estar deshabilitada en algunos entornos.
         try:
             from apps.publicaciones.models import Publicacion, CategoriaPublicacion
 
             resumen["total_publicaciones"] = Publicacion.objects.count()
             resumen["total_categorias_publicaciones"] = CategoriaPublicacion.objects.count()
+            resumen["total_publicaciones_activas"] = Publicacion.objects.filter(estado=cons.Estado.ACTIVO).count()
+            resumen["total_publicaciones_inactivas"] = resumen["total_publicaciones"] - resumen["total_publicaciones_activas"]
+            ultimas_pub = Publicacion.objects.select_related("categoria", "usuario").order_by("-fecha_creacion")[:5]
+            resumen["ultimas_publicaciones"] = [
+                {
+                    "titulo": p.titulo,
+                    "estado": p.estado,
+                    "categoria": p.categoria.nombre if p.categoria else None,
+                    "fecha_creacion": p.fecha_creacion,
+                    "usuario_nombre": f"{p.usuario.nombres} {p.usuario.apellidos}",
+                    "id": p.id,
+                }
+                for p in ultimas_pub
+            ]
         except Exception:
             return resumen
 
