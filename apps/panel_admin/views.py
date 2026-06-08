@@ -1,4 +1,4 @@
-from django.views.decorators.http import require_http_methods, require_POST, require_safe
+from django.views.decorators.http import require_http_methods, require_POST
 import io
 import re as _re
 
@@ -758,14 +758,14 @@ def es_administrador(user):
     return bool(user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN)
 
 
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def admin_redirect_no_autorizado(request):
     return render(request, "base/inicio.html")
 
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def admin(request):
     contexto = {
         "mensaje": "Bienvenido al panel de control de Inforecicla",
@@ -776,7 +776,7 @@ def admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_usuarios(request):
     usuarios = Usuario.objects.all()
     q = request.GET.get('q', '').strip()
@@ -811,7 +811,7 @@ def listar_usuarios(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_usuarios_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -824,7 +824,7 @@ def exportar_usuarios_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_usuarios_excel(request):
     import openpyxl
     from openpyxl.styles import Alignment, Font, PatternFill
@@ -953,7 +953,7 @@ def crear_usuario_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_publicaciones_admin(request):
     publicaciones = []
     publicaciones_habilitadas = True
@@ -1027,7 +1027,7 @@ def crear_publicacion_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_puntos_eca_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1040,7 +1040,7 @@ def exportar_puntos_eca_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_puntos_eca_excel(request):
     import io
     import openpyxl
@@ -1116,7 +1116,7 @@ def crear_punto_eca_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_puntos_eca_admin(request):
     puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1137,7 +1137,7 @@ def listar_puntos_eca_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_materiales_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1150,7 +1150,7 @@ def exportar_materiales_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_materiales_excel(request):
     import io
     import openpyxl
@@ -1189,7 +1189,7 @@ def exportar_materiales_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_materiales_admin(request):
     materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1204,7 +1204,7 @@ def listar_materiales_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1217,7 +1217,7 @@ def exportar_categorias_material_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_material_excel(request):
     import io
     import openpyxl
@@ -1253,7 +1253,7 @@ def exportar_categorias_material_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_categorias_material_admin(request):
     categorias = CategoriaMaterial.objects.all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1267,7 +1267,7 @@ def listar_categorias_material_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_publicacion_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1284,7 +1284,7 @@ def exportar_categorias_publicacion_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_publicacion_excel(request):
     import io
     import openpyxl
@@ -1326,7 +1326,7 @@ def exportar_categorias_publicacion_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_categorias_publicacion_admin(request):
     categorias = []
     publicaciones_habilitadas = True
@@ -1360,7 +1360,7 @@ def listar_categorias_publicacion_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_tipos_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1373,7 +1373,7 @@ def exportar_tipos_material_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_tipos_material_excel(request):
     import io
     import openpyxl
@@ -1409,7 +1409,7 @@ def exportar_tipos_material_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_tipos_material_admin(request):
     tipos = TipoMaterial.objects.all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1803,7 +1803,7 @@ def crear_material_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def gestion_materiales(request):
     q_mat = request.GET.get('q_mat', '').strip()
     q_tipo = request.GET.get('q_tipo', '').strip()
@@ -1881,7 +1881,7 @@ _PASSWORD_COMP = _re.compile(
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def perfil_admin(request):
     localidades = Localidad.objects.all()
     tipos_documento = cons.TipoDocumento.choices
