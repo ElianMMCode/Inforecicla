@@ -1,4 +1,4 @@
-from django.views.decorators.http import require_GET, require_http_methods, require_POST, require_safe
+from django.views.decorators.http import require_http_methods, require_POST, require_safe
 import io
 import re as _re
 
@@ -28,6 +28,10 @@ ADMIN_CREATE_PUBLICACION_TEMPLATE = "admin/Publicaciones/createPublicacion.html"
 ADMIN_CREATE_USUARIO_TEMPLATE = "admin/Usuarios/createUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
+USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
+CORREGIR_CAMPOS_MSG = CORREGIR_CAMPOS_MSG
+LISTAR_PUNTOS_ECA_URL = LISTAR_PUNTOS_ECA_URL
+LISTAR_CATEGORIAS_PUBLICACION_URL = LISTAR_CATEGORIAS_PUBLICACION_URL
 
 
 def _crear_respuesta_descarga(contenido, content_type, filename):
@@ -139,7 +143,7 @@ def _validar_numero_documento_perfil_admin(numero_documento, user, errores):
     if not (numero_documento.isdigit() and 6 <= len(numero_documento) <= 20):
         errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
     elif numero_documento != user.numero_documento and Usuario.objects.filter(numero_documento=numero_documento).exists():
-        errores.append("Ya existe un usuario con ese número de documento.")
+        errores.append(USUARIO_DOCUMENTO_DUPLICADO_MSG)
 
 
 def _validar_datos_perfil_admin(user, nombres, apellidos, celular, ciudad, fecha_str, localidad_id,
@@ -312,7 +316,7 @@ def _validar_unicidad_crear_usuario_admin(datos, errores):
     if datos["email"] and Usuario.objects.filter(email=datos["email"]).exists():
         errores.append("Ya existe un usuario con ese correo electrónico.")
     if datos["numero_documento"] and Usuario.objects.filter(numero_documento=datos["numero_documento"]).exists():
-        errores.append("Ya existe un usuario con ese número de documento.")
+        errores.append(USUARIO_DOCUMENTO_DUPLICADO_MSG)
 
 
 def _obtener_localidad_crear_usuario_admin(localidad_id, errores):
@@ -420,7 +424,7 @@ def _validar_unicidad_crear_punto_eca_admin(datos, errores):
     if datos["email_gestor"] and Usuario.objects.filter(email=datos["email_gestor"]).exists():
         errores.append("Ya existe un usuario con ese correo de gestor.")
     if datos["numero_documento"] and Usuario.objects.filter(numero_documento=datos["numero_documento"]).exists():
-        errores.append("Ya existe un usuario con ese número de documento.")
+        errores.append(USUARIO_DOCUMENTO_DUPLICADO_MSG)
 
 
 def _obtener_localidad_crear_punto_eca_admin(localidad_id, errores):
@@ -871,7 +875,7 @@ def crear_usuario_admin(request):
 
         if errores:
             if is_ajax:
-                return JsonResponse({"ok": False, "errors": errores, "message": "Corrige los campos señalados."})
+                return JsonResponse({"ok": False, "errors": errores, "message": CORREGIR_CAMPOS_MSG})
             return render(
                 request,
                 ADMIN_CREATE_USUARIO_TEMPLATE,
@@ -1047,7 +1051,7 @@ def crear_punto_eca_admin(request):
 
         if errores:
             if is_ajax:
-                return JsonResponse({"ok": False, "errors": errores, "message": "Corrige los campos señalados."})
+                return JsonResponse({"ok": False, "errors": errores, "message": CORREGIR_CAMPOS_MSG})
             return render(
                 request,
                 "admin/PuntoECA/createPuntoECA.html",
@@ -1064,7 +1068,7 @@ def crear_punto_eca_admin(request):
             if is_ajax:
                 return JsonResponse({"ok": True, "message": f"Punto ECA '{data['nombre_punto']}' creado correctamente."})
             messages.success(request, f"Punto ECA '{data['nombre_punto']}' creado correctamente.")
-            return redirect("panel_admin:listar_puntos_eca_admin")
+            return redirect(LISTAR_PUNTOS_ECA_URL)
         except (IntegrityError, ValidationError) as e:
             error_msg = f"Error al crear el punto ECA: {e}"
             if is_ajax:
@@ -1420,7 +1424,7 @@ def editar_usuario_admin(request, usuario_id):
         except ValidationError as e:
             lista_errores = _errores_validacion_lista(e)
             if is_ajax:
-                return JsonResponse({"ok": False, "errors": lista_errores, "message": "Corrige los campos señalados."})
+                return JsonResponse({"ok": False, "errors": lista_errores, "message": CORREGIR_CAMPOS_MSG})
             mensajes_error = " ".join(lista_errores)
             messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
         except Exception as e:
@@ -1489,7 +1493,7 @@ def editar_punto_eca_admin(request, punto_id):
         if is_ajax:
             return JsonResponse({"ok": False, "message": "Punto ECA no encontrado."})
         messages.error(request, "Punto ECA no encontrado.")
-        return redirect("panel_admin:listar_puntos_eca_admin")
+        return redirect(LISTAR_PUNTOS_ECA_URL)
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
@@ -1497,7 +1501,7 @@ def editar_punto_eca_admin(request, punto_id):
             return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:listar_puntos_eca_admin")
+            return redirect(LISTAR_PUNTOS_ECA_URL)
         messages.error(request, resultado["message"])
         punto.refresh_from_db()
 
@@ -1589,14 +1593,14 @@ def editar_categoria_publicacion_admin(request, categoria_id):
         if is_ajax:
             return JsonResponse({"ok": False, "message": "El modulo de publicaciones no esta habilitado."})
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
-        return redirect("panel_admin:listar_categorias_publicacion_admin")
+        return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
 
     categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
     if not categoria:
         if is_ajax:
             return JsonResponse({"ok": False, "message": "Categoria de publicacion no encontrada."})
         messages.error(request, "Categoria de publicacion no encontrada.")
-        return redirect("panel_admin:listar_categorias_publicacion_admin")
+        return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
 
     form_data = {
         "nombre": getattr(categoria, "nombre", ""),
@@ -1618,7 +1622,7 @@ def editar_categoria_publicacion_admin(request, categoria_id):
             return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:listar_categorias_publicacion_admin")
+            return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
         messages.error(request, resultado["message"])
         form_data = {
             "nombre": request.POST.get("nombre", ""),
@@ -1797,7 +1801,7 @@ def crear_categoria_publicacion(request):
             return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:listar_categorias_publicacion_admin")
+            return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
         messages.error(request, resultado["message"])
         context["form_data"] = {
             "nombre": request.POST.get("nombre", ""),
