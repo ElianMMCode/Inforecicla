@@ -530,9 +530,9 @@ class AdminCatalogService:
 
     @staticmethod
     @transaction.atomic
-    def actualizar_publicacion(publicacion_id, data):
+    def actualizar_publicacion(publicacion_id, data, files=None):
         try:
-            from apps.publicaciones.models import Publicacion, CategoriaPublicacion
+            from apps.publicaciones.models import Publicacion, CategoriaPublicacion, ImagenPublicacion
         except Exception:
             return {
                 "ok": False,
@@ -560,14 +560,53 @@ class AdminCatalogService:
                 return {"ok": False, "errors": {"categoria_id": "Categoria de publicacion invalida."}, "message": "Categoria de publicacion invalida."}
 
         contenido = (data.get("contenido") or "").strip()
+        resumen = (data.get("resumen") or "").strip()
+        destacado = data.get("destacado") == "1"
+        video_url = (data.get("video_url") or "").strip()
 
         try:
             publicacion.titulo = titulo
             publicacion.contenido = contenido
+            publicacion.resumen = resumen or None
+            publicacion.destacado = destacado
             publicacion.estado = estado
             publicacion.categoria = categoria
+            publicacion.video_url = video_url or None
+
+            # Manejar eliminación de video/thumbnail
+            if data.get("eliminar_video") == "1" and publicacion.video:
+                publicacion.video.delete(save=False)
+                publicacion.video = None
+            if data.get("eliminar_video_url") == "1":
+                publicacion.video_url = None
+
+            # Subir nuevo video si se proporciona
+            if files:
+                nuevo_video = files.get("video")
+                if nuevo_video:
+                    if publicacion.video:
+                        publicacion.video.delete(save=False)
+                    publicacion.video = nuevo_video
+
+                nuevo_thumbnail = files.get("video_thumbnail")
+                if nuevo_thumbnail:
+                    if publicacion.video_thumbnail:
+                        publicacion.video_thumbnail.delete(save=False)
+                    publicacion.video_thumbnail = nuevo_thumbnail
+
             publicacion.full_clean()
             publicacion.save()
+
+            # Manejar imágenes
+            eliminar_ids = data.getlist("eliminar_imagenes")
+            if eliminar_ids:
+                ImagenPublicacion.objects.filter(id__in=eliminar_ids, publicacion=publicacion).delete()
+
+            if files:
+                nuevas_imagenes = files.getlist("imagenes")
+                for img in nuevas_imagenes:
+                    ImagenPublicacion.objects.create(publicacion=publicacion, imagen=img)
+
             return {"ok": True, "message": "Publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}

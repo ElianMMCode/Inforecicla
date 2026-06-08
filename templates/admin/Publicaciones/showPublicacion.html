@@ -2,15 +2,11 @@
 {% load static %}
 {% block page_title %}Detalle Publicación - InfoRecicla{% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
-{% block extra_head %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="" crossorigin="anonymous">
-{% endblock %}
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
 {% block content %}
 
 <div class="container-fluid px-0">
     <div class="row g-0">
-
         <main class="col offset-md-2 p-4">
 
     {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
@@ -18,9 +14,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
         <div>
             <h1 class="h2 fw-bold text-success mb-1"><i class="fas fa-newspaper me-2"></i>Detalle de la Publicación</h1>
-            <p class="text-muted mb-0">Visualización completa del contenido</p>
+            <p class="text-muted mb-0">{{ publicacion.titulo|truncatechars:60 }}</p>
         </div>
-        <a href="lista.html" class="btn btn-outline-secondary d-none d-sm-block">
+        <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-secondary d-none d-sm-block">
             <i class="fas fa-arrow-left me-1"></i> Volver a la lista
         </a>
     </div>
@@ -29,38 +25,69 @@
         <div class="col-lg-8">
             <div class="card border-success shadow-sm mb-4">
                 <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">Campaña de reciclaje 2025</h4>
+                    <h4 class="mb-0">{{ publicacion.titulo }}</h4>
                 </div>
                 <div class="card-body bg-light">
                     <div class="row mb-4 g-3 border-bottom pb-3">
                         <div class="col-sm-6">
                             <small class="text-success fw-bold text-uppercase d-block mb-1">Estado</small>
-                            <span class="badge bg-success fs-6">Publicado</span>
+                            <span class="badge {% if publicacion.estado == 'ACTIVO' %}bg-success{% else %}bg-secondary{% endif %} fs-6">{{ publicacion.get_estado_display }}</span>
                         </div>
                         <div class="col-sm-6">
                             <small class="text-success fw-bold text-uppercase d-block mb-1">Categoría</small>
-                            <span class="badge bg-info text-dark fs-6">Noticias</span>
+                            <span class="badge bg-info text-dark fs-6">{{ publicacion.categoria.get_tipo_display|default:"Sin categoría" }}</span>
                         </div>
                         <div class="col-sm-6">
                             <small class="text-success fw-bold text-uppercase d-block mb-1">Autor</small>
-                            <span class="text-dark fw-semibold"><i class="fas fa-user-circle text-muted me-1"></i> Juan Pérez</span>
+                            <span class="text-dark fw-semibold"><i class="fas fa-user-circle text-muted me-1"></i> {{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</span>
                         </div>
                         <div class="col-sm-6">
                             <small class="text-success fw-bold text-uppercase d-block mb-1">Última Actualización</small>
-                            <span class="text-dark fw-semibold"><i class="fas fa-calendar-alt text-muted me-1"></i> 15/02/2025 14:30</span>
+                            <span class="text-dark fw-semibold"><i class="fas fa-calendar-alt text-muted me-1"></i> {{ publicacion.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        {% if publicacion.destacado %}
+                        <div class="col-12">
+                            <span class="badge bg-warning text-dark"><i class="fas fa-star me-1"></i>Destacado</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if publicacion.resumen %}
+                    <div class="mb-3">
+                        <h6 class="text-success fw-bold text-uppercase mb-2"><i class="fas fa-align-left me-2"></i>Resumen:</h6>
+                        <div class="p-3 bg-white rounded border border-light-subtle">
+                            <p class="mb-0 text-muted">{{ publicacion.resumen }}</p>
                         </div>
                     </div>
+                    {% endif %}
+
+                    {% if publicacion.video_url %}
+                    <div class="mb-4 rounded overflow-hidden shadow-sm ratio ratio-16x9">
+                        <iframe src="{{ publicacion.video_url }}" title="Video de la publicación" allowfullscreen></iframe>
+                    </div>
+                    {% elif publicacion.video %}
+                    <div class="mb-4 rounded overflow-hidden shadow-sm">
+                        <video class="w-100 rounded" controls preload="metadata"
+                               {% if publicacion.video_thumbnail %}poster="{{ publicacion.video_thumbnail.url }}"{% endif %}>
+                            <source src="{{ publicacion.video.url }}">
+                        </video>
+                    </div>
+                    {% endif %}
+
+                    {% if publicacion.imagenes.exists and not publicacion.video and not publicacion.video_url %}
+                    <div class="mb-4">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for img in publicacion.imagenes.all %}
+                            <img src="{{ img.imagen.url }}" alt="{{ img.descripcion|default:'Imagen' }}" class="img-thumbnail" style="max-height:200px;object-fit:cover;">
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <div class="mb-4">
                         <h6 class="text-success fw-bold text-uppercase mb-3"><i class="fas fa-align-left me-2"></i>Contenido:</h6>
                         <div class="p-4 bg-white rounded border border-light-subtle">
-                            <p><strong>Únete a nuestra nueva iniciativa</strong> para reducir el uso de plásticos de un solo uso en la ciudad. Durante este mes, estaremos ubicando contenedores especiales en puntos estratégicos.</p>
-                            <ul>
-                                <li>Parque Central</li>
-                                <li>Plaza Bolívar</li>
-                                <li>Estación Norte</li>
-                            </ul>
-                            <p><em>Recuerda lavar los envases antes de depositarlos. ¡El planeta te lo agradece!</em></p>
+                            {{ publicacion.contenido|linebreaks }}
                         </div>
                     </div>
                 </div>
@@ -68,21 +95,14 @@
         </div>
 
         <div class="col-lg-4">
-
             <div class="card border-info shadow-sm mb-4">
                 <div class="card-header bg-info text-white">
                     <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Acciones</h6>
                 </div>
                 <div class="card-body text-center bg-light">
-                    <a href="editar.html" class="btn btn-warning w-100 mb-2 fw-bold text-dark">
+                    <a href="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=publicacion.id %}" class="btn btn-warning w-100 mb-2 fw-bold text-dark">
                         <i class="fas fa-edit me-2"></i>Editar Contenido
                     </a>
-                    <button type="button" class="btn btn-secondary w-100 mb-2">
-                        <i class="fas fa-archive me-2"></i>Archivar
-                    </button>
-                    <button type="button" class="btn btn-outline-danger w-100">
-                        <i class="fas fa-trash me-2"></i>Eliminar
-                    </button>
                 </div>
             </div>
 
@@ -93,18 +113,23 @@
                 <div class="card-body bg-light small">
                     <ul class="list-group list-group-flush bg-transparent">
                         <li class="list-group-item bg-transparent px-0 d-flex justify-content-between">
-                            <strong>ID Publicación:</strong> <span class="font-monospace">#PUB-1024</span>
+                            <strong>ID:</strong> <span class="font-monospace">{{ publicacion.id|stringformat:".8s" }}...</span>
                         </li>
                         <li class="list-group-item bg-transparent px-0 d-flex justify-content-between">
-                            <strong>Extensión:</strong> <span>345 caracteres</span>
+                            <strong>Creada:</strong> <span>{{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</span>
                         </li>
                         <li class="list-group-item bg-transparent px-0 d-flex justify-content-between">
-                            <strong>Antigüedad:</strong> <span>7 días</span>
+                            <strong>Actualizada:</strong> <span>{{ publicacion.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                        </li>
+                        <li class="list-group-item bg-transparent px-0 d-flex justify-content-between">
+                            <strong>Comentarios:</strong> <span>{{ publicacion.comentarios.count }}</span>
+                        </li>
+                        <li class="list-group-item bg-transparent px-0 d-flex justify-content-between">
+                            <strong>Reacciones:</strong> <span>{{ publicacion.reacciones.count }}</span>
                         </li>
                     </ul>
                 </div>
             </div>
-
         </div>
     </div>
         </main>

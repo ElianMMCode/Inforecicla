@@ -580,11 +580,18 @@ def _procesar_creacion_publicacion_admin(admin_request, categorias, publicacione
             },
         )
 
+    destacado = admin_request.POST.get("destacado") == "1"
+    video_url = _normalizar_texto(admin_request.POST.get("video_url"))
+    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
+
     publicacion = Publicacion(
         titulo=titulo,
         contenido=contenido,
+        resumen=resumen or None,
+        destacado=destacado,
         usuario=admin_request.user,
         categoria=categoria,
+        video_url=video_url or None,
         video=admin_request.FILES.get("video") or None,
         video_thumbnail=admin_request.FILES.get("video_thumbnail") or None,
     )
@@ -623,12 +630,19 @@ def _procesar_creacion_publicacion_admin_ajax(admin_request):
     if errores:
         return {"ok": False, "errors": errores, "message": next(iter(errores.values()))}
 
+    destacado = admin_request.POST.get("destacado") == "1"
+    video_url = _normalizar_texto(admin_request.POST.get("video_url"))
+    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
+
     try:
         publicacion = Publicacion(
             titulo=titulo,
             contenido=contenido,
+            resumen=resumen or None,
+            destacado=destacado,
             usuario=admin_request.user,
             categoria=categoria,
+            video_url=video_url or None,
             video=admin_request.FILES.get("video") or None,
             video_thumbnail=admin_request.FILES.get("video_thumbnail") or None,
         )
@@ -1459,7 +1473,7 @@ def editar_publicacion_admin(request, publicacion_id):
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     if request.method == "POST":
-        resultado = AdminCatalogService.actualizar_publicacion(publicacion_id, request.POST)
+        resultado = AdminCatalogService.actualizar_publicacion(publicacion_id, request.POST, request.FILES)
         if is_ajax:
             return JsonResponse(resultado)
         if resultado["ok"]:
@@ -1477,6 +1491,34 @@ def editar_publicacion_admin(request, publicacion_id):
             "categorias": categorias,
             "estados": cons.Estado.choices,
         },
+    )
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET"])
+def ver_publicacion_admin(request, publicacion_id):
+    try:
+        from apps.publicaciones.models import Publicacion
+    except Exception:
+        messages.error(request, "El modulo de publicaciones no esta habilitado.")
+        return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
+
+    publicacion = (
+        Publicacion.objects
+        .select_related("categoria", "usuario")
+        .prefetch_related("imagenes", "comentarios", "reacciones")
+        .filter(id=publicacion_id)
+        .first()
+    )
+    if not publicacion:
+        messages.error(request, "Publicacion no encontrada.")
+        return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
+
+    return render(
+        request,
+        "admin/Publicaciones/showPublicacion.html",
+        {"publicacion": publicacion, "active_tab": "publicaciones"},
     )
 
 
