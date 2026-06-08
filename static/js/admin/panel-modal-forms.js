@@ -212,7 +212,7 @@ function _trimPuntos(texto) {
 function marcarErroresForm(form, fieldErrors) {
     if (!form || !fieldErrors) return;
     for (const key in fieldErrors) {
-        if (!Object.prototype.hasOwnProperty.call(fieldErrors, key) || key === '_general') continue;
+        if (!Object.hasOwn(fieldErrors, key) || key === '_general') continue;
         const field = form.querySelector(`[name="${key}"]`);
         if (!field) continue;
         field.classList.remove('is-valid');
@@ -228,6 +228,14 @@ function marcarErroresForm(form, fieldErrors) {
     form.classList.remove('was-validated');
 }
 
+function _agregarErrorCampo(key, errors, errorList, fieldErrors) {
+    if (!Object.hasOwn(errors, key) || key === '_general') return;
+    const label = MARCAR_ERRORES[key] || key.charAt(0).toUpperCase() + key.slice(1);
+    const msg = _trimPuntos(String(errors[key]));
+    errorList.push(label + ': ' + msg);
+    fieldErrors[key] = msg;
+}
+
 function _procesarErrorRespuesta(data) {
     const errorList = [];
     const fieldErrors = {};
@@ -238,11 +246,7 @@ function _procesarErrorRespuesta(data) {
             }
         } else if (typeof data.errors === 'object') {
             for (const key in data.errors) {
-                if (!Object.prototype.hasOwnProperty.call(data.errors, key) || key === '_general') continue;
-                const label = MARCAR_ERRORES[key] || key.charAt(0).toUpperCase() + key.slice(1);
-                const msg = _trimPuntos(String(data.errors[key]));
-                errorList.push(label + ': ' + msg);
-                fieldErrors[key] = msg;
+                _agregarErrorCampo(key, data.errors, errorList, fieldErrors);
             }
         }
     }
@@ -372,7 +376,7 @@ function setupEditModal(btnSelector, modalId, fieldMapping) {
         btn.addEventListener('click', () => {
             limpiarErroresModal(modal);
             for (const fieldName in fieldMapping) {
-                if (!Object.prototype.hasOwnProperty.call(fieldMapping, fieldName)) continue;
+                if (!Object.hasOwn(fieldMapping, fieldName)) continue;
                 const targetId = fieldMapping[fieldName];
                 const target = document.getElementById(targetId);
                 if (!target) continue;
