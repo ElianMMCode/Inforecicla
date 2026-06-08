@@ -28,6 +28,8 @@ ADMIN_CREATE_PUBLICACION_TEMPLATE = "admin/Publicaciones/createPublicacion.html"
 ADMIN_CREATE_USUARIO_TEMPLATE = "admin/Usuarios/createUsuario.html"
 ADMIN_EDIT_USUARIO_TEMPLATE = "admin/Usuarios/editUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
+PUBLICACIONES_NO_HABILITADAS_AJAX_MSG = "El modulo de publicaciones no esta habilitado."
+PUBLICACION_NO_ENCONTRADA_MSG = "Publicacion no encontrada."
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
 CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
@@ -1477,15 +1479,15 @@ def editar_publicacion_admin(request, publicacion_id):
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
     except Exception:
         if is_ajax:
-            return JsonResponse({"ok": False, "message": "El modulo de publicaciones no esta habilitado."})
+            return JsonResponse({"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_AJAX_MSG})
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     publicacion = Publicacion.objects.select_related("categoria", "usuario").filter(id=publicacion_id).first()
     if not publicacion:
         if is_ajax:
-            return JsonResponse({"ok": False, "message": "Publicacion no encontrada."})
-        messages.error(request, "Publicacion no encontrada.")
+            return JsonResponse({"ok": False, "message": PUBLICACION_NO_ENCONTRADA_MSG})
+        messages.error(request, PUBLICACION_NO_ENCONTRADA_MSG)
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     if request.method == "POST":
@@ -1517,7 +1519,7 @@ def ver_publicacion_admin(request, publicacion_id):
     try:
         from apps.publicaciones.models import Publicacion
     except Exception:
-        messages.error(request, "El modulo de publicaciones no esta habilitado.")
+        messages.error(request, PUBLICACIONES_NO_HABILITADAS_AJAX_MSG)
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     publicacion = (
@@ -1528,7 +1530,7 @@ def ver_publicacion_admin(request, publicacion_id):
         .first()
     )
     if not publicacion:
-        messages.error(request, "Publicacion no encontrada.")
+        messages.error(request, PUBLICACION_NO_ENCONTRADA_MSG)
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     return render(
@@ -1646,7 +1648,7 @@ def editar_categoria_publicacion_admin(request, categoria_id):
         from apps.publicaciones.models import CategoriaPublicacion
     except Exception:
         if is_ajax:
-            return JsonResponse({"ok": False, "message": "El modulo de publicaciones no esta habilitado."})
+            return JsonResponse({"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_AJAX_MSG})
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
         return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
 
