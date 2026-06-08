@@ -283,18 +283,18 @@ class AdminCatalogService:
         try:
             from apps.publicaciones.models import CategoriaPublicacion
         except Exception:
-            return None, None, None, None, {"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_MSG}
+            return None, None, None, None, {"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_MSG}, None
 
         tipo, error = resolver_tipo(data)
         if error:
-            return None, None, None, None, error
+            return None, None, None, None, error, None
 
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
-            return None, None, None, None, {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return None, None, None, None, {"ok": False, "message": ESTADO_INVALIDO_MSG}, None
 
         campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
         return tipo, nombre, descripcion, estado, None, campos_modelo
