@@ -4,7 +4,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
 {% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="materiales" %}{% endblock %}
+
 {% block content %}
     {% include "admin/partials/index_header.html" with title="Materiales y Catálogos" subtitle="Gestión de materiales reciclables y clasificaciones" icon_class="fas fa-boxes me-2" color="success" cta1_url="lista.html" cta1_label="Ver Catálogo" cta1_icon="fas fa-list" cta2_url="crear.html" cta2_label="Nuevo Material" cta2_icon="fas fa-plus-circle" %}
 
