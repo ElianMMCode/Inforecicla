@@ -6,6 +6,7 @@ app_name = "publicacion"
 urlpatterns = [
     path("", views.panel_publicaciones, name="publicaciones"),
     path("panel/", views.panel_publicaciones, name="panel_publicaciones"),
+    path("ajax/cards/", views.panel_publicaciones_ajax, name="ajax_cards"),
     path("<uuid:publicacion_id>/", views.publicacion, name="detalle_publicacion"),
     path("<uuid:publicacion_id>/comentar/", views.agregar_comentario, name="agregar_comentario"),
     path("<uuid:publicacion_id>/votar/", views.votar_publicacion, name="votar_publicacion"),

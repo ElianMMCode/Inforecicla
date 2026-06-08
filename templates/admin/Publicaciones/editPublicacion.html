@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Editar Publicación - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
@@ -18,7 +18,7 @@
 <div class="card border-success shadow-sm">
   <div class="card-header bg-success text-white"><i class="bi bi-pencil-square me-1"></i> Formulario de Edición</div>
   <div class="card-body bg-light p-4">
-    <form method="post" id="editPublicacionForm" class="needs-validation" novalidate>
+    <form method="post" id="editPublicacionForm" enctype="multipart/form-data" class="needs-validation" novalidate>
       {% csrf_token %}
       <div class="row g-3">
         <div class="col-12">
@@ -26,7 +26,14 @@
           <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required minlength="3" maxlength="200" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Título de la publicación">
           <div class="invalid-feedback">El título debe tener al menos 3 caracteres e incluir letras (máx. 200).</div>
         </div>
-        <div class="col-md-6">
+
+        <div class="col-12">
+          <label for="pub_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span></label>
+          <textarea id="pub_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas (máx. 500 caracteres)...">{{ publicacion.resumen|default:'' }}</textarea>
+          <div class="invalid-feedback">El resumen es obligatorio.</div>
+        </div>
+
+        <div class="col-md-4">
           <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
           <select id="pub_categoria_id" name="categoria_id" class="form-select">
             <option value="">Sin categoría</option>
@@ -36,7 +43,7 @@
           </select>
           <div class="invalid-feedback">Selecciona una categoría válida o déjala en blanco.</div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label for="pub_estado" class="form-label fw-semibold">Estado</label>
           <select id="pub_estado" name="estado" class="form-select">
             {% for val, label in estados %}
@@ -45,11 +52,87 @@
           </select>
           <div class="invalid-feedback">Selecciona un estado válido.</div>
         </div>
+        <div class="col-md-4">
+          <div class="form-check form-switch mt-4 pt-1">
+            <input id="pub_destacado" type="checkbox" name="destacado" class="form-check-input" value="1" {% if publicacion.destacado %}checked{% endif %}>
+            <label for="pub_destacado" class="form-check-label fw-semibold">Publicación destacada</label>
+          </div>
+        </div>
+
         <div class="col-12">
           <label for="pub_contenido" class="form-label fw-semibold">Contenido</label>
           <textarea id="pub_contenido" name="contenido" class="form-control" rows="8" placeholder="Escribe el contenido de la publicación...">{{ publicacion.contenido }}</textarea>
           <div class="invalid-feedback">Revisa el contenido de la publicación.</div>
         </div>
+
+        <!-- Multimedia actual -->
+        {% if publicacion.imagenes.exists or publicacion.video or publicacion.video_url %}
+        <div class="col-12">
+          <hr class="my-1">
+          <p class="fw-semibold text-muted mb-2"><i class="bi bi-images me-1"></i>Multimedia actual</p>
+          <div class="d-flex flex-wrap gap-3 align-items-start">
+            {% for img in publicacion.imagenes.all %}
+            <div class="position-relative" style="width:120px;">
+              <img src="{{ img.imagen.url }}" alt="{{ img.descripcion }}" class="img-thumbnail" style="width:120px;height:90px;object-fit:cover;">
+              <div class="form-check mt-1">
+                <input type="checkbox" name="eliminar_imagenes" value="{{ img.id }}" class="form-check-input" id="elim_img_{{ img.id }}">
+                <label class="form-check-label small text-danger" for="elim_img_{{ img.id }}">Eliminar</label>
+              </div>
+            </div>
+            {% endfor %}
+            {% if publicacion.video and publicacion.video.url %}
+            <div class="border rounded p-2 bg-white" style="max-width:200px;">
+              <small class="d-block text-muted mb-1">Video actual:</small>
+              <video src="{{ publicacion.video.url }}" style="max-height:80px;" controls class="w-100 rounded">
+                <track kind="captions" label="No disponible" srclang="es">
+              </video>
+              <div class="form-check mt-1">
+                <input type="checkbox" name="eliminar_video" value="1" class="form-check-input" id="elim_video">
+                <label class="form-check-label small text-danger" for="elim_video">Eliminar video</label>
+              </div>
+            </div>
+            {% endif %}
+            {% if publicacion.video_url %}
+            <div class="border rounded p-2 bg-white">
+              <small class="d-block text-muted mb-1">URL del video:</small>
+              <a href="{{ publicacion.video_url }}" target="_blank" class="small">{{ publicacion.video_url|truncatechars:40 }}</a>
+              <div class="form-check mt-1">
+                <input type="checkbox" name="eliminar_video_url" value="1" class="form-check-input" id="elim_video_url">
+                <label class="form-check-label small text-danger" for="elim_video_url">Eliminar URL</label>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Nuevo multimedia -->
+        <div class="col-12">
+          <hr class="my-1">
+          <p class="fw-semibold text-muted mb-0"><i class="bi bi-plus-circle me-1"></i>Agregar o reemplazar multimedia <span class="fw-normal">(opcional)</span></p>
+          <small class="text-muted">Sube nuevas imágenes, un video o una URL. Lo nuevo reemplaza lo anterior si aplica.</small>
+        </div>
+        <div class="col-md-6">
+          <label for="pub_imagenes" class="form-label fw-semibold">Nuevas imágenes</label>
+          <input type="file" name="imagenes" id="pub_imagenes" class="form-control" accept="image/*" multiple>
+          <div class="form-text">Se agregarán a las existentes (a menos que marques eliminar arriba).</div>
+        </div>
+        <div class="col-md-6">
+          <label for="pub_video_url" class="form-label fw-semibold">URL del video <span class="text-muted fw-normal">(YouTube, Vimeo...)</span></label>
+          <input id="pub_video_url" type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=..." value="{{ publicacion.video_url|default:'' }}">
+          <div class="form-text">Reemplaza cualquier URL guardada previamente.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="pub_video" class="form-label fw-semibold">Video <span class="text-muted fw-normal">(archivo)</span></label>
+          <input id="pub_video" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
+          <div class="form-text">Formatos: MP4, WEBM, OGG. Reemplaza el video actual si se sube.</div>
+        </div>
+        <div class="col-md-6" id="pub_thumbnail_wrapper" style="display:none;">
+          <label for="pub_thumbnail" class="form-label fw-semibold">Miniatura del video</label>
+          <input id="pub_thumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/*">
+          <div class="form-text">Se muestra antes de reproducir.</div>
+        </div>
+
         <div class="col-12">
           <div class="alert alert-secondary d-flex align-items-center mb-0" role="alert">
             <i class="bi bi-info-circle-fill fs-5 me-2"></i>
@@ -80,5 +163,17 @@
 {% block extra_scripts %}
 {% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/publicacion-form-comun.js' %}"></script>
-<script src="{% static 'js/admin/publicacion-editar.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  publicacionInitForm({ formId: "editPublicacionForm", esCreacion: false });
+
+  var videoInput = document.getElementById("pub_video");
+  if (videoInput) {
+    videoInput.addEventListener("change", function() {
+      var wrapper = document.getElementById("pub_thumbnail_wrapper");
+      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? "block" : "none";
+    });
+  }
+});
+</script>
 {% endblock %}
