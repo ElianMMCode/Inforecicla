@@ -217,6 +217,40 @@ class AdminDashboardService:
 
         return resumen
 
+    @staticmethod
+    def obtener_tendencia_usuarios(dias=30):
+        desde = timezone.now() - datetime.timedelta(days=dias)
+        usuarios = Usuario.objects.filter(date_joined__gte=desde)
+        dias_dict = {}
+        for i in range(dias):
+            fecha = (timezone.now() - datetime.timedelta(days=i)).date()
+            dias_dict[fecha.isoformat()] = 0
+        for u in usuarios:
+            d = u.date_joined.date()
+            if d.isoformat() in dias_dict:
+                dias_dict[d.isoformat()] += 1
+        fechas_ordenadas = sorted(dias_dict.keys())
+        return [{"date": f, "count": dias_dict[f]} for f in fechas_ordenadas]
+
+    @staticmethod
+    def obtener_distribucion_puntos_eca():
+        puntos = PuntoECA.objects.select_related("localidad").all()
+        dist = {}
+        for p in puntos:
+            nombre = p.localidad.nombre if p.localidad else "Sin localidad"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"localidad": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+
+    @staticmethod
+    def obtener_distribucion_materiales():
+        from django.db.models import Count
+        materiales = Material.objects.select_related("categoria").all()
+        dist = {}
+        for m in materiales:
+            nombre = m.categoria.nombre if m.categoria else "Sin categoría"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"categoria": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+
 
 class AdminCatalogService:
 
