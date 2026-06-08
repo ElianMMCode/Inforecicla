@@ -45,8 +45,9 @@
       <div class="flex-grow-1 d-flex flex-column" style="min-width:0;">
         <!-- Topbar Mobile: botón menú + logo -->
         <div class="d-md-none d-flex align-items-center bg-success px-3 py-2 shadow position-sticky top-0" style="z-index:1045">
-          <button class="btn btn-link text-white px-0 me-3" style="font-size:1.8rem;" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Abrir menú">
+          <button class="btn btn-link text-white px-0 me-3" style="font-size:1.8rem;" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
             <i class="bi bi-list"></i>
+            <span class="visually-hidden">Abrir menú</span>
           </button>
           <img src="{% static 'img/logo.png' %}" alt="Logo" width="40" height="40" class="rounded me-2"/>
           <span class="fw-semibold">InfoRecicla</span>
@@ -57,6 +58,74 @@
             <i class="bi bi-recycle me-2"></i>Punto ECA <span class="mx-2"><i class="bi bi-dot text-primary"></i></span> <span class="text-primary">{{ punto.nombre }}</span>
           </h1>
           <div class="flex-fill"></div>
+          <!-- Campana de notificaciones -->
+          <div class="dropdown">
+            <button class="btn btn-light text-success position-relative rounded-circle d-flex align-items-center justify-content-center"
+                    style="width:42px;height:42px;" type="button" id="notificacionesDropdownGestor"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="visually-hidden">Notificaciones</span>
+              <i class="bi bi-bell-fill fs-5"></i>
+              {% if notificaciones_no_leidas %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.65rem;">
+                {{ notificaciones_no_leidas }}
+                <span class="visually-hidden">notificaciones sin leer</span>
+              </span>
+              {% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow-sm p-0" aria-labelledby="notificacionesDropdownGestor" style="width:340px; max-height:420px; overflow-y:auto;">
+              <div class="px-3 py-2 border-bottom bg-light">
+                <h6 class="mb-0 fw-bold text-success"><i class="bi bi-bell-fill me-2"></i>Notificaciones</h6>
+              </div>
+              {% if mis_notificaciones %}
+                {% for notif in mis_notificaciones %}
+                <div class="dropdown-item d-flex gap-2 align-items-start py-2 px-3 border-bottom {% if not notif.leido %}bg-warning-subtle{% endif %}"
+                     style="white-space:normal;">
+                  <a href="{% url 'publicacion:abrir_notificacion' notif.id %}"
+                     class="d-flex gap-2 align-items-start flex-grow-1 text-decoration-none text-reset">
+                    <span class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width:32px;height:32px;">
+                      {% if notif.inventario %}
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                      {% elif notif.evento_instancia %}
+                        <i class="bi bi-calendar-event-fill"></i>
+                      {% else %}
+                        <i class="bi bi-chat-dots-fill"></i>
+                      {% endif %}
+                    </span>
+                    <span class="flex-grow-1">
+                      <span class="d-block small {% if not notif.leido %}fw-semibold{% endif %} text-dark">
+                        {% if notif.inventario %}
+                          Alerta de stock: {{ notif.inventario.material.nombre }} ({{ notif.inventario.alerta }})
+                        {% elif notif.evento_instancia %}
+                          Evento próximo: {{ notif.evento_instancia.evento_base.titulo }} — {{ notif.evento_instancia.fecha_inicio|date:"d/m/Y H:i" }}
+                        {% else %}
+                          Mensaje de {{ notif.mensaje.chat.ciudadano.get_full_name|default:notif.mensaje.chat.ciudadano.email }}: {{ notif.mensaje.texto|truncatechars:50 }}
+                        {% endif %}
+                      </span>
+                      <span class="d-block text-muted" style="font-size:.72rem;">
+                        <i class="bi bi-clock me-1"></i>{{ notif.fecha_creacion|date:"d/m/Y H:i" }}
+                      </span>
+                    </span>
+                    {% if not notif.leido %}
+                    <span class="badge rounded-pill bg-success align-self-center" style="font-size:.55rem;">Nueva</span>
+                    {% endif %}
+                  </a>
+                  <form method="POST" action="{% url 'publicacion:eliminar_notificacion' notif.id %}" class="ms-1 flex-shrink-0"
+                        onsubmit="return confirm('¿Eliminar esta notificación?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-link text-muted p-0" title="Eliminar notificación" aria-label="Eliminar notificación">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </form>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="text-center text-muted py-4 small">
+                  <i class="bi bi-bell-slash d-block mb-2" style="font-size:1.5rem;"></i>
+                  Sin notificaciones por ahora.
+                </div>
+              {% endif %}
+            </div>
+          </div>
         </header>
         <!-- Contenido principal -->
         <main class="container-fluid flex-grow-1 px-2 px-md-4 py-4" style="min-width:0;">
@@ -86,6 +155,14 @@
     {% if seccion == 'resumen' %}
       <script src="{% static 'js/ecas/resumen.js' %}" defer></script>
     {% endif %}
+    <script src="{% static 'js/notificaciones_ws.js' %}"></script>
+    <script>
+    initNotificacionesWS('notificacionesDropdownGestor', {
+      inventario: 'bi-exclamation-triangle-fill',
+      evento: 'bi-calendar-event-fill',
+      mensaje: 'bi-chat-dots-fill'
+    });
+    </script>
 
   </body>
 </html>

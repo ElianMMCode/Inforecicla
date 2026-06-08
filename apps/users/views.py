@@ -2,6 +2,7 @@ import re
 from datetime import date as date_type
 from django.shortcuts import render, redirect
 from django.db import transaction, IntegrityError
+from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST, require_safe
@@ -848,7 +849,7 @@ def _create_registro_ciudadano(fields):
 def perfil_ciudadano(request, tab="datos"):
     if request.user.is_staff or request.user.is_superuser:
         return redirect("/panel_admin/perfil/")
-    from apps.publicaciones.models import Comentario, Guardados
+    from apps.publicaciones.models import Comentario, Guardados, Notificacion
 
     localidades = Localidad.objects.all()
     perfil_pendientes = _get_perfil_pendientes(request.user)
@@ -862,6 +863,15 @@ def perfil_ciudadano(request, tab="datos"):
         .select_related("publicacion")
         .order_by("-fecha_creacion")
     )
+    notificaciones_disponibles = Notificacion.objects.filter(usuario=request.user).filter(
+        Q(publicacion__isnull=True) | Q(publicacion__estado=cons.Estado.ACTIVO)
+    )
+    mis_notificaciones = (
+        notificaciones_disponibles
+        .select_related("publicacion", "mensaje__chat__punto")
+        .order_by("-fecha_creacion")[:20]
+    )
+    notificaciones_no_leidas = notificaciones_disponibles.filter(leido=False).count()
     return render(
         request,
         "users/perfil_ciudadano.html",
@@ -869,6 +879,8 @@ def perfil_ciudadano(request, tab="datos"):
             "localidades": localidades,
             "mis_comentarios": mis_comentarios,
             "mis_guardados": mis_guardados,
+            "mis_notificaciones": mis_notificaciones,
+            "notificaciones_no_leidas": notificaciones_no_leidas,
             "tab_activo": tab,
             "perfil_incompleto": perfil_incompleto(request.user),
             "perfil_pendientes": perfil_pendientes,

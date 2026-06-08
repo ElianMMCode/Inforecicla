@@ -1,17 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-
-from .service import PublicacionService
+from django.views.decorators.http import require_GET
 
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
 _DETALLE_PUBLICACION = "publicacion:detalle_publicacion"
 
+from .service import PublicacionService
 
-@require_http_methods(["GET", "HEAD"])
+
+@require_GET
 def panel_publicaciones(request):
     return render(
         request,
@@ -20,13 +19,7 @@ def panel_publicaciones(request):
     )
 
 
-@require_http_methods(["GET", "HEAD"])
-def panel_publicaciones_ajax(request):
-    data = PublicacionService.ajax_cards(request)
-    return JsonResponse(data)
-
-
-@require_http_methods(["GET", "HEAD"])
+@require_GET
 def publicacion(request, publicacion_id):
     from .models import Reaccion, Guardados
     context = PublicacionService.get_detail_context(publicacion_id)
@@ -102,6 +95,42 @@ def eliminar_comentario(request, comentario_id):
         comentario.delete()
         return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
     return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
+
+
+@login_required
+@require_GET
+def abrir_notificacion(request, notificacion_id):
+    from .models import Notificacion
+    from config.constants import TipoUsuario
+    notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
+    if not notificacion.leido:
+        notificacion.leido = True
+        notificacion.save(update_fields=["leido"])
+    if notificacion.publicacion_id:
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=notificacion.publicacion_id)
+    if notificacion.mensaje_id:
+        if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
+            return redirect(f"/punto-eca/mensajes/?chat_id={notificacion.mensaje.chat_id}")
+        return redirect(f"/perfil/mensajes/?chat_punto={notificacion.mensaje.chat.punto_id}")
+    if notificacion.inventario_id:
+        return redirect("/punto-eca/inventario/")
+    if notificacion.evento_instancia_id:
+        return redirect("/punto-eca/calendario/")
+    if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
+        return redirect("/punto-eca/")
+    return redirect("perfil_ciudadano")
+
+
+@login_required
+def eliminar_notificacion(request, notificacion_id):
+    if request.method == "POST":
+        from .models import Notificacion
+        notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
+        notificacion.delete()
+    from config.constants import TipoUsuario
+    if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
+        return redirect("/punto-eca/")
+    return redirect("perfil_ciudadano")
 
 
 @login_required
