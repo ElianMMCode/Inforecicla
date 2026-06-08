@@ -29,9 +29,9 @@ ADMIN_CREATE_USUARIO_TEMPLATE = "admin/Usuarios/createUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
-CORREGIR_CAMPOS_MSG = CORREGIR_CAMPOS_MSG
-LISTAR_PUNTOS_ECA_URL = LISTAR_PUNTOS_ECA_URL
-LISTAR_CATEGORIAS_PUBLICACION_URL = LISTAR_CATEGORIAS_PUBLICACION_URL
+CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
+LISTAR_PUNTOS_ECA_URL = "panel_admin:listar_puntos_eca_admin"
+LISTAR_CATEGORIAS_PUBLICACION_URL = "panel_admin:listar_categorias_publicacion_admin"
 
 
 def _crear_respuesta_descarga(contenido, content_type, filename):
@@ -1400,44 +1400,40 @@ def editar_usuario_admin(request, usuario_id):
         messages.error(request, "Usuario no encontrado.")
         return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
-    if request.method == "POST":
-        error = _aplicar_datos_usuario_admin(usuario, request.POST)
-        if error:
-            if is_ajax:
-                return JsonResponse({"ok": False, "errors": [error], "message": error})
-            messages.error(request, error)
-            contexto = {
-                "usuario": usuario,
-                "localidades": Localidad.objects.all().order_by("nombre"),
-                "tipos_documento": cons.TipoDocumento.choices,
-                "tipos_usuario": cons.TipoUsuario.choices,
-            }
-            return render(request, "admin/Usuarios/editUsuario.html", contexto)
-
-        try:
-            usuario.full_clean()
-            usuario.save()
-            if is_ajax:
-                return JsonResponse({"ok": True, "message": "Usuario actualizado correctamente."})
-            messages.success(request, "Usuario actualizado correctamente.")
-            return redirect(ADMIN_LISTAR_USUARIOS_URL)
-        except ValidationError as e:
-            lista_errores = _errores_validacion_lista(e)
-            if is_ajax:
-                return JsonResponse({"ok": False, "errors": lista_errores, "message": CORREGIR_CAMPOS_MSG})
-            mensajes_error = " ".join(lista_errores)
-            messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
-        except Exception as e:
-            if is_ajax:
-                return JsonResponse({"ok": False, "errors": [str(e)], "message": str(e)})
-            messages.error(request, f"No se pudo actualizar el usuario: {e}")
-
     contexto = {
         "usuario": usuario,
         "localidades": Localidad.objects.all().order_by("nombre"),
         "tipos_documento": cons.TipoDocumento.choices,
         "tipos_usuario": cons.TipoUsuario.choices,
     }
+    if request.method != "POST":
+        return render(request, "admin/Usuarios/editUsuario.html", contexto)
+
+    error = _aplicar_datos_usuario_admin(usuario, request.POST)
+    if error:
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": [error], "message": error})
+        messages.error(request, error)
+        return render(request, "admin/Usuarios/editUsuario.html", contexto)
+
+    try:
+        usuario.full_clean()
+        usuario.save()
+        if is_ajax:
+            return JsonResponse({"ok": True, "message": "Usuario actualizado correctamente."})
+        messages.success(request, "Usuario actualizado correctamente.")
+        return redirect(ADMIN_LISTAR_USUARIOS_URL)
+    except ValidationError as e:
+        lista_errores = _errores_validacion_lista(e)
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": lista_errores, "message": CORREGIR_CAMPOS_MSG})
+        mensajes_error = " ".join(lista_errores)
+        messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
+    except Exception as e:
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": [str(e)], "message": str(e)})
+        messages.error(request, f"No se pudo actualizar el usuario: {e}")
+
     return render(request, "admin/Usuarios/editUsuario.html", contexto)
 
 
