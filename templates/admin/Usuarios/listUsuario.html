@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Usuarios - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
@@ -352,6 +352,8 @@
   </div>
 </div>
 
+{% block extra_scripts %}
+{% include "admin/_messages_swal.html" %}
 {% endblock %}
 
 {% block extra_scripts %}

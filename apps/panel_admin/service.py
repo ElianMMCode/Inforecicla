@@ -1,13 +1,20 @@
-# apps/panel_admin/service.py
+﻿# apps/panel_admin/service.py
 import datetime
 import re as _regex
 from decimal import Decimal as decimal
 
 from django.db import transaction
+from django.http import Http404
 from apps.ecas.models import Localidad, PuntoECA
 from apps.users.models import Usuario
 from apps.inventory.models import Inventario, TipoMaterial, CategoriaMaterial, Material
 from config import constants as cons
+from apps.operations.models import VentaInventario, CompraInventario
+from apps.inventory.service import InventoryService
+from apps.operations.service import CompraInventarioService, VentaInventarioService
+from apps.panel_admin import models
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
@@ -28,6 +35,7 @@ DESCRIPCION_CATEGORIA_MAX_500_MSG = (
     "La descripción no puede exceder 500 caracteres."
 )
 RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado"
+TIPO_CATEGORIA_INVALIDO_MSG = "Tipo de categoria invalido."
 NOMBRE_SIN_LETRA_MSG = "El nombre debe contener al menos una letra."
 TIPO_DUPLICADO_MSG = "Ya existe un tipo con ese nombre."
 CATEGORIA_DUPLICADA_MSG = "Ya existe una categoría con ese nombre."
@@ -293,6 +301,24 @@ class AdminCatalogService:
         return nombre, descripcion, estado, categoria, tipo, errores
 
     @staticmethod
+    def _resolver_categoria_material(categoria_id):
+        if not categoria_id:
+            return None
+        categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
+        if not categoria:
+            raise ValueError("Categoría de material inválida.")
+        return categoria
+
+    @staticmethod
+    def _resolver_tipo_material(tipo_id):
+        if not tipo_id:
+            return None
+        tipo = TipoMaterial.objects.filter(id=tipo_id).first()
+        if not tipo:
+            raise ValueError("Tipo de material inválido.")
+        return tipo
+
+    @staticmethod
     @transaction.atomic
     def crear_material(data, files=None):
         nombre, descripcion, estado, categoria, tipo, errores = AdminCatalogService._validar_material_data(data)
@@ -302,6 +328,8 @@ class AdminCatalogService:
             return {"ok": False, "message": msg, "errors": errores}
 
         try:
+            categoria = AdminCatalogService._resolver_categoria_material(data.get("categoria_id"))
+            tipo = AdminCatalogService._resolver_tipo_material(data.get("tipo_id"))
             obj = Material(nombre=nombre, descripcion=descripcion, estado=estado,
                            categoria=categoria, tipo=tipo)
             if files and "imagen" in files:
@@ -496,7 +524,6 @@ class AdminCatalogService:
         punto.descripcion = data.get("descripcion", "").strip()
         punto.sitio_web = data.get("sitio_web", "").strip()
         punto.logo_url_punto = data.get("logo_url_punto", "").strip()
-        punto.foto_url_punto = data.get("foto_url_punto", "").strip()
         punto.estado = estado
 
         latitud = data.get("latitud")
@@ -510,32 +537,9 @@ class AdminCatalogService:
             punto.localidad = localidad
 
     @staticmethod
-    def _actualizar_gestor_punto_eca(gestor, data):
-        gestor_nombres = (data.get("gestor_nombres") or "").strip()
-        if gestor_nombres:
-            gestor.nombres = gestor_nombres
-        gestor_apellidos = (data.get("gestor_apellidos") or "").strip()
-        if gestor_apellidos:
-            gestor.apellidos = gestor_apellidos
-        gestor_email = (data.get("gestor_email") or "").strip()
-        if gestor_email:
-            gestor.email = gestor_email
-        gestor_tipo_doc = (data.get("gestor_tipo_documento") or "").strip()
-        if gestor_tipo_doc:
-            gestor.tipo_documento = gestor_tipo_doc
-        gestor_num_doc = (data.get("gestor_numero_documento") or "").strip()
-        if gestor_num_doc:
-            gestor.numero_documento = gestor_num_doc
-        gestor_password = data.get("gestor_password", "")
-        if gestor_password:
-            gestor.set_password(gestor_password)
-        gestor.full_clean()
-        gestor.save()
-
-    @staticmethod
     @transaction.atomic
     def actualizar_punto_eca(punto_id, data):
-        punto = PuntoECA.objects.select_related("gestor_eca").filter(id=punto_id).first()
+        punto = PuntoECA.objects.filter(id=punto_id).first()
         if not punto:
             return {"ok": False, "errors": {"_general": "Punto ECA no encontrado."}, "message": "Punto ECA no encontrado."}
 
@@ -545,8 +549,6 @@ class AdminCatalogService:
 
         try:
             AdminCatalogService._aplicar_campos_punto_eca(punto, data, estado)
-            if punto.gestor_eca:
-                AdminCatalogService._actualizar_gestor_punto_eca(punto.gestor_eca, data)
             punto.full_clean()
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}
@@ -555,7 +557,6 @@ class AdminCatalogService:
                 return {"ok": False, "errors": {"_general": str(e)}, "message": f"No se pudo actualizar: {e}"}
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
-    @staticmethod
     @staticmethod
     def _validar_publicacion_existente(publicacion_id):
         from apps.publicaciones.models import Publicacion
@@ -676,6 +677,33 @@ class AdminCatalogService:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
+    def _validar_tipo_categoria_publicacion(tipo, tipo_otro):
+        if not tipo:
+            return "Debe seleccionar un tipo o escribir uno nuevo."
+        if len(tipo) > 30:
+            return "El tipo no puede superar 30 caracteres."
+        tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
+        if tipo not in tipos_validos and tipo != tipo_otro:
+            return TIPO_CATEGORIA_INVALIDO_MSG
+        return None
+
+    @staticmethod
+    def _asignar_campos_categoria_publicacion(categoria, nombre, descripcion):
+        from apps.publicaciones.models import CategoriaPublicacion
+        campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
+        if "nombre" in campos_modelo:
+            if not nombre:
+                return "El nombre de la categoría es obligatorio."
+            if len(nombre) > 30:
+                return "El nombre no puede exceder 30 caracteres."
+            categoria.nombre = nombre
+        if "descripcion" in campos_modelo:
+            if len(descripcion) > 500:
+                return "La descripción no puede exceder 500 caracteres."
+            categoria.descripcion = descripcion
+        return None
+
+    @staticmethod
     @transaction.atomic
     def actualizar_categoria_publicacion(categoria_id, data):
         try:
@@ -696,7 +724,7 @@ class AdminCatalogService:
             return error
 
         if payload["tipo"] not in {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()} and payload["tipo"] != tipo_otro:
-            return {"ok": False, "errors": {"tipo": "Tipo de categoria invalido."}, "message": "Tipo de categoria invalido."}
+            return {"ok": False, "errors": {"tipo": TIPO_CATEGORIA_INVALIDO_MSG}, "message": TIPO_CATEGORIA_INVALIDO_MSG}
 
         try:
             if "nombre" in campos_modelo and "nombre" in payload:

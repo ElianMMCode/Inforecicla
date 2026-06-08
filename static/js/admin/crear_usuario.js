@@ -1,4 +1,4 @@
-function sincronizarValidacionCampo(campo) {
+﻿function sincronizarValidacionCampo(campo) {
   if (!campo) {
     return;
   }
