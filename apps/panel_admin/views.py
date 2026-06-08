@@ -41,6 +41,35 @@ def _crear_respuesta_descarga(contenido, content_type, filename):
     return response
 
 
+def _crear_libro_excel(headers, rows, sheet_title):
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_title
+
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    for row_idx, row_data in enumerate(rows, 2):
+        ws.append(row_data)
+
+    for col in ws.columns:
+        ancho = max((len(str(cell.value or "")) for cell in col), default=8)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf.read()
+
+
 def _validar_nombre_perfil_admin(nombres, errores):
     if not nombres or len(nombres) < 3:
         errores.append("El nombre debe tener al menos 3 caracteres.")
@@ -217,10 +246,6 @@ def _validar_datos_usuario_csv(datos, fila_numero):
     errores = []
     if not all([datos["email"], datos["nombres"], datos["apellidos"], datos["celular"], datos["password"]]):
         errores.append(f"Fila {fila_numero}: campos obligatorios incompletos.")
-    if datos["email"] and Usuario.objects.filter(email=datos["email"]).exists():
-        errores.append(f"Fila {fila_numero}: el email '{datos['email']}' ya existe.")
-    if datos["numero_documento"] and Usuario.objects.filter(numero_documento=datos["numero_documento"]).exists():
-        errores.append(f"Fila {fila_numero}: el documento '{datos['numero_documento']}' ya existe.")
     return errores
 
 
@@ -480,30 +505,6 @@ def _crear_punto_eca_desde_datos(datos, localidad_inst):
         )
 
 
-def _escribir_puntos_eca_excel(ws, puntos):
-    for row, punto in enumerate(puntos, 2):
-        gestor = f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else ""
-        ws.cell(row=row, column=1, value=punto.nombre)
-        ws.cell(row=row, column=2, value=punto.direccion or "")
-        ws.cell(row=row, column=3, value=punto.localidad.nombre if punto.localidad else "")
-        ws.cell(row=row, column=4, value=punto.ciudad or "")
-        ws.cell(row=row, column=5, value=punto.telefono_punto or "")
-        ws.cell(row=row, column=6, value=punto.email or "")
-        ws.cell(row=row, column=7, value=punto.celular or "")
-        ws.cell(row=row, column=8, value=gestor)
-        ws.cell(row=row, column=9, value=punto.horario_atencion or "")
-        ws.cell(row=row, column=10, value=punto.sitio_web or "")
-        ws.cell(row=row, column=11, value=punto.estado or "")
-        ws.cell(row=row, column=12, value=punto.latitud or "")
-        ws.cell(row=row, column=13, value=punto.longitud or "")
-
-
-def _ajustar_ancho_columnas(ws):
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-
 def _procesar_importar_usuarios_csv(archivo):
     import csv
     import io
@@ -516,20 +517,38 @@ def _procesar_importar_usuarios_csv(archivo):
         faltantes = campos_requeridos - fieldnames
         raise ValueError(f"El CSV no tiene las columnas requeridas: {', '.join(faltantes)}")
 
+    filas = list(lector)
+    existing_emails = set(Usuario.objects.values_list("email", flat=True))
+    existing_docs = set(Usuario.objects.values_list("numero_documento", flat=True))
+
     creados = 0
     errores = []
-    for fila_numero, fila in enumerate(lector, 2):
+    usuarios_a_crear = []
+
+    for fila_numero, fila in enumerate(filas, 2):
         datos = _obtener_datos_usuario_csv(fila)
         errores_fila = _validar_datos_usuario_csv(datos, fila_numero)
         if errores_fila:
             errores.extend(errores_fila)
             continue
+        if datos["email"] in existing_emails:
+            errores.append(f"Fila {fila_numero}: el email '{datos['email']}' ya existe.")
+            continue
+        if datos["numero_documento"] and datos["numero_documento"] in existing_docs:
+            errores.append(f"Fila {fila_numero}: el documento '{datos['numero_documento']}' ya existe.")
+            continue
 
+        usuarios_a_crear.append(datos)
+        existing_emails.add(datos["email"])
+        if datos["numero_documento"]:
+            existing_docs.add(datos["numero_documento"])
+
+    for datos in usuarios_a_crear:
         try:
             _crear_usuario_desde_csv(datos)
             creados += 1
         except Exception as e:
-            errores.append(f"Fila {fila_numero}: {e}")
+            errores.append(f"{e}")
 
     return creados, errores
 
@@ -794,46 +813,23 @@ def exportar_usuarios_pdf(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_safe
 def exportar_usuarios_excel(request):
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Usuarios"
-
-    headers = ["Nombres", "Apellidos", "Email", "Celular", "Tipo Usuario",
-               "Tipo Documento", "N° Documento", "Ciudad", "Estado", "Fecha Registro"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
-
     tipo_labels = dict(cons.TipoUsuario.choices)
     doc_labels = dict(cons.TipoDocumento.choices)
-
-    for row, u in enumerate(Usuario.objects.all().order_by("apellidos", "nombres"), 2):
-        ws.cell(row=row, column=1, value=u.nombres)
-        ws.cell(row=row, column=2, value=u.apellidos)
-        ws.cell(row=row, column=3, value=u.email)
-        ws.cell(row=row, column=4, value=u.celular or "")
-        ws.cell(row=row, column=5, value=tipo_labels.get(u.tipo_usuario, u.tipo_usuario))
-        ws.cell(row=row, column=6, value=doc_labels.get(u.tipo_documento, u.tipo_documento))
-        ws.cell(row=row, column=7, value=u.numero_documento)
-        ws.cell(row=row, column=8, value=u.ciudad or "")
-        ws.cell(row=row, column=9, value="Activo" if u.is_active else "Inactivo")
-        ws.cell(row=row, column=10, value=u.date_joined.strftime("%Y-%m-%d") if u.date_joined else "")
-
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "usuarios.xlsx")
+    headers = ["Nombres", "Apellidos", "Email", "Celular", "Tipo Usuario",
+               "Tipo Documento", "N° Documento", "Ciudad", "Estado", "Fecha Registro"]
+    rows = [
+        [
+            u.nombres, u.apellidos, u.email, u.celular or "",
+            tipo_labels.get(u.tipo_usuario, u.tipo_usuario),
+            doc_labels.get(u.tipo_documento, u.tipo_documento),
+            u.numero_documento, u.ciudad or "",
+            "Activo" if u.is_active else "Inactivo",
+            u.date_joined.strftime("%Y-%m-%d") if u.date_joined else "",
+        ]
+        for u in Usuario.objects.all().order_by("apellidos", "nombres")
+    ]
+    data = _crear_libro_excel(headers, rows, "Usuarios")
+    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "usuarios.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1010,32 +1006,25 @@ def exportar_puntos_eca_pdf(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_safe
 def exportar_puntos_eca_excel(request):
-    import io
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Puntos ECA"
-
     headers = ["Nombre", "Dirección", "Localidad", "Ciudad", "Teléfono", "Email",
-               "Celular", "Gestor", "Horario", "Sitio Web", "Estado", "Latitud", "Longitud"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
-
+               "Celular", "Gestor", "Horario", "Sitio Web", "Descripción",
+               "Logo URL", "Foto URL", "Estado", "Latitud", "Longitud"]
     puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
-    _escribir_puntos_eca_excel(ws, puntos)
-    _ajustar_ancho_columnas(ws)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "puntos_eca.xlsx")
+    rows = []
+    for punto in puntos:
+        gestor = f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else ""
+        rows.append([
+            punto.nombre, punto.direccion or "",
+            punto.localidad.nombre if punto.localidad else "",
+            punto.ciudad or "", punto.telefono_punto or "",
+            punto.email or "", punto.celular or "",
+            gestor, punto.horario_atencion or "",
+            punto.sitio_web or "", punto.descripcion or "",
+            punto.logo_url_punto or "", punto.foto_url_punto or "",
+            punto.estado or "", punto.latitud or "", punto.longitud or "",
+        ])
+    data = _crear_libro_excel(headers, rows, "Puntos ECA")
+    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "puntos_eca.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1120,39 +1109,17 @@ def exportar_materiales_pdf(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_safe
 def exportar_materiales_excel(request):
-    import io
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Materiales"
-
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Categoría", "Tipo", "Estado"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
-
     materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
-    for row, m in enumerate(materiales, 2):
-        ws.cell(row=row, column=1, value=m.nombre)
-        ws.cell(row=row, column=2, value=m.descripcion or "")
-        ws.cell(row=row, column=3, value=m.categoria.nombre if m.categoria else "")
-        ws.cell(row=row, column=4, value=m.tipo.nombre if m.tipo else "")
-        ws.cell(row=row, column=5, value=m.estado or "")
-
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "materiales.xlsx")
+    rows = [
+        [m.nombre, m.descripcion or "",
+         m.categoria.nombre if m.categoria else "",
+         m.tipo.nombre if m.tipo else "",
+         m.estado or ""]
+        for m in materiales
+    ]
+    data = _crear_libro_excel(headers, rows, "Materiales")
+    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "materiales.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1187,36 +1154,13 @@ def exportar_categorias_material_pdf(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_safe
 def exportar_categorias_material_excel(request):
-    import io
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Categorías de Materiales"
-
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
-
-    for row, c in enumerate(CategoriaMaterial.objects.all().order_by("nombre"), 2):
-        ws.cell(row=row, column=1, value=c.nombre)
-        ws.cell(row=row, column=2, value=c.descripcion or "")
-        ws.cell(row=row, column=3, value=c.estado or "")
-
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_material.xlsx")
+    rows = [
+        [c.nombre, c.descripcion or "", c.estado or ""]
+        for c in CategoriaMaterial.objects.all().order_by("nombre")
+    ]
+    data = _crear_libro_excel(headers, rows, "Categorías de Materiales")
+    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "categorias_material.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1254,42 +1198,19 @@ def exportar_categorias_publicacion_pdf(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_safe
 def exportar_categorias_publicacion_excel(request):
-    import io
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Categorías de Publicaciones"
-
-    headers = ["Tipo", EXCEL_DESCRIPTION_HEADER, "Estado"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
-
     try:
         from apps.publicaciones.models import CategoriaPublicacion
         categorias = CategoriaPublicacion.objects.all().order_by("tipo")
     except Exception:
         categorias = []
 
-    for row, c in enumerate(categorias, 2):
-        ws.cell(row=row, column=1, value=c.tipo)
-        ws.cell(row=row, column=2, value=c.descripcion or "")
-        ws.cell(row=row, column=3, value=c.estado or "")
-
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_publicacion.xlsx")
+    headers = ["Nombre", "Tipo", EXCEL_DESCRIPTION_HEADER, "Estado"]
+    rows = [
+        [c.nombre or "", c.tipo, c.descripcion or "", c.estado or ""]
+        for c in categorias
+    ]
+    data = _crear_libro_excel(headers, rows, "Categorías de Publicaciones")
+    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "categorias_publicacion.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1343,36 +1264,13 @@ def exportar_tipos_material_pdf(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_safe
 def exportar_tipos_material_excel(request):
-    import io
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Tipos de Material"
-
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
-
-    for row, t in enumerate(TipoMaterial.objects.all().order_by("nombre"), 2):
-        ws.cell(row=row, column=1, value=t.nombre)
-        ws.cell(row=row, column=2, value=t.descripcion or "")
-        ws.cell(row=row, column=3, value=t.estado or "")
-
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "tipos_material.xlsx")
+    rows = [
+        [t.nombre, t.descripcion or "", t.estado or ""]
+        for t in TipoMaterial.objects.all().order_by("nombre")
+    ]
+    data = _crear_libro_excel(headers, rows, "Tipos de Material")
+    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "tipos_material.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1482,6 +1380,8 @@ def editar_publicacion_admin(request, publicacion_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "POST"])
 def editar_punto_eca_admin(request, punto_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
@@ -1508,6 +1408,7 @@ def editar_punto_eca_admin(request, punto_id):
         {
             "punto": punto,
             "localidades": Localidad.objects.all().order_by("nombre"),
+            "tipos_documento": cons.TipoDocumento.choices,
             "estados": cons.Estado.choices,
         },
     )

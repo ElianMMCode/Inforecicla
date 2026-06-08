@@ -495,6 +495,7 @@ class AdminCatalogService:
         punto.descripcion = data.get("descripcion", "").strip()
         punto.sitio_web = data.get("sitio_web", "").strip()
         punto.logo_url_punto = data.get("logo_url_punto", "").strip()
+        punto.foto_url_punto = data.get("foto_url_punto", "").strip()
         punto.estado = estado
 
         latitud = data.get("latitud")
@@ -510,7 +511,7 @@ class AdminCatalogService:
     @staticmethod
     @transaction.atomic
     def actualizar_punto_eca(punto_id, data):
-        punto = PuntoECA.objects.filter(id=punto_id).first()
+        punto = PuntoECA.objects.select_related("gestor_eca").filter(id=punto_id).first()
         if not punto:
             return {"ok": False, "errors": {"_general": "Punto ECA no encontrado."}, "message": "Punto ECA no encontrado."}
 
@@ -520,6 +521,30 @@ class AdminCatalogService:
 
         try:
             AdminCatalogService._aplicar_campos_punto_eca(punto, data, estado)
+
+            gestor = punto.gestor_eca
+            if gestor:
+                gestor_nombres = (data.get("gestor_nombres") or "").strip()
+                if gestor_nombres:
+                    gestor.nombres = gestor_nombres
+                gestor_apellidos = (data.get("gestor_apellidos") or "").strip()
+                if gestor_apellidos:
+                    gestor.apellidos = gestor_apellidos
+                gestor_email = (data.get("gestor_email") or "").strip()
+                if gestor_email:
+                    gestor.email = gestor_email
+                gestor_tipo_doc = (data.get("gestor_tipo_documento") or "").strip()
+                if gestor_tipo_doc:
+                    gestor.tipo_documento = gestor_tipo_doc
+                gestor_num_doc = (data.get("gestor_numero_documento") or "").strip()
+                if gestor_num_doc:
+                    gestor.numero_documento = gestor_num_doc
+                gestor_password = data.get("gestor_password", "")
+                if gestor_password:
+                    gestor.set_password(gestor_password)
+                gestor.full_clean()
+                gestor.save()
+
             punto.full_clean()
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}

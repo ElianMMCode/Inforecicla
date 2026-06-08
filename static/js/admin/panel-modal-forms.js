@@ -183,6 +183,11 @@ const MARCAR_ERRORES = {
     tipoDocumento: 'Tipo de documento',
     numeroDocumento: 'Número de documento',
     localidad: 'Localidad',
+    gestor_nombres: 'Nombres del gestor',
+    gestor_apellidos: 'Apellidos del gestor',
+    gestor_email: 'Email del gestor',
+    gestor_tipo_documento: 'Tipo de documento del gestor',
+    gestor_numero_documento: 'Número de documento del gestor',
 };
 
 function limpiarErroresForm(form) {
