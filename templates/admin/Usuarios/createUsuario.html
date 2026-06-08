@@ -171,7 +171,7 @@
     Swal.fire({
       icon: "error",
       title: "Revisa los campos",
-      html: '<div class="text-start"><ul class="mb-0 ps-3">{% for error in errores %}<li>{{ error|escape }}</li>{% endfor %}</ul></div>',
+      html: '<div class="text-start"><ul class="mb-0 ps-3">{% for error in errores %}<li>{{ error|escapejs }}</li>{% endfor %}</ul></div>',
       confirmButtonColor: "#198754",
     });
   });

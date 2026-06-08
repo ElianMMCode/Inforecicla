@@ -721,8 +721,8 @@ def es_administrador(user):
     return bool(user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN)
 
 
+@require_safe
 def admin_redirect_no_autorizado(request):
-    # Para usuarios autenticados sin rol admin, redirige al inicio.
     return render(request, "base/inicio.html")
 
 
@@ -1003,6 +1003,7 @@ def exportar_puntos_eca_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def exportar_puntos_eca_excel(request):
     import io
     import openpyxl
@@ -1034,6 +1035,7 @@ def exportar_puntos_eca_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
 def crear_punto_eca_admin(request):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     localidades = Localidad.objects.all().order_by("nombre")
@@ -1077,6 +1079,7 @@ def crear_punto_eca_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_safe
 def listar_puntos_eca_admin(request):
     puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
     q = request.GET.get('q', '').strip()

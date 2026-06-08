@@ -260,24 +260,28 @@
     var cssHref = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
     var jsSrc = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
 
-    function insertCss(href) {
+    function insertCss(href, integrity) {
       if (document.querySelector('link[href="' + href + '"]')) return;
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
+      link.integrity = integrity;
+      link.crossOrigin = 'anonymous';
       document.head.appendChild(link);
     }
 
-    function loadScript(src, cb) {
+    function loadScript(src, integrity, cb) {
       if (globalThis.L) return cb();
       var s = document.createElement('script');
       s.src = src;
+      s.integrity = integrity;
+      s.crossOrigin = 'anonymous';
       s.onload = cb;
       document.body.appendChild(s);
     }
 
-    insertCss(cssHref);
-    loadScript(jsSrc, function() {
+    insertCss(cssHref, 'sha384-b8ANgTJvdlAnWM5YGMpKn7Kodm+1k7NYNG9zdjTCcZcKatzYHwZ0RLdWarbJJVzU');
+    loadScript(jsSrc, 'sha384-u5N8qJeJOO2iqNjIKTdl6KeKsEikMAmCUBPc6sC6uGpgL34aPJ4VgNhuhumedpEk', function() {
       var latInput = document.getElementById('latitud');
       var lngInput = document.getElementById('longitud');
       var initLat = Number.parseFloat(latInput && latInput.value) || 4.711;
