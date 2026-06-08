@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
 from .service import PublicacionService
 
@@ -10,6 +11,7 @@ _COMENTARIO_MAX = 1000
 _DETALLE_PUBLICACION = "publicacion:detalle_publicacion"
 
 
+@require_http_methods(["GET", "HEAD"])
 def panel_publicaciones(request):
     return render(
         request,
@@ -18,11 +20,13 @@ def panel_publicaciones(request):
     )
 
 
+@require_http_methods(["GET", "HEAD"])
 def panel_publicaciones_ajax(request):
     data = PublicacionService.ajax_cards(request)
     return JsonResponse(data)
 
 
+@require_http_methods(["GET", "HEAD"])
 def publicacion(request, publicacion_id):
     from .models import Reaccion, Guardados
     context = PublicacionService.get_detail_context(publicacion_id)
