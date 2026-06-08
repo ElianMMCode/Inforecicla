@@ -4,29 +4,28 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Inicio - InfoRecicla</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
-            crossorigin="anonymous" />
-    <style>
-      .hero-img { max-width: 420px; }
-      .animated-card { opacity: 0; transform: translateY(40px) scale(0.96); transition: all 0.7s cubic-bezier(.39,.575,.565,1.000); }
-      .animated-card.is-visible { opacity: 1; transform: translateY(0) scale(1); }
-      .animated-card.is-visible:hover, .animated-card.is-visible:focus-visible {
-        z-index: 2;
-        box-shadow: 0 0 24px 0 rgba(0,128,0,.20), 0 4px 24px 0 rgba(0,0,0,.18);
-        transform: translateY(-4px) scale(1.035);
-        transition: box-shadow 0.18s, transform 0.18s;
-      }
-    .badge-feature { background-color: #e5f4e1; color: #145c3a; font-weight: 600; margin-right: 0.5rem; }
-    .stat-num { font-size: 2.5rem; font-weight: bold; color: #0f3d27; }
-      .stat-label { color: #666; font-size: 1rem; }
-    </style>
+    <meta name="description" content="InfoRecicla: plataforma colaborativa que conecta ciudadanos con centros de recolección de materiales reciclables. Encuentra puntos ECA cerca de ti.">
+    <meta property="og:title" content="InfoRecicla - Plataforma Colaborativa para el Reciclaje">
+    <meta property="og:description" content="Conectamos ciudadanos con centros de recolección de materiales reciclables. Comparte, encuentra y aprende sobre reciclaje.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ SITE_URL|default:'' }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="{% static 'img/logo.png' %}" type="image/png">
+    <title>InfoRecicla - Plataforma Colaborativa para el Reciclaje</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+        crossorigin="anonymous" />
+    <link rel="stylesheet" href="{% static 'css/Inicio/styleInicio.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
     {% include "users/partials/navbar.html" with navbar_container_class="" %}
-    <main>
+
+    <main id="main-content">
         <!-- HERO SECTION -->
         <section class="py-5 bg-light text-dark">
             <div class="container">
@@ -40,39 +39,59 @@
                         </div>
                     </div>
                     <div class="col-lg-5 text-center">
-                        <img src="{% static 'img/ParejaReciclando.png' %}" alt="Personas reciclando" class="img-fluid hero-img">
+                        <img src="{% static 'img/ParejaReciclando.png' %}" alt="Personas reciclando" class="img-fluid hero-img" loading="lazy">
                     </div>
                 </div>
             </div>
         </section>
-        <!-- HOW IT WORKS SECTION -->
+
+        <!-- HOW IT WORKS - FLIP CARDS -->
         <section class="py-5">
             <div class="container">
                 <div class="row text-center g-4">
                     <div class="col-md-4">
-                        <div class="p-4 rounded bg-success  shadow-sm h-100">
-                            <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" class="mb-3" style="width: 120px; height: 120px; object-fit: contain;">
-                            <h3 class="h5 text-white">Busca puntos de recolección</h3>
-                            <p class="small mb-0 text-white-50">Encuentra estaciones ECA por ubicación, horarios y tipos de materiales aceptados.</p>
+                        <div class="flip-card" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" aria-label="Busca puntos de recolección">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" style="width: 120px; height: 120px; object-fit: contain;">
+                                    <h3 class="h5 text-white mt-3">Busca puntos de recolección</h3>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p>Encuentra estaciones ECA por ubicación, horarios y tipos de materiales aceptados.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="p-4 rounded bg-success  shadow-sm h-100">
-                            <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" class="mb-3 card-img-berde" style="width: 120px; height: 120px; object-fit: contain;">
-                            <h3 class="h5 text-white">Noticias y novedades</h3>
-                            <p class="small mb-0 text-white-50">Accedé a noticias, eventos y novedades sobre reciclaje, publicadas y curadas por InfoRecicla para mantenerte siempre informado.</p>
+                        <div class="flip-card" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" aria-label="Noticias y novedades">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" style="width: 120px; height: 120px; object-fit: contain;">
+                                    <h3 class="h5 text-white mt-3">Noticias y novedades</h3>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p>Accedé a noticias, eventos y novedades sobre reciclaje, publicadas y curadas por InfoRecicla para mantenerte siempre informado.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="p-4 rounded bg-success  shadow-sm h-100">
-                            <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" class="mb-3" style="width: 120px; height: 120px; object-fit: contain;">
-                            <h3 class="h5 text-white">Gestiona tu punto ECA</h3>
-                            <p class="small mb-0 text-white-50">Registra tu estación, actualiza inventario y comunica disponibilidad a los usuarios.</p>
+                        <div class="flip-card" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" aria-label="Gestiona tu punto ECA">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" style="width: 120px; height: 120px; object-fit: contain;">
+                                    <h3 class="h5 text-white mt-3">Gestiona tu punto ECA</h3>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p>Registra tu estación, actualiza inventario y comunica disponibilidad a los usuarios.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
         <!-- FEATURES SECTION -->
         <section class="py-4 bg-success bg-opacity-10">
             <div class="container text-center">
@@ -82,25 +101,27 @@
                 <span class="badge badge-feature">Acceso gratuito</span>
             </div>
         </section>
+
         <!-- STATISTICS SECTION -->
         <section class="py-5">
             <div class="container">
                 <div class="row text-center justify-content-center gy-4">
                     <div class="col-md-4">
-                        <div class="stat-num">+120</div>
+                        <div class="stat-num">+{{ total_ecas }}</div>
                         <div class="stat-label">Puntos ECA registrados</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="stat-num">+350</div>
+                        <div class="stat-num">+{{ total_publicaciones }}</div>
                         <div class="stat-label">Publicaciones de la comunidad</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="stat-num">+800</div>
+                        <div class="stat-num">+{{ total_usuarios }}</div>
                         <div class="stat-label">Usuarios activos</div>
                     </div>
                 </div>
             </div>
         </section>
+
         <!-- TESTIMONIALS SECTION -->
         <section class="py-5 bg-light border-top">
             <div class="container">
@@ -125,103 +146,71 @@
                 </div>
             </div>
         </section>
+
         <!-- CALL TO ACTION SECTION -->
         <section class="py-5 bg-success text-white">
             <div class="container">
-                <div class="text-center">
+                <div class="text-center mb-5">
                     <h2 class="mb-3">¿Quieres formar parte de la comunidad?</h2>
-                    <p class="mb-4">Regístrate de forma gratuita y accede a funcionalidades pensadas para cada perfil.</p>
+                    <p class="mb-0">Regístrate de forma gratuita y accede a funcionalidades pensadas para cada perfil.</p>
                 </div>
-                <div class="row g-4 justify-content-center">
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow animated-card">
-                            <div class="card-body">
-                                <h3 class="h5 text-success">Usuario ciudadano</h3>
-                                <style>
-                                  .ciudadano-benefit-marked {
-                                    border-left: 4px solid #218838;
-                                    background: #f6fcf4;
-                                    border-radius: 0 6px 6px 0;
-                                    padding-left: 1rem;
-                                    margin-bottom: 0.5rem;
-                                    display: flex;
-                                    align-items: center;
-                                    min-height: 42px;
-                                  }
-                                  .ciudadano-benefit-marked .bi {
-                                    margin-right: 0.6rem;
-                                    font-size: 1.25rem;
-                                    color: #198754;
-                                  }
-                                </style>
-                                <div class="benefits-list">
-                                  <div class="ciudadano-benefit-marked">
-                                    <i class="bi bi-people"></i>
-                                    <span>Participar en la comunidad a través de comentarios y valoraciones.</span>
-                                  </div>
-                                  <div class="ciudadano-benefit-marked">
-                                    <i class="bi bi-clock-history"></i>
-                                    <span>Consultar horarios, ubicación y tipos de materiales aceptados.</span>
-                                  </div>
-                                  <div class="ciudadano-benefit-marked">
-                                    <i class="bi bi-bell"></i>
-                                    <span>Recibir notificaciones relevantes sobre el reciclaje en tu zona.</span>
-                                  </div>
-                                </div>
-                                <a href="/registro/ciudadano/" class="btn btn-outline-success w-100">Registrarse como ciudadano</a>
-                            </div>
+
+                <!-- Ciudadano -->
+                <div class="row g-4 align-items-center mb-5">
+                    <div class="col-md-5 text-center">
+                        <i class="bi bi-person-circle cta-profile-icon"></i>
+                        <div class="cta-profile-title mt-2">Usuario ciudadano</div>
+                        <a href="/registro/ciudadano/" class="btn btn-outline-light mt-3">Registrarse como ciudadano</a>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="benefit-item">
+                            <i class="bi bi-people"></i>
+                            <span>Participar en la comunidad a través de comentarios y valoraciones.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Consultar horarios, ubicación y tipos de materiales aceptados.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-bell"></i>
+                            <span>Recibir notificaciones relevantes sobre el reciclaje en tu zona.</span>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow animated-card">
-                            <div class="card-body">
-                                <h3 class="h5 text-success">Gestor de Punto ECA</h3>
-                                <style>
-                                  .eca-benefit-marked {
-                                    border-left: 4px solid #218838;
-                                    background: #f6fcf4;
-                                    border-radius: 0 6px 6px 0;
-                                    padding-left: 1rem;
-                                    margin-bottom: 0.5rem;
-                                    display: flex;
-                                    align-items: center;
-                                    min-height: 42px;
-                                  }
-                                  .eca-benefit-marked .bi {
-                                    margin-right: 0.6rem;
-                                    font-size: 1.25rem;
-                                    color: #198754;
-                                  }
-                                </style>
-                                <div class="benefits-list">
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Registrar y visibilizar tu estación ante la comunidad.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Actualizar el inventario y comunicar la disponibilidad de materiales en tiempo real.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Gestionar los horarios y la información de contacto del punto.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Responder consultas y dudas de los ciudadanos sobre tu estación.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Acceder a estadísticas y reportes de la gestión de tu ECA.</span>
-                                  </div>
-                                </div>
-                                <a href="/registro/eca/" class="btn btn-outline-success w-100">Registrar Punto ECA</a>
-                            </div>
+                </div>
+
+                <!-- Gestor ECA (orden inverso) -->
+                <div class="row g-4 align-items-center">
+                    <div class="col-md-7">
+                        <div class="benefit-item">
+                            <i class="bi bi-dot"></i>
+                            <span>Registrar y visibilizar tu estación ante la comunidad.</span>
                         </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-dot"></i>
+                            <span>Actualizar el inventario y comunicar la disponibilidad de materiales en tiempo real.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-dot"></i>
+                            <span>Gestionar los horarios y la información de contacto del punto.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-dot"></i>
+                            <span>Responder consultas y dudas de los ciudadanos sobre tu estación.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-dot"></i>
+                            <span>Acceder a estadísticas y reportes de la gestión de tu ECA.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-5 text-center">
+                        <i class="bi bi-shop cta-profile-icon"></i>
+                        <div class="cta-profile-title mt-2">Gestor de Punto ECA</div>
+                        <a href="/registro/eca/" class="btn btn-outline-light mt-3">Registrar Punto ECA</a>
                     </div>
                 </div>
             </div>
         </section>
+
         <!-- FAQ SECTION -->
         <section class="py-4">
             <div class="container">
@@ -260,24 +249,25 @@
             </div>
         </section>
     </main>
+
     <footer class="bg-success text-white py-4 mt-5">
         <div class="container text-center">
             <small>&copy; 2026 InfoRecicla - Proyecto colaborativo para la gestión de reciclaje.</small>
             <div class="mt-2">
-                <a href="#" class="text-white me-3">Contacto</a>
-                <a href="#" class="text-white me-3">Términos y condiciones</a>
-                <a href="#" class="text-white">Política de privacidad</a>
+                <a href="#" class="text-white text-decoration-none me-3">Contacto</a>
+                <a href="#" class="text-white text-decoration-none me-3">Términos y condiciones</a>
+                <a href="#" class="text-white text-decoration-none">Política de privacidad</a>
             </div>
         </div>
     </footer>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-                integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
-                crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+        crossorigin="anonymous"></script>
     <script>
-      // Intersection Observer para animar tarjetas al entrar en la vista
       document.addEventListener('DOMContentLoaded', function() {
-        const animatedCards = document.querySelectorAll('.animated-card');
-                if ('IntersectionObserver' in globalThis) {
+        // Intersection Observer para animar cards y testimonios
+        if ('IntersectionObserver' in globalThis) {
           const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
               if (entry.isIntersecting) {
@@ -286,10 +276,20 @@
               }
             });
           }, { threshold: 0.2 });
-          animatedCards.forEach(card => observer.observe(card));
+          document.querySelectorAll('.animated-card, .animate-fadeIn').forEach(card => observer.observe(card));
         } else {
-          animatedCards.forEach(card => card.classList.add('is-visible'));
+          document.querySelectorAll('.animated-card, .animate-fadeIn').forEach(card => card.classList.add('is-visible'));
         }
+
+        // Flip cards con teclado (Enter/Space)
+        document.querySelectorAll('.flip-card').forEach(card => {
+          card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              this.classList.toggle('flipped');
+            }
+          });
+        });
       });
     </script>
 </body>
