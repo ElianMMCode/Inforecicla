@@ -50,7 +50,7 @@
             <div class="container">
                 <div class="row text-center g-4">
                     <div class="col-md-4">
-                        <div class="flip-card" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" aria-label="Busca puntos de recolección">
+                        <div class="flip-card" tabindex="0" aria-label="Busca puntos de recolección">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
                                     <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" style="width: 120px; height: 120px; object-fit: contain;">
@@ -63,7 +63,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="flip-card" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" aria-label="Noticias y novedades">
+                        <div class="flip-card" tabindex="0" aria-label="Noticias y novedades">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
                                     <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" style="width: 120px; height: 120px; object-fit: contain;">
@@ -76,7 +76,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="flip-card" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" aria-label="Gestiona tu punto ECA">
+                        <div class="flip-card" tabindex="0" aria-label="Gestiona tu punto ECA">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
                                     <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" style="width: 120px; height: 120px; object-fit: contain;">
@@ -280,16 +280,6 @@
         } else {
           document.querySelectorAll('.animated-card, .animate-fadeIn').forEach(card => card.classList.add('is-visible'));
         }
-
-        // Flip cards con teclado (Enter/Space)
-        document.querySelectorAll('.flip-card').forEach(card => {
-          card.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              this.classList.toggle('flipped');
-            }
-          });
-        });
       });
     </script>
 </body>
