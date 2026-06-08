@@ -563,55 +563,31 @@ class AdminCatalogService:
         try:
             from apps.publicaciones.models import CategoriaPublicacion
         except Exception:
-            return {
-                "ok": False,
-                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
-            }
+            return {"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_MSG}
 
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
         if not categoria:
             return {"ok": False, "errors": {"_general": "Categoria de publicacion no encontrada."}, "message": "Categoria de publicacion no encontrada."}
 
-        nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip()
-        tipo = (data.get("tipo") or "").strip()
         tipo_otro = (data.get("tipo_otro") or "").strip()
-        estado = (data.get("estado") or "").strip().upper()
-
-        if tipo == "__otro__":
-            tipo = tipo_otro
-
-        if not tipo:
-            return {"ok": False, "errors": {"tipo": TIPO_OBLIGATORIO_MSG}, "message": TIPO_OBLIGATORIO_MSG}
-        if len(tipo) > 30:
-            return {"ok": False, "errors": {"tipo": "El tipo no puede superar 30 caracteres."}, "message": "El tipo no puede superar 30 caracteres."}
-
-        tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
         tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
-        estados_validos = {value for value, _ in cons.Estado.choices}
-        if tipo not in tipos_validos and tipo != tipo_otro:
+        campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
+
+        payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
+        if error:
+            return error
+
+        if payload["tipo"] not in {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()} and payload["tipo"] != tipo_otro:
             return {"ok": False, "errors": {"tipo": "Tipo de categoria invalido."}, "message": "Tipo de categoria invalido."}
-        if estado not in estados_validos:
-            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         try:
-            campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
-
-            if "nombre" in campos_modelo:
-                if not nombre:
-                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
-                if len(nombre) > 30:
-                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_MAX_30_MSG}, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
-                categoria.nombre = nombre
-
-            if "descripcion" in campos_modelo:
-                if len(descripcion) > 500:
-                    return {"ok": False, "errors": {"descripcion": DESCRIPCION_CATEGORIA_MAX_500_MSG}, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
-                categoria.descripcion = descripcion
-
-            categoria.tipo = tipo
-            categoria.estado = estado
-            if tipo in tipos_base:
+            if "nombre" in campos_modelo and "nombre" in payload:
+                categoria.nombre = payload["nombre"]
+            if "descripcion" in campos_modelo and "descripcion" in payload:
+                categoria.descripcion = payload["descripcion"]
+            categoria.tipo = payload["tipo"]
+            categoria.estado = payload["estado"]
+            if payload["tipo"] in tipos_base:
                 categoria.full_clean()
             else:
                 categoria.clean_fields(exclude=["tipo"])
