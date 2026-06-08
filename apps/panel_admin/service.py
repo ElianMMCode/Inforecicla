@@ -264,10 +264,10 @@ class AdminCatalogService:
             return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
-    def _validar_material_data(data):
+    def _validar_material_data(data, default_estado="ACTIVO"):
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip() or None
-        estado = (data.get("estado") or "ACTIVO").strip().upper()
+        estado = (data.get("estado") or default_estado).strip().upper()
         estado_valido = estado in {value for value, _ in cons.Estado.choices}
 
         errores = {}
@@ -446,42 +446,21 @@ class AdminCatalogService:
         if not material:
             return {"ok": False, "errors": {"_general": "Material no encontrado."}, "message": "Material no encontrado."}
 
-        nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip() or None
-        estado = (data.get("estado") or "").strip().upper()
-        categoria_id = data.get("categoria_id")
-        tipo_id = data.get("tipo_id")
-
-        if not nombre:
-            return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
-
-        estados_validos = {value for value, _ in cons.Estado.choices}
-        if estado not in estados_validos:
-            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
-
-        categoria = None
-        if categoria_id:
-            categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
-            if not categoria:
-                return {"ok": False, "errors": {"categoria_id": "Categoria de material invalida."}, "message": "Categoria de material invalida."}
-
-        tipo = None
-        if tipo_id:
-            tipo = TipoMaterial.objects.filter(id=tipo_id).first()
-            if not tipo:
-                return {"ok": False, "errors": {"tipo_id": "Tipo de material invalido."}, "message": "Tipo de material invalido."}
+        _, _, _, categoria, tipo, errores = AdminCatalogService._validar_material_data(data, default_estado="")
+        if errores:
+            msg = next(iter(errores.values()))
+            return {"ok": False, "message": msg, "errors": errores}
 
         try:
-            material.nombre = nombre
-            material.descripcion = descripcion
-            material.estado = estado
+            material.nombre = (data.get("nombre") or "").strip()
+            material.descripcion = (data.get("descripcion") or "").strip() or None
+            material.estado = (data.get("estado") or "").strip().upper()
             material.categoria = categoria
             material.tipo = tipo
-            
-            # Si se sube una imagen, Django se encarga de guardarla automáticamente
+
             if files and "imagen" in files:
                 material.imagen = files["imagen"]
-            
+
             material.full_clean()
             material.save()
             return {"ok": True, "message": "Material actualizado correctamente."}
