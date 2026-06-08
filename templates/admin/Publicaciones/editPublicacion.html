@@ -164,14 +164,16 @@
 {% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/publicacion-form-comun.js' %}"></script>
 <script>
-(function() {
-  var videoInput = document.getElementById('pub_video');
+document.addEventListener("DOMContentLoaded", function() {
+  publicacionInitForm({ formId: "editPublicacionForm", esCreacion: false });
+
+  var videoInput = document.getElementById("pub_video");
   if (videoInput) {
-    videoInput.addEventListener('change', function() {
-      var wrapper = document.getElementById('pub_thumbnail_wrapper');
-      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? 'block' : 'none';
+    videoInput.addEventListener("change", function() {
+      var wrapper = document.getElementById("pub_thumbnail_wrapper");
+      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? "block" : "none";
     });
   }
-})();
+});
 </script>
 {% endblock %}
