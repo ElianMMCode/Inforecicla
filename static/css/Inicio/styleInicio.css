@@ -85,6 +85,15 @@
   perspective: 1000px;
   height: 280px;
   cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  line-height: inherit;
+  display: block;
+  width: 100%;
 }
 .flip-card-inner {
   position: relative;
