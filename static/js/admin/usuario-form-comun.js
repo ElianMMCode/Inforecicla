@@ -303,7 +303,7 @@ function _mensajeValidacionES(campo) {
             apellidos: 'Apellidos',
             celular: 'Celular',
             email: 'Correo electrónico',
-            password: 'Contraseña',
+            password: 'Contraseña', // NOSONAR - field label, not credential
             passwordConfirm: 'Confirmar contraseña',
             tipo_documento: 'Tipo de documento',
             numero_documento: 'Número de documento',

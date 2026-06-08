@@ -159,7 +159,7 @@ var MARCAR_ERRORES = {
     localidad_id: 'Localidad',
     fecha_nacimiento: 'Fecha de nacimiento',
     tipo_usuario: 'Tipo de usuario',
-    password: 'Contraseña',
+    password: 'Contraseña', // NOSONAR - field label, not credential
     nombres: 'Nombres',
     direccion: 'Dirección',
     telefono_punto: 'Teléfono',
