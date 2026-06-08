@@ -1,4 +1,4 @@
-from django.views.decorators.http import require_http_methods, require_POST, require_safe
+﻿from django.views.decorators.http import require_http_methods, require_POST
 import io
 import re as _re
 
@@ -28,6 +28,8 @@ ADMIN_CREATE_PUBLICACION_TEMPLATE = "admin/Publicaciones/createPublicacion.html"
 ADMIN_CREATE_USUARIO_TEMPLATE = "admin/Usuarios/createUsuario.html"
 ADMIN_EDIT_USUARIO_TEMPLATE = "admin/Usuarios/editUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
+PUBLICACIONES_NO_HABILITADAS_AJAX_MSG = "El modulo de publicaciones no esta habilitado."
+PUBLICACION_NO_ENCONTRADA_MSG = "Publicacion no encontrada."
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
 CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
@@ -564,6 +566,20 @@ def _procesar_creacion_publicacion_admin(admin_request, categorias, publicacione
         messages.error(admin_request, "El titulo es obligatorio.")
         return None
 
+    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
+    if not resumen:
+        messages.error(admin_request, "El resumen es obligatorio.")
+        return render(
+            admin_request,
+            ADMIN_CREATE_PUBLICACION_TEMPLATE,
+            {
+                "publicaciones_habilitadas": publicaciones_habilitadas,
+                "categorias": categorias,
+                "form_data": admin_request.POST,
+                "active_tab": "publicaciones",
+            },
+        )
+
     categoria = None
     if categoria_id:
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
@@ -599,11 +615,17 @@ def _procesar_creacion_publicacion_admin(admin_request, categorias, publicacione
             },
         )
 
+    destacado = admin_request.POST.get("destacado") == "1"
+    video_url = _normalizar_texto(admin_request.POST.get("video_url"))
+
     publicacion = Publicacion(
         titulo=titulo,
         contenido=contenido,
+        resumen=resumen,
+        destacado=destacado,
         usuario=admin_request.user,
         categoria=categoria,
+        video_url=video_url or None,
         video=admin_request.FILES.get("video") or None,
         video_thumbnail=admin_request.FILES.get("video_thumbnail") or None,
     )
@@ -627,6 +649,10 @@ def _procesar_creacion_publicacion_admin_ajax(admin_request):
     if not titulo:
         errores["titulo"] = "El título es obligatorio."
 
+    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
+    if not resumen:
+        errores["resumen"] = "El resumen es obligatorio."
+
     categoria = None
     if categoria_id:
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
@@ -642,12 +668,18 @@ def _procesar_creacion_publicacion_admin_ajax(admin_request):
     if errores:
         return {"ok": False, "errors": errores, "message": next(iter(errores.values()))}
 
+    destacado = admin_request.POST.get("destacado") == "1"
+    video_url = _normalizar_texto(admin_request.POST.get("video_url"))
+
     try:
         publicacion = Publicacion(
             titulo=titulo,
             contenido=contenido,
+            resumen=resumen,
+            destacado=destacado,
             usuario=admin_request.user,
             categoria=categoria,
+            video_url=video_url or None,
             video=admin_request.FILES.get("video") or None,
             video_thumbnail=admin_request.FILES.get("video_thumbnail") or None,
         )
@@ -745,14 +777,14 @@ def es_administrador(user):
     return bool(user.is_staff or user.is_superuser or user.tipo_usuario == cons.TipoUsuario.ADMIN)
 
 
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def admin_redirect_no_autorizado(request):
     return render(request, "base/inicio.html")
 
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def admin(request):
     contexto = {
         "mensaje": "Bienvenido al panel de control de Inforecicla",
@@ -763,7 +795,7 @@ def admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_usuarios(request):
     usuarios = Usuario.objects.all()
     q = request.GET.get('q', '').strip()
@@ -798,7 +830,7 @@ def listar_usuarios(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_usuarios_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -811,7 +843,7 @@ def exportar_usuarios_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_usuarios_excel(request):
     tipo_labels = dict(cons.TipoUsuario.choices)
     doc_labels = dict(cons.TipoDocumento.choices)
@@ -917,7 +949,7 @@ def crear_usuario_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_publicaciones_admin(request):
     publicaciones = []
     publicaciones_habilitadas = True
@@ -991,7 +1023,7 @@ def crear_publicacion_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_puntos_eca_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1020,7 +1052,7 @@ def _fila_punto_eca_excel(punto):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_puntos_eca_excel(request):
     headers = ["Nombre", "Dirección", "Localidad", "Ciudad", "Teléfono", "Email",
                "Celular", "Gestor", "Horario", "Sitio Web", "Descripción",
@@ -1077,7 +1109,7 @@ def crear_punto_eca_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_puntos_eca_admin(request):
     puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1098,7 +1130,7 @@ def listar_puntos_eca_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_materiales_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1111,7 +1143,7 @@ def exportar_materiales_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_materiales_excel(request):
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Categoría", "Tipo", "Estado"]
     materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
@@ -1128,7 +1160,7 @@ def exportar_materiales_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_materiales_admin(request):
     materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1143,7 +1175,7 @@ def listar_materiales_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1156,7 +1188,7 @@ def exportar_categorias_material_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_material_excel(request):
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
     rows = [
@@ -1169,7 +1201,7 @@ def exportar_categorias_material_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_categorias_material_admin(request):
     categorias = CategoriaMaterial.objects.all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1183,7 +1215,7 @@ def listar_categorias_material_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_publicacion_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1200,7 +1232,7 @@ def exportar_categorias_publicacion_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_categorias_publicacion_excel(request):
     try:
         from apps.publicaciones.models import CategoriaPublicacion
@@ -1219,7 +1251,7 @@ def exportar_categorias_publicacion_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_categorias_publicacion_admin(request):
     categorias = []
     publicaciones_habilitadas = True
@@ -1253,7 +1285,7 @@ def listar_categorias_publicacion_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_tipos_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1266,7 +1298,7 @@ def exportar_tipos_material_pdf(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def exportar_tipos_material_excel(request):
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
     rows = [
@@ -1279,7 +1311,7 @@ def exportar_tipos_material_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def listar_tipos_material_admin(request):
     tipos = TipoMaterial.objects.all().order_by("nombre")
     q = request.GET.get('q', '').strip()
@@ -1349,19 +1381,19 @@ def editar_publicacion_admin(request, publicacion_id):
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
     except Exception:
         if is_ajax:
-            return JsonResponse({"ok": False, "message": "El modulo de publicaciones no esta habilitado."})
+            return JsonResponse({"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_AJAX_MSG})
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     publicacion = Publicacion.objects.select_related("categoria", "usuario").filter(id=publicacion_id).first()
     if not publicacion:
         if is_ajax:
-            return JsonResponse({"ok": False, "message": "Publicacion no encontrada."})
-        messages.error(request, "Publicacion no encontrada.")
+            return JsonResponse({"ok": False, "message": PUBLICACION_NO_ENCONTRADA_MSG})
+        messages.error(request, PUBLICACION_NO_ENCONTRADA_MSG)
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     if request.method == "POST":
-        resultado = AdminCatalogService.actualizar_publicacion(publicacion_id, request.POST)
+        resultado = AdminCatalogService.actualizar_publicacion(publicacion_id, request.POST, request.FILES)
         if is_ajax:
             return JsonResponse(resultado)
         if resultado["ok"]:
@@ -1384,6 +1416,33 @@ def editar_publicacion_admin(request, publicacion_id):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET"])
+def ver_publicacion_admin(request, publicacion_id):
+    try:
+        from apps.publicaciones.models import Publicacion
+    except Exception:
+        messages.error(request, PUBLICACIONES_NO_HABILITADAS_AJAX_MSG)
+        return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
+
+    publicacion = (
+        Publicacion.objects
+        .select_related("categoria", "usuario")
+        .prefetch_related("imagenes", "comentarios", "reacciones")
+        .filter(id=publicacion_id)
+        .first()
+    )
+    if not publicacion:
+        messages.error(request, PUBLICACION_NO_ENCONTRADA_MSG)
+        return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
+
+    return render(
+        request,
+        "admin/Publicaciones/showPublicacion.html",
+        {"publicacion": publicacion, "active_tab": "publicaciones"},
+    )
+
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "POST"])
@@ -1493,7 +1552,7 @@ def editar_categoria_publicacion_admin(request, categoria_id):
         from apps.publicaciones.models import CategoriaPublicacion
     except Exception:
         if is_ajax:
-            return JsonResponse({"ok": False, "message": "El modulo de publicaciones no esta habilitado."})
+            return JsonResponse({"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_AJAX_MSG})
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
         return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
 
@@ -1648,7 +1707,7 @@ def crear_material_admin(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def gestion_materiales(request):
     q_mat = request.GET.get('q_mat', '').strip()
     q_tipo = request.GET.get('q_tipo', '').strip()
@@ -1726,7 +1785,7 @@ _PASSWORD_COMP = _re.compile(
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_safe
+@require_http_methods(["GET", "HEAD"])
 def perfil_admin(request):
     localidades = Localidad.objects.all()
     tipos_documento = cons.TipoDocumento.choices

@@ -387,7 +387,11 @@ function setupEditModal(btnSelector, modalId, fieldMapping) {
                 const targetId = fieldMapping[fieldName];
                 const target = document.getElementById(targetId);
                 if (!target) continue;
-                target.value = btn.dataset[fieldName] || '';
+                if (target.type === 'checkbox') {
+                    target.checked = btn.dataset[fieldName] === '1';
+                } else {
+                    target.value = btn.dataset[fieldName] || '';
+                }
             }
 
             const actionUrl = btn.dataset.action;
