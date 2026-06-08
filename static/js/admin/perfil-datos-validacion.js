@@ -197,11 +197,11 @@ const PerfilDatosValidacionModule = (() => {
 
         Object.values(fields).forEach((field) => {
             if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) {
-                if (!field.checkValidity()) {
+                if (field.checkValidity()) {
+                    updateControlState(field, true);
+                } else {
                     updateControlState(field, false);
                     todoValido = false;
-                } else {
-                    updateControlState(field, true);
                 }
             }
         });
