@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-  var form = document.getElementById("createMaterialForm") || document.getElementById("editMaterialForm");
+  const form = document.getElementById("createMaterialForm") || document.getElementById("editMaterialForm");
   if (!form) return;
-  var esCrear = form.id === "createMaterialForm";
+  const esCrear = form.id === "createMaterialForm";
   materialesInicializarFormulario({
     formularioId: form.id,
     campos: [
