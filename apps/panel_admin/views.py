@@ -545,6 +545,20 @@ def _procesar_creacion_publicacion_admin(admin_request, categorias, publicacione
         messages.error(admin_request, "El titulo es obligatorio.")
         return None
 
+    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
+    if not resumen:
+        messages.error(admin_request, "El resumen es obligatorio.")
+        return render(
+            admin_request,
+            ADMIN_CREATE_PUBLICACION_TEMPLATE,
+            {
+                "publicaciones_habilitadas": publicaciones_habilitadas,
+                "categorias": categorias,
+                "form_data": admin_request.POST,
+                "active_tab": "publicaciones",
+            },
+        )
+
     categoria = None
     if categoria_id:
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
@@ -582,12 +596,11 @@ def _procesar_creacion_publicacion_admin(admin_request, categorias, publicacione
 
     destacado = admin_request.POST.get("destacado") == "1"
     video_url = _normalizar_texto(admin_request.POST.get("video_url"))
-    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
 
     publicacion = Publicacion(
         titulo=titulo,
         contenido=contenido,
-        resumen=resumen or None,
+        resumen=resumen,
         destacado=destacado,
         usuario=admin_request.user,
         categoria=categoria,
@@ -615,6 +628,10 @@ def _procesar_creacion_publicacion_admin_ajax(admin_request):
     if not titulo:
         errores["titulo"] = "El título es obligatorio."
 
+    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
+    if not resumen:
+        errores["resumen"] = "El resumen es obligatorio."
+
     categoria = None
     if categoria_id:
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
@@ -632,13 +649,12 @@ def _procesar_creacion_publicacion_admin_ajax(admin_request):
 
     destacado = admin_request.POST.get("destacado") == "1"
     video_url = _normalizar_texto(admin_request.POST.get("video_url"))
-    resumen = _normalizar_texto(admin_request.POST.get("resumen"))
 
     try:
         publicacion = Publicacion(
             titulo=titulo,
             contenido=contenido,
-            resumen=resumen or None,
+            resumen=resumen,
             destacado=destacado,
             usuario=admin_request.user,
             categoria=categoria,

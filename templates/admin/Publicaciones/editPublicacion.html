@@ -28,8 +28,9 @@
         </div>
 
         <div class="col-12">
-          <label for="pub_resumen" class="form-label fw-semibold">Resumen <span class="text-muted fw-normal">(opcional)</span></label>
-          <textarea id="pub_resumen" name="resumen" class="form-control" rows="2" maxlength="500" placeholder="Resumen corto para vistas previas (máx. 500 caracteres)...">{{ publicacion.resumen|default:'' }}</textarea>
+          <label for="pub_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span></label>
+          <textarea id="pub_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas (máx. 500 caracteres)...">{{ publicacion.resumen|default:'' }}</textarea>
+          <div class="invalid-feedback">El resumen es obligatorio.</div>
         </div>
 
         <div class="col-md-4">

@@ -116,8 +116,9 @@
               <div class="invalid-feedback">Debe contener al menos una letra (máx. 255 caracteres).</div>
             </div>
             <div class="col-12">
-              <label for="cp_resumen" class="form-label fw-semibold">Resumen <small class="text-muted fw-normal">(opcional)</small></label>
-              <textarea id="cp_resumen" name="resumen" class="form-control" rows="2" maxlength="500" placeholder="Resumen corto para vistas previas..."></textarea>
+              <label for="cp_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <textarea id="cp_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas..."></textarea>
+              <div class="invalid-feedback">El resumen es obligatorio.</div>
             </div>
             <div class="col-12">
               <label for="cp_contenido" class="form-label fw-semibold">Contenido <small class="text-muted fw-normal">(opcional)</small></label>
@@ -191,8 +192,9 @@
               <div class="invalid-feedback">Debe contener al menos una letra (máx. 200 caracteres).</div>
             </div>
             <div class="col-12">
-              <label for="ep_resumen" class="form-label fw-semibold">Resumen <small class="text-muted fw-normal">(opcional)</small></label>
-              <textarea id="ep_resumen" name="resumen" class="form-control" rows="2" maxlength="500" placeholder="Resumen corto para vistas previas..."></textarea>
+              <label for="ep_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <textarea id="ep_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas..."></textarea>
+              <div class="invalid-feedback">El resumen es obligatorio.</div>
             </div>
             <div class="col-md-4">
               <label for="ep_categoria" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(opcional)</small></label>

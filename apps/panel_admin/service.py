@@ -549,6 +549,10 @@ class AdminCatalogService:
         if not titulo:
             return {"ok": False, "errors": {"titulo": "El titulo es obligatorio."}, "message": "El titulo es obligatorio."}
 
+        resumen = (data.get("resumen") or "").strip()
+        if not resumen:
+            return {"ok": False, "errors": {"resumen": "El resumen es obligatorio."}, "message": "El resumen es obligatorio."}
+
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
             return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
@@ -560,14 +564,13 @@ class AdminCatalogService:
                 return {"ok": False, "errors": {"categoria_id": "Categoria de publicacion invalida."}, "message": "Categoria de publicacion invalida."}
 
         contenido = (data.get("contenido") or "").strip()
-        resumen = (data.get("resumen") or "").strip()
         destacado = data.get("destacado") == "1"
         video_url = (data.get("video_url") or "").strip()
 
         try:
             publicacion.titulo = titulo
             publicacion.contenido = contenido
-            publicacion.resumen = resumen or None
+            publicacion.resumen = resumen
             publicacion.destacado = destacado
             publicacion.estado = estado
             publicacion.categoria = categoria

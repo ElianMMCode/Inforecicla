@@ -40,8 +40,8 @@ class Publicacion(CreacionModificacionModel):
 
     resumen = models.TextField(
         max_length=500,
-        blank=True,
-        null=True,
+        blank=False,
+        default="",
         verbose_name="Resumen",
         help_text="Resumen corto para vistas previas (máx. 500 caracteres)",
     )
