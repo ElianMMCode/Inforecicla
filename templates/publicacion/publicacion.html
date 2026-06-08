@@ -28,7 +28,12 @@
                                 <div class="fw-bold">{{ publicacion.usuario.nombres }} {{ publicacion.usuario.apellidos }}</div>
                                 <div class="text-muted small d-flex align-items-center gap-2 flex-wrap">
                                     <span class="d-inline-flex align-items-center gap-1"><i class="far fa-clock" aria-hidden="true"></i>{{ publicacion.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                    {% if publicacion.categoria %}
                                     <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">{{ publicacion.categoria.nombre|default:publicacion.categoria.get_tipo_display }}</span>
+                                    {% endif %}
+                                    {% if publicacion.destacado %}
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle"><i class="fas fa-star" aria-hidden="true"></i> Destacado</span>
+                                    {% endif %}
                                 </div>
                                 {% if publicacion.categoria and publicacion.categoria.descripcion %}
                                 <div class="text-muted small mt-1">{{ publicacion.categoria.descripcion }}</div>
@@ -45,24 +50,29 @@
                         {% endif %}
 
                         {% if publicacion.video_url %}
-                        <div class="mb-4 rounded overflow-hidden shadow-sm ratio ratio-16x9">
-                            <iframe src="{{ publicacion.video_url|video_embed_url }}" title="Video de la publicación" allowfullscreen></iframe>
+                        <div class="mb-4 rounded overflow-hidden shadow-sm">
+                            <div class="ratio ratio-16x9">
+                                <iframe src="{{ publicacion.video_url|video_embed_url }}" title="Video de la publicación" allowfullscreen></iframe>
+                            </div>
                         </div>
                         {% elif publicacion.video %}
                         <div class="mb-4 rounded overflow-hidden shadow-sm">
-                            <video class="w-100 rounded" controls preload="metadata"
-                                   aria-describedby="video-publicacion-desc"
-                                   {% if publicacion.video_thumbnail %}poster="{{ publicacion.video_thumbnail.url }}"{% endif %}>
-                                <track kind="captions" srclang="es" label="Español" src="{% static 'subtitles/publicacion_generica.vtt' %}" default>
-                                <track kind="descriptions" srclang="es" label="Descripción" src="{% static 'subtitles/publicacion_generica.vtt' %}">
-                                <source src="{{ publicacion.video.url }}">
-                                Tu navegador no soporta la reproducción de video.
-                            </video>
+                            <div class="ratio ratio-16x9">
+                                <video class="rounded" controls preload="metadata"
+                                       aria-describedby="video-publicacion-desc"
+                                       style="object-fit:contain; background:#000;"
+                                       {% if publicacion.video_thumbnail %}poster="{{ publicacion.video_thumbnail.url }}"{% endif %}>
+                                    <track kind="captions" srclang="es" label="Español" src="{% static 'subtitles/publicacion_generica.vtt' %}" default>
+                                    <track kind="descriptions" srclang="es" label="Descripción" src="{% static 'subtitles/publicacion_generica.vtt' %}">
+                                    <source src="{{ publicacion.video.url }}">
+                                    Tu navegador no soporta la reproducción de video.
+                                </video>
+                            </div>
                             <p id="video-publicacion-desc" class="visually-hidden">Video de la publicación.</p>
                         </div>
                         {% endif %}
 
-                        {% if publicacion.imagenes.exists and not publicacion.video %}
+                        {% if publicacion.imagenes.exists and not publicacion.video and not publicacion.video_url %}
                         <div id="carruselPublicacion" class="carousel slide mb-3 rounded overflow-hidden shadow-sm" data-bs-ride="carousel">
 
                             {% if publicacion.imagenes.count > 1 %}
@@ -79,8 +89,8 @@
                                 {% for img in publicacion.imagenes.all %}
                                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
                                      <img src="{{ img.imagen.url }}" class="d-block w-100"
-                                         alt="{{ img.descripcion|default:'Publicación' }}"
-                                         style="max-height:440px; object-fit:cover;">
+                                          alt="{{ img.descripcion|default:'Publicación' }}"
+                                          style="width:100%; height:440px; object-fit:cover;">
                                     {% if img.descripcion %}
                                     <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-1">
                                         <p class="mb-0 small">{{ img.descripcion }}</p>
@@ -102,11 +112,13 @@
                             {% endif %}
                         </div>
 
+                        {% if publicacion.imagenes.exists %}
                         <div class="mb-3">
                             <span class="badge rounded-pill bg-light text-muted border d-inline-flex align-items-center gap-1">
                                 <i class="fas fa-images text-success" aria-hidden="true"></i>{{ publicacion.imagenes.count }} imagen{{ publicacion.imagenes.count|pluralize:"es" }}
                             </span>
                         </div>
+                        {% endif %}
                         {% endif %}
 
                         <hr class="text-muted opacity-25 my-3">
@@ -307,10 +319,10 @@
                             <div class="d-flex gap-3 align-items-start">
                                 <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:30px;height:30px;font-size:.85rem;">{{ forloop.counter }}</div>
                                 <div class="flex-grow-1" style="min-width:0;">
+                                    {% if relacionada.categoria %}
                                     <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle mb-1">{{ relacionada.categoria.nombre|default:relacionada.categoria.get_tipo_display }}</span>
-                                    {% if relacionada.categoria and relacionada.categoria.descripcion %}
-                                    <div class="text-muted small mb-1">{{ relacionada.categoria.descripcion|truncatechars:80 }}</div>
                                     {% endif %}
+                                    <div class="text-muted small mb-1">{{ relacionada.resumen|truncatechars:80 }}</div>
                                     <div class="fw-semibold small">{{ relacionada.titulo }}</div>
                                     <div class="text-muted d-flex align-items-center gap-1" style="font-size:.75rem;"><i class="far fa-calendar" aria-hidden="true"></i>{{ relacionada.fecha_creacion|date:"d/m/Y" }}</div>
                                 </div>

@@ -1,4 +1,5 @@
 {% extends "publicacion/base.html" %}
+{% load static %}
 
 {% block page_title %}Publicaciones - InfoRecicla{% endblock %}
 {% block main_class %}py-0{% endblock %}
@@ -12,6 +13,70 @@
 {% endblock %}
 
 {% block content %}
+
+{% if publicaciones_destacadas %}
+<section class="py-4">
+    <div class="container">
+        <h2 class="fw-bold h4 mb-3 d-flex align-items-center gap-2">
+            <i class="fas fa-star text-warning" aria-hidden="true"></i>Publicaciones destacadas
+        </h2>
+        <div id="carruselDestacadas" class="carousel slide shadow-sm rounded-4 overflow-hidden" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                {% for pub in publicaciones_destacadas %}
+                <button type="button" data-bs-target="#carruselDestacadas"
+                        data-bs-slide-to="{{ forloop.counter0 }}"
+                        {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                        aria-label="Slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+            <div class="carousel-inner">
+                {% for pub in publicaciones_destacadas %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="bg-success d-flex align-items-center" style="height:360px;">
+                        <div class="container py-5 text-white">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-8 text-center">
+                                    {% if pub.categoria %}
+                                    <span class="badge bg-warning text-dark mb-3">{{ pub.categoria.nombre|default:pub.categoria.get_tipo_display }}</span>
+                                    {% endif %}
+                                    <h3 class="fw-bold mb-3">{{ pub.titulo }}</h3>
+                                    <p class="mb-4 opacity-90 lead">{{ pub.resumen|truncatechars:120 }}</p>
+                                    <div class="d-flex justify-content-center gap-2 mb-3">
+                                        <span class="badge bg-white text-success d-inline-flex align-items-center gap-1 px-3 py-2">
+                                            <i class="fas fa-thumbs-up" aria-hidden="true"></i>{{ pub.likes_count }}
+                                        </span>
+                                        <span class="badge bg-white text-danger d-inline-flex align-items-center gap-1 px-3 py-2">
+                                            <i class="fas fa-thumbs-down" aria-hidden="true"></i>{{ pub.dislikes_count }}
+                                        </span>
+                                        <span class="badge bg-white text-primary d-inline-flex align-items-center gap-1 px-3 py-2">
+                                            <i class="fas fa-comment-dots" aria-hidden="true"></i>{{ pub.comentarios_total }}
+                                        </span>
+                                    </div>
+                                    <a class="btn btn-light fw-semibold px-4" href="{% url 'publicacion:detalle_publicacion' pub.id %}">
+                                        Leer más<i class="fas fa-arrow-right ms-2" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if publicaciones_destacadas|length > 1 %}
+            <button class="carousel-control-prev" type="button" data-bs-target="#carruselDestacadas" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carruselDestacadas" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <section class="py-4">
     <div class="container">
         <div class="bg-white rounded-4 border shadow-sm p-4">
@@ -72,13 +137,18 @@
                                 <div class="fw-semibold small text-truncate">{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</div>
                                 <div class="text-muted d-flex align-items-center gap-1 flex-wrap" style="font-size:.75rem;">
                                     <i class="far fa-calendar" aria-hidden="true"></i>{{ pub.fecha_creacion|date:"d M Y" }}
+                                    {% if pub.categoria %}
                                     <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">{{ pub.categoria.nombre|default:pub.categoria.get_tipo_display }}</span>
+                                    {% endif %}
+                                    {% if pub.destacado %}
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle"><i class="fas fa-star" aria-hidden="true"></i> Destacado</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
 
                         <h5 class="fw-bold mb-2">{{ pub.titulo }}</h5>
-                        <p class="text-muted small mb-3">{{ pub.contenido|truncatewords:28 }}</p>
+                        <p class="text-muted small mb-3">{{ pub.resumen|truncatechars:150 }}</p>
 
                         <div class="mt-auto">
                             <div class="d-flex align-items-center gap-2 mb-3">
@@ -91,6 +161,11 @@
                                 <span class="badge rounded-pill bg-primary-subtle text-primary d-inline-flex align-items-center gap-1 px-3 py-2">
                                     <i class="fas fa-comment-dots" aria-hidden="true"></i>{{ pub.comentarios_total }}
                                 </span>
+                                {% if pub.video or pub.video_url %}
+                                <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle px-2 py-2" title="Contiene video">
+                                    <i class="fas fa-video" aria-hidden="true"></i>
+                                </span>
+                                {% endif %}
                             </div>
                             <a class="btn btn-success w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" href="{% url 'publicacion:detalle_publicacion' pub.id %}">
                                 Ver publicación<i class="fas fa-arrow-right" aria-hidden="true"></i>

@@ -59,17 +59,12 @@ class PublicacionService:
         paginator = Paginator(queryset, 6)
         publicaciones = paginator.get_page(request.GET.get("page"))
 
-        publicacion_id = request.GET.get("publicacion")
-        publicacion_destacada = None
-        if publicacion_id:
-            publicacion_destacada = queryset.filter(pk=publicacion_id).first()
-        if publicacion_destacada is None:
-            publicacion_destacada = queryset.first()
+        publicaciones_destacadas = cls._base_queryset().filter(destacado=True)[:5]
 
         return {
             "publicaciones": publicaciones,
             "categorias": CategoriaPublicacion.objects.order_by("nombre", "tipo"),
-            "publicacion_destacada": publicacion_destacada,
+            "publicaciones_destacadas": publicaciones_destacadas,
             "filtros": {
                 "q": query,
                 "categoria": categoria_id or "",
