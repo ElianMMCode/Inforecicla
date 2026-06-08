@@ -39,7 +39,7 @@ function materialesSuprimirValidacionNativa(formulario) {
 }
 
 function _mensajeMaterialES(campo) {
-  var etiqueta = typeof MARCAR_ERRORES !== 'undefined' && MARCAR_ERRORES[campo.name] ||
+  const etiqueta = typeof MARCAR_ERRORES !== 'undefined' && MARCAR_ERRORES[campo.name] ||
     campo.name.charAt(0).toUpperCase() + campo.name.slice(1);
   if (campo.validity.valid && !campo.validity.customError) return '';
   if (campo.validity.valueMissing) return etiqueta + ': es obligatorio.';
@@ -97,7 +97,7 @@ function materialesConfirmarEnvioSwal(mensaje) {
   };
   if (typeof Swal === "undefined") {
     return Promise.resolve({
-      isConfirmed: window.confirm(mensaje.text || mensaje.title || ""),
+      isConfirmed: globalThis.confirm(mensaje.text || mensaje.title || ""),
     });
   }
   return Swal.fire(configuracion);
@@ -192,31 +192,29 @@ function materialesBindEnvio({ formulario, camposValidacion, confirmar, antesDeE
     }
     if (!formulario.checkValidity()) {
       formulario.classList.add("was-validated");
-      var errores = [];
-      var invalidFields = [];
-      camposValidacion.forEach(function (c) {
+      const errores = [];
+      const invalidFields = [];
+      camposValidacion.forEach((c) => {
         if (c && !c.checkValidity()) {
-          var msg = _mensajeMaterialES(c);
+          const msg = _mensajeMaterialES(c);
           if (msg) {
             errores.push(msg);
-            invalidFields.push({ field: c, msg: msg });
+            invalidFields.push({ field: c, msg });
           }
         }
       });
-      var prom = materialesMostrarErroresSwal(errores);
-      if (prom && prom.then) {
-        (function (inv) {
-          prom.then(function () {
-            inv.forEach(function (item) {
-              item.field.classList.add("is-invalid");
-              var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
-              if (contenedor) {
-                var fb = contenedor.querySelector('.invalid-feedback');
-                if (fb) fb.textContent = item.msg;
-              }
-            });
+      const prom = materialesMostrarErroresSwal(errores);
+      if (prom?.then) {
+        prom.then(() => {
+          invalidFields.forEach((item) => {
+            item.field.classList.add("is-invalid");
+            const contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
+            if (contenedor) {
+              const fb = contenedor.querySelector('.invalid-feedback');
+              if (fb) fb.textContent = item.msg;
+            }
           });
-        })(invalidFields);
+        });
       }
       return;
     }
