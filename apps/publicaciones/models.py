@@ -38,11 +38,32 @@ class Publicacion(CreacionModificacionModel):
 
     contenido = models.TextField()
 
+    resumen = models.TextField(
+        max_length=500,
+        blank=False,
+        default="",
+        verbose_name="Resumen",
+        help_text="Resumen corto para vistas previas (máx. 500 caracteres)",
+    )
+
+    destacado = models.BooleanField(
+        default=False,
+        verbose_name="Destacado",
+        help_text="Marcar para mostrar esta publicación en lugares destacados",
+    )
+
     video = models.FileField(
         upload_to='publicaciones/videos/',
         blank=True,
         null=True,
         verbose_name="Video",
+    )
+
+    video_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name="URL del video (YouTube, Vimeo...)",
+        help_text="Pega el enlace de un video de YouTube, Vimeo, etc.",
     )
 
     video_thumbnail = models.ImageField(

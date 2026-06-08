@@ -20,6 +20,7 @@ DESCRIPCION_MAX_500_MSG = "La descripcion no puede superar 500 caracteres."
 PUBLICACIONES_NO_HABILITADAS_MSG = (
     "El modulo de publicaciones no esta habilitado en la configuracion actual."
 )
+PUBLICACION_NO_ENCONTRADA_MSG = "Publicacion no encontrada."
 TIPO_MAX_30_MSG = "El tipo no puede exceder 30 caracteres."
 NOMBRE_CATEGORIA_OBLIGATORIO_MSG = "El nombre de la categoría es obligatorio."
 NOMBRE_CATEGORIA_MAX_30_MSG = "El nombre no puede exceder 30 caracteres."
@@ -529,45 +530,120 @@ class AdminCatalogService:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
-    @transaction.atomic
-    def actualizar_publicacion(publicacion_id, data):
-        try:
-            from apps.publicaciones.models import Publicacion, CategoriaPublicacion
-        except Exception:
-            return {
-                "ok": False,
-                "message": PUBLICACIONES_NO_HABILITADAS_MSG,
-            }
+    def _validar_publicacion_existente(publicacion_id):
+        from apps.publicaciones.models import Publicacion
 
         publicacion = Publicacion.objects.filter(id=publicacion_id).first()
         if not publicacion:
-            return {"ok": False, "errors": {"_general": "Publicacion no encontrada."}, "message": "Publicacion no encontrada."}
+            return None, {"ok": False, "errors": {"_general": PUBLICACION_NO_ENCONTRADA_MSG}, "message": PUBLICACION_NO_ENCONTRADA_MSG}
+        return publicacion, None
+
+    @staticmethod
+    def _validar_campos_publicacion(data):
+        from apps.publicaciones.models import CategoriaPublicacion
 
         titulo = (data.get("titulo") or "").strip()
-        estado = (data.get("estado") or "").strip().upper()
-        categoria_id = data.get("categoria_id")
         if not titulo:
             return {"ok": False, "errors": {"titulo": "El titulo es obligatorio."}, "message": "El titulo es obligatorio."}
 
-        estados_validos = {value for value, _ in cons.Estado.choices}
-        if estado not in estados_validos:
+        resumen = (data.get("resumen") or "").strip()
+        if not resumen:
+            return {"ok": False, "errors": {"resumen": "El resumen es obligatorio."}, "message": "El resumen es obligatorio."}
+
+        estado = (data.get("estado") or "").strip().upper()
+        if estado not in {value for value, _ in cons.Estado.choices}:
             return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
+        categoria_id = data.get("categoria_id")
         categoria = None
         if categoria_id:
             categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
             if not categoria:
                 return {"ok": False, "errors": {"categoria_id": "Categoria de publicacion invalida."}, "message": "Categoria de publicacion invalida."}
 
-        contenido = (data.get("contenido") or "").strip()
+        return {
+            "titulo": titulo,
+            "resumen": resumen,
+            "estado": estado,
+            "categoria": categoria,
+            "contenido": (data.get("contenido") or "").strip(),
+            "destacado": data.get("destacado") == "1",
+            "video_url": (data.get("video_url") or "").strip() or None,
+        }
+
+    @staticmethod
+    def _aplicar_campos_publicacion(publicacion, campos):
+        publicacion.titulo = campos["titulo"]
+        publicacion.contenido = campos["contenido"]
+        publicacion.resumen = campos["resumen"]
+        publicacion.destacado = campos["destacado"]
+        publicacion.estado = campos["estado"]
+        publicacion.categoria = campos["categoria"]
+        publicacion.video_url = campos["video_url"]
+
+    @staticmethod
+    def _eliminar_video_publicacion(publicacion, data):
+        if data.get("eliminar_video") == "1" and publicacion.video:
+            publicacion.video.delete(save=False)
+            publicacion.video = None
+        if data.get("eliminar_video_url") == "1":
+            publicacion.video_url = None
+
+    @staticmethod
+    def _subir_archivos_publicacion(publicacion, files):
+        if not files:
+            return
+
+        nuevo_video = files.get("video")
+        if nuevo_video:
+            if publicacion.video:
+                publicacion.video.delete(save=False)
+            publicacion.video = nuevo_video
+
+        nuevo_thumbnail = files.get("video_thumbnail")
+        if nuevo_thumbnail:
+            if publicacion.video_thumbnail:
+                publicacion.video_thumbnail.delete(save=False)
+            publicacion.video_thumbnail = nuevo_thumbnail
+
+    @staticmethod
+    def _gestionar_imagenes_publicacion(publicacion, data, files):
+        from apps.publicaciones.models import ImagenPublicacion
+
+        eliminar_ids = data.getlist("eliminar_imagenes")
+        if eliminar_ids:
+            ImagenPublicacion.objects.filter(id__in=eliminar_ids, publicacion=publicacion).delete()
+
+        if files:
+            for img in files.getlist("imagenes"):
+                ImagenPublicacion.objects.create(publicacion=publicacion, imagen=img)
+
+    @staticmethod
+    @transaction.atomic
+    def actualizar_publicacion(publicacion_id, data, files=None):
+        try:
+            from apps.publicaciones.models import Publicacion
+        except Exception:
+            return {"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_MSG}
+
+        publicacion = Publicacion.objects.filter(id=publicacion_id).first()
+        if not publicacion:
+            return {"ok": False, "errors": {"_general": PUBLICACION_NO_ENCONTRADA_MSG}, "message": PUBLICACION_NO_ENCONTRADA_MSG}
+
+        campos = AdminCatalogService._validar_campos_publicacion(data)
+        if isinstance(campos, dict) and "errors" in campos:
+            return campos
 
         try:
-            publicacion.titulo = titulo
-            publicacion.contenido = contenido
-            publicacion.estado = estado
-            publicacion.categoria = categoria
+            AdminCatalogService._aplicar_campos_publicacion(publicacion, campos)
+            AdminCatalogService._eliminar_video_publicacion(publicacion, data)
+            AdminCatalogService._subir_archivos_publicacion(publicacion, files)
+
             publicacion.full_clean()
             publicacion.save()
+
+            AdminCatalogService._gestionar_imagenes_publicacion(publicacion, data, files)
+
             return {"ok": True, "message": "Publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}

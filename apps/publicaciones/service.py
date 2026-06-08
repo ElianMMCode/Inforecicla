@@ -14,7 +14,7 @@ class PublicacionService:
         return (
             Publicacion.objects.filter(estado=constants.Estado.ACTIVO)
             .select_related("usuario", "categoria")
-            .prefetch_related("comentarios__usuario", "reacciones")
+            .prefetch_related("comentarios__usuario", "reacciones", "imagenes")
             .annotate(
                 likes_count=Count(
                     "reacciones",
@@ -31,12 +31,11 @@ class PublicacionService:
         )
 
     @classmethod
-    def list_for_panel(cls, request):
-        queryset = cls._base_queryset()
-
+    def _filter_queryset(cls, queryset, request):
         query = (request.GET.get("q") or "").strip()
         categoria_id = request.GET.get("categoria")
         orden = request.GET.get("orden") or "recientes"
+        solo_destacados = request.GET.get("destacados") == "1"
 
         if query:
             queryset = queryset.filter(
@@ -49,33 +48,60 @@ class PublicacionService:
         if categoria_id:
             queryset = queryset.filter(categoria_id=categoria_id)
 
+        if solo_destacados:
+            queryset = queryset.filter(destacado=True)
+
         if orden == "valorados":
             queryset = queryset.order_by("-likes_count", "-fecha_creacion")
         elif orden == "comentados":
             queryset = queryset.order_by("-comentarios_total", "-fecha_creacion")
+        elif orden == "destacados":
+            queryset = queryset.order_by("-destacado", "-fecha_creacion")
         else:
             queryset = queryset.order_by("-fecha_creacion")
 
+        filtros = {
+            "q": query,
+            "categoria": categoria_id or "",
+            "orden": orden,
+            "destacados": "1" if solo_destacados else "",
+        }
+        return queryset, filtros
+
+    @classmethod
+    def list_for_panel(cls, request):
+        queryset = cls._base_queryset()
+        queryset, filtros = cls._filter_queryset(queryset, request)
+
         paginator = Paginator(queryset, 6)
         publicaciones = paginator.get_page(request.GET.get("page"))
-
-        publicacion_id = request.GET.get("publicacion")
-        publicacion_destacada = None
-        if publicacion_id:
-            publicacion_destacada = queryset.filter(pk=publicacion_id).first()
-        if publicacion_destacada is None:
-            publicacion_destacada = queryset.first()
+        publicaciones_destacadas = cls._base_queryset().filter(destacado=True)[:5]
 
         return {
             "publicaciones": publicaciones,
+            "total_pages": paginator.num_pages,
             "categorias": CategoriaPublicacion.objects.order_by("nombre", "tipo"),
-            "publicacion_destacada": publicacion_destacada,
-            "filtros": {
-                "q": query,
-                "categoria": categoria_id or "",
-                "orden": orden,
-            },
+            "publicaciones_destacadas": publicaciones_destacadas,
+            "filtros": filtros,
         }
+
+    @classmethod
+    def ajax_cards(cls, request):
+        from django.template.loader import render_to_string
+
+        queryset = cls._base_queryset()
+        queryset, _ = cls._filter_queryset(queryset, request)
+
+        paginator = Paginator(queryset, 6)
+        page = paginator.get_page(request.GET.get("page"))
+
+        html = render_to_string(
+            "publicacion/_publicacion_cards.html",
+            {"publicaciones": page},
+            request=request,
+        )
+
+        return {"html": html, "has_next": page.has_next(), "page": page.number}
 
     @classmethod
     def get_detail_context(cls, publicacion_id):

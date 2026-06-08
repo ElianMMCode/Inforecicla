@@ -68,11 +68,17 @@
           </td>
           <td>{{ pub.fecha_creacion|date:"d/m/Y" }}</td>
           <td class="text-center">
+            <a href="{% url 'panel_admin:ver_publicacion_admin' publicacion_id=pub.id %}" class="btn btn-outline-info btn-sm" title="Ver">
+              <i class="bi bi-eye"></i>
+            </a>
             <button type="button" class="btn btn-outline-primary btn-sm btn-editar-publicacion"
                     title="Editar"
                     data-id="{{ pub.id }}"
                     data-titulo="{{ pub.titulo|default:'' }}"
                     data-contenido="{{ pub.contenido|default:'' }}"
+                    data-resumen="{{ pub.resumen|default:'' }}"
+                    data-destacado="{% if pub.destacado %}1{% endif %}"
+                    data-video_url="{{ pub.video_url|default:'' }}"
                     data-categoria_id="{{ pub.categoria.id|default:'' }}"
                     data-estado="{{ pub.estado|default:'ACTIVO' }}"
                     data-action="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}">
@@ -111,6 +117,11 @@
               <div class="invalid-feedback">Debe contener al menos una letra (máx. 255 caracteres).</div>
             </div>
             <div class="col-12">
+              <label for="cp_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <textarea id="cp_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas..."></textarea>
+              <div class="invalid-feedback">El resumen es obligatorio.</div>
+            </div>
+            <div class="col-12">
               <label for="cp_contenido" class="form-label fw-semibold">Contenido <small class="text-muted fw-normal">(opcional)</small></label>
               <textarea id="cp_contenido" name="contenido" class="form-control" rows="5" data-letters-required placeholder="Escribe el contenido..."></textarea>
               <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
@@ -124,10 +135,16 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-2">
+                <input id="cp_destacado" type="checkbox" name="destacado" class="form-check-input" value="1">
+                <label for="cp_destacado" class="form-check-label fw-semibold">Destacado</label>
+              </div>
+            </div>
             <div class="col-12">
               <hr class="my-1">
               <p class="fw-semibold text-muted mb-0"><i class="bi bi-images me-1"></i>Contenido multimedia <span class="fw-normal">(opcional)</span></p>
-              <small class="text-muted">Puedes subir imágenes o un video.</small>
+              <small class="text-muted">Puedes subir imágenes, un video o enlazar una URL de YouTube/Vimeo.</small>
             </div>
             <div class="col-md-6">
               <label for="cp_imagenes" class="form-label fw-semibold">Imágenes <small class="text-muted fw-normal">(opcional)</small></label>
@@ -135,7 +152,11 @@
               <div class="form-text">Formatos: JPG, PNG, WEBP. Máximo 6 MB por imagen.</div>
             </div>
             <div class="col-md-6">
-              <label for="cp_video" class="form-label fw-semibold">Video <small class="text-muted fw-normal">(opcional)</small></label>
+              <label for="cp_video_url" class="form-label fw-semibold">URL del video <small class="text-muted fw-normal">(YouTube, Vimeo...)</small></label>
+              <input id="cp_video_url" type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+            <div class="col-md-6">
+              <label for="cp_video" class="form-label fw-semibold">Video <small class="text-muted fw-normal">(archivo)</small></label>
               <input id="cp_video" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
               <div class="form-text">Formatos: MP4, WEBM, OGG.</div>
             </div>
@@ -162,7 +183,7 @@
         <h5 class="modal-title" id="labelEditarPublicacion"><i class="bi bi-pencil me-2"></i>Editar Publicación</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form method="POST" novalidate id="formEditarPublicacion">
+      <form method="POST" novalidate id="formEditarPublicacion" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="modal-body">
           <div class="row g-3">
@@ -171,7 +192,12 @@
               <input id="ep_titulo" type="text" name="titulo" class="form-control" required maxlength="200" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
               <div class="invalid-feedback">Debe contener al menos una letra (máx. 200 caracteres).</div>
             </div>
-            <div class="col-md-6">
+            <div class="col-12">
+              <label for="ep_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <textarea id="ep_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas..."></textarea>
+              <div class="invalid-feedback">El resumen es obligatorio.</div>
+            </div>
+            <div class="col-md-4">
               <label for="ep_categoria" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(opcional)</small></label>
               <select id="ep_categoria" name="categoria_id" class="form-select">
                 <option value="">Sin categoría</option>
@@ -180,7 +206,7 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="ep_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
               <select id="ep_estado" name="estado" class="form-select">
                 {% for val, label in estados %}
@@ -188,10 +214,37 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch mt-2">
+                <input id="ep_destacado" type="checkbox" name="destacado" class="form-check-input" value="1">
+                <label for="ep_destacado" class="form-check-label fw-semibold">Destacado</label>
+              </div>
+            </div>
             <div class="col-12">
               <label for="ep_contenido" class="form-label fw-semibold">Contenido <small class="text-muted fw-normal">(opcional)</small></label>
               <textarea id="ep_contenido" name="contenido" class="form-control" rows="6" data-letters-required></textarea>
               <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+            </div>
+            <div class="col-12">
+              <hr class="my-1">
+              <p class="fw-semibold text-muted mb-0"><i class="bi bi-plus-circle me-1"></i>Multimedia <small class="fw-normal">(opcional)</small></p>
+              <small class="text-muted">Sube nuevas imágenes o un video. Para reemplazar multimedia existente, usa la página de edición completa.</small>
+            </div>
+            <div class="col-md-6">
+              <label for="ep_imagenes" class="form-label fw-semibold">Imágenes</label>
+              <input type="file" name="imagenes" id="ep_imagenes" class="form-control" accept="image/*" multiple>
+            </div>
+            <div class="col-md-6">
+              <label for="ep_video_url" class="form-label fw-semibold">URL del video</label>
+              <input id="ep_video_url" type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+            <div class="col-md-6">
+              <label for="ep_video" class="form-label fw-semibold">Video (archivo)</label>
+              <input id="ep_video" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
+            </div>
+            <div class="col-md-6" id="ep_thumbnail_wrapper" style="display:none;">
+              <label for="ep_thumbnail" class="form-label fw-semibold">Miniatura del video</label>
+              <input id="ep_thumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/*">
             </div>
           </div>
         </div>
@@ -221,8 +274,18 @@
   initModalFormAjax('formCrearPublicacion', '{% url "panel_admin:listar_publicaciones_admin" %}');
   initModalFormAjax('formEditarPublicacion', globalThis.location.href);
 
+  var epVideoInput = document.getElementById('ep_video');
+  if (epVideoInput) {
+    epVideoInput.addEventListener('change', function() {
+      var wrapper = document.getElementById('ep_thumbnail_wrapper');
+      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? 'block' : 'none';
+    });
+  }
+
   setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
     titulo: 'ep_titulo', contenido: 'ep_contenido',
+    resumen: 'ep_resumen', destacado: 'ep_destacado',
+    video_url: 'ep_video_url',
     categoria_id: 'ep_categoria', estado: 'ep_estado'
   });
 })();
