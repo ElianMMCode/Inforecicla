@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
+  var form = document.getElementById("createTipoMaterialForm") || document.getElementById("editTipoMaterialForm");
+  if (!form) return;
+  var esCrear = form.id === "createTipoMaterialForm";
   materialesInicializarFormulario({
-    formularioId: "createTipoMaterialForm",
+    formularioId: form.id,
     campos: [
       {
         name: "nombre",
@@ -16,9 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
       { name: "estado", esSelect: true, mensaje: "Selecciona un estado." },
     ],
     confirmar: {
-      title: "¿Crear tipo de material?",
-      text: "El formulario está completo y listo para enviarse.",
-      confirmText: "Sí, crear",
+      title: esCrear ? "¿Crear tipo de material?" : "¿Guardar cambios?",
+      text: esCrear ? "El formulario está completo y listo para enviarse." : "Se actualizará la información del tipo de material.",
+      confirmText: esCrear ? "Sí, crear" : "Sí, guardar",
     },
   });
 });

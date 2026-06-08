@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
+  var form = document.getElementById("createMaterialForm") || document.getElementById("editMaterialForm");
+  if (!form) return;
+  var esCrear = form.id === "createMaterialForm";
   materialesInicializarFormulario({
-    formularioId: "createMaterialForm",
+    formularioId: form.id,
     campos: [
       {
         name: "nombre",
@@ -23,9 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
       maxBytes: MATERIALES_LIMITE_IMAGEN_BYTES,
     },
     confirmar: {
-      title: "¿Crear material?",
-      text: "El formulario está completo y listo para enviarse.",
-      confirmText: "Sí, crear",
+      title: esCrear ? "¿Crear material?" : "¿Guardar cambios?",
+      text: esCrear ? "El formulario está completo y listo para enviarse." : "Se actualizará la información del material.",
+      confirmText: esCrear ? "Sí, crear" : "Sí, guardar",
     },
   });
 });
