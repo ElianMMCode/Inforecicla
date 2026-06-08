@@ -529,75 +529,75 @@ def _procesar_importar_usuarios_csv(archivo):
     return creados, errores
 
 
-def _procesar_creacion_publicacion_admin(request, categorias, publicaciones_habilitadas):
+def _procesar_creacion_publicacion_admin(admin_request, categorias, publicaciones_habilitadas):
     from apps.publicaciones.models import CategoriaPublicacion, ImagenPublicacion, Publicacion
 
-    titulo = _normalizar_texto(request.POST.get("titulo"))
-    contenido = _normalizar_texto(request.POST.get("contenido"))
-    categoria_id = _normalizar_texto(request.POST.get("categoria_id"))
+    titulo = _normalizar_texto(admin_request.POST.get("titulo"))
+    contenido = _normalizar_texto(admin_request.POST.get("contenido"))
+    categoria_id = _normalizar_texto(admin_request.POST.get("categoria_id"))
 
     if not titulo:
-        messages.error(request, "El titulo es obligatorio.")
+        messages.error(admin_request, "El titulo es obligatorio.")
         return None
 
     categoria = None
     if categoria_id:
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
         if not categoria:
-            messages.error(request, "La categoria seleccionada no existe.")
+            messages.error(admin_request, "La categoria seleccionada no existe.")
             return render(
-                request,
+                admin_request,
                 ADMIN_CREATE_PUBLICACION_TEMPLATE,
                 {
                     "publicaciones_habilitadas": publicaciones_habilitadas,
                     "categorias": categorias,
-                    "form_data": request.POST,
+                    "form_data": admin_request.POST,
                     "active_tab": "publicaciones",
                 },
             )
 
     limite_bytes = 6 * 1024 * 1024
-    imagenes = request.FILES.getlist("imagenes")
+    imagenes = admin_request.FILES.getlist("imagenes")
     imagenes_grandes = [img.name for img in imagenes if img.size > limite_bytes]
     if imagenes_grandes:
         nombres = ", ".join(imagenes_grandes)
         messages.error(
-            request,
+            admin_request,
             f"Las siguientes imágenes superan el límite de 6 MB y no pueden subirse: {nombres}.",
         )
         return render(
-            request,
+            admin_request,
             ADMIN_CREATE_PUBLICACION_TEMPLATE,
             {
                 "publicaciones_habilitadas": publicaciones_habilitadas,
                 "categorias": categorias,
-                "form_data": request.POST,
+                "form_data": admin_request.POST,
             },
         )
 
     publicacion = Publicacion(
         titulo=titulo,
         contenido=contenido,
-        usuario=request.user,
+        usuario=admin_request.user,
         categoria=categoria,
-        video=request.FILES.get("video") or None,
-        video_thumbnail=request.FILES.get("video_thumbnail") or None,
+        video=admin_request.FILES.get("video") or None,
+        video_thumbnail=admin_request.FILES.get("video_thumbnail") or None,
     )
     publicacion.save()
 
     for imagen in imagenes:
         ImagenPublicacion.objects.create(publicacion=publicacion, imagen=imagen)
 
-    messages.success(request, "Publicacion creada correctamente.")
+    messages.success(admin_request, "Publicacion creada correctamente.")
     return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
 
-def _procesar_creacion_publicacion_admin_ajax(request):
+def _procesar_creacion_publicacion_admin_ajax(admin_request):
     from apps.publicaciones.models import CategoriaPublicacion, ImagenPublicacion, Publicacion
 
-    titulo = _normalizar_texto(request.POST.get("titulo"))
-    contenido = _normalizar_texto(request.POST.get("contenido"))
-    categoria_id = _normalizar_texto(request.POST.get("categoria_id"))
+    titulo = _normalizar_texto(admin_request.POST.get("titulo"))
+    contenido = _normalizar_texto(admin_request.POST.get("contenido"))
+    categoria_id = _normalizar_texto(admin_request.POST.get("categoria_id"))
     errores = {}
 
     if not titulo:
@@ -610,7 +610,7 @@ def _procesar_creacion_publicacion_admin_ajax(request):
             errores["categoria_id"] = "La categoría seleccionada no existe."
 
     limite_bytes = 6 * 1024 * 1024
-    imagenes = request.FILES.getlist("imagenes")
+    imagenes = admin_request.FILES.getlist("imagenes")
     imagenes_grandes = [img.name for img in imagenes if img.size > limite_bytes]
     if imagenes_grandes:
         errores["multimedia"] = f"Las siguientes imágenes superan el límite de 6 MB: {', '.join(imagenes_grandes)}."
@@ -622,10 +622,10 @@ def _procesar_creacion_publicacion_admin_ajax(request):
         publicacion = Publicacion(
             titulo=titulo,
             contenido=contenido,
-            usuario=request.user,
+            usuario=admin_request.user,
             categoria=categoria,
-            video=request.FILES.get("video") or None,
-            video_thumbnail=request.FILES.get("video_thumbnail") or None,
+            video=admin_request.FILES.get("video") or None,
+            video_thumbnail=admin_request.FILES.get("video_thumbnail") or None,
         )
         publicacion.save()
 
