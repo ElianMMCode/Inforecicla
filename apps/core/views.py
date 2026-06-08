@@ -1,13 +1,23 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.http import FileResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 from pathlib import Path
 
+from apps.ecas.models import PuntoECA
+from apps.publicaciones.models import Publicacion
+
 
 @require_GET
 def inicio(request):
-    return render(request, "base/inicio.html")
+    user_model = get_user_model()
+    context = {
+        "total_ecas": PuntoECA.objects.count(),
+        "total_publicaciones": Publicacion.objects.count(),
+        "total_usuarios": user_model.objects.filter(is_active=True).count(),
+    }
+    return render(request, "base/inicio.html", context)
 
 
 # ── Handlers de error ──────────────────────────────────────────────────────────
@@ -26,6 +36,11 @@ def error_404(request, _exception=None):
 
 def error_500(_request):
     return render(_request, "errors/500.html", status=500)
+
+
+@require_GET
+def terminos(_request):
+    return render(_request, "core/terminos.html")
 
 
 @require_GET
