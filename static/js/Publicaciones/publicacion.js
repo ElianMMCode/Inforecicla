@@ -4,7 +4,7 @@
 document.getElementById('year').textContent = new Date().getFullYear();
 
 // ====== Compartir (links rápidos) ======
-const url = encodeURIComponent(window.location.href);
+const url = encodeURIComponent(globalThis.location.href);
 const title = encodeURIComponent(document.getElementById('postTitle').textContent);
 document.getElementById('shareWhats').href = `https://wa.me/?text=${title}%20${url}`;
 document.getElementById('shareX').href = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;

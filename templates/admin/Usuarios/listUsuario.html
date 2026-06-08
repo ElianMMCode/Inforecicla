@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Usuarios - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
@@ -154,7 +154,6 @@
 {% endblock %}
 
 {% block extra_modals %}
-
 <!-- ===== MODAL CREAR USUARIO ===== -->
 <div class="modal fade" id="modalCrearUsuario" tabindex="-1" aria-labelledby="labelCrearUsuario" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -351,10 +350,10 @@
     </div>
   </div>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
+{% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script>

@@ -47,7 +47,7 @@ function renderLista(items) {
   lista.querySelectorAll('[data-id]').forEach(card => {
     card.addEventListener('click', () => {
       const id = String(card.dataset.id);
-      const p = window.__PUNTOS.find(x => String(x.id) === id);
+      const p = globalThis.__PUNTOS.find(x => String(x.id) === id);
       if (!p) return;
       if (p.lng != null && p.lat != null) {
         map.setView([p.lat, p.lng], 14, { animate: true });
@@ -75,7 +75,7 @@ fetch('/puntos.geojson')
       lng: f.geometry.coordinates[0],
       lat: f.geometry.coordinates[1],
     }));
-    window.__PUNTOS = puntos;
+    globalThis.__PUNTOS = puntos;
 
     // Marcadores
     puntos.forEach(p => {
@@ -97,7 +97,7 @@ const filtro = document.getElementById('filtro');
 if (filtro) {
   filtro.addEventListener('input', e => {
     const q = (e.target.value || '').toLowerCase().trim();
-    const filtered = (window.__PUNTOS || []).filter(p =>
+    const filtered = (globalThis.__PUNTOS || []).filter(p =>
       (p.nombre || '').toLowerCase().includes(q) ||
       (p.localidad || '').toLowerCase().includes(q) ||
       (p.direccion || '').toLowerCase().includes(q)

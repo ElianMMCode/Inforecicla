@@ -1,4 +1,4 @@
-// Helpers compartidos entre crear_usuario.js y editar_usuario.js.
+﻿// Helpers compartidos entre crear_usuario.js y editar_usuario.js.
 // Se cargan como script clasico (sin type=module) y exponen funciones globales
 // para compatibilidad con el HTML que ya invoca `mostrarErroresSwal`,
 // `confirmarEnvioSwal`, etc.

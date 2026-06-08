@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Editar Publicación - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
@@ -26,7 +26,7 @@
           <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required minlength="3" maxlength="200" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Título de la publicación">
           <div class="invalid-feedback">El título debe tener al menos 3 caracteres e incluir letras (máx. 200).</div>
         </div>
-        <!-- Resumen -->
+
         <div class="col-12">
           <label for="pub_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span></label>
           <textarea id="pub_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas (máx. 500 caracteres)...">{{ publicacion.resumen|default:'' }}</textarea>
@@ -163,16 +163,17 @@
 {% block extra_scripts %}
 {% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/publicacion-form-comun.js' %}"></script>
-<script src="{% static 'js/admin/publicacion-editar.js' %}"></script>
 <script>
-(function() {
-  var videoInput = document.getElementById('pub_video');
+document.addEventListener("DOMContentLoaded", function() {
+  publicacionInitForm({ formId: "editPublicacionForm", esCreacion: false });
+
+  var videoInput = document.getElementById("pub_video");
   if (videoInput) {
-    videoInput.addEventListener('change', function() {
-      var wrapper = document.getElementById('pub_thumbnail_wrapper');
-      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? 'block' : 'none';
+    videoInput.addEventListener("change", function() {
+      var wrapper = document.getElementById("pub_thumbnail_wrapper");
+      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? "block" : "none";
     });
   }
-})();
+});
 </script>
 {% endblock %}

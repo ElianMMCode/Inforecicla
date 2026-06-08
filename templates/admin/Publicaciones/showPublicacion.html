@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load static publicaciones_extras %}
+{% load static %}
 {% block page_title %}Detalle Publicación - InfoRecicla{% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
@@ -63,7 +63,7 @@
 
                     {% if publicacion.video_url %}
                     <div class="mb-4 rounded overflow-hidden shadow-sm ratio ratio-16x9">
-                        <iframe src="{{ publicacion.video_url|video_embed_url }}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        <iframe src="{{ publicacion.video_url }}" title="Video de la publicación" allowfullscreen></iframe>
                     </div>
                     {% elif publicacion.video %}
                     <div class="mb-4 rounded overflow-hidden shadow-sm">
