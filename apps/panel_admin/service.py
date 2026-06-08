@@ -468,41 +468,43 @@ class AdminCatalogService:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
+    def _aplicar_campos_punto_eca(punto, data, estado):
+        punto.nombre = (data.get("nombre") or "").strip() or punto.nombre
+        punto.direccion = (data.get("direccion") or "").strip()
+        punto.email = (data.get("email") or "").strip()
+        punto.celular = (data.get("celular") or "").strip()
+        telefono_punto = (data.get("telefono_punto") or "").strip()
+        punto.telefono_punto = telefono_punto or None
+        punto.horario_atencion = (data.get("horario_atencion") or "").strip()
+        punto.descripcion = (data.get("descripcion") or "").strip()
+        punto.sitio_web = (data.get("sitio_web") or "").strip()
+        punto.logo_url_punto = (data.get("logo_url_punto") or "").strip()
+        punto.estado = estado
+
+        latitud = data.get("latitud")
+        longitud = data.get("longitud")
+        punto.latitud = float(latitud) if latitud else None
+        punto.longitud = float(longitud) if longitud else None
+
+        localidad_id = data.get("localidad_id")
+        if localidad_id:
+            localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
+            if localidad:
+                punto.localidad = localidad
+
+    @staticmethod
     @transaction.atomic
     def actualizar_punto_eca(punto_id, data):
         punto = PuntoECA.objects.filter(id=punto_id).first()
         if not punto:
             return {"ok": False, "errors": {"_general": "Punto ECA no encontrado."}, "message": "Punto ECA no encontrado."}
 
-        estados_validos = {value for value, _ in cons.Estado.choices}
         estado = (data.get("estado") or "").strip().upper()
-        if estado not in estados_validos:
+        if estado not in {value for value, _ in cons.Estado.choices}:
             return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         try:
-            punto.nombre = (data.get("nombre") or "").strip() or punto.nombre
-            punto.direccion = (data.get("direccion") or "").strip()
-            punto.email = (data.get("email") or "").strip()
-            punto.celular = (data.get("celular") or "").strip()
-            telefono_punto = (data.get("telefono_punto") or "").strip()
-            punto.telefono_punto = telefono_punto or None
-            punto.horario_atencion = (data.get("horario_atencion") or "").strip()
-            punto.descripcion = (data.get("descripcion") or "").strip()
-            punto.sitio_web = (data.get("sitio_web") or "").strip()
-            punto.logo_url_punto = (data.get("logo_url_punto") or "").strip()
-            punto.estado = estado
-
-            latitud = data.get("latitud")
-            longitud = data.get("longitud")
-            punto.latitud = float(latitud) if latitud else None
-            punto.longitud = float(longitud) if longitud else None
-
-            localidad_id = data.get("localidad_id")
-            if localidad_id:
-                localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
-                if localidad:
-                    punto.localidad = localidad
-
+            AdminCatalogService._aplicar_campos_punto_eca(punto, data, estado)
             punto.full_clean()
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}
