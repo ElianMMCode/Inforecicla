@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (inputVideo) {
     inputVideo.addEventListener("change", () => {
       publicacionRenderPreviewVideo(
-        inputVideo.files && inputVideo.files[0],
+        inputVideo.files?.[0],
         previewVideo,
         wrapperThumbnail,
       );
@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (inputThumbnail) {
     inputThumbnail.addEventListener("change", () => {
       publicacionRenderPreviewThumbnail(
-        inputThumbnail.files && inputThumbnail.files[0],
+        inputThumbnail.files?.[0],
         previewThumbnail,
       );
     });
