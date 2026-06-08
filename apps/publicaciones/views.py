@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
+_DETALLE_PUBLICACION = _DETALLE_PUBLICACION
 
 from .service import PublicacionService
 
@@ -39,7 +40,7 @@ def toggle_guardado(request, publicacion_id):
             guardado.delete()
         else:
             Guardados.objects.create(usuario=request.user, publicacion=pub)
-    return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
 
 
 @login_required
@@ -59,7 +60,7 @@ def agregar_comentario(request, publicacion_id):
                 texto=texto,
             )
             messages.success(request, "Tu comentario ha sido publicado con éxito.")
-    return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
 
 
 @login_required
@@ -67,7 +68,7 @@ def editar_comentario(request, comentario_id):
     from .models import Comentario
     comentario = get_object_or_404(Comentario, pk=comentario_id)
     if comentario.usuario != request.user:
-        return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
     if request.method == "POST":
         texto = request.POST.get("texto", "").strip()
         if not texto or len(texto) < _COMENTARIO_MIN:
@@ -77,7 +78,7 @@ def editar_comentario(request, comentario_id):
         else:
             comentario.texto = texto
             comentario.save()
-    return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
 
 
 @login_required
@@ -85,12 +86,12 @@ def eliminar_comentario(request, comentario_id):
     from .models import Comentario
     comentario = get_object_or_404(Comentario, pk=comentario_id)
     if comentario.usuario != request.user:
-        return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
     if request.method == "POST":
         publicacion_id = comentario.publicacion_id
         comentario.delete()
-        return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
-    return redirect("publicacion:detalle_publicacion", publicacion_id=comentario.publicacion_id)
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=comentario.publicacion_id)
 
 
 @login_required
@@ -102,7 +103,7 @@ def abrir_notificacion(request, notificacion_id):
         notificacion.leido = True
         notificacion.save(update_fields=["leido"])
     if notificacion.publicacion_id:
-        return redirect("publicacion:detalle_publicacion", publicacion_id=notificacion.publicacion_id)
+        return redirect(_DETALLE_PUBLICACION, publicacion_id=notificacion.publicacion_id)
     if notificacion.mensaje_id:
         if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
             return redirect(f"/punto-eca/mensajes/?chat_id={notificacion.mensaje.chat_id}")
@@ -145,4 +146,4 @@ def votar_publicacion(request, publicacion_id):
                     reaccion.save()
             else:
                 Reaccion.objects.create(publicacion=pub, usuario=request.user, valor=valor)
-    return redirect("publicacion:detalle_publicacion", publicacion_id=publicacion_id)
+    return redirect(_DETALLE_PUBLICACION, publicacion_id=publicacion_id)
