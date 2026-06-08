@@ -7,7 +7,7 @@ from .service import PublicacionService
 
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
-_DETALLE_PUBLICACION = _DETALLE_PUBLICACION
+_DETALLE_PUBLICACION = "publicacion:detalle_publicacion"
 
 
 def panel_publicaciones(request):
