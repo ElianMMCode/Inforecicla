@@ -31,6 +31,7 @@ NOMBRE_SIN_LETRA_MSG = "El nombre debe contener al menos una letra."
 TIPO_DUPLICADO_MSG = "Ya existe un tipo con ese nombre."
 CATEGORIA_DUPLICADA_MSG = "Ya existe una categoría con ese nombre."
 TIPO_OBLIGATORIO_MSG = "Debe seleccionar un tipo o escribir uno nuevo."
+NOMBRE_REGEX = _regex.compile(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]')
 UTC_SUFFIX = "+00:00"
 
 
@@ -190,7 +191,7 @@ class AdminCatalogService:
         elif len(nombre) > 30:
             errores["nombre"] = NOMBRE_MAX_30_MSG
 
-        if not errores.get("nombre") and not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
+        if not errores.get("nombre") and not NOMBRE_REGEX.search(nombre):
             errores["nombre"] = NOMBRE_SIN_LETRA_MSG
         if descripcion and len(descripcion) > 500:
             errores["descripcion"] = DESCRIPCION_MAX_500_MSG
@@ -312,12 +313,32 @@ class AdminCatalogService:
                     "errors": {"_general": f"No se pudo guardar: {_aplanar_error(e)}"}}
 
     @staticmethod
+    def _validar_nombre_categoria(nombre, campos_modelo, payload):
+        if "nombre" not in campos_modelo:
+            return None
+        if not nombre:
+            return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
+        if len(nombre) > 30:
+            return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_MAX_30_MSG}, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
+        payload["nombre"] = nombre
+        return None
+
+    @staticmethod
+    def _validar_descripcion_categoria(descripcion, campos_modelo, payload):
+        if "descripcion" not in campos_modelo:
+            return None
+        if len(descripcion) > 500:
+            return {"ok": False, "errors": {"descripcion": DESCRIPCION_CATEGORIA_MAX_500_MSG}, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
+        payload["descripcion"] = descripcion
+        return None
+
+    @staticmethod
     def _validar_categoria_publicacion(data, campos_modelo):
-        nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip()
-        tipo = (data.get("tipo") or "").strip()
-        tipo_otro = (data.get("tipo_otro") or "").strip()
-        estado = (data.get("estado") or "").strip().upper()
+        nombre = data.get("nombre", "").strip()
+        descripcion = data.get("descripcion", "").strip()
+        tipo = data.get("tipo", "").strip()
+        tipo_otro = data.get("tipo_otro", "").strip()
+        estado = data.get("estado", "").strip().upper()
 
         if tipo == "__otro__":
             tipo = tipo_otro
@@ -327,23 +348,18 @@ class AdminCatalogService:
         if len(tipo) > 30:
             return None, {"ok": False, "errors": {"tipo": TIPO_MAX_30_MSG}, "message": TIPO_MAX_30_MSG}
 
-        estados_validos = {value for value, _ in cons.Estado.choices}
-        if estado not in estados_validos:
+        if estado not in {value for value, _ in cons.Estado.choices}:
             return None, {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         payload = {"tipo": tipo, "estado": estado}
 
-        if "nombre" in campos_modelo:
-            if not nombre:
-                return None, {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
-            if len(nombre) > 30:
-                return None, {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_MAX_30_MSG}, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
-            payload["nombre"] = nombre
+        error = AdminCatalogService._validar_nombre_categoria(nombre, campos_modelo, payload)
+        if error:
+            return None, error
 
-        if "descripcion" in campos_modelo:
-            if len(descripcion) > 500:
-                return None, {"ok": False, "errors": {"descripcion": DESCRIPCION_CATEGORIA_MAX_500_MSG}, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
-            payload["descripcion"] = descripcion
+        error = AdminCatalogService._validar_descripcion_categoria(descripcion, campos_modelo, payload)
+        if error:
+            return None, error
 
         return payload, None
 
@@ -389,7 +405,7 @@ class AdminCatalogService:
             return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
         if len(nombre) < 3:
             return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
-        if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
+        if not NOMBRE_REGEX.search(nombre):
             return {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
         if estado not in estados_validos:
             return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
@@ -422,7 +438,7 @@ class AdminCatalogService:
             return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
         if len(nombre) < 3:
             return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
-        if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
+        if not NOMBRE_REGEX.search(nombre):
             return {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
         if estado not in estados_validos:
             return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
@@ -469,16 +485,16 @@ class AdminCatalogService:
 
     @staticmethod
     def _aplicar_campos_punto_eca(punto, data, estado):
-        punto.nombre = (data.get("nombre") or "").strip() or punto.nombre
-        punto.direccion = (data.get("direccion") or "").strip()
-        punto.email = (data.get("email") or "").strip()
-        punto.celular = (data.get("celular") or "").strip()
-        telefono_punto = (data.get("telefono_punto") or "").strip()
+        punto.nombre = data.get("nombre", "").strip() or punto.nombre
+        punto.direccion = data.get("direccion", "").strip()
+        punto.email = data.get("email", "").strip()
+        punto.celular = data.get("celular", "").strip()
+        telefono_punto = data.get("telefono_punto", "").strip()
         punto.telefono_punto = telefono_punto or None
-        punto.horario_atencion = (data.get("horario_atencion") or "").strip()
-        punto.descripcion = (data.get("descripcion") or "").strip()
-        punto.sitio_web = (data.get("sitio_web") or "").strip()
-        punto.logo_url_punto = (data.get("logo_url_punto") or "").strip()
+        punto.horario_atencion = data.get("horario_atencion", "").strip()
+        punto.descripcion = data.get("descripcion", "").strip()
+        punto.sitio_web = data.get("sitio_web", "").strip()
+        punto.logo_url_punto = data.get("logo_url_punto", "").strip()
         punto.estado = estado
 
         latitud = data.get("latitud")
@@ -487,10 +503,9 @@ class AdminCatalogService:
         punto.longitud = float(longitud) if longitud else None
 
         localidad_id = data.get("localidad_id")
-        if localidad_id:
-            localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
-            if localidad:
-                punto.localidad = localidad
+        localidad = localidad_id and Localidad.objects.filter(localidad_id=localidad_id).first()
+        if localidad:
+            punto.localidad = localidad
 
     @staticmethod
     @transaction.atomic
