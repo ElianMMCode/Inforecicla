@@ -49,6 +49,7 @@
                         <p class="lead text-muted mb-4">{{ publicacion.resumen }}</p>
                         {% endif %}
 
+                        {% if publicacion.video_url or publicacion.video or publicacion.imagenes.exists %}
                         {% if publicacion.video_url %}
                         <div class="mb-4 rounded overflow-hidden shadow-sm">
                             <div class="ratio ratio-16x9">
@@ -74,7 +75,6 @@
 
                         {% if publicacion.imagenes.exists and not publicacion.video and not publicacion.video_url %}
                         <div id="carruselPublicacion" class="carousel slide mb-3 rounded overflow-hidden shadow-sm" data-bs-ride="carousel">
-
                             {% if publicacion.imagenes.count > 1 %}
                             <div class="carousel-indicators">
                                 {% for img in publicacion.imagenes.all %}
@@ -99,7 +99,6 @@
                                 </div>
                                 {% endfor %}
                             </div>
-
                             {% if publicacion.imagenes.count > 1 %}
                             <button class="carousel-control-prev" type="button" data-bs-target="#carruselPublicacion" data-bs-slide="prev">
                                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -112,16 +111,16 @@
                             {% endif %}
                         </div>
 
-                        {% if publicacion.imagenes.exists %}
                         <div class="mb-3">
                             <span class="badge rounded-pill bg-light text-muted border d-inline-flex align-items-center gap-1">
                                 <i class="fas fa-images text-success" aria-hidden="true"></i>{{ publicacion.imagenes.count }} imagen{{ publicacion.imagenes.count|pluralize:"es" }}
                             </span>
                         </div>
                         {% endif %}
-                        {% endif %}
 
                         <hr class="text-muted opacity-25 my-3">
+                        {% endif %}
+
                         <div class="fs-5 lh-lg">{{ publicacion.contenido|linebreaks }}</div>
                     </div>
 
