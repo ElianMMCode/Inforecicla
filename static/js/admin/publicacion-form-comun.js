@@ -11,9 +11,29 @@ function publicacionSuprimirValidacionNativa(formulario) {
   );
 }
 
+function _mensajePublicacionES(campo) {
+  var etiqueta = '';
+  if (campo.name === 'titulo') etiqueta = 'T\u00edtulo';
+  else if (campo.name === 'contenido') etiqueta = 'Contenido';
+  else if (campo.name === 'categoria_id') etiqueta = 'Categor\u00eda';
+  else if (campo.name === 'estado') etiqueta = 'Estado';
+  else if (campo.name === 'multimedia') etiqueta = 'Multimedia';
+  else etiqueta = campo.name.charAt(0).toUpperCase() + campo.name.slice(1);
+
+  if (campo.validity.valid && !campo.validity.customError) return '';
+  if (campo.validity.valueMissing) return etiqueta + ' es obligatorio.';
+  if (campo.validity.patternMismatch) return etiqueta + ': Debe contener al menos 3 caracteres e incluir letras.';
+  if (campo.validity.tooShort) return etiqueta + ': Debe tener al menos ' + campo.minLength + ' caracteres.';
+  if (campo.validity.tooLong) return etiqueta + ': Debe tener m\u00e1ximo ' + campo.maxLength + ' caracteres.';
+  if (campo.validity.typeMismatch) return etiqueta + ': El formato no es correcto.';
+  if (campo.validity.customError) return etiqueta + ': ' + campo.validationMessage;
+  if (campo.validity.badInput) return etiqueta + ': El valor ingresado no es v\u00e1lido.';
+  return etiqueta + ': El valor ingresado no es v\u00e1lido.';
+}
+
 function publicacionObtenerErroresFormulario(campos) {
   return Array.from(
-    new Set(campos.map((campo) => campo.validationMessage).filter(Boolean)),
+    new Set(campos.map(function (c) { return _mensajePublicacionES(c); }).filter(Boolean)),
   );
 }
 
@@ -21,10 +41,10 @@ function publicacionMostrarErroresSwal(errores) {
   if (typeof Swal === "undefined" || !errores || errores.length === 0) {
     return;
   }
-  const html = `<div class="text-start"><ul class="mb-0 ps-3">${errores
-    .map((error) => `<li>${publicacionEscaparHtml(error)}</li>`)
-    .join("")}</ul></div>`;
-  Swal.fire({
+  const html = `<div class="text-start">${errores
+    .map(function (e) { return publicacionEscaparHtml(e); })
+    .join(' ')}</div>`;
+  return Swal.fire({
     icon: "error",
     title: "Corrige los campos",
     html,
@@ -173,7 +193,34 @@ function publicacionBindEnvio({ formulario, camposValidacion, confirmar, antesDe
     }
     if (!formulario.checkValidity()) {
       formulario.classList.add("was-validated");
-      publicacionMostrarErroresSwal(publicacionObtenerErroresFormulario(camposValidacion));
+      var errs = [];
+      var invalidFields = [];
+      for (var pi = 0; pi < camposValidacion.length; pi++) {
+        var campo = camposValidacion[pi];
+        if (campo && !campo.checkValidity()) {
+          var msg = _mensajePublicacionES(campo);
+          if (msg) {
+            errs.push(msg);
+            invalidFields.push({ field: campo, msg: msg });
+          }
+        }
+      }
+      var prom = publicacionMostrarErroresSwal(errs);
+      if (prom && prom.then) {
+        (function(inv) {
+          prom.then(function () {
+            for (var j = 0; j < inv.length; j++) {
+              var item = inv[j];
+              item.field.classList.add('is-invalid');
+              var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
+              if (contenedor) {
+                var fb = contenedor.querySelector('.invalid-feedback');
+                if (fb) fb.textContent = item.msg;
+              }
+            }
+          });
+        })(invalidFields);
+      }
       return;
     }
     formulario.classList.add("was-validated");

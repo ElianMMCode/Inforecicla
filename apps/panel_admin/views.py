@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.db.models import Q
 
@@ -75,9 +75,20 @@ def _validar_fecha_perfil_admin(fecha_str, errores):
         return None
 
     try:
+        hoy = date_type.today()
         fecha_nacimiento = date_type.fromisoformat(fecha_str)
-        if fecha_nacimiento > date_type.today():
+        if fecha_nacimiento > hoy:
             errores.append("La fecha de nacimiento no puede ser futura.")
+            return None
+        edad = hoy.year - fecha_nacimiento.year - (
+            (hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day)
+        )
+        if edad < 18:
+            errores.append("Debes tener al menos 18 años para registrarte.")
+            return None
+        if edad > 100:
+            errores.append("La fecha debe corresponder a una persona entre 18 y 100 años.")
+            return None
         return fecha_nacimiento
     except ValueError:
         errores.append("Formato de fecha inválido.")
@@ -94,13 +105,54 @@ def _validar_localidad_perfil_admin(user, localidad_id, errores):
     return localidad_inst
 
 
-def _validar_datos_perfil_admin(user, nombres, apellidos, celular, ciudad, fecha_str, localidad_id):
+def _validar_email_perfil_admin(email, user, errores):
+    if not email:
+        return
+    if " " in email:
+        errores.append("El correo electrónico no puede contener espacios.")
+        return
+    if ".." in email:
+        errores.append("El correo electrónico no puede contener puntos consecutivos.")
+        return
+    cantidad_arrobas = email.count("@")
+    if cantidad_arrobas != 1:
+        errores.append("El correo electrónico debe contener exactamente un símbolo @.")
+        return
+    dominio = email.rsplit("@", 1)[-1].lower()
+    if not dominio.endswith((".com", ".co", ".edu.co", ".com.co", "soy.sena.edu.co", "sena.edu.co")):
+        errores.append("El correo electrónico debe terminar en .com, .co, .edu.co, com.co, soy.sena.edu.co o sena.edu.co.")
+        return
+    if email.lower() != user.email and Usuario.objects.filter(email=email).exists():
+        errores.append("Ya existe un usuario con ese correo electrónico.")
+
+
+def _validar_tipo_documento_perfil_admin(tipo_documento, errores):
+    if not tipo_documento:
+        return
+    if tipo_documento not in {valor for valor, _ in cons.TipoDocumento.choices}:
+        errores.append("El tipo de documento seleccionado no es válido.")
+
+
+def _validar_numero_documento_perfil_admin(numero_documento, user, errores):
+    if not numero_documento:
+        return
+    if not (numero_documento.isdigit() and 6 <= len(numero_documento) <= 20):
+        errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
+    elif numero_documento != user.numero_documento and Usuario.objects.filter(numero_documento=numero_documento).exists():
+        errores.append("Ya existe un usuario con ese número de documento.")
+
+
+def _validar_datos_perfil_admin(user, nombres, apellidos, celular, ciudad, fecha_str, localidad_id,
+                                email, tipo_documento, numero_documento):
     errores = []
 
     _validar_nombre_perfil_admin(nombres, errores)
     _validar_apellido_perfil_admin(apellidos, errores)
     _validar_celular_perfil_admin(celular, errores)
     _validar_ciudad_perfil_admin(ciudad, errores)
+    _validar_email_perfil_admin(email, user, errores)
+    _validar_tipo_documento_perfil_admin(tipo_documento, errores)
+    _validar_numero_documento_perfil_admin(numero_documento, user, errores)
     fecha_nacimiento = _validar_fecha_perfil_admin(fecha_str, errores)
     localidad_inst = _validar_localidad_perfil_admin(user, localidad_id, errores)
 
@@ -205,10 +257,14 @@ def _validar_campos_crear_usuario_admin(datos, errores):
         errores.append("El nombre debe tener al menos 3 caracteres.")
     elif len(datos["nombres"]) > 30:
         errores.append("El nombre no puede superar 30 caracteres.")
+    elif not _texto_solo_letras(datos["nombres"], permitir_apostrofo=True):
+        errores.append("El nombre solo puede contener letras, espacios, guiones o apóstrofes.")
     if len(datos["apellidos"]) < 3:
         errores.append("Los apellidos deben tener al menos 3 caracteres.")
     elif len(datos["apellidos"]) > 40:
         errores.append("Los apellidos no pueden superar 40 caracteres.")
+    elif not _texto_solo_letras(datos["apellidos"], permitir_apostrofo=True):
+        errores.append("Los apellidos solo pueden contener letras, espacios, guiones o apóstrofes.")
     _validar_email_crear_usuario_admin(datos["email"], errores)
     if len(datos["celular"]) != 10 or not datos["celular"].startswith("3"):
         errores.append(CELULAR_ERROR)
@@ -536,6 +592,51 @@ def _procesar_creacion_publicacion_admin(request, categorias, publicaciones_habi
     return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
 
+def _procesar_creacion_publicacion_admin_ajax(request):
+    from apps.publicaciones.models import CategoriaPublicacion, ImagenPublicacion, Publicacion
+
+    titulo = _normalizar_texto(request.POST.get("titulo"))
+    contenido = _normalizar_texto(request.POST.get("contenido"))
+    categoria_id = _normalizar_texto(request.POST.get("categoria_id"))
+    errores = {}
+
+    if not titulo:
+        errores["titulo"] = "El título es obligatorio."
+
+    categoria = None
+    if categoria_id:
+        categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
+        if not categoria:
+            errores["categoria_id"] = "La categoría seleccionada no existe."
+
+    limite_bytes = 6 * 1024 * 1024
+    imagenes = request.FILES.getlist("imagenes")
+    imagenes_grandes = [img.name for img in imagenes if img.size > limite_bytes]
+    if imagenes_grandes:
+        errores["multimedia"] = f"Las siguientes imágenes superan el límite de 6 MB: {', '.join(imagenes_grandes)}."
+
+    if errores:
+        return {"ok": False, "errors": errores, "message": next(iter(errores.values()))}
+
+    try:
+        publicacion = Publicacion(
+            titulo=titulo,
+            contenido=contenido,
+            usuario=request.user,
+            categoria=categoria,
+            video=request.FILES.get("video") or None,
+            video_thumbnail=request.FILES.get("video_thumbnail") or None,
+        )
+        publicacion.save()
+
+        for imagen in imagenes:
+            ImagenPublicacion.objects.create(publicacion=publicacion, imagen=imagen)
+
+        return {"ok": True, "message": "Publicación creada correctamente."}
+    except Exception as e:
+        return {"ok": False, "errors": {"_general": str(e)}, "message": f"Error al crear la publicación: {e}"}
+
+
 def _aplicar_datos_usuario_admin(usuario, data):
     usuario.nombres = _normalizar_texto(data.get("nombres"))
     usuario.apellidos = _normalizar_texto(data.get("apellidos"))
@@ -554,7 +655,15 @@ def _aplicar_datos_usuario_admin(usuario, data):
     if localidad_id:
         usuario.localidad = Localidad.objects.filter(localidad_id=localidad_id).first()
 
-    usuario.fecha_nacimiento = _normalizar_texto(data.get("fechaNacimiento")) or None
+    import re as _re
+    fecha_str = _normalizar_texto(data.get("fechaNacimiento"))
+    if fecha_str and _re.match(r"^\d{2}-\d{2}-\d{4}$", fecha_str):
+        try:
+            from datetime import datetime
+            fecha_str = datetime.strptime(fecha_str, "%d-%m-%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    usuario.fecha_nacimiento = fecha_str or None
 
     password = _normalizar_texto(data.get("password"))
     password_confirm = _normalizar_texto(data.get("passwordConfirm"))
@@ -584,6 +693,26 @@ def _formatear_error_validacion(excepcion):
             return " ".join(mensajes)
 
     return str(excepcion)
+
+
+def _errores_validacion_lista(excepcion):
+    """Returns a LIST of individual error messages instead of one joined string."""
+    if hasattr(excepcion, "message_dict") and excepcion.message_dict:
+        mensajes = []
+        for valores in excepcion.message_dict.values():
+            if isinstance(valores, (list, tuple)):
+                mensajes.extend(str(valor) for valor in valores if str(valor).strip())
+            elif str(valores).strip():
+                mensajes.append(str(valores))
+        if mensajes:
+            return mensajes
+
+    if hasattr(excepcion, "messages") and excepcion.messages:
+        mensajes = [str(mensaje) for mensaje in excepcion.messages if str(mensaje).strip()]
+        if mensajes:
+            return mensajes
+
+    return [str(excepcion)]
 
 
 def es_administrador(user):
@@ -634,6 +763,9 @@ def listar_usuarios(request):
         "search_query": q,
         "search_tipo": tipo,
         "search_estado": estado,
+        "localidades": Localidad.objects.all().order_by("nombre"),
+        "tipos_documento": cons.TipoDocumento.choices,
+        "tipos_usuario": cons.TipoUsuario.choices,
     }
     return render(request, "admin/Usuarios/listUsuario.html", contexto)
 
@@ -724,6 +856,7 @@ def importar_usuarios_csv(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def crear_usuario_admin(request):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     localidades = Localidad.objects.all().order_by("nombre")
     tipos_documento = cons.TipoDocumento.choices
     tipos_usuario = cons.TipoUsuario.choices
@@ -733,6 +866,8 @@ def crear_usuario_admin(request):
         errores, localidad_inst = _validar_datos_crear_usuario_admin(data)
 
         if errores:
+            if is_ajax:
+                return JsonResponse({"ok": False, "errors": errores, "message": "Corrige los campos señalados."})
             return render(
                 request,
                 ADMIN_CREATE_USUARIO_TEMPLATE,
@@ -747,10 +882,15 @@ def crear_usuario_admin(request):
 
         try:
             _crear_usuario_admin_desde_datos(data, localidad_inst)
+            if is_ajax:
+                return JsonResponse({"ok": True, "message": f"Usuario {data['nombres']} {data['apellidos']} creado correctamente."})
             messages.success(request, f"Usuario {data['nombres']} {data['apellidos']} creado correctamente.")
             return redirect(ADMIN_LISTAR_USUARIOS_URL)
         except (IntegrityError, ValidationError) as e:
-            errores = [f"Error al crear el usuario: {e}"]
+            error_msg = f"Error al crear el usuario: {e}"
+            if is_ajax:
+                return JsonResponse({"ok": False, "errors": [error_msg], "message": error_msg})
+            errores = [error_msg]
             return render(
                 request,
                 ADMIN_CREATE_USUARIO_TEMPLATE,
@@ -775,11 +915,13 @@ def crear_usuario_admin(request):
 def listar_publicaciones_admin(request):
     publicaciones = []
     publicaciones_habilitadas = True
+    categorias = []
     q = request.GET.get('q', '').strip()
     try:
-        from apps.publicaciones.models import Publicacion
+        from apps.publicaciones.models import CategoriaPublicacion, Publicacion
 
         publicaciones = Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")
+        categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
         if q:
             publicaciones = publicaciones.filter(
                 Q(titulo__icontains=q) |
@@ -796,7 +938,9 @@ def listar_publicaciones_admin(request):
         {
             "publicaciones": publicaciones,
             "publicaciones_habilitadas": publicaciones_habilitadas,
+            "categorias": categorias,
             "search_query": q,
+            "estados": cons.Estado.choices,
         },
     )
 
@@ -804,6 +948,7 @@ def listar_publicaciones_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def crear_publicacion_admin(request):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     publicaciones_habilitadas = True
     categorias = []
 
@@ -813,12 +958,17 @@ def crear_publicacion_admin(request):
         categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
 
         if request.method == "POST":
+            if is_ajax:
+                resultado = _procesar_creacion_publicacion_admin_ajax(request)
+                return JsonResponse(resultado)
             respuesta = _procesar_creacion_publicacion_admin(request, categorias, publicaciones_habilitadas)
             if respuesta is not None:
                 return respuesta
 
     except Exception as e:
         publicaciones_habilitadas = False
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": [f"No se pudo cargar el modulo de publicaciones: {e}"], "message": str(e)})
         messages.error(request, f"No se pudo cargar el modulo de publicaciones: {e}")
 
     return render(
@@ -878,6 +1028,7 @@ def exportar_puntos_eca_excel(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def crear_punto_eca_admin(request):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     localidades = Localidad.objects.all().order_by("nombre")
     tipos_documento = cons.TipoDocumento.choices
 
@@ -886,6 +1037,8 @@ def crear_punto_eca_admin(request):
         errores, localidad_inst = _validar_datos_crear_punto_eca_admin(data)
 
         if errores:
+            if is_ajax:
+                return JsonResponse({"ok": False, "errors": errores, "message": "Corrige los campos señalados."})
             return render(
                 request,
                 "admin/PuntoECA/createPuntoECA.html",
@@ -899,10 +1052,15 @@ def crear_punto_eca_admin(request):
 
         try:
             _crear_punto_eca_desde_datos(data, localidad_inst)
+            if is_ajax:
+                return JsonResponse({"ok": True, "message": f"Punto ECA '{data['nombre_punto']}' creado correctamente."})
             messages.success(request, f"Punto ECA '{data['nombre_punto']}' creado correctamente.")
             return redirect("panel_admin:listar_puntos_eca_admin")
         except (IntegrityError, ValidationError) as e:
-            messages.error(request, f"Error al crear el punto ECA: {e}")
+            error_msg = f"Error al crear el punto ECA: {e}"
+            if is_ajax:
+                return JsonResponse({"ok": False, "errors": [error_msg], "message": error_msg})
+            messages.error(request, error_msg)
 
     return render(request, "admin/PuntoECA/createPuntoECA.html", {
         "localidades": localidades,
@@ -921,7 +1079,13 @@ def listar_puntos_eca_admin(request):
             Q(direccion__icontains=q) |
             Q(localidad__nombre__icontains=q)
         )
-    return render(request, "admin/PuntoECA/listPuntoECA.html", {"puntos": puntos, "search_query": q})
+    return render(request, "admin/PuntoECA/listPuntoECA.html", {
+        "puntos": puntos,
+        "search_query": q,
+        "localidades": Localidad.objects.all().order_by("nombre"),
+        "tipos_documento": cons.TipoDocumento.choices,
+        "estados": cons.Estado.choices,
+    })
 
 
 @login_required(login_url="/login/")
@@ -1132,6 +1296,8 @@ def listar_categorias_publicacion_admin(request):
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "search_query": q,
             "active_tab": "categorias_publicacion",
+            "tipos_publicacion": AdminCatalogService._tipos_publicacion_disponibles(),
+            "estados": cons.Estado.choices,
         },
     )
 
@@ -1199,14 +1365,19 @@ def listar_tipos_material_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def editar_usuario_admin(request, usuario_id):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     usuario = Usuario.objects.filter(id=usuario_id).first()
     if not usuario:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "Usuario no encontrado."})
         messages.error(request, "Usuario no encontrado.")
         return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
     if request.method == "POST":
         error = _aplicar_datos_usuario_admin(usuario, request.POST)
         if error:
+            if is_ajax:
+                return JsonResponse({"ok": False, "errors": [error], "message": error})
             messages.error(request, error)
             contexto = {
                 "usuario": usuario,
@@ -1219,12 +1390,19 @@ def editar_usuario_admin(request, usuario_id):
         try:
             usuario.full_clean()
             usuario.save()
+            if is_ajax:
+                return JsonResponse({"ok": True, "message": "Usuario actualizado correctamente."})
             messages.success(request, "Usuario actualizado correctamente.")
-            return redirect("panel_admin:editar_usuario_admin", usuario_id=usuario.id)
+            return redirect(ADMIN_LISTAR_USUARIOS_URL)
         except ValidationError as e:
-            mensajes_error = _formatear_error_validacion(e)
+            lista_errores = _errores_validacion_lista(e)
+            if is_ajax:
+                return JsonResponse({"ok": False, "errors": lista_errores, "message": "Corrige los campos señalados."})
+            mensajes_error = " ".join(lista_errores)
             messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
         except Exception as e:
+            if is_ajax:
+                return JsonResponse({"ok": False, "errors": [str(e)], "message": str(e)})
             messages.error(request, f"No se pudo actualizar el usuario: {e}")
 
     contexto = {
@@ -1239,22 +1417,29 @@ def editar_usuario_admin(request, usuario_id):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def editar_publicacion_admin(request, publicacion_id):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     try:
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
     except Exception:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "El modulo de publicaciones no esta habilitado."})
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     publicacion = Publicacion.objects.select_related("categoria", "usuario").filter(id=publicacion_id).first()
     if not publicacion:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "Publicacion no encontrada."})
         messages.error(request, "Publicacion no encontrada.")
         return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_publicacion(publicacion_id, request.POST)
+        if is_ajax:
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:editar_publicacion_admin", publicacion_id=publicacion_id)
+            return redirect(ADMIN_LISTAR_PUBLICACIONES_URL)
         messages.error(request, resultado["message"])
         publicacion.refresh_from_db()
 
@@ -1273,16 +1458,21 @@ def editar_publicacion_admin(request, publicacion_id):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def editar_punto_eca_admin(request, punto_id):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     punto = PuntoECA.objects.select_related("localidad", "gestor_eca").filter(id=punto_id).first()
     if not punto:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "Punto ECA no encontrado."})
         messages.error(request, "Punto ECA no encontrado.")
         return redirect("panel_admin:listar_puntos_eca_admin")
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
+        if is_ajax:
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:editar_punto_eca_admin", punto_id=punto_id)
+            return redirect("panel_admin:listar_puntos_eca_admin")
         messages.error(request, resultado["message"])
         punto.refresh_from_db()
 
@@ -1300,16 +1490,21 @@ def editar_punto_eca_admin(request, punto_id):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def editar_material_admin(request, material_id):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     material = Material.objects.select_related("categoria", "tipo").filter(id=material_id).first()
     if not material:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "Material no encontrado."})
         messages.error(request, "Material no encontrado.")
         return redirect("panel_admin:listar_materiales_admin")
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_material(material_id, request.POST, request.FILES)
+        if is_ajax:
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:editar_material_admin", material_id=material_id)
+            return redirect("/panel_admin/materiales/gestion/?tab=materiales")
         messages.error(request, resultado["message"])
         material.refresh_from_db()
 
@@ -1328,16 +1523,21 @@ def editar_material_admin(request, material_id):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def editar_categoria_material_admin(request, categoria_id):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
     if not categoria:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "Categoria de material no encontrada."})
         messages.error(request, "Categoria de material no encontrada.")
         return redirect("panel_admin:listar_categorias_material_admin")
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_categoria_material(categoria_id, request.POST)
+        if is_ajax:
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:editar_categoria_material_admin", categoria_id=categoria_id)
+            return redirect("/panel_admin/materiales/gestion/?tab=categorias")
         messages.error(request, resultado["message"])
         categoria.refresh_from_db()
 
@@ -1354,14 +1554,19 @@ def editar_categoria_material_admin(request, categoria_id):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def editar_categoria_publicacion_admin(request, categoria_id):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     try:
         from apps.publicaciones.models import CategoriaPublicacion
     except Exception:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "El modulo de publicaciones no esta habilitado."})
         messages.error(request, "El modulo de publicaciones no esta habilitado en la configuracion actual.")
         return redirect("panel_admin:listar_categorias_publicacion_admin")
 
     categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
     if not categoria:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "Categoria de publicacion no encontrada."})
         messages.error(request, "Categoria de publicacion no encontrada.")
         return redirect("panel_admin:listar_categorias_publicacion_admin")
 
@@ -1381,9 +1586,11 @@ def editar_categoria_publicacion_admin(request, categoria_id):
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_categoria_publicacion(categoria_id, request.POST)
+        if is_ajax:
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:editar_categoria_publicacion_admin", categoria_id=categoria_id)
+            return redirect("panel_admin:listar_categorias_publicacion_admin")
         messages.error(request, resultado["message"])
         form_data = {
             "nombre": request.POST.get("nombre", ""),
@@ -1409,16 +1616,21 @@ def editar_categoria_publicacion_admin(request, categoria_id):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def editar_tipo_material_admin(request, tipo_id):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     tipo = TipoMaterial.objects.filter(id=tipo_id).first()
     if not tipo:
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": "Tipo de material no encontrado."})
         messages.error(request, "Tipo de material no encontrado.")
         return redirect("panel_admin:listar_tipos_material_admin")
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_tipo_material(tipo_id, request.POST)
+        if is_ajax:
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:editar_tipo_material_admin", tipo_id=tipo_id)
+            return redirect("/panel_admin/materiales/gestion/?tab=tipos")
         messages.error(request, resultado["message"])
         tipo.refresh_from_db()
 
@@ -1437,6 +1649,8 @@ def editar_tipo_material_admin(request, tipo_id):
 def crear_tipo_material(request):
     if request.method == "POST":
         resultado = AdminCatalogService.crear_tipo_material(request.POST)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
         else:
@@ -1455,6 +1669,8 @@ def crear_tipo_material(request):
 def crear_categoria_material(request):
     if request.method == "POST":
         resultado = AdminCatalogService.crear_categoria_material(request.POST)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
         else:
@@ -1473,6 +1689,8 @@ def crear_categoria_material(request):
 def crear_material_admin(request):
     if request.method == "POST":
         resultado = AdminCatalogService.crear_material(request.POST, request.FILES)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
         else:
@@ -1527,6 +1745,7 @@ def gestion_materiales(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 def crear_categoria_publicacion(request):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     context = {
         "tipos_publicacion": AdminCatalogService._tipos_publicacion_disponibles(),
         "form_data": {
@@ -1540,9 +1759,11 @@ def crear_categoria_publicacion(request):
     }
     if request.method == "POST":
         resultado = AdminCatalogService.crear_categoria_publicacion(request.POST)
+        if is_ajax:
+            return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("panel_admin:crear_categoria_publicacion")
+            return redirect("panel_admin:listar_categorias_publicacion_admin")
         messages.error(request, resultado["message"])
         context["form_data"] = {
             "nombre": request.POST.get("nombre", ""),
@@ -1567,7 +1788,11 @@ _PASSWORD_COMP = _re.compile(
 @user_passes_test(es_administrador, login_url="/inicio/")
 def perfil_admin(request):
     localidades = Localidad.objects.all()
-    return render(request, "admin/perfil_admin.html", {"localidades": localidades})
+    tipos_documento = cons.TipoDocumento.choices
+    return render(request, "admin/perfil_admin.html", {
+        "localidades": localidades,
+        "tipos_documento": tipos_documento,
+    })
 
 
 @login_required(login_url="/login/")
@@ -1576,47 +1801,77 @@ def actualizar_datos_admin(request):
     if request.method != "POST":
         return redirect(ADMIN_PERFIL_URL)
 
+    is_ajax_request = (
+        request.headers.get("x-requested-with") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("accept", "")
+    )
+
+    def _finish(ok, message, status_code=200):
+        if is_ajax_request:
+            return JsonResponse({"ok": ok, "message": message}, status=status_code)
+        if ok:
+            messages.success(request, message)
+        else:
+            messages.error(request, message)
+        return redirect(ADMIN_PERFIL_URL)
+
     user = request.user
-    nombres        = request.POST.get("nombres", "").strip()
-    apellidos      = request.POST.get("apellidos", "").strip()
-    celular        = request.POST.get("celular", "").strip()
-    ciudad         = request.POST.get("ciudad", "").strip()
-    localidad_id   = request.POST.get("localidad", "").strip()
-    fecha_str      = request.POST.get("fechaNacimiento", "").strip()
+    nombres          = request.POST.get("nombres", "").strip()
+    apellidos        = request.POST.get("apellidos", "").strip()
+    celular          = request.POST.get("celular", "").strip()
+    ciudad           = request.POST.get("ciudad", "").strip()
+    localidad_id     = request.POST.get("localidad", "").strip()
+    fecha_str        = request.POST.get("fechaNacimiento", "").strip()
+    email            = request.POST.get("email", "").strip().lower()
+    tipo_documento   = request.POST.get("tipoDocumento", "").strip()
+    numero_documento = request.POST.get("numeroDocumento", "").strip()
+
     errores, fecha_nacimiento, localidad_inst = _validar_datos_perfil_admin(
-        user,
-        nombres,
-        apellidos,
-        celular,
-        ciudad,
-        fecha_str,
-        localidad_id,
+        user, nombres, apellidos, celular, ciudad, fecha_str, localidad_id,
+        email, tipo_documento, numero_documento,
     )
 
     if errores:
-        for e in errores:
-            messages.error(request, e)
-        return redirect(ADMIN_PERFIL_URL)
+        return _finish(False, errores[0], status_code=400)
 
     try:
-        user.nombres         = nombres
-        user.apellidos       = apellidos
-        user.celular         = celular if celular else None
-        user.ciudad          = ciudad if ciudad else DEFAULT_CITY
-        user.localidad       = localidad_inst
+        user.nombres          = nombres
+        user.apellidos        = apellidos
+        user.celular          = celular if celular else None
+        user.ciudad           = ciudad if ciudad else DEFAULT_CITY
+        user.localidad        = localidad_inst
         user.fecha_nacimiento = fecha_nacimiento
+        if email:
+            user.email = email
+        if tipo_documento:
+            user.tipo_documento = tipo_documento
+        if numero_documento:
+            user.numero_documento = numero_documento
         user.save()
-        messages.success(request, "Datos actualizados correctamente.")
     except Exception:
-        messages.error(request, "No se pudieron guardar los cambios.")
+        return _finish(False, "No se pudieron guardar los cambios.", status_code=500)
 
-    return redirect(ADMIN_PERFIL_URL)
+    return _finish(True, "Datos actualizados correctamente.")
 
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_POST
 def cambiar_contrasena_admin(request):
+
+    is_ajax_request = (
+        request.headers.get("x-requested-with") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("accept", "")
+    )
+
+    def _finish(ok, message, status_code=200):
+        if is_ajax_request:
+            return JsonResponse({"ok": ok, "message": message}, status=status_code)
+        if ok:
+            messages.success(request, message)
+        else:
+            messages.error(request, message)
+        return redirect(ADMIN_PERFIL_URL)
 
     user      = request.user
     actual    = request.POST.get("contrasenaActual", "")
@@ -1625,11 +1880,9 @@ def cambiar_contrasena_admin(request):
 
     error = _validar_cambio_contrasena_admin(user, actual, nueva, confirmar)
     if error:
-        messages.error(request, error)
-    else:
-        user.set_password(nueva)
-        user.save()
-        update_session_auth_hash(request, user)
-        messages.success(request, "Contraseña actualizada correctamente.")
+        return _finish(False, error, status_code=400)
 
-    return redirect(ADMIN_PERFIL_URL)
+    user.set_password(nueva)
+    user.save()
+    update_session_auth_hash(request, user)
+    return _finish(True, "Contraseña actualizada correctamente.")

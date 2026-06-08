@@ -5,16 +5,6 @@
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="usuarios" %}{% endblock %}
 {% block content %}
 <div>
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
   <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
       <h1 class="h2 fw-bold text-success mb-1">Gestión de Usuarios</h1>
@@ -30,9 +20,9 @@
       <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalImportCSV" title="Importar CSV">
         <i class="bi bi-upload me-1"></i> Importar CSV
       </button>
-      <a href="{% url 'panel_admin:crear_usuario_admin' %}" class="btn btn-success">
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
         <i class="bi bi-person-plus me-1"></i> Nuevo Usuario
-      </a>
+      </button>
     </div>
   </div>
 
@@ -53,7 +43,7 @@
             </div>
             <p class="small text-muted mb-3">* Opcionales. Valores válidos para <strong>tipo_usuario</strong>: <code>ADM</code>, <code>CIU</code>, <code>GECA</code>. Para <strong>tipo_documento</strong>: <code>CC</code>, <code>TI</code>, <code>CE</code>, <code>PA</code>, <code>NIT</code>.</p>
             <div class="mb-3">
-              <label for="import_archivo_csv" class="form-label fw-semibold">Archivo CSV <span class="text-danger">*</span></label>
+              <label for="import_archivo_csv" class="form-label fw-semibold">Archivo CSV <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
               <input id="import_archivo_csv" type="file" name="archivo_csv" class="form-control" accept=".csv" required>
             </div>
           </div>
@@ -135,9 +125,23 @@
               {% endif %}
             </td>
             <td class="text-center">
-              <a href="{% url 'panel_admin:editar_usuario_admin' usuario_id=usuario.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+              <button type="button" class="btn btn-outline-primary btn-sm btn-editar-usuario"
+                      title="Editar"
+                      data-id="{{ usuario.id }}"
+                      data-nombres="{{ usuario.nombres|default:'' }}"
+                      data-apellidos="{{ usuario.apellidos|default:'' }}"
+                      data-email="{{ usuario.email|default:'' }}"
+                      data-celular="{{ usuario.celular|default:'' }}"
+                      data-ciudad="{{ usuario.ciudad|default:'Bogotá' }}"
+                      data-localidad_id="{{ usuario.localidad.localidad_id|default:'' }}"
+                      data-tipo_documento="{{ usuario.tipo_documento|default:'' }}"
+                      data-numero_documento="{{ usuario.numero_documento|default:'' }}"
+                      data-tipo_usuario="{{ usuario.tipo_usuario|default:'' }}"
+                      data-is_active="{% if usuario.is_active %}activo{% else %}inactivo{% endif %}"
+                      data-fecha_nacimiento="{{ usuario.fecha_nacimiento|date:'Y-m-d'|default:'' }}"
+                      data-action="{% url 'panel_admin:editar_usuario_admin' usuario_id=usuario.id %}">
                 <i class="bi bi-pencil"></i>
-              </a>
+              </button>
             </td>
           </tr>
           {% empty %}
@@ -149,6 +153,275 @@
   </div>
 {% endblock %}
 
+{% block extra_modals %}
+
+<!-- ===== MODAL CREAR USUARIO ===== -->
+<div class="modal fade" id="modalCrearUsuario" tabindex="-1" aria-labelledby="labelCrearUsuario" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelCrearUsuario"><i class="bi bi-person-plus me-2"></i>Nuevo Usuario</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{% url 'panel_admin:crear_usuario_admin' %}" novalidate id="formCrearUsuario">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="cu_nombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="cu_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Nombres" autocomplete="given-name">
+              <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_apellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="cu_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Apellidos" autocomplete="family-name">
+              <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_email" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="cu_email" type="text" name="email" class="form-control" required maxlength="254" inputmode="email" placeholder="usuario@ejemplo.com">
+              <div class="invalid-feedback">Ingresa un correo con un solo @ y dominio válido.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="cu_celular" type="tel" name="celular" class="form-control" required pattern="^3[0-9]{9}$" maxlength="10" inputmode="numeric" placeholder="3001234567">
+              <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_tipo_documento" class="form-label fw-semibold">Tipo de Documento <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <select id="cu_tipo_documento" name="tipoDocumento" class="form-select" required>
+                <option value="">Seleccionar...</option>
+                {% for val, label in tipos_documento %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="invalid-feedback">Selecciona un tipo de documento.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_numero_documento" class="form-label fw-semibold">Número de Documento <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="cu_numero_documento" type="text" name="numeroDocumento" class="form-control" required minlength="6" maxlength="20" inputmode="numeric" placeholder="1234567890">
+              <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="cu_ciudad" type="text" name="ciudad" class="form-control" value="Bogotá" readonly aria-readonly="true">
+              <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <select id="cu_localidad" name="localidad" class="form-select" required>
+                <option value="">Seleccionar localidad...</option>
+                {% for loc in localidades %}
+                  <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
+                {% endfor %}
+              </select>
+              <div class="invalid-feedback">Selecciona una localidad.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_tipo_usuario" class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <select id="cu_tipo_usuario" name="tipo_usuario" class="form-select" required>
+                {% for val, label in tipos_usuario %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="invalid-feedback">Selecciona un tipo de usuario.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_fecha_nacimiento" class="form-label fw-semibold">Fecha de Nacimiento <small class="text-muted fw-normal">(opcional)</small></label>
+              <input id="cu_fecha_nacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA">
+              <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 años.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_password" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <div class="input-group">
+                <input id="cu_password" type="password" name="password" class="form-control" required minlength="8" placeholder="Mínimo 8 caracteres">
+                <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#cu_password">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cu_password2" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <div class="input-group">
+                <input id="cu_password2" type="password" name="passwordConfirm" class="form-control" required minlength="8" placeholder="Repite la contraseña">
+                <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#cu_password2">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-person-check me-1"></i> Crear Usuario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR USUARIO ===== -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="labelEditarUsuario" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelEditarUsuario"><i class="bi bi-pencil me-2"></i>Editar Usuario</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" novalidate id="formEditarUsuario">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="eu_nombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="eu_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$">
+              <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_apellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="eu_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$">
+              <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_email" class="form-label fw-semibold">Correo electrónico <small class="text-muted fw-normal">(opcional)</small></label>
+              <input id="eu_email" type="email" name="email" class="form-control" readonly>
+              <div class="form-text">El correo no puede modificarse.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="eu_celular" type="tel" name="celular" class="form-control" required pattern="^3\d{9}$" maxlength="10" inputmode="numeric">
+              <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_tipo_documento" class="form-label fw-semibold">Tipo de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="eu_tipo_documento" name="tipoDocumento" class="form-select">
+                {% for val, label in tipos_documento %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_numero_documento" class="form-label fw-semibold">Número de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+              <input id="eu_numero_documento" type="text" name="numeroDocumento" class="form-control" minlength="6" maxlength="20" inputmode="numeric" pattern="^\d{6,20}$">
+              <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_ciudad" class="form-label fw-semibold">Ciudad <small class="text-muted fw-normal">(opcional)</small></label>
+              <input id="eu_ciudad" type="text" name="ciudad" class="form-control" readonly aria-readonly="true">
+              <div class="form-text">La ciudad está fija en Bogotá.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_localidad" class="form-label fw-semibold">Localidad <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="eu_localidad" name="localidad" class="form-select">
+                <option value="">-- Sin localidad --</option>
+                {% for loc in localidades %}
+                  <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_tipo_usuario" class="form-label fw-semibold">Tipo de Usuario <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="eu_tipo_usuario" name="tipo_usuario" class="form-select">
+                {% for val, label in tipos_usuario %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_estado" class="form-label fw-semibold">Estado de la cuenta <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="eu_estado" name="estado_usuario" class="form-select">
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="eu_fecha_nacimiento" class="form-label fw-semibold">Fecha de Nacimiento <small class="text-muted fw-normal">(opcional)</small></label>
+              <input id="eu_fecha_nacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA">
+              <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 años.</div>
+          </div>
+        </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
 {% block extra_scripts %}
+<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
+<script>
+(function() {
+  function validarCrearUsuario(form) {
+    var pass = document.getElementById('cu_password');
+    var pass2 = document.getElementById('cu_password2');
+    if (pass && pass2 && pass.value !== pass2.value) {
+      Swal.fire({ icon: 'error', title: 'Las contraseñas no coinciden', confirmButtonColor: '#198754' });
+      pass.classList.add('is-invalid');
+      pass2.classList.add('is-invalid');
+      return false;
+    }
+    return true;
+  }
+
+  initModalFormAjax('formCrearUsuario', '{% url "panel_admin:listar_usuarios" %}', validarCrearUsuario);
+  initModalFormAjax('formEditarUsuario', window.location.href);
+
+  function _initFechaNacimientoModal(id) {
+    var inp = document.getElementById(id);
+    if (!inp) return;
+    if (inp.value) {
+      var f = parsearFechaNacimiento(inp.value);
+      if (f && fechaEsValida(f)) inp.value = formatDateDDMMYYYY(f);
+    }
+    function _validarFecha() { validarNormalizarFechaNacimiento(inp, 18); }
+    inp.addEventListener('input', _validarFecha);
+    inp.addEventListener('blur', _validarFecha);
+    inp.addEventListener('change', _validarFecha);
+  }
+  _initFechaNacimientoModal('cu_fecha_nacimiento');
+  _initFechaNacimientoModal('eu_fecha_nacimiento');
+
+  document.getElementById('modalEditarUsuario').addEventListener('shown.bs.modal', function () {
+    var inp = document.getElementById('eu_fecha_nacimiento');
+    if (inp && inp.value) {
+      var f = parsearFechaNacimiento(inp.value);
+      if (f && fechaEsValida(f)) inp.value = formatDateDDMMYYYY(f);
+    }
+  });
+
+  setupEditModal('.btn-editar-usuario', 'modalEditarUsuario', {
+    nombres: 'eu_nombres', apellidos: 'eu_apellidos',
+    email: 'eu_email', celular: 'eu_celular',
+    ciudad: 'eu_ciudad', localidad_id: 'eu_localidad',
+    tipo_documento: 'eu_tipo_documento', numero_documento: 'eu_numero_documento',
+    tipo_usuario: 'eu_tipo_usuario', is_active: 'eu_estado',
+    fecha_nacimiento: 'eu_fecha_nacimiento'
+  });
+
+  function initTogglePassword() {
+    document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', function() {
+        var inp = document.querySelector(btn.dataset.target);
+        if (!inp) return;
+        var pw = inp.type === 'password';
+        inp.type = pw ? 'text' : 'password';
+        var icon = btn.querySelector('.bi');
+        if (icon) { icon.classList.toggle('bi-eye', !pw); icon.classList.toggle('bi-eye-slash', pw); }
+      });
+    });
+  }
+  initTogglePassword();
+})();
+</script>
 {% include "admin/_messages_swal.html" %}
 {% endblock %}

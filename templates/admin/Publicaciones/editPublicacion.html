@@ -23,8 +23,8 @@
       <div class="row g-3">
         <div class="col-12">
           <label for="pub_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
-          <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required maxlength="200" placeholder="Título de la publicación">
-          <div class="invalid-feedback">El título es obligatorio y debe tener máximo 200 caracteres.</div>
+          <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ publicacion.titulo }}" required minlength="3" maxlength="200" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Título de la publicación">
+          <div class="invalid-feedback">El título debe tener al menos 3 caracteres e incluir letras (máx. 200).</div>
         </div>
         <div class="col-md-6">
           <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
@@ -79,6 +79,6 @@
 
 {% block extra_scripts %}
 {% include "admin/_messages_swal.html" %}
-<script src="{% static 'js/formularios/publicacion-form-comun.js' %}"></script>
-<script src="{% static 'js/formularios/publicacion-editar.js' %}"></script>
+<script src="{% static 'js/admin/publicacion-form-comun.js' %}"></script>
+<script src="{% static 'js/admin/publicacion-editar.js' %}"></script>
 {% endblock %}

@@ -26,11 +26,6 @@ document.addEventListener("DOMContentLoaded", () => {
     fechaNacimientoInput,
   ].filter(Boolean);
 
-  const fechaMinima = new Date();
-  fechaMinima.setFullYear(fechaMinima.getFullYear() - 100);
-  const fechaMaxima = new Date();
-  fechaMaxima.setFullYear(fechaMaxima.getFullYear() - 18);
-
   function validarNombres() {
     return validarTexto(
       nombresInput,
@@ -77,12 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "Selecciona un estado válido.",
       { caseSensitive: false },
     );
-    validarFechaNacimientoRango(
-      fechaNacimientoInput,
-      fechaMinima,
-      fechaMaxima,
-      "La fecha debe corresponder a una persona entre 18 y 100 años.",
-    );
+    validarNormalizarFechaNacimiento(fechaNacimientoInput, 18);
     campos.forEach((campo) => actualizarEstadoCampo(campo));
     return form.checkValidity();
   }
@@ -104,12 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     validarOpcionSeleccion(estadoUsuarioInput, USUARIO_ESTADOS_VALIDOS, "Selecciona un estado válido.", { caseSensitive: false }),
   );
   registrarValidacionCampo(fechaNacimientoInput, () =>
-    validarFechaNacimientoRango(
-      fechaNacimientoInput,
-      fechaMinima,
-      fechaMaxima,
-      "La fecha debe corresponder a una persona entre 18 y 100 años.",
-    ),
+    validarNormalizarFechaNacimiento(fechaNacimientoInput, 18),
   );
 
   form.addEventListener(

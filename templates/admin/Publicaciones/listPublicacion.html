@@ -10,9 +10,9 @@
     <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-newspaper me-2"></i>Publicaciones</h1>
     <p class="text-muted mb-0">Gestiona las publicaciones del sistema.</p>
   </div>
-  <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-success">
+  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearPublicacion">
     <i class="bi bi-plus-circle me-1"></i> Nueva Publicación
-  </a>
+  </button>
 </div>
 
 {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
@@ -68,9 +68,16 @@
           </td>
           <td>{{ pub.fecha_creacion|date:"d/m/Y" }}</td>
           <td class="text-center">
-            <a href="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-publicacion"
+                    title="Editar"
+                    data-id="{{ pub.id }}"
+                    data-titulo="{{ pub.titulo|default:'' }}"
+                    data-contenido="{{ pub.contenido|default:'' }}"
+                    data-categoria_id="{{ pub.categoria.id|default:'' }}"
+                    data-estado="{{ pub.estado|default:'ACTIVO' }}"
+                    data-action="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}">
               <i class="bi bi-pencil"></i>
-            </a>
+            </button>
           </td>
         </tr>
         {% empty %}
@@ -84,6 +91,141 @@
 
 {% endblock %}
 
+{% block extra_modals %}
+
+<!-- ===== MODAL CREAR PUBLICACIÓN ===== -->
+<div class="modal fade" id="modalCrearPublicacion" tabindex="-1" aria-labelledby="labelCrearPublicacion" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelCrearPublicacion"><i class="bi bi-plus-circle me-2"></i>Nueva Publicación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{% url 'panel_admin:crear_publicacion_admin' %}" novalidate id="formCrearPublicacion" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="cp_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="cp_titulo" type="text" name="titulo" class="form-control" required maxlength="255" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Título de la publicación">
+              <div class="invalid-feedback">Debe contener al menos una letra (máx. 255 caracteres).</div>
+            </div>
+            <div class="col-12">
+              <label for="cp_contenido" class="form-label fw-semibold">Contenido <small class="text-muted fw-normal">(opcional)</small></label>
+              <textarea id="cp_contenido" name="contenido" class="form-control" rows="5" data-letters-required placeholder="Escribe el contenido..."></textarea>
+              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cp_categoria" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="cp_categoria" name="categoria_id" class="form-select">
+                <option value="">Sin categoría</option>
+                {% for cat in categorias %}
+                  <option value="{{ cat.id }}">{{ cat.nombre }} ({{ cat.get_tipo_display }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <hr class="my-1">
+              <p class="fw-semibold text-muted mb-0"><i class="bi bi-images me-1"></i>Contenido multimedia <span class="fw-normal">(opcional)</span></p>
+              <small class="text-muted">Puedes subir imágenes o un video.</small>
+            </div>
+            <div class="col-md-6">
+              <label for="cp_imagenes" class="form-label fw-semibold">Imágenes <small class="text-muted fw-normal">(opcional)</small></label>
+              <input type="file" name="imagenes" id="cp_imagenes" class="form-control" accept="image/*" multiple>
+              <div class="form-text">Formatos: JPG, PNG, WEBP. Máximo 6 MB por imagen.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cp_video" class="form-label fw-semibold">Video <small class="text-muted fw-normal">(opcional)</small></label>
+              <input id="cp_video" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
+              <div class="form-text">Formatos: MP4, WEBM, OGG.</div>
+            </div>
+            <div class="col-md-6" id="cp_thumbnail_wrapper" style="display:none;">
+              <label for="cp_thumbnail" class="form-label fw-semibold">Miniatura del video <small class="text-muted fw-normal">(opcional)</small></label>
+              <input id="cp_thumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/*">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Crear Publicación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR PUBLICACIÓN ===== -->
+<div class="modal fade" id="modalEditarPublicacion" tabindex="-1" aria-labelledby="labelEditarPublicacion" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelEditarPublicacion"><i class="bi bi-pencil me-2"></i>Editar Publicación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" novalidate id="formEditarPublicacion">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="ep_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="ep_titulo" type="text" name="titulo" class="form-control" required maxlength="200" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+              <div class="invalid-feedback">Debe contener al menos una letra (máx. 200 caracteres).</div>
+            </div>
+            <div class="col-md-6">
+              <label for="ep_categoria" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="ep_categoria" name="categoria_id" class="form-select">
+                <option value="">Sin categoría</option>
+                {% for cat in categorias %}
+                  <option value="{{ cat.id }}">{{ cat.tipo }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="ep_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="ep_estado" name="estado" class="form-select">
+                {% for val, label in estados %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label for="ep_contenido" class="form-label fw-semibold">Contenido <small class="text-muted fw-normal">(opcional)</small></label>
+              <textarea id="ep_contenido" name="contenido" class="form-control" rows="6" data-letters-required></textarea>
+              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
 {% block extra_scripts %}
+<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+(function() {
+  var videoInput = document.getElementById('cp_video');
+  if (videoInput) {
+    videoInput.addEventListener('change', function() {
+      var wrapper = document.getElementById('cp_thumbnail_wrapper');
+      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? 'block' : 'none';
+    });
+  }
+
+  initModalFormAjax('formCrearPublicacion', '{% url "panel_admin:listar_publicaciones_admin" %}');
+  initModalFormAjax('formEditarPublicacion', window.location.href);
+
+  setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
+    titulo: 'ep_titulo', contenido: 'ep_contenido',
+    categoria_id: 'ep_categoria', estado: 'ep_estado'
+  });
+})();
+</script>
 {% include "admin/_messages_swal.html" %}
 {% endblock %}

@@ -24,15 +24,15 @@
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="createUserNombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
-            <input id="createUserNombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30"
-                   value="{{ form_data.nombres|default:'' }}" placeholder="Nombres">
-            <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres para los nombres.</div>
+            <input id="createUserNombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                   value="{{ form_data.nombres|default:'' }}" placeholder="Nombres" autocomplete="given-name">
+            <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras, espacios, guiones o apóstrofes.</div>
           </div>
           <div class="col-md-6">
             <label for="createUserApellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
-            <input id="createUserApellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40"
-                   value="{{ form_data.apellidos|default:'' }}" placeholder="Apellidos">
-            <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres para los apellidos.</div>
+            <input id="createUserApellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                   value="{{ form_data.apellidos|default:'' }}" placeholder="Apellidos" autocomplete="family-name">
+            <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras, espacios, guiones o apóstrofes.</div>
           </div>
         </div>
 
@@ -95,9 +95,9 @@
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="createUserFechaNacimiento" class="form-label fw-semibold">Fecha de Nacimiento</label>
-            <input id="createUserFechaNacimiento" type="date" name="fechaNacimiento" class="form-control"
+            <input id="createUserFechaNacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA"
                    value="{{ form_data.fechaNacimiento|default:'' }}">
-            <div class="invalid-feedback">Debes ser menor de edad para registrarte con esta fecha.</div>
+             <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 a\u00f1os.</div>
           </div>
           <div class="col-md-6">
             <label for="createUserTipoUsuario" class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span></label>

@@ -1,5 +1,6 @@
 # apps/panel_admin/service.py
 import datetime
+import re as _regex
 from decimal import Decimal as decimal
 
 from django.db import transaction
@@ -21,6 +22,7 @@ from django.utils import timezone
 ESTADO_INVALIDO_MSG = "Estado invalido."
 NOMBRE_OBLIGATORIO_MSG = "El nombre es obligatorio."
 NOMBRE_MAX_30_MSG = "El nombre no puede superar 30 caracteres."
+NOMBRE_MIN_3_MSG = "El nombre debe tener al menos 3 caracteres."
 DESCRIPCION_MAX_500_MSG = "La descripcion no puede superar 500 caracteres."
 PUBLICACIONES_NO_HABILITADAS_MSG = (
     "El modulo de publicaciones no esta habilitado en la configuracion actual."
@@ -59,6 +61,26 @@ def _aplanar_error(excepcion):
     if messages:
         return ". ".join(str(m).strip().rstrip(".") for m in messages) + "."
     return str(excepcion).strip()
+
+
+def _errores_a_dict(excepcion):
+    """Convierte un ValidationError en un dict {campo: mensaje} para respuestas AJAX."""
+    message_dict = getattr(excepcion, "message_dict", None)
+    if message_dict:
+        result = {}
+        for campo, errs in message_dict.items():
+            for err in errs:
+                err_texto = str(err).strip().rstrip(".")
+                if campo == "__all__":
+                    result["_general"] = err_texto
+                else:
+                    result[campo] = err_texto
+        return result
+    messages = getattr(excepcion, "messages", None)
+    if messages:
+        return {"_general": ". ".join(str(m).strip().rstrip(".") for m in messages)}
+    return {"_general": str(excepcion).strip()}
+
 
 def _obtener_localidad(valor_localidad):
     if not valor_localidad:
@@ -155,20 +177,31 @@ class AdminCatalogService:
 
     @staticmethod
     def _validar_campos_catalogo(data):
-        """Valida nombre, descripcion y estado para crear entidades de catalogo."""
+        """Valida nombre, descripcion y estado para crear entidades de catalogo.
+        Returns: (campos, error_dict) where error_dict includes "errors" with field-level messages.
+        """
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip() or None
         estado = (data.get("estado") or "").strip().upper()
         estados_validos = {value for value, _ in cons.Estado.choices}
 
+        errores = {}
         if not nombre:
-            return None, {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
-        if len(nombre) > 30:
-            return None, {"ok": False, "message": NOMBRE_MAX_30_MSG}
+            errores["nombre"] = NOMBRE_OBLIGATORIO_MSG
+        elif len(nombre) < 3:
+            errores["nombre"] = NOMBRE_MIN_3_MSG
+        elif len(nombre) > 30:
+            errores["nombre"] = NOMBRE_MAX_30_MSG
+
+        if not errores.get("nombre") and not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
+            errores["nombre"] = "El nombre debe contener al menos una letra."
         if descripcion and len(descripcion) > 500:
-            return None, {"ok": False, "message": DESCRIPCION_MAX_500_MSG}
+            errores["descripcion"] = DESCRIPCION_MAX_500_MSG
         if estado not in estados_validos:
-            return None, {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            errores["estado"] = ESTADO_INVALIDO_MSG
+
+        if errores:
+            return None, {"ok": False, "message": next(iter(errores.values())), "errors": errores}
 
         return {"nombre": nombre, "descripcion": descripcion, "estado": estado}, None
 
@@ -207,6 +240,8 @@ class AdminCatalogService:
         campos, error = AdminCatalogService._validar_campos_catalogo(data)
         if error:
             return error
+        if TipoMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
+            return {"ok": False, "errors": {"nombre": "Ya existe un tipo con ese nombre."}, "message": "Ya existe un tipo con ese nombre."}
         try:
             obj = TipoMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
             obj.full_clean()
@@ -221,6 +256,8 @@ class AdminCatalogService:
         campos, error = AdminCatalogService._validar_campos_catalogo(data)
         if error:
             return error
+        if CategoriaMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
+            return {"ok": False, "errors": {"nombre": "Ya existe una categoría con ese nombre."}, "message": "Ya existe una categoría con ese nombre."}
         try:
             obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
             obj.full_clean()
@@ -238,37 +275,44 @@ class AdminCatalogService:
         categoria_id = data.get("categoria_id")
         tipo_id = data.get("tipo_id")
 
+        errores = {}
         estados_validos = {value for value, _ in cons.Estado.choices}
+
         if not nombre:
-            return {"ok": False, "message": NOMBRE_OBLIGATORIO_MSG}
-        if len(nombre) > 30:
-            return {"ok": False, "message": NOMBRE_MAX_30_MSG}
+            errores["nombre"] = NOMBRE_OBLIGATORIO_MSG
+        elif len(nombre) > 30:
+            errores["nombre"] = NOMBRE_MAX_30_MSG
+
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            errores["estado"] = ESTADO_INVALIDO_MSG
 
         categoria = None
         if categoria_id:
             categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
             if not categoria:
-                return {"ok": False, "message": "Categoría de material inválida."}
+                errores["categoria_id"] = "Categoría de material inválida."
 
         tipo = None
         if tipo_id:
             tipo = TipoMaterial.objects.filter(id=tipo_id).first()
             if not tipo:
-                return {"ok": False, "message": "Tipo de material inválido."}
+                errores["tipo_id"] = "Tipo de material inválido."
+
+        if errores:
+            msg = next(iter(errores.values()))
+            return {"ok": False, "message": msg, "errors": errores}
 
         try:
             obj = Material(nombre=nombre, descripcion=descripcion, estado=estado,
                            categoria=categoria, tipo=tipo)
-            # Si se sube una imagen, Django se encarga de guardarla automáticamente
             if files and "imagen" in files:
                 obj.imagen = files["imagen"]
             obj.full_clean()
             obj.save()
             return {"ok": True, "message": "Material creado correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
+            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}",
+                    "errors": {"_general": f"No se pudo guardar: {_aplanar_error(e)}"}}
 
     @staticmethod
     @transaction.atomic
@@ -291,31 +335,34 @@ class AdminCatalogService:
         if tipo == "__otro__":
             tipo = tipo_otro
 
+        errores = {}
         if not tipo:
-            return {"ok": False, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
-        if len(tipo) > 30:
-            return {"ok": False, "message": TIPO_MAX_30_MSG}
+            errores["tipo"] = "Debe seleccionar un tipo o escribir uno nuevo."
+        elif len(tipo) > 30:
+            errores["tipo"] = TIPO_MAX_30_MSG
+
+        if errores:
+            return {"ok": False, "errors": errores, "message": next(iter(errores.values()))}
 
         tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         try:
-            # El modelo puede o no incluir nombre/descripcion según la versión actual del proyecto.
             campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
             payload = {"tipo": tipo, "estado": estado}
 
             if "nombre" in campos_modelo:
                 if not nombre:
-                    return {"ok": False, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
+                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}, "message": NOMBRE_CATEGORIA_OBLIGATORIO_MSG}
                 if len(nombre) > 30:
-                    return {"ok": False, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
+                    return {"ok": False, "errors": {"nombre": NOMBRE_CATEGORIA_MAX_30_MSG}, "message": NOMBRE_CATEGORIA_MAX_30_MSG}
                 payload["nombre"] = nombre
 
             if "descripcion" in campos_modelo:
                 if len(descripcion) > 500:
-                    return {"ok": False, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
+                    return {"ok": False, "errors": {"descripcion": DESCRIPCION_CATEGORIA_MAX_500_MSG}, "message": DESCRIPCION_CATEGORIA_MAX_500_MSG}
                 payload["descripcion"] = descripcion
 
             obj = CategoriaPublicacion(**payload)
@@ -328,14 +375,14 @@ class AdminCatalogService:
             obj.save()
             return {"ok": True, "message": "Categoria de publicacion creada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
+            return {"ok": False, "errors": {"_general": str(e)}, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
     def actualizar_tipo_material(tipo_id, data):
         tipo = TipoMaterial.objects.filter(id=tipo_id).first()
         if not tipo:
-            return {"ok": False, "message": "Tipo de material no encontrado."}
+            return {"ok": False, "errors": {"_general": "Tipo de material no encontrado."}, "message": "Tipo de material no encontrado."}
 
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip() or None
@@ -343,9 +390,15 @@ class AdminCatalogService:
         estados_validos = {value for value, _ in cons.Estado.choices}
 
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "errors": {"nombre": "El nombre es obligatorio."}, "message": "El nombre es obligatorio."}
+        if len(nombre) < 3:
+            return {"ok": False, "errors": {"nombre": "El nombre debe tener al menos 3 caracteres."}, "message": "El nombre debe tener al menos 3 caracteres."}
+        if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
+            return {"ok": False, "errors": {"nombre": "El nombre debe contener al menos una letra."}, "message": "El nombre debe contener al menos una letra."}
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
+        if TipoMaterial.objects.filter(nombre__iexact=nombre).exclude(id=tipo_id).exists():
+            return {"ok": False, "errors": {"nombre": "Ya existe un tipo con ese nombre."}, "message": "Ya existe un tipo con ese nombre."}
 
         try:
             tipo.nombre = nombre
@@ -355,14 +408,14 @@ class AdminCatalogService:
             tipo.save()
             return {"ok": True, "message": "Tipo de material actualizado correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
     def actualizar_categoria_material(categoria_id, data):
         categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
         if not categoria:
-            return {"ok": False, "message": "Categoria de material no encontrada."}
+            return {"ok": False, "errors": {"_general": "Categoria de material no encontrada."}, "message": "Categoria de material no encontrada."}
 
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip() or None
@@ -370,9 +423,15 @@ class AdminCatalogService:
         estados_validos = {value for value, _ in cons.Estado.choices}
 
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "errors": {"nombre": "El nombre es obligatorio."}, "message": "El nombre es obligatorio."}
+        if len(nombre) < 3:
+            return {"ok": False, "errors": {"nombre": "El nombre debe tener al menos 3 caracteres."}, "message": "El nombre debe tener al menos 3 caracteres."}
+        if not _regex.search(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]', nombre):
+            return {"ok": False, "errors": {"nombre": "El nombre debe contener al menos una letra."}, "message": "El nombre debe contener al menos una letra."}
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
+        if CategoriaMaterial.objects.filter(nombre__iexact=nombre).exclude(id=categoria_id).exists():
+            return {"ok": False, "errors": {"nombre": "Ya existe una categoría con ese nombre."}, "message": "Ya existe una categoría con ese nombre."}
 
         try:
             categoria.nombre = nombre
@@ -382,14 +441,14 @@ class AdminCatalogService:
             categoria.save()
             return {"ok": True, "message": "Categoria de material actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
     def actualizar_material(material_id, data, files=None):
         material = Material.objects.filter(id=material_id).first()
         if not material:
-            return {"ok": False, "message": "Material no encontrado."}
+            return {"ok": False, "errors": {"_general": "Material no encontrado."}, "message": "Material no encontrado."}
 
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip() or None
@@ -398,23 +457,23 @@ class AdminCatalogService:
         tipo_id = data.get("tipo_id")
 
         if not nombre:
-            return {"ok": False, "message": "El nombre es obligatorio."}
+            return {"ok": False, "errors": {"nombre": "El nombre es obligatorio."}, "message": "El nombre es obligatorio."}
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         categoria = None
         if categoria_id:
             categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
             if not categoria:
-                return {"ok": False, "message": "Categoria de material invalida."}
+                return {"ok": False, "errors": {"categoria_id": "Categoria de material invalida."}, "message": "Categoria de material invalida."}
 
         tipo = None
         if tipo_id:
             tipo = TipoMaterial.objects.filter(id=tipo_id).first()
             if not tipo:
-                return {"ok": False, "message": "Tipo de material invalido."}
+                return {"ok": False, "errors": {"tipo_id": "Tipo de material invalido."}, "message": "Tipo de material invalido."}
 
         try:
             material.nombre = nombre
@@ -431,19 +490,19 @@ class AdminCatalogService:
             material.save()
             return {"ok": True, "message": "Material actualizado correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
     def actualizar_punto_eca(punto_id, data):
         punto = PuntoECA.objects.filter(id=punto_id).first()
         if not punto:
-            return {"ok": False, "message": "Punto ECA no encontrado."}
+            return {"ok": False, "errors": {"_general": "Punto ECA no encontrado."}, "message": "Punto ECA no encontrado."}
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         estado = (data.get("estado") or "").strip().upper()
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         try:
             punto.nombre = (data.get("nombre") or "").strip() or punto.nombre
@@ -473,7 +532,9 @@ class AdminCatalogService:
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}
         except (ValidationError, IntegrityError, ValueError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+            if isinstance(e, ValueError):
+                return {"ok": False, "errors": {"_general": str(e)}, "message": f"No se pudo actualizar: {e}"}
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -488,23 +549,23 @@ class AdminCatalogService:
 
         publicacion = Publicacion.objects.filter(id=publicacion_id).first()
         if not publicacion:
-            return {"ok": False, "message": "Publicacion no encontrada."}
+            return {"ok": False, "errors": {"_general": "Publicacion no encontrada."}, "message": "Publicacion no encontrada."}
 
         titulo = (data.get("titulo") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
         categoria_id = data.get("categoria_id")
         if not titulo:
-            return {"ok": False, "message": "El titulo es obligatorio."}
+            return {"ok": False, "errors": {"titulo": "El titulo es obligatorio."}, "message": "El titulo es obligatorio."}
 
         estados_validos = {value for value, _ in cons.Estado.choices}
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         categoria = None
         if categoria_id:
             categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
             if not categoria:
-                return {"ok": False, "message": "Categoria de publicacion invalida."}
+                return {"ok": False, "errors": {"categoria_id": "Categoria de publicacion invalida."}, "message": "Categoria de publicacion invalida."}
 
         contenido = (data.get("contenido") or "").strip()
 
@@ -517,7 +578,7 @@ class AdminCatalogService:
             publicacion.save()
             return {"ok": True, "message": "Publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @transaction.atomic
@@ -532,7 +593,7 @@ class AdminCatalogService:
 
         categoria = CategoriaPublicacion.objects.filter(id=categoria_id).first()
         if not categoria:
-            return {"ok": False, "message": "Categoria de publicacion no encontrada."}
+            return {"ok": False, "errors": {"_general": "Categoria de publicacion no encontrada."}, "message": "Categoria de publicacion no encontrada."}
 
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip()
@@ -544,31 +605,31 @@ class AdminCatalogService:
             tipo = tipo_otro
 
         if not tipo:
-            return {"ok": False, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
+            return {"ok": False, "errors": {"tipo": "Debe seleccionar un tipo o escribir uno nuevo."}, "message": "Debe seleccionar un tipo o escribir uno nuevo."}
         if len(tipo) > 30:
-            return {"ok": False, "message": "El tipo no puede superar 30 caracteres."}
+            return {"ok": False, "errors": {"tipo": "El tipo no puede superar 30 caracteres."}, "message": "El tipo no puede superar 30 caracteres."}
 
         tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
         tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         estados_validos = {value for value, _ in cons.Estado.choices}
         if tipo not in tipos_validos and tipo != tipo_otro:
-            return {"ok": False, "message": "Tipo de categoria invalido."}
+            return {"ok": False, "errors": {"tipo": "Tipo de categoria invalido."}, "message": "Tipo de categoria invalido."}
         if estado not in estados_validos:
-            return {"ok": False, "message": ESTADO_INVALIDO_MSG}
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
 
         try:
             campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
 
             if "nombre" in campos_modelo:
                 if not nombre:
-                    return {"ok": False, "message": "El nombre de la categoría es obligatorio."}
+                    return {"ok": False, "errors": {"nombre": "El nombre de la categoría es obligatorio."}, "message": "El nombre de la categoría es obligatorio."}
                 if len(nombre) > 30:
-                    return {"ok": False, "message": "El nombre no puede exceder 30 caracteres."}
+                    return {"ok": False, "errors": {"nombre": "El nombre no puede exceder 30 caracteres."}, "message": "El nombre no puede exceder 30 caracteres."}
                 categoria.nombre = nombre
 
             if "descripcion" in campos_modelo:
                 if len(descripcion) > 500:
-                    return {"ok": False, "message": "La descripción no puede exceder 500 caracteres."}
+                    return {"ok": False, "errors": {"descripcion": "La descripción no puede exceder 500 caracteres."}, "message": "La descripción no puede exceder 500 caracteres."}
                 categoria.descripcion = descripcion
 
             categoria.tipo = tipo
@@ -580,4 +641,4 @@ class AdminCatalogService:
             categoria.save()
             return {"ok": True, "message": "Categoria de publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}

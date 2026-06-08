@@ -1,14 +1,8 @@
 {% extends "admin/base.html" %}
+{% load static %}
 {% block page_title %}Gestión de Materiales - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
-{% block extra_styles %}
-  <style>
-    .nav-tabs .nav-link { color: #198754; font-weight: 500; }
-    .nav-tabs .nav-link.active { color: #fff; background-color: #198754; border-color: #198754; }
-    .nav-tabs .nav-link:hover:not(.active) { background-color: rgba(25,135,84,.08); }
-  </style>
-{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="materiales" %}{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active=tab|default:"materiales" %}{% endblock %}
 
 {% block content %}
 
@@ -23,60 +17,53 @@
   {% endif %}
 
   <!-- Header -->
-  <div class="mb-4 pb-3 border-bottom">
-    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-box-seam me-2"></i>Gestión de Materiales</h1>
-    <p class="text-muted mb-0">Administra materiales reciclables, sus tipos y categorías desde un solo lugar.</p>
+  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-box-seam me-2"></i>Gestión de Materiales</h1>
+      <p class="text-muted mb-0">Administra materiales reciclables, sus tipos y categorías desde un solo lugar.</p>
+    </div>
+    <div id="btn-group-materiales" class="d-flex flex-wrap gap-2 {% if tab != 'tipos' and tab != 'categorias' %}d-flex{% else %}d-none{% endif %}">
+      <a href="{% url 'panel_admin:exportar_materiales_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_materiales_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearMaterial">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Material
+      </button>
+    </div>
+    <div id="btn-group-tipos" class="d-flex flex-wrap gap-2 {% if tab == 'tipos' %}d-flex{% else %}d-none{% endif %}">
+      <a href="{% url 'panel_admin:exportar_tipos_material_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipo">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
+      </button>
+    </div>
+    <div id="btn-group-categorias" class="d-flex flex-wrap gap-2 {% if tab == 'categorias' %}d-flex{% else %}d-none{% endif %}">
+      <a href="{% url 'panel_admin:exportar_categorias_material_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">
+        <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
+      </button>
+    </div>
   </div>
 
-  <!-- Tabs -->
-  <nav aria-label="Pestañas Materiales">
-  <ul class="nav nav-tabs mb-4" id="materialesTabs">
-    <li class="nav-item">
-      <button class="nav-link {% if tab == 'materiales' or not tab %}active{% endif %}"
-              id="tab-materiales" data-bs-toggle="tab" data-bs-target="#pane-materiales"
-              type="button" role="tab">
-        <i class="bi bi-box-seam me-1"></i> Materiales
-        <span class="badge bg-success ms-1">{{ materiales|length }}</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link {% if tab == 'tipos' %}active{% endif %}"
-              id="tab-tipos" data-bs-toggle="tab" data-bs-target="#pane-tipos"
-              type="button" role="tab">
-        <i class="bi bi-recycle me-1"></i> Tipos de Material
-        <span class="badge bg-success ms-1">{{ tipos|length }}</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link {% if tab == 'categorias' %}active{% endif %}"
-              id="tab-categorias" data-bs-toggle="tab" data-bs-target="#pane-categorias"
-              type="button" role="tab">
-        <i class="bi bi-tags-fill me-1"></i> Categorías de Material
-        <span class="badge bg-success ms-1">{{ categorias|length }}</span>
-      </button>
-    </li>
-  </ul>
-  </nav>
+  {% include "admin/Materiales/tabs_materiales.html" with active_tab=tab|default:"materiales" %}
 
   <div class="tab-content" id="materialesTabsContent">
 
     <!-- ===== TAB MATERIALES ===== -->
     <div class="tab-pane fade {% if tab == 'materiales' or not tab %}show active{% endif %}"
          id="pane-materiales" role="tabpanel">
-
-      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-        <div class="d-flex flex-wrap gap-2">
-          <a href="{% url 'panel_admin:exportar_materiales_excel' %}" class="btn btn-outline-success">
-            <i class="bi bi-file-earmark-excel me-1"></i> Excel
-          </a>
-          <a href="{% url 'panel_admin:exportar_materiales_pdf' %}" class="btn btn-outline-danger">
-            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-          </a>
-        </div>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearMaterial">
-          <i class="bi bi-plus-circle me-1"></i> Nuevo Material
-        </button>
-      </div>
 
       <div class="card border-success mb-3 shadow-sm">
         <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
@@ -125,9 +112,17 @@
                   {% endif %}
                 </td>
                 <td class="text-center">
-                  <a href="{% url 'panel_admin:editar_material_admin' material_id=material.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+                  <button type="button" class="btn btn-outline-primary btn-sm btn-editar-material"
+                          title="Editar"
+                          data-id="{{ material.id }}"
+                          data-nombre="{{ material.nombre|default:'' }}"
+                          data-descripcion="{{ material.descripcion|default:'' }}"
+                          data-categoria_id="{{ material.categoria.id|default:'' }}"
+                          data-tipo_id="{{ material.tipo.id|default:'' }}"
+                          data-estado="{{ material.estado|default:'ACTIVO' }}"
+                          data-action="{% url 'panel_admin:editar_material_admin' material_id=material.id %}">
                     <i class="bi bi-pencil"></i>
-                  </a>
+                  </button>
                 </td>
               </tr>
               {% empty %}
@@ -142,20 +137,6 @@
     <!-- ===== TAB TIPOS ===== -->
     <div class="tab-pane fade {% if tab == 'tipos' %}show active{% endif %}"
          id="pane-tipos" role="tabpanel">
-
-      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-        <div class="d-flex flex-wrap gap-2">
-          <a href="{% url 'panel_admin:exportar_tipos_material_excel' %}" class="btn btn-outline-success">
-            <i class="bi bi-file-earmark-excel me-1"></i> Excel
-          </a>
-          <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}" class="btn btn-outline-danger">
-            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-          </a>
-        </div>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipo">
-          <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
-        </button>
-      </div>
 
       <div class="card border-success mb-3 shadow-sm">
         <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
@@ -200,9 +181,15 @@
                   {% endif %}
                 </td>
                 <td class="text-center">
-                  <a href="{% url 'panel_admin:editar_tipo_material_admin' tipo_id=tipo.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+                  <button type="button" class="btn btn-outline-primary btn-sm btn-editar-tipo"
+                          title="Editar"
+                          data-id="{{ tipo.id }}"
+                          data-nombre="{{ tipo.nombre|default:'' }}"
+                          data-descripcion="{{ tipo.descripcion|default:'' }}"
+                          data-estado="{{ tipo.estado|default:'ACTIVO' }}"
+                          data-action="{% url 'panel_admin:editar_tipo_material_admin' tipo_id=tipo.id %}">
                     <i class="bi bi-pencil"></i>
-                  </a>
+                  </button>
                 </td>
               </tr>
               {% empty %}
@@ -217,20 +204,6 @@
     <!-- ===== TAB CATEGORÍAS ===== -->
     <div class="tab-pane fade {% if tab == 'categorias' %}show active{% endif %}"
          id="pane-categorias" role="tabpanel">
-
-      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-        <div class="d-flex flex-wrap gap-2">
-          <a href="{% url 'panel_admin:exportar_categorias_material_excel' %}" class="btn btn-outline-success">
-            <i class="bi bi-file-earmark-excel me-1"></i> Excel
-          </a>
-          <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}" class="btn btn-outline-danger">
-            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-          </a>
-        </div>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">
-          <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
-        </button>
-      </div>
 
       <div class="card border-success mb-3 shadow-sm">
         <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
@@ -275,9 +248,15 @@
                   {% endif %}
                 </td>
                 <td class="text-center">
-                  <a href="{% url 'panel_admin:editar_categoria_material_admin' categoria_id=cat.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+                  <button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-mat"
+                          title="Editar"
+                          data-id="{{ cat.id }}"
+                          data-nombre="{{ cat.nombre|default:'' }}"
+                          data-descripcion="{{ cat.descripcion|default:'' }}"
+                          data-estado="{{ cat.estado|default:'ACTIVO' }}"
+                          data-action="{% url 'panel_admin:editar_categoria_material_admin' categoria_id=cat.id %}">
                     <i class="bi bi-pencil"></i>
-                  </a>
+                  </button>
                 </td>
               </tr>
               {% empty %}
@@ -308,44 +287,53 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-12">
-              <label for="formCrearMaterial_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-              <input id="formCrearMaterial_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Botella PET, Papel Blanco..." required maxlength="30">
-              <div class="invalid-feedback">El nombre es obligatorio (máx. 30 caracteres).</div>
+              <label for="formCrearMaterial_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="formCrearMaterial_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Botella PET, Papel Blanco, Cartón..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir letras (máx. 30).</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo.</div>
             </div>
             <div class="col-12">
-              <label for="formCrearMaterial_descripcion" class="form-label fw-semibold">Descripción</label>
-              <textarea id="formCrearMaterial_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Características, usos y especificaciones..."></textarea>
+              <label for="formCrearMaterial_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+              <textarea id="formCrearMaterial_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Características, usos y especificaciones del material..."></textarea>
+              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los ciudadanos a identificar el material.</div>
             </div>
             <div class="col-md-6">
-              <label for="formCrearMaterial_categoria_id" class="form-label fw-semibold">Categoría</label>
+              <label for="formCrearMaterial_categoria_id" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(opcional)</small></label>
               <select id="formCrearMaterial_categoria_id" name="categoria_id" class="form-select">
                 <option value="">Sin categoría</option>
                 {% for cat in todas_categorias %}
                 <option value="{{ cat.id }}">{{ cat.nombre }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona una categoría válida o déjala en blanco.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; agrupa el material en una familia (plásticos, metales, papel…).</div>
             </div>
             <div class="col-md-6">
-              <label for="formCrearMaterial_tipo_id" class="form-label fw-semibold">Tipo</label>
+              <label for="formCrearMaterial_tipo_id" class="form-label fw-semibold">Tipo <small class="text-muted fw-normal">(opcional)</small></label>
               <select id="formCrearMaterial_tipo_id" name="tipo_id" class="form-select">
                 <option value="">Sin tipo</option>
                 {% for tipo in todos_tipos %}
                 <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona un tipo válido o déjalo en blanco.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; subclasifica el material dentro de la categoría.</div>
             </div>
             <div class="col-md-6">
-              <label for="formCrearMaterial_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
+              <label for="formCrearMaterial_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
               <select id="formCrearMaterial_estado" name="estado" class="form-select" required>
                 {% for val, label in estados %}
                 <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona un estado válido.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del material (Activo/Inactivo/Suspendido/Bloqueado).</div>
             </div>
             <div class="col-md-6">
-              <label for="formCrearMaterial_imagen" class="form-label fw-semibold">Imagen <span class="text-muted fw-normal small">(opcional)</span></label>
+              <label for="formCrearMaterial_imagen" class="form-label fw-semibold">Imagen <small class="text-muted fw-normal">(opcional)</small></label>
               <input id="formCrearMaterial_imagen" type="file" name="imagen" class="form-control" accept="image/*">
-              <small class="form-text text-muted">JPG, PNG, GIF (máximo 5MB)</small>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; formatos JPG, PNG, GIF, WEBP &middot; máximo 5 MB.</div>
             </div>
           </div>
         </div>
@@ -370,21 +358,26 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-12">
-              <label for="formCrearTipo_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-              <input id="formCrearTipo_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: PET, Cartón corrugado..." required maxlength="30">
-              <div class="invalid-feedback">El nombre es obligatorio (máx. 30 caracteres).</div>
+              <label for="formCrearTipo_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="formCrearTipo_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: PET, Cartón, Aluminio..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de tipos.</div>
             </div>
             <div class="col-12">
-              <label for="formCrearTipo_descripcion" class="form-label fw-semibold">Descripción</label>
-              <textarea id="formCrearTipo_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Descripción del tipo de material..."></textarea>
+              <label for="formCrearTipo_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+              <textarea id="formCrearTipo_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Describe brevemente el tipo de material..."></textarea>
+              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los gestores y ciudadanos a entender el tipo.</div>
             </div>
             <div class="col-12">
-              <label for="formCrearTipo_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
+              <label for="formCrearTipo_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
               <select id="formCrearTipo_estado" name="estado" class="form-select" required>
                 {% for val, label in estados %}
                 <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona un estado válido.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del tipo en el catálogo.</div>
             </div>
           </div>
         </div>
@@ -410,21 +403,26 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-12">
-              <label for="formCrearCategoria_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-              <input id="formCrearCategoria_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Plásticos, Metales, Papel..." required maxlength="30">
-              <div class="invalid-feedback">El nombre es obligatorio (máx. 30 caracteres).</div>
+              <label for="formCrearCategoria_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="formCrearCategoria_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Plásticos, Metales, Papel y Cartón..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de categorías.</div>
             </div>
             <div class="col-12">
-              <label for="formCrearCategoria_descripcion" class="form-label fw-semibold">Descripción</label>
-              <textarea id="formCrearCategoria_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" placeholder="Descripción de la categoría..."></textarea>
+              <label for="formCrearCategoria_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+              <textarea id="formCrearCategoria_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Describe brevemente la categoría..."></textarea>
+              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a clasificar mejor los materiales.</div>
             </div>
             <div class="col-12">
-              <label for="formCrearCategoria_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
+              <label for="formCrearCategoria_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
               <select id="formCrearCategoria_estado" name="estado" class="form-select" required>
                 {% for val, label in estados %}
                 <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona un estado válido.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad de la categoría en el catálogo.</div>
             </div>
           </div>
         </div>
@@ -436,19 +434,184 @@
     </div>
   </div>
 </div>
+
+<!-- ===== MODAL EDITAR MATERIAL ===== -->
+<div class="modal fade" id="modalEditarMaterial" tabindex="-1" aria-labelledby="labelEditarMaterial" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelEditarMaterial"><i class="bi bi-pencil me-2"></i>Editar Material</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" novalidate id="formEditarMaterial" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="em_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <input id="em_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir letras (máx. 30).</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo.</div>
+            </div>
+            <div class="col-12">
+              <label for="em_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+              <textarea id="em_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
+              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los ciudadanos a identificar el material.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="em_categoria" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="em_categoria" name="categoria_id" class="form-select">
+                <option value="">Sin categoría</option>
+                {% for cat in todas_categorias %}
+                <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; agrupa el material en una familia (plásticos, metales, papel…).</div>
+            </div>
+            <div class="col-md-6">
+              <label for="em_tipo" class="form-label fw-semibold">Tipo <small class="text-muted fw-normal">(opcional)</small></label>
+              <select id="em_tipo" name="tipo_id" class="form-select">
+                <option value="">Sin tipo</option>
+                {% for t in todos_tipos %}
+                <option value="{{ t.id }}">{{ t.nombre }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; subclasifica el material dentro de la categoría.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="em_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <select id="em_estado" name="estado" class="form-select" required>
+                {% for val, label in estados %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="invalid-feedback">Selecciona un estado.</div>
+              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del material (Activo/Inactivo/Suspendido/Bloqueado).</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR TIPO ===== -->
+<div class="modal fade" id="modalEditarTipo" tabindex="-1" aria-labelledby="labelEditarTipo" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelEditarTipo"><i class="bi bi-pencil me-2"></i>Editar Tipo de Material</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" novalidate id="formEditarTipo">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="et_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="et_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+            <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
+            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de tipos.</div>
+          </div>
+          <div class="mb-3">
+            <label for="et_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+            <textarea id="et_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
+            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los gestores y ciudadanos a entender el tipo.</div>
+          </div>
+          <div class="mb-3">
+            <label for="et_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <select id="et_estado" name="estado" class="form-select" required>
+              {% for val, label in estados %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Selecciona un estado.</div>
+            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del tipo en el catálogo.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR CATEGORÍA ===== -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-labelledby="labelEditarCategoria" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelEditarCategoria"><i class="bi bi-pencil me-2"></i>Editar Categoría de Material</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" novalidate id="formEditarCategoria">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="ec_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="ec_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+            <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
+            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de categorías.</div>
+          </div>
+          <div class="mb-3">
+            <label for="ec_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+            <textarea id="ec_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
+            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a clasificar mejor los materiales.</div>
+          </div>
+          <div class="mb-3">
+            <label for="ec_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <select id="ec_estado" name="estado" class="form-select" required>
+              {% for val, label in estados %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Selecciona un estado.</div>
+            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad de la categoría en el catálogo.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
     {% endblock %}
 
     {% block extra_scripts %}
+    <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
     <script>
-    // Validación de formularios modales
-    ['formCrearMaterial', 'formCrearTipo', 'formCrearCategoria'].forEach(function(id) {
-      var form = document.getElementById(id);
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-          this.classList.add('was-validated');
-        });
-      }
+    // Create modals — AJAX submission with field-level errors (modal stays open on error)
+    var materialesGestionUrl = '/panel_admin/materiales/gestion/';
+    initModalFormAjax('formCrearMaterial', materialesGestionUrl + '?tab=materiales');
+    initModalFormAjax('formCrearTipo', materialesGestionUrl + '?tab=tipos');
+    initModalFormAjax('formCrearCategoria', materialesGestionUrl + '?tab=categorias');
+
+    // Edit modals — AJAX with field-level errors
+    initModalFormAjax('formEditarMaterial', window.location.href);
+    initModalFormAjax('formEditarTipo', window.location.href);
+    initModalFormAjax('formEditarCategoria', window.location.href);
+
+    setupEditModal('.btn-editar-material', 'modalEditarMaterial', {
+      nombre: 'em_nombre', descripcion: 'em_descripcion',
+      categoria_id: 'em_categoria', tipo_id: 'em_tipo', estado: 'em_estado'
+    });
+
+    setupEditModal('.btn-editar-tipo', 'modalEditarTipo', {
+      nombre: 'et_nombre', descripcion: 'et_descripcion', estado: 'et_estado'
+    });
+
+    setupEditModal('.btn-editar-cat-mat', 'modalEditarCategoria', {
+      nombre: 'ec_nombre', descripcion: 'ec_descripcion', estado: 'ec_estado'
     });
     </script>
     {% endblock %}

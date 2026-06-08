@@ -20,7 +20,7 @@
 
 const MATERIALES_COLOR_CONFIRMAR = "#198754";
 const MATERIALES_COLOR_CANCELAR = "#6c757d";
-const MATERIALES_LIMITE_NOMBRE_MIN = 1;
+const MATERIALES_LIMITE_NOMBRE_MIN = 3;
 const MATERIALES_LIMITE_NOMBRE_MAX = 30;
 const MATERIALES_LIMITE_DESCRIPCION_MAX = 500;
 const MATERIALES_LIMITE_IMAGEN_BYTES = 5 * 1024 * 1024;
@@ -38,9 +38,22 @@ function materialesSuprimirValidacionNativa(formulario) {
   );
 }
 
+function _mensajeMaterialES(campo) {
+  var etiqueta = typeof MARCAR_ERRORES !== 'undefined' && MARCAR_ERRORES[campo.name] ||
+    campo.name.charAt(0).toUpperCase() + campo.name.slice(1);
+  if (campo.validity.valid && !campo.validity.customError) return '';
+  if (campo.validity.valueMissing) return etiqueta + ': es obligatorio.';
+  if (campo.validity.patternMismatch) return etiqueta + ': El formato ingresado no es v\u00e1lido.';
+  if (campo.validity.tooShort) return etiqueta + ': Debe tener al menos ' + campo.minLength + ' caracteres.';
+  if (campo.validity.tooLong) return etiqueta + ': Debe tener m\u00e1ximo ' + campo.maxLength + ' caracteres.';
+  if (campo.validity.customError) return etiqueta + ': ' + campo.validationMessage;
+  if (campo.validity.badInput) return etiqueta + ': El valor ingresado no es v\u00e1lido.';
+  return etiqueta + ': El valor ingresado no es v\u00e1lido.';
+}
+
 function materialesObtenerErroresFormulario(campos) {
   return Array.from(
-    new Set(campos.map((campo) => campo.validationMessage).filter(Boolean)),
+    new Set(campos.map(function (c) { return _mensajeMaterialES(c); }).filter(Boolean)),
   );
 }
 
@@ -61,13 +74,12 @@ function materialesMostrarErroresSwal(errores) {
   if (typeof Swal === "undefined" || !errores || errores.length === 0) {
     return;
   }
-  const html = `<div class="text-start"><ul class="mb-0 ps-3">${errores
-    .map((error) => `<li>${materialesEscaparHtml(error)}</li>`)
-    .join("")}</ul></div>`;
-  Swal.fire({
+  return Swal.fire({
     icon: "error",
     title: "Corrige los campos",
-    html,
+    html: '<div class="text-start">' +
+      errores.map(function (e) { return materialesEscaparHtml(e); }).join(' ') +
+      '</div>',
     confirmButtonColor: MATERIALES_COLOR_CONFIRMAR,
   });
 }
@@ -121,7 +133,7 @@ function materialesSincronizarEstadoCampo(campo) {
   if (!campo) {
     return;
   }
-  campo.setCustomValidity(campo.checkValidity() ? "" : campo.validationMessage);
+  campo.setCustomValidity(campo.checkValidity() ? "" : "invalido");
   materialesActualizarEstadoCampo(campo);
 }
 
@@ -180,9 +192,32 @@ function materialesBindEnvio({ formulario, camposValidacion, confirmar, antesDeE
     }
     if (!formulario.checkValidity()) {
       formulario.classList.add("was-validated");
-      materialesMostrarErroresSwal(
-        materialesObtenerErroresFormulario(camposValidacion),
-      );
+      var errores = [];
+      var invalidFields = [];
+      camposValidacion.forEach(function (c) {
+        if (c && !c.checkValidity()) {
+          var msg = _mensajeMaterialES(c);
+          if (msg) {
+            errores.push(msg);
+            invalidFields.push({ field: c, msg: msg });
+          }
+        }
+      });
+      var prom = materialesMostrarErroresSwal(errores);
+      if (prom && prom.then) {
+        (function (inv) {
+          prom.then(function () {
+            inv.forEach(function (item) {
+              item.field.classList.add("is-invalid");
+              var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
+              if (contenedor) {
+                var fb = contenedor.querySelector('.invalid-feedback');
+                if (fb) fb.textContent = item.msg;
+              }
+            });
+          });
+        })(invalidFields);
+      }
       return;
     }
     formulario.classList.add("was-validated");

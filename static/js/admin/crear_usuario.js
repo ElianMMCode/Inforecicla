@@ -32,10 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
     passwordConfirmInput,
   ].filter(Boolean);
 
-  const fechaMaximaMenorEdad = formatDate(
-    new Date(new Date().getFullYear() - 18, new Date().getMonth(), new Date().getDate() - 1),
-  );
-
   function actualizarEstadoCajaContrasena(cumpleTodo) {
     if (!passwordRequirementsBox) {
       return;
@@ -58,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!campo) {
       return;
     }
-    campo.setCustomValidity(campo.checkValidity() ? "" : campo.validationMessage);
+    campo.setCustomValidity(campo.checkValidity() ? "" : "invalido");
     actualizarEstadoCampo(campo);
   }
 
@@ -85,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
       passwordInput.setCustomValidity(cumpleTodo ? "" : "La contraseña no cumple los requisitos.");
       actualizarEstadoCajaContrasena(cumpleTodo);
     }
-    validarFechaNacimiento(fechaNacimientoInput, fechaMaximaMenorEdad);
+    validarNormalizarFechaNacimiento(fechaNacimientoInput, 18);
     validarCelular(celularInput);
     validarNumeroDocumento(numeroDocumentoInput);
     validarLocalidad(localidadInput, "Selecciona una localidad.");
@@ -133,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (campo === fechaNacimientoInput) {
-        validarFechaNacimiento(fechaNacimientoInput, fechaMaximaMenorEdad);
+        validarNormalizarFechaNacimiento(fechaNacimientoInput, 18);
         return;
       }
       if (campo === celularInput) {

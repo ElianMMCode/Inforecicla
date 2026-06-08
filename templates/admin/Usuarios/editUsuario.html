@@ -121,8 +121,8 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label for="usuario_fechaNacimiento" class="form-label fw-semibold visually-hidden">Fecha de Nacimiento</label>
-              <input id="usuario_fechaNacimiento" type="date" name="fechaNacimiento" class="form-control" value="{{ usuario.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
-              <div class="invalid-feedback">La fecha debe corresponder a una persona entre 18 y 100 años.</div>
+              <input id="usuario_fechaNacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA" value="{{ usuario.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+              <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 a\u00f1os.</div>
             </div>
           </div>
         </div>
@@ -151,4 +151,13 @@
 {% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script src="{% static 'js/admin/editar_usuario.js' %}"></script>
+<script>
+(function() {
+  var inp = document.getElementById('usuario_fechaNacimiento');
+  if (inp && inp.value) {
+    var f = parsearFechaNacimiento(inp.value);
+    if (f && fechaEsValida(f)) inp.value = formatDateDDMMYYYY(f);
+  }
+})();
+</script>
 {% endblock %}

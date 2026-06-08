@@ -26,8 +26,8 @@
 
           <div class="col-12">
             <label for="material_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(obligatorio)</small></label>
-            <input id="material_nombre" type="text" name="nombre" class="form-control" value="{{ material.nombre }}" required maxlength="30">
-            <div class="invalid-feedback">El nombre es obligatorio (máx. 30 caracteres).</div>
+            <input id="material_nombre" type="text" name="nombre" class="form-control" value="{{ material.nombre }}" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+            <div class="invalid-feedback">El nombre debe tener al menos 3 caracteres e incluir letras (máx. 30).</div>
             <div class="form-text">
               <i class="bi bi-info-circle me-1"></i>
               <strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo.

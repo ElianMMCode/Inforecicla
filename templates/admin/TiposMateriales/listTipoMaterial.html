@@ -34,6 +34,8 @@
     </div>
   </div>
 
+  {% include "admin/Materiales/tabs_materiales.html" with active_tab="tipos" %}
+
   <div class="card border-success mb-4 shadow-sm">
     <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
     <div class="card-body">
@@ -76,7 +78,7 @@
               {% endif %}
             </td>
             <td class="text-center">
-              <a href="{% url 'panel_admin:editar_tipo_material_admin' tipo_id=tipo.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+              <a href="{% url 'panel_admin:editar_tipo_material_admin' tipo_id=tipo.id %}" class="btn btn-outline-success btn-sm" title="Editar">
                 <i class="bi bi-pencil"></i>
               </a>
             </td>

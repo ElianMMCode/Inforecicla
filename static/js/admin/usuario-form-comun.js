@@ -8,7 +8,7 @@ const USUARIO_LIMITE_NOMBRES_MAX = 30;
 const USUARIO_LIMITE_APELLIDOS_MIN = 3;
 const USUARIO_LIMITE_APELLIDOS_MAX = 40;
 const USUARIO_LIMITE_PASSWORD_MIN = 8;
-const USUARIO_DOMINIOS_EMAIL_PERMITIDOS = [".com", ".co", ".edu.co", ".com.co"];
+const USUARIO_DOMINIOS_EMAIL_PERMITIDOS = [".com", ".co", ".edu.co", ".com.co", "soy.sena.edu.co", "sena.edu.co"];
 const USUARIO_TIPOS_DOCUMENTO_VALIDOS = new Set(["CC", "TI", "CE", "PA", "NIT"]);
 const USUARIO_TIPOS_USUARIO_VALIDOS = new Set(["ADM", "CIU", "GECA"]);
 const USUARIO_ESTADOS_VALIDOS = new Set(["activo", "inactivo"]);
@@ -35,6 +35,92 @@ function formatDate(date) {
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+}
+
+function formatDateDDMMYYYY(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${day}-${month}-${year}`;
+}
+
+function parsearFechaNacimiento(valor) {
+    if (!valor || String(valor).trim() === '') return null;
+    var limpio = String(valor).trim();
+    var matchDD = limpio.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (matchDD) return new Date(+matchDD[3], +matchDD[2] - 1, +matchDD[1]);
+    var matchISO = limpio.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (matchISO) return new Date(+matchISO[1], +matchISO[2] - 1, +matchISO[3]);
+    return null;
+}
+
+function fechaEsValida(dateObj) {
+    return dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
+}
+
+function normalizarCaracteresFecha(campo) {
+    if (!campo || !campo.value) return;
+    var normalizado = campo.value.replace(/[\/\\\.\s]+/g, '-');
+    if (normalizado !== campo.value) {
+        campo.value = normalizado;
+    }
+}
+
+function normalizarFechaNacimientoInput(campo) {
+    if (!campo || !campo.value) return;
+    normalizarCaracteresFecha(campo);
+    var fecha = parsearFechaNacimiento(campo.value);
+    if (fecha && fechaEsValida(fecha)) {
+        campo.value = formatDate(fecha);
+    }
+}
+
+function validarNormalizarFechaNacimiento(campo, edadMinima) {
+    if (!campo) return true;
+    normalizarCaracteresFecha(campo);
+    var valor = String(campo.value || '').trim();
+    if (!valor) {
+        campo.setCustomValidity('');
+        actualizarEstadoCampo(campo);
+        return true;
+    }
+    var soloDigitosGuiones = /^[\d\-]+$/.test(valor);
+    if (!soloDigitosGuiones) {
+        campo.setCustomValidity('Solo se permiten números y guiones.');
+        actualizarEstadoCampo(campo);
+        return false;
+    }
+    var fecha = parsearFechaNacimiento(valor);
+    if (!fecha || !fechaEsValida(fecha)) {
+        campo.setCustomValidity('Formato de fecha inválido. Usa DD-MM-AAAA o AAAA-MM-DD.');
+        actualizarEstadoCampo(campo);
+        return false;
+    }
+    var hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    if (fecha > hoy) {
+        campo.setCustomValidity('La fecha de nacimiento no puede ser futura.');
+        actualizarEstadoCampo(campo);
+        return false;
+    }
+    var edadMin = edadMinima || 18;
+    var edad = hoy.getFullYear() - fecha.getFullYear();
+    var m = hoy.getMonth() - fecha.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < fecha.getDate())) edad--;
+    if (edad < edadMin) {
+        campo.setCustomValidity('Debes ser mayor de ' + edadMin + ' años.');
+        actualizarEstadoCampo(campo);
+        return false;
+    }
+    if (edad > 100) {
+        campo.setCustomValidity('Edad no válida.');
+        actualizarEstadoCampo(campo);
+        return false;
+    }
+    campo.value = formatDateDDMMYYYY(fecha);
+    campo.setCustomValidity('');
+    actualizarEstadoCampo(campo);
+    return true;
 }
 
 function actualizarEstadoCampo(campo) {
@@ -64,12 +150,12 @@ function mostrarErroresSwal(errores) {
     if (typeof Swal === "undefined" || !errores || errores.length === 0) {
         return;
     }
-    Swal.fire({
+    return Swal.fire({
         icon: "error",
         title: "Corrige los campos",
-        html: `<div class="text-start"><ul class="mb-0 ps-3">${errores
-            .map((error) => `<li>${escaparHtml(error)}</li>`)
-            .join("")}</ul></div>`,
+        html: '<div class="text-start">' +
+            errores.map(function (e) { return escaparHtml(e); }).join(' ') +
+            '</div>',
         confirmButtonColor: USUARIO_COLOR_CONFIRMAR,
     });
 }
@@ -210,8 +296,48 @@ function validarTexto(campo, minimo, maximo, patron, mensajeMinimo, mensajeMaxim
     return true;
 }
 
+function _mensajeValidacionES(campo) {
+    var etiqueta = function () {
+        var mapa = {
+            nombres: 'Nombres',
+            apellidos: 'Apellidos',
+            celular: 'Celular',
+            email: 'Correo electrónico',
+            password: 'Contraseña',
+            passwordConfirm: 'Confirmar contraseña',
+            tipo_documento: 'Tipo de documento',
+            numero_documento: 'Número de documento',
+            ciudad: 'Ciudad',
+            localidad: 'Localidad',
+            tipo_usuario: 'Tipo de usuario',
+            estado_usuario: 'Estado del usuario',
+            fechaNacimiento: 'Fecha de nacimiento',
+            fecha_nacimiento: 'Fecha de nacimiento',
+        };
+        return mapa[campo.name] || campo.name.charAt(0).toUpperCase() + campo.name.slice(1);
+    }();
+    if (campo.validity.valid && !campo.validity.customError) return '';
+    if (campo.validity.valueMissing) return etiqueta + ' es obligatorio.';
+    if (campo.validity.patternMismatch) {
+        if (campo.name === 'nombres' || campo.name === 'apellidos') return etiqueta + ': Solo se permiten letras, espacios, guiones o apóstrofes.';
+        if (campo.name === 'celular') return etiqueta + ': Debe iniciar con 3 y tener exactamente 10 dígitos.';
+        if (campo.name === 'fechaNacimiento' || campo.name === 'fecha_nacimiento') return etiqueta + ': Usa el formato DD-MM-AAAA o AAAA-MM-DD.';
+        return etiqueta + ': El formato ingresado no es válido.';
+    }
+    if (campo.validity.tooShort) return etiqueta + ': Debe tener al menos ' + campo.minLength + ' caracteres.';
+    if (campo.validity.tooLong) return etiqueta + ': Debe tener máximo ' + campo.maxLength + ' caracteres.';
+    if (campo.validity.typeMismatch) return etiqueta + ': El formato no es correcto.';
+    if (campo.validity.rangeUnderflow || campo.validity.rangeOverflow) return etiqueta + ': El valor está fuera del rango permitido.';
+    if (campo.validity.customError) return etiqueta + ': ' + campo.validationMessage;
+    if (campo.validity.badInput) return etiqueta + ': El valor ingresado no es válido.';
+    return etiqueta + ': El valor ingresado no es válido.';
+}
+
 function obtenerErroresFormulario(campos) {
-    return Array.from(new Set(campos.map((campo) => campo.validationMessage).filter(Boolean)));
+    return Array.from(new Set(campos.map(function (campo) {
+        var msg = _mensajeValidacionES(campo);
+        return msg || null;
+    }).filter(Boolean)));
 }
 
 function registrarValidacionCampo(campo, handler) {
@@ -306,7 +432,7 @@ function validarEmail(emailInput) {
     emailInput.setCustomValidity(
         valido
             ? ""
-            : "El correo electrónico debe tener un @, sin espacios, y terminar en .com, .co, .edu.co o .com.co.",
+            : "El correo electrónico debe tener un solo @, sin espacios, sin puntos consecutivos, y terminar en .com, .co, .edu.co, com.co, soy.sena.edu.co o sena.edu.co.",
     );
     actualizarEstadoCampo(emailInput);
     return valido;
@@ -406,7 +532,14 @@ function bindSubmitUsuario({ formulario, camposValidacion, confirmar, antesDeEnv
         }
         if (!formulario.checkValidity()) {
             formulario.classList.add("was-validated");
-            mostrarErroresSwal(obtenerErroresFormulario(camposValidacion));
+            var promesa = mostrarErroresSwal(obtenerErroresFormulario(camposValidacion));
+            if (promesa && promesa.then) {
+                promesa.then(function () {
+                    camposValidacion.forEach(function (c) {
+                        if (c && !c.checkValidity()) c.classList.add("is-invalid");
+                    });
+                });
+            }
             return;
         }
         formulario.classList.add("was-validated");

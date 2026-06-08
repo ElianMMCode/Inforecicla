@@ -36,7 +36,7 @@
   </div>
   {% endif %}
 
-  <form method="post" id="ecaForm">
+  <form method="post" id="ecaForm" class="needs-validation" novalidate>
     {% csrf_token %}
 
     <!-- Datos del Punto ECA -->
@@ -47,13 +47,15 @@
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="eca_nombre_punto" class="form-label fw-semibold">Nombre del Punto ECA <span class="text-danger">*</span></label>
-            <input id="eca_nombre_punto" type="text" name="nombre_punto" class="form-control" required
+            <input id="eca_nombre_punto" type="text" name="nombre_punto" class="form-control" required maxlength="100"
                    value="{{ form_data.nombre_punto|default:'' }}" placeholder="Ej: Centro Ambiental San Felipe">
+            <div class="invalid-feedback">El nombre del punto ECA es obligatorio.</div>
           </div>
           <div class="col-md-6">
             <label for="eca_direccion" class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
             <input id="eca_direccion" type="text" name="direccion" class="form-control" required
                    value="{{ form_data.direccion|default:'' }}" placeholder="Calle 10 # 20 - 30">
+            <div class="invalid-feedback">La dirección es obligatoria.</div>
           </div>
         </div>
 
@@ -63,12 +65,13 @@
             <input id="eca_telefono_punto" type="text" name="telefono_punto" class="form-control" required
                    pattern="60[0-9]{8}" maxlength="10"
                    value="{{ form_data.telefono_punto|default:'' }}" placeholder="6012345678">
-            <div class="form-text">Debe comenzar con 60 y tener 10 dígitos.</div>
+            <div class="invalid-feedback">Debe comenzar con 60 y tener 10 dígitos.</div>
           </div>
           <div class="col-md-6">
             <label for="eca_email" class="form-label fw-semibold">Email del Punto ECA <span class="text-danger">*</span></label>
-            <input id="eca_email" type="email" name="email" class="form-control" required
+            <input id="eca_email" type="text" name="email" class="form-control" required
                    value="{{ form_data.email|default:'' }}" placeholder="punto@eca.com">
+            <div class="invalid-feedback">Ingresa un email válido.</div>
           </div>
         </div>
 
@@ -78,6 +81,7 @@
             <input id="eca_celular" type="text" name="celular" class="form-control" required
                    pattern="3[0-9]{9}" maxlength="10"
                    value="{{ form_data.celular|default:'' }}" placeholder="3101234567">
+            <div class="invalid-feedback">Debe iniciar con 3 y tener 10 dígitos.</div>
           </div>
           <div class="col-md-6">
             <label for="eca_horario_atencion" class="form-label fw-semibold">Horario de Atención</label>
@@ -119,7 +123,9 @@
           <div class="col-md-6">
             <label for="eca_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
             <input id="eca_ciudad" type="text" name="ciudad" class="form-control" required
-                   value="{{ form_data.ciudad|default:'Bogotá' }}" placeholder="Bogotá">
+                   value="{{ form_data.ciudad|default:'Bogotá' }}" placeholder="Bogotá"
+                   readonly aria-readonly="true">
+            <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
           </div>
           <div class="col-md-6">
             <label for="eca_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
@@ -132,6 +138,7 @@
                 </option>
               {% endfor %}
             </select>
+            <div class="invalid-feedback">Selecciona una localidad.</div>
           </div>
         </div>
 
@@ -143,11 +150,13 @@
             <label for="latitud" class="form-label fw-semibold">Latitud <span class="text-danger">*</span></label>
             <input type="number" name="latitud" id="latitud" class="form-control" required
                    step="0.0001" value="{{ form_data.latitud|default:'' }}" placeholder="4.7110">
+            <div class="invalid-feedback">La latitud es obligatoria.</div>
           </div>
           <div class="col-md-6">
             <label for="longitud" class="form-label fw-semibold">Longitud <span class="text-danger">*</span></label>
             <input type="number" name="longitud" id="longitud" class="form-control" required
                    step="0.0001" value="{{ form_data.longitud|default:'' }}" placeholder="-74.0721">
+            <div class="invalid-feedback">La longitud es obligatoria.</div>
           </div>
         </div>
 
@@ -162,21 +171,24 @@
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="eca_nombres" class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span></label>
-            <input id="eca_nombres" type="text" name="nombres" class="form-control" required
-                   value="{{ form_data.nombres|default:'' }}" placeholder="Ej: Juan Carlos">
+            <input id="eca_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                   value="{{ form_data.nombres|default:'' }}" placeholder="Ej: Juan Carlos" autocomplete="given-name">
+            <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
           </div>
           <div class="col-md-6">
             <label for="eca_apellidos" class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span></label>
-            <input id="eca_apellidos" type="text" name="apellidos" class="form-control" required
-                   value="{{ form_data.apellidos|default:'' }}" placeholder="Ej: Pérez García">
+            <input id="eca_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                   value="{{ form_data.apellidos|default:'' }}" placeholder="Ej: Pérez García" autocomplete="family-name">
+            <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
           </div>
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="eca_email_gestor" class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span></label>
-            <input id="eca_email_gestor" type="email" name="email_gestor" class="form-control" required
+            <input id="eca_email_gestor" type="text" name="email_gestor" class="form-control" required
                    value="{{ form_data.email_gestor|default:'' }}" placeholder="gestor@mail.com">
+            <div class="invalid-feedback">El email del gestor es obligatorio.</div>
             <div class="form-text">Este correo será el usuario de acceso al sistema.</div>
           </div>
         </div>
@@ -204,13 +216,25 @@
         <div class="row g-3">
           <div class="col-md-6">
             <label for="password" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
-            <input type="password" name="password" id="password" class="form-control" required minlength="8"
-                   placeholder="Mínimo 8 caracteres">
+            <div class="input-group">
+              <input type="password" name="password" id="password" class="form-control" required minlength="8"
+                     placeholder="Mínimo 8 caracteres">
+              <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" data-target="#password" aria-label="Mostrar u ocultar contraseña">
+                <i class="bi bi-eye" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
           </div>
           <div class="col-md-6">
             <label for="passwordConfirm" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
-            <input type="password" name="passwordConfirm" id="passwordConfirm" class="form-control" required minlength="8"
-                   placeholder="Repite la contraseña">
+            <div class="input-group">
+              <input type="password" name="passwordConfirm" id="passwordConfirm" class="form-control" required minlength="8"
+                     placeholder="Repite la contraseña">
+              <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" data-target="#passwordConfirm" aria-label="Mostrar u ocultar confirmación de contraseña">
+                <i class="bi bi-eye" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
           </div>
         </div>
 
@@ -230,8 +254,10 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script>
-  (function loadLeafletAndInit() {
+(function() {
+  function loadLeafletAndInit() {
     var cssHref = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
     var jsSrc = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
 
@@ -274,12 +300,100 @@
       });
     });
 
-    var ecaForm = document.getElementById('ecaForm');
-    if (ecaForm) ecaForm.addEventListener('submit', function(e) {
-      var p = document.getElementById('password') && document.getElementById('password').value;
-      var pc = document.getElementById('passwordConfirm') && document.getElementById('passwordConfirm').value;
-      if (p !== pc) { e.preventDefault(); alert('Las contraseñas no coinciden.'); }
+    function initTogglePassword() {
+      document.querySelectorAll('.toggle-password-button').forEach(function(btn) {
+        if (btn.dataset.togglePasswordBound === '1') return;
+        btn.dataset.togglePasswordBound = '1';
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var targetSelector = btn.dataset.target || btn.querySelector('.toggle-password')?.dataset.target;
+          if (!targetSelector) return;
+          var input = document.querySelector(targetSelector);
+          if (!input) return;
+          var isPassword = input.type === 'password';
+          input.type = isPassword ? 'text' : 'password';
+          var icon = btn.querySelector('.bi');
+          if (icon) { icon.classList.toggle('bi-eye', !isPassword); icon.classList.toggle('bi-eye-slash', isPassword); }
+        });
+      });
+    }
+    initTogglePassword();
+  }
+  loadLeafletAndInit();
+
+  var ecaForm = document.getElementById('ecaForm');
+  if (ecaForm) {
+    ecaForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      var p1 = document.getElementById('password');
+      var p2 = document.getElementById('passwordConfirm');
+      if (p1 && p2 && p1.value !== p2.value) {
+        ecaForm.classList.add('was-validated');
+        mostrarErroresSwal(['Las contraseñas no coinciden.']);
+        return;
+      }
+
+      if (!ecaForm.checkValidity()) {
+        ecaForm.classList.add('was-validated');
+        var errs = [];
+        var invalidFields = [];
+        var campos = ecaForm.querySelectorAll('[required], [pattern]');
+        for (var i = 0; i < campos.length; i++) {
+          if (!campos[i].checkValidity()) {
+            var msg = typeof _mensajeValidacionES === 'function' ? _mensajeValidacionES(campos[i]) : '';
+            if (msg) {
+              errs.push(msg);
+              invalidFields.push({ field: campos[i], msg: msg });
+            }
+          }
+        }
+        var prom = mostrarErroresSwal(errs);
+        if (prom && prom.then) {
+          (function(inv) {
+            prom.then(function () {
+              for (var j = 0; j < inv.length; j++) {
+                var item = inv[j];
+                item.field.classList.add('is-invalid');
+                var contenedor = item.field.closest('.col-12, .col-md-6, .col-md-12, .mb-3');
+                if (contenedor) {
+                  var fb = contenedor.querySelector('.invalid-feedback');
+                  if (fb) fb.textContent = item.msg;
+                }
+              }
+            });
+          })(invalidFields);
+        }
+        return;
+      }
+
+      ecaForm.classList.add('was-validated');
+      Swal.fire({
+        icon: 'question', title: '¿Guardar cambios?', showCancelButton: true,
+        confirmButtonText: 'Sí, guardar', cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#198754', cancelButtonColor: '#6c757d'
+      }).then(function(r) { if (r.isConfirmed) ecaForm.submit(); });
     });
-  })();
+
+    ecaForm.addEventListener('invalid', function(e) { e.preventDefault(); }, true);
+
+    var campos = ecaForm.querySelectorAll('input, select, textarea');
+    for (var i = 0; i < campos.length; i++) {
+      (function(campo) {
+        var eventName = campo.tagName === 'SELECT' ? 'change' : 'input';
+        campo.addEventListener(eventName, function() {
+          campo.classList.toggle('is-valid', campo.checkValidity() && campo.value.trim() !== '');
+          campo.classList.toggle('is-invalid', !campo.checkValidity() && (campo.value.trim() !== '' || campo.required));
+        });
+        campo.addEventListener('blur', function() {
+          campo.classList.toggle('is-valid', campo.checkValidity() && campo.value.trim() !== '');
+          campo.classList.toggle('is-invalid', !campo.checkValidity() && (campo.value.trim() !== '' || campo.required));
+        });
+      })(campos[i]);
+    }
+  }
+})();
 </script>
+{% include "admin/_messages_swal.html" %}
 {% endblock %}
