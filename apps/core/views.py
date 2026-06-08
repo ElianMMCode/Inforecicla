@@ -39,6 +39,11 @@ def error_500(_request):
 
 
 @require_GET
+def terminos(_request):
+    return render(_request, "core/terminos.html")
+
+
+@require_GET
 def favicon(_request):
     favicon_path = Path(settings.BASE_DIR) / "static" / "img" / "logo.png"
     return FileResponse(open(favicon_path, "rb"), content_type="image/png")
