@@ -290,6 +290,23 @@ function _guardarOriginalText(form) {
     return submitBtn;
 }
 
+function _manejarRespuestaGuardado(data, form, modalEl, redirectUrl) {
+    if (data.ok) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Guardado',
+            text: data.message || 'Registro creado correctamente.',
+            confirmButtonColor: '#198754',
+        }).then(() => { globalThis.location.href = redirectUrl; });
+    } else {
+        const { errorList, fieldErrors } = _procesarErrorRespuesta(data);
+        const promesa = mostrarErroresSwal(errorList.length ? errorList : ['Error al guardar.']);
+        if (promesa?.then) {
+            promesa.then(() => _mostrarErrorGuardar(form, modalEl, fieldErrors));
+        }
+    }
+}
+
 function initModalFormAjax(formId, redirectUrl, validarFn) {
     const form = document.getElementById(formId);
     if (!form) return;
@@ -338,22 +355,7 @@ function initModalFormAjax(formId, redirectUrl, validarFn) {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
             })
             .then((response) => response.json())
-            .then((data) => {
-                if (data.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Guardado',
-                        text: data.message || 'Registro creado correctamente.',
-                        confirmButtonColor: '#198754',
-                    }).then(() => { globalThis.location.href = redirectUrl; });
-                } else {
-                    const { errorList, fieldErrors } = _procesarErrorRespuesta(data);
-                    const promesa = mostrarErroresSwal(errorList.length ? errorList : ['Error al guardar.']);
-                    if (promesa?.then) {
-                        promesa.then(() => _mostrarErrorGuardar(form, modalEl, fieldErrors));
-                    }
-                }
-            })
+            .then((data) => _manejarRespuestaGuardado(data, form, modalEl, redirectUrl))
             .catch(() => {
                 Swal.fire({
                     icon: 'error', title: 'Error de conexión',
