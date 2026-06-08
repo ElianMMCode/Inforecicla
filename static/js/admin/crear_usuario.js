@@ -1,3 +1,11 @@
+function sincronizarValidacionCampo(campo) {
+  if (!campo) {
+    return;
+  }
+  campo.setCustomValidity(campo.checkValidity() ? "" : "invalido");
+  actualizarEstadoCampo(campo);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("createUserForm");
   if (!form) {
@@ -48,14 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     passwordRequirementsBox.classList.add("alert-light", "border");
-  }
-
-  function sincronizarValidacionCampo(campo) {
-    if (!campo) {
-      return;
-    }
-    campo.setCustomValidity(campo.checkValidity() ? "" : "invalido");
-    actualizarEstadoCampo(campo);
   }
 
   function ejecutarValidacionesCrearUsuario() {
