@@ -1,16 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
-  var CATEGORIA_IDS = ["createCategoriaMaterialForm", "editCategoriaMaterialForm"];
-  var TIPO_IDS = ["createTipoMaterialForm", "editTipoMaterialForm"];
-  var todos = CATEGORIA_IDS.concat(TIPO_IDS);
-  var form = null;
-  var esCategoria = false;
-  for (var i = 0; i < todos.length; i++) {
-    var f = document.getElementById(todos[i]);
-    if (f) { form = f; esCategoria = CATEGORIA_IDS.indexOf(todos[i]) !== -1; break; }
+  const CATEGORIA_IDS = ["createCategoriaMaterialForm", "editCategoriaMaterialForm"];
+  const TIPO_IDS = ["createTipoMaterialForm", "editTipoMaterialForm"];
+  const todos = CATEGORIA_IDS.concat(TIPO_IDS);
+  let form = null;
+  let esCategoria = false;
+  for (const id of todos) {
+    const f = document.getElementById(id);
+    if (f) { form = f; esCategoria = CATEGORIA_IDS.includes(id); break; }
   }
   if (!form) return;
-  var esCrear = form.id.indexOf("create") === 0;
-  var entidad = esCategoria ? "categoría" : "tipo";
+  const esCrear = form.id.startsWith("create");
+  const entidad = esCategoria ? "categoría" : "tipo";
   materialesInicializarFormulario({
     formularioId: form.id,
     campos: [
