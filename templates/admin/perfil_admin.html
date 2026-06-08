@@ -1,34 +1,10 @@
+{% extends "admin/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Panel de Administración</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
-    <style>
-        .form-control:focus, .form-select:focus {
-            border-color: #198754;
-            box-shadow: 0 0 0 0.2rem rgba(25,135,84,0.15);
-        }
-    </style>
-</head>
-<body class="bg-light">
+{% block page_title %}Mi Perfil - Panel de Administración{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+{% block sidebar %}{% include "admin/partials/sidebar.html" with active="perfil" %}{% endblock %}
 
-{% include "admin/partials/sidebar.html" with active="perfil" %}
-
-<main class="col offset-md-2 p-4">
-
-    {% if messages %}
-    <div class="mb-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-            {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+{% block content %}
 
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
@@ -66,69 +42,69 @@
                     </h5>
                     <div class="row g-3">
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-person-badge me-1 text-success"></i>Nombres
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.nombres }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-person me-1 text-success"></i>Apellidos
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.apellidos }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-envelope me-1 text-success"></i>Correo Electrónico
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.email }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-telephone me-1 text-success"></i>Celular
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.celular|default:"No registrado" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-geo-alt me-1 text-success"></i>Ciudad
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.ciudad|default:"Bogotá" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-map me-1 text-success"></i>Localidad
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.localidad.nombre|default:"No registrada" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-card-text me-1 text-success"></i>Tipo de Documento
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.get_tipo_documento_display }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-hash me-1 text-success"></i>N° Documento
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.numero_documento|default:"No registrado" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-calendar me-1 text-success"></i>Fecha de Nacimiento
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.fecha_nacimiento|date:"d/m/Y"|default:"No registrada" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-calendar-check me-1 text-success"></i>Miembro Desde
-                            </label>
+                            </span>
                             <p class="mb-0 fw-semibold">{{ user.date_joined|date:"d/m/Y" }}</p>
                         </div>
                         <div class="col-md-6 col-lg-4">
-                            <label class="form-label fw-semibold text-muted small text-uppercase">
+                            <span class="form-label fw-semibold text-muted small text-uppercase d-block">
                                 <i class="bi bi-shield me-1 text-danger"></i>Rol
-                            </label>
+                            </span>
                             <p class="mb-0">
                                 <span class="badge bg-danger rounded-pill px-3 py-2">Administrador</span>
                             </p>
@@ -145,44 +121,69 @@
                     <h5 class="fw-bold text-success mb-4">
                         <i class="bi bi-pencil-fill me-2"></i>Editar Información
                     </h5>
-                    <form method="POST" action="{% url 'panel_admin:actualizar_datos_admin' %}" novalidate id="formDatos">
+                    <form method="POST" action="{% url 'panel_admin:actualizar_datos_admin' %}" novalidate id="formDatos" class="needs-validation">
                         {% csrf_token %}
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Nombres</label>
-                                <input type="text" name="nombres" class="form-control"
+                                <label for="datosNombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
+                                <input id="datosNombres" type="text" name="nombres" class="form-control"
                                        value="{{ user.nombres }}"
                                        required minlength="3" maxlength="30"
                                        pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
                                 <div class="invalid-feedback">Mínimo 3 letras, máximo 30, sin números ni símbolos.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Apellidos</label>
-                                <input type="text" name="apellidos" class="form-control"
+                                <label for="datosApellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
+                                <input id="datosApellidos" type="text" name="apellidos" class="form-control"
                                        value="{{ user.apellidos }}"
                                        required minlength="3" maxlength="40"
                                        pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+">
                                 <div class="invalid-feedback">Mínimo 3 letras, máximo 40, sin números ni símbolos.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
-                                <input type="text" name="celular" class="form-control"
+                                <label for="datosEmail" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+                                <input id="datosEmail" type="text" name="email" class="form-control"
+                                       value="{{ user.email }}"
+                                       required maxlength="254" inputmode="email" autocomplete="email">
+                                <div class="invalid-feedback">Debe tener un solo @, sin espacios, sin puntos consecutivos, y terminar en .com, .co, .edu.co, com.co, soy.sena.edu.co o sena.edu.co.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="datosCelular" class="form-label fw-semibold">Celular <span class="text-muted fw-normal">(opcional)</span></label>
+                                <input id="datosCelular" type="text" name="celular" class="form-control"
                                        value="{{ user.celular|default:'' }}"
                                        placeholder="3001234567"
-                                       pattern="3[0-9]{9}" maxlength="10">
+                                       pattern="3[0-9]{9}" maxlength="10"
+                                       data-digits-only="10">
                                 <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Ciudad</label>
-                                <input type="text" name="ciudad" class="form-control"
-                                       value="{{ user.ciudad|default:'Bogotá' }}"
-                                       maxlength="15"
-                                       pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-]+">
-                                <div class="invalid-feedback">Solo letras, máximo 15 caracteres.</div>
+                                <label for="datosTipoDocumento" class="form-label fw-semibold">Tipo de Documento <span class="text-danger">*</span></label>
+                                <select id="datosTipoDocumento" name="tipoDocumento" class="form-select" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for val, label in tipos_documento %}
+                                        <option value="{{ val }}" {% if user.tipo_documento == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">Selecciona un tipo de documento.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Localidad</label>
-                                <select name="localidad" class="form-select">
+                                <label for="datosNumeroDocumento" class="form-label fw-semibold">Número de Documento <span class="text-danger">*</span></label>
+                                <input id="datosNumeroDocumento" type="text" name="numeroDocumento" class="form-control"
+                                       value="{{ user.numero_documento|default:'' }}"
+                                       required minlength="6" maxlength="20" inputmode="numeric"
+                                       placeholder="1234567890">
+                                <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos, sin letras ni caracteres especiales.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="datosCiudad" class="form-label fw-semibold">Ciudad</label>
+                                <input id="datosCiudad" type="text" name="ciudad" class="form-control"
+                                       value="{{ user.ciudad|default:'Bogotá' }}"
+                                       readonly aria-readonly="true">
+                                <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="datosLocalidad" class="form-label fw-semibold">Localidad <span class="text-muted fw-normal">(opcional)</span></label>
+                                <select id="datosLocalidad" name="localidad" class="form-select">
                                     <option value="">Sin localidad</option>
                                     {% for loc in localidades %}
                                         <option value="{{ loc.localidad_id }}"
@@ -193,11 +194,10 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Fecha de Nacimiento <span class="text-muted fw-normal">(opcional)</span></label>
-                                <input type="date" name="fechaNacimiento" class="form-control"
-                                       value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}"
-                                       id="fechaNac">
-                                <div class="invalid-feedback">La fecha no puede ser futura.</div>
+                                <label for="datosFechaNac" class="form-label fw-semibold">Fecha de Nacimiento <span class="text-muted fw-normal">(opcional)</span></label>
+                                <input id="datosFechaNac" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA"
+                                       value="{{ user.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+                                 <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 a\u00f1os.</div>
                             </div>
                             <div class="col-12 mt-2">
                                 <button type="submit" class="btn btn-success px-4">
@@ -210,73 +210,24 @@
             </div>
         </div>
 
-        <!-- Cambiar contraseña -->
+        <!-- Cambiar contraseña (partial canónico con toggle integrado) -->
         <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold text-success mb-4">
-                        <i class="bi bi-shield-lock-fill me-2"></i>Cambiar Contraseña
-                    </h5>
-                    <div class="alert alert-light border-start border-success border-4 py-2 mb-3 small">
-                        <strong>Requisitos:</strong> mínimo 8 caracteres &bull; una mayúscula &bull; una minúscula &bull; un número &bull; un símbolo <code>@$!%*?&</code>
-                    </div>
-                    <form method="POST" action="{% url 'panel_admin:cambiar_contrasena_admin' %}" novalidate id="formPass">
-                        {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Contraseña Actual</label>
-                                <input type="password" name="contrasenaActual" class="form-control"
-                                       required maxlength="128"
-                                       autocomplete="current-password"
-                                       placeholder="Tu contraseña actual">
-                                <div class="invalid-feedback">Ingresa tu contraseña actual.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Nueva Contraseña</label>
-                                <input type="password" name="contrasenaNueva" class="form-control"
-                                       required minlength="8" maxlength="128" id="nuevaPass"
-                                       autocomplete="new-password"
-                                       pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}"
-                                       placeholder="Nueva contraseña">
-                                <div class="invalid-feedback">Debe cumplir los requisitos indicados.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Confirmar Nueva</label>
-                                <input type="password" name="confirmarContrasena" class="form-control"
-                                       required maxlength="128" id="confirmarPass"
-                                       autocomplete="new-password"
-                                       placeholder="Repite la nueva contraseña">
-                                <div class="invalid-feedback">Las contraseñas no coinciden.</div>
-                            </div>
-                            <div class="col-12 mt-2">
-                                <button type="submit" class="btn btn-success px-4">
-                                    <i class="bi bi-lock-fill me-2"></i>Actualizar Contraseña
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+            {% include "partials/password_change_card.html" with form_action="/panel_admin/perfil/cambiar-contrasena/" %}
         </div>
 
     </div>
-</main>
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_scripts %}
 <script>
-document.getElementById('formDatos').addEventListener('submit', function(e) {
-    if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-    this.classList.add('was-validated');
-});
-document.getElementById('formPass').addEventListener('submit', function(e) {
-    var nueva = document.getElementById('nuevaPass').value;
-    var confirmar = document.getElementById('confirmarPass').value;
-    document.getElementById('confirmarPass').setCustomValidity(nueva !== confirmar ? 'Las contraseñas no coinciden.' : '');
-    if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-    this.classList.add('was-validated');
-});
-var fechaInput = document.getElementById('fechaNac');
-if (fechaInput) fechaInput.max = new Date().toISOString().split('T')[0];
+(function() {
+  var inp = document.getElementById('datosFechaNac');
+  if (inp && inp.value) {
+    var f = parsearFechaNacimiento(inp.value);
+    if (f && fechaEsValida(f)) inp.value = formatDateDDMMYYYY(f);
+  }
+})();
 </script>
-</body>
-</html>
+<script type="module" src="{% static 'js/admin/perfil-datos-validacion.js' %}?v=20260607"></script>
+<script type="module" src="{% static 'js/formularios/perfil-cambio-contrasena.js' %}?v=20260607"></script>
+{% endblock %}

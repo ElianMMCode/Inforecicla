@@ -1,0 +1,46 @@
+{% csrf_token %}
+<div class="mb-3">
+  <label for="nombreInput" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+<input id="nombreInput" type="text" name="nombre" class="form-control"{% if mode == 'create' %} placeholder="Ej: Educación Ambiental, Noticias..."{% endif %} value="{{ form_data.nombre }}" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+      <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir letras (máx. 30).</div>
+</div>
+<div class="mb-3">
+  <label for="descripcionInput" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+    <textarea id="descripcionInput" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required{% if mode == 'create' %} placeholder="Describe el propósito de esta categoría..."{% endif %}>{{ form_data.descripcion }}</textarea>
+    <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+</div>
+<div class="mb-3">
+  <label for="tipoSelect" class="form-label fw-semibold">Tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+  <select id="tipoSelect" name="tipo" class="form-select" required>
+    <option value="">Seleccionar tipo...</option>
+    {% for value, label in tipos_publicacion %}
+    <option value="{{ value }}" {% if form_data.tipo == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+    <option value="__otro__" {% if form_data.tipo == '__otro__' %}selected{% endif %}>Otro tipo...</option>
+  </select>
+  <div class="invalid-feedback">Selecciona un tipo.</div>
+</div>
+<div class="mb-3" id="tipoOtroWrapper" style="display: none;">
+  <label for="tipoOtroInput" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+  <input id="tipoOtroInput" type="text" name="tipo_otro" class="form-control" maxlength="30" value="{{ form_data.tipo_otro }}" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
+  <div class="invalid-feedback">El nuevo tipo es obligatorio.</div>
+</div>
+<div class="mb-3">
+  <label for="estadoSelect" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
+  <select id="estadoSelect" name="estado" class="form-select">
+    {% if mode == 'edit' %}
+    {% for val, label in estados %}
+      <option value="{{ val }}" {% if form_data.estado == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+    {% else %}
+    <option value="ACTIVO" {% if form_data.estado == 'ACTIVO' %}selected{% endif %}>Activo</option>
+    <option value="INACTIVO" {% if form_data.estado == 'INACTIVO' %}selected{% endif %}>Inactivo</option>
+    {% endif %}
+  </select>
+</div>
+<div class="d-flex gap-2">
+  <button type="submit" class="btn btn-success">
+    <i class="bi bi-save me-1"></i> {{ submit_text }}
+  </button>
+  <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="btn btn-outline-secondary">Cancelar</a>
+</div>

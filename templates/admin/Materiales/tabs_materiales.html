@@ -1,0 +1,61 @@
+{% load static %}
+
+<style>
+  .admin-section-tabs .nav-link {
+    color: #198754;
+    font-weight: 600;
+  }
+
+  .admin-section-tabs .nav-link.active {
+    color: #fff;
+    background-color: #198754;
+    border-color: #198754;
+  }
+
+  .admin-section-tabs .nav-link:hover:not(.active) {
+    background-color: rgba(25, 135, 84, 0.08);
+  }
+
+  .admin-section-tabs .nav-link .tab-icon {
+    filter: brightness(0);
+  }
+</style>
+
+<ul class="nav nav-tabs mb-4 admin-section-tabs">
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'materiales' or not active_tab %}active{% endif %}"
+       href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales">
+      <img src="{% static 'img/bootstrap-icons-1.13.1/box-seam.svg' %}"
+           alt=""
+           aria-hidden="true"
+           class="me-1 tab-icon"
+           width="16"
+           height="16">
+      Materiales
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'tipos' %}active{% endif %}"
+       href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos">
+      <img src="{% static 'img/bootstrap-icons-1.13.1/recycle.svg' %}"
+           alt=""
+           aria-hidden="true"
+           class="me-1 tab-icon"
+           width="16"
+           height="16">
+      Tipos de materiales
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'categorias' %}active{% endif %}"
+       href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias">
+      <img src="{% static 'img/bootstrap-icons-1.13.1/tags-fill.svg' %}"
+           alt=""
+           aria-hidden="true"
+           class="me-1 tab-icon"
+           width="16"
+           height="16">
+      Categorías de materiales
+    </a>
+  </li>
+</ul>

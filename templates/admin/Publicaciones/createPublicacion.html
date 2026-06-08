@@ -1,224 +1,108 @@
 {% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Nueva Publicación - InfoRecicla Admin{% endblock %}
-{% block body_class %}bg-light{% endblock %}
+{% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
-{% block extra_head %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="" crossorigin="anonymous">
-{% endblock %}
 {% block content %}
 
-<main class="col offset-md-2 p-4">
-  {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+{% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-plus-circle me-2"></i>Nueva Publicación</h1>
+    <p class="text-muted mb-0">Crea una nueva publicación en el sistema.</p>
   </div>
-  {% endif %}
+  <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-success d-none d-sm-block">
+    <i class="bi bi-arrow-left me-1"></i> Volver a la lista
+  </a>
+</div>
 
-  <div class="mb-4 d-flex justify-content-between align-items-center">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-plus-circle me-2"></i>Nueva Publicación</h1>
-      <p class="text-muted mb-0">Crea una nueva publicación en el sistema.</p>
-    </div>
-    <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Volver
-    </a>
-  </div>
+{% if not publicaciones_habilitadas %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está disponible.</div>
+{% else %}
+<div class="card border-success shadow-sm">
+  <div class="card-header bg-success text-white"><i class="bi bi-file-earmark-plus me-1"></i> Formulario de Creación</div>
+  <div class="card-body bg-light p-4">
+    <form method="post" enctype="multipart/form-data" id="createPublicacionForm" class="needs-validation" novalidate>
+      {% csrf_token %}
+      <div class="row g-4">
 
-  {% if not publicaciones_habilitadas %}
-  <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está disponible.</div>
-  {% else %}
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-success text-white"><i class="bi bi-file-earmark-plus me-1"></i> Formulario</div>
-    <div class="card-body p-4">
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="row g-4">
-
-          <!-- Título -->
-          <div class="col-12">
-            <label for="pub_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
-            <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ form_data.titulo|default:'' }}" required maxlength="255">
-          </div>
-
-          <!-- Contenido -->
-          <div class="col-12">
-            <label for="pub_contenido" class="form-label fw-semibold">Contenido</label>
-            <textarea id="pub_contenido" name="contenido" class="form-control" rows="8">{{ form_data.contenido|default:'' }}</textarea>
-          </div>
-
-          <!-- Categoría -->
-          <div class="col-md-6">
-            <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
-            <select id="pub_categoria_id" name="categoria_id" class="form-select">
-              <option value="">Sin categoría</option>
-              {% for cat in categorias %}
-                <option value="{{ cat.id }}" {% if form_data.categoria_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nombre }} ({{ cat.get_tipo_display }})</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Separador multimedia -->
-          <div class="col-12">
-            <hr class="my-1">
-            <p class="fw-semibold text-muted mb-0"><i class="bi bi-images me-1"></i>Contenido multimedia <span class="fw-normal">(opcional)</span></p>
-            <small class="text-muted">Puedes subir imágenes o un video. Si subes un video, las imágenes no se mostrarán.</small>
-          </div>
-
-          <!-- Imágenes -->
-          <div class="col-md-6">
-            <label for="inputImagenes" class="form-label fw-semibold">Imágenes</label>
-            <input type="file" name="imagenes" id="inputImagenes" class="form-control" accept="image/*" multiple aria-describedby="imagenesHelp">
-            <div class="form-text">Formatos: JPG, PNG, WEBP. Puedes seleccionar varias. <strong>Máximo 6 MB por imagen.</strong></div>
-            <div id="alertImagenes" class="alert alert-danger py-2 small mt-2 d-none" role="alert"></div>
-            <div id="previewImagenes" class="d-flex flex-wrap gap-2 mt-2"></div>
-          </div>
-
-          <!-- Video -->
-          <div class="col-md-6">
-            <label for="inputVideo" class="form-label fw-semibold">Video <span class="text-muted fw-normal">(reemplaza las imágenes)</span></label>
-            <input id="inputVideo" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
-            <div class="form-text">Formatos: MP4, WEBM, OGG. Máximo recomendado: 100 MB.</div>
-            <div id="previewVideo" class="mt-2"></div>
-          </div>
-
-          <!-- Miniatura del video -->
-          <div class="col-md-6" id="wrapperThumbnail" style="display:none;">
-            <label for="inputThumbnail" class="form-label fw-semibold">Miniatura del video <span class="text-muted fw-normal">(opcional)</span></label>
-            <input id="inputThumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/*">
-            <div class="form-text">Imagen de portada que se muestra antes de reproducir el video.</div>
-            <div id="previewThumbnail" class="mt-2"></div>
-          </div>
-
-          <!-- Botones -->
-          <div class="col-12 pt-2">
-            <button type="submit" class="btn btn-success me-2">
-              <i class="bi bi-save me-1"></i> Crear Publicación
-            </button>
-            <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-secondary">Cancelar</a>
-          </div>
-
+        <!-- Título -->
+        <div class="col-12">
+          <label for="pub_titulo" class="form-label fw-semibold">Título <span class="text-danger">*</span></label>
+          <input id="pub_titulo" type="text" name="titulo" class="form-control" value="{{ form_data.titulo|default:'' }}" required minlength="3" maxlength="255" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Título de la publicación">
+          <div class="invalid-feedback">El título debe tener al menos 3 caracteres e incluir letras (máx. 255).</div>
         </div>
-      </form>
-    </div>
+
+        <!-- Contenido -->
+        <div class="col-12">
+          <label for="pub_contenido" class="form-label fw-semibold">Contenido</label>
+          <textarea id="pub_contenido" name="contenido" class="form-control" rows="8" placeholder="Escribe el contenido de la publicación...">{{ form_data.contenido|default:'' }}</textarea>
+          <div class="invalid-feedback">Revisa el contenido de la publicación.</div>
+        </div>
+
+        <!-- Categoría -->
+        <div class="col-md-6">
+          <label for="pub_categoria_id" class="form-label fw-semibold">Categoría</label>
+          <select id="pub_categoria_id" name="categoria_id" class="form-select">
+            <option value="">Sin categoría</option>
+            {% for cat in categorias %}
+              <option value="{{ cat.id }}" {% if form_data.categoria_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nombre }} ({{ cat.get_tipo_display }})</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Selecciona una categoría válida o déjala en blanco.</div>
+        </div>
+
+        <!-- Separador multimedia -->
+        <div class="col-12">
+          <hr class="my-1">
+          <p class="fw-semibold text-muted mb-0"><i class="bi bi-images me-1"></i>Contenido multimedia <span class="fw-normal">(opcional)</span></p>
+          <small class="text-muted">Puedes subir imágenes o un video. Si subes un video, las imágenes no se mostrarán.</small>
+        </div>
+
+        <!-- Imágenes -->
+        <div class="col-md-6">
+          <label for="inputImagenes" class="form-label fw-semibold">Imágenes</label>
+          <input type="file" name="imagenes" id="inputImagenes" class="form-control" accept="image/*" multiple aria-describedby="imagenesHelp">
+          <div class="form-text">Formatos: JPG, PNG, WEBP. Puedes seleccionar varias. <strong>Máximo 6 MB por imagen.</strong></div>
+          <div id="alertImagenes" class="alert alert-danger py-2 small mt-2 d-none" role="alert"></div>
+          <div id="previewImagenes" class="d-flex flex-wrap gap-2 mt-2"></div>
+        </div>
+
+        <!-- Video -->
+        <div class="col-md-6">
+          <label for="inputVideo" class="form-label fw-semibold">Video <span class="text-muted fw-normal">(reemplaza las imágenes)</span></label>
+          <input id="inputVideo" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
+          <div class="form-text">Formatos: MP4, WEBM, OGG. Máximo recomendado: 100 MB.</div>
+          <div id="previewVideo" class="mt-2"></div>
+        </div>
+
+        <!-- Miniatura del video -->
+        <div class="col-md-6" id="wrapperThumbnail" style="display:none;">
+          <label for="inputThumbnail" class="form-label fw-semibold">Miniatura del video <span class="text-muted fw-normal">(opcional)</span></label>
+          <input id="inputThumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/*">
+          <div class="form-text">Imagen de portada que se muestra antes de reproducir el video.</div>
+          <div id="previewThumbnail" class="mt-2"></div>
+        </div>
+
+        <!-- Botones -->
+        <div class="col-12 pt-2 d-flex flex-wrap gap-2">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-save me-1"></i> Crear Publicación
+          </button>
+          <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+
+      </div>
+    </form>
   </div>
-  {% endif %}
-    </main>
+</div>
+{% endif %}
 
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-  const LIMITE_MB = 6;
-  const LIMITE_BYTES = LIMITE_MB * 1024 * 1024;
-
-  // Validación de tamaño al seleccionar imágenes
-  document.getElementById('inputImagenes').addEventListener('change', function () {
-    const container = document.getElementById('previewImagenes');
-    const alerta = document.getElementById('alertImagenes');
-    container.innerHTML = '';
-    alerta.classList.add('d-none');
-    alerta.textContent = '';
-
-    const grandes = Array.from(this.files).filter(f => f.size > LIMITE_BYTES);
-    if (grandes.length > 0) {
-      const nombres = grandes.map(f => `"${f.name}"`).join(', ');
-      alerta.textContent = `Las siguientes imágenes superan ${LIMITE_MB} MB y no se pueden subir: ${nombres}.`;
-      alerta.classList.remove('d-none');
-      this.value = '';
-      return;
-    }
-
-    Array.from(this.files).forEach(function (file) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:relative;width:80px;height:80px;';
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #198754;';
-        wrapper.appendChild(img);
-        container.appendChild(wrapper);
-      };
-      reader.readAsDataURL(file);
-    });
-  });
-
-  // Bloqueo en el submit por si el usuario omite el cambio de archivo
-  document.querySelector('form').addEventListener('submit', function (e) {
-    const input = document.getElementById('inputImagenes');
-    const grandes = Array.from(input.files).filter(f => f.size > LIMITE_BYTES);
-    if (grandes.length > 0) {
-      e.preventDefault();
-      const alerta = document.getElementById('alertImagenes');
-      const nombres = grandes.map(f => `"${f.name}"`).join(', ');
-      alerta.textContent = `Las siguientes imágenes superan ${LIMITE_MB} MB y no se pueden subir: ${nombres}.`;
-      alerta.classList.remove('d-none');
-      alerta.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  });
-
-  // Preview video
-  document.getElementById('inputVideo').addEventListener('change', function () {
-    const container = document.getElementById('previewVideo');
-    const thumbnail = document.getElementById('wrapperThumbnail');
-    container.innerHTML = '';
-    if (this.files[0]) {
-      const url = URL.createObjectURL(this.files[0]);
-      const video = document.createElement('video');
-      video.src = url;
-      video.controls = true;
-      video.style.cssText = 'width:100%;max-height:200px;border-radius:8px;border:2px solid #198754;';
-      container.appendChild(video);
-      thumbnail.style.display = '';
-    } else {
-      thumbnail.style.display = 'none';
-    }
-
-    const inputVideo = document.getElementById('inputVideo');
-    if (inputVideo) {
-      inputVideo.addEventListener('change', function () {
-        const container = document.getElementById('previewVideo');
-        const thumbnail = document.getElementById('wrapperThumbnail');
-        if (!container || !thumbnail) return;
-        container.innerHTML = '';
-        if (this.files && this.files[0]) {
-          const url = URL.createObjectURL(this.files[0]);
-          const video = document.createElement('video');
-          video.src = url;
-          video.controls = true;
-          video.style.cssText = 'width:100%;max-height:200px;border-radius:8px;border:2px solid #198754;';
-          container.appendChild(video);
-          thumbnail.style.display = '';
-        } else {
-          thumbnail.style.display = 'none';
-        }
-      });
-    }
-
-    const inputThumbnail = document.getElementById('inputThumbnail');
-    if (inputThumbnail) {
-      inputThumbnail.addEventListener('change', function () {
-        const container = document.getElementById('previewThumbnail');
-        if (!container) return;
-        container.innerHTML = '';
-        if (this.files && this.files[0]) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.cssText = 'height:80px;border-radius:8px;border:2px solid #198754;';
-            container.appendChild(img);
-          };
-          reader.readAsDataURL(this.files[0]);
-        }
-      });
-    }
-  })();
-</script>
+{% include "admin/_messages_swal.html" %}
+<script src="{% static 'js/admin/publicacion-form-comun.js' %}"></script>
+<script src="{% static 'js/admin/publicacion-crear.js' %}"></script>
 {% endblock %}

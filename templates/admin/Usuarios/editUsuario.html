@@ -3,14 +3,14 @@
 {% block page_title %}Editar Usuario - InfoRecicla{% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
 {% block sidebar %}{% include "admin/partials/sidebar.html" with active="usuarios" %}{% endblock %}
+{% block messages %}{% endblock %}
 {% block content %}
-
-<main class="col offset-md-2 p-4">
+<div>
 
   {% if messages %}
     <div class="mb-3">
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
           {{ message }}
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
@@ -49,13 +49,13 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label for="usuario_nombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
-              <input id="usuario_nombres" type="text" name="nombres" class="form-control" value="{{ usuario.nombres|default:'' }}" required minlength="3" maxlength="30">
-              <div class="invalid-feedback">Nombres inválidos.</div>
+              <input id="usuario_nombres" type="text" name="nombres" class="form-control" value="{{ usuario.nombres|default:'' }}" required minlength="3" maxlength="30" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$" autocomplete="given-name" placeholder="Nombres">
+              <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras, espacios, guiones o apóstrofes.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_apellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
-              <input id="usuario_apellidos" type="text" name="apellidos" class="form-control" value="{{ usuario.apellidos|default:'' }}" required minlength="2" maxlength="40">
-              <div class="invalid-feedback">Apellidos inválidos.</div>
+              <input id="usuario_apellidos" type="text" name="apellidos" class="form-control" value="{{ usuario.apellidos|default:'' }}" required minlength="3" maxlength="40" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\-']+$" autocomplete="family-name" placeholder="Apellidos">
+              <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras, espacios, guiones o apóstrofes.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_email" class="form-label fw-semibold">Correo electrónico</label>
@@ -64,13 +64,13 @@
             </div>
             <div class="col-md-6">
               <label for="usuario_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
-              <input id="usuario_celular" type="tel" name="celular" class="form-control" value="{{ usuario.celular|default:'' }}" required pattern="^3\d{9}$">
-              <div class="invalid-feedback">Debe iniciar con 3 y tener 10 dígitos.</div>
+              <input id="usuario_celular" type="tel" name="celular" class="form-control" value="{{ usuario.celular|default:'' }}" required pattern="^3\d{9}$" maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="3001234567">
+              <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
-              <input id="usuario_ciudad" type="text" name="ciudad" class="form-control" value="{{ usuario.ciudad|default:'' }}" required maxlength="15">
-              <div class="invalid-feedback">Ciudad obligatoria.</div>
+              <input id="usuario_ciudad" type="text" name="ciudad" class="form-control" value="{{ usuario.ciudad|default:'Bogotá' }}" readonly aria-readonly="true">
+              <div class="form-text">La ciudad está fija en Bogotá para este sistema y no puede modificarse desde este formulario.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_localidad" class="form-label fw-semibold">Localidad</label>
@@ -80,6 +80,7 @@
                   <option value="{{ localidad.localidad_id }}" {% if usuario.localidad and usuario.localidad.localidad_id == localidad.localidad_id %}selected{% endif %}>{{ localidad.nombre }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona una localidad válida o deja la opción en blanco.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_tipoDocumento" class="form-label fw-semibold">Tipo de documento</label>
@@ -88,10 +89,12 @@
                   <option value="{{ val }}" {% if usuario.tipo_documento == val %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona un tipo de documento válido.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_numeroDocumento" class="form-label fw-semibold">Número de documento</label>
-              <input id="usuario_numeroDocumento" type="text" name="numeroDocumento" class="form-control" value="{{ usuario.numero_documento|default:'' }}">
+              <input id="usuario_numeroDocumento" type="text" name="numeroDocumento" class="form-control" value="{{ usuario.numero_documento|default:'' }}" required minlength="6" maxlength="20" inputmode="numeric" pattern="^\d{6,20}$" autocomplete="off" placeholder="1234567890">
+              <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos, sin letras ni caracteres especiales.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_tipo_usuario" class="form-label fw-semibold">Tipo de usuario</label>
@@ -100,6 +103,7 @@
                   <option value="{{ val }}" {% if usuario.tipo_usuario == val %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
+              <div class="invalid-feedback">Selecciona un tipo de usuario válido.</div>
             </div>
             <div class="col-md-6">
               <label for="usuario_estado_usuario" class="form-label fw-semibold">Estado de la cuenta</label>
@@ -107,6 +111,7 @@
                 <option value="activo" {% if usuario.is_active %}selected{% endif %}>Activo</option>
                 <option value="inactivo" {% if not usuario.is_active %}selected{% endif %}>Inactivo</option>
               </select>
+              <div class="invalid-feedback">Selecciona un estado válido.</div>
             </div>
           </div>
         </div>
@@ -115,7 +120,9 @@
           <h6 class="border-bottom border-success pb-2 text-success fw-bold"><i class="bi bi-calendar me-1"></i> Fecha de Nacimiento</h6>
           <div class="row g-3">
             <div class="col-md-6">
-              <input type="date" name="fechaNacimiento" class="form-control" value="{{ usuario.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+              <label for="usuario_fechaNacimiento" class="form-label fw-semibold visually-hidden">Fecha de Nacimiento</label>
+              <input id="usuario_fechaNacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA" value="{{ usuario.fecha_nacimiento|date:'Y-m-d'|default:'' }}">
+              <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 a\u00f1os.</div>
             </div>
           </div>
         </div>
@@ -136,24 +143,21 @@
     </div>
   </div>
 
-</main>
+</div>
 
 {% endblock %}
 
 {% block extra_scripts %}
+{% include "admin/_messages_swal.html" %}
+<script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
+<script src="{% static 'js/admin/editar_usuario.js' %}"></script>
 <script>
-  (function () {
-    'use strict'
-    var forms = document.querySelectorAll('.needs-validation')
-    Array.prototype.slice.call(forms).forEach(function (form) {
-      form.addEventListener('submit', function (event) {
-        if (!form.checkValidity()) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-        form.classList.add('was-validated')
-      }, false)
-    })
-  })()
+(function() {
+  var inp = document.getElementById('usuario_fechaNacimiento');
+  if (inp && inp.value) {
+    var f = parsearFechaNacimiento(inp.value);
+    if (f && fechaEsValida(f)) inp.value = formatDateDDMMYYYY(f);
+  }
+})();
 </script>
 {% endblock %}

@@ -28,8 +28,13 @@
       <a href="{% url 'panel_admin:exportar_materiales_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
       </a>
+      <a href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales" class="btn btn-success">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Material
+      </a>
     </div>
   </div>
+
+  {% include "admin/Materiales/tabs_materiales.html" with active_tab="materiales" %}
 
     <div class="card border-success mb-4 shadow-sm">
     <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
@@ -78,7 +83,7 @@
               {% endif %}
             </td>
             <td class="text-center">
-              <a href="{% url 'panel_admin:editar_material_admin' material_id=material.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+              <a href="{% url 'panel_admin:editar_material_admin' material_id=material.id %}" class="btn btn-outline-success btn-sm" title="Editar">
                 <i class="bi bi-pencil"></i>
               </a>
             </td>
