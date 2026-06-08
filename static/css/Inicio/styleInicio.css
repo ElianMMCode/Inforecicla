@@ -86,6 +86,9 @@ main {
     padding-bottom: 0%;
 }
 
+.bienvenida div article{
+}
+
 .bienvenida>article>h1{
     font-size: 70px;
     color: black;
@@ -159,6 +162,7 @@ main {
     border-radius: 4%;
     box-shadow: 0 0 10px rgba(238, 234, 234, 0.248);
     transition: transform 0.2s ease;
+    transition: transform 0.2s ease;            
 }
 
 .mapa div.col-6:hover{
@@ -193,6 +197,7 @@ padding: 20px;
 list-style: none;
 padding: 0;
 justify-content: center;
+justify-content: center;           
 }
 
 .footer-nav > li{

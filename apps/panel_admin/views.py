@@ -1509,6 +1509,62 @@ def editar_usuario_admin(request, usuario_id):
             return respuesta
 
     return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, _contexto_usuario_admin(usuario))
+        error = _aplicar_datos_usuario_admin(usuario, request.POST)
+        if error:
+            messages.error(request, error)
+            contexto = {
+                "usuario": usuario,
+                "localidades": Localidad.objects.all().order_by("nombre"),
+                "tipos_documento": cons.TipoDocumento.choices,
+                "tipos_usuario": cons.TipoUsuario.choices,
+            }
+            return render(request, "admin/Usuarios/editUsuario.html", contexto)
+
+        try:
+            usuario.full_clean()
+            usuario.save()
+            messages.success(request, USUARIO_ACTUALIZADO_OK_MSG)
+            return redirect("panel_admin:editar_usuario_admin", usuario_id=usuario.id)
+        except ValidationError as e:
+            mensajes_error = _formatear_error_validacion(e)
+            messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
+        except Exception as e:
+            messages.error(request, f"No se pudo actualizar el usuario: {e}")
+    contexto = {
+        "usuario": usuario,
+        "localidades": Localidad.objects.all().order_by("nombre"),
+        "tipos_documento": cons.TipoDocumento.choices,
+        "tipos_usuario": cons.TipoUsuario.choices,
+    }
+    if request.method != "POST":
+        return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
+
+    error = _aplicar_datos_usuario_admin(usuario, request.POST)
+    if error:
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": [error], "message": error})
+        messages.error(request, error)
+        return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
+
+    try:
+        usuario.full_clean()
+        usuario.save()
+        if is_ajax:
+            return JsonResponse({"ok": True, "message": USUARIO_ACTUALIZADO_OK_MSG})
+        messages.success(request, USUARIO_ACTUALIZADO_OK_MSG)
+        return redirect(ADMIN_LISTAR_USUARIOS_URL)
+    except ValidationError as e:
+        lista_errores = _errores_validacion_lista(e)
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": lista_errores, "message": CORREGIR_CAMPOS_MSG})
+        mensajes_error = " ".join(lista_errores)
+        messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
+    except Exception as e:
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": [str(e)], "message": str(e)})
+        messages.error(request, f"No se pudo actualizar el usuario: {e}")
+
+    return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
 
 
 @login_required(login_url="/login/")
@@ -1842,6 +1898,7 @@ def crear_material_admin(request):
     )
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
