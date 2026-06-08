@@ -597,9 +597,9 @@
     initModalFormAjax('formCrearCategoria', materialesGestionUrl + '?tab=categorias');
 
     // Edit modals — AJAX with field-level errors
-    initModalFormAjax('formEditarMaterial', window.location.href);
-    initModalFormAjax('formEditarTipo', window.location.href);
-    initModalFormAjax('formEditarCategoria', window.location.href);
+    initModalFormAjax('formEditarMaterial', globalThis.location.href);
+    initModalFormAjax('formEditarTipo', globalThis.location.href);
+    initModalFormAjax('formEditarCategoria', globalThis.location.href);
 
     setupEditModal('.btn-editar-material', 'modalEditarMaterial', {
       nombre: 'em_nombre', descripcion: 'em_descripcion',

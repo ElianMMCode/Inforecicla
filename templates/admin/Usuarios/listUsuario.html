@@ -372,7 +372,7 @@
   }
 
   initModalFormAjax('formCrearUsuario', '{% url "panel_admin:listar_usuarios" %}', validarCrearUsuario);
-  initModalFormAjax('formEditarUsuario', window.location.href);
+  initModalFormAjax('formEditarUsuario', globalThis.location.href);
 
   function _initFechaNacimientoModal(id) {
     var inp = document.getElementById(id);

@@ -219,7 +219,7 @@
   }
 
   initModalFormAjax('formCrearPublicacion', '{% url "panel_admin:listar_publicaciones_admin" %}');
-  initModalFormAjax('formEditarPublicacion', window.location.href);
+  initModalFormAjax('formEditarPublicacion', globalThis.location.href);
 
   setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
     titulo: 'ep_titulo', contenido: 'ep_contenido',
