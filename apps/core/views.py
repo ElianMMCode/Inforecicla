@@ -11,11 +11,11 @@ from apps.publicaciones.models import Publicacion
 
 @require_GET
 def inicio(request):
-    User = get_user_model()
+    user_model = get_user_model()
     context = {
         "total_ecas": PuntoECA.objects.count(),
         "total_publicaciones": Publicacion.objects.count(),
-        "total_usuarios": User.objects.filter(is_active=True).count(),
+        "total_usuarios": user_model.objects.filter(is_active=True).count(),
     }
     return render(request, "base/inicio.html", context)
 
