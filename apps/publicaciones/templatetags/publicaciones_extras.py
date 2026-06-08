@@ -34,7 +34,7 @@ def _youtube_embed_url(parsed):
         video_id = qs.get("v", [None])[0]
         if not video_id:
             path = parsed.path.strip("/")
-            if path.startswith("embed/") or path.startswith("v/"):
+            if path.startswith(("embed/", "v/")):
                 video_id = path.split("/")[-1]
     if video_id:
         return f"https://www.youtube.com/embed/{video_id}"
