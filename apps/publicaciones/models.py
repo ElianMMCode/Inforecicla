@@ -153,7 +153,23 @@ class Notificacion(models.Model):
     )
 
     publicacion = models.ForeignKey(
-        Publicacion, on_delete=models.CASCADE, related_name="notificaciones"
+        Publicacion, on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
+    )
+
+    mensaje = models.ForeignKey(
+        "chat.Mensaje", on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
+    )
+
+    inventario = models.ForeignKey(
+        "inventory.Inventario", on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
+    )
+
+    evento_instancia = models.ForeignKey(
+        "scheduling.EventoInstancia", on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
     )
 
     leido = models.BooleanField(default=False)

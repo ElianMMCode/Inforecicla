@@ -2,6 +2,7 @@ import re
 from datetime import date as date_type
 from django.shortcuts import render, redirect
 from django.db import transaction, IntegrityError
+from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST, require_safe
@@ -862,16 +863,15 @@ def perfil_ciudadano(request, tab="datos"):
         .select_related("publicacion")
         .order_by("-fecha_creacion")
     )
+    notificaciones_disponibles = Notificacion.objects.filter(usuario=request.user).filter(
+        Q(publicacion__isnull=True) | Q(publicacion__estado=cons.Estado.ACTIVO)
+    )
     mis_notificaciones = (
-        Notificacion.objects.filter(
-            usuario=request.user, publicacion__estado=cons.Estado.ACTIVO
-        )
-        .select_related("publicacion")
+        notificaciones_disponibles
+        .select_related("publicacion", "mensaje__chat__punto")
         .order_by("-fecha_creacion")[:20]
     )
-    notificaciones_no_leidas = Notificacion.objects.filter(
-        usuario=request.user, leido=False, publicacion__estado=cons.Estado.ACTIVO
-    ).count()
+    notificaciones_no_leidas = notificaciones_disponibles.filter(leido=False).count()
     return render(
         request,
         "users/perfil_ciudadano.html",

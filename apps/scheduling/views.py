@@ -401,7 +401,9 @@ def _build_calendario_context(punto):
     """
     # Materiales disponibles en el punto
     materiales_inventario = list(
-        Inventario.objects.filter(punto_eca=punto).order_by("-fecha_modificacion")
+        Inventario.objects.filter(punto_eca=punto)
+        .select_related("material", "material__tipo")
+        .order_by("-fecha_modificacion")
     )
 
     # Centros de acopio (globales y asociados a este punto)

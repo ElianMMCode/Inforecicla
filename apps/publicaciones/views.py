@@ -99,11 +99,24 @@ def eliminar_comentario(request, comentario_id):
 @login_required
 def abrir_notificacion(request, notificacion_id):
     from .models import Notificacion
+    from config.constants import TipoUsuario
     notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
     if not notificacion.leido:
         notificacion.leido = True
         notificacion.save(update_fields=["leido"])
-    return redirect("publicacion:detalle_publicacion", publicacion_id=notificacion.publicacion_id)
+    if notificacion.publicacion_id:
+        return redirect("publicacion:detalle_publicacion", publicacion_id=notificacion.publicacion_id)
+    if notificacion.mensaje_id:
+        if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
+            return redirect(f"/punto-eca/mensajes/?chat_id={notificacion.mensaje.chat_id}")
+        return redirect(f"/perfil/mensajes/?chat_punto={notificacion.mensaje.chat.punto_id}")
+    if notificacion.inventario_id:
+        return redirect("/punto-eca/inventario/")
+    if notificacion.evento_instancia_id:
+        return redirect("/punto-eca/calendario/")
+    if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
+        return redirect("/punto-eca/")
+    return redirect("perfil_ciudadano")
 
 
 @login_required
@@ -112,6 +125,9 @@ def eliminar_notificacion(request, notificacion_id):
         from .models import Notificacion
         notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
         notificacion.delete()
+    from config.constants import TipoUsuario
+    if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
+        return redirect("/punto-eca/")
     return redirect("perfil_ciudadano")
 
 
