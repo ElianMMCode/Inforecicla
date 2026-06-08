@@ -1509,18 +1509,6 @@ def editar_usuario_admin(request, usuario_id):
             return respuesta
 
     return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, _contexto_usuario_admin(usuario))
-        error = _aplicar_datos_usuario_admin(usuario, request.POST)
-        if error:
-            messages.error(request, error)
-            contexto = {
-                "usuario": usuario,
-                "localidades": Localidad.objects.all().order_by("nombre"),
-                "tipos_documento": cons.TipoDocumento.choices,
-                "tipos_usuario": cons.TipoUsuario.choices,
-            }
-            return render(request, "admin/Usuarios/editUsuario.html", contexto)
-
-    return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, _contexto_usuario_admin(usuario))
 
 
 @login_required(login_url="/login/")
