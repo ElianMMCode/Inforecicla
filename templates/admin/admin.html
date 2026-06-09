@@ -422,9 +422,9 @@
 {% endblock %}
 
 {% block extra_scripts %}
-{{ tendencia_usuarios_json|json_script:"tendencia-usuarios-data" }}
-{{ dist_puntos_eca_json|json_script:"puntos-eca-data" }}
-{{ dist_materiales_json|json_script:"materiales-data" }}
+{{ tendencia_usuarios|json_script:"tendencia-usuarios-data" }}
+{{ dist_puntos_eca|json_script:"puntos-eca-data" }}
+{{ dist_materiales|json_script:"materiales-data" }}
 <script>
 (function() {
     const COLORS = {
