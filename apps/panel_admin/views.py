@@ -1912,6 +1912,43 @@ def crear_material_admin(request):
     )
 
 
+def material_to_dict(m):
+    return {
+        "id": m.id,
+        "nombre": m.nombre,
+        "descripcion": m.descripcion or "",
+        "categoria_nombre": m.categoria.nombre if m.categoria else "-",
+        "categoria_id": str(m.categoria.id) if m.categoria else "",
+        "tipo_nombre": m.tipo.nombre if m.tipo else "-",
+        "tipo_id": str(m.tipo.id) if m.tipo else "",
+        "estado": m.estado,
+        "is_active": m.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_material_admin", kwargs={"material_id": m.id}),
+    }
+
+
+def tipo_material_to_dict(t):
+    return {
+        "id": t.id,
+        "nombre": t.nombre,
+        "descripcion": t.descripcion or "",
+        "estado": t.estado,
+        "is_active": t.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_tipo_material_admin", kwargs={"tipo_id": t.id}),
+    }
+
+
+def categoria_material_to_dict(c):
+    return {
+        "id": c.id,
+        "nombre": c.nombre,
+        "descripcion": c.descripcion or "",
+        "estado": c.estado,
+        "is_active": c.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_categoria_material_admin", kwargs={"categoria_id": c.id}),
+    }
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1921,24 +1958,30 @@ def gestion_materiales(request):
     q_cat = request.GET.get('q_cat', '').strip()
     tab = request.GET.get('tab', 'materiales')
 
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
-    tipos = TipoMaterial.objects.all().order_by("nombre")
-    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    tipos_qs = TipoMaterial.objects.all().order_by("nombre")
+    categorias_qs = CategoriaMaterial.objects.all().order_by("nombre")
+
+    materiales_json = json.dumps([material_to_dict(m) for m in all_materiales], cls=DjangoJSONEncoder)
+    tipos_json = json.dumps([tipo_material_to_dict(t) for t in tipos_qs], cls=DjangoJSONEncoder)
+    categorias_json = json.dumps([categoria_material_to_dict(c) for c in categorias_qs], cls=DjangoJSONEncoder)
 
     if q_mat:
-        materiales = materiales.filter(
-            Q(nombre__icontains=q_mat) | Q(descripcion__icontains=q_mat) |
-            Q(categoria__nombre__icontains=q_mat) | Q(tipo__nombre__icontains=q_mat)
-        )
+        ql = q_mat.lower()
+        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower() + " " + (m.tipo.nombre if m.tipo else "").lower())]
+
     if q_tipo:
-        tipos = tipos.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
+        tipos_qs = tipos_qs.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
     if q_cat:
-        categorias = categorias.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
+        categorias_qs = categorias_qs.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
 
     return render(request, "admin/materiales_gestion.html", {
-        "materiales": materiales,
-        "tipos": tipos,
-        "categorias": categorias,
+        "materiales": all_materiales,
+        "materiales_json": materiales_json,
+        "tipos": tipos_qs,
+        "tipos_json": tipos_json,
+        "categorias": categorias_qs,
+        "categorias_json": categorias_json,
         "q_mat": q_mat, "q_tipo": q_tipo, "q_cat": q_cat,
         "tab": tab,
         "estados": cons.Estado.choices,
