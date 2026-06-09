@@ -21,6 +21,50 @@
 <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
 {% else %}
 
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:180px;width:100%;"><canvas id="chartPubEstado"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-warning me-1"></i>Por Categoría</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:180px;width:100%;"><canvas id="chartPubCategoria"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-star-fill text-primary me-1"></i>Destacadas</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:180px;width:100%;"><canvas id="chartPubDestacadas"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-primary me-1"></i>Tendencia de Publicaciones (30 días)</h6>
+      </div>
+      <div class="card-body py-2">
+        <canvas id="chartPubTendencia" style="max-height:140px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card shadow-sm mb-4 border-0">
   <div class="card-header bg-success-subtle border-0 px-4 py-3">
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
@@ -82,6 +126,10 @@
 {% endif %}
 
 {{ publicaciones_json|json_script:"publicaciones-data" }}
+{{ dist_estado_pub|json_script:"dist-estado-pub-data" }}
+{{ dist_categoria_pub|json_script:"dist-categoria-pub-data" }}
+{{ dist_destacadas|json_script:"dist-destacadas-data" }}
+{{ tendencia_publicaciones|json_script:"tendencia-publicaciones-data" }}
 
 {% endblock %}
 
@@ -250,6 +298,56 @@
 {% block extra_scripts %}
 <script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+(function() {
+  var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
+  var paleta = [C.success, C.warning, C.danger, C.info, C.primary, '#6f42c1', '#fd7e14', '#20c997', '#d63384'];
+  var estPub = JSON.parse(document.getElementById('dist-estado-pub-data').textContent);
+  if (estPub.length) {
+    new Chart(document.getElementById('chartPubEstado'), {
+      type: 'doughnut',
+      data: {
+        labels: estPub.map(function(e){ return e.estado; }),
+        datasets: [{ data: estPub.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estPub.length), borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
+    });
+  }
+  var catPub = JSON.parse(document.getElementById('dist-categoria-pub-data').textContent);
+  if (catPub.length) {
+    new Chart(document.getElementById('chartPubCategoria'), {
+      type: 'doughnut',
+      data: {
+        labels: catPub.map(function(c){ return c.categoria; }),
+        datasets: [{ data: catPub.map(function(c){ return c.count; }), backgroundColor: paleta.slice(0, catPub.length), borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
+    });
+  }
+  var dest = JSON.parse(document.getElementById('dist-destacadas-data').textContent);
+  if (dest.length) {
+    new Chart(document.getElementById('chartPubDestacadas'), {
+      type: 'doughnut',
+      data: {
+        labels: dest.map(function(d){ return d.label; }),
+        datasets: [{ data: dest.map(function(d){ return d.count; }), backgroundColor: [C.primary, C.dark], borderColor: '#fff', borderWidth: 2 }]
+      },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
+    });
+  }
+  var tendPub = JSON.parse(document.getElementById('tendencia-publicaciones-data').textContent);
+  if (tendPub.length) {
+    new Chart(document.getElementById('chartPubTendencia'), {
+      type: 'line',
+      data: {
+        labels: tendPub.map(function(d){ return d.date; }),
+        datasets: [{ label: 'Publicaciones', data: tendPub.map(function(d){ return d.count; }), borderColor: C.success, backgroundColor: 'rgba(25,135,84,0.08)', fill: true, tension: 0.3, pointRadius: 2, pointHoverRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { maxTicksLimit: 8, font: { size: 9 } } } } }
+    });
+  }
+})();
+</script>
 <script>
 (function() {
   function estadoBadge(row) {

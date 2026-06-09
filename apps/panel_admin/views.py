@@ -831,6 +831,10 @@ def listar_usuarios(request):
         "localidades": Localidad.objects.all().order_by("nombre"),
         "tipos_documento": cons.TipoDocumento.choices,
         "tipos_usuario": cons.TipoUsuario.choices,
+        "dist_roles": AdminDashboardService.obtener_distribucion_usuarios_por_rol(),
+        "dist_activos": AdminDashboardService.obtener_distribucion_usuarios_activos(),
+        "dist_usuarios_localidad": AdminDashboardService.obtener_distribucion_usuarios_por_localidad(),
+        "tendencia_usuarios": AdminDashboardService.obtener_tendencia_usuarios(30),
     }
     return render(request, "admin/Usuarios/listUsuario.html", contexto)
 
@@ -1054,6 +1058,10 @@ def listar_publicaciones_admin(request):
             "categorias": categorias,
             "search_query": q,
             "estados": cons.Estado.choices,
+            "dist_estado_pub": AdminDashboardService.obtener_distribucion_publicaciones_por_estado(),
+            "dist_categoria_pub": AdminDashboardService.obtener_distribucion_publicaciones_por_categoria(),
+            "dist_destacadas": AdminDashboardService.obtener_distribucion_publicaciones_destacadas(),
+            "tendencia_publicaciones": AdminDashboardService.obtener_tendencia_publicaciones(30),
         },
     )
 
@@ -1205,6 +1213,8 @@ def listar_puntos_eca_admin(request):
         "localidades": Localidad.objects.all().order_by("nombre"),
         "tipos_documento": cons.TipoDocumento.choices,
         "estados": cons.Estado.choices,
+        "dist_estado_punto": AdminDashboardService.obtener_distribucion_puntos_eca_por_estado(),
+        "dist_gestor_punto": AdminDashboardService.obtener_distribucion_puntos_eca_con_gestor(),
     })
 
 
@@ -1434,6 +1444,9 @@ def listar_categorias_publicacion_admin(request):
             "active_tab": "categorias_publicacion",
             "tipos_publicacion": AdminCatalogService._tipos_publicacion_disponibles(),
             "estados": cons.Estado.choices,
+            "dist_tipo_cat_pub": AdminDashboardService.obtener_distribucion_categorias_publicacion_por_tipo(),
+            "dist_estado_cat_pub": AdminDashboardService.obtener_distribucion_categorias_publicacion_por_estado(),
+            "tendencia_publicaciones": AdminDashboardService.obtener_tendencia_publicaciones(30),
         },
     )
 
@@ -1992,6 +2005,11 @@ def gestion_materiales(request):
         "estados": cons.Estado.choices,
         "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),
         "todos_tipos": TipoMaterial.objects.all().order_by("nombre"),
+        "dist_categoria_mat": AdminDashboardService.obtener_distribucion_materiales(),
+        "dist_tipo_mat": AdminDashboardService.obtener_distribucion_materiales_por_tipo(),
+        "dist_estado_mat": AdminDashboardService.obtener_distribucion_materiales_por_estado(),
+        "dist_estado_cat": AdminDashboardService.obtener_distribucion_categorias_material_por_estado(),
+        "dist_estado_tipo": AdminDashboardService.obtener_distribucion_tipos_material_por_estado(),
     })
 
 
