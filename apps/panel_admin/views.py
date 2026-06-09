@@ -277,14 +277,17 @@ def _validar_campos_crear_usuario_admin(datos, errores):
     _validar_email_crear_usuario_admin(datos["email"], errores)
     if len(datos["celular"]) != 10 or not datos["celular"].startswith("3"):
         errores.append(CELULAR_ERROR)
-    if not datos["tipo_documento"]:
+    es_admin = datos.get("tipo_usuario") == "ADM"
+    if datos["tipo_documento"]:
+        if datos["tipo_documento"] not in {valor for valor, _ in cons.TipoDocumento.choices}:
+            errores.append("El tipo de documento seleccionado no es válido.")
+    elif es_admin:
         errores.append("Debe seleccionar un tipo de documento.")
-    elif datos["tipo_documento"] not in {valor for valor, _ in cons.TipoDocumento.choices}:
-        errores.append("El tipo de documento seleccionado no es válido.")
-    if not datos["numero_documento"]:
+    if datos["numero_documento"]:
+        if not (datos["numero_documento"].isdigit() and 6 <= len(datos["numero_documento"]) <= 20):
+            errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
+    elif es_admin:
         errores.append("Debe ingresar un número de documento.")
-    elif not (datos["numero_documento"].isdigit() and 6 <= len(datos["numero_documento"]) <= 20):
-        errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
     if not datos["ciudad"]:
         errores.append("Debe especificar la ciudad.")
 
