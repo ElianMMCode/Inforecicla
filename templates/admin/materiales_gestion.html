@@ -65,72 +65,45 @@
     <div class="tab-pane fade {% if tab == 'materiales' or not tab %}show active{% endif %}"
          id="pane-materiales" role="tabpanel">
 
-      <div class="card border-success mb-3 shadow-sm">
-        <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+      <div class="card shadow-sm mb-3 border-0">
+        <div class="card-header bg-success-subtle border-0 px-4 py-3">
+          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+        </div>
         <div class="card-body">
-          <form method="get" class="row g-2">
-            <input type="hidden" name="tab" value="materiales">
+          <div class="row g-2" id="materiales-filter-form">
             <div class="col-md-10">
-              <input type="text" name="q_mat" class="form-control" placeholder="Nombre, descripción, categoría o tipo..." value="{{ q_mat }}" aria-label="Buscar materiales">
+              <input type="text" name="q_mat" class="form-control" placeholder="Nombre, descripción, categoría o tipo..." value="{{ q_mat }}" aria-label="Buscar materiales" id="materiales-search-input">
             </div>
             <div class="col-md-2 d-grid">
-              <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+              <button type="button" class="btn btn-success" id="materiales-search-btn"><i class="bi bi-search"></i> Buscar</button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
 
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-table me-1"></i> Listado</span>
-          <span class="badge bg-light text-success">{{ materiales|length }} resultados</span>
+        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+          <span class="badge bg-secondary rounded-pill" id="materiales-count-badge">{{ materiales|length }} registros</span>
         </div>
         <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle">
+          <table class="table table-sm table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Categoría</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-                <th class="text-center">Acciones</th>
+                <th class="fw-bold small">Nombre</th>
+                <th class="fw-bold small">Descripción</th>
+                <th class="fw-bold small">Categoría</th>
+                <th class="fw-bold small">Tipo</th>
+                <th class="fw-bold small">Estado</th>
+                <th class="fw-bold small text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              {% for material in materiales %}
-              <tr>
-                <td><strong>{{ material.nombre }}</strong></td>
-                <td>{{ material.descripcion|truncatechars:40|default:"-" }}</td>
-                <td>{{ material.categoria.nombre|default:"-" }}</td>
-                <td>{{ material.tipo.nombre|default:"-" }}</td>
-                <td>
-                  {% if material.estado == "ACTIVO" %}
-                    <span class="badge bg-success">Activo</span>
-                  {% else %}
-                    <span class="badge bg-secondary">{{ material.estado }}</span>
-                  {% endif %}
-                </td>
-                <td class="text-center">
-                  <button type="button" class="btn btn-outline-primary btn-sm btn-editar-material"
-                          title="Editar"
-                          data-id="{{ material.id }}"
-                          data-nombre="{{ material.nombre|default:'' }}"
-                          data-descripcion="{{ material.descripcion|default:'' }}"
-                          data-categoria_id="{{ material.categoria.id|default:'' }}"
-                          data-tipo_id="{{ material.tipo.id|default:'' }}"
-                          data-estado="{{ material.estado|default:'ACTIVO' }}"
-                          data-action="{% url 'panel_admin:editar_material_admin' material_id=material.id %}">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                </td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron materiales.</td></tr>
-              {% endfor %}
-            </tbody>
+            <tbody class="border-top" id="materiales-tbody"></tbody>
           </table>
         </div>
+        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+          <ul class="pagination pagination-sm mb-0" id="materiales-pager"></ul>
+        </nav>
       </div>
     </div>
 
@@ -138,66 +111,43 @@
     <div class="tab-pane fade {% if tab == 'tipos' %}show active{% endif %}"
          id="pane-tipos" role="tabpanel">
 
-      <div class="card border-success mb-3 shadow-sm">
-        <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+      <div class="card shadow-sm mb-3 border-0">
+        <div class="card-header bg-success-subtle border-0 px-4 py-3">
+          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+        </div>
         <div class="card-body">
-          <form method="get" class="row g-2">
-            <input type="hidden" name="tab" value="tipos">
+          <div class="row g-2" id="tipos-filter-form">
             <div class="col-md-10">
-              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" aria-label="Buscar tipos de material">
+              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" aria-label="Buscar tipos de material" id="tipos-search-input">
             </div>
             <div class="col-md-2 d-grid">
-              <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+              <button type="button" class="btn btn-success" id="tipos-search-btn"><i class="bi bi-search"></i> Buscar</button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
 
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-table me-1"></i> Listado</span>
-          <span class="badge bg-light text-success">{{ tipos|length }} resultados</span>
+        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+          <span class="badge bg-secondary rounded-pill" id="tipos-count-badge">{{ tipos|length }} registros</span>
         </div>
         <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle">
+          <table class="table table-sm table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Estado</th>
-                <th class="text-center">Acciones</th>
+                <th class="fw-bold small">Nombre</th>
+                <th class="fw-bold small">Descripción</th>
+                <th class="fw-bold small">Estado</th>
+                <th class="fw-bold small text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              {% for tipo in tipos %}
-              <tr>
-                <td><strong>{{ tipo.nombre }}</strong></td>
-                <td>{{ tipo.descripcion|truncatechars:60|default:"-" }}</td>
-                <td>
-                  {% if tipo.estado == "ACTIVO" %}
-                    <span class="badge bg-success">Activo</span>
-                  {% else %}
-                    <span class="badge bg-secondary">{{ tipo.estado }}</span>
-                  {% endif %}
-                </td>
-                <td class="text-center">
-                  <button type="button" class="btn btn-outline-primary btn-sm btn-editar-tipo"
-                          title="Editar"
-                          data-id="{{ tipo.id }}"
-                          data-nombre="{{ tipo.nombre|default:'' }}"
-                          data-descripcion="{{ tipo.descripcion|default:'' }}"
-                          data-estado="{{ tipo.estado|default:'ACTIVO' }}"
-                          data-action="{% url 'panel_admin:editar_tipo_material_admin' tipo_id=tipo.id %}">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                </td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="4" class="text-center text-muted py-4">No se encontraron tipos de material.</td></tr>
-              {% endfor %}
-            </tbody>
+            <tbody class="border-top" id="tipos-tbody"></tbody>
           </table>
         </div>
+        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+          <ul class="pagination pagination-sm mb-0" id="tipos-pager"></ul>
+        </nav>
       </div>
     </div>
 
@@ -205,71 +155,51 @@
     <div class="tab-pane fade {% if tab == 'categorias' %}show active{% endif %}"
          id="pane-categorias" role="tabpanel">
 
-      <div class="card border-success mb-3 shadow-sm">
-        <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+      <div class="card shadow-sm mb-3 border-0">
+        <div class="card-header bg-success-subtle border-0 px-4 py-3">
+          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+        </div>
         <div class="card-body">
-          <form method="get" class="row g-2">
-            <input type="hidden" name="tab" value="categorias">
+          <div class="row g-2" id="categorias-filter-form">
             <div class="col-md-10">
-              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" aria-label="Buscar categorías">
+              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" aria-label="Buscar categorías" id="categorias-search-input">
             </div>
             <div class="col-md-2 d-grid">
-              <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+              <button type="button" class="btn btn-success" id="categorias-search-btn"><i class="bi bi-search"></i> Buscar</button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
 
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-table me-1"></i> Listado</span>
-          <span class="badge bg-light text-success">{{ categorias|length }} resultados</span>
+        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+          <span class="badge bg-secondary rounded-pill" id="categorias-count-badge">{{ categorias|length }} registros</span>
         </div>
         <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle">
+          <table class="table table-sm table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Estado</th>
-                <th class="text-center">Acciones</th>
+                <th class="fw-bold small">Nombre</th>
+                <th class="fw-bold small">Descripción</th>
+                <th class="fw-bold small">Estado</th>
+                <th class="fw-bold small text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              {% for cat in categorias %}
-              <tr>
-                <td><strong>{{ cat.nombre }}</strong></td>
-                <td>{{ cat.descripcion|truncatechars:60|default:"-" }}</td>
-                <td>
-                  {% if cat.estado == "ACTIVO" %}
-                    <span class="badge bg-success">Activo</span>
-                  {% else %}
-                    <span class="badge bg-secondary">{{ cat.estado }}</span>
-                  {% endif %}
-                </td>
-                <td class="text-center">
-                  <button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-mat"
-                          title="Editar"
-                          data-id="{{ cat.id }}"
-                          data-nombre="{{ cat.nombre|default:'' }}"
-                          data-descripcion="{{ cat.descripcion|default:'' }}"
-                          data-estado="{{ cat.estado|default:'ACTIVO' }}"
-                          data-action="{% url 'panel_admin:editar_categoria_material_admin' categoria_id=cat.id %}">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                </td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="4" class="text-center text-muted py-4">No se encontraron categorías.</td></tr>
-              {% endfor %}
-            </tbody>
+            <tbody class="border-top" id="categorias-tbody"></tbody>
           </table>
         </div>
+        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+          <ul class="pagination pagination-sm mb-0" id="categorias-pager"></ul>
+        </nav>
       </div>
     </div>
 
   </div><!-- /tab-content -->
-</main>
+
+{{ materiales_json|json_script:"materiales-data" }}
+{{ tipos_json|json_script:"tipos-data" }}
+{{ categorias_json|json_script:"categorias-data" }}
 
 {% endblock %}
 
@@ -588,30 +518,185 @@
     {% endblock %}
 
     {% block extra_scripts %}
+    <script src="{% static 'js/admin/panel-tables.js' %}"></script>
     <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
     <script>
-    // Create modals — AJAX submission with field-level errors (modal stays open on error)
+    function estadoBadge(row) {
+      if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+      return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+    }
+
+    function accionBtnMaterial(row) {
+      return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-material" title="Editar"' +
+        ' data-id="' + row.id + '"' +
+        ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+        ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+        ' data-categoria_id="' + escapeAttr(row.categoria_id) + '"' +
+        ' data-tipo_id="' + escapeAttr(row.tipo_id) + '"' +
+        ' data-estado="' + escapeAttr(row.estado) + '"' +
+        ' data-action="' + escapeAttr(row.action_url) + '">' +
+        '<i class="bi bi-pencil"></i></button>';
+    }
+
+    function accionBtnTipo(row) {
+      return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-tipo" title="Editar"' +
+        ' data-id="' + row.id + '"' +
+        ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+        ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+        ' data-estado="' + escapeAttr(row.estado) + '"' +
+        ' data-action="' + escapeAttr(row.action_url) + '">' +
+        '<i class="bi bi-pencil"></i></button>';
+    }
+
+    function accionBtnCategoria(row) {
+      return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-mat" title="Editar"' +
+        ' data-id="' + row.id + '"' +
+        ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+        ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+        ' data-estado="' + escapeAttr(row.estado) + '"' +
+        ' data-action="' + escapeAttr(row.action_url) + '">' +
+        '<i class="bi bi-pencil"></i></button>';
+    }
+
+    function reinitEditModales() {
+      setupEditModal('.btn-editar-material', 'modalEditarMaterial', {
+        nombre: 'em_nombre', descripcion: 'em_descripcion',
+        categoria_id: 'em_categoria', tipo_id: 'em_tipo', estado: 'em_estado'
+      });
+      setupEditModal('.btn-editar-tipo', 'modalEditarTipo', {
+        nombre: 'et_nombre', descripcion: 'et_descripcion', estado: 'et_estado'
+      });
+      setupEditModal('.btn-editar-cat-mat', 'modalEditarCategoria', {
+        nombre: 'ec_nombre', descripcion: 'ec_descripcion', estado: 'ec_estado'
+      });
+    }
+
+    var tab = '{{ tab|escapejs }}' || 'materiales';
+
+    function initTablaMateriales() {
+      var table = new AdminTable({
+        containerId: 'materiales-tbody',
+        data: readJSONData('materiales-data'),
+        pageSize: 10,
+        countBadgeId: 'materiales-count-badge',
+        pagerId: 'materiales-pager',
+        rowIdPrefix: 'mat-',
+        filterFns: [
+          function(row, q) { return (row.nombre + ' ' + row.descripcion + ' ' + row.categoria_nombre + ' ' + row.tipo_nombre).toLowerCase().indexOf(q) !== -1; }
+        ],
+        defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+        onAfterRender: reinitEditModales,
+        columns: [
+          { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+          { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+          { render: function(r) { return escapeHTML(r.categoria_nombre); } },
+          { render: function(r) { return escapeHTML(r.tipo_nombre); } },
+          { render: estadoBadge },
+          { className: 'text-center', render: accionBtnMaterial }
+        ]
+      });
+      {% if q_mat %}
+      table.setFilters('{{ q_mat|escapejs }}', {});
+      {% endif %}
+      var btn = document.getElementById('materiales-search-btn');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          var q = document.getElementById('materiales-search-input')?.value || '';
+          table.setSearch(q);
+        });
+      }
+      return table;
+    }
+
+    function initTablaTipos() {
+      var table = new AdminTable({
+        containerId: 'tipos-tbody',
+        data: readJSONData('tipos-data'),
+        pageSize: 10,
+        countBadgeId: 'tipos-count-badge',
+        pagerId: 'tipos-pager',
+        rowIdPrefix: 'tipo-',
+        filterFns: [
+          function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+        ],
+        defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+        onAfterRender: reinitEditModales,
+        columns: [
+          { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+          { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+          { render: estadoBadge },
+          { className: 'text-center', render: accionBtnTipo }
+        ]
+      });
+      {% if q_tipo %}
+      table.setFilters('{{ q_tipo|escapejs }}', {});
+      {% endif %}
+      var btn = document.getElementById('tipos-search-btn');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          var q = document.getElementById('tipos-search-input')?.value || '';
+          table.setSearch(q);
+        });
+      }
+      return table;
+    }
+
+    function initTablaCategorias() {
+      var table = new AdminTable({
+        containerId: 'categorias-tbody',
+        data: readJSONData('categorias-data'),
+        pageSize: 10,
+        countBadgeId: 'categorias-count-badge',
+        pagerId: 'categorias-pager',
+        rowIdPrefix: 'cat-',
+        filterFns: [
+          function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+        ],
+        defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+        onAfterRender: reinitEditModales,
+        columns: [
+          { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+          { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+          { render: estadoBadge },
+          { className: 'text-center', render: accionBtnCategoria }
+        ]
+      });
+      {% if q_cat %}
+      table.setFilters('{{ q_cat|escapejs }}', {});
+      {% endif %}
+      var btn = document.getElementById('categorias-search-btn');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          var q = document.getElementById('categorias-search-input')?.value || '';
+          table.setSearch(q);
+        });
+      }
+      return table;
+    }
+
+    if (tab === 'tipos') { initTablaTipos(); }
+    else if (tab === 'categorias') { initTablaCategorias(); }
+    else { initTablaMateriales(); }
+
     var materialesGestionUrl = '/panel_admin/materiales/gestion/';
     initModalFormAjax('formCrearMaterial', materialesGestionUrl + '?tab=materiales');
     initModalFormAjax('formCrearTipo', materialesGestionUrl + '?tab=tipos');
     initModalFormAjax('formCrearCategoria', materialesGestionUrl + '?tab=categorias');
 
-    // Edit modals — AJAX with field-level errors
     initModalFormAjax('formEditarMaterial', globalThis.location.href);
     initModalFormAjax('formEditarTipo', globalThis.location.href);
     initModalFormAjax('formEditarCategoria', globalThis.location.href);
 
-    setupEditModal('.btn-editar-material', 'modalEditarMaterial', {
-      nombre: 'em_nombre', descripcion: 'em_descripcion',
-      categoria_id: 'em_categoria', tipo_id: 'em_tipo', estado: 'em_estado'
-    });
-
-    setupEditModal('.btn-editar-tipo', 'modalEditarTipo', {
-      nombre: 'et_nombre', descripcion: 'et_descripcion', estado: 'et_estado'
-    });
-
-    setupEditModal('.btn-editar-cat-mat', 'modalEditarCategoria', {
-      nombre: 'ec_nombre', descripcion: 'ec_descripcion', estado: 'ec_estado'
-    });
+    function initSelect2Modales() {
+      $('#modalCrearMaterial').on('shown.bs.modal', function() {
+        $('#formCrearMaterial_categoria_id').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalCrearMaterial') });
+        $('#formCrearMaterial_tipo_id').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalCrearMaterial') });
+      });
+      $('#modalEditarMaterial').on('shown.bs.modal', function() {
+        $('#em_categoria').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalEditarMaterial') });
+        $('#em_tipo').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalEditarMaterial') });
+      });
+    }
+    initSelect2Modales();
     </script>
     {% endblock %}

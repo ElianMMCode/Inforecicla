@@ -9,6 +9,7 @@ from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.db.models import Q
 
 from apps.users.models import Usuario
@@ -778,32 +779,52 @@ def admin(request):
     return render(request, "admin/admin.html", contexto)
 
 
+def usuario_to_dict(usuario):
+    return {
+        "id": usuario.id,
+        "nombres": usuario.nombres,
+        "apellidos": usuario.apellidos,
+        "email": usuario.email,
+        "celular": usuario.celular or "",
+        "tipo_usuario": usuario.tipo_usuario,
+        "get_tipo_usuario_display": usuario.get_tipo_usuario_display(),
+        "is_active": usuario.is_active,
+        "ciudad": getattr(usuario, "ciudad", None) or DEFAULT_CITY,
+        "localidad_id": str(usuario.localidad.localidad_id)
+        if getattr(usuario, "localidad", None)
+        else "",
+        "tipo_documento": usuario.tipo_documento or "",
+        "numero_documento": usuario.numero_documento or "",
+        "fecha_nacimiento": usuario.fecha_nacimiento.strftime("%Y-%m-%d")
+        if usuario.fecha_nacimiento
+        else "",
+        "action_url": reverse("panel_admin:editar_usuario_admin", kwargs={"usuario_id": usuario.id}),
+    }
+
+
 @require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_usuarios(request):
-    usuarios = Usuario.objects.all()
-    q = request.GET.get('q', '').strip()
-    tipo = request.GET.get('tipo', '').strip()
-    estado = request.GET.get('estado', '').strip()
+    usuarios = list(Usuario.objects.select_related("localidad").all())
+    usuarios_json = [usuario_to_dict(u) for u in usuarios]
 
+    q = request.GET.get("q", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    filtered = usuarios
     if q:
-        usuarios = usuarios.filter(
-            Q(nombres__icontains=q) |
-            Q(apellidos__icontains=q) |
-            Q(email__icontains=q)
-        )
-
+        filtered = [u for u in filtered if q.lower() in (u.nombres.lower() + " " + u.apellidos.lower() + " " + u.email.lower())]
     if tipo:
-        usuarios = usuarios.filter(tipo_usuario=tipo)
-
+        filtered = [u for u in filtered if u.tipo_usuario == tipo]
     if estado:
-        is_active = estado.lower() == 'activo' or estado.lower() == 'true'
-        usuarios = usuarios.filter(is_active=is_active)
+        is_active = estado.lower() in ("activo", "true")
+        filtered = [u for u in filtered if u.is_active == is_active]
 
     contexto = {
-        "usuarios": usuarios,
+        "usuarios": filtered,
+        "usuarios_json": usuarios_json,
         "search_query": q,
         "search_tipo": tipo,
         "search_estado": estado,
@@ -958,6 +979,48 @@ def crear_usuario_admin(request):
     })
 
 
+def publicacion_to_dict(pub):
+    return {
+        "id": pub.id,
+        "titulo": pub.titulo,
+        "autor": f"{pub.usuario.nombres} {pub.usuario.apellidos}",
+        "categoria": pub.categoria.tipo if pub.categoria else "-",
+        "categoria_id": str(pub.categoria.id) if pub.categoria else "",
+        "estado": pub.estado,
+        "fecha_creacion": pub.fecha_creacion.strftime("%d/%m/%Y") if pub.fecha_creacion else "",
+        "contenido": pub.contenido or "",
+        "resumen": pub.resumen or "",
+        "destacado": pub.destacado,
+        "video_url": pub.video_url or "",
+        "is_active": pub.estado == "ACTIVO",
+        "view_url": reverse("panel_admin:ver_publicacion_admin", kwargs={"publicacion_id": pub.id}),
+        "action_url": reverse("panel_admin:editar_publicacion_admin", kwargs={"publicacion_id": pub.id}),
+    }
+
+
+def punto_eca_to_dict(punto):
+    return {
+        "id": punto.id,
+        "nombre": punto.nombre,
+        "direccion": punto.direccion or "",
+        "localidad": punto.localidad.nombre if punto.localidad else "-",
+        "localidad_id": str(punto.localidad.localidad_id) if punto.localidad else "",
+        "gestor": f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else "Sin gestor",
+        "estado": punto.estado,
+        "email": punto.email or "",
+        "celular": punto.celular or "",
+        "telefono_punto": punto.telefono_punto or "",
+        "sitio_web": punto.sitio_web or "",
+        "horario_atencion": punto.horario_atencion or "",
+        "logo_url_punto": punto.logo_url_punto or "",
+        "descripcion": punto.descripcion or "",
+        "latitud": str(punto.latitud) if punto.latitud else "",
+        "longitud": str(punto.longitud) if punto.longitud else "",
+        "is_active": punto.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_punto_eca_admin", kwargs={"punto_id": punto.id}),
+    }
+
+
 @require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
@@ -970,23 +1033,23 @@ def listar_publicaciones_admin(request):
     try:
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
 
-        publicaciones = Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")
+        all_pubs = list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion"))
         categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
+        publicaciones_json = [publicacion_to_dict(p) for p in all_pubs]
         if q:
-            publicaciones = publicaciones.filter(
-                Q(titulo__icontains=q) |
-                Q(contenido__icontains=q) |
-                Q(usuario__nombres__icontains=q) |
-                Q(usuario__apellidos__icontains=q)
-            )
+            ql = q.lower()
+            all_pubs = [p for p in all_pubs if ql in (p.titulo.lower() + " " + (p.contenido or "").lower() + " " + p.usuario.nombres.lower() + " " + p.usuario.apellidos.lower())]
+        publicaciones = all_pubs
     except Exception:
         publicaciones_habilitadas = False
+        publicaciones_json = "[]"
 
     return render(
         request,
         "admin/Publicaciones/listPublicacion.html",
         {
             "publicaciones": publicaciones,
+            "publicaciones_json": publicaciones_json,
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "categorias": categorias,
             "search_query": q,
@@ -1129,16 +1192,15 @@ def crear_punto_eca_admin(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_puntos_eca_admin(request):
-    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    all_puntos = list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre"))
+    puntos_json = [punto_eca_to_dict(p) for p in all_puntos]
     q = request.GET.get('q', '').strip()
     if q:
-        puntos = puntos.filter(
-            Q(nombre__icontains=q) |
-            Q(direccion__icontains=q) |
-            Q(localidad__nombre__icontains=q)
-        )
+        ql = q.lower()
+        all_puntos = [p for p in all_puntos if ql in (p.nombre.lower() + " " + p.direccion.lower() + " " + p.localidad.nombre.lower())]
     return render(request, "admin/PuntoECA/listPuntoECA.html", {
-        "puntos": puntos,
+        "puntos": all_puntos,
+        "puntos_json": puntos_json,
         "search_query": q,
         "localidades": Localidad.objects.all().order_by("nombre"),
         "tipos_documento": cons.TipoDocumento.choices,
@@ -1205,15 +1267,13 @@ def exportar_materiales_excel(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_materiales_admin(request):
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    materiales_json = [material_to_dict(m) for m in all_materiales]
     q = request.GET.get('q', '').strip()
     if q:
-        materiales = materiales.filter(
-            Q(nombre__icontains=q) |
-            Q(descripcion__icontains=q) |
-            Q(categoria__nombre__icontains=q)
-        )
-    return render(request, "admin/Materiales/listMaterial.html", {"materiales": materiales, "search_query": q})
+        ql = q.lower()
+        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower())]
+    return render(request, "admin/Materiales/listMaterial.html", {"materiales": all_materiales, "materiales_json": materiales_json, "search_query": q})
 
 
 @require_GET
@@ -1272,14 +1332,13 @@ def exportar_categorias_material_excel(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_categorias_material_admin(request):
-    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    all_categorias = list(CategoriaMaterial.objects.all().order_by("nombre"))
+    categorias_json = [categoria_material_to_dict(c) for c in all_categorias]
     q = request.GET.get('q', '').strip()
     if q:
-        categorias = categorias.filter(
-            Q(nombre__icontains=q) |
-            Q(descripcion__icontains=q)
-        )
-    return render(request, "admin/CategoriasMateriales/listCategoriaMaterial.html", {"categorias": categorias, "search_query": q})
+        ql = q.lower()
+        all_categorias = [c for c in all_categorias if ql in (c.nombre.lower() + " " + (c.descripcion or "").lower())]
+    return render(request, "admin/CategoriasMateriales/listCategoriaMaterial.html", {"categorias": all_categorias, "categorias_json": categorias_json, "search_query": q})
 
 
 @require_GET
@@ -1349,18 +1408,18 @@ def exportar_categorias_publicacion_excel(request):
 @require_http_methods(["GET", "HEAD"])
 def listar_categorias_publicacion_admin(request):
     categorias = []
+    categorias_json = "[]"
     publicaciones_habilitadas = True
     q = request.GET.get('q', '').strip()
     try:
         from apps.publicaciones.models import CategoriaPublicacion
 
-        categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
+        all_categorias = list(CategoriaPublicacion.objects.all().order_by("nombre", "tipo"))
+        categorias_json = [categoria_publicacion_to_dict(c) for c in all_categorias]
         if q:
-            categorias = categorias.filter(
-                Q(nombre__icontains=q) |
-                Q(tipo__icontains=q) |
-                Q(descripcion__icontains=q)
-            )
+            ql = q.lower()
+            all_categorias = [c for c in all_categorias if ql in (c.nombre.lower() + " " + c.tipo.lower() + " " + (c.descripcion or "").lower())]
+        categorias = all_categorias
     except Exception:
         publicaciones_habilitadas = False
 
@@ -1369,6 +1428,7 @@ def listar_categorias_publicacion_admin(request):
         "admin/CategoriasPublicaciones/listCategoriaPublicacion.html",
         {
             "categorias": categorias,
+            "categorias_json": categorias_json,
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "search_query": q,
             "active_tab": "categorias_publicacion",
@@ -1434,14 +1494,13 @@ def exportar_tipos_material_excel(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_tipos_material_admin(request):
-    tipos = TipoMaterial.objects.all().order_by("nombre")
+    all_tipos = list(TipoMaterial.objects.all().order_by("nombre"))
+    tipos_json = [tipo_material_to_dict(t) for t in all_tipos]
     q = request.GET.get('q', '').strip()
     if q:
-        tipos = tipos.filter(
-            Q(nombre__icontains=q) |
-            Q(descripcion__icontains=q)
-        )
-    return render(request, "admin/TiposMateriales/listTipoMaterial.html", {"tipos": tipos, "search_query": q})
+        ql = q.lower()
+        all_tipos = [t for t in all_tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
+    return render(request, "admin/TiposMateriales/listTipoMaterial.html", {"tipos": all_tipos, "tipos_json": tipos_json, "search_query": q})
 
 
 def _contexto_usuario_admin(usuario):
@@ -1845,6 +1904,56 @@ def crear_material_admin(request):
     )
 
 
+def material_to_dict(m):
+    return {
+        "id": m.id,
+        "nombre": m.nombre,
+        "descripcion": m.descripcion or "",
+        "categoria_nombre": m.categoria.nombre if m.categoria else "-",
+        "categoria_id": str(m.categoria.id) if m.categoria else "",
+        "tipo_nombre": m.tipo.nombre if m.tipo else "-",
+        "tipo_id": str(m.tipo.id) if m.tipo else "",
+        "estado": m.estado,
+        "is_active": m.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_material_admin", kwargs={"material_id": m.id}),
+    }
+
+
+def tipo_material_to_dict(t):
+    return {
+        "id": t.id,
+        "nombre": t.nombre,
+        "descripcion": t.descripcion or "",
+        "estado": t.estado,
+        "is_active": t.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_tipo_material_admin", kwargs={"tipo_id": t.id}),
+    }
+
+
+def categoria_material_to_dict(c):
+    return {
+        "id": c.id,
+        "nombre": c.nombre,
+        "descripcion": c.descripcion or "",
+        "estado": c.estado,
+        "is_active": c.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_categoria_material_admin", kwargs={"categoria_id": c.id}),
+    }
+
+
+def categoria_publicacion_to_dict(c):
+    return {
+        "id": c.id,
+        "nombre": c.nombre or c.tipo,
+        "tipo": c.tipo,
+        "get_tipo_display": c.get_tipo_display(),
+        "descripcion": c.descripcion or "",
+        "estado": c.estado,
+        "is_active": c.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_categoria_publicacion_admin", kwargs={"categoria_id": c.id}),
+    }
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1854,24 +1963,30 @@ def gestion_materiales(request):
     q_cat = request.GET.get('q_cat', '').strip()
     tab = request.GET.get('tab', 'materiales')
 
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
-    tipos = TipoMaterial.objects.all().order_by("nombre")
-    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    tipos_qs = TipoMaterial.objects.all().order_by("nombre")
+    categorias_qs = CategoriaMaterial.objects.all().order_by("nombre")
+
+    materiales_json = [material_to_dict(m) for m in all_materiales]
+    tipos_json = [tipo_material_to_dict(t) for t in tipos_qs]
+    categorias_json = [categoria_material_to_dict(c) for c in categorias_qs]
 
     if q_mat:
-        materiales = materiales.filter(
-            Q(nombre__icontains=q_mat) | Q(descripcion__icontains=q_mat) |
-            Q(categoria__nombre__icontains=q_mat) | Q(tipo__nombre__icontains=q_mat)
-        )
+        ql = q_mat.lower()
+        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower() + " " + (m.tipo.nombre if m.tipo else "").lower())]
+
     if q_tipo:
-        tipos = tipos.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
+        tipos_qs = tipos_qs.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
     if q_cat:
-        categorias = categorias.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
+        categorias_qs = categorias_qs.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
 
     return render(request, "admin/materiales_gestion.html", {
-        "materiales": materiales,
-        "tipos": tipos,
-        "categorias": categorias,
+        "materiales": all_materiales,
+        "materiales_json": materiales_json,
+        "tipos": tipos_qs,
+        "tipos_json": tipos_json,
+        "categorias": categorias_qs,
+        "categorias_json": categorias_json,
         "q_mat": q_mat, "q_tipo": q_tipo, "q_cat": q_cat,
         "tab": tab,
         "estados": cons.Estado.choices,
