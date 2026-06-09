@@ -156,28 +156,100 @@ class AdminDashboardService:
             "total_categorias_materiales": 0,
             "total_categorias_publicaciones": 0,
             "total_tipos_material": 0,
+            "total_ciudadanos": 0,
+            "total_gestores": 0,
+            "total_administradores": 0,
+            "total_usuarios_activos": 0,
+            "total_usuarios_inactivos": 0,
+            "total_publicaciones_activas": 0,
+            "total_publicaciones_inactivas": 0,
+            "ultimas_publicaciones": [],
+            "ultimos_usuarios": [],
         }
 
-        # Conteos de apps siempre disponibles en la configuracion actual.
         try:
             resumen["total_usuarios"] = Usuario.objects.count()
             resumen["total_puntos_eca"] = PuntoECA.objects.count()
             resumen["total_materiales"] = Material.objects.count()
             resumen["total_categorias_materiales"] = CategoriaMaterial.objects.count()
             resumen["total_tipos_material"] = TipoMaterial.objects.count()
+            resumen["total_ciudadanos"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.CIUDADANO).count()
+            resumen["total_gestores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.GESTOR_ECA).count()
+            resumen["total_administradores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.ADMIN).count()
+            resumen["total_usuarios_activos"] = Usuario.objects.filter(is_active=True).count()
+            resumen["total_usuarios_inactivos"] = resumen["total_usuarios"] - resumen["total_usuarios_activos"]
+            ultimos_usuarios = Usuario.objects.order_by("-date_joined")[:5]
+            resumen["ultimos_usuarios"] = [
+                {
+                    "nombres": u.nombres,
+                    "apellidos": u.apellidos,
+                    "email": u.email,
+                    "tipo_usuario": u.get_tipo_usuario_display(),
+                    "is_active": u.is_active,
+                    "date_joined": u.date_joined,
+                }
+                for u in ultimos_usuarios
+            ]
         except Exception:
             return resumen
 
-        # Publicaciones puede estar deshabilitada en algunos entornos.
         try:
             from apps.publicaciones.models import Publicacion, CategoriaPublicacion
 
             resumen["total_publicaciones"] = Publicacion.objects.count()
             resumen["total_categorias_publicaciones"] = CategoriaPublicacion.objects.count()
+            resumen["total_publicaciones_activas"] = Publicacion.objects.filter(estado=cons.Estado.ACTIVO).count()
+            resumen["total_publicaciones_inactivas"] = resumen["total_publicaciones"] - resumen["total_publicaciones_activas"]
+            ultimas_pub = Publicacion.objects.select_related("categoria", "usuario").order_by("-fecha_creacion")[:5]
+            resumen["ultimas_publicaciones"] = [
+                {
+                    "titulo": p.titulo,
+                    "estado": p.estado,
+                    "categoria": p.categoria.nombre if p.categoria else None,
+                    "fecha_creacion": p.fecha_creacion,
+                    "usuario_nombre": f"{p.usuario.nombres} {p.usuario.apellidos}",
+                    "id": p.id,
+                }
+                for p in ultimas_pub
+            ]
         except Exception:
             return resumen
 
         return resumen
+
+    @staticmethod
+    def obtener_tendencia_usuarios(dias=30):
+        desde = timezone.now() - datetime.timedelta(days=dias)
+        usuarios = Usuario.objects.filter(date_joined__gte=desde)
+        dias_dict = {}
+        for i in range(dias):
+            fecha = (timezone.now() - datetime.timedelta(days=i)).date()
+            dias_dict[fecha.isoformat()] = 0
+        for u in usuarios:
+            d = u.date_joined.date()
+            if d.isoformat() in dias_dict:
+                dias_dict[d.isoformat()] += 1
+        fechas_ordenadas = sorted(dias_dict.keys())
+        return [{"date": f, "count": dias_dict[f]} for f in fechas_ordenadas]
+
+    @staticmethod
+    def obtener_distribucion_puntos_eca():
+        puntos = PuntoECA.objects.select_related("localidad").all()
+        dist = {}
+        for p in puntos:
+            nombre = p.localidad.nombre if p.localidad else "Sin localidad"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"localidad": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+
+    @staticmethod
+    def obtener_distribucion_materiales():
+        from django.db.models import Count
+        materiales = Material.objects.select_related("categoria").all()
+        dist = {}
+        for m in materiales:
+            nombre = m.categoria.nombre if m.categoria else "Sin categoría"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"categoria": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
 
 
 class AdminCatalogService:

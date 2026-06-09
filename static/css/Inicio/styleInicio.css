@@ -192,7 +192,7 @@ padding: 20px;
 .footer-nav {
 list-style: none;
 padding: 0;
-justify-content: center;
+    justify-content: center;
 }
 
 .footer-nav > li{
