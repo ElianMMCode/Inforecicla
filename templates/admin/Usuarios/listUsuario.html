@@ -135,10 +135,18 @@
     <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
         <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Directorio de Usuarios</h6>
-        <a href="{% url 'panel_admin:exportar_usuarios_excel' %}" class="btn btn-sm btn-outline-success fw-semibold" title="Exportar Excel">
+        <a href="{% url 'panel_admin:exportar_usuarios_excel' %}"
+           class="btn btn-sm btn-outline-success fw-semibold export-link"
+           title="Exportar Excel"
+           data-export-base="{% url 'panel_admin:exportar_usuarios_excel' %}"
+           data-export-filters="q:usuarios-filter-q,tipo:usuarios-filter-tipo,estado:usuarios-filter-estado">
           <i class="bi bi-file-earmark-excel me-1"></i> Excel
         </a>
-        <a href="{% url 'panel_admin:exportar_usuarios_pdf' %}" class="btn btn-sm btn-outline-danger fw-semibold" title="Exportar PDF">
+        <a href="{% url 'panel_admin:exportar_usuarios_pdf' %}"
+           class="btn btn-sm btn-outline-danger fw-semibold export-link"
+           title="Exportar PDF"
+           data-export-base="{% url 'panel_admin:exportar_usuarios_pdf' %}"
+           data-export-filters="q:usuarios-filter-q,tipo:usuarios-filter-tipo,estado:usuarios-filter-estado">
           <i class="bi bi-file-earmark-pdf me-1"></i> PDF
         </a>
       </div>

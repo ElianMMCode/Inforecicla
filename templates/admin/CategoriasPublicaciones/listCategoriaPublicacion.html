@@ -95,10 +95,18 @@
   <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center gap-2">
       <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
-      <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}" class="btn btn-sm btn-outline-success fw-semibold" title="Exportar Excel">
+      <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}"
+         class="btn btn-sm btn-outline-success fw-semibold export-link"
+         title="Exportar Excel"
+         data-export-base="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}"
+         data-export-filters="q:cat-pub-search-input">
         <i class="bi bi-file-earmark-excel me-1"></i> Excel
       </a>
-      <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}" class="btn btn-sm btn-outline-danger fw-semibold" title="Exportar PDF">
+      <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}"
+         class="btn btn-sm btn-outline-danger fw-semibold export-link"
+         title="Exportar PDF"
+         data-export-base="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}"
+         data-export-filters="q:cat-pub-search-input">
         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
       </a>
     </div>
