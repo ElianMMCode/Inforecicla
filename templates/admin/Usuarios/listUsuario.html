@@ -61,12 +61,12 @@
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
     </div>
     <div class="card-body">
-      <form method="get" class="row g-3">
+      <form id="usuarios-filter-form" class="row g-3">
         <div class="col-md-4">
           <input type="text" name="q" class="form-control" placeholder="Nombre, apellido o email..." value="{{ search_query }}">
         </div>
         <div class="col-md-3">
-          <select name="tipo" class="form-select">
+          <select name="tipo" class="form-select" id="usuarios-filter-tipo">
             <option value="">Todos los roles</option>
             <option value="ADM" {% if search_tipo == "ADM" %}selected{% endif %}>Administrador</option>
             <option value="CIU" {% if search_tipo == "CIU" %}selected{% endif %}>Ciudadano</option>
@@ -74,14 +74,14 @@
           </select>
         </div>
         <div class="col-md-3">
-          <select name="estado" class="form-select">
+          <select name="estado" class="form-select" id="usuarios-filter-estado">
             <option value="">Todos los estados</option>
             <option value="activo" {% if search_estado == "activo" %}selected{% endif %}>Activo</option>
             <option value="inactivo" {% if search_estado == "inactivo" %}selected{% endif %}>Inactivo</option>
           </select>
         </div>
         <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Filtrar</button>
+          <button type="button" class="btn btn-success" id="usuarios-search-btn"><i class="bi bi-search"></i> Filtrar</button>
         </div>
       </form>
     </div>
@@ -90,7 +90,7 @@
   <div class="card shadow-sm border-0">
     <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
       <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Directorio de Usuarios</span>
-      <span class="badge bg-secondary rounded-pill">{{ usuarios|length }} registros</span>
+      <span class="badge bg-secondary rounded-pill" id="usuarios-count-badge">{{ usuarios|length }} registros</span>
     </div>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0">
@@ -104,55 +104,20 @@
             <th class="fw-bold small text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody class="border-top">
-          {% for usuario in usuarios %}
-          <tr>
-            <td><strong>{{ usuario.nombres }} {{ usuario.apellidos }}</strong></td>
-            <td>{{ usuario.email }}</td>
-            <td>{{ usuario.celular|default:"-" }}</td>
-            <td>
-              {% if usuario.tipo_usuario == "ADM" %}
-                <span class="badge bg-dark">Administrador</span>
-              {% elif usuario.tipo_usuario == "GECA" %}
-                <span class="badge bg-info text-dark">Gestor ECA</span>
-              {% else %}
-                <span class="badge bg-success">Ciudadano</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if usuario.is_active %}
-                <span class="badge bg-success">Activo</span>
-              {% else %}
-                <span class="badge bg-secondary">Inactivo</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              <button type="button" class="btn btn-outline-primary btn-sm btn-editar-usuario"
-                      title="Editar"
-                      data-id="{{ usuario.id }}"
-                      data-nombres="{{ usuario.nombres|default:'' }}"
-                      data-apellidos="{{ usuario.apellidos|default:'' }}"
-                      data-email="{{ usuario.email|default:'' }}"
-                      data-celular="{{ usuario.celular|default:'' }}"
-                      data-ciudad="{{ usuario.ciudad|default:'Bogotá' }}"
-                      data-localidad_id="{{ usuario.localidad.localidad_id|default:'' }}"
-                      data-tipo_documento="{{ usuario.tipo_documento|default:'' }}"
-                      data-numero_documento="{{ usuario.numero_documento|default:'' }}"
-                      data-tipo_usuario="{{ usuario.tipo_usuario|default:'' }}"
-                      data-is_active="{% if usuario.is_active %}activo{% else %}inactivo{% endif %}"
-                      data-fecha_nacimiento="{{ usuario.fecha_nacimiento|date:'Y-m-d'|default:'' }}"
-                      data-action="{% url 'panel_admin:editar_usuario_admin' usuario_id=usuario.id %}">
-                <i class="bi bi-pencil"></i>
-              </button>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron usuarios.</td></tr>
-          {% endfor %}
-        </tbody>
+        <tbody class="border-top" id="usuarios-table-body">
+          </tbody>
       </table>
     </div>
+    <div class="card-footer bg-light border-top px-4 py-3 d-flex justify-content-between align-items-center">
+      <small class="text-muted" id="usuarios-footer-count">—</small>
+      <nav aria-label="Paginación usuarios">
+        <ul class="pagination pagination-sm mb-0" id="usuarios-pager"></ul>
+      </nav>
+    </div>
   </div>
+
+{{ usuarios_json|json_script:"usuarios-data" }}
+
 {% endblock %}
 
 {% block extra_modals %}
@@ -358,13 +323,105 @@
 {% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script>
 (function() {
+  var usuariosData = readJSONData('usuarios-data');
+
+  function rolBadge(row) {
+    var badgeClass = row.tipo_usuario === 'ADM' ? 'bg-dark' : (row.tipo_usuario === 'GECA' ? 'bg-info text-dark' : 'bg-success');
+    return '<span class="badge ' + badgeClass + '">' + escapeHTML(row.get_tipo_usuario_display) + '</span>';
+  }
+
+  function estadoBadge(row) {
+    var cls = row.is_active ? 'bg-success' : 'bg-secondary';
+    var label = row.is_active ? 'Activo' : 'Inactivo';
+    return '<span class="badge ' + cls + '">' + label + '</span>';
+  }
+
+  function accionBtn(row) {
+    return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-usuario" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-nombres="' + escapeAttr(row.nombres) + '"' +
+      ' data-apellidos="' + escapeAttr(row.apellidos) + '"' +
+      ' data-email="' + escapeAttr(row.email) + '"' +
+      ' data-celular="' + escapeAttr(row.celular || '') + '"' +
+      ' data-ciudad="' + escapeAttr(row.ciudad || 'Bogot\u00E1') + '"' +
+      ' data-localidad_id="' + escapeAttr(row.localidad_id || '') + '"' +
+      ' data-tipo_documento="' + escapeAttr(row.tipo_documento || '') + '"' +
+      ' data-numero_documento="' + escapeAttr(row.numero_documento || '') + '"' +
+      ' data-tipo_usuario="' + escapeAttr(row.tipo_usuario) + '"' +
+      ' data-is_active="' + (row.is_active ? 'activo' : 'inactivo') + '"' +
+      ' data-fecha_nacimiento="' + escapeAttr(row.fecha_nacimiento || '') + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    if (typeof setupEditModal !== 'function') return;
+    setupEditModal('.btn-editar-usuario', 'modalEditarUsuario', {
+      nombres: 'eu_nombres', apellidos: 'eu_apellidos',
+      email: 'eu_email', celular: 'eu_celular',
+      ciudad: 'eu_ciudad', localidad_id: 'eu_localidad',
+      tipo_documento: 'eu_tipo_documento', numero_documento: 'eu_numero_documento',
+      tipo_usuario: 'eu_tipo_usuario', is_active: 'eu_estado',
+      fecha_nacimiento: 'eu_fecha_nacimiento'
+    });
+  }
+
+  var usuariosTable = new AdminTable({
+    data: usuariosData,
+    pageSize: 10,
+    tableBodyId: 'usuarios-table-body',
+    pagerId: 'usuarios-pager',
+    footerInfoId: 'usuarios-footer-count',
+    countBadgeId: 'usuarios-count-badge',
+    filterFormId: 'usuarios-filter-form',
+    filterFns: [
+      function(row, q) { return (row.nombres + ' ' + row.apellidos + ' ' + row.email).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return (a.nombres + ' ' + a.apellidos).localeCompare(b.nombres + ' ' + b.apellidos); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombres + ' ' + r.apellidos) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.email); } },
+      { render: function(r) { return escapeHTML(r.celular || '-'); } },
+      { render: rolBadge },
+      { render: estadoBadge },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  {% if search_query or search_tipo or search_estado %}
+  (function() {
+    var extraFilts = {};
+    {% if search_tipo %}extraFilts.tipo_usuario = '{{ search_tipo|escapejs }}';{% endif %}
+    {% if search_estado %}extraFilts.is_active = {% if search_estado == 'activo' %}true{% else %}false{% endif %};{% endif %}
+    usuariosTable.setFilters('{{ search_query|escapejs }}', extraFilts);
+  })();
+  {% endif %}
+
+  // Bind extra filter selects
+  var tipoSelect = document.getElementById('usuarios-filter-tipo');
+  var estadoSelect = document.getElementById('usuarios-filter-estado');
+  var searchBtn = document.getElementById('usuarios-search-btn');
+
+  function applyFilts() {
+    var q = document.querySelector('#usuarios-filter-form input[name="q"]')?.value || '';
+    usuariosTable.setSearch(q);
+    if (tipoSelect?.value) usuariosTable.setExtraFilter('tipo_usuario', tipoSelect.value);
+    if (estadoSelect?.value) usuariosTable.setExtraFilter('is_active', estadoSelect.value === 'activo');
+  }
+
+  if (tipoSelect) tipoSelect.addEventListener('change', applyFilts);
+  if (estadoSelect) estadoSelect.addEventListener('change', applyFilts);
+  if (searchBtn) searchBtn.addEventListener('click', applyFilts);
+
   function validarCrearUsuario(form) {
     var pass = document.getElementById('cu_password');
     var pass2 = document.getElementById('cu_password2');
     if (pass && pass2 && pass.value !== pass2.value) {
-      Swal.fire({ icon: 'error', title: 'Las contraseñas no coinciden', confirmButtonColor: '#198754' });
+      Swal.fire({ icon: 'error', title: 'Las contrase\u00F1as no coinciden', confirmButtonColor: '#198754' });
       pass.classList.add('is-invalid');
       pass2.classList.add('is-invalid');
       return false;
@@ -398,14 +455,7 @@
     }
   });
 
-  setupEditModal('.btn-editar-usuario', 'modalEditarUsuario', {
-    nombres: 'eu_nombres', apellidos: 'eu_apellidos',
-    email: 'eu_email', celular: 'eu_celular',
-    ciudad: 'eu_ciudad', localidad_id: 'eu_localidad',
-    tipo_documento: 'eu_tipo_documento', numero_documento: 'eu_numero_documento',
-    tipo_usuario: 'eu_tipo_usuario', is_active: 'eu_estado',
-    fecha_nacimiento: 'eu_fecha_nacimiento'
-  });
+  reinitEditModal();
 
   function initTogglePassword() {
     document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {

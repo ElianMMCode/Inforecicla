@@ -1,14 +1,17 @@
 ﻿from django.views.decorators.http import require_GET, require_http_methods, require_POST
 import io
+import json
 import re as _re
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.db.models import Q
 
 from apps.users.models import Usuario
@@ -782,28 +785,51 @@ def admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
+def usuario_to_dict(usuario):
+    return {
+        "id": usuario.id,
+        "nombres": usuario.nombres,
+        "apellidos": usuario.apellidos,
+        "email": usuario.email,
+        "celular": usuario.celular or "",
+        "tipo_usuario": usuario.tipo_usuario,
+        "get_tipo_usuario_display": usuario.get_tipo_usuario_display(),
+        "is_active": usuario.is_active,
+        "ciudad": getattr(usuario, "ciudad", None) or DEFAULT_CITY,
+        "localidad_id": str(usuario.localidad.localidad_id)
+        if getattr(usuario, "localidad", None)
+        else "",
+        "tipo_documento": usuario.tipo_documento or "",
+        "numero_documento": usuario.numero_documento or "",
+        "fecha_nacimiento": usuario.fecha_nacimiento.strftime("%Y-%m-%d")
+        if usuario.fecha_nacimiento
+        else "",
+        "action_url": reverse("panel_admin:editar_usuario_admin", kwargs={"usuario_id": usuario.id}),
+    }
+
+
 def listar_usuarios(request):
-    usuarios = Usuario.objects.all()
-    q = request.GET.get('q', '').strip()
-    tipo = request.GET.get('tipo', '').strip()
-    estado = request.GET.get('estado', '').strip()
+    usuarios = list(Usuario.objects.select_related("localidad").all())
+    usuarios_json = json.dumps(
+        [usuario_to_dict(u) for u in usuarios],
+        cls=DjangoJSONEncoder,
+    )
 
+    q = request.GET.get("q", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    filtered = usuarios
     if q:
-        usuarios = usuarios.filter(
-            Q(nombres__icontains=q) |
-            Q(apellidos__icontains=q) |
-            Q(email__icontains=q)
-        )
-
+        filtered = [u for u in filtered if q.lower() in (u.nombres.lower() + " " + u.apellidos.lower() + " " + u.email.lower())]
     if tipo:
-        usuarios = usuarios.filter(tipo_usuario=tipo)
-
+        filtered = [u for u in filtered if u.tipo_usuario == tipo]
     if estado:
-        is_active = estado.lower() == 'activo' or estado.lower() == 'true'
-        usuarios = usuarios.filter(is_active=is_active)
+        is_active = estado.lower() in ("activo", "true")
+        filtered = [u for u in filtered if u.is_active == is_active]
 
     contexto = {
-        "usuarios": usuarios,
+        "usuarios": filtered,
+        "usuarios_json": usuarios_json,
         "search_query": q,
         "search_tipo": tipo,
         "search_estado": estado,
