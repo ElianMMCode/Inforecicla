@@ -375,57 +375,14 @@
 
 {% block extra_scripts %}
 {% include "admin/_messages_swal.html" %}
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
-<script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script>
-(function() {
-  var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-  var roles = JSON.parse(document.getElementById('dist-roles-data').textContent);
-  if (roles.length) {
-    new Chart(document.getElementById('chartUsuRol'), {
-      type: 'doughnut',
-      data: {
-        labels: roles.map(function(r){ return r.display; }),
-        datasets: [{ data: roles.map(function(r){ return r.count; }), backgroundColor: [C.warning, C.success, C.danger], borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-    });
-  }
-  var activos = JSON.parse(document.getElementById('dist-activos-data').textContent);
-  if (activos.length) {
-    new Chart(document.getElementById('chartUsuActivos'), {
-      type: 'doughnut',
-      data: {
-        labels: activos.map(function(a){ return a.label; }),
-        datasets: [{ data: activos.map(function(a){ return a.count; }), backgroundColor: [C.success, C.dark], borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-    });
-  }
-  var tendencia = JSON.parse(document.getElementById('tendencia-usuarios-data').textContent);
-  if (tendencia.length) {
-    new Chart(document.getElementById('chartUsuTendencia'), {
-      type: 'line',
-      data: {
-        labels: tendencia.map(function(d){ return d.date; }),
-        datasets: [{ label: 'Usuarios', data: tendencia.map(function(d){ return d.count; }), borderColor: C.primary, backgroundColor: 'rgba(13,110,253,0.08)', fill: true, tension: 0.3, pointRadius: 2, pointHoverRadius: 4 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { maxTicksLimit: 8, font: { size: 9 } } } } }
-    });
-  }
-  var localidad = JSON.parse(document.getElementById('dist-localidad-data').textContent);
-  if (localidad.length) {
-    new Chart(document.getElementById('chartUsuLocalidad'), {
-      type: 'bar',
-      data: {
-        labels: localidad.map(function(l){ return l.localidad; }),
-        datasets: [{ label: 'Usuarios', data: localidad.map(function(l){ return l.count; }), backgroundColor: C.info, borderRadius: 4 }]
-      },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 10 } } } } }
-    });
-  }
-})();
+AdminCharts.initAll([
+  { type: 'doughnut', canvas: 'chartUsuRol', dataId: 'dist-roles-data', labelKey: 'display', colors: [AdminCharts.C.warning, AdminCharts.C.success, AdminCharts.C.danger] },
+  { type: 'doughnut', canvas: 'chartUsuActivos', dataId: 'dist-activos-data', colors: [AdminCharts.C.success, AdminCharts.C.dark] },
+  { type: 'trendLine', canvas: 'chartUsuTendencia', dataId: 'tendencia-usuarios-data', colorKey: 'primary' },
+  { type: 'barH', canvas: 'chartUsuLocalidad', dataId: 'dist-localidad-data', labelKey: 'localidad' },
+]);
 </script>
 <script>
 (function() {

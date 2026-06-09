@@ -605,69 +605,16 @@
     {% endblock %}
 
     {% block extra_scripts %}
-    <script src="{% static 'js/admin/panel-tables.js' %}"></script>
-    <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
     <script>
-    (function() {
-      var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-      var paleta = [C.success, C.warning, C.danger, C.info, C.primary, '#6f42c1', '#fd7e14', '#20c997', '#d63384'];
-
-      var catMat = JSON.parse(document.getElementById('dist-categoria-mat-data').textContent);
-      if (catMat.length) {
-        new Chart(document.getElementById('chartMatCategoria'), {
-          type: 'bar',
-          data: { labels: catMat.map(function(d){ return d.categoria; }), datasets: [{ label: 'Materiales', data: catMat.map(function(d){ return d.count; }), backgroundColor: C.warning, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-      var tipoMat = JSON.parse(document.getElementById('dist-tipo-mat-data').textContent);
-      if (tipoMat.length) {
-        new Chart(document.getElementById('chartMatTipo'), {
-          type: 'bar',
-          data: { labels: tipoMat.map(function(d){ return d.tipo; }), datasets: [{ label: 'Materiales', data: tipoMat.map(function(d){ return d.count; }), backgroundColor: C.info, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-      var estMat = JSON.parse(document.getElementById('dist-estado-mat-data').textContent);
-      if (estMat.length) {
-        new Chart(document.getElementById('chartMatEstado'), {
-          type: 'doughnut',
-          data: { labels: estMat.map(function(e){ return e.estado; }), datasets: [{ data: estMat.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estMat.length), borderColor: '#fff', borderWidth: 2 }] },
-          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 8, usePointStyle: true, font: { size: 9 } } } } }
-        });
-      }
-      var estTipo = JSON.parse(document.getElementById('dist-estado-tipo-data').textContent);
-      if (estTipo.length) {
-        new Chart(document.getElementById('chartTipoEstado'), {
-          type: 'doughnut',
-          data: { labels: estTipo.map(function(e){ return e.estado; }), datasets: [{ data: estTipo.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estTipo.length), borderColor: '#fff', borderWidth: 2 }] },
-          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-        });
-      }
-      var estCat = JSON.parse(document.getElementById('dist-estado-cat-data').textContent);
-      if (estCat.length) {
-        new Chart(document.getElementById('chartCatEstado'), {
-          type: 'doughnut',
-          data: { labels: estCat.map(function(e){ return e.estado; }), datasets: [{ data: estCat.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estCat.length), borderColor: '#fff', borderWidth: 2 }] },
-          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-        });
-      }
-      if (catMat.length) {
-        new Chart(document.getElementById('chartMatPorCategoria'), {
-          type: 'bar',
-          data: { labels: catMat.map(function(d){ return d.categoria; }), datasets: [{ label: 'Materiales', data: catMat.map(function(d){ return d.count; }), backgroundColor: C.info, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-      var tipoMat2 = JSON.parse(document.getElementById('dist-tipo-mat-data').textContent);
-      if (tipoMat2.length) {
-        new Chart(document.getElementById('chartMatPorTipo'), {
-          type: 'bar',
-          data: { labels: tipoMat2.map(function(d){ return d.tipo; }), datasets: [{ label: 'Materiales', data: tipoMat2.map(function(d){ return d.count; }), backgroundColor: C.warning, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-    })();
+    AdminCharts.initAll([
+      { type: 'barH', canvas: 'chartMatCategoria', dataId: 'dist-categoria-mat-data', labelKey: 'categoria', color: AdminCharts.C.warning },
+      { type: 'barH', canvas: 'chartMatTipo', dataId: 'dist-tipo-mat-data', labelKey: 'tipo', color: AdminCharts.C.info },
+      { type: 'doughnut', canvas: 'chartMatEstado', dataId: 'dist-estado-mat-data', labelKey: 'estado' },
+      { type: 'doughnut', canvas: 'chartTipoEstado', dataId: 'dist-estado-tipo-data', labelKey: 'estado' },
+      { type: 'doughnut', canvas: 'chartCatEstado', dataId: 'dist-estado-cat-data', labelKey: 'estado' },
+      { type: 'barH', canvas: 'chartMatPorCategoria', dataId: 'dist-categoria-mat-data', labelKey: 'categoria', color: AdminCharts.C.info },
+      { type: 'barH', canvas: 'chartMatPorTipo', dataId: 'dist-tipo-mat-data', labelKey: 'tipo', color: AdminCharts.C.warning },
+    ]);
     </script>
     <script>
     function estadoBadge(row) {
