@@ -984,6 +984,48 @@ def crear_usuario_admin(request):
     })
 
 
+def publicacion_to_dict(pub):
+    return {
+        "id": pub.id,
+        "titulo": pub.titulo,
+        "autor": f"{pub.usuario.nombres} {pub.usuario.apellidos}",
+        "categoria": pub.categoria.tipo if pub.categoria else "-",
+        "categoria_id": str(pub.categoria.id) if pub.categoria else "",
+        "estado": pub.estado,
+        "fecha_creacion": pub.fecha_creacion.strftime("%d/%m/%Y") if pub.fecha_creacion else "",
+        "contenido": pub.contenido or "",
+        "resumen": pub.resumen or "",
+        "destacado": pub.destacado,
+        "video_url": pub.video_url or "",
+        "is_active": pub.estado == "ACTIVO",
+        "view_url": reverse("panel_admin:ver_publicacion_admin", kwargs={"publicacion_id": pub.id}),
+        "action_url": reverse("panel_admin:editar_publicacion_admin", kwargs={"publicacion_id": pub.id}),
+    }
+
+
+def punto_eca_to_dict(punto):
+    return {
+        "id": punto.id,
+        "nombre": punto.nombre,
+        "direccion": punto.direccion or "",
+        "localidad": punto.localidad.nombre if punto.localidad else "-",
+        "localidad_id": str(punto.localidad.localidad_id) if punto.localidad else "",
+        "gestor": f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else "Sin gestor",
+        "estado": punto.estado,
+        "email": punto.email or "",
+        "celular": punto.celular or "",
+        "telefono_punto": punto.telefono_punto or "",
+        "sitio_web": punto.sitio_web or "",
+        "horario_atencion": punto.horario_atencion or "",
+        "logo_url_punto": punto.logo_url_punto or "",
+        "descripcion": punto.descripcion or "",
+        "latitud": str(punto.latitud) if punto.latitud else "",
+        "longitud": str(punto.longitud) if punto.longitud else "",
+        "is_active": punto.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_punto_eca_admin", kwargs={"punto_id": punto.id}),
+    }
+
+
 @require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
@@ -996,23 +1038,23 @@ def listar_publicaciones_admin(request):
     try:
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
 
-        publicaciones = Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")
+        all_pubs = list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion"))
         categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
+        publicaciones_json = json.dumps([publicacion_to_dict(p) for p in all_pubs], cls=DjangoJSONEncoder)
         if q:
-            publicaciones = publicaciones.filter(
-                Q(titulo__icontains=q) |
-                Q(contenido__icontains=q) |
-                Q(usuario__nombres__icontains=q) |
-                Q(usuario__apellidos__icontains=q)
-            )
+            ql = q.lower()
+            all_pubs = [p for p in all_pubs if ql in (p.titulo.lower() + " " + (p.contenido or "").lower() + " " + p.usuario.nombres.lower() + " " + p.usuario.apellidos.lower())]
+        publicaciones = all_pubs
     except Exception:
         publicaciones_habilitadas = False
+        publicaciones_json = "[]"
 
     return render(
         request,
         "admin/Publicaciones/listPublicacion.html",
         {
             "publicaciones": publicaciones,
+            "publicaciones_json": publicaciones_json,
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "categorias": categorias,
             "search_query": q,
@@ -1155,16 +1197,15 @@ def crear_punto_eca_admin(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_puntos_eca_admin(request):
-    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    all_puntos = list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre"))
+    puntos_json = json.dumps([punto_eca_to_dict(p) for p in all_puntos], cls=DjangoJSONEncoder)
     q = request.GET.get('q', '').strip()
     if q:
-        puntos = puntos.filter(
-            Q(nombre__icontains=q) |
-            Q(direccion__icontains=q) |
-            Q(localidad__nombre__icontains=q)
-        )
+        ql = q.lower()
+        all_puntos = [p for p in all_puntos if ql in (p.nombre.lower() + " " + p.direccion.lower() + " " + p.localidad.nombre.lower())]
     return render(request, "admin/PuntoECA/listPuntoECA.html", {
-        "puntos": puntos,
+        "puntos": all_puntos,
+        "puntos_json": puntos_json,
         "search_query": q,
         "localidades": Localidad.objects.all().order_by("nombre"),
         "tipos_documento": cons.TipoDocumento.choices,

@@ -28,21 +28,21 @@
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
   <div class="card-body">
-    <form method="get" class="row g-2">
+    <div class="row g-2" id="puntos-filter-form">
       <div class="col-md-10">
-        <input type="text" name="q" class="form-control" placeholder="Nombre, dirección o localidad..." value="{{ search_query }}">
+        <input type="text" name="q" class="form-control" placeholder="Nombre, dirección o localidad..." value="{{ search_query }}" id="puntos-search-input">
       </div>
       <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+        <button type="button" class="btn btn-success" id="puntos-search-btn"><i class="bi bi-search"></i> Buscar</button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
 
 <div class="card shadow-sm border-0">
   <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
     <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
-    <span class="badge bg-secondary rounded-pill">{{ puntos|length }} registros</span>
+    <span class="badge bg-secondary rounded-pill" id="puntos-count-badge">{{ puntos|length }} registros</span>
   </div>
   <div class="table-responsive">
     <table class="table table-sm table-hover align-middle mb-0">
@@ -56,70 +56,15 @@
           <th class="fw-bold small text-center">Acciones</th>
         </tr>
       </thead>
-      <tbody class="border-top">
-        {% for punto in puntos %}
-        <tr data-id="{{ punto.id }}"
-            data-nombre="{{ punto.nombre|default:'' }}"
-            data-direccion="{{ punto.direccion|default:'' }}"
-            data-email="{{ punto.email|default:'' }}"
-            data-celular="{{ punto.celular|default:'' }}"
-            data-telefono_punto="{{ punto.telefono_punto|default:'' }}"
-            data-sitio_web="{{ punto.sitio_web|default:'' }}"
-            data-horario_atencion="{{ punto.horario_atencion|default:'' }}"
-            data-logo_url_punto="{{ punto.logo_url_punto|default:'' }}"
-            data-descripcion="{{ punto.descripcion|default:'' }}"
-            data-latitud="{{ punto.latitud|default:'' }}"
-            data-longitud="{{ punto.longitud|default:'' }}"
-            data-localidad_id="{{ punto.localidad.localidad_id|default:'' }}"
-            data-estado="{{ punto.estado|default:'ACTIVO' }}">
-          <td><strong>{{ punto.nombre }}</strong></td>
-          <td>{{ punto.direccion|default:"-" }}</td>
-          <td>{{ punto.localidad.nombre|default:"-" }}</td>
-          <td>
-            {% if punto.gestor_eca %}
-              {{ punto.gestor_eca.nombres }} {{ punto.gestor_eca.apellidos }}
-            {% else %}
-              <span class="text-muted">Sin gestor</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if punto.estado == "ACTIVO" %}
-              <span class="badge bg-success">Activo</span>
-            {% elif punto.estado == "INACTIVO" %}
-              <span class="badge bg-secondary">Inactivo</span>
-            {% else %}
-              <span class="badge bg-warning text-dark">{{ punto.estado }}</span>
-            {% endif %}
-          </td>
-          <td class="text-center">
-            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-punto"
-                    title="Editar"
-                    data-id="{{ punto.id }}"
-                    data-nombre="{{ punto.nombre|default:'' }}"
-                    data-direccion="{{ punto.direccion|default:'' }}"
-                    data-email="{{ punto.email|default:'' }}"
-                    data-celular="{{ punto.celular|default:'' }}"
-                    data-telefono_punto="{{ punto.telefono_punto|default:'' }}"
-                    data-sitio_web="{{ punto.sitio_web|default:'' }}"
-                    data-horario_atencion="{{ punto.horario_atencion|default:'' }}"
-                    data-logo_url_punto="{{ punto.logo_url_punto|default:'' }}"
-                    data-descripcion="{{ punto.descripcion|default:'' }}"
-                    data-latitud="{{ punto.latitud|default:'' }}"
-                    data-longitud="{{ punto.longitud|default:'' }}"
-                    data-localidad_id="{{ punto.localidad.localidad_id|default:'' }}"
-                    data-estado="{{ punto.estado|default:'ACTIVO' }}"
-                    data-action="{% url 'panel_admin:editar_punto_eca_admin' punto_id=punto.id %}">
-              <i class="bi bi-pencil"></i>
-            </button>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron puntos ECA.</td></tr>
-        {% endfor %}
-      </tbody>
+      <tbody class="border-top" id="puntos-tbody"></tbody>
     </table>
   </div>
+  <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+    <ul class="pagination pagination-sm mb-0" id="puntos-pager"></ul>
+  </nav>
 </div>
+
+{{ puntos_json|json_script:"puntos-data" }}
 
 {% endblock %}
 
@@ -387,9 +332,88 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script>
 (function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    if (row.estado === 'INACTIVO') return '<span class="badge bg-secondary">Inactivo</span>';
+    return '<span class="badge bg-warning text-dark">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  function gestorDisplay(row) {
+    return row.gestor && row.gestor !== 'Sin gestor'
+      ? escapeHTML(row.gestor)
+      : '<span class="text-muted">Sin gestor</span>';
+  }
+
+  function accionBtn(row) {
+    return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-punto" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+      ' data-direccion="' + escapeAttr(row.direccion) + '"' +
+      ' data-email="' + escapeAttr(row.email) + '"' +
+      ' data-celular="' + escapeAttr(row.celular) + '"' +
+      ' data-telefono_punto="' + escapeAttr(row.telefono_punto) + '"' +
+      ' data-sitio_web="' + escapeAttr(row.sitio_web) + '"' +
+      ' data-horario_atencion="' + escapeAttr(row.horario_atencion) + '"' +
+      ' data-logo_url_punto="' + escapeAttr(row.logo_url_punto) + '"' +
+      ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+      ' data-latitud="' + escapeAttr(row.latitud) + '"' +
+      ' data-longitud="' + escapeAttr(row.longitud) + '"' +
+      ' data-localidad_id="' + escapeAttr(row.localidad_id) + '"' +
+      ' data-estado="' + escapeAttr(row.estado) + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    setupEditModal('.btn-editar-punto', 'modalEditarPuntoECA', {
+      nombre: 'edit_eca_nombre', direccion: 'edit_eca_direccion',
+      email: 'edit_eca_email', celular: 'edit_eca_celular',
+      telefono_punto: 'edit_eca_telefono', sitio_web: 'edit_eca_sitio_web',
+      horario_atencion: 'edit_eca_horario', logo_url_punto: 'edit_eca_logo',
+      descripcion: 'edit_eca_descripcion', latitud: 'edit_eca_latitud',
+      longitud: 'edit_eca_longitud', localidad_id: 'edit_eca_localidad',
+      estado: 'edit_eca_estado'
+    });
+  }
+
+  var puntosTable = new AdminTable({
+    containerId: 'puntos-tbody',
+    data: readJSONData('puntos-data'),
+    pageSize: 10,
+    countBadgeId: 'puntos-count-badge',
+    pagerId: 'puntos-pager',
+    rowIdPrefix: 'punto-',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.direccion + ' ' + row.localidad).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.direccion || '-'); } },
+      { render: function(r) { return escapeHTML(r.localidad); } },
+      { render: gestorDisplay },
+      { render: estadoBadge },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  {% if search_query %}
+  puntosTable.setFilters('{{ search_query|escapejs }}', {});
+  {% endif %}
+
+  var searchBtn = document.getElementById('puntos-search-btn');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', function() {
+      var q = document.getElementById('puntos-search-input')?.value || '';
+      puntosTable.setSearch(q);
+    });
+  }
+
   function validarPasswordsECA(form) {
     var p1 = document.getElementById('crear_eca_password');
     var p2 = document.getElementById('crear_eca_password2');
@@ -404,16 +428,6 @@
 
   initModalFormAjax('formCrearPuntoECA', '{% url "panel_admin:listar_puntos_eca_admin" %}', validarPasswordsECA);
   initModalFormAjax('formEditarPuntoECA', globalThis.location.href);
-
-  setupEditModal('.btn-editar-punto', 'modalEditarPuntoECA', {
-    nombre: 'edit_eca_nombre', direccion: 'edit_eca_direccion',
-    email: 'edit_eca_email', celular: 'edit_eca_celular',
-    telefono_punto: 'edit_eca_telefono', sitio_web: 'edit_eca_sitio_web',
-    horario_atencion: 'edit_eca_horario', logo_url_punto: 'edit_eca_logo',
-    descripcion: 'edit_eca_descripcion', latitud: 'edit_eca_latitud',
-    longitud: 'edit_eca_longitud', localidad_id: 'edit_eca_localidad',
-    estado: 'edit_eca_estado'
-  });
 
   function initTogglePassword() {
     document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {

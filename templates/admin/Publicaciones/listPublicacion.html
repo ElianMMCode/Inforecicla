@@ -26,22 +26,22 @@
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
   <div class="card-body">
-    <form method="get" class="row g-2">
+    <div class="row g-2" id="publicaciones-filter-form">
       <div class="col-md-10">
         <label for="q_search" class="visually-hidden">Buscar publicaciones</label>
         <input id="q_search" type="text" name="q" class="form-control" placeholder="Título, contenido o autor..." value="{{ search_query }}" aria-label="Buscar publicaciones">
       </div>
       <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+        <button type="button" class="btn btn-success" id="publicaciones-search-btn"><i class="bi bi-search"></i> Buscar</button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
 
 <div class="card shadow-sm border-0">
   <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
     <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
-    <span class="badge bg-secondary rounded-pill">{{ publicaciones|length }} registros</span>
+    <span class="badge bg-secondary rounded-pill" id="publicaciones-count-badge">{{ publicaciones|length }} registros</span>
   </div>
   <div class="table-responsive">
     <table class="table table-sm table-hover align-middle mb-0">
@@ -55,47 +55,16 @@
           <th class="fw-bold small text-center">Acciones</th>
         </tr>
       </thead>
-      <tbody class="border-top">
-        {% for pub in publicaciones %}
-        <tr>
-          <td><strong>{{ pub.titulo|truncatechars:50 }}</strong></td>
-          <td>{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</td>
-          <td>{{ pub.categoria.tipo|default:"-" }}</td>
-          <td>
-            {% if pub.estado == "ACTIVO" %}
-              <span class="badge bg-success">Activo</span>
-            {% else %}
-              <span class="badge bg-secondary">{{ pub.estado }}</span>
-            {% endif %}
-          </td>
-          <td>{{ pub.fecha_creacion|date:"d/m/Y" }}</td>
-          <td class="text-center">
-            <a href="{% url 'panel_admin:ver_publicacion_admin' publicacion_id=pub.id %}" class="btn btn-outline-info btn-sm" title="Ver">
-              <i class="bi bi-eye"></i>
-            </a>
-            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-publicacion"
-                    title="Editar"
-                    data-id="{{ pub.id }}"
-                    data-titulo="{{ pub.titulo|default:'' }}"
-                    data-contenido="{{ pub.contenido|default:'' }}"
-                    data-resumen="{{ pub.resumen|default:'' }}"
-                    data-destacado="{% if pub.destacado %}1{% endif %}"
-                    data-video_url="{{ pub.video_url|default:'' }}"
-                    data-categoria_id="{{ pub.categoria.id|default:'' }}"
-                    data-estado="{{ pub.estado|default:'ACTIVO' }}"
-                    data-action="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}">
-              <i class="bi bi-pencil"></i>
-            </button>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron publicaciones.</td></tr>
-        {% endfor %}
-      </tbody>
+      <tbody class="border-top" id="publicaciones-tbody"></tbody>
     </table>
   </div>
+  <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+    <ul class="pagination pagination-sm mb-0" id="publicaciones-pager"></ul>
+  </nav>
 </div>
 {% endif %}
+
+{{ publicaciones_json|json_script:"publicaciones-data" }}
 
 {% endblock %}
 
@@ -262,9 +231,73 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script>
 (function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  function accionBtn(row) {
+    return '<a href="' + escapeAttr(row.view_url) + '" class="btn btn-outline-info btn-sm" title="Ver"><i class="bi bi-eye"></i></a>' +
+      '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-publicacion" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-titulo="' + escapeAttr(row.titulo) + '"' +
+      ' data-contenido="' + escapeAttr(row.contenido) + '"' +
+      ' data-resumen="' + escapeAttr(row.resumen) + '"' +
+      ' data-destacado="' + (row.destacado ? '1' : '') + '"' +
+      ' data-video_url="' + escapeAttr(row.video_url) + '"' +
+      ' data-categoria_id="' + escapeAttr(row.categoria_id) + '"' +
+      ' data-estado="' + escapeAttr(row.estado) + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
+      titulo: 'ep_titulo', contenido: 'ep_contenido',
+      resumen: 'ep_resumen', destacado: 'ep_destacado',
+      video_url: 'ep_video_url',
+      categoria_id: 'ep_categoria', estado: 'ep_estado'
+    });
+  }
+
+  var publicacionesTable = new AdminTable({
+    containerId: 'publicaciones-tbody',
+    data: readJSONData('publicaciones-data'),
+    pageSize: 10,
+    countBadgeId: 'publicaciones-count-badge',
+    pagerId: 'publicaciones-pager',
+    rowIdPrefix: 'pub-',
+    filterFns: [
+      function(row, q) { return (row.titulo + ' ' + row.autor).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.titulo.localeCompare(b.titulo); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.titulo) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.autor); } },
+      { render: function(r) { return escapeHTML(r.categoria); } },
+      { render: estadoBadge },
+      { render: function(r) { return escapeHTML(r.fecha_creacion); } },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  {% if search_query %}
+  publicacionesTable.setFilters('{{ search_query|escapejs }}', {});
+  {% endif %}
+
+  var searchBtn = document.getElementById('publicaciones-search-btn');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', function() {
+      var q = document.querySelector('#publicaciones-filter-form input[name="q"]')?.value || '';
+      publicacionesTable.setSearch(q);
+    });
+  }
+
   var videoInput = document.getElementById('cp_video');
   if (videoInput) {
     videoInput.addEventListener('change', function() {
@@ -283,13 +316,6 @@
       if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? 'block' : 'none';
     });
   }
-
-  setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
-    titulo: 'ep_titulo', contenido: 'ep_contenido',
-    resumen: 'ep_resumen', destacado: 'ep_destacado',
-    video_url: 'ep_video_url',
-    categoria_id: 'ep_categoria', estado: 'ep_estado'
-  });
 })();
 </script>
 {% include "admin/_messages_swal.html" %}
