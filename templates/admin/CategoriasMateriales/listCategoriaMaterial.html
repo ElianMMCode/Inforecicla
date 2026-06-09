@@ -5,7 +5,7 @@
 
 {% block content %}
 
-<main class="col offset-md-2 p-4">
+<div>
   {% if messages %}
   <div class="mb-3">
     {% for message in messages %}
@@ -36,8 +36,10 @@
 
   {% include "admin/Materiales/tabs_materiales.html" with active_tab="categorias" %}
 
-  <div class="card border-success mb-4 shadow-sm">
-    <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-header bg-success-subtle border-0 px-4 py-3">
+      <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+    </div>
     <div class="card-body">
       <form method="get" class="row g-2">
         <div class="col-md-10">
@@ -51,21 +53,21 @@
   </div>
 
   <div class="card shadow-sm border-0">
-    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-      <span><i class="bi bi-table me-1"></i> Listado</span>
-      <span class="badge bg-light text-success">{{ categorias|length }} resultados</span>
+    <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+      <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+      <span class="badge bg-secondary rounded-pill">{{ categorias|length }} registros</span>
     </div>
     <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle">
+      <table class="table table-sm table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-            <th class="text-center">Acciones</th>
+            <th class="fw-bold small">Nombre</th>
+            <th class="fw-bold small">Descripción</th>
+            <th class="fw-bold small">Estado</th>
+            <th class="fw-bold small text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="border-top">
           {% for cat in categorias %}
           <tr>
             <td><strong>{{ cat.nombre }}</strong></td>
@@ -90,5 +92,5 @@
       </table>
     </div>
   </div>
-</main>
+</div>
 {% endblock %}
