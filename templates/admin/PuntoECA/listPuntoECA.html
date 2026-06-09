@@ -83,14 +83,14 @@
          class="btn btn-sm btn-outline-success fw-semibold export-link"
          title="Exportar Excel"
          data-export-base="{% url 'panel_admin:exportar_puntos_eca_excel' %}"
-         data-export-filters="q:puntos-search-input">
+         data-export-filters="q:puntos-search-input,localidad:punto-filter-localidad,estado:punto-filter-estado">
         <i class="bi bi-file-earmark-excel me-1"></i> Excel
       </a>
       <a href="{% url 'panel_admin:exportar_puntos_eca_pdf' %}"
          class="btn btn-sm btn-outline-danger fw-semibold export-link"
          title="Exportar PDF"
          data-export-base="{% url 'panel_admin:exportar_puntos_eca_pdf' %}"
-         data-export-filters="q:puntos-search-input">
+         data-export-filters="q:puntos-search-input,localidad:punto-filter-localidad,estado:punto-filter-estado">
         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
       </a>
     </div>

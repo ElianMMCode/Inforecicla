@@ -859,6 +859,12 @@ def _filtrar_puntos_eca_export(request, puntos):
     if q:
         ql = q.lower()
         puntos = [p for p in puntos if ql in (p.nombre.lower() + " " + p.direccion.lower() + " " + p.localidad.nombre.lower())]
+    localidad = request.GET.get('localidad', '').strip()
+    if localidad:
+        puntos = [p for p in puntos if p.localidad and p.localidad.nombre == localidad]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        puntos = [p for p in puntos if p.estado == estado]
     return puntos
 
 
