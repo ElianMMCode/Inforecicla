@@ -41,21 +41,21 @@
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
     </div>
     <div class="card-body">
-      <form method="get" class="row g-2">
+      <div class="row g-2" id="tipos-list-filter-form">
         <div class="col-md-10">
-          <input type="text" name="q" aria-label="Buscar tipos de material" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}">
+          <input type="text" aria-label="Buscar tipos de material" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}" id="tipos-list-search-input">
         </div>
         <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+          <button type="button" class="btn btn-success" id="tipos-list-search-btn"><i class="bi bi-search"></i> Buscar</button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
   <div class="card shadow-sm border-0">
     <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
       <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
-      <span class="badge bg-secondary rounded-pill">{{ tipos|length }} registros</span>
+      <span class="badge bg-secondary rounded-pill" id="tipos-list-count-badge">{{ tipos|length }} registros</span>
     </div>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0">
@@ -67,31 +67,58 @@
             <th class="fw-bold small text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody class="border-top">
-          {% for tipo in tipos %}
-          <tr>
-            <td><strong>{{ tipo.nombre }}</strong></td>
-            <td>{{ tipo.descripcion|truncatechars:60|default:"-" }}</td>
-            <td>
-              {% if tipo.estado == "ACTIVO" %}
-                <span class="badge bg-success">Activo</span>
-              {% else %}
-                <span class="badge bg-secondary">{{ tipo.estado }}</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              <a href="{% url 'panel_admin:editar_tipo_material_admin' tipo_id=tipo.id %}" class="btn btn-outline-success btn-sm" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" class="text-center text-muted py-4">No se encontraron tipos de material.</td></tr>
-          {% endfor %}
-        </tbody>
+        <tbody class="border-top" id="tipos-list-tbody"></tbody>
       </table>
     </div>
+    <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+      <ul class="pagination pagination-sm mb-0" id="tipos-list-pager"></ul>
+    </nav>
   </div>
 </div>
 
+{{ tipos_json|json_script:"tipos-list-data" }}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
+<script>
+(function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  var table = new AdminTable({
+    containerId: 'tipos-list-tbody',
+    data: readJSONData('tipos-list-data'),
+    pageSize: 10,
+    countBadgeId: 'tipos-list-count-badge',
+    pagerId: 'tipos-list-pager',
+    rowIdPrefix: 'tipo-',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+      { render: estadoBadge },
+      { className: 'text-center', render: function(r) { return '<a href="' + escapeAttr(r.action_url) + '" class="btn btn-outline-success btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>'; } }
+    ]
+  });
+
+  {% if search_query %}
+  table.setFilters('{{ search_query|escapejs }}', {});
+  {% endif %}
+
+  var btn = document.getElementById('tipos-list-search-btn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var q = document.getElementById('tipos-list-search-input')?.value || '';
+      table.setSearch(q);
+    });
+  }
+})();
+</script>
 {% endblock %}

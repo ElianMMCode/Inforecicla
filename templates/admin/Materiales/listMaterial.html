@@ -41,22 +41,22 @@
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
     </div>
     <div class="card-body">
-      <form method="get" class="row g-2">
+      <div class="row g-2" id="materiales-list-filter-form">
         <div class="col-md-10">
-          <label for="q_search" class="visually-hidden">Buscar materiales</label>
-          <input id="q_search" type="text" name="q" class="form-control" placeholder="Nombre, descripción o categoría..." value="{{ search_query }}" aria-label="Buscar materiales">
+          <label for="mat-list-search" class="visually-hidden">Buscar materiales</label>
+          <input id="mat-list-search" type="text" class="form-control" placeholder="Nombre, descripción o categoría..." value="{{ search_query }}" aria-label="Buscar materiales">
         </div>
         <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+          <button type="button" class="btn btn-success" id="materiales-list-search-btn"><i class="bi bi-search"></i> Buscar</button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
   <div class="card shadow-sm border-0">
     <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
       <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
-      <span class="badge bg-secondary rounded-pill">{{ materiales|length }} registros</span>
+      <span class="badge bg-secondary rounded-pill" id="materiales-list-count-badge">{{ materiales|length }} registros</span>
     </div>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0">
@@ -70,33 +70,60 @@
             <th class="fw-bold small text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody class="border-top">
-          {% for material in materiales %}
-          <tr>
-            <td><strong>{{ material.nombre }}</strong></td>
-            <td>{{ material.descripcion|truncatechars:40|default:"-" }}</td>
-            <td>{{ material.categoria.nombre|default:"-" }}</td>
-            <td>{{ material.tipo.nombre|default:"-" }}</td>
-            <td>
-              {% if material.estado == "ACTIVO" %}
-                <span class="badge bg-success">Activo</span>
-              {% else %}
-                <span class="badge bg-secondary">{{ material.estado }}</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              <a href="{% url 'panel_admin:editar_material_admin' material_id=material.id %}" class="btn btn-outline-success btn-sm" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron materiales.</td></tr>
-          {% endfor %}
-        </tbody>
+        <tbody class="border-top" id="materiales-list-tbody"></tbody>
       </table>
     </div>
+    <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+      <ul class="pagination pagination-sm mb-0" id="materiales-list-pager"></ul>
+    </nav>
   </div>
 </div>
 
+{{ materiales_json|json_script:"materiales-list-data" }}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
+<script>
+(function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  var table = new AdminTable({
+    containerId: 'materiales-list-tbody',
+    data: readJSONData('materiales-list-data'),
+    pageSize: 10,
+    countBadgeId: 'materiales-list-count-badge',
+    pagerId: 'materiales-list-pager',
+    rowIdPrefix: 'mat-',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.descripcion + ' ' + row.categoria_nombre).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+      { render: function(r) { return escapeHTML(r.categoria_nombre); } },
+      { render: function(r) { return escapeHTML(r.tipo_nombre); } },
+      { render: estadoBadge },
+      { className: 'text-center', render: function(r) { return '<a href="' + escapeAttr(r.action_url) + '" class="btn btn-outline-success btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>'; } }
+    ]
+  });
+
+  {% if search_query %}
+  table.setFilters('{{ search_query|escapejs }}', {});
+  {% endif %}
+
+  var btn = document.getElementById('materiales-list-search-btn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var q = document.getElementById('mat-list-search')?.value || '';
+      table.setSearch(q);
+    });
+  }
+})();
+</script>
 {% endblock %}

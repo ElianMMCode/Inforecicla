@@ -35,21 +35,21 @@
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
   <div class="card-body">
-    <form method="get" class="row g-2">
+    <div class="row g-2" id="cat-pub-filter-form">
       <div class="col-md-10">
-        <input type="text" name="q" class="form-control" placeholder="Nombre, tipo o descripción..." value="{{ search_query }}">
+        <input type="text" class="form-control" placeholder="Nombre, tipo o descripción..." value="{{ search_query }}" id="cat-pub-search-input">
       </div>
       <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+        <button type="button" class="btn btn-success" id="cat-pub-search-btn"><i class="bi bi-search"></i> Buscar</button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
 
 <div class="card shadow-sm border-0">
   <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
     <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
-    <span class="badge bg-secondary rounded-pill">{{ categorias|length }} registros</span>
+    <span class="badge bg-secondary rounded-pill" id="cat-pub-count-badge">{{ categorias|length }} registros</span>
   </div>
   <div class="table-responsive">
     <table class="table table-sm table-hover align-middle mb-0">
@@ -62,39 +62,16 @@
           <th class="fw-bold small text-center">Acciones</th>
         </tr>
       </thead>
-      <tbody class="border-top">
-        {% for cat in categorias %}
-        <tr>
-          <td class="fw-semibold">{{ cat.nombre|default:cat.tipo }}</td>
-          <td><span class="badge bg-primary">{{ cat.get_tipo_display }}</span></td>
-          <td>{{ cat.descripcion|truncatechars:60|default:"-" }}</td>
-          <td>
-            {% if cat.estado == "ACTIVO" %}
-              <span class="badge bg-success">Activo</span>
-            {% else %}
-              <span class="badge bg-secondary">{{ cat.estado }}</span>
-            {% endif %}
-          </td>
-          <td class="text-center">
-            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-pub"
-                    title="Editar"
-                    data-id="{{ cat.id }}"
-                    data-nombre="{{ cat.nombre|default:'' }}"
-                    data-descripcion="{{ cat.descripcion|default:'' }}"
-                    data-tipo="{{ cat.tipo|default:'' }}"
-                    data-estado="{{ cat.estado|default:'ACTIVO' }}"
-                    data-action="{% url 'panel_admin:editar_categoria_publicacion_admin' categoria_id=cat.id %}">
-              <i class="bi bi-pencil"></i>
-            </button>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-center text-muted py-4">No se encontraron categorías.</td></tr>
-        {% endfor %}
-      </tbody>
+      <tbody class="border-top" id="cat-pub-tbody"></tbody>
     </table>
   </div>
+  <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+    <ul class="pagination pagination-sm mb-0" id="cat-pub-pager"></ul>
+  </nav>
 </div>
+
+{{ categorias_json|json_script:"cat-pub-data" }}
+
 {% endif %}
 
 {% endblock %}
@@ -211,9 +188,70 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script>
 (function() {
+  function tipoBadge(row) {
+    return '<span class="badge bg-primary">' + escapeHTML(row.get_tipo_display) + '</span>';
+  }
+
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  function accionBtn(row) {
+    return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-pub" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+      ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+      ' data-tipo="' + escapeAttr(row.tipo) + '"' +
+      ' data-estado="' + escapeAttr(row.estado) + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    setupEditModal('.btn-editar-cat-pub', 'modalEditarCategoriaPublicacion', {
+      nombre: 'ecp_nombre', descripcion: 'ecp_descripcion',
+      tipo: 'ecp_tipo', estado: 'ecp_estado'
+    });
+  }
+
+  var table = new AdminTable({
+    containerId: 'cat-pub-tbody',
+    data: readJSONData('cat-pub-data'),
+    pageSize: 10,
+    countBadgeId: 'cat-pub-count-badge',
+    pagerId: 'cat-pub-pager',
+    rowIdPrefix: 'cat-pub-',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.tipo + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<span class="fw-semibold">' + escapeHTML(r.nombre) + '</span>'; } },
+      { render: tipoBadge },
+      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+      { render: estadoBadge },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  {% if search_query %}
+  table.setFilters('{{ search_query|escapejs }}', {});
+  {% endif %}
+
+  var btn = document.getElementById('cat-pub-search-btn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var q = document.getElementById('cat-pub-search-input')?.value || '';
+      table.setSearch(q);
+    });
+  }
+
   function initTipoOtro(selectId, wrapperId, inputId) {
     var sel = document.getElementById(selectId);
     var wrapper = document.getElementById(wrapperId);
@@ -229,7 +267,6 @@
     return toggle;
   }
 
-  // Pre-populate tipo_otro on edit modal open
   var editModal = document.getElementById('modalEditarCategoriaPublicacion');
   var editSel = document.getElementById('ecp_tipo');
   var editWrapper = document.getElementById('ecp_tipo_otro_wrapper');
@@ -237,7 +274,6 @@
 
   if (editModal && editSel) {
     editModal.addEventListener('show.bs.modal', function() {
-      // The tipo was already set by setupEditModal; check if it's not a known value
       var known = [{% for value, label in tipos_publicacion %}'{{ value }}',{% endfor %}];
       if (editSel.value && known.indexOf(editSel.value) === -1 && editSel.value !== '__otro__') {
         editInput.value = editSel.value;
@@ -252,11 +288,6 @@
 
   initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
   initModalFormAjax('formEditarCatPub', window.location.href);
-
-  setupEditModal('.btn-editar-cat-pub', 'modalEditarCategoriaPublicacion', {
-    nombre: 'ecp_nombre', descripcion: 'ecp_descripcion',
-    tipo: 'ecp_tipo', estado: 'ecp_estado'
-  });
 })();
 </script>
 {% include "admin/_messages_swal.html" %}

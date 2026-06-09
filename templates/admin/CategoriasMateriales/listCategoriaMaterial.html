@@ -41,21 +41,21 @@
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
     </div>
     <div class="card-body">
-      <form method="get" class="row g-2">
+      <div class="row g-2" id="cat-mat-filter-form">
         <div class="col-md-10">
-          <input type="text" name="q" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}">
+          <input type="text" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}" id="cat-mat-search-input">
         </div>
         <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+          <button type="button" class="btn btn-success" id="cat-mat-search-btn"><i class="bi bi-search"></i> Buscar</button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
   <div class="card shadow-sm border-0">
     <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
       <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
-      <span class="badge bg-secondary rounded-pill">{{ categorias|length }} registros</span>
+      <span class="badge bg-secondary rounded-pill" id="cat-mat-count-badge">{{ categorias|length }} registros</span>
     </div>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0">
@@ -67,30 +67,58 @@
             <th class="fw-bold small text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody class="border-top">
-          {% for cat in categorias %}
-          <tr>
-            <td><strong>{{ cat.nombre }}</strong></td>
-            <td>{{ cat.descripcion|truncatechars:60|default:"-" }}</td>
-            <td>
-              {% if cat.estado == "ACTIVO" %}
-                <span class="badge bg-success">Activo</span>
-              {% else %}
-                <span class="badge bg-secondary">{{ cat.estado }}</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              <a href="{% url 'panel_admin:editar_categoria_material_admin' categoria_id=cat.id %}" class="btn btn-outline-success btn-sm" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" class="text-center text-muted py-4">No se encontraron categorías.</td></tr>
-          {% endfor %}
-        </tbody>
+        <tbody class="border-top" id="cat-mat-tbody"></tbody>
       </table>
     </div>
+    <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+      <ul class="pagination pagination-sm mb-0" id="cat-mat-pager"></ul>
+    </nav>
   </div>
 </div>
+
+{{ categorias_json|json_script:"cat-mat-data" }}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
+<script>
+(function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  var table = new AdminTable({
+    containerId: 'cat-mat-tbody',
+    data: readJSONData('cat-mat-data'),
+    pageSize: 10,
+    countBadgeId: 'cat-mat-count-badge',
+    pagerId: 'cat-mat-pager',
+    rowIdPrefix: 'cat-',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+      { render: estadoBadge },
+      { className: 'text-center', render: function(r) { return '<a href="' + escapeAttr(r.action_url) + '" class="btn btn-outline-success btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>'; } }
+    ]
+  });
+
+  {% if search_query %}
+  table.setFilters('{{ search_query|escapejs }}', {});
+  {% endif %}
+
+  var btn = document.getElementById('cat-mat-search-btn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var q = document.getElementById('cat-mat-search-input')?.value || '';
+      table.setSearch(q);
+    });
+  }
+})();
+</script>
 {% endblock %}
