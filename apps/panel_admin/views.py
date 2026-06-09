@@ -768,21 +768,12 @@ def admin_redirect_no_autorizado(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def admin(request):
-    from django.core.serializers.json import DjangoJSONEncoder
-    import json
-
     contexto = {
         "mensaje": "Bienvenido al panel de control de Inforecicla",
         "resumen_general": AdminDashboardService.obtener_resumen_general(),
-        "tendencia_usuarios_json": json.dumps(
-            AdminDashboardService.obtener_tendencia_usuarios(30), cls=DjangoJSONEncoder
-        ),
-        "dist_puntos_eca_json": json.dumps(
-            AdminDashboardService.obtener_distribucion_puntos_eca(), cls=DjangoJSONEncoder
-        ),
-        "dist_materiales_json": json.dumps(
-            AdminDashboardService.obtener_distribucion_materiales(), cls=DjangoJSONEncoder
-        ),
+        "tendencia_usuarios": AdminDashboardService.obtener_tendencia_usuarios(30),
+        "dist_puntos_eca": AdminDashboardService.obtener_distribucion_puntos_eca(),
+        "dist_materiales": AdminDashboardService.obtener_distribucion_materiales(),
     }
     return render(request, "admin/admin.html", contexto)
 
