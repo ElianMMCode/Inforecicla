@@ -20,7 +20,7 @@
         this.filteredData = this.data.slice();
         this.pageSize = config.pageSize || 10;
         this.currentPage = 1;
-        this.tableBodyId = config.tableBodyId;
+        this.tableBodyId = config.tableBodyId || config.containerId;
         this.pagerId = config.pagerId;
         this.footerInfoId = config.footerInfoId;
         this.countBadgeId = config.countBadgeId;
