@@ -86,12 +86,28 @@
           <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
         </div>
         <div class="card-body">
-          <div class="row g-2" id="materiales-filter-form">
-            <div class="col-md-10">
-              <input type="text" name="q_mat" class="form-control" placeholder="Nombre, descripción, categoría o tipo..." value="{{ q_mat }}" aria-label="Buscar materiales" id="materiales-search-input">
+          <div class="row g-3 align-items-end" id="materiales-filter-form">
+            <div class="col-md-4">
+              <label for="materiales-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+              <input type="text" name="q_mat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_mat }}" id="materiales-search-input">
             </div>
-            <div class="col-md-2 d-grid">
-              <button type="button" class="btn btn-success" id="materiales-search-btn"><i class="bi bi-search"></i> Buscar</button>
+            <div class="col-md-3">
+              <label for="mat-filter-categoria" class="form-label fw-semibold text-muted mb-1">Categoría</label>
+              <select class="form-select js-select2" id="mat-filter-categoria">
+                <option value="">Todas las categorías</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="mat-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
+              <select class="form-select js-select2" id="mat-filter-tipo">
+                <option value="">Todos los tipos</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success flex-grow-1" id="materiales-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+                <button type="button" class="btn btn-outline-secondary" id="mat-filter-limpiar"><i class="bi bi-eraser"></i></button>
+              </div>
             </div>
           </div>
         </div>
@@ -172,12 +188,24 @@
           <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
         </div>
         <div class="card-body">
-          <div class="row g-2" id="tipos-filter-form">
-            <div class="col-md-10">
-              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" aria-label="Buscar tipos de material" id="tipos-search-input">
+          <div class="row g-3 align-items-end" id="tipos-filter-form">
+            <div class="col-md-6">
+              <label for="tipos-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" id="tipos-search-input">
             </div>
-            <div class="col-md-2 d-grid">
-              <button type="button" class="btn btn-success" id="tipos-search-btn"><i class="bi bi-search"></i> Buscar</button>
+            <div class="col-md-3">
+              <label for="tipo-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+              <select class="form-select js-select2" id="tipo-filter-estado">
+                <option value="">Todos</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="INACTIVO">Inactivo</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success flex-grow-1" id="tipos-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+                <button type="button" class="btn btn-outline-secondary" id="tipo-filter-limpiar"><i class="bi bi-eraser"></i></button>
+              </div>
             </div>
           </div>
         </div>
@@ -256,12 +284,24 @@
           <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
         </div>
         <div class="card-body">
-          <div class="row g-2" id="categorias-filter-form">
-            <div class="col-md-10">
-              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" aria-label="Buscar categorías" id="categorias-search-input">
+          <div class="row g-3 align-items-end" id="categorias-filter-form">
+            <div class="col-md-6">
+              <label for="categorias-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" id="categorias-search-input">
             </div>
-            <div class="col-md-2 d-grid">
-              <button type="button" class="btn btn-success" id="categorias-search-btn"><i class="bi bi-search"></i> Buscar</button>
+            <div class="col-md-3">
+              <label for="cat-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+              <select class="form-select js-select2" id="cat-filter-estado">
+                <option value="">Todos</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="INACTIVO">Inactivo</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success flex-grow-1" id="categorias-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+                <button type="button" class="btn btn-outline-secondary" id="cat-filter-limpiar"><i class="bi bi-eraser"></i></button>
+              </div>
             </div>
           </div>
         </div>
@@ -724,13 +764,48 @@
       {% if q_mat %}
       table.setFilters('{{ q_mat|escapejs }}', {});
       {% endif %}
-      var btn = document.getElementById('materiales-search-btn');
-      if (btn) {
-        btn.addEventListener('click', function() {
-          var q = document.getElementById('materiales-search-input')?.value || '';
-          table.setSearch(q);
+      var data = table.data;
+      var cats = [...new Set(data.map(function(m) { return m.categoria_nombre; }))].sort();
+      var catSel = document.getElementById('mat-filter-categoria');
+      if (catSel) {
+        cats.forEach(function(c) {
+          if (!c || c === '-') return;
+          var opt = document.createElement('option');
+          opt.value = c; opt.textContent = c;
+          catSel.appendChild(opt);
         });
       }
+      var tipos = [...new Set(data.map(function(m) { return m.tipo_nombre; }))].sort();
+      var tipSel = document.getElementById('mat-filter-tipo');
+      if (tipSel) {
+        tipos.forEach(function(t) {
+          if (!t || t === '-') return;
+          var opt = document.createElement('option');
+          opt.value = t; opt.textContent = t;
+          tipSel.appendChild(opt);
+        });
+      }
+      $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+      function aplicarFiltros() {
+        var q = document.getElementById('materiales-search-input')?.value || '';
+        table.setSearch(q);
+        var cat = $('#mat-filter-categoria').val() || '';
+        if (cat) table.setExtraFilter('categoria_nombre', cat);
+        else table.removeExtraFilter('categoria_nombre');
+        var tip = $('#mat-filter-tipo').val() || '';
+        if (tip) table.setExtraFilter('tipo_nombre', tip);
+        else table.removeExtraFilter('tipo_nombre');
+      }
+      function limpiarFiltros() {
+        document.getElementById('materiales-search-input').value = '';
+        $('#mat-filter-categoria').val('').trigger('change');
+        $('#mat-filter-tipo').val('').trigger('change');
+        table.setFilters('', {});
+      }
+      document.getElementById('materiales-search-btn').addEventListener('click', aplicarFiltros);
+      document.getElementById('mat-filter-limpiar').addEventListener('click', limpiarFiltros);
+      $('#mat-filter-categoria, #mat-filter-tipo').on('change', aplicarFiltros);
+      document.getElementById('materiales-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
       return table;
     }
 
@@ -757,13 +832,22 @@
       {% if q_tipo %}
       table.setFilters('{{ q_tipo|escapejs }}', {});
       {% endif %}
-      var btn = document.getElementById('tipos-search-btn');
-      if (btn) {
-        btn.addEventListener('click', function() {
-          var q = document.getElementById('tipos-search-input')?.value || '';
-          table.setSearch(q);
-        });
+      function aplicarFiltros() {
+        var q = document.getElementById('tipos-search-input')?.value || '';
+        table.setSearch(q);
+        var est = $('#tipo-filter-estado').val() || '';
+        if (est) table.setExtraFilter('estado', est);
+        else table.removeExtraFilter('estado');
       }
+      function limpiarFiltros() {
+        document.getElementById('tipos-search-input').value = '';
+        $('#tipo-filter-estado').val('').trigger('change');
+        table.setFilters('', {});
+      }
+      document.getElementById('tipos-search-btn').addEventListener('click', aplicarFiltros);
+      document.getElementById('tipo-filter-limpiar').addEventListener('click', limpiarFiltros);
+      $('#tipo-filter-estado').on('change', aplicarFiltros);
+      document.getElementById('tipos-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
       return table;
     }
 
@@ -790,13 +874,22 @@
       {% if q_cat %}
       table.setFilters('{{ q_cat|escapejs }}', {});
       {% endif %}
-      var btn = document.getElementById('categorias-search-btn');
-      if (btn) {
-        btn.addEventListener('click', function() {
-          var q = document.getElementById('categorias-search-input')?.value || '';
-          table.setSearch(q);
-        });
+      function aplicarFiltros() {
+        var q = document.getElementById('categorias-search-input')?.value || '';
+        table.setSearch(q);
+        var est = $('#cat-filter-estado').val() || '';
+        if (est) table.setExtraFilter('estado', est);
+        else table.removeExtraFilter('estado');
       }
+      function limpiarFiltros() {
+        document.getElementById('categorias-search-input').value = '';
+        $('#cat-filter-estado').val('').trigger('change');
+        table.setFilters('', {});
+      }
+      document.getElementById('categorias-search-btn').addEventListener('click', aplicarFiltros);
+      document.getElementById('cat-filter-limpiar').addEventListener('click', limpiarFiltros);
+      $('#cat-filter-estado').on('change', aplicarFiltros);
+      document.getElementById('categorias-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
       return table;
     }
 
