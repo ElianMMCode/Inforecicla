@@ -867,6 +867,12 @@ def _filtrar_materiales_export(request, materiales):
     if q:
         ql = q.lower()
         materiales = [m for m in materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower())]
+    categoria = request.GET.get('categoria', '').strip()
+    if categoria:
+        materiales = [m for m in materiales if m.categoria and m.categoria.nombre == categoria]
+    tipo = request.GET.get('tipo', '').strip()
+    if tipo:
+        materiales = [m for m in materiales if m.tipo and m.tipo.nombre == tipo]
     return materiales
 
 
@@ -875,6 +881,9 @@ def _filtrar_categorias_material_export(request, categorias):
     if q:
         ql = q.lower()
         categorias = [c for c in categorias if ql in (c.nombre.lower() + " " + (c.descripcion or "").lower())]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        categorias = [c for c in categorias if c.estado == estado]
     return categorias
 
 
@@ -891,6 +900,9 @@ def _filtrar_tipos_material_export(request, tipos):
     if q:
         ql = q.lower()
         tipos = [t for t in tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        tipos = [t for t in tipos if t.estado == estado]
     return tipos
 
 

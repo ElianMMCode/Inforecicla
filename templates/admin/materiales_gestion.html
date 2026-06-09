@@ -121,14 +121,14 @@
                class="btn btn-sm btn-outline-success fw-semibold export-link"
                title="Exportar Excel"
                data-export-base="{% url 'panel_admin:exportar_materiales_excel' %}"
-               data-export-filters="q:materiales-search-input">
+               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,tipo:mat-filter-tipo">
               <i class="bi bi-file-earmark-excel me-1"></i> Excel
             </a>
             <a href="{% url 'panel_admin:exportar_materiales_pdf' %}"
                class="btn btn-sm btn-outline-danger fw-semibold export-link"
                title="Exportar PDF"
                data-export-base="{% url 'panel_admin:exportar_materiales_pdf' %}"
-               data-export-filters="q:materiales-search-input">
+               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,tipo:mat-filter-tipo">
               <i class="bi bi-file-earmark-pdf me-1"></i> PDF
             </a>
           </div>
@@ -219,14 +219,14 @@
                class="btn btn-sm btn-outline-success fw-semibold export-link"
                title="Exportar Excel"
                data-export-base="{% url 'panel_admin:exportar_tipos_material_excel' %}"
-               data-export-filters="q:tipos-search-input">
+               data-export-filters="q:tipos-search-input,estado:tipo-filter-estado">
               <i class="bi bi-file-earmark-excel me-1"></i> Excel
             </a>
             <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}"
                class="btn btn-sm btn-outline-danger fw-semibold export-link"
                title="Exportar PDF"
                data-export-base="{% url 'panel_admin:exportar_tipos_material_pdf' %}"
-               data-export-filters="q:tipos-search-input">
+               data-export-filters="q:tipos-search-input,estado:tipo-filter-estado">
               <i class="bi bi-file-earmark-pdf me-1"></i> PDF
             </a>
           </div>
@@ -315,14 +315,14 @@
                class="btn btn-sm btn-outline-success fw-semibold export-link"
                title="Exportar Excel"
                data-export-base="{% url 'panel_admin:exportar_categorias_material_excel' %}"
-               data-export-filters="q:categorias-search-input">
+               data-export-filters="q:categorias-search-input,estado:cat-filter-estado">
               <i class="bi bi-file-earmark-excel me-1"></i> Excel
             </a>
             <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
                class="btn btn-sm btn-outline-danger fw-semibold export-link"
                title="Exportar PDF"
                data-export-base="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
-               data-export-filters="q:categorias-search-input">
+               data-export-filters="q:categorias-search-input,estado:cat-filter-estado">
               <i class="bi bi-file-earmark-pdf me-1"></i> PDF
             </a>
           </div>
