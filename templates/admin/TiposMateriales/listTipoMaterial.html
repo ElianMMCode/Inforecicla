@@ -4,149 +4,24 @@
 {% block body_class %}bg-light{% endblock %}
 
 {% block content %}
-
 <div>
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-recycle me-2"></i>Tipos de Material</h1>
-      <p class="text-muted mb-0">Gestiona los tipos de materiales reciclables.</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <a href="{% url 'panel_admin:exportar_tipos_material_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-        <i class="bi bi-file-earmark-excel me-1"></i> Excel
-      </a>
-      <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-      </a>
-      <a href="{% url 'panel_admin:crear_tipo_material' %}" class="btn btn-success">
-        <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
-      </a>
-    </div>
-  </div>
-
-  {% include "admin/Materiales/tabs_materiales.html" with active_tab="tipos" %}
-
-  <div class="card shadow-sm mb-4 border-0">
-    <div class="card-header bg-success-subtle border-0 px-4 py-3">
-      <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
-    </div>
-    <div class="card-body">
-      <div class="row g-3 align-items-end" id="tipos-list-filter-form">
-        <div class="col-md-6">
-          <label for="tipos-list-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
-          <input type="text" aria-label="Buscar tipos de material" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}" id="tipos-list-search-input">
-        </div>
-        <div class="col-md-3">
-          <label for="tipos-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
-          <select class="form-select js-select2" id="tipos-filter-estado">
-            <option value="">Todos</option>
-            <option value="ACTIVO">Activo</option>
-            <option value="INACTIVO">Inactivo</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-success flex-grow-1" id="tipos-list-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
-            <button type="button" class="btn btn-outline-secondary" id="tipos-filter-limpiar"><i class="bi bi-eraser"></i></button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-      <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
-      <span class="badge bg-secondary rounded-pill" id="tipos-list-count-badge">{{ tipos|length }} registros</span>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-sm table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th class="fw-bold small">Nombre</th>
-            <th class="fw-bold small">Descripción</th>
-            <th class="fw-bold small">Estado</th>
-            <th class="fw-bold small text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="border-top" id="tipos-list-tbody"></tbody>
-      </table>
-    </div>
-    <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
-      <ul class="pagination pagination-sm mb-0" id="tipos-list-pager"></ul>
-    </nav>
-  </div>
+  {% include "admin/partials/lista_entidad_estado.html" with
+    icon="bi-recycle"
+    title="Tipos de Material"
+    description="Gestiona los tipos de materiales reciclables."
+    export_excel_url="panel_admin:exportar_tipos_material_excel"
+    export_pdf_url="panel_admin:exportar_tipos_material_pdf"
+    create_url="panel_admin:crear_tipo_material"
+    create_btn_text="Nuevo Tipo"
+    tabs_template="admin/Materiales/tabs_materiales.html"
+    active_tab="tipos"
+    id_prefix="tipos-list"
+    count=tipos|length
+    json_data=tipos_json
+  %}
 </div>
-
-{{ tipos_json|json_script:"tipos-list-data" }}
-
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/admin/panel-tables.js' %}"></script>
-<script>
-(function() {
-  function estadoBadge(row) {
-    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
-    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
-  }
-
-  var table = new AdminTable({
-    containerId: 'tipos-list-tbody',
-    data: readJSONData('tipos-list-data'),
-    pageSize: 10,
-    countBadgeId: 'tipos-list-count-badge',
-    pagerId: 'tipos-list-pager',
-    rowIdPrefix: 'tipo-',
-    filterFns: [
-      function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
-    ],
-    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
-    columns: [
-      { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
-      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
-      { render: estadoBadge },
-      { className: 'text-center', render: function(r) { return '<a href="' + escapeAttr(r.action_url) + '" class="btn btn-outline-success btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>'; } }
-    ]
-  });
-
-  (function() {
-    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
-
-    function aplicarFiltros() {
-      var q = document.getElementById('tipos-list-search-input')?.value || '';
-      table.setSearch(q);
-
-      var est = $('#tipos-filter-estado').val() || '';
-      if (est) table.setExtraFilter('estado', est);
-      else table.removeExtraFilter('estado');
-    }
-
-    function limpiarFiltros() {
-      document.getElementById('tipos-list-search-input').value = '';
-      $('#tipos-filter-estado').val('').trigger('change');
-      table.setFilters('', {});
-    }
-
-    document.getElementById('tipos-list-search-btn').addEventListener('click', aplicarFiltros);
-    document.getElementById('tipos-filter-limpiar').addEventListener('click', limpiarFiltros);
-    $('#tipos-filter-estado').on('change', aplicarFiltros);
-    document.getElementById('tipos-list-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
-
-    {% if search_query %}
-    table.setFilters('{{ search_query|escapejs }}', {});
-    {% endif %}
-  })();
-})();
-</script>
+{% include "admin/partials/lista_entidad_estado_js.html" with id_prefix="tipos-list" %}
 {% endblock %}
