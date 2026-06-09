@@ -1,16 +1,16 @@
 /* AdminCharts — helper para reducir duplicidad de Chart.js en templates admin */
-var AdminCharts = (function() {
-  var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-  var PALETA = [C.success, C.warning, C.danger, C.info, C.primary, '#6f42c1', '#fd7e14', '#20c997', '#d63384'];
-  var BG_RGBA = { primary: 'rgba(13,110,253,0.08)', success: 'rgba(25,135,84,0.08)' };
+const AdminCharts = (function() {
+  const C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
+  const PALETA = [C.success, C.warning, C.danger, C.info, C.primary, '#6f42c1', '#fd7e14', '#20c997', '#d63384'];
+  const BG_RGBA = { primary: 'rgba(13,110,253,0.08)', success: 'rgba(25,135,84,0.08)' };
 
   function _data(id) {
-    var el = document.getElementById(id);
+    const el = document.getElementById(id);
     return el ? JSON.parse(el.textContent) : [];
   }
 
   function doughnut(canvasId, dataId, labelKey, valueKey, colors) {
-    var data = _data(dataId);
+    const data = _data(dataId);
     if (!data.length) return;
     new Chart(document.getElementById(canvasId), {
       type: 'doughnut',
@@ -23,7 +23,7 @@ var AdminCharts = (function() {
   }
 
   function barH(canvasId, dataId, labelKey, valueKey, color, label) {
-    var data = _data(dataId);
+    const data = _data(dataId);
     if (!data.length) return;
     new Chart(document.getElementById(canvasId), {
       type: 'bar',
@@ -33,9 +33,9 @@ var AdminCharts = (function() {
   }
 
   function trendLine(canvasId, dataId, colorKey) {
-    var data = _data(dataId);
+    const data = _data(dataId);
     if (!data.length) return;
-    var ck = colorKey || 'primary';
+    const ck = colorKey || 'primary';
     new Chart(document.getElementById(canvasId), {
       type: 'line',
       data: { labels: data.map(function(d) { return d.date; }), datasets: [{ label: '', data: data.map(function(d) { return d.count; }), borderColor: C[ck], backgroundColor: BG_RGBA[ck] || BG_RGBA.primary, fill: true, tension: 0.3, pointRadius: 2, pointHoverRadius: 4 }] },
