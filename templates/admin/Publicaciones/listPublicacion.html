@@ -296,57 +296,16 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/admin/charts-helper.js' %}"></script>
 <script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script>
-(function() {
-  var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-  var paleta = [C.success, C.warning, C.danger, C.info, C.primary, '#6f42c1', '#fd7e14', '#20c997', '#d63384'];
-  var estPub = JSON.parse(document.getElementById('dist-estado-pub-data').textContent);
-  if (estPub.length) {
-    new Chart(document.getElementById('chartPubEstado'), {
-      type: 'doughnut',
-      data: {
-        labels: estPub.map(function(e){ return e.estado; }),
-        datasets: [{ data: estPub.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estPub.length), borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-    });
-  }
-  var catPub = JSON.parse(document.getElementById('dist-categoria-pub-data').textContent);
-  if (catPub.length) {
-    new Chart(document.getElementById('chartPubCategoria'), {
-      type: 'doughnut',
-      data: {
-        labels: catPub.map(function(c){ return c.categoria; }),
-        datasets: [{ data: catPub.map(function(c){ return c.count; }), backgroundColor: paleta.slice(0, catPub.length), borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-    });
-  }
-  var dest = JSON.parse(document.getElementById('dist-destacadas-data').textContent);
-  if (dest.length) {
-    new Chart(document.getElementById('chartPubDestacadas'), {
-      type: 'doughnut',
-      data: {
-        labels: dest.map(function(d){ return d.label; }),
-        datasets: [{ data: dest.map(function(d){ return d.count; }), backgroundColor: [C.primary, C.dark], borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-    });
-  }
-  var tendPub = JSON.parse(document.getElementById('tendencia-publicaciones-data').textContent);
-  if (tendPub.length) {
-    new Chart(document.getElementById('chartPubTendencia'), {
-      type: 'line',
-      data: {
-        labels: tendPub.map(function(d){ return d.date; }),
-        datasets: [{ label: 'Publicaciones', data: tendPub.map(function(d){ return d.count; }), borderColor: C.success, backgroundColor: 'rgba(25,135,84,0.08)', fill: true, tension: 0.3, pointRadius: 2, pointHoverRadius: 4 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { maxTicksLimit: 8, font: { size: 9 } } } } }
-    });
-  }
-})();
+AdminCharts.initAll([
+  { type: 'doughnut', canvas: 'chartPubEstado', dataId: 'dist-estado-pub-data', labelKey: 'estado' },
+  { type: 'doughnut', canvas: 'chartPubCategoria', dataId: 'dist-categoria-pub-data', labelKey: 'categoria' },
+  { type: 'doughnut', canvas: 'chartPubDestacadas', dataId: 'dist-destacadas-data', colors: [AdminCharts.C.primary, AdminCharts.C.dark] },
+  { type: 'trendLine', canvas: 'chartPubTendencia', dataId: 'tendencia-publicaciones-data', colorKey: 'success' },
+]);
 </script>
 <script>
 (function() {
