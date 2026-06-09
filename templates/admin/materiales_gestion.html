@@ -23,34 +23,16 @@
       <p class="text-muted mb-0">Administra materiales reciclables, sus tipos y categorías desde un solo lugar.</p>
     </div>
     <div id="btn-group-materiales" class="d-flex flex-wrap gap-2 {% if tab != 'tipos' and tab != 'categorias' %}d-flex{% else %}d-none{% endif %}">
-      <a href="{% url 'panel_admin:exportar_materiales_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-        <i class="bi bi-file-earmark-excel me-1"></i> Excel
-      </a>
-      <a href="{% url 'panel_admin:exportar_materiales_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-      </a>
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearMaterial">
         <i class="bi bi-plus-circle me-1"></i> Nuevo Material
       </button>
     </div>
     <div id="btn-group-tipos" class="d-flex flex-wrap gap-2 {% if tab == 'tipos' %}d-flex{% else %}d-none{% endif %}">
-      <a href="{% url 'panel_admin:exportar_tipos_material_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-        <i class="bi bi-file-earmark-excel me-1"></i> Excel
-      </a>
-      <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-      </a>
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipo">
         <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
       </button>
     </div>
     <div id="btn-group-categorias" class="d-flex flex-wrap gap-2 {% if tab == 'categorias' %}d-flex{% else %}d-none{% endif %}">
-      <a href="{% url 'panel_admin:exportar_categorias_material_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-        <i class="bi bi-file-earmark-excel me-1"></i> Excel
-      </a>
-      <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-      </a>
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">
         <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
       </button>
@@ -117,7 +99,23 @@
 
       <div class="card shadow-sm border-0">
         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-          <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+          <div class="d-flex align-items-center gap-2">
+            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+            <a href="{% url 'panel_admin:exportar_materiales_excel' %}"
+               class="btn btn-sm btn-outline-success fw-semibold export-link"
+               title="Exportar Excel"
+               data-export-base="{% url 'panel_admin:exportar_materiales_excel' %}"
+               data-export-filters="q:materiales-search-input">
+              <i class="bi bi-file-earmark-excel me-1"></i> Excel
+            </a>
+            <a href="{% url 'panel_admin:exportar_materiales_pdf' %}"
+               class="btn btn-sm btn-outline-danger fw-semibold export-link"
+               title="Exportar PDF"
+               data-export-base="{% url 'panel_admin:exportar_materiales_pdf' %}"
+               data-export-filters="q:materiales-search-input">
+              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+            </a>
+          </div>
           <span class="badge bg-secondary rounded-pill" id="materiales-count-badge">{{ materiales|length }} registros</span>
         </div>
         <div class="table-responsive">
@@ -187,7 +185,23 @@
 
       <div class="card shadow-sm border-0">
         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-          <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+          <div class="d-flex align-items-center gap-2">
+            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+            <a href="{% url 'panel_admin:exportar_tipos_material_excel' %}"
+               class="btn btn-sm btn-outline-success fw-semibold export-link"
+               title="Exportar Excel"
+               data-export-base="{% url 'panel_admin:exportar_tipos_material_excel' %}"
+               data-export-filters="q:tipos-search-input">
+              <i class="bi bi-file-earmark-excel me-1"></i> Excel
+            </a>
+            <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}"
+               class="btn btn-sm btn-outline-danger fw-semibold export-link"
+               title="Exportar PDF"
+               data-export-base="{% url 'panel_admin:exportar_tipos_material_pdf' %}"
+               data-export-filters="q:tipos-search-input">
+              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+            </a>
+          </div>
           <span class="badge bg-secondary rounded-pill" id="tipos-count-badge">{{ tipos|length }} registros</span>
         </div>
         <div class="table-responsive">
@@ -255,7 +269,23 @@
 
       <div class="card shadow-sm border-0">
         <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-          <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+          <div class="d-flex align-items-center gap-2">
+            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+            <a href="{% url 'panel_admin:exportar_categorias_material_excel' %}"
+               class="btn btn-sm btn-outline-success fw-semibold export-link"
+               title="Exportar Excel"
+               data-export-base="{% url 'panel_admin:exportar_categorias_material_excel' %}"
+               data-export-filters="q:categorias-search-input">
+              <i class="bi bi-file-earmark-excel me-1"></i> Excel
+            </a>
+            <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
+               class="btn btn-sm btn-outline-danger fw-semibold export-link"
+               title="Exportar PDF"
+               data-export-base="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
+               data-export-filters="q:categorias-search-input">
+              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+            </a>
+          </div>
           <span class="badge bg-secondary rounded-pill" id="categorias-count-badge">{{ categorias|length }} registros</span>
         </div>
         <div class="table-responsive">

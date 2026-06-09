@@ -17,6 +17,8 @@ urlpatterns = [
     # Publicaciones
     path('publicaciones/', views.listar_publicaciones_admin, name='listar_publicaciones_admin'),
     path('publicaciones/crear/', views.crear_publicacion_admin, name='crear_publicacion_admin'),
+    path('publicaciones/exportar/pdf/', views.exportar_publicaciones_pdf, name='exportar_publicaciones_pdf'),
+    path('publicaciones/exportar/excel/', views.exportar_publicaciones_excel, name='exportar_publicaciones_excel'),
     path('publicaciones/<uuid:publicacion_id>/', views.ver_publicacion_admin, name='ver_publicacion_admin'),
     path('publicaciones/<uuid:publicacion_id>/editar/', views.editar_publicacion_admin, name='editar_publicacion_admin'),
 

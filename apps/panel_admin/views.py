@@ -894,6 +894,14 @@ def _filtrar_tipos_material_export(request, tipos):
     return tipos
 
 
+def _filtrar_publicaciones_export(request, publicaciones):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        publicaciones = [p for p in publicaciones if ql in (p.titulo.lower() + " " + (p.contenido or "").lower() + " " + p.usuario.nombres.lower() + " " + p.usuario.apellidos.lower())]
+    return publicaciones
+
+
 @require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
@@ -1121,6 +1129,70 @@ def listar_publicaciones_admin(request):
             "tendencia_publicaciones": AdminDashboardService.obtener_tendencia_publicaciones(30),
         },
     )
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_publicaciones_pdf(request):
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    try:
+        from apps.publicaciones.models import Publicacion
+        publicaciones = _filtrar_publicaciones_export(request, list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")))
+    except Exception:
+        publicaciones = []
+    html = render_to_string("admin/Publicaciones/publicaciones_pdf.html", {"publicaciones": publicaciones})
+    pdf = HTML(string=html).write_pdf()
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "publicaciones.pdf")
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_publicaciones_excel(request):
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Publicaciones"
+
+    headers = ["Título", "Resumen", "Categoría", "Autor", "Estado", "Destacado", "Fecha Creación"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    try:
+        from apps.publicaciones.models import Publicacion
+        publicaciones = _filtrar_publicaciones_export(request, list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")))
+    except Exception:
+        publicaciones = []
+
+    for row, p in enumerate(publicaciones, 2):
+        ws.cell(row=row, column=1, value=p.titulo)
+        ws.cell(row=row, column=2, value=p.resumen or "")
+        ws.cell(row=row, column=3, value=p.categoria.nombre if p.categoria else "")
+        ws.cell(row=row, column=4, value=f"{p.usuario.nombres} {p.usuario.apellidos}" if p.usuario else "")
+        ws.cell(row=row, column=5, value=str(p.estado))
+        ws.cell(row=row, column=6, value="Sí" if p.destacado else "No")
+        ws.cell(row=row, column=7, value=p.fecha_creacion.strftime("%Y-%m-%d") if p.fecha_creacion else "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "publicaciones.xlsx")
 
 
 @login_required(login_url="/login/")
