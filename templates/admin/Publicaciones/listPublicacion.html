@@ -26,13 +26,30 @@
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
   <div class="card-body">
-    <div class="row g-2" id="publicaciones-filter-form">
-      <div class="col-md-10">
-        <label for="q_search" class="visually-hidden">Buscar publicaciones</label>
-        <input id="q_search" type="text" name="q" class="form-control" placeholder="Título, contenido o autor..." value="{{ search_query }}" aria-label="Buscar publicaciones">
+    <div class="row g-3 align-items-end" id="publicaciones-filter-form">
+      <div class="col-md-4">
+        <label for="q_search" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+        <input id="q_search" type="text" name="q" class="form-control" placeholder="Título o autor..." value="{{ search_query }}">
       </div>
-      <div class="col-md-2 d-grid">
-        <button type="button" class="btn btn-success" id="publicaciones-search-btn"><i class="bi bi-search"></i> Buscar</button>
+      <div class="col-md-3">
+        <label for="pub-filter-categoria" class="form-label fw-semibold text-muted mb-1">Categoría</label>
+        <select class="form-select js-select2" id="pub-filter-categoria">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="pub-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select js-select2" id="pub-filter-estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success flex-grow-1" id="publicaciones-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+          <button type="button" class="btn btn-outline-secondary" id="pub-filter-limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
       </div>
     </div>
   </div>
@@ -270,7 +287,6 @@
     pageSize: 10,
     countBadgeId: 'publicaciones-count-badge',
     pagerId: 'publicaciones-pager',
-    rowIdPrefix: 'pub-',
     filterFns: [
       function(row, q) { return (row.titulo + ' ' + row.autor).toLowerCase().indexOf(q) !== -1; }
     ],
@@ -286,17 +302,52 @@
     ]
   });
 
-  {% if search_query %}
-  publicacionesTable.setFilters('{{ search_query|escapejs }}', {});
-  {% endif %}
+  (function() {
+    var data = publicacionesTable.data;
+    // Populate categorias from data
+    var categorias = [...new Set(data.map(function(p) { return p.categoria; }))].sort();
+    var catSel = document.getElementById('pub-filter-categoria');
+    if (catSel) {
+      categorias.forEach(function(c) {
+        if (!c || c === '-') return;
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        catSel.appendChild(opt);
+      });
+    }
 
-  var searchBtn = document.getElementById('publicaciones-search-btn');
-  if (searchBtn) {
-    searchBtn.addEventListener('click', function() {
-      var q = document.querySelector('#publicaciones-filter-form input[name="q"]')?.value || '';
+    // Init Select2
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
+      var q = document.getElementById('q_search')?.value || '';
       publicacionesTable.setSearch(q);
-    });
-  }
+
+      var cat = $('#pub-filter-categoria').val() || '';
+      if (cat) publicacionesTable.setExtraFilter('categoria', cat);
+      else publicacionesTable.removeExtraFilter('categoria');
+
+      var est = $('#pub-filter-estado').val() || '';
+      if (est) publicacionesTable.setExtraFilter('estado', est);
+      else publicacionesTable.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('q_search').value = '';
+      $('#pub-filter-categoria').val('').trigger('change');
+      $('#pub-filter-estado').val('').trigger('change');
+      publicacionesTable.setFilters('', {});
+    }
+
+    document.getElementById('publicaciones-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('pub-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#pub-filter-categoria, #pub-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('q_search').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    publicacionesTable.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
 
   var videoInput = document.getElementById('cp_video');
   if (videoInput) {

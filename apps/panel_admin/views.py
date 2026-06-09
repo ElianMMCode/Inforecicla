@@ -1,12 +1,10 @@
 ﻿from django.views.decorators.http import require_GET, require_http_methods, require_POST
 import io
-import json
 import re as _re
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import update_session_auth_hash
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
@@ -781,10 +779,6 @@ def admin(request):
     return render(request, "admin/admin.html", contexto)
 
 
-@require_GET
-@login_required(login_url="/login/")
-@user_passes_test(es_administrador, login_url="/inicio/")
-@require_http_methods(["GET", "HEAD"])
 def usuario_to_dict(usuario):
     return {
         "id": usuario.id,
@@ -808,12 +802,13 @@ def usuario_to_dict(usuario):
     }
 
 
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
 def listar_usuarios(request):
     usuarios = list(Usuario.objects.select_related("localidad").all())
-    usuarios_json = json.dumps(
-        [usuario_to_dict(u) for u in usuarios],
-        cls=DjangoJSONEncoder,
-    )
+    usuarios_json = [usuario_to_dict(u) for u in usuarios]
 
     q = request.GET.get("q", "").strip()
     tipo = request.GET.get("tipo", "").strip()
@@ -1040,7 +1035,7 @@ def listar_publicaciones_admin(request):
 
         all_pubs = list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion"))
         categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
-        publicaciones_json = json.dumps([publicacion_to_dict(p) for p in all_pubs], cls=DjangoJSONEncoder)
+        publicaciones_json = [publicacion_to_dict(p) for p in all_pubs]
         if q:
             ql = q.lower()
             all_pubs = [p for p in all_pubs if ql in (p.titulo.lower() + " " + (p.contenido or "").lower() + " " + p.usuario.nombres.lower() + " " + p.usuario.apellidos.lower())]
@@ -1198,7 +1193,7 @@ def crear_punto_eca_admin(request):
 @require_http_methods(["GET", "HEAD"])
 def listar_puntos_eca_admin(request):
     all_puntos = list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre"))
-    puntos_json = json.dumps([punto_eca_to_dict(p) for p in all_puntos], cls=DjangoJSONEncoder)
+    puntos_json = [punto_eca_to_dict(p) for p in all_puntos]
     q = request.GET.get('q', '').strip()
     if q:
         ql = q.lower()
@@ -1273,7 +1268,7 @@ def exportar_materiales_excel(request):
 @require_http_methods(["GET", "HEAD"])
 def listar_materiales_admin(request):
     all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
-    materiales_json = json.dumps([material_to_dict(m) for m in all_materiales], cls=DjangoJSONEncoder)
+    materiales_json = [material_to_dict(m) for m in all_materiales]
     q = request.GET.get('q', '').strip()
     if q:
         ql = q.lower()
@@ -1338,7 +1333,7 @@ def exportar_categorias_material_excel(request):
 @require_http_methods(["GET", "HEAD"])
 def listar_categorias_material_admin(request):
     all_categorias = list(CategoriaMaterial.objects.all().order_by("nombre"))
-    categorias_json = json.dumps([categoria_material_to_dict(c) for c in all_categorias], cls=DjangoJSONEncoder)
+    categorias_json = [categoria_material_to_dict(c) for c in all_categorias]
     q = request.GET.get('q', '').strip()
     if q:
         ql = q.lower()
@@ -1420,7 +1415,7 @@ def listar_categorias_publicacion_admin(request):
         from apps.publicaciones.models import CategoriaPublicacion
 
         all_categorias = list(CategoriaPublicacion.objects.all().order_by("nombre", "tipo"))
-        categorias_json = json.dumps([categoria_publicacion_to_dict(c) for c in all_categorias], cls=DjangoJSONEncoder)
+        categorias_json = [categoria_publicacion_to_dict(c) for c in all_categorias]
         if q:
             ql = q.lower()
             all_categorias = [c for c in all_categorias if ql in (c.nombre.lower() + " " + c.tipo.lower() + " " + (c.descripcion or "").lower())]
@@ -1500,7 +1495,7 @@ def exportar_tipos_material_excel(request):
 @require_http_methods(["GET", "HEAD"])
 def listar_tipos_material_admin(request):
     all_tipos = list(TipoMaterial.objects.all().order_by("nombre"))
-    tipos_json = json.dumps([tipo_material_to_dict(t) for t in all_tipos], cls=DjangoJSONEncoder)
+    tipos_json = [tipo_material_to_dict(t) for t in all_tipos]
     q = request.GET.get('q', '').strip()
     if q:
         ql = q.lower()
@@ -1972,9 +1967,9 @@ def gestion_materiales(request):
     tipos_qs = TipoMaterial.objects.all().order_by("nombre")
     categorias_qs = CategoriaMaterial.objects.all().order_by("nombre")
 
-    materiales_json = json.dumps([material_to_dict(m) for m in all_materiales], cls=DjangoJSONEncoder)
-    tipos_json = json.dumps([tipo_material_to_dict(t) for t in tipos_qs], cls=DjangoJSONEncoder)
-    categorias_json = json.dumps([categoria_material_to_dict(c) for c in categorias_qs], cls=DjangoJSONEncoder)
+    materiales_json = [material_to_dict(m) for m in all_materiales]
+    tipos_json = [tipo_material_to_dict(t) for t in tipos_qs]
+    categorias_json = [categoria_material_to_dict(c) for c in categorias_qs]
 
     if q_mat:
         ql = q_mat.lower()

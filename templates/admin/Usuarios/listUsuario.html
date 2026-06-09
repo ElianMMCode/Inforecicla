@@ -61,12 +61,14 @@
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
     </div>
     <div class="card-body">
-      <form id="usuarios-filter-form" class="row g-3">
+      <form id="usuarios-filter-form" class="row g-3 align-items-end">
         <div class="col-md-4">
-          <input type="text" name="q" class="form-control" placeholder="Nombre, apellido o email..." value="{{ search_query }}">
+          <label for="usuarios-filter-q" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+          <input type="text" name="q" class="form-control" placeholder="Nombre, apellido o email..." value="{{ search_query }}" id="usuarios-filter-q">
         </div>
         <div class="col-md-3">
-          <select name="tipo" class="form-select" id="usuarios-filter-tipo">
+          <label for="usuarios-filter-tipo" class="form-label fw-semibold text-muted mb-1">Rol</label>
+          <select name="tipo" class="form-select js-select2" id="usuarios-filter-tipo">
             <option value="">Todos los roles</option>
             <option value="ADM" {% if search_tipo == "ADM" %}selected{% endif %}>Administrador</option>
             <option value="CIU" {% if search_tipo == "CIU" %}selected{% endif %}>Ciudadano</option>
@@ -74,14 +76,18 @@
           </select>
         </div>
         <div class="col-md-3">
-          <select name="estado" class="form-select" id="usuarios-filter-estado">
+          <label for="usuarios-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+          <select name="estado" class="form-select js-select2" id="usuarios-filter-estado">
             <option value="">Todos los estados</option>
             <option value="activo" {% if search_estado == "activo" %}selected{% endif %}>Activo</option>
             <option value="inactivo" {% if search_estado == "inactivo" %}selected{% endif %}>Inactivo</option>
           </select>
         </div>
-        <div class="col-md-2 d-grid">
-          <button type="button" class="btn btn-success" id="usuarios-search-btn"><i class="bi bi-search"></i> Filtrar</button>
+        <div class="col-md-2">
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success flex-grow-1" id="usuarios-search-btn"><i class="bi bi-search"></i> Filtrar</button>
+            <button type="button" class="btn btn-outline-secondary" id="usuarios-filter-limpiar"><i class="bi bi-eraser"></i></button>
+          </div>
         </div>
       </form>
     </div>
@@ -401,21 +407,39 @@
   })();
   {% endif %}
 
+  // Init Select2 on filter selects
+  $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
   // Bind extra filter selects
   var tipoSelect = document.getElementById('usuarios-filter-tipo');
   var estadoSelect = document.getElementById('usuarios-filter-estado');
   var searchBtn = document.getElementById('usuarios-search-btn');
+  var limpiarBtn = document.getElementById('usuarios-filter-limpiar');
 
   function applyFilts() {
     var q = document.querySelector('#usuarios-filter-form input[name="q"]')?.value || '';
     usuariosTable.setSearch(q);
-    if (tipoSelect?.value) usuariosTable.setExtraFilter('tipo_usuario', tipoSelect.value);
-    if (estadoSelect?.value) usuariosTable.setExtraFilter('is_active', estadoSelect.value === 'activo');
+
+    var tipo = $(tipoSelect).val() || '';
+    if (tipo) usuariosTable.setExtraFilter('tipo_usuario', tipo);
+    else usuariosTable.removeExtraFilter('tipo_usuario');
+
+    var est = $(estadoSelect).val() || '';
+    if (est) usuariosTable.setExtraFilter('is_active', est === 'activo');
+    else usuariosTable.removeExtraFilter('is_active');
   }
 
-  if (tipoSelect) tipoSelect.addEventListener('change', applyFilts);
-  if (estadoSelect) estadoSelect.addEventListener('change', applyFilts);
+  function limpiarFilts() {
+    document.querySelector('#usuarios-filter-form input[name="q"]').value = '';
+    $(tipoSelect).val('').trigger('change');
+    $(estadoSelect).val('').trigger('change');
+    usuariosTable.setFilters('', {});
+  }
+
+  $(tipoSelect).on('change', applyFilts);
+  $(estadoSelect).on('change', applyFilts);
   if (searchBtn) searchBtn.addEventListener('click', applyFilts);
+  if (limpiarBtn) limpiarBtn.addEventListener('click', limpiarFilts);
 
   function validarCrearUsuario(form) {
     var pass = document.getElementById('cu_password');

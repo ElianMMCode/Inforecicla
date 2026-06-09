@@ -103,6 +103,14 @@
         this.render();
     };
 
+    AdminTable.prototype.removeExtraFilter = function(key) {
+        if (!this._extraFilters) return;
+        delete this._extraFilters[key];
+        this.currentPage = 1;
+        this.fullFilter();
+        this.render();
+    };
+
     AdminTable.prototype.clearExtraFilters = function() {
         this._extraFilters = {};
         this.currentPage = 1;

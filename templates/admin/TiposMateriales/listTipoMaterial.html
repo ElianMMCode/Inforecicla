@@ -41,12 +41,24 @@
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
     </div>
     <div class="card-body">
-      <div class="row g-2" id="tipos-list-filter-form">
-        <div class="col-md-10">
+      <div class="row g-3 align-items-end" id="tipos-list-filter-form">
+        <div class="col-md-6">
+          <label for="tipos-list-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
           <input type="text" aria-label="Buscar tipos de material" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}" id="tipos-list-search-input">
         </div>
-        <div class="col-md-2 d-grid">
-          <button type="button" class="btn btn-success" id="tipos-list-search-btn"><i class="bi bi-search"></i> Buscar</button>
+        <div class="col-md-3">
+          <label for="tipos-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+          <select class="form-select js-select2" id="tipos-filter-estado">
+            <option value="">Todos</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success flex-grow-1" id="tipos-list-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+            <button type="button" class="btn btn-outline-secondary" id="tipos-filter-limpiar"><i class="bi bi-eraser"></i></button>
+          </div>
         </div>
       </div>
     </div>
@@ -108,17 +120,33 @@
     ]
   });
 
-  {% if search_query %}
-  table.setFilters('{{ search_query|escapejs }}', {});
-  {% endif %}
+  (function() {
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
 
-  var btn = document.getElementById('tipos-list-search-btn');
-  if (btn) {
-    btn.addEventListener('click', function() {
+    function aplicarFiltros() {
       var q = document.getElementById('tipos-list-search-input')?.value || '';
       table.setSearch(q);
-    });
-  }
+
+      var est = $('#tipos-filter-estado').val() || '';
+      if (est) table.setExtraFilter('estado', est);
+      else table.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('tipos-list-search-input').value = '';
+      $('#tipos-filter-estado').val('').trigger('change');
+      table.setFilters('', {});
+    }
+
+    document.getElementById('tipos-list-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('tipos-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#tipos-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('tipos-list-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    table.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
 })();
 </script>
 {% endblock %}

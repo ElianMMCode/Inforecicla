@@ -36,18 +36,33 @@
 
   {% include "admin/Materiales/tabs_materiales.html" with active_tab="materiales" %}
 
-    <div class="card shadow-sm mb-4 border-0">
+  <div class="card shadow-sm mb-4 border-0">
     <div class="card-header bg-success-subtle border-0 px-4 py-3">
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
     </div>
     <div class="card-body">
-      <div class="row g-2" id="materiales-list-filter-form">
-        <div class="col-md-10">
-          <label for="mat-list-search" class="visually-hidden">Buscar materiales</label>
-          <input id="mat-list-search" type="text" class="form-control" placeholder="Nombre, descripción o categoría..." value="{{ search_query }}" aria-label="Buscar materiales">
+      <div class="row g-3 align-items-end" id="materiales-list-filter-form">
+        <div class="col-md-4">
+          <label for="mat-list-search" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+          <input id="mat-list-search" type="text" class="form-control" placeholder="Nombre, descripción o categoría..." value="{{ search_query }}">
         </div>
-        <div class="col-md-2 d-grid">
-          <button type="button" class="btn btn-success" id="materiales-list-search-btn"><i class="bi bi-search"></i> Buscar</button>
+        <div class="col-md-3">
+          <label for="mat-filter-categoria" class="form-label fw-semibold text-muted mb-1">Categoría</label>
+          <select class="form-select js-select2" id="mat-filter-categoria">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="mat-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
+          <select class="form-select js-select2" id="mat-filter-tipo">
+            <option value="">Todos los tipos</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success flex-grow-1" id="materiales-list-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+            <button type="button" class="btn btn-outline-secondary" id="mat-filter-limpiar"><i class="bi bi-eraser"></i></button>
+          </div>
         </div>
       </div>
     </div>
@@ -113,17 +128,62 @@
     ]
   });
 
-  {% if search_query %}
-  table.setFilters('{{ search_query|escapejs }}', {});
-  {% endif %}
+  (function() {
+    var data = table.data;
+    // Populate categoria select
+    var cats = [...new Set(data.map(function(m) { return m.categoria_nombre; }))].sort();
+    var catSel = document.getElementById('mat-filter-categoria');
+    if (catSel) {
+      cats.forEach(function(c) {
+        if (!c || c === '-') return;
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        catSel.appendChild(opt);
+      });
+    }
+    // Populate tipo select
+    var tipos = [...new Set(data.map(function(m) { return m.tipo_nombre; }))].sort();
+    var tipSel = document.getElementById('mat-filter-tipo');
+    if (tipSel) {
+      tipos.forEach(function(t) {
+        if (!t || t === '-') return;
+        var opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        tipSel.appendChild(opt);
+      });
+    }
 
-  var btn = document.getElementById('materiales-list-search-btn');
-  if (btn) {
-    btn.addEventListener('click', function() {
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
       var q = document.getElementById('mat-list-search')?.value || '';
       table.setSearch(q);
-    });
-  }
+
+      var cat = $('#mat-filter-categoria').val() || '';
+      if (cat) table.setExtraFilter('categoria_nombre', cat);
+      else table.removeExtraFilter('categoria_nombre');
+
+      var tip = $('#mat-filter-tipo').val() || '';
+      if (tip) table.setExtraFilter('tipo_nombre', tip);
+      else table.removeExtraFilter('tipo_nombre');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('mat-list-search').value = '';
+      $('#mat-filter-categoria').val('').trigger('change');
+      $('#mat-filter-tipo').val('').trigger('change');
+      table.setFilters('', {});
+    }
+
+    document.getElementById('materiales-list-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('mat-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#mat-filter-categoria, #mat-filter-tipo').on('change', aplicarFiltros);
+    document.getElementById('mat-list-search').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    table.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
 })();
 </script>
 {% endblock %}

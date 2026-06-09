@@ -28,12 +28,30 @@
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
   <div class="card-body">
-    <div class="row g-2" id="puntos-filter-form">
-      <div class="col-md-10">
+    <div class="row g-3 align-items-end" id="puntos-filter-form">
+      <div class="col-md-4">
+        <label for="puntos-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
         <input type="text" name="q" class="form-control" placeholder="Nombre, dirección o localidad..." value="{{ search_query }}" id="puntos-search-input">
       </div>
-      <div class="col-md-2 d-grid">
-        <button type="button" class="btn btn-success" id="puntos-search-btn"><i class="bi bi-search"></i> Buscar</button>
+      <div class="col-md-3">
+        <label for="punto-filter-localidad" class="form-label fw-semibold text-muted mb-1">Localidad</label>
+        <select class="form-select js-select2" id="punto-filter-localidad">
+          <option value="">Todas las localidades</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="punto-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select js-select2" id="punto-filter-estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success flex-grow-1" id="puntos-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+          <button type="button" class="btn btn-outline-secondary" id="punto-filter-limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
       </div>
     </div>
   </div>
@@ -386,7 +404,6 @@
     pageSize: 10,
     countBadgeId: 'puntos-count-badge',
     pagerId: 'puntos-pager',
-    rowIdPrefix: 'punto-',
     filterFns: [
       function(row, q) { return (row.nombre + ' ' + row.direccion + ' ' + row.localidad).toLowerCase().indexOf(q) !== -1; }
     ],
@@ -402,17 +419,51 @@
     ]
   });
 
-  {% if search_query %}
-  puntosTable.setFilters('{{ search_query|escapejs }}', {});
-  {% endif %}
+  (function() {
+    var data = puntosTable.data;
+    // Populate localidad select from data
+    var localidades = [...new Set(data.map(function(p) { return p.localidad; }))].sort();
+    var locSel = document.getElementById('punto-filter-localidad');
+    if (locSel) {
+      localidades.forEach(function(l) {
+        if (!l || l === '-') return;
+        var opt = document.createElement('option');
+        opt.value = l; opt.textContent = l;
+        locSel.appendChild(opt);
+      });
+    }
 
-  var searchBtn = document.getElementById('puntos-search-btn');
-  if (searchBtn) {
-    searchBtn.addEventListener('click', function() {
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
       var q = document.getElementById('puntos-search-input')?.value || '';
       puntosTable.setSearch(q);
-    });
-  }
+
+      var loc = $('#punto-filter-localidad').val() || '';
+      if (loc) puntosTable.setExtraFilter('localidad', loc);
+      else puntosTable.removeExtraFilter('localidad');
+
+      var est = $('#punto-filter-estado').val() || '';
+      if (est) puntosTable.setExtraFilter('estado', est);
+      else puntosTable.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('puntos-search-input').value = '';
+      $('#punto-filter-localidad').val('').trigger('change');
+      $('#punto-filter-estado').val('').trigger('change');
+      puntosTable.setFilters('', {});
+    }
+
+    document.getElementById('puntos-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('punto-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#punto-filter-localidad, #punto-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('puntos-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    puntosTable.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
 
   function validarPasswordsECA(form) {
     var p1 = document.getElementById('crear_eca_password');

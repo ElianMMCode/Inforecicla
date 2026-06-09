@@ -35,12 +35,29 @@
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
   <div class="card-body">
-    <div class="row g-2" id="cat-pub-filter-form">
-      <div class="col-md-10">
+    <div class="row g-3 align-items-end" id="cat-pub-filter-form">
+      <div class="col-md-5">
         <input type="text" class="form-control" placeholder="Nombre, tipo o descripción..." value="{{ search_query }}" id="cat-pub-search-input">
       </div>
-      <div class="col-md-2 d-grid">
-        <button type="button" class="btn btn-success" id="cat-pub-search-btn"><i class="bi bi-search"></i> Buscar</button>
+      <div class="col-md-3">
+        <label for="cat-pub-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
+        <select class="form-select js-select2" id="cat-pub-filter-tipo">
+          <option value="">Todos los tipos</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="cat-pub-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select js-select2" id="cat-pub-filter-estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success flex-grow-1" id="cat-pub-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+          <button type="button" class="btn btn-outline-secondary" id="cat-pub-filter-limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
       </div>
     </div>
   </div>
@@ -225,7 +242,6 @@
     pageSize: 10,
     countBadgeId: 'cat-pub-count-badge',
     pagerId: 'cat-pub-pager',
-    rowIdPrefix: 'cat-pub-',
     filterFns: [
       function(row, q) { return (row.nombre + ' ' + row.tipo + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
     ],
@@ -240,17 +256,51 @@
     ]
   });
 
-  {% if search_query %}
-  table.setFilters('{{ search_query|escapejs }}', {});
-  {% endif %}
+  (function() {
+    var data = table.data;
+    // Populate tipo select from data
+    var tipos = [...new Set(data.map(function(c) { return c.get_tipo_display; }))].sort();
+    var tipSel = document.getElementById('cat-pub-filter-tipo');
+    if (tipSel) {
+      tipos.forEach(function(t) {
+        if (!t) return;
+        var opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        tipSel.appendChild(opt);
+      });
+    }
 
-  var btn = document.getElementById('cat-pub-search-btn');
-  if (btn) {
-    btn.addEventListener('click', function() {
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
       var q = document.getElementById('cat-pub-search-input')?.value || '';
       table.setSearch(q);
-    });
-  }
+
+      var tip = $('#cat-pub-filter-tipo').val() || '';
+      if (tip) table.setExtraFilter('get_tipo_display', tip);
+      else table.removeExtraFilter('get_tipo_display');
+
+      var est = $('#cat-pub-filter-estado').val() || '';
+      if (est) table.setExtraFilter('estado', est);
+      else table.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('cat-pub-search-input').value = '';
+      $('#cat-pub-filter-tipo').val('').trigger('change');
+      $('#cat-pub-filter-estado').val('').trigger('change');
+      table.setFilters('', {});
+    }
+
+    document.getElementById('cat-pub-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('cat-pub-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#cat-pub-filter-tipo, #cat-pub-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('cat-pub-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    table.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
 
   function initTipoOtro(selectId, wrapperId, inputId) {
     var sel = document.getElementById(selectId);
