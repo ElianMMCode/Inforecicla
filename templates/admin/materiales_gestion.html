@@ -65,40 +65,6 @@
     <div class="tab-pane fade {% if tab == 'materiales' or not tab %}show active{% endif %}"
          id="pane-materiales" role="tabpanel">
 
-      <!-- Charts Materiales -->
-      <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Por Categoría</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatCategoria" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-recycle text-info me-1"></i>Por Tipo</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatTipo" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6>
-            </div>
-            <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:160px;width:100%;"><canvas id="chartMatEstado"></canvas></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="card shadow-sm mb-3 border-0">
         <div class="card-header bg-success-subtle border-0 px-4 py-3">
           <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
@@ -145,30 +111,6 @@
     <div class="tab-pane fade {% if tab == 'tipos' %}show active{% endif %}"
          id="pane-tipos" role="tabpanel">
 
-      <!-- Charts Tipos -->
-      <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Tipos por Estado</h6>
-            </div>
-            <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:200px;width:100%;"><canvas id="chartTipoEstado"></canvas></div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Materiales por Tipo</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatPorTipo" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="card shadow-sm mb-3 border-0">
         <div class="card-header bg-success-subtle border-0 px-4 py-3">
           <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
@@ -212,30 +154,6 @@
     <!-- ===== TAB CATEGORÍAS ===== -->
     <div class="tab-pane fade {% if tab == 'categorias' %}show active{% endif %}"
          id="pane-categorias" role="tabpanel">
-
-      <!-- Charts Categorías -->
-      <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Categorías por Estado</h6>
-            </div>
-            <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:200px;width:100%;"><canvas id="chartCatEstado"></canvas></div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-info me-1"></i>Materiales por Categoría</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatPorCategoria" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div class="card shadow-sm mb-3 border-0">
         <div class="card-header bg-success-subtle border-0 px-4 py-3">
@@ -282,11 +200,6 @@
 {{ materiales_json|json_script:"materiales-data" }}
 {{ tipos_json|json_script:"tipos-data" }}
 {{ categorias_json|json_script:"categorias-data" }}
-{{ dist_categoria_mat|json_script:"dist-categoria-mat-data" }}
-{{ dist_tipo_mat|json_script:"dist-tipo-mat-data" }}
-{{ dist_estado_mat|json_script:"dist-estado-mat-data" }}
-{{ dist_estado_cat|json_script:"dist-estado-cat-data" }}
-{{ dist_estado_tipo|json_script:"dist-estado-tipo-data" }}
 
 {% endblock %}
 
@@ -607,68 +520,6 @@
     {% block extra_scripts %}
     <script src="{% static 'js/admin/panel-tables.js' %}"></script>
     <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
-    <script>
-    (function() {
-      var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-      var paleta = [C.success, C.warning, C.danger, C.info, C.primary, '#6f42c1', '#fd7e14', '#20c997', '#d63384'];
-
-      var catMat = JSON.parse(document.getElementById('dist-categoria-mat-data').textContent);
-      if (catMat.length) {
-        new Chart(document.getElementById('chartMatCategoria'), {
-          type: 'bar',
-          data: { labels: catMat.map(function(d){ return d.categoria; }), datasets: [{ label: 'Materiales', data: catMat.map(function(d){ return d.count; }), backgroundColor: C.warning, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-      var tipoMat = JSON.parse(document.getElementById('dist-tipo-mat-data').textContent);
-      if (tipoMat.length) {
-        new Chart(document.getElementById('chartMatTipo'), {
-          type: 'bar',
-          data: { labels: tipoMat.map(function(d){ return d.tipo; }), datasets: [{ label: 'Materiales', data: tipoMat.map(function(d){ return d.count; }), backgroundColor: C.info, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-      var estMat = JSON.parse(document.getElementById('dist-estado-mat-data').textContent);
-      if (estMat.length) {
-        new Chart(document.getElementById('chartMatEstado'), {
-          type: 'doughnut',
-          data: { labels: estMat.map(function(e){ return e.estado; }), datasets: [{ data: estMat.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estMat.length), borderColor: '#fff', borderWidth: 2 }] },
-          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 8, usePointStyle: true, font: { size: 9 } } } } }
-        });
-      }
-      var estTipo = JSON.parse(document.getElementById('dist-estado-tipo-data').textContent);
-      if (estTipo.length) {
-        new Chart(document.getElementById('chartTipoEstado'), {
-          type: 'doughnut',
-          data: { labels: estTipo.map(function(e){ return e.estado; }), datasets: [{ data: estTipo.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estTipo.length), borderColor: '#fff', borderWidth: 2 }] },
-          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-        });
-      }
-      var estCat = JSON.parse(document.getElementById('dist-estado-cat-data').textContent);
-      if (estCat.length) {
-        new Chart(document.getElementById('chartCatEstado'), {
-          type: 'doughnut',
-          data: { labels: estCat.map(function(e){ return e.estado; }), datasets: [{ data: estCat.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estCat.length), borderColor: '#fff', borderWidth: 2 }] },
-          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-        });
-      }
-      if (catMat.length) {
-        new Chart(document.getElementById('chartMatPorCategoria'), {
-          type: 'bar',
-          data: { labels: catMat.map(function(d){ return d.categoria; }), datasets: [{ label: 'Materiales', data: catMat.map(function(d){ return d.count; }), backgroundColor: C.info, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-      var tipoMat2 = JSON.parse(document.getElementById('dist-tipo-mat-data').textContent);
-      if (tipoMat2.length) {
-        new Chart(document.getElementById('chartMatPorTipo'), {
-          type: 'bar',
-          data: { labels: tipoMat2.map(function(d){ return d.tipo; }), datasets: [{ label: 'Materiales', data: tipoMat2.map(function(d){ return d.count; }), backgroundColor: C.warning, borderRadius: 4 }] },
-          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-      }
-    })();
-    </script>
     <script>
     function estadoBadge(row) {
       if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';

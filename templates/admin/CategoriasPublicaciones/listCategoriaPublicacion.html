@@ -30,40 +30,6 @@
 <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
 {% else %}
 
-<!-- Charts -->
-<div class="row g-3 mb-4">
-  <div class="col-12 col-lg-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white border-bottom py-2">
-        <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-primary me-1"></i>Categorías por Tipo</h6>
-      </div>
-      <div class="card-body d-flex align-items-center justify-content-center py-2">
-        <div style="max-width:200px;width:100%;"><canvas id="chartCatPubTipo"></canvas></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-12 col-lg-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white border-bottom py-2">
-        <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6>
-      </div>
-      <div class="card-body d-flex align-items-center justify-content-center py-2">
-        <div style="max-width:200px;width:100%;"><canvas id="chartCatPubEstado"></canvas></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-12">
-    <div class="card border-0 shadow-sm">
-      <div class="card-header bg-white border-bottom py-2">
-        <h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-primary me-1"></i>Tendencia de Publicaciones (30 días)</h6>
-      </div>
-      <div class="card-body py-2">
-        <canvas id="chartCatPubTendencia" style="max-height:140px;"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="card shadow-sm mb-4 border-0">
   <div class="card-header bg-success-subtle border-0 px-4 py-3">
     <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
@@ -122,9 +88,6 @@
 </div>
 
 {{ categorias_json|json_script:"cat-pub-data" }}
-{{ dist_tipo_cat_pub|json_script:"dist-tipo-cat-pub-data" }}
-{{ dist_estado_cat_pub|json_script:"dist-estado-cat-pub-data" }}
-{{ tendencia_publicaciones|json_script:"tendencia-publicaciones-data" }}
 
 {% endif %}
 
@@ -244,36 +207,6 @@
 {% block extra_scripts %}
 <script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
-<script>
-(function() {
-  var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-  var paleta = [C.primary, C.success, C.warning, C.danger, C.info, '#6f42c1', '#fd7e14', '#20c997'];
-  var tipoCat = JSON.parse(document.getElementById('dist-tipo-cat-pub-data').textContent);
-  if (tipoCat.length) {
-    new Chart(document.getElementById('chartCatPubTipo'), {
-      type: 'doughnut',
-      data: { labels: tipoCat.map(function(t){ return t.tipo; }), datasets: [{ data: tipoCat.map(function(t){ return t.count; }), backgroundColor: paleta.slice(0, tipoCat.length), borderColor: '#fff', borderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } }
-    });
-  }
-  var estCatPub = JSON.parse(document.getElementById('dist-estado-cat-pub-data').textContent);
-  if (estCatPub.length) {
-    new Chart(document.getElementById('chartCatPubEstado'), {
-      type: 'doughnut',
-      data: { labels: estCatPub.map(function(e){ return e.estado; }), datasets: [{ data: estCatPub.map(function(e){ return e.count; }), backgroundColor: paleta.slice(0, estCatPub.length), borderColor: '#fff', borderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } }
-    });
-  }
-  var tendPub = JSON.parse(document.getElementById('tendencia-publicaciones-data').textContent);
-  if (tendPub.length) {
-    new Chart(document.getElementById('chartCatPubTendencia'), {
-      type: 'line',
-      data: { labels: tendPub.map(function(d){ return d.date; }), datasets: [{ label: 'Publicaciones', data: tendPub.map(function(d){ return d.count; }), borderColor: C.success, backgroundColor: 'rgba(25,135,84,0.08)', fill: true, tension: 0.3, pointRadius: 2, pointHoverRadius: 4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { maxTicksLimit: 8, font: { size: 9 } } } } }
-    });
-  }
-})();
-</script>
 <script>
 (function() {
   function tipoBadge(row) {

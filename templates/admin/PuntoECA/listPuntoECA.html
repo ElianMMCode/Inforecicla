@@ -23,33 +23,9 @@
   </div>
 </div>
 
-<!-- Charts -->
-<div class="row g-3 mb-4">
-  <div class="col-12 col-lg-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white border-bottom py-2">
-        <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Puntos ECA por Estado</h6>
-      </div>
-      <div class="card-body d-flex align-items-center justify-content-center py-2">
-        <div style="max-width:200px;width:100%;"><canvas id="chartPuntoEstado"></canvas></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-12 col-lg-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white border-bottom py-2">
-        <h6 class="mb-0 fw-bold small"><i class="bi bi-person-check text-info me-1"></i>Asignación de Gestor</h6>
-      </div>
-      <div class="card-body d-flex align-items-center justify-content-center py-2">
-        <div style="max-width:200px;width:100%;"><canvas id="chartPuntoGestor"></canvas></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="card shadow-sm mb-4 border-0">
-    <div class="card-header bg-success-subtle border-0 px-4 py-3">
-      <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+  <div class="card-header bg-success-subtle border-0 px-4 py-3">
+    <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
   <div class="card-body">
     <div class="row g-3 align-items-end" id="puntos-filter-form">
@@ -107,8 +83,6 @@
 </div>
 
 {{ puntos_json|json_script:"puntos-data" }}
-{{ dist_estado_punto|json_script:"dist-estado-punto-data" }}
-{{ dist_gestor_punto|json_script:"dist-gestor-punto-data" }}
 
 {% endblock %}
 
@@ -378,34 +352,6 @@
 {% block extra_scripts %}
 <script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
-<script>
-(function() {
-  var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-  var paletaEst = [C.success, C.warning, C.danger, C.info];
-  var estPunto = JSON.parse(document.getElementById('dist-estado-punto-data').textContent);
-  if (estPunto.length) {
-    new Chart(document.getElementById('chartPuntoEstado'), {
-      type: 'doughnut',
-      data: {
-        labels: estPunto.map(function(e){ return e.estado; }),
-        datasets: [{ data: estPunto.map(function(e){ return e.count; }), backgroundColor: paletaEst.slice(0, estPunto.length), borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } }
-    });
-  }
-  var gestor = JSON.parse(document.getElementById('dist-gestor-punto-data').textContent);
-  if (gestor.length) {
-    new Chart(document.getElementById('chartPuntoGestor'), {
-      type: 'doughnut',
-      data: {
-        labels: gestor.map(function(g){ return g.label; }),
-        datasets: [{ data: gestor.map(function(g){ return g.count; }), backgroundColor: [C.success, C.danger], borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } }
-    });
-  }
-})();
-</script>
 <script>
 (function() {
   function estadoBadge(row) {

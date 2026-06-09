@@ -56,50 +56,6 @@
     </div>
   </div>
 
-  <!-- Charts -->
-  <div class="row g-3 mb-4">
-    <div class="col-12 col-lg-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-2">
-          <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Usuarios por Rol</h6>
-        </div>
-        <div class="card-body d-flex align-items-center justify-content-center py-2">
-          <div style="max-width:180px;width:100%;"><canvas id="chartUsuRol"></canvas></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-lg-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-2">
-          <h6 class="mb-0 fw-bold small"><i class="bi bi-activity text-info me-1"></i>Activos vs Inactivos</h6>
-        </div>
-        <div class="card-body d-flex align-items-center justify-content-center py-2">
-          <div style="max-width:180px;width:100%;"><canvas id="chartUsuActivos"></canvas></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-lg-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-2">
-          <h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-primary me-1"></i>Registros (30 días)</h6>
-        </div>
-        <div class="card-body py-2">
-          <canvas id="chartUsuTendencia" style="max-height:140px;"></canvas>
-        </div>
-      </div>
-    </div>
-    <div class="col-12">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-bottom py-2">
-          <h6 class="mb-0 fw-bold small"><i class="bi bi-geo-alt text-info me-1"></i>Usuarios por Localidad</h6>
-        </div>
-        <div class="card-body py-2">
-          <canvas id="chartUsuLocalidad" style="max-height:160px;"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="card shadow-sm mb-4 border-0">
     <div class="card-header bg-success-subtle border-0 px-4 py-3">
       <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
@@ -167,10 +123,6 @@
   </div>
 
 {{ usuarios_json|json_script:"usuarios-data" }}
-{{ dist_roles|json_script:"dist-roles-data" }}
-{{ dist_activos|json_script:"dist-activos-data" }}
-{{ dist_usuarios_localidad|json_script:"dist-localidad-data" }}
-{{ tendencia_usuarios|json_script:"tendencia-usuarios-data" }}
 
 {% endblock %}
 
@@ -378,55 +330,6 @@
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script src="{% static 'js/admin/panel-tables.js' %}"></script>
-<script>
-(function() {
-  var C = { success: '#198754', warning: '#ffc107', danger: '#dc3545', info: '#0dcaf0', primary: '#0d6efd', dark: '#212529' };
-  var roles = JSON.parse(document.getElementById('dist-roles-data').textContent);
-  if (roles.length) {
-    new Chart(document.getElementById('chartUsuRol'), {
-      type: 'doughnut',
-      data: {
-        labels: roles.map(function(r){ return r.display; }),
-        datasets: [{ data: roles.map(function(r){ return r.count; }), backgroundColor: [C.warning, C.success, C.danger], borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-    });
-  }
-  var activos = JSON.parse(document.getElementById('dist-activos-data').textContent);
-  if (activos.length) {
-    new Chart(document.getElementById('chartUsuActivos'), {
-      type: 'doughnut',
-      data: {
-        labels: activos.map(function(a){ return a.label; }),
-        datasets: [{ data: activos.map(function(a){ return a.count; }), backgroundColor: [C.success, C.dark], borderColor: '#fff', borderWidth: 2 }]
-      },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 10 } } } } }
-    });
-  }
-  var tendencia = JSON.parse(document.getElementById('tendencia-usuarios-data').textContent);
-  if (tendencia.length) {
-    new Chart(document.getElementById('chartUsuTendencia'), {
-      type: 'line',
-      data: {
-        labels: tendencia.map(function(d){ return d.date; }),
-        datasets: [{ label: 'Usuarios', data: tendencia.map(function(d){ return d.count; }), borderColor: C.primary, backgroundColor: 'rgba(13,110,253,0.08)', fill: true, tension: 0.3, pointRadius: 2, pointHoverRadius: 4 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { maxTicksLimit: 8, font: { size: 9 } } } } }
-    });
-  }
-  var localidad = JSON.parse(document.getElementById('dist-localidad-data').textContent);
-  if (localidad.length) {
-    new Chart(document.getElementById('chartUsuLocalidad'), {
-      type: 'bar',
-      data: {
-        labels: localidad.map(function(l){ return l.localidad; }),
-        datasets: [{ label: 'Usuarios', data: localidad.map(function(l){ return l.count; }), backgroundColor: C.info, borderRadius: 4 }]
-      },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 10 } } } } }
-    });
-  }
-})();
-</script>
 <script>
 (function() {
   var usuariosData = readJSONData('usuarios-data');
