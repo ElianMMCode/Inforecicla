@@ -847,7 +847,18 @@ def exportar_usuarios_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    usuarios = Usuario.objects.all().order_by("apellidos", "nombres")
+    usuarios = list(Usuario.objects.all().order_by("apellidos", "nombres"))
+    q = request.GET.get("q", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    if q:
+        ql = q.lower()
+        usuarios = [u for u in usuarios if ql in (u.nombres.lower() + " " + u.apellidos.lower() + " " + u.email.lower())]
+    if tipo:
+        usuarios = [u for u in usuarios if u.tipo_usuario == tipo]
+    if estado:
+        is_active = estado.lower() in ("activo", "true")
+        usuarios = [u for u in usuarios if u.is_active == is_active]
     html = render_to_string("admin/Usuarios/usuarios_pdf.html", {"usuarios": usuarios})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "usuarios.pdf")
@@ -878,7 +889,20 @@ def exportar_usuarios_excel(request):
     tipo_labels = dict(cons.TipoUsuario.choices)
     doc_labels = dict(cons.TipoDocumento.choices)
 
-    for row, u in enumerate(Usuario.objects.all().order_by("apellidos", "nombres"), 2):
+    usuarios = list(Usuario.objects.all().order_by("apellidos", "nombres"))
+    q = request.GET.get("q", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    if q:
+        ql = q.lower()
+        usuarios = [u for u in usuarios if ql in (u.nombres.lower() + " " + u.apellidos.lower() + " " + u.email.lower())]
+    if tipo:
+        usuarios = [u for u in usuarios if u.tipo_usuario == tipo]
+    if estado:
+        is_active = estado.lower() in ("activo", "true")
+        usuarios = [u for u in usuarios if u.is_active == is_active]
+
+    for row, u in enumerate(usuarios, 2):
         ws.cell(row=row, column=1, value=u.nombres)
         ws.cell(row=row, column=2, value=u.apellidos)
         ws.cell(row=row, column=3, value=u.email)
@@ -1112,7 +1136,11 @@ def exportar_puntos_eca_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    puntos = list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        puntos = [p for p in puntos if ql in (p.nombre.lower() + " " + p.direccion.lower() + " " + p.localidad.nombre.lower())]
     html = render_to_string("admin/PuntoECA/puntos_eca_pdf.html", {"puntos": puntos})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "puntos_eca.pdf")
@@ -1141,7 +1169,11 @@ def exportar_puntos_eca_excel(request):
         cell.font = font
         cell.alignment = Alignment(horizontal="center")
 
-    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    puntos = list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        puntos = [p for p in puntos if ql in (p.nombre.lower() + " " + p.direccion.lower() + " " + p.localidad.nombre.lower())]
     _escribir_puntos_eca_excel(ws, puntos)
     _ajustar_ancho_columnas(ws)
 
@@ -1226,7 +1258,11 @@ def exportar_materiales_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        materiales = [m for m in materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower())]
     html = render_to_string("admin/Materiales/materiales_pdf.html", {"materiales": materiales})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "materiales.pdf")
@@ -1254,7 +1290,11 @@ def exportar_materiales_excel(request):
         cell.font = font
         cell.alignment = Alignment(horizontal="center")
 
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        materiales = [m for m in materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower())]
     for row, m in enumerate(materiales, 2):
         ws.cell(row=row, column=1, value=m.nombre)
         ws.cell(row=row, column=2, value=m.descripcion or "")
@@ -1294,7 +1334,11 @@ def exportar_categorias_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    categorias = list(CategoriaMaterial.objects.all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        categorias = [c for c in categorias if ql in (c.nombre.lower() + " " + (c.descripcion or "").lower())]
     html = render_to_string("admin/CategoriasMateriales/categorias_material_pdf.html", {"categorias": categorias})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_material.pdf")
@@ -1322,7 +1366,13 @@ def exportar_categorias_material_excel(request):
         cell.font = font
         cell.alignment = Alignment(horizontal="center")
 
-    for row, c in enumerate(CategoriaMaterial.objects.all().order_by("nombre"), 2):
+    categorias = list(CategoriaMaterial.objects.all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        categorias = [c for c in categorias if ql in (c.nombre.lower() + " " + (c.descripcion or "").lower())]
+
+    for row, c in enumerate(categorias, 2):
         ws.cell(row=row, column=1, value=c.nombre)
         ws.cell(row=row, column=2, value=c.descripcion or "")
         ws.cell(row=row, column=3, value=c.estado or "")
@@ -1361,9 +1411,13 @@ def exportar_categorias_publicacion_pdf(request):
 
     try:
         from apps.publicaciones.models import CategoriaPublicacion
-        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+        categorias = list(CategoriaPublicacion.objects.all().order_by("tipo"))
     except Exception:
         categorias = []
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        categorias = [c for c in categorias if ql in (c.nombre.lower() + " " + c.tipo.lower() + " " + (c.descripcion or "").lower())]
     html = render_to_string("admin/CategoriasPublicaciones/categorias_publicacion_pdf.html", {"categorias": categorias})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_publicacion.pdf")
@@ -1393,9 +1447,13 @@ def exportar_categorias_publicacion_excel(request):
 
     try:
         from apps.publicaciones.models import CategoriaPublicacion
-        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+        categorias = list(CategoriaPublicacion.objects.all().order_by("tipo"))
     except Exception:
         categorias = []
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        categorias = [c for c in categorias if ql in (c.nombre.lower() + " " + c.tipo.lower() + " " + (c.descripcion or "").lower())]
 
     for row, c in enumerate(categorias, 2):
         ws.cell(row=row, column=1, value=c.tipo)
@@ -1459,7 +1517,11 @@ def exportar_tipos_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    tipos = TipoMaterial.objects.all().order_by("nombre")
+    tipos = list(TipoMaterial.objects.all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        tipos = [t for t in tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
     html = render_to_string("admin/TiposMateriales/tipos_material_pdf.html", {"tipos": tipos})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_material.pdf")
@@ -1487,7 +1549,13 @@ def exportar_tipos_material_excel(request):
         cell.font = font
         cell.alignment = Alignment(horizontal="center")
 
-    for row, t in enumerate(TipoMaterial.objects.all().order_by("nombre"), 2):
+    tipos = list(TipoMaterial.objects.all().order_by("nombre"))
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        tipos = [t for t in tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
+
+    for row, t in enumerate(tipos, 2):
         ws.cell(row=row, column=1, value=t.nombre)
         ws.cell(row=row, column=2, value=t.descripcion or "")
         ws.cell(row=row, column=3, value=t.estado or "")
