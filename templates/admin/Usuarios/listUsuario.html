@@ -375,10 +375,7 @@
 
 {% block extra_scripts %}
 {% include "admin/_messages_swal.html" %}
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
-<script src="{% static 'js/admin/charts-helper.js' %}"></script>
-<script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script>
 AdminCharts.initAll([
   { type: 'doughnut', canvas: 'chartUsuRol', dataId: 'dist-roles-data', labelKey: 'display', colors: [AdminCharts.C.warning, AdminCharts.C.success, AdminCharts.C.danger] },

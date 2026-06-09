@@ -296,9 +296,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/admin/charts-helper.js' %}"></script>
-<script src="{% static 'js/admin/panel-tables.js' %}"></script>
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script>
 AdminCharts.initAll([
   { type: 'doughnut', canvas: 'chartPubEstado', dataId: 'dist-estado-pub-data', labelKey: 'estado' },

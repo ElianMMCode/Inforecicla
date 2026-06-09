@@ -605,9 +605,6 @@
     {% endblock %}
 
     {% block extra_scripts %}
-    <script src="{% static 'js/admin/charts-helper.js' %}"></script>
-    <script src="{% static 'js/admin/panel-tables.js' %}"></script>
-    <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
     <script>
     AdminCharts.initAll([
       { type: 'barH', canvas: 'chartMatCategoria', dataId: 'dist-categoria-mat-data', labelKey: 'categoria', color: AdminCharts.C.warning },
