@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% load static %}
 {% block page_title %}Nuevo Punto ECA - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
 
@@ -238,6 +239,18 @@
           </div>
         </div>
 
+        <div id="passwordRequirementsBox" class="alert alert-light border mb-4 mt-3" role="alert">
+          <strong>Requisitos de contraseña:</strong>
+          <ul class="mb-0 mt-2 ps-3">
+            <li id="reqMinusculas">❌ Mínimo una letra minúscula (a-z)</li>
+            <li id="reqMayusculas">❌ Mínimo una letra mayúscula (A-Z)</li>
+            <li id="reqNumeros">❌ Mínimo un número (0-9)</li>
+            <li id="reqEspeciales">❌ Mínimo un carácter especial (@$!%*?&)</li>
+            <li id="reqLongitud">❌ Mínimo 8 caracteres</li>
+          </ul>
+          <div id="mensajeCoincidencia" class="mt-2 small"></div>
+        </div>
+
       </div>
     </div>
 
@@ -249,82 +262,74 @@
     </div>
 
   </form>
-</main>
 
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script>
-(function() {
-  function insertCss(href, integrity) {
-    if (document.querySelector('link[href="' + href + '"]')) return;
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.integrity = integrity;
-    link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
-  }
+  initPasswordVisibilityToggle();
 
-  function loadScript(src, integrity, cb) {
-    if (globalThis.L) return cb();
-    var s = document.createElement('script');
-    s.src = src;
-    s.integrity = integrity;
-    s.crossOrigin = 'anonymous';
-    s.onload = cb;
-    document.body.appendChild(s);
-  }
+  var pwdInput = document.getElementById('password');
+  var pwdConfirm = document.getElementById('passwordConfirm');
+  var msgCoincidencia = document.getElementById('mensajeCoincidencia');
 
-  function initTogglePassword() {
-    document.querySelectorAll('.toggle-password-button').forEach(function(btn) {
-      if (btn.dataset.togglePasswordBound === '1') return;
-      btn.dataset.togglePasswordBound = '1';
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        var targetSelector = btn.dataset.target || btn.querySelector('.toggle-password')?.dataset.target;
-        if (!targetSelector) return;
-        var input = document.querySelector(targetSelector);
-        if (!input) return;
-        var isPassword = input.type === 'password';
-        input.type = isPassword ? 'text' : 'password';
-        var icon = btn.querySelector('.bi');
-        if (icon) { icon.classList.toggle('bi-eye', !isPassword); icon.classList.toggle('bi-eye-slash', isPassword); }
-      });
+  if (pwdInput && pwdConfirm && msgCoincidencia) {
+    pwdInput.addEventListener('input', function() {
+      actualizarRequisitosPasswordUI(pwdInput.value);
+      if (pwdConfirm.value) {
+        if (pwdInput.value !== pwdConfirm.value) {
+          pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
+          msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
+        } else {
+          pwdConfirm.setCustomValidity('');
+          msgCoincidencia.innerHTML = '<span class="text-success">✓ Coinciden</span>';
+        }
+      }
+    });
+    pwdConfirm.addEventListener('input', function() {
+      if (pwdInput.value !== pwdConfirm.value) {
+        pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
+        msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
+      } else {
+        pwdConfirm.setCustomValidity('');
+        msgCoincidencia.innerHTML = '<span class="text-success">✓ Coinciden</span>';
+      }
     });
   }
 
   function loadLeafletAndInit() {
-    var cssHref = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
-    var jsSrc = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
-
-    insertCss(cssHref, 'sha384-b8ANgTJvdlAnWM5YGMpKn7Kodm+1k7NYNG9zdjTCcZcKatzYHwZ0RLdWarbJJVzU');
-    loadScript(jsSrc, 'sha384-u5N8qJeJOO2iqNjIKTdl6KeKsEikMAmCUBPc6sC6uGpgL34aPJ4VgNhuhumedpEk', function() {
-      var latInput = document.getElementById('latitud');
-      var lngInput = document.getElementById('longitud');
-      var initLat = Number.parseFloat(latInput && latInput.value) || 4.711;
-      var initLng = Number.parseFloat(lngInput && lngInput.value) || -74.072;
-
-      var mapa = L.map('mapa').setView([initLat, initLng], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(mapa);
-
-      var marcador = null;
-      if (latInput && latInput.value && lngInput && lngInput.value) {
-        marcador = L.marker([initLat, initLng]).addTo(mapa);
-      }
-
-      mapa.on('click', function(e) {
-        if (marcador) mapa.removeLayer(marcador);
-        marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
-        if (latInput) latInput.value = e.latlng.lat.toFixed(4);
-        if (lngInput) lngInput.value = e.latlng.lng.toFixed(4);
-      });
-    });
-
-    initTogglePassword();
+    if (document.querySelector('link[href*="leaflet"]')) { initLeaflet(); return; }
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
+    s.crossOrigin = 'anonymous';
+    s.onload = initLeaflet;
+    document.body.appendChild(s);
   }
+
+  function initLeaflet() {
+    var latInput = document.getElementById('latitud');
+    var lngInput = document.getElementById('longitud');
+    var initLat = Number.parseFloat(latInput?.value) || 4.711;
+    var initLng = Number.parseFloat(lngInput?.value) || -74.072;
+    var mapa = L.map('mapa').setView([initLat, initLng], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(mapa);
+    var marcador = null;
+    if (latInput?.value && lngInput?.value) marcador = L.marker([initLat, initLng]).addTo(mapa);
+    mapa.on('click', function(e) {
+      if (marcador) mapa.removeLayer(marcador);
+      marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
+      if (latInput) latInput.value = e.latlng.lat.toFixed(4);
+      if (lngInput) lngInput.value = e.latlng.lng.toFixed(4);
+    });
+  }
+
   loadLeafletAndInit();
-})();
 </script>
 {% include "admin/PuntoECA/_form_scripts.html" with form_id="ecaForm" check_passwords=True %}
 {% endblock %}

@@ -59,7 +59,7 @@
     }).then(function (r) { if (r.isConfirmed) form.submit(); });
   });
 
-  form.addEventListener('invalid', function (e) { e.preventDefault(); }, true);
+  form.addEventListener('invalid', function (e) { e.preventDefault(); e.target.classList.add('is-invalid'); }, true);
 
   var campos = form.querySelectorAll('input, select, textarea');
   for (var i = 0; i < campos.length; i++) {
@@ -67,11 +67,13 @@
       var eventName = campo.tagName === 'SELECT' ? 'change' : 'input';
       campo.addEventListener(eventName, function () {
         campo.classList.toggle('is-valid', campo.checkValidity() && campo.value.trim() !== '');
-        campo.classList.toggle('is-invalid', !campo.checkValidity() && (campo.value.trim() !== '' || campo.required));
+        campo.classList.toggle('is-invalid', !campo.checkValidity() && (campo.value.trim() !== '' || (campo.required && form.classList.contains('was-validated'))));
       });
       campo.addEventListener('blur', function () {
-        campo.classList.toggle('is-valid', campo.checkValidity() && campo.value.trim() !== '');
-        campo.classList.toggle('is-invalid', !campo.checkValidity() && (campo.value.trim() !== '' || campo.required));
+        if (campo.value.trim() !== '') {
+          campo.classList.toggle('is-valid', campo.checkValidity());
+          campo.classList.toggle('is-invalid', !campo.checkValidity());
+        }
       });
     })(campos[i]);
   }
