@@ -257,6 +257,14 @@ class CategoriaMaterial(DescripcionModel):
     Categoría para clasificar materiales reciclables (ejemplo: Plástico, Metal).
     Relación 1 a N con Material: una categoría puede contener varios materiales.
     """
+    tipo = models.ForeignKey(
+        "inventory.TipoMaterial",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de material",
+        help_text="Tipo al que pertenece esta categoría",
+    )
 
     class Meta(DescripcionModel.Meta):
         verbose_name = "Categoría de material"
