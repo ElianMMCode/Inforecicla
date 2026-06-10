@@ -1,4 +1,20 @@
 /* ─── Hero ────────────────────────────────────────────── */
+.hero-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.hero-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 320px;
+  height: 320px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(25,135,84,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
 .hero-img {
   max-width: 420px;
   animation: float 4s ease-in-out infinite;
