@@ -35,18 +35,6 @@
     </a>
   </li>
   <li class="nav-item">
-    <a class="nav-link {% if active_tab == 'tipos' %}active{% endif %}"
-       href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos">
-      <img src="{% static 'img/bootstrap-icons-1.13.1/recycle.svg' %}"
-           alt=""
-           aria-hidden="true"
-           class="me-1 tab-icon"
-           width="16"
-           height="16">
-      Tipos de materiales
-    </a>
-  </li>
-  <li class="nav-item">
     <a class="nav-link {% if active_tab == 'categorias' %}active{% endif %}"
        href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias">
       <img src="{% static 'img/bootstrap-icons-1.13.1/tags-fill.svg' %}"
@@ -56,6 +44,18 @@
            width="16"
            height="16">
       Categorías de materiales
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'tipos' %}active{% endif %}"
+       href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos">
+      <img src="{% static 'img/bootstrap-icons-1.13.1/recycle.svg' %}"
+           alt=""
+           aria-hidden="true"
+           class="me-1 tab-icon"
+           width="16"
+           height="16">
+      Tipos de materiales
     </a>
   </li>
 </ul>

@@ -27,14 +27,14 @@
         <i class="bi bi-plus-circle me-1"></i> Nuevo Material
       </button>
     </div>
-    <div id="btn-group-tipos" class="d-flex flex-wrap gap-2 {% if tab == 'tipos' %}d-flex{% else %}d-none{% endif %}">
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipo">
-        <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
-      </button>
-    </div>
     <div id="btn-group-categorias" class="d-flex flex-wrap gap-2 {% if tab == 'categorias' %}d-flex{% else %}d-none{% endif %}">
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">
         <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
+      </button>
+    </div>
+    <div id="btn-group-tipos" class="d-flex flex-wrap gap-2 {% if tab == 'tipos' %}d-flex{% else %}d-none{% endif %}">
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipo">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
       </button>
     </div>
   </div>
@@ -155,6 +155,103 @@
       </div>
     </div>
 
+    <!-- ===== TAB CATEGORÍAS ===== -->
+    <div class="tab-pane fade {% if tab == 'categorias' %}show active{% endif %}"
+         id="pane-categorias" role="tabpanel">
+
+      <!-- Charts Categorías -->
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-2">
+              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Categorías por Estado</h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center py-2">
+              <div style="max-width:200px;width:100%;"><canvas id="chartCatEstado"></canvas></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-2">
+              <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-info me-1"></i>Materiales por Categoría</h6>
+            </div>
+            <div class="card-body py-2">
+              <canvas id="chartMatPorCategoria" style="max-height:150px;"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3 border-0">
+        <div class="card-header bg-success-subtle border-0 px-4 py-3">
+          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 align-items-end" id="categorias-filter-form">
+            <div class="col-md-6">
+              <label for="categorias-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" id="categorias-search-input">
+            </div>
+            <div class="col-md-3">
+              <label for="cat-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+              <select class="form-select js-select2" id="cat-filter-estado">
+                <option value="">Todos</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="INACTIVO">Inactivo</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success flex-grow-1" id="categorias-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+                <button type="button" class="btn btn-outline-secondary" id="cat-filter-limpiar"><i class="bi bi-eraser"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+            <a href="{% url 'panel_admin:exportar_categorias_material_excel' %}"
+               class="btn btn-sm btn-outline-success fw-semibold export-link"
+               title="Exportar Excel"
+               data-export-base="{% url 'panel_admin:exportar_categorias_material_excel' %}"
+               data-export-filters="q:categorias-search-input,estado:cat-filter-estado">
+              <i class="bi bi-file-earmark-excel me-1"></i> Excel
+            </a>
+            <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
+               class="btn btn-sm btn-outline-danger fw-semibold export-link"
+               title="Exportar PDF"
+               data-export-base="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
+               data-export-filters="q:categorias-search-input,estado:cat-filter-estado">
+              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+            </a>
+          </div>
+          <span class="badge bg-secondary rounded-pill" id="categorias-count-badge">{{ categorias|length }} registros</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="fw-bold small">Nombre</th>
+                <th class="fw-bold small">Descripción</th>
+                <th class="fw-bold small">Tipo</th>
+                <th class="fw-bold small">Estado</th>
+                <th class="fw-bold small text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="border-top" id="categorias-tbody"></tbody>
+          </table>
+        </div>
+        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+          <ul class="pagination pagination-sm mb-0" id="categorias-pager"></ul>
+        </nav>
+      </div>
+    </div>
+
     <!-- ===== TAB TIPOS ===== -->
     <div class="tab-pane fade {% if tab == 'tipos' %}show active{% endif %}"
          id="pane-tipos" role="tabpanel">
@@ -247,102 +344,6 @@
         </div>
         <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
           <ul class="pagination pagination-sm mb-0" id="tipos-pager"></ul>
-        </nav>
-      </div>
-    </div>
-
-    <!-- ===== TAB CATEGORÍAS ===== -->
-    <div class="tab-pane fade {% if tab == 'categorias' %}show active{% endif %}"
-         id="pane-categorias" role="tabpanel">
-
-      <!-- Charts Categorías -->
-      <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Categorías por Estado</h6>
-            </div>
-            <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:200px;width:100%;"><canvas id="chartCatEstado"></canvas></div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-info me-1"></i>Materiales por Categoría</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatPorCategoria" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm mb-3 border-0">
-        <div class="card-header bg-success-subtle border-0 px-4 py-3">
-          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
-        </div>
-        <div class="card-body">
-          <div class="row g-3 align-items-end" id="categorias-filter-form">
-            <div class="col-md-6">
-              <label for="categorias-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
-              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" id="categorias-search-input">
-            </div>
-            <div class="col-md-3">
-              <label for="cat-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
-              <select class="form-select js-select2" id="cat-filter-estado">
-                <option value="">Todos</option>
-                <option value="ACTIVO">Activo</option>
-                <option value="INACTIVO">Inactivo</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-success flex-grow-1" id="categorias-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
-                <button type="button" class="btn btn-outline-secondary" id="cat-filter-limpiar"><i class="bi bi-eraser"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center gap-2">
-            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
-            <a href="{% url 'panel_admin:exportar_categorias_material_excel' %}"
-               class="btn btn-sm btn-outline-success fw-semibold export-link"
-               title="Exportar Excel"
-               data-export-base="{% url 'panel_admin:exportar_categorias_material_excel' %}"
-               data-export-filters="q:categorias-search-input,estado:cat-filter-estado">
-              <i class="bi bi-file-earmark-excel me-1"></i> Excel
-            </a>
-            <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
-               class="btn btn-sm btn-outline-danger fw-semibold export-link"
-               title="Exportar PDF"
-               data-export-base="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
-               data-export-filters="q:categorias-search-input,estado:cat-filter-estado">
-              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-            </a>
-          </div>
-          <span class="badge bg-secondary rounded-pill" id="categorias-count-badge">{{ categorias|length }} registros</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="fw-bold small">Nombre</th>
-                <th class="fw-bold small">Descripción</th>
-                <th class="fw-bold small">Estado</th>
-                <th class="fw-bold small text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="border-top" id="categorias-tbody"></tbody>
-          </table>
-        </div>
-        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
-          <ul class="pagination pagination-sm mb-0" id="categorias-pager"></ul>
         </nav>
       </div>
     </div>
