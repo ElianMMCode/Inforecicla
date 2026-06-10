@@ -251,7 +251,7 @@ def _obtener_datos_crear_usuario_admin(data):
         "email": _normalizar_texto(data.get("email", "")).lower(),
         "celular": _normalizar_texto(data.get("celular", "")),
         "tipo_documento": _normalizar_texto(data.get("tipoDocumento", "")),
-        "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")),
+        "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")) or None,
         "ciudad": DEFAULT_CITY,
         "localidad_id": _normalizar_texto(data.get("localidad", "")),
         "fecha_nacimiento": _normalizar_texto(data.get("fechaNacimiento", "")) or None,
