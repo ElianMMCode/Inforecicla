@@ -268,7 +268,7 @@
         crossorigin="anonymous"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        // Intersection Observer para animar cards y testimonios
+        // Intersection Observer para animar testimonios
         if ('IntersectionObserver' in globalThis) {
           const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
@@ -281,6 +281,30 @@
           document.querySelectorAll('.animate-fadeIn').forEach(card => observer.observe(card));
         } else {
           document.querySelectorAll('.animate-fadeIn').forEach(card => card.classList.add('is-visible'));
+        }
+
+        // Count-up animado en estadísticas
+        const statNums = document.querySelectorAll('.stat-num');
+        if ('IntersectionObserver' in globalThis && statNums.length) {
+          const countObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+              if (!entry.isIntersecting) return;
+              const el = entry.target;
+              obs.unobserve(el);
+              const raw = el.textContent.replace(/[^0-9]/g, '');
+              const target = parseInt(raw, 10);
+              if (!target) return;
+              const suffix = el.textContent.includes('+') ? '+' : '';
+              let current = 0;
+              const step = Math.max(1, Math.floor(target / 40));
+              const timer = setInterval(() => {
+                current += step;
+                if (current >= target) { current = target; clearInterval(timer); }
+                el.textContent = suffix + current;
+              }, 25);
+            });
+          }, { threshold: 0.5 });
+          statNums.forEach(el => countObserver.observe(el));
         }
       });
     </script>
