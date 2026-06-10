@@ -32,12 +32,14 @@ ADMIN_EDIT_USUARIO_TEMPLATE = "admin/Usuarios/editUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
 PUBLICACIONES_NO_HABILITADAS_AJAX_MSG = "El modulo de publicaciones no esta habilitado."
 PUBLICACION_NO_ENCONTRADA_MSG = "Publicacion no encontrada."
+RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado."
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
 USUARIO_ACTUALIZADO_OK_MSG = "Usuario actualizado correctamente."
 CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
 LISTAR_PUNTOS_ECA_URL = "panel_admin:listar_puntos_eca_admin"
 LISTAR_CATEGORIAS_PUBLICACION_URL = "panel_admin:listar_categorias_publicacion_admin"
+LISTAR_TIPOS_PUBLICACION_URL = "panel_admin:listar_tipos_publicacion_admin"
 
 
 def _crear_respuesta_descarga(contenido, content_type, filename):
@@ -273,19 +275,18 @@ def _obtener_datos_crear_usuario_admin(data):
     }
 
 
+def _validar_texto_personal(valor, campo, min_len, max_len, errores):
+    if len(valor) < min_len:
+        errores.append(f"El {campo} debe tener al menos {min_len} caracteres.")
+    elif len(valor) > max_len:
+        errores.append(f"El {campo} no puede superar {max_len} caracteres.")
+    elif not _texto_solo_letras(valor, permitir_apostrofo=True):
+        errores.append(f"El {campo} solo puede contener letras, espacios, guiones o apóstrofes.")
+
+
 def _validar_campos_crear_usuario_admin(datos, errores):
-    if len(datos["nombres"]) < 3:
-        errores.append("El nombre debe tener al menos 3 caracteres.")
-    elif len(datos["nombres"]) > 30:
-        errores.append("El nombre no puede superar 30 caracteres.")
-    elif not _texto_solo_letras(datos["nombres"], permitir_apostrofo=True):
-        errores.append("El nombre solo puede contener letras, espacios, guiones o apóstrofes.")
-    if len(datos["apellidos"]) < 3:
-        errores.append("Los apellidos deben tener al menos 3 caracteres.")
-    elif len(datos["apellidos"]) > 40:
-        errores.append("Los apellidos no pueden superar 40 caracteres.")
-    elif not _texto_solo_letras(datos["apellidos"], permitir_apostrofo=True):
-        errores.append("Los apellidos solo pueden contener letras, espacios, guiones o apóstrofes.")
+    _validar_texto_personal(datos["nombres"], "nombre", 3, 30, errores)
+    _validar_texto_personal(datos["apellidos"], "apellido", 3, 40, errores)
     _validar_email_crear_usuario_admin(datos["email"], errores)
     if len(datos["celular"]) != 10 or not datos["celular"].startswith("3"):
         errores.append(CELULAR_ERROR)
@@ -1951,10 +1952,11 @@ def editar_categoria_publicacion_admin(request, categoria_id):
         messages.error(request, "Categoria de publicacion no encontrada.")
         return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
 
+    tipos_publicacion = AdminCatalogService._tipos_publicacion_disponibles()
     form_data = {
         "nombre": getattr(categoria, "nombre", ""),
         "descripcion": getattr(categoria, "descripcion", ""),
-        "tipo": categoria.tipo,
+        "tipo": categoria.tipo if categoria.tipo in {v for v, _ in tipos_publicacion} else "",
         "estado": categoria.estado,
     }
 
@@ -2249,7 +2251,7 @@ def crear_tipo_publicacion(request):
             messages.success(request, resultado["message"])
         else:
             messages.error(request, resultado["message"])
-        return redirect("panel_admin:listar_tipos_publicacion_admin")
+        return redirect(LISTAR_TIPOS_PUBLICACION_URL)
     return render(
         request,
         "admin/Publicaciones/createTipoPublicacion.html",
@@ -2269,7 +2271,7 @@ def editar_tipo_publicacion_admin(request, tipo_id):
         tipo = None
     if not tipo:
         messages.error(request, RECURSO_NO_ENCONTRADO_MSG)
-        return redirect("panel_admin:listar_tipos_publicacion_admin")
+        return         redirect(LISTAR_TIPOS_PUBLICACION_URL)
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_tipo_publicacion(tipo_id, request.POST)
@@ -2279,7 +2281,7 @@ def editar_tipo_publicacion_admin(request, tipo_id):
             messages.success(request, resultado["message"])
         else:
             messages.error(request, resultado["message"])
-        return redirect("panel_admin:listar_tipos_publicacion_admin")
+        return redirect(LISTAR_TIPOS_PUBLICACION_URL)
 
     return render(
         request,
