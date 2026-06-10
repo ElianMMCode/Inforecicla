@@ -3,266 +3,218 @@
 {% block page_title %}Nuevo Punto ECA - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
 
-
 {% block content %}
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+<style>
+  #mapa { height: 300px; border-radius: 8px; border: 1px solid #dee2e6; z-index: 1; }
+  .map-info { background: #f8f9fa; border-left: 4px solid #145c3a; padding: .75rem 1rem; border-radius: 6px; font-size: .88rem; }
+</style>
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-plus-circle me-2"></i>Nuevo Punto ECA</h1>
+    <p class="text-muted mb-0">Registra una nueva estación de clasificación y aprovechamiento.</p>
+  </div>
+  <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Volver
+  </a>
+</div>
+
+{% if errores %}
+<div class="alert alert-danger alert-dismissible fade show mb-4">
+  <strong>Por favor corrige los siguientes errores:</strong>
+  <ul class="mb-0 mt-2">
+    {% for error in errores %}
+      <li>{{ error }}</li>
     {% endfor %}
-  </div>
-  {% endif %}
+  </ul>
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
 
-  <div class="mb-4 d-flex justify-content-between align-items-center">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-plus-circle me-2"></i>Nuevo Punto ECA</h1>
-      <p class="text-muted mb-0">Registra una nueva estación de clasificación y aprovechamiento.</p>
-    </div>
-    <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Volver
-    </a>
-  </div>
+<form method="post" id="ecaForm" class="needs-validation" novalidate>
+  {% csrf_token %}
 
-  {% if errores %}
-  <div class="alert alert-danger alert-dismissible fade show mb-4">
-    <strong>Por favor corrige los siguientes errores:</strong>
-    <ul class="mb-0 mt-2">
-      {% for error in errores %}
-        <li>{{ error }}</li>
-      {% endfor %}
-    </ul>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-  {% endif %}
+  <!-- Datos del Punto ECA -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-success text-white"><i class="bi bi-building me-1"></i> Datos del Punto ECA</div>
+    <div class="card-body p-4">
 
-  <form method="post" id="ecaForm" class="needs-validation" novalidate>
-    {% csrf_token %}
-
-    <!-- Datos del Punto ECA -->
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-header bg-success text-white"><i class="bi bi-building me-1"></i> Datos del Punto ECA</div>
-      <div class="card-body p-4">
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_nombre_punto" class="form-label fw-semibold">Nombre del Punto ECA <span class="text-danger">*</span></label>
-            <input id="eca_nombre_punto" type="text" name="nombre_punto" class="form-control" required maxlength="100"
-                   value="{{ form_data.nombre_punto|default:'' }}" placeholder="Ej: Centro Ambiental San Felipe">
-            <div class="invalid-feedback">El nombre del punto ECA es obligatorio.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="eca_direccion" class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
-            <input id="eca_direccion" type="text" name="direccion" class="form-control" required
-                   value="{{ form_data.direccion|default:'' }}" placeholder="Calle 10 # 20 - 30">
-            <div class="invalid-feedback">La dirección es obligatoria.</div>
-          </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_nombre_punto" class="form-label fw-semibold">Nombre del Punto ECA <span class="text-danger">*</span></label>
+          <input id="eca_nombre_punto" type="text" name="nombre_punto" class="form-control" required maxlength="100"
+                 value="{{ form_data.nombre_punto|default:'' }}" placeholder="Ej: Centro Ambiental San Felipe">
+          <div class="invalid-feedback">El nombre del punto ECA es obligatorio.</div>
         </div>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_telefono_punto" class="form-label fw-semibold">Teléfono Fijo <span class="text-danger">*</span></label>
-            <input id="eca_telefono_punto" type="text" name="telefono_punto" class="form-control" required
-                   pattern="60[0-9]{8}" maxlength="10"
-                   value="{{ form_data.telefono_punto|default:'' }}" placeholder="6012345678">
-            <div class="invalid-feedback">Debe comenzar con 60 y tener 10 dígitos.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="eca_email" class="form-label fw-semibold">Email del Punto ECA <span class="text-danger">*</span></label>
-            <input id="eca_email" type="text" name="email" class="form-control" required
-                   value="{{ form_data.email|default:'' }}" placeholder="punto@eca.com">
-            <div class="invalid-feedback">Ingresa un email válido.</div>
-          </div>
+        <div class="col-md-6">
+          <label for="eca_direccion" class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
+          <input id="eca_direccion" type="text" name="direccion" class="form-control" required
+                 value="{{ form_data.direccion|default:'' }}" placeholder="Calle 10 # 20 - 30">
+          <div class="invalid-feedback">La dirección es obligatoria.</div>
         </div>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span></label>
-            <input id="eca_celular" type="text" name="celular" class="form-control" required
-                   pattern="3[0-9]{9}" maxlength="10"
-                   value="{{ form_data.celular|default:'' }}" placeholder="3101234567">
-            <div class="invalid-feedback">Debe iniciar con 3 y tener 10 dígitos.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="eca_horario_atencion" class="form-label fw-semibold">Horario de Atención</label>
-            <input id="eca_horario_atencion" type="text" name="horario_atencion" class="form-control"
-                   value="{{ form_data.horario_atencion|default:'' }}" placeholder="Lunes a Viernes 8:00-16:00">
-          </div>
-        </div>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_sitio_web" class="form-label fw-semibold">Sitio Web</label>
-            <input id="eca_sitio_web" type="url" name="sitio_web" class="form-control"
-                   value="{{ form_data.sitio_web|default:'' }}" placeholder="https://tupunto.com">
-          </div>
-          <div class="col-md-6">
-            <label for="eca_logo_url_punto" class="form-label fw-semibold">Logo (URL)</label>
-            <input id="eca_logo_url_punto" type="url" name="logo_url_punto" class="form-control"
-                   value="{{ form_data.logo_url_punto|default:'' }}" placeholder="https://...logo.png">
-          </div>
-        </div>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_foto_url_punto" class="form-label fw-semibold">Foto del Punto (URL)</label>
-            <input id="eca_foto_url_punto" type="url" name="foto_url_punto" class="form-control"
-                   value="{{ form_data.foto_url_punto|default:'' }}" placeholder="https://...foto.jpg">
-          </div>
-          <div class="col-md-6">
-            <label for="eca_descripcion" class="form-label fw-semibold">Descripción</label>
-            <textarea id="eca_descripcion" name="descripcion" class="form-control" rows="2"
-                      placeholder="Describe el punto ECA...">{{ form_data.descripcion|default:'' }}</textarea>
-          </div>
-        </div>
-
-        <hr class="my-3">
-        <h6 class="fw-semibold text-success mb-3"><i class="bi bi-geo-alt me-1"></i> Localización</h6>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
-            <input id="eca_ciudad" type="text" name="ciudad" class="form-control" required
-                   value="{{ form_data.ciudad|default:'Bogotá' }}" placeholder="Bogotá"
-                   readonly aria-readonly="true">
-            <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="eca_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
-            <select id="eca_localidad" name="localidad" class="form-select" required>
-              <option value="">Seleccionar localidad...</option>
-              {% for loc in localidades %}
-                <option value="{{ loc.localidad_id }}"
-                  {% if form_data.localidad == loc.localidad_id|stringformat:'s' %}selected{% endif %}>
-                  {{ loc.nombre }}
-                </option>
-              {% endfor %}
-            </select>
-            <div class="invalid-feedback">Selecciona una localidad.</div>
-          </div>
-        </div>
-
-        <div class="form-text mb-2"><i class="bi bi-info-circle me-1"></i>Haz clic en el mapa para seleccionar las coordenadas del punto ECA.</div>
-        <div id="mapa" style="height:300px; border-radius:8px; border:1px solid #dee2e6;" class="mb-3"></div>
-
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="latitud" class="form-label fw-semibold">Latitud <span class="text-danger">*</span></label>
-            <input type="number" name="latitud" id="latitud" class="form-control" required
-                   step="0.0001" value="{{ form_data.latitud|default:'' }}" placeholder="4.7110">
-            <div class="invalid-feedback">La latitud es obligatoria.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="longitud" class="form-label fw-semibold">Longitud <span class="text-danger">*</span></label>
-            <input type="number" name="longitud" id="longitud" class="form-control" required
-                   step="0.0001" value="{{ form_data.longitud|default:'' }}" placeholder="-74.0721">
-            <div class="invalid-feedback">La longitud es obligatoria.</div>
-          </div>
-        </div>
-
       </div>
-    </div>
 
-    <!-- Datos del Gestor -->
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-header bg-primary text-white"><i class="bi bi-person-badge me-1"></i> Datos del Gestor</div>
-      <div class="card-body p-4">
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_nombres" class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span></label>
-            <input id="eca_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
-                   value="{{ form_data.nombres|default:'' }}" placeholder="Ej: Juan Carlos" autocomplete="given-name">
-            <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="eca_apellidos" class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span></label>
-            <input id="eca_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
-                   value="{{ form_data.apellidos|default:'' }}" placeholder="Ej: Pérez García" autocomplete="family-name">
-            <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
-          </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_email" class="form-label fw-semibold">Email del Punto ECA <span class="text-danger">*</span></label>
+          <input id="eca_email" type="text" name="email" class="form-control" required
+                 value="{{ form_data.email|default:'' }}" placeholder="punto@eca.com">
+          <div class="invalid-feedback">Ingresa un email válido.</div>
         </div>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_email_gestor" class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span></label>
-            <input id="eca_email_gestor" type="text" name="email_gestor" class="form-control" required
-                   value="{{ form_data.email_gestor|default:'' }}" placeholder="gestor@mail.com">
-            <div class="invalid-feedback">El email del gestor es obligatorio.</div>
-            <div class="form-text">Este correo será el usuario de acceso al sistema.</div>
-          </div>
+        <div class="col-md-6">
+          <label for="eca_telefono_punto" class="form-label fw-semibold">Teléfono Fijo <span class="text-danger">*</span></label>
+          <input id="eca_telefono_punto" type="text" name="telefono_punto" class="form-control" required
+                 pattern="60[0-9]{8}" maxlength="10"
+                 value="{{ form_data.telefono_punto|default:'' }}" placeholder="6012345678">
+          <div class="invalid-feedback">Debe comenzar con 60 y tener 10 dígitos.</div>
         </div>
-
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label for="eca_tipoDocumento" class="form-label fw-semibold">Tipo de Documento</label>
-            <select id="eca_tipoDocumento" name="tipoDocumento" class="form-select">
-              <option value="">Seleccionar...</option>
-              {% for val, label in tipos_documento %}
-                <option value="{{ val }}" {% if form_data.tipoDocumento == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label for="eca_numeroDocumento" class="form-label fw-semibold">Número de Documento</label>
-            <input id="eca_numeroDocumento" type="text" name="numeroDocumento" class="form-control"
-                   value="{{ form_data.numeroDocumento|default:'' }}" placeholder="123456789">
-          </div>
-        </div>
-
-        <hr class="my-3">
-        <h6 class="fw-semibold mb-3">Contraseña de Acceso</h6>
-
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="password" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <input type="password" name="password" id="password" class="form-control" required minlength="8"
-                     placeholder="Mínimo 8 caracteres">
-              <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" data-target="#password" aria-label="Mostrar u ocultar contraseña">
-                <i class="bi bi-eye" aria-hidden="true"></i>
-              </button>
-            </div>
-            <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="passwordConfirm" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <input type="password" name="passwordConfirm" id="passwordConfirm" class="form-control" required minlength="8"
-                     placeholder="Repite la contraseña">
-              <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" data-target="#passwordConfirm" aria-label="Mostrar u ocultar confirmación de contraseña">
-                <i class="bi bi-eye" aria-hidden="true"></i>
-              </button>
-            </div>
-            <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
-          </div>
-        </div>
-
-        <div id="passwordRequirementsBox" class="alert alert-light border mb-4 mt-3" role="alert">
-          <strong>Requisitos de contraseña:</strong>
-          <ul class="mb-0 mt-2 ps-3">
-            <li id="reqMinusculas">❌ Mínimo una letra minúscula (a-z)</li>
-            <li id="reqMayusculas">❌ Mínimo una letra mayúscula (A-Z)</li>
-            <li id="reqNumeros">❌ Mínimo un número (0-9)</li>
-            <li id="reqEspeciales">❌ Mínimo un carácter especial (@$!%*?&)</li>
-            <li id="reqLongitud">❌ Mínimo 8 caracteres</li>
-          </ul>
-          <div id="mensajeCoincidencia" class="mt-2 small"></div>
-        </div>
-
       </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_celular" class="form-label fw-semibold">Celular de contacto <span class="text-danger">*</span></label>
+          <input id="eca_celular" type="text" name="celular" class="form-control" required
+                 pattern="3[0-9]{9}" maxlength="10"
+                 value="{{ form_data.celular|default:'' }}" placeholder="3101234567">
+          <div class="invalid-feedback">Debe iniciar con 3 y tener 10 dígitos.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
+          <input id="eca_ciudad" type="text" name="ciudad" class="form-control" required
+                 value="{{ form_data.ciudad|default:'Bogotá' }}" readonly aria-readonly="true">
+          <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
+          <select id="eca_localidad" name="localidad" class="form-select" required>
+            <option value="">Seleccionar localidad...</option>
+            {% for loc in localidades %}
+              <option value="{{ loc.localidad_id }}"
+                {% if form_data.localidad == loc.localidad_id|stringformat:'s' %}selected{% endif %}>
+                {{ loc.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Selecciona una localidad.</div>
+        </div>
+      </div>
+
+      <hr class="my-3">
+      <h6 class="fw-semibold text-success mb-3"><i class="bi bi-geo-alt me-1"></i> Ubicación en el mapa</h6>
+
+      <div class="map-info mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Haz clic en el mapa para seleccionar las coordenadas del punto ECA.
+      </div>
+      <div id="mapa" class="mb-3"></div>
+
+      <input type="hidden" name="latitud" id="latitud" value="{{ form_data.latitud|default:'' }}">
+      <input type="hidden" name="longitud" id="longitud" value="{{ form_data.longitud|default:'' }}">
+
     </div>
+  </div>
 
-    <div class="d-flex gap-2 mb-5">
-      <button type="submit" class="btn btn-success">
-        <i class="bi bi-save me-1"></i> Crear Punto ECA
-      </button>
-      <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="btn btn-outline-secondary">Cancelar</a>
+  <!-- Datos del Gestor -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-primary text-white"><i class="bi bi-person-badge me-1"></i> Datos del Gestor</div>
+    <div class="card-body p-4">
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_nombres" class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span></label>
+          <input id="eca_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                 value="{{ form_data.nombres|default:'' }}" placeholder="Ej: Juan Carlos" autocomplete="given-name">
+          <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_apellidos" class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span></label>
+          <input id="eca_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                 value="{{ form_data.apellidos|default:'' }}" placeholder="Ej: Pérez García" autocomplete="family-name">
+          <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_email_gestor" class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span></label>
+          <input id="eca_email_gestor" type="text" name="email_gestor" class="form-control" required
+                 value="{{ form_data.email_gestor|default:'' }}" placeholder="gestor@mail.com">
+          <div class="invalid-feedback">El email del gestor es obligatorio.</div>
+          <div class="form-text">Este correo será el usuario de acceso al sistema.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_tipoDocumento" class="form-label fw-semibold">Tipo de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+          <select id="eca_tipoDocumento" name="tipoDocumento" class="form-select">
+            <option value="">Seleccionar...</option>
+            {% for val, label in tipos_documento %}
+              <option value="{{ val }}" {% if form_data.tipoDocumento == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_numeroDocumento" class="form-label fw-semibold">Número de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+          <input id="eca_numeroDocumento" type="text" name="numeroDocumento" class="form-control"
+                 value="{{ form_data.numeroDocumento|default:'' }}" placeholder="123456789">
+        </div>
+      </div>
+
+      <hr class="my-3">
+      <h6 class="fw-semibold mb-3">Contraseña de Acceso</h6>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="password" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="password" name="password" id="password" class="form-control" required minlength="8"
+                   placeholder="Mínimo 8 caracteres">
+            <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" data-target="#password">
+              <i class="bi bi-eye" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="passwordConfirm" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="password" name="passwordConfirm" id="passwordConfirm" class="form-control" required minlength="8"
+                   placeholder="Repite la contraseña">
+            <button class="btn btn-outline-secondary toggle-password-button" type="button" tabindex="-1" data-target="#passwordConfirm">
+              <i class="bi bi-eye" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
+        </div>
+      </div>
+
+      <div id="passwordRequirementsBox" class="alert alert-light border mb-0 mt-3" role="alert">
+        <strong>Requisitos de contraseña:</strong>
+        <ul class="mb-0 mt-2 ps-3">
+          <li id="reqMinusculas">❌ Mínimo una letra minúscula (a-z)</li>
+          <li id="reqMayusculas">❌ Mínimo una letra mayúscula (A-Z)</li>
+          <li id="reqNumeros">❌ Mínimo un número (0-9)</li>
+          <li id="reqEspeciales">❌ Mínimo un carácter especial (@$!%*?&)</li>
+          <li id="reqLongitud">❌ Mínimo 8 caracteres</li>
+        </ul>
+        <div id="mensajeCoincidencia" class="mt-2 small"></div>
+      </div>
+
     </div>
+  </div>
 
-  </form>
+  <div class="d-flex gap-2 mb-5">
+    <button type="submit" class="btn btn-success btn-lg px-4">
+      <i class="bi bi-save me-2"></i> Crear Punto ECA
+    </button>
+    <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="btn btn-outline-secondary btn-lg px-4">Cancelar</a>
+  </div>
 
+</form>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -273,7 +225,6 @@
   var pwdInput = document.getElementById('password');
   var pwdConfirm = document.getElementById('passwordConfirm');
   var msgCoincidencia = document.getElementById('mensajeCoincidencia');
-
   if (pwdInput && pwdConfirm && msgCoincidencia) {
     pwdInput.addEventListener('input', function() {
       actualizarRequisitosPasswordUI(pwdInput.value);
