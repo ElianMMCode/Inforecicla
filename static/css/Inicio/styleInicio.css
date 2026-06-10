@@ -83,7 +83,7 @@
 /* ─── Flip cards (How it works) ──────────────────────── */
 .flip-card {
   perspective: 1000px;
-  height: 280px;
+  min-height: 280px;
   cursor: pointer;
   border: none;
   background: none;
@@ -126,6 +126,11 @@
   background-color: #198754;
   color: #fff;
   transform: rotateY(180deg);
+}
+.flip-card-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
 }
 .flip-card-back p {
   font-size: 0.9rem;

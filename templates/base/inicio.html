@@ -55,7 +55,7 @@
                         <button type="button" class="flip-card" aria-label="Busca puntos de recolección">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
-                                    <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" style="width: 120px; height: 120px; object-fit: contain;" loading="lazy">
+                                    <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" class="flip-card-img" loading="lazy">
                                     <h3 class="h5 text-white mt-3">Busca puntos de recolección</h3>
                                 </div>
                                 <div class="flip-card-back">
@@ -68,7 +68,7 @@
                         <button type="button" class="flip-card" aria-label="Noticias y novedades">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
-                                    <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" style="width: 120px; height: 120px; object-fit: contain;" loading="lazy">
+                                    <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" class="flip-card-img" loading="lazy">
                                     <h3 class="h5 text-white mt-3">Noticias y novedades</h3>
                                 </div>
                                 <div class="flip-card-back">
@@ -81,7 +81,7 @@
                         <button type="button" class="flip-card" aria-label="Gestiona tu punto ECA">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
-                                    <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" style="width: 120px; height: 120px; object-fit: contain;" loading="lazy">
+                                    <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" class="flip-card-img" loading="lazy">
                                     <h3 class="h5 text-white mt-3">Gestiona tu punto ECA</h3>
                                 </div>
                                 <div class="flip-card-back">
@@ -254,7 +254,7 @@
 
     <footer class="bg-success text-white py-4 mt-5">
         <div class="container text-center">
-            <small>&copy; 2026 InfoRecicla - Proyecto colaborativo para la gestión de reciclaje.</small>
+            <small>&copy; {% now "Y" %} InfoRecicla - Proyecto colaborativo para la gestión de reciclaje.</small>
             <div class="mt-2">
                 <a href="{% url 'core:terminos' %}" class="text-white text-decoration-none me-3">Términos y condiciones</a>
             </div>
