@@ -11,13 +11,7 @@
     <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-folder-fill me-2"></i>Categorías de Publicaciones</h1>
     <p class="text-muted mb-0">Organiza las publicaciones por categorías.</p>
   </div>
-  <div class="d-flex flex-wrap gap-2">
-    <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-      <i class="bi bi-file-earmark-excel me-1"></i> Excel
-    </a>
-    <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-      <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-    </a>
+  <div>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoriaPublicacion">
       <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
     </button>
@@ -99,7 +93,23 @@
 
 <div class="card shadow-sm border-0">
   <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-    <span class="fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</span>
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+      <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}"
+         class="btn btn-sm btn-outline-success fw-semibold export-link"
+         title="Exportar Excel"
+         data-export-base="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}"
+         data-export-filters="q:cat-pub-search-input">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}"
+         class="btn btn-sm btn-outline-danger fw-semibold export-link"
+         title="Exportar PDF"
+         data-export-base="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}"
+         data-export-filters="q:cat-pub-search-input">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+    </div>
     <span class="badge bg-secondary rounded-pill" id="cat-pub-count-badge">{{ categorias|length }} registros</span>
   </div>
   <div class="table-responsive">
@@ -160,13 +170,8 @@
               {% for value, label in tipos_publicacion %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
-              <option value="__otro__">Otro tipo...</option>
             </select>
             <div class="invalid-feedback">Selecciona un tipo.</div>
-          </div>
-          <div class="mb-3" id="ccp_tipo_otro_wrapper" style="display:none;">
-            <label for="ccp_tipo_otro" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="ccp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
           </div>
           <div class="mb-3">
             <label for="ccp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
@@ -213,13 +218,8 @@
               {% for value, label in tipos_publicacion %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
-              <option value="__otro__">Otro tipo...</option>
             </select>
             <div class="invalid-feedback">Selecciona un tipo.</div>
-          </div>
-          <div class="mb-3" id="ecp_tipo_otro_wrapper" style="display:none;">
-            <label for="ecp_tipo_otro" class="form-label fw-semibold">Nuevo tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="ecp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
           </div>
           <div class="mb-3">
             <label for="ecp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
@@ -344,39 +344,7 @@ AdminCharts.initAll([
     {% endif %}
   })();
 
-  function initTipoOtro(selectId, wrapperId, inputId) {
-    var sel = document.getElementById(selectId);
-    var wrapper = document.getElementById(wrapperId);
-    var inp = document.getElementById(inputId);
-    if (!sel || !wrapper || !inp) return;
-    function toggle() {
-      var esOtro = sel.value === '__otro__';
-      wrapper.style.display = esOtro ? 'block' : 'none';
-      inp.required = esOtro;
-      if (!esOtro) inp.value = '';
-    }
-    sel.addEventListener('change', toggle);
-    return toggle;
-  }
-
-  var editModal = document.getElementById('modalEditarCategoriaPublicacion');
-  var editSel = document.getElementById('ecp_tipo');
-  var editWrapper = document.getElementById('ecp_tipo_otro_wrapper');
-  var editInput = document.getElementById('ecp_tipo_otro');
-
-  if (editModal && editSel) {
-    editModal.addEventListener('show.bs.modal', function() {
-      var known = [{% for value, label in tipos_publicacion %}'{{ value }}',{% endfor %}];
-      if (editSel.value && known.indexOf(editSel.value) === -1 && editSel.value !== '__otro__') {
-        editInput.value = editSel.value;
-        editSel.value = '__otro__';
-      }
-      toggleEditTipo();
-    });
-  }
-  var toggleEditTipo = initTipoOtro('ecp_tipo', 'ecp_tipo_otro_wrapper', 'ecp_tipo_otro');
-
-  initTipoOtro('ccp_tipo', 'ccp_tipo_otro_wrapper', 'ccp_tipo_otro');
+  initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
 
   initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
   initModalFormAjax('formEditarCatPub', window.location.href);

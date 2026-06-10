@@ -7,6 +7,17 @@ from config.base_models import CreacionModificacionModel, DescripcionModel
 
 
 ##########################################################
+class TipoPublicacion(DescripcionModel):
+    class Meta(DescripcionModel.Meta):
+        verbose_name = "Tipo de publicación"
+        verbose_name_plural = "Tipos de publicación"
+        db_table = "tipo_publicacion"
+
+    def __str__(self):
+        return self.nombre
+
+
+##########################################################
 class CategoriaPublicacion(DescripcionModel):
     tipo = models.CharField(
         max_length=30,

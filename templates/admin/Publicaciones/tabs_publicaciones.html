@@ -42,4 +42,16 @@
       Categorías de publicaciones
     </a>
   </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'tipos_publicacion' %}active{% endif %}"
+       href="{% url 'panel_admin:listar_tipos_publicacion_admin' %}">
+      <img src="{% static 'img/bootstrap-icons-1.13.1/tags-fill.svg' %}"
+           alt=""
+           aria-hidden="true"
+           class="me-1"
+           width="16"
+           height="16">
+      Tipos de publicación
+    </a>
+  </li>
 </ul>

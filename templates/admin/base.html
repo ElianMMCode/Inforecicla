@@ -80,6 +80,27 @@
 <script src="{% static 'js/admin/charts-helper.js' %}"></script>
 <script src="{% static 'js/admin/panel-tables.js' %}"></script>
 <script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+document.addEventListener('click', function(e) {
+    var link = e.target.closest('a.export-link');
+    if (!link) { return; }
+    e.preventDefault();
+    var baseUrl = link.getAttribute('data-export-base');
+    var filterStr = link.getAttribute('data-export-filters') || '';
+    var params = new URLSearchParams();
+    if (filterStr) {
+        filterStr.split(',').forEach(function(pair) {
+            var parts = pair.split(':');
+            if (parts.length === 2) {
+                var el = document.getElementById(parts[1]);
+                if (el && el.value) { params.set(parts[0], el.value); }
+            }
+        });
+    }
+    var qs = params.toString();
+    window.location.href = qs ? baseUrl + '?' + qs : baseUrl;
+});
+</script>
 <style>
     .select2-container--bootstrap-5 .select2-dropdown { z-index: 2000 !important; }
     .select2-container--bootstrap-5.select2-container--open { z-index: 2001 !important; }

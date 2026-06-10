@@ -1,22 +1,6 @@
 {% load static %}
 <script>
 (function () {
-  var tipoSelect = document.getElementById("tipoSelect");
-  var tipoOtroWrapper = document.getElementById("tipoOtroWrapper");
-  var tipoOtroInput = document.getElementById("tipoOtroInput");
-
-  function toggleTipoOtro() {
-    var esOtro = tipoSelect && tipoSelect.value === "__otro__";
-    if (tipoOtroWrapper) tipoOtroWrapper.style.display = esOtro ? "block" : "none";
-    if (tipoOtroInput) tipoOtroInput.required = esOtro;
-    if (!esOtro && tipoOtroInput) tipoOtroInput.value = "";
-  }
-
-  if (tipoSelect) {
-    tipoSelect.addEventListener("change", toggleTipoOtro);
-    toggleTipoOtro();
-  }
-
   initModalFormAjax('{{ form_id }}', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
 })();
 </script>
