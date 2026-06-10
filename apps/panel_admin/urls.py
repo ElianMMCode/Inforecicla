@@ -51,6 +51,11 @@ urlpatterns = [
     path('categorias-publicaciones/crear/', views.crear_categoria_publicacion, name='crear_categoria_publicacion'),
     path('categorias-publicaciones/<uuid:categoria_id>/editar/', views.editar_categoria_publicacion_admin, name='editar_categoria_publicacion_admin'),
 
+    # Tipos de publicaciones
+    path('tipos-publicaciones/', views.listar_tipos_publicacion_admin, name='listar_tipos_publicacion_admin'),
+    path('tipos-publicaciones/crear/', views.crear_tipo_publicacion, name='crear_tipo_publicacion'),
+    path('tipos-publicaciones/<uuid:tipo_id>/editar/', views.editar_tipo_publicacion_admin, name='editar_tipo_publicacion_admin'),
+
     # Tipos de materiales
     path('tipos-materiales/', views.listar_tipos_material_admin, name='listar_tipos_material_admin'),
     path('tipos-materiales/exportar/pdf/', views.exportar_tipos_material_pdf, name='exportar_tipos_material_pdf'),

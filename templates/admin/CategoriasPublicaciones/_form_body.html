@@ -16,14 +16,8 @@
     {% for value, label in tipos_publicacion %}
     <option value="{{ value }}" {% if form_data.tipo == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
-    <option value="__otro__" {% if form_data.tipo == '__otro__' %}selected{% endif %}>Otro tipo...</option>
   </select>
   <div class="invalid-feedback">Selecciona un tipo.</div>
-</div>
-<div class="mb-3" id="tipoOtroWrapper" style="display: none;">
-  <label for="tipoOtroInput" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-  <input id="tipoOtroInput" type="text" name="tipo_otro" class="form-control" maxlength="30" value="{{ form_data.tipo_otro }}" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
-  <div class="invalid-feedback">El nuevo tipo es obligatorio.</div>
 </div>
 <div class="mb-3">
   <label for="estadoSelect" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>

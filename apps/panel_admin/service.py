@@ -422,30 +422,20 @@ class AdminCatalogService:
 
     @staticmethod
     def _tipos_publicacion_disponibles(excluir_categoria_id=None):
-        tipos = list(cons.TipoPublicacion.choices)
-        valores = {value for value, _ in tipos}
-
         try:
-            from apps.publicaciones.models import CategoriaPublicacion
+            from apps.publicaciones.models import TipoPublicacion
 
-            categorias = CategoriaPublicacion.objects.all()
+            tipos_qs = TipoPublicacion.objects.all()
             if excluir_categoria_id:
-                categorias = categorias.exclude(pk=excluir_categoria_id)
+                from apps.publicaciones.models import CategoriaPublicacion
 
-            nombres = (
-                categorias.exclude(nombre__isnull=True)
-                .exclude(nombre="")
-                .values_list("nombre", flat=True)
-                .distinct()
-                .order_by("nombre")
-            )
+                cat = CategoriaPublicacion.objects.filter(id=excluir_categoria_id).first()
+                if cat and cat.tipo:
+                    tipos_qs = tipos_qs.exclude(nombre=cat.tipo)
 
-            for nombre in nombres:
-                if nombre not in valores:
-                    tipos.append((nombre, nombre))
-                    valores.add(nombre)
+            return [(t.nombre, t.nombre) for t in tipos_qs.order_by("nombre")]
         except Exception:
-            return tipos
+            return list(cons.TipoPublicacion.choices)
 
         return tipos
 
@@ -574,16 +564,15 @@ class AdminCatalogService:
         nombre = data.get("nombre", "").strip()
         descripcion = data.get("descripcion", "").strip()
         tipo = data.get("tipo", "").strip()
-        tipo_otro = data.get("tipo_otro", "").strip()
         estado = data.get("estado", "").strip().upper()
-
-        if tipo == "__otro__":
-            tipo = tipo_otro
 
         if not tipo:
             return None, {"ok": False, "errors": {"tipo": TIPO_OBLIGATORIO_MSG}, "message": TIPO_OBLIGATORIO_MSG}
         if len(tipo) > 30:
             return None, {"ok": False, "errors": {"tipo": TIPO_MAX_30_MSG}, "message": TIPO_MAX_30_MSG}
+        tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
+        if tipo not in tipos_validos:
+            return None, {"ok": False, "errors": {"tipo": TIPO_CATEGORIA_INVALIDO_MSG}, "message": TIPO_CATEGORIA_INVALIDO_MSG}
 
         if estado not in {value for value, _ in cons.Estado.choices}:
             return None, {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
@@ -608,7 +597,6 @@ class AdminCatalogService:
         except Exception:
             return {"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_MSG}
 
-        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
 
         payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
@@ -617,10 +605,7 @@ class AdminCatalogService:
 
         try:
             obj = CategoriaPublicacion(**payload)
-            if payload["tipo"] in tipos_base:
-                obj.full_clean()
-            else:
-                obj.clean_fields(exclude=["tipo"])
+            obj.full_clean()
             obj.save()
             return {"ok": True, "message": "Categoria de publicacion creada correctamente."}
         except (ValidationError, IntegrityError) as e:
@@ -656,6 +641,64 @@ class AdminCatalogService:
             tipo.full_clean()
             tipo.save()
             return {"ok": True, "message": "Tipo de material actualizado correctamente."}
+        except (ValidationError, IntegrityError) as e:
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+
+    @staticmethod
+    def crear_tipo_publicacion(data):
+        from apps.publicaciones.models import TipoPublicacion
+
+        nombre = (data.get("nombre") or "").strip()
+        descripcion = (data.get("descripcion") or "").strip() or None
+        estado = (data.get("estado") or "ACTIVO").strip().upper()
+        estados_validos = {value for value, _ in cons.Estado.choices}
+
+        if not nombre:
+            return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
+        if len(nombre) < 3:
+            return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
+        if not NOMBRE_REGEX.search(nombre):
+            return {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
+        if estado not in estados_validos:
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
+        if TipoPublicacion.objects.filter(nombre__iexact=nombre).exists():
+            return {"ok": False, "errors": {"nombre": TIPO_DUPLICADO_MSG}, "message": TIPO_DUPLICADO_MSG}
+        try:
+            obj = TipoPublicacion(nombre=nombre, descripcion=descripcion, estado=estado)
+            obj.full_clean()
+            obj.save()
+            return {"ok": True, "message": "Tipo de publicación creado correctamente."}
+        except (ValidationError, IntegrityError) as e:
+            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
+
+    @staticmethod
+    def actualizar_tipo_publicacion(tipo_id, data):
+        from apps.publicaciones.models import TipoPublicacion
+
+        tipo = TipoPublicacion.objects.filter(id=tipo_id).first()
+        if not tipo:
+            return {"ok": False, "errors": {"_general": RECURSO_NO_ENCONTRADO_MSG}, "message": RECURSO_NO_ENCONTRADO_MSG}
+        nombre = (data.get("nombre") or "").strip()
+        descripcion = (data.get("descripcion") or "").strip() or None
+        estado = (data.get("estado") or "").strip().upper()
+        estados_validos = {value for value, _ in cons.Estado.choices}
+        if not nombre:
+            return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
+        if len(nombre) < 3:
+            return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
+        if not NOMBRE_REGEX.search(nombre):
+            return {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
+        if estado not in estados_validos:
+            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
+        if TipoPublicacion.objects.filter(nombre__iexact=nombre).exclude(id=tipo_id).exists():
+            return {"ok": False, "errors": {"nombre": TIPO_DUPLICADO_MSG}, "message": TIPO_DUPLICADO_MSG}
+        try:
+            tipo.nombre = nombre
+            tipo.descripcion = descripcion
+            tipo.estado = estado
+            tipo.full_clean()
+            tipo.save()
+            return {"ok": True, "message": "Tipo de publicación actualizado correctamente."}
         except (ValidationError, IntegrityError) as e:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
@@ -885,13 +928,13 @@ class AdminCatalogService:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
-    def _validar_tipo_categoria_publicacion(tipo, tipo_otro):
+    def _validar_tipo_categoria_publicacion(tipo):
         if not tipo:
-            return "Debe seleccionar un tipo o escribir uno nuevo."
+            return "Debe seleccionar un tipo de publicación."
         if len(tipo) > 30:
             return "El tipo no puede superar 30 caracteres."
         tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
-        if tipo not in tipos_validos and tipo != tipo_otro:
+        if tipo not in tipos_validos:
             return TIPO_CATEGORIA_INVALIDO_MSG
         return None
 
@@ -923,16 +966,11 @@ class AdminCatalogService:
         if not categoria:
             return {"ok": False, "errors": {"_general": "Categoria de publicacion no encontrada."}, "message": "Categoria de publicacion no encontrada."}
 
-        tipo_otro = (data.get("tipo_otro") or "").strip()
-        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
 
         payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
         if error:
             return error
-
-        if payload["tipo"] not in {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()} and payload["tipo"] != tipo_otro:
-            return {"ok": False, "errors": {"tipo": TIPO_CATEGORIA_INVALIDO_MSG}, "message": TIPO_CATEGORIA_INVALIDO_MSG}
 
         try:
             if "nombre" in campos_modelo and "nombre" in payload:
@@ -941,10 +979,7 @@ class AdminCatalogService:
                 categoria.descripcion = payload["descripcion"]
             categoria.tipo = payload["tipo"]
             categoria.estado = payload["estado"]
-            if payload["tipo"] in tipos_base:
-                categoria.full_clean()
-            else:
-                categoria.clean_fields(exclude=["tipo"])
+            categoria.full_clean()
             categoria.save()
             return {"ok": True, "message": "Categoria de publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:

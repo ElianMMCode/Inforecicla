@@ -1944,15 +1944,8 @@ def editar_categoria_publicacion_admin(request, categoria_id):
         "nombre": getattr(categoria, "nombre", ""),
         "descripcion": getattr(categoria, "descripcion", ""),
         "tipo": categoria.tipo,
-        "tipo_otro": "",
         "estado": categoria.estado,
     }
-
-    tipos_publicacion = AdminCatalogService._tipos_publicacion_disponibles()
-    tipos_validos = {value for value, _ in tipos_publicacion}
-    if categoria.tipo not in tipos_validos:
-        form_data["tipo"] = "__otro__"
-        form_data["tipo_otro"] = categoria.tipo
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_categoria_publicacion(categoria_id, request.POST)
@@ -1966,7 +1959,6 @@ def editar_categoria_publicacion_admin(request, categoria_id):
             "nombre": request.POST.get("nombre", ""),
             "descripcion": request.POST.get("descripcion", ""),
             "tipo": request.POST.get("tipo", ""),
-            "tipo_otro": request.POST.get("tipo_otro", ""),
             "estado": request.POST.get("estado", ""),
         }
 
@@ -2132,6 +2124,93 @@ def categoria_publicacion_to_dict(c):
     }
 
 
+def tipo_publicacion_to_dict(t):
+    return {
+        "id": t.id,
+        "nombre": t.nombre,
+        "descripcion": t.descripcion or "",
+        "estado": t.estado,
+        "is_active": t.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_tipo_publicacion_admin", kwargs={"tipo_id": t.id}),
+    }
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def listar_tipos_publicacion_admin(request):
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        all_tipos = list(TipoPublicacion.objects.all().order_by("nombre"))
+        tipos_json = [tipo_publicacion_to_dict(t) for t in all_tipos]
+    except Exception:
+        all_tipos = []
+        tipos_json = []
+    return render(
+        request,
+        "admin/Publicaciones/listTipoPublicacion.html",
+        {
+            "tipos": all_tipos,
+            "tipos_json": tipos_json,
+            "active_tab": "tipos_publicacion",
+            "estados": cons.Estado.choices,
+        },
+    )
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
+def crear_tipo_publicacion(request):
+    if request.method == "POST":
+        resultado = AdminCatalogService.crear_tipo_publicacion(request.POST)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(resultado)
+        if resultado["ok"]:
+            messages.success(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+        return redirect("panel_admin:listar_tipos_publicacion_admin")
+    return render(
+        request,
+        "admin/Publicaciones/createTipoPublicacion.html",
+        {"estados": cons.Estado.choices},
+    )
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
+def editar_tipo_publicacion_admin(request, tipo_id):
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        tipo = TipoPublicacion.objects.filter(id=tipo_id).first()
+    except Exception:
+        tipo = None
+    if not tipo:
+        messages.error(request, RECURSO_NO_ENCONTRADO_MSG)
+        return redirect("panel_admin:listar_tipos_publicacion_admin")
+
+    if request.method == "POST":
+        resultado = AdminCatalogService.actualizar_tipo_publicacion(tipo_id, request.POST)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(resultado)
+        if resultado["ok"]:
+            messages.success(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+        return redirect("panel_admin:listar_tipos_publicacion_admin")
+
+    return render(
+        request,
+        "admin/Publicaciones/editTipoPublicacion.html",
+        {"tipo": tipo, "estados": cons.Estado.choices},
+    )
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -2189,7 +2268,6 @@ def crear_categoria_publicacion(request):
             "nombre": "",
             "descripcion": "",
             "tipo": "",
-            "tipo_otro": "",
             "estado": "ACTIVO",
         },
         "active_tab": "categorias_publicacion",
@@ -2206,7 +2284,6 @@ def crear_categoria_publicacion(request):
             "nombre": request.POST.get("nombre", ""),
             "descripcion": request.POST.get("descripcion", ""),
             "tipo": request.POST.get("tipo", ""),
-            "tipo_otro": request.POST.get("tipo_otro", ""),
             "estado": request.POST.get("estado", "ACTIVO"),
         }
 

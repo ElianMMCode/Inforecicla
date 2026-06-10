@@ -170,13 +170,8 @@
               {% for value, label in tipos_publicacion %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
-              <option value="__otro__">Otro tipo...</option>
             </select>
             <div class="invalid-feedback">Selecciona un tipo.</div>
-          </div>
-          <div class="mb-3" id="ccp_tipo_otro_wrapper" style="display:none;">
-            <label for="ccp_tipo_otro" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="ccp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
           </div>
           <div class="mb-3">
             <label for="ccp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
@@ -223,13 +218,8 @@
               {% for value, label in tipos_publicacion %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
-              <option value="__otro__">Otro tipo...</option>
             </select>
             <div class="invalid-feedback">Selecciona un tipo.</div>
-          </div>
-          <div class="mb-3" id="ecp_tipo_otro_wrapper" style="display:none;">
-            <label for="ecp_tipo_otro" class="form-label fw-semibold">Nuevo tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="ecp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
           </div>
           <div class="mb-3">
             <label for="ecp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
@@ -354,39 +344,7 @@ AdminCharts.initAll([
     {% endif %}
   })();
 
-  function initTipoOtro(selectId, wrapperId, inputId) {
-    var sel = document.getElementById(selectId);
-    var wrapper = document.getElementById(wrapperId);
-    var inp = document.getElementById(inputId);
-    if (!sel || !wrapper || !inp) return;
-    function toggle() {
-      var esOtro = sel.value === '__otro__';
-      wrapper.style.display = esOtro ? 'block' : 'none';
-      inp.required = esOtro;
-      if (!esOtro) inp.value = '';
-    }
-    sel.addEventListener('change', toggle);
-    return toggle;
-  }
-
-  var editModal = document.getElementById('modalEditarCategoriaPublicacion');
-  var editSel = document.getElementById('ecp_tipo');
-  var editWrapper = document.getElementById('ecp_tipo_otro_wrapper');
-  var editInput = document.getElementById('ecp_tipo_otro');
-
-  if (editModal && editSel) {
-    editModal.addEventListener('show.bs.modal', function() {
-      var known = [{% for value, label in tipos_publicacion %}'{{ value }}',{% endfor %}];
-      if (editSel.value && known.indexOf(editSel.value) === -1 && editSel.value !== '__otro__') {
-        editInput.value = editSel.value;
-        editSel.value = '__otro__';
-      }
-      toggleEditTipo();
-    });
-  }
-  var toggleEditTipo = initTipoOtro('ecp_tipo', 'ecp_tipo_otro_wrapper', 'ecp_tipo_otro');
-
-  initTipoOtro('ccp_tipo', 'ccp_tipo_otro_wrapper', 'ccp_tipo_otro');
+  initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
 
   initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
   initModalFormAjax('formEditarCatPub', window.location.href);
