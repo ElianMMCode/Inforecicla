@@ -906,6 +906,9 @@ def _filtrar_categorias_material_export(request, categorias):
     estado = request.GET.get('estado', '').strip()
     if estado:
         categorias = [c for c in categorias if c.estado == estado]
+    tipo = request.GET.get('tipo', '').strip()
+    if tipo:
+        categorias = [c for c in categorias if c.tipo and c.tipo.nombre == tipo]
     return categorias
 
 
@@ -2118,6 +2121,8 @@ def categoria_material_to_dict(c):
         "id": c.id,
         "nombre": c.nombre,
         "descripcion": c.descripcion or "",
+        "tipo_id": c.tipo.id if c.tipo else "",
+        "tipo_nombre": c.tipo.nombre if c.tipo else "-",
         "estado": c.estado,
         "is_active": c.estado == "ACTIVO",
         "action_url": reverse("panel_admin:editar_categoria_material_admin", kwargs={"categoria_id": c.id}),

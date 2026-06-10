@@ -463,8 +463,12 @@ class AdminCatalogService:
             return error
         if CategoriaMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
             return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
+        tipo_id = (data.get("tipo_id") or "").strip()
+        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else None
+        if not tipo:
+            return {"ok": False, "errors": {"tipo_id": "Debe seleccionar un tipo de material."}, "message": "Debe seleccionar un tipo de material."}
         try:
-            obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
+            obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"], tipo=tipo)
             obj.full_clean()
             obj.save()
             return {"ok": True, "message": "Categoria de material creada correctamente."}
@@ -490,11 +494,10 @@ class AdminCatalogService:
         categoria = CategoriaMaterial.objects.filter(id=categoria_id).first() if categoria_id else None
         if categoria_id and not categoria:
             errores["categoria_id"] = "Categoría de material inválida."
+        if not categoria:
+            errores["categoria_id"] = "Debe seleccionar una categoría."
 
-        tipo_id = data.get("tipo_id")
-        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else None
-        if tipo_id and not tipo:
-            errores["tipo_id"] = "Tipo de material inválido."
+        tipo = categoria.tipo if categoria else None
 
         return nombre, descripcion, estado, categoria, tipo, errores
 
@@ -527,7 +530,7 @@ class AdminCatalogService:
 
         try:
             categoria = AdminCatalogService._resolver_categoria_material(data.get("categoria_id"))
-            tipo = AdminCatalogService._resolver_tipo_material(data.get("tipo_id"))
+            tipo = categoria.tipo if categoria else AdminCatalogService._resolver_tipo_material(data.get("tipo_id"))
             obj = Material(nombre=nombre, descripcion=descripcion, estado=estado,
                            categoria=categoria, tipo=tipo)
             if files and "imagen" in files:
@@ -725,10 +728,15 @@ class AdminCatalogService:
         if CategoriaMaterial.objects.filter(nombre__iexact=nombre).exclude(id=categoria_id).exists():
             return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
 
+        tipo_id = (data.get("tipo_id") or "").strip()
+        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else categoria.tipo
+        if tipo_id and not tipo:
+            return {"ok": False, "errors": {"tipo_id": "Tipo de material inválido."}, "message": "Tipo de material inválido."}
         try:
             categoria.nombre = nombre
             categoria.descripcion = descripcion
             categoria.estado = estado
+            categoria.tipo = tipo
             categoria.full_clean()
             categoria.save()
             return {"ok": True, "message": "Categoria de material actualizada correctamente."}
@@ -752,7 +760,7 @@ class AdminCatalogService:
             material.descripcion = (data.get("descripcion") or "").strip() or None
             material.estado = (data.get("estado") or "").strip().upper()
             material.categoria = categoria
-            material.tipo = tipo
+            material.tipo = categoria.tipo if categoria else tipo
 
             if files and "imagen" in files:
                 material.imagen = files["imagen"]
