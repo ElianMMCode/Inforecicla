@@ -53,6 +53,8 @@ urlpatterns = [
 
     # Tipos de publicaciones
     path('tipos-publicaciones/', views.listar_tipos_publicacion_admin, name='listar_tipos_publicacion_admin'),
+    path('tipos-publicaciones/exportar/pdf/', views.exportar_tipos_publicacion_pdf, name='exportar_tipos_publicacion_pdf'),
+    path('tipos-publicaciones/exportar/excel/', views.exportar_tipos_publicacion_excel, name='exportar_tipos_publicacion_excel'),
     path('tipos-publicaciones/crear/', views.crear_tipo_publicacion, name='crear_tipo_publicacion'),
     path('tipos-publicaciones/<uuid:tipo_id>/editar/', views.editar_tipo_publicacion_admin, name='editar_tipo_publicacion_admin'),
 

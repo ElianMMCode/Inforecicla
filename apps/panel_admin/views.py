@@ -927,6 +927,17 @@ def _filtrar_tipos_material_export(request, tipos):
     return tipos
 
 
+def _filtrar_tipos_publicacion_export(request, tipos):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        tipos = [t for t in tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        tipos = [t for t in tipos if t.estado == estado]
+    return tipos
+
+
 def _filtrar_publicaciones_export(request, publicaciones):
     q = request.GET.get('q', '').strip()
     if q:
@@ -2148,6 +2159,9 @@ def listar_tipos_publicacion_admin(request):
     except Exception:
         all_tipos = []
         tipos_json = []
+    from collections import Counter
+    dist_estado = Counter(t.estado for t in all_tipos)
+    dist_estado_tipo_pub = [{"estado": k, "count": v} for k, v in dist_estado.items()]
     return render(
         request,
         "admin/Publicaciones/listTipoPublicacion.html",
@@ -2156,8 +2170,71 @@ def listar_tipos_publicacion_admin(request):
             "tipos_json": tipos_json,
             "active_tab": "tipos_publicacion",
             "estados": cons.Estado.choices,
+            "dist_estado_tipo_pub": dist_estado_tipo_pub,
         },
     )
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_tipos_publicacion_pdf(request):
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        tipos = _filtrar_tipos_publicacion_export(request, list(TipoPublicacion.objects.all().order_by("nombre")))
+    except Exception:
+        tipos = []
+    html = render_to_string("admin/Publicaciones/tipos_publicacion_pdf.html", {"tipos": tipos})
+    pdf = HTML(string=html).write_pdf()
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_publicacion.pdf")
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_tipos_publicacion_excel(request):
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tipos de Publicación"
+
+    headers = ["Nombre", "Descripción", "Estado"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        tipos = _filtrar_tipos_publicacion_export(request, list(TipoPublicacion.objects.all().order_by("nombre")))
+    except Exception:
+        tipos = []
+
+    for row, t in enumerate(tipos, 2):
+        ws.cell(row=row, column=1, value=t.nombre)
+        ws.cell(row=row, column=2, value=t.descripcion or "")
+        ws.cell(row=row, column=3, value=t.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "tipos_publicacion.xlsx")
 
 
 @login_required(login_url="/login/")
