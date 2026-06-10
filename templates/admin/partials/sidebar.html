@@ -30,7 +30,7 @@
         </li>
 
         <li class="nav-item dropdown sidebar-dropdown">
-            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/publicaciones' in request.path or '/panel_admin/categorias-publicaciones' in request.path %}active{% endif %} sidebar-dropdown-toggle"
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/publicaciones' in request.path or '/panel_admin/categorias-publicaciones' in request.path or '/panel_admin/tipos-publicaciones' in request.path %}active{% endif %} sidebar-dropdown-toggle"
                href="{% url 'panel_admin:listar_publicaciones_admin' %}">
                 <i class="bi bi-newspaper me-2"></i>Publicaciones
                 <i class="bi bi-chevron-down ms-auto small"></i>
@@ -40,6 +40,7 @@
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_publicacion_admin' %}active{% endif %}" href="{% url 'panel_admin:crear_publicacion_admin' %}">Crear Publicación</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-publicaciones' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}">Categorías de Publicaciones</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/tipos-publicaciones' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_tipos_publicacion_admin' %}">Tipos de Publicación</a></li>
             </ul>
         </li>
 
