@@ -1,5 +1,12 @@
 /* ─── Hero ────────────────────────────────────────────── */
-.hero-img { max-width: 420px; }
+.hero-img {
+  max-width: 420px;
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
 
 /* ─── Animated cards (CTA bottom) ──────────────────── */
 .animated-card {
