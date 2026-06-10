@@ -48,6 +48,18 @@ def _crear_respuesta_descarga(contenido, content_type, filename):
     return response
 
 
+def _escribir_encabezados_excel(ws, headers):
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+
 def _validar_nombre_perfil_admin(nombres, errores):
     if not nombres or len(nombres) < 3:
         errores.append("El nombre debe tener al menos 3 caracteres.")
@@ -970,7 +982,6 @@ def exportar_usuarios_pdf(request):
 @require_http_methods(["GET", "HEAD"])
 def exportar_usuarios_excel(request):
     import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -978,13 +989,7 @@ def exportar_usuarios_excel(request):
 
     headers = ["Nombres", "Apellidos", "Email", "Celular", "Tipo Usuario",
                "Tipo Documento", "N° Documento", "Ciudad", "Estado", "Fecha Registro"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
+    _escribir_encabezados_excel(ws, headers)
 
     tipo_labels = dict(cons.TipoUsuario.choices)
     doc_labels = dict(cons.TipoDocumento.choices)
