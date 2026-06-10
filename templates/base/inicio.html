@@ -55,7 +55,7 @@
                         <button type="button" class="flip-card" aria-label="Busca puntos de recolección">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
-                                    <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" style="width: 120px; height: 120px; object-fit: contain;">
+                                    <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" style="width: 120px; height: 120px; object-fit: contain;" loading="lazy">
                                     <h3 class="h5 text-white mt-3">Busca puntos de recolección</h3>
                                 </div>
                                 <div class="flip-card-back">
@@ -68,7 +68,7 @@
                         <button type="button" class="flip-card" aria-label="Noticias y novedades">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
-                                    <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" style="width: 120px; height: 120px; object-fit: contain;">
+                                    <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" style="width: 120px; height: 120px; object-fit: contain;" loading="lazy">
                                     <h3 class="h5 text-white mt-3">Noticias y novedades</h3>
                                 </div>
                                 <div class="flip-card-back">
@@ -81,7 +81,7 @@
                         <button type="button" class="flip-card" aria-label="Gestiona tu punto ECA">
                             <div class="flip-card-inner">
                                 <div class="flip-card-front">
-                                    <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" style="width: 120px; height: 120px; object-fit: contain;">
+                                    <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" style="width: 120px; height: 120px; object-fit: contain;" loading="lazy">
                                     <h3 class="h5 text-white mt-3">Gestiona tu punto ECA</h3>
                                 </div>
                                 <div class="flip-card-back">
@@ -109,15 +109,15 @@
             <div class="container">
                 <div class="row text-center justify-content-center gy-4">
                     <div class="col-md-4">
-                        <div class="stat-num">+{{ total_ecas }}</div>
+                        <div class="stat-num">+{{ total_ecas|default:0 }}</div>
                         <div class="stat-label">Puntos ECA registrados</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="stat-num">+{{ total_publicaciones }}</div>
+                        <div class="stat-num">+{{ total_publicaciones|default:0 }}</div>
                         <div class="stat-label">Publicaciones de la comunidad</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="stat-num">+{{ total_usuarios }}</div>
+                        <div class="stat-num">+{{ total_usuarios|default:0 }}</div>
                         <div class="stat-label">Usuarios activos</div>
                     </div>
                 </div>
@@ -184,23 +184,23 @@
                 <div class="row g-0 cta-row shadow">
                     <div class="col-md-7 bg-white cta-benefits">
                         <div class="benefit-item">
-                            <i class="bi bi-dot"></i>
+                            <i class="bi bi-shop"></i>
                             <span>Registrar y visibilizar tu estación ante la comunidad.</span>
                         </div>
                         <div class="benefit-item">
-                            <i class="bi bi-dot"></i>
+                            <i class="bi bi-box-seam"></i>
                             <span>Actualizar el inventario y comunicar la disponibilidad de materiales en tiempo real.</span>
                         </div>
                         <div class="benefit-item">
-                            <i class="bi bi-dot"></i>
+                            <i class="bi bi-clock"></i>
                             <span>Gestionar los horarios y la información de contacto del punto.</span>
                         </div>
                         <div class="benefit-item">
-                            <i class="bi bi-dot"></i>
+                            <i class="bi bi-chat-dots"></i>
                             <span>Responder consultas y dudas de los ciudadanos sobre tu estación.</span>
                         </div>
                         <div class="benefit-item">
-                            <i class="bi bi-dot"></i>
+                            <i class="bi bi-graph-up"></i>
                             <span>Acceder a estadísticas y reportes de la gestión de tu ECA.</span>
                         </div>
                     </div>
@@ -276,9 +276,9 @@
               }
             });
           }, { threshold: 0.2 });
-          document.querySelectorAll('.animated-card, .animate-fadeIn').forEach(card => observer.observe(card));
+          document.querySelectorAll('.animate-fadeIn').forEach(card => observer.observe(card));
         } else {
-          document.querySelectorAll('.animated-card, .animate-fadeIn').forEach(card => card.classList.add('is-visible'));
+          document.querySelectorAll('.animate-fadeIn').forEach(card => card.classList.add('is-visible'));
         }
       });
     </script>
