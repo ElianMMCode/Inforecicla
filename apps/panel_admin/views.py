@@ -1,4 +1,5 @@
 ﻿from django.views.decorators.http import require_GET, require_http_methods, require_POST
+import datetime
 import io
 import re as _re
 
@@ -244,6 +245,17 @@ def _crear_usuario_desde_csv(datos):
         usuario.save()
 
 
+def _parsear_fecha_crear_usuario(valor):
+    if not valor:
+        return None
+    for fmt in ("%d-%m-%Y", "%Y-%m-%d"):
+        try:
+            return datetime.datetime.strptime(valor, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
 def _obtener_datos_crear_usuario_admin(data):
     return {
         "nombres": _normalizar_texto(data.get("nombres", "")),
@@ -254,7 +266,7 @@ def _obtener_datos_crear_usuario_admin(data):
         "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")) or None,
         "ciudad": DEFAULT_CITY,
         "localidad_id": _normalizar_texto(data.get("localidad", "")),
-        "fecha_nacimiento": _normalizar_texto(data.get("fechaNacimiento", "")) or None,
+        "fecha_nacimiento": _parsear_fecha_crear_usuario(_normalizar_texto(data.get("fechaNacimiento", ""))),
         "tipo_usuario": _normalizar_texto(data.get("tipo_usuario", cons.TipoUsuario.CIUDADANO)),
         "password": data.get("password", ""),
         "password_confirm": data.get("passwordConfirm", ""),
