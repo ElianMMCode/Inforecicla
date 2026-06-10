@@ -51,14 +51,9 @@
                 <i class="bi bi-chevron-down ms-auto small"></i>
             </a>
             <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales">Gestión de Materiales</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_material_admin' %}active{% endif %}" href="{% url 'panel_admin:crear_material_admin' %}">Crear Material</a></li>
-                <li><hr class="dropdown-divider my-1"></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-materiales' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_categorias_material_admin' %}">Categorías de Materiales</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_categoria_material' %}active{% endif %}" href="{% url 'panel_admin:crear_categoria_material' %}">Crear Categoría de Material</a></li>
-                <li><hr class="dropdown-divider my-1"></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/tipos-materiales' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_tipos_material_admin' %}">Tipos de Materiales</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_tipo_material' %}active{% endif %}" href="{% url 'panel_admin:crear_tipo_material' %}">Crear Tipo de Material</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.GET.tab == 'materiales' or not request.GET.tab %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales"><i class="bi bi-box-seam me-1"></i>Materiales</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-materiales' in request.path or request.GET.tab == 'categorias' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias"><i class="bi bi-tags-fill me-1"></i>Categorías de Materiales</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/tipos-materiales' in request.path or request.GET.tab == 'tipos' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos"><i class="bi bi-recycle me-1"></i>Tipos de Materiales</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar Materiales PDF</a></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_excel' %}"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Materiales Excel</a></li>
