@@ -4,17 +4,10 @@ import re as _regex
 from decimal import Decimal as decimal
 
 from django.db import transaction
-from django.http import Http404
 from apps.ecas.models import Localidad, PuntoECA
 from apps.users.models import Usuario
 from apps.inventory.models import Inventario, TipoMaterial, CategoriaMaterial, Material
 from config import constants as cons
-from apps.operations.models import VentaInventario, CompraInventario
-from apps.inventory.service import InventoryService
-from apps.operations.service import CompraInventarioService, VentaInventarioService
-from apps.panel_admin import models
-from django.shortcuts import get_object_or_404
-from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
@@ -36,6 +29,7 @@ DESCRIPCION_CATEGORIA_MAX_500_MSG = (
 )
 RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado"
 TIPO_CATEGORIA_INVALIDO_MSG = "Tipo de categoria invalido."
+TIPO_MATERIAL_INVALIDO_MSG = "Tipo de material inválido."
 NOMBRE_SIN_LETRA_MSG = "El nombre debe contener al menos una letra."
 TIPO_DUPLICADO_MSG = "Ya existe un tipo con ese nombre."
 CATEGORIA_DUPLICADA_MSG = "Ya existe una categoría con ese nombre."
@@ -437,8 +431,6 @@ class AdminCatalogService:
         except Exception:
             return list(cons.TipoPublicacion.choices)
 
-        return tipos
-
     @staticmethod
     @transaction.atomic
     def crear_tipo_material(data):
@@ -516,7 +508,7 @@ class AdminCatalogService:
             return None
         tipo = TipoMaterial.objects.filter(id=tipo_id).first()
         if not tipo:
-            raise ValueError("Tipo de material inválido.")
+            raise ValueError(TIPO_MATERIAL_INVALIDO_MSG)
         return tipo
 
     @staticmethod
@@ -731,7 +723,7 @@ class AdminCatalogService:
         tipo_id = (data.get("tipo_id") or "").strip()
         tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else categoria.tipo
         if tipo_id and not tipo:
-            return {"ok": False, "errors": {"tipo_id": "Tipo de material inválido."}, "message": "Tipo de material inválido."}
+            return {"ok": False, "errors": {"tipo_id": TIPO_MATERIAL_INVALIDO_MSG}, "message": TIPO_MATERIAL_INVALIDO_MSG}
         try:
             categoria.nombre = nombre
             categoria.descripcion = descripcion

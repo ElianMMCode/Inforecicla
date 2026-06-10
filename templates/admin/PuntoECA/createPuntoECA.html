@@ -229,22 +229,22 @@
     pwdInput.addEventListener('input', function() {
       actualizarRequisitosPasswordUI(pwdInput.value);
       if (pwdConfirm.value) {
-        if (pwdInput.value !== pwdConfirm.value) {
-          pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
-          msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
-        } else {
+        if (pwdInput.value === pwdConfirm.value) {
           pwdConfirm.setCustomValidity('');
           msgCoincidencia.innerHTML = '<span class="text-success">✓ Coinciden</span>';
+        } else {
+          pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
+          msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
         }
       }
     });
     pwdConfirm.addEventListener('input', function() {
-      if (pwdInput.value !== pwdConfirm.value) {
-        pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
-        msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
-      } else {
+      if (pwdInput.value === pwdConfirm.value) {
         pwdConfirm.setCustomValidity('');
         msgCoincidencia.innerHTML = '<span class="text-success">✓ Coinciden</span>';
+      } else {
+        pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
+        msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
       }
     });
   }
