@@ -20,40 +20,29 @@ function toggleSections(tipo) {
   var esGestor = tipo === 'GECA';
   var esCiudadano = tipo === 'CIU';
 
-  // Labels for Gestor ECA
   if (labelNombres) labelNombres.textContent = esGestor ? 'Institución / Punto ECA' : 'Nombres';
   if (labelApellidos) labelApellidos.textContent = esGestor ? 'Nombre del gestor responsable' : 'Apellidos';
 
-  // Document section
   if (secDoc) {
     secDoc.classList.toggle('visible', esAdmin || esGestor);
     if (tipoDoc) {
       tipoDoc.required = esAdmin;
-      if (!esAdmin) tipoDoc.value = '';
+      if (!esAdmin) { tipoDoc.value = ''; tipoDoc.classList.remove('is-valid', 'is-invalid'); }
     }
     if (numDoc) {
       numDoc.required = esAdmin;
-      if (!esAdmin) numDoc.value = '';
+      if (!esAdmin) { numDoc.value = ''; numDoc.classList.remove('is-valid', 'is-invalid'); }
     }
   }
 
-  // Location section
   if (secUbi) secUbi.classList.toggle('visible', esAdmin || esGestor);
   if (wrapperCiudad) wrapperCiudad.style.display = esGestor ? 'none' : '';
-  if (localidad) localidad.required = esAdmin || esGestor;
-
-  // Map (Gestor ECA only)
+  if (localidad) {
+    localidad.required = esAdmin || esGestor;
+    if (!localidad.required) { localidad.value = ''; localidad.classList.remove('is-valid', 'is-invalid'); }
+  }
   if (wrapperMapa) wrapperMapa.style.display = esGestor ? 'block' : 'none';
-
-  // Birth date (Admin only)
   if (secFecha) secFecha.classList.toggle('visible', esAdmin);
-
-  // Revalidate all visible fields
-  document.querySelectorAll('#createUserForm [required]').forEach(function(el) {
-    if (el.offsetParent !== null || (el.closest('.usuario-section') && el.closest('.usuario-section').classList.contains('visible'))) {
-      sincronizarValidacionCampo(el);
-    }
-  });
 }
 
 var mapa = null;
@@ -176,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   bindPasswordRealtime(passwordInput, passwordConfirmInput, mensajeCoincidencia);
-  camposObligatorios.forEach(function(c) { actualizarEstadoCampo(c); });
+  camposObligatorios.forEach(function(c) { if (c.value) actualizarEstadoCampo(c); });
 
   bindSubmitUsuario({
     formulario: form,
