@@ -2156,7 +2156,7 @@ def listar_tipos_publicacion_admin(request):
     try:
         from apps.publicaciones.models import TipoPublicacion
 
-        all_tipos = list(TipoPublicacion.objects.all().order_by("nombre"))
+        all_tipos = _filtrar_tipos_publicacion_export(request, list(TipoPublicacion.objects.all().order_by("nombre")))
         tipos_json = [tipo_publicacion_to_dict(t) for t in all_tipos]
     except Exception:
         all_tipos = []
@@ -2173,6 +2173,7 @@ def listar_tipos_publicacion_admin(request):
             "active_tab": "tipos_publicacion",
             "estados": cons.Estado.choices,
             "dist_estado_tipo_pub": dist_estado_tipo_pub,
+            "search_query": request.GET.get("q", "").strip(),
         },
     )
 
