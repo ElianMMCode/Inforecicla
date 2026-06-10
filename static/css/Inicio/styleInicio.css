@@ -126,7 +126,7 @@
 /* ─── Flip cards (How it works) ──────────────────────── */
 .flip-card {
   perspective: 1000px;
-  min-height: 280px;
+  height: 280px;
   cursor: pointer;
   border: none;
   background: none;
@@ -160,7 +160,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 1.25rem;
+  overflow: hidden;
 }
 .flip-card-front {
   background: linear-gradient(135deg, #198754, #146c43);
@@ -171,15 +172,32 @@
   transform: rotateY(180deg);
 }
 .flip-card-img {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
+  max-width: 90%;
   object-fit: contain;
+  flex-shrink: 0;
+}
+.flip-card-front h3 {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  word-break: break-word;
+  max-width: 100%;
 }
 .flip-card-back p {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.5;
   text-align: center;
   margin: 0;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+@media (max-width: 767.98px) {
+  .flip-card { height: 240px; }
+  .flip-card-img { width: 80px; height: 80px; }
+  .flip-card-front h3 { font-size: 0.9rem; }
+  .flip-card-back p { font-size: 0.8rem; }
 }
 
 /* ─── CTA profile column ─────────────────────────────── */
