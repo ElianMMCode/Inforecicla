@@ -14,9 +14,9 @@
       <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalImportCSV" title="Importar CSV">
         <i class="bi bi-upload me-1"></i> Importar CSV
       </button>
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+      <a href="{% url 'panel_admin:crear_usuario_admin' %}" class="btn btn-success">
         <i class="bi bi-person-plus me-1"></i> Nuevo Usuario
-      </button>
+      </a>
     </div>
   </div>
 
@@ -185,113 +185,6 @@
 {% endblock %}
 
 {% block extra_modals %}
-<!-- ===== MODAL CREAR USUARIO ===== -->
-<div class="modal fade" id="modalCrearUsuario" tabindex="-1" aria-labelledby="labelCrearUsuario" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelCrearUsuario"><i class="bi bi-person-plus me-2"></i>Nuevo Usuario</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" action="{% url 'panel_admin:crear_usuario_admin' %}" novalidate id="formCrearUsuario">
-        {% csrf_token %}
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="cu_nombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Nombres" autocomplete="given-name">
-              <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_apellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Apellidos" autocomplete="family-name">
-              <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_email" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_email" type="text" name="email" class="form-control" required maxlength="254" inputmode="email" placeholder="usuario@ejemplo.com">
-              <div class="invalid-feedback">Ingresa un correo con un solo @ y dominio válido.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_celular" type="tel" name="celular" class="form-control" required pattern="^3[0-9]{9}$" maxlength="10" inputmode="numeric" placeholder="3001234567">
-              <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_tipo_documento" class="form-label fw-semibold">Tipo de Documento <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="cu_tipo_documento" name="tipoDocumento" class="form-select" required>
-                <option value="">Seleccionar...</option>
-                {% for val, label in tipos_documento %}
-                  <option value="{{ val }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un tipo de documento.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_numero_documento" class="form-label fw-semibold">Número de Documento <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_numero_documento" type="text" name="numeroDocumento" class="form-control" required minlength="6" maxlength="20" inputmode="numeric" placeholder="1234567890">
-              <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_ciudad" type="text" name="ciudad" class="form-control" value="Bogotá" readonly aria-readonly="true">
-              <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="cu_localidad" name="localidad" class="form-select" required>
-                <option value="">Seleccionar localidad...</option>
-                {% for loc in localidades %}
-                  <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona una localidad.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_tipo_usuario" class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="cu_tipo_usuario" name="tipo_usuario" class="form-select" required>
-                {% for val, label in tipos_usuario %}
-                  <option value="{{ val }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un tipo de usuario.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_fecha_nacimiento" class="form-label fw-semibold">Fecha de Nacimiento <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="cu_fecha_nacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA">
-              <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 años.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_password" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <div class="input-group">
-                <input id="cu_password" type="password" name="password" class="form-control" required minlength="8" placeholder="Mínimo 8 caracteres">
-                <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#cu_password">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-              <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_password2" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <div class="input-group">
-                <input id="cu_password2" type="password" name="passwordConfirm" class="form-control" required minlength="8" placeholder="Repite la contraseña">
-                <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#cu_password2">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-              <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-person-check me-1"></i> Crear Usuario</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <!-- ===== MODAL EDITAR USUARIO ===== -->
 <div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="labelEditarUsuario" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -505,19 +398,6 @@ AdminCharts.initAll([
   if (searchBtn) searchBtn.addEventListener('click', applyFilts);
   if (limpiarBtn) limpiarBtn.addEventListener('click', limpiarFilts);
 
-  function validarCrearUsuario(form) {
-    var pass = document.getElementById('cu_password');
-    var pass2 = document.getElementById('cu_password2');
-    if (pass && pass2 && pass.value !== pass2.value) {
-      Swal.fire({ icon: 'error', title: 'Las contrase\u00F1as no coinciden', confirmButtonColor: '#198754' });
-      pass.classList.add('is-invalid');
-      pass2.classList.add('is-invalid');
-      return false;
-    }
-    return true;
-  }
-
-  initModalFormAjax('formCrearUsuario', '{% url "panel_admin:listar_usuarios" %}', validarCrearUsuario);
   initModalFormAjax('formEditarUsuario', globalThis.location.href);
 
   function _initFechaNacimientoModal(id) {
@@ -562,9 +442,6 @@ AdminCharts.initAll([
   initTogglePassword();
 
   function initSelect2Modals() {
-    $('#modalCrearUsuario').on('shown.bs.modal', function() {
-      $('#cu_localidad').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalCrearUsuario') });
-    });
     $('#modalEditarUsuario').on('shown.bs.modal', function() {
       $('#eu_localidad').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalEditarUsuario') });
     });
