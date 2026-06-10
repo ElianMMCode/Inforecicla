@@ -76,6 +76,17 @@
   min-width: 220px;
 }
 
+/* ─── Entrance animations (secciones) ───────────────── */
+.fade-section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.fade-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ─── Fade-in animation (testimonials) ──────────────── */
 .animate-fadeIn {
   opacity: 0;

@@ -49,7 +49,7 @@
         </section>
 
         <!-- HOW IT WORKS - FLIP CARDS -->
-        <section class="py-5">
+        <section class="py-5 fade-section">
             <div class="container">
                 <div class="row text-center g-4">
                     <div class="col-md-4">
@@ -96,7 +96,7 @@
         </section>
 
         <!-- FEATURES SECTION -->
-        <section class="py-4 bg-success bg-opacity-10">
+        <section class="py-4 bg-success bg-opacity-10 fade-section">
             <div class="container text-center">
                 <span class="badge badge-feature">Datos actualizados</span>
                 <span class="badge badge-feature">Comunidad activa</span>
@@ -106,7 +106,7 @@
         </section>
 
         <!-- STATISTICS SECTION -->
-        <section class="py-5">
+        <section class="py-5 fade-section">
             <div class="container">
                 <div class="row text-center justify-content-center gy-4">
                     <div class="col-md-4">
@@ -151,7 +151,7 @@
         </section>
 
         <!-- CALL TO ACTION SECTION -->
-        <section class="py-5">
+        <section class="py-5 fade-section">
             <div class="container">
                 <div class="text-center mb-5">
                     <h2 class="mb-3 text-success">¿Quieres formar parte de la comunidad?</h2>
@@ -215,7 +215,7 @@
         </section>
 
         <!-- FAQ SECTION -->
-        <section class="py-4">
+        <section class="py-4 fade-section">
             <div class="container">
                 <div class="accordion" id="faqAccordion">
                     <div class="accordion-item">
@@ -268,7 +268,7 @@
         crossorigin="anonymous"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        // Intersection Observer para animar testimonios
+        // Intersection Observer para animar secciones y testimonios
         if ('IntersectionObserver' in globalThis) {
           const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
@@ -277,10 +277,10 @@
                 observer.unobserve(entry.target);
               }
             });
-          }, { threshold: 0.2 });
-          document.querySelectorAll('.animate-fadeIn').forEach(card => observer.observe(card));
+          }, { threshold: 0.15 });
+          document.querySelectorAll('.animate-fadeIn, .fade-section').forEach(card => observer.observe(card));
         } else {
-          document.querySelectorAll('.animate-fadeIn').forEach(card => card.classList.add('is-visible'));
+          document.querySelectorAll('.animate-fadeIn, .fade-section').forEach(card => card.classList.add('is-visible'));
         }
 
         // Count-up animado en estadísticas
