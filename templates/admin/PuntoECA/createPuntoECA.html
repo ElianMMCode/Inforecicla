@@ -221,33 +221,11 @@
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script>
   initPasswordVisibilityToggle();
-
-  var pwdInput = document.getElementById('password');
-  var pwdConfirm = document.getElementById('passwordConfirm');
-  var msgCoincidencia = document.getElementById('mensajeCoincidencia');
-  if (pwdInput && pwdConfirm && msgCoincidencia) {
-    pwdInput.addEventListener('input', function() {
-      actualizarRequisitosPasswordUI(pwdInput.value);
-      if (pwdConfirm.value) {
-        if (pwdInput.value === pwdConfirm.value) {
-          pwdConfirm.setCustomValidity('');
-          msgCoincidencia.innerHTML = '<span class="text-success">✓ Coinciden</span>';
-        } else {
-          pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
-          msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
-        }
-      }
-    });
-    pwdConfirm.addEventListener('input', function() {
-      if (pwdInput.value === pwdConfirm.value) {
-        pwdConfirm.setCustomValidity('');
-        msgCoincidencia.innerHTML = '<span class="text-success">✓ Coinciden</span>';
-      } else {
-        pwdConfirm.setCustomValidity('Las contraseñas no coinciden.');
-        msgCoincidencia.innerHTML = '<span class="text-danger">✗ No coinciden</span>';
-      }
-    });
-  }
+  bindPasswordRealtime(
+    document.getElementById('password'),
+    document.getElementById('passwordConfirm'),
+    document.getElementById('mensajeCoincidencia')
+  );
 
   function loadLeafletAndInit() {
     if (document.querySelector('link[href*="leaflet"]')) { initLeaflet(); return; }
