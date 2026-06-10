@@ -1,4 +1,5 @@
-﻿from django.views.decorators.http import require_http_methods, require_POST
+﻿from django.views.decorators.http import require_GET, require_http_methods, require_POST
+import datetime
 import io
 import re as _re
 
@@ -9,6 +10,7 @@ from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.db.models import Q
 
 from apps.users.models import Usuario
@@ -30,11 +32,14 @@ ADMIN_EDIT_USUARIO_TEMPLATE = "admin/Usuarios/editUsuario.html"
 EXCEL_DESCRIPTION_HEADER = "Descripción"
 PUBLICACIONES_NO_HABILITADAS_AJAX_MSG = "El modulo de publicaciones no esta habilitado."
 PUBLICACION_NO_ENCONTRADA_MSG = "Publicacion no encontrada."
+RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado."
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
+USUARIO_ACTUALIZADO_OK_MSG = "Usuario actualizado correctamente."
 CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
 LISTAR_PUNTOS_ECA_URL = "panel_admin:listar_puntos_eca_admin"
 LISTAR_CATEGORIAS_PUBLICACION_URL = "panel_admin:listar_categorias_publicacion_admin"
+LISTAR_TIPOS_PUBLICACION_URL = "panel_admin:listar_tipos_publicacion_admin"
 
 
 def _crear_respuesta_descarga(contenido, content_type, filename):
@@ -43,33 +48,16 @@ def _crear_respuesta_descarga(contenido, content_type, filename):
     return response
 
 
-def _crear_libro_excel(headers, rows, sheet_title):
-    from openpyxl import Workbook
+def _escribir_encabezados_excel(ws, headers):
     from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = sheet_title
 
     fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
     font = Font(color="FFFFFF", bold=True)
-    for col_idx, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_idx, value=h)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
         cell.fill = fill
         cell.font = font
         cell.alignment = Alignment(horizontal="center")
-
-    for row_idx, row_data in enumerate(rows, 2):
-        ws.append(row_data)
-
-    for col in ws.columns:
-        ancho = max((len(str(cell.value or "")) for cell in col), default=8)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return buf.read()
 
 
 def _validar_nombre_perfil_admin(nombres, errores):
@@ -248,6 +236,10 @@ def _validar_datos_usuario_csv(datos, fila_numero):
     errores = []
     if not all([datos["email"], datos["nombres"], datos["apellidos"], datos["celular"], datos["password"]]):
         errores.append(f"Fila {fila_numero}: campos obligatorios incompletos.")
+    if datos["email"] and Usuario.objects.filter(email=datos["email"]).exists():
+        errores.append(f"Fila {fila_numero}: el email '{datos['email']}' ya existe.")
+    if datos["numero_documento"] and Usuario.objects.filter(numero_documento=datos["numero_documento"]).exists():
+        errores.append(f"Fila {fila_numero}: el documento '{datos['numero_documento']}' ya existe.")
     return errores
 
 
@@ -267,6 +259,17 @@ def _crear_usuario_desde_csv(datos):
         usuario.save()
 
 
+def _parsear_fecha_crear_usuario(valor):
+    if not valor:
+        return None
+    for fmt in ("%d-%m-%Y", "%Y-%m-%d"):
+        try:
+            return datetime.datetime.strptime(valor, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
 def _obtener_datos_crear_usuario_admin(data):
     return {
         "nombres": _normalizar_texto(data.get("nombres", "")),
@@ -274,40 +277,42 @@ def _obtener_datos_crear_usuario_admin(data):
         "email": _normalizar_texto(data.get("email", "")).lower(),
         "celular": _normalizar_texto(data.get("celular", "")),
         "tipo_documento": _normalizar_texto(data.get("tipoDocumento", "")),
-        "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")),
+        "numero_documento": _normalizar_texto(data.get("numeroDocumento", "")) or None,
         "ciudad": DEFAULT_CITY,
         "localidad_id": _normalizar_texto(data.get("localidad", "")),
-        "fecha_nacimiento": _normalizar_texto(data.get("fechaNacimiento", "")) or None,
+        "fecha_nacimiento": _parsear_fecha_crear_usuario(_normalizar_texto(data.get("fechaNacimiento", ""))),
         "tipo_usuario": _normalizar_texto(data.get("tipo_usuario", cons.TipoUsuario.CIUDADANO)),
         "password": data.get("password", ""),
         "password_confirm": data.get("passwordConfirm", ""),
     }
 
 
+def _validar_texto_personal(valor, campo, min_len, max_len, errores):
+    if len(valor) < min_len:
+        errores.append(f"El {campo} debe tener al menos {min_len} caracteres.")
+    elif len(valor) > max_len:
+        errores.append(f"El {campo} no puede superar {max_len} caracteres.")
+    elif not _texto_solo_letras(valor, permitir_apostrofo=True):
+        errores.append(f"El {campo} solo puede contener letras, espacios, guiones o apóstrofes.")
+
+
 def _validar_campos_crear_usuario_admin(datos, errores):
-    if len(datos["nombres"]) < 3:
-        errores.append("El nombre debe tener al menos 3 caracteres.")
-    elif len(datos["nombres"]) > 30:
-        errores.append("El nombre no puede superar 30 caracteres.")
-    elif not _texto_solo_letras(datos["nombres"], permitir_apostrofo=True):
-        errores.append("El nombre solo puede contener letras, espacios, guiones o apóstrofes.")
-    if len(datos["apellidos"]) < 3:
-        errores.append("Los apellidos deben tener al menos 3 caracteres.")
-    elif len(datos["apellidos"]) > 40:
-        errores.append("Los apellidos no pueden superar 40 caracteres.")
-    elif not _texto_solo_letras(datos["apellidos"], permitir_apostrofo=True):
-        errores.append("Los apellidos solo pueden contener letras, espacios, guiones o apóstrofes.")
+    _validar_texto_personal(datos["nombres"], "nombre", 3, 30, errores)
+    _validar_texto_personal(datos["apellidos"], "apellido", 3, 40, errores)
     _validar_email_crear_usuario_admin(datos["email"], errores)
     if len(datos["celular"]) != 10 or not datos["celular"].startswith("3"):
         errores.append(CELULAR_ERROR)
-    if not datos["tipo_documento"]:
+    es_admin = datos.get("tipo_usuario") == "ADM"
+    if datos["tipo_documento"]:
+        if datos["tipo_documento"] not in {valor for valor, _ in cons.TipoDocumento.choices}:
+            errores.append("El tipo de documento seleccionado no es válido.")
+    elif es_admin:
         errores.append("Debe seleccionar un tipo de documento.")
-    elif datos["tipo_documento"] not in {valor for valor, _ in cons.TipoDocumento.choices}:
-        errores.append("El tipo de documento seleccionado no es válido.")
-    if not datos["numero_documento"]:
+    if datos["numero_documento"]:
+        if not (datos["numero_documento"].isdigit() and 6 <= len(datos["numero_documento"]) <= 20):
+            errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
+    elif es_admin:
         errores.append("Debe ingresar un número de documento.")
-    elif not (datos["numero_documento"].isdigit() and 6 <= len(datos["numero_documento"]) <= 20):
-        errores.append("El número de documento debe tener entre 6 y 20 dígitos, sin letras ni caracteres especiales.")
     if not datos["ciudad"]:
         errores.append("Debe especificar la ciudad.")
 
@@ -507,6 +512,30 @@ def _crear_punto_eca_desde_datos(datos, localidad_inst):
         )
 
 
+def _escribir_puntos_eca_excel(ws, puntos):
+    for row, punto in enumerate(puntos, 2):
+        gestor = f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else ""
+        ws.cell(row=row, column=1, value=punto.nombre)
+        ws.cell(row=row, column=2, value=punto.direccion or "")
+        ws.cell(row=row, column=3, value=punto.localidad.nombre if punto.localidad else "")
+        ws.cell(row=row, column=4, value=punto.ciudad or "")
+        ws.cell(row=row, column=5, value=punto.telefono_punto or "")
+        ws.cell(row=row, column=6, value=punto.email or "")
+        ws.cell(row=row, column=7, value=punto.celular or "")
+        ws.cell(row=row, column=8, value=gestor)
+        ws.cell(row=row, column=9, value=punto.horario_atencion or "")
+        ws.cell(row=row, column=10, value=punto.sitio_web or "")
+        ws.cell(row=row, column=11, value=punto.estado or "")
+        ws.cell(row=row, column=12, value=punto.latitud or "")
+        ws.cell(row=row, column=13, value=punto.longitud or "")
+
+
+def _ajustar_ancho_columnas(ws):
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+
 def _procesar_importar_usuarios_csv(archivo):
     import csv
     import io
@@ -519,38 +548,20 @@ def _procesar_importar_usuarios_csv(archivo):
         faltantes = campos_requeridos - fieldnames
         raise ValueError(f"El CSV no tiene las columnas requeridas: {', '.join(faltantes)}")
 
-    filas = list(lector)
-    existing_emails = set(Usuario.objects.values_list("email", flat=True))
-    existing_docs = set(Usuario.objects.values_list("numero_documento", flat=True))
-
     creados = 0
     errores = []
-    usuarios_a_crear = []
-
-    for fila_numero, fila in enumerate(filas, 2):
+    for fila_numero, fila in enumerate(lector, 2):
         datos = _obtener_datos_usuario_csv(fila)
         errores_fila = _validar_datos_usuario_csv(datos, fila_numero)
         if errores_fila:
             errores.extend(errores_fila)
             continue
-        if datos["email"] in existing_emails:
-            errores.append(f"Fila {fila_numero}: el email '{datos['email']}' ya existe.")
-            continue
-        if datos["numero_documento"] and datos["numero_documento"] in existing_docs:
-            errores.append(f"Fila {fila_numero}: el documento '{datos['numero_documento']}' ya existe.")
-            continue
 
-        usuarios_a_crear.append(datos)
-        existing_emails.add(datos["email"])
-        if datos["numero_documento"]:
-            existing_docs.add(datos["numero_documento"])
-
-    for datos in usuarios_a_crear:
         try:
             _crear_usuario_desde_csv(datos)
             creados += 1
         except Exception as e:
-            errores.append(f"{e}")
+            errores.append(f"Fila {fila_numero}: {e}")
 
     return creados, errores
 
@@ -770,7 +781,6 @@ def _errores_validacion_lista(excepcion):
 
     return [str(excepcion)]
 
-
 def es_administrador(user):
     if not user.is_authenticated:
         return False
@@ -782,6 +792,7 @@ def admin_redirect_no_autorizado(request):
     return render(request, "base/inicio.html")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -789,45 +800,169 @@ def admin(request):
     contexto = {
         "mensaje": "Bienvenido al panel de control de Inforecicla",
         "resumen_general": AdminDashboardService.obtener_resumen_general(),
+        "tendencia_usuarios": AdminDashboardService.obtener_tendencia_usuarios(30),
+        "dist_puntos_eca": AdminDashboardService.obtener_distribucion_puntos_eca(),
+        "dist_materiales": AdminDashboardService.obtener_distribucion_materiales(),
     }
     return render(request, "admin/admin.html", contexto)
 
 
+def usuario_to_dict(usuario):
+    return {
+        "id": usuario.id,
+        "nombres": usuario.nombres,
+        "apellidos": usuario.apellidos,
+        "email": usuario.email,
+        "celular": usuario.celular or "",
+        "tipo_usuario": usuario.tipo_usuario,
+        "get_tipo_usuario_display": usuario.get_tipo_usuario_display(),
+        "is_active": usuario.is_active,
+        "ciudad": getattr(usuario, "ciudad", None) or DEFAULT_CITY,
+        "localidad_id": str(usuario.localidad.localidad_id)
+        if getattr(usuario, "localidad", None)
+        else "",
+        "tipo_documento": usuario.tipo_documento or "",
+        "numero_documento": usuario.numero_documento or "",
+        "fecha_nacimiento": usuario.fecha_nacimiento.strftime("%Y-%m-%d")
+        if usuario.fecha_nacimiento
+        else "",
+        "action_url": reverse("panel_admin:editar_usuario_admin", kwargs={"usuario_id": usuario.id}),
+    }
+
+
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_usuarios(request):
-    usuarios = Usuario.objects.all()
-    q = request.GET.get('q', '').strip()
-    tipo = request.GET.get('tipo', '').strip()
-    estado = request.GET.get('estado', '').strip()
+    usuarios = list(Usuario.objects.select_related("localidad").all())
+    usuarios_json = [usuario_to_dict(u) for u in usuarios]
 
+    q = request.GET.get("q", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    filtered = usuarios
     if q:
-        usuarios = usuarios.filter(
-            Q(nombres__icontains=q) |
-            Q(apellidos__icontains=q) |
-            Q(email__icontains=q)
-        )
-
+        filtered = [u for u in filtered if q.lower() in (u.nombres.lower() + " " + u.apellidos.lower() + " " + u.email.lower())]
     if tipo:
-        usuarios = usuarios.filter(tipo_usuario=tipo)
-
+        filtered = [u for u in filtered if u.tipo_usuario == tipo]
     if estado:
-        is_active = estado.lower() == 'activo' or estado.lower() == 'true'
-        usuarios = usuarios.filter(is_active=is_active)
+        is_active = estado.lower() in ("activo", "true")
+        filtered = [u for u in filtered if u.is_active == is_active]
 
     contexto = {
-        "usuarios": usuarios,
+        "usuarios": filtered,
+        "usuarios_json": usuarios_json,
         "search_query": q,
         "search_tipo": tipo,
         "search_estado": estado,
         "localidades": Localidad.objects.all().order_by("nombre"),
         "tipos_documento": cons.TipoDocumento.choices,
         "tipos_usuario": cons.TipoUsuario.choices,
+        "dist_roles": AdminDashboardService.obtener_distribucion_usuarios_por_rol(),
+        "dist_activos": AdminDashboardService.obtener_distribucion_usuarios_activos(),
+        "dist_usuarios_localidad": AdminDashboardService.obtener_distribucion_usuarios_por_localidad(),
+        "tendencia_usuarios": AdminDashboardService.obtener_tendencia_usuarios(30),
     }
     return render(request, "admin/Usuarios/listUsuario.html", contexto)
 
 
+def _filtrar_usuarios_export(request, usuarios):
+    q = request.GET.get("q", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    if q:
+        ql = q.lower()
+        usuarios = [u for u in usuarios if ql in (u.nombres.lower() + " " + u.apellidos.lower() + " " + u.email.lower())]
+    if tipo:
+        usuarios = [u for u in usuarios if u.tipo_usuario == tipo]
+    if estado:
+        is_active = estado.lower() in ("activo", "true")
+        usuarios = [u for u in usuarios if u.is_active == is_active]
+    return usuarios
+
+
+def _filtrar_puntos_eca_export(request, puntos):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        puntos = [p for p in puntos if ql in (p.nombre.lower() + " " + p.direccion.lower() + " " + p.localidad.nombre.lower())]
+    localidad = request.GET.get('localidad', '').strip()
+    if localidad:
+        puntos = [p for p in puntos if p.localidad and p.localidad.nombre == localidad]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        puntos = [p for p in puntos if p.estado == estado]
+    return puntos
+
+
+def _filtrar_materiales_export(request, materiales):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        materiales = [m for m in materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower())]
+    categoria = request.GET.get('categoria', '').strip()
+    if categoria:
+        materiales = [m for m in materiales if m.categoria and m.categoria.nombre == categoria]
+    tipo = request.GET.get('tipo', '').strip()
+    if tipo:
+        materiales = [m for m in materiales if m.tipo and m.tipo.nombre == tipo]
+    return materiales
+
+
+def _filtrar_categorias_material_export(request, categorias):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        categorias = [c for c in categorias if ql in (c.nombre.lower() + " " + (c.descripcion or "").lower())]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        categorias = [c for c in categorias if c.estado == estado]
+    tipo = request.GET.get('tipo', '').strip()
+    if tipo:
+        categorias = [c for c in categorias if c.tipo and c.tipo.nombre == tipo]
+    return categorias
+
+
+def _filtrar_categorias_publicacion_export(request, categorias):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        categorias = [c for c in categorias if ql in (c.nombre.lower() + " " + c.tipo.lower() + " " + (c.descripcion or "").lower())]
+    return categorias
+
+
+def _filtrar_tipos_material_export(request, tipos):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        tipos = [t for t in tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        tipos = [t for t in tipos if t.estado == estado]
+    return tipos
+
+
+def _filtrar_tipos_publicacion_export(request, tipos):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        tipos = [t for t in tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
+    estado = request.GET.get('estado', '').strip()
+    if estado:
+        tipos = [t for t in tipos if t.estado == estado]
+    return tipos
+
+
+def _filtrar_publicaciones_export(request, publicaciones):
+    q = request.GET.get('q', '').strip()
+    if q:
+        ql = q.lower()
+        publicaciones = [p for p in publicaciones if ql in (p.titulo.lower() + " " + (p.contenido or "").lower() + " " + p.usuario.nombres.lower() + " " + p.usuario.apellidos.lower())]
+    return publicaciones
+
+
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -835,33 +970,52 @@ def exportar_usuarios_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    usuarios = Usuario.objects.all().order_by("apellidos", "nombres")
+    usuarios = _filtrar_usuarios_export(request, list(Usuario.objects.all().order_by("apellidos", "nombres")))
     html = render_to_string("admin/Usuarios/usuarios_pdf.html", {"usuarios": usuarios})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "usuarios.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def exportar_usuarios_excel(request):
-    tipo_labels = dict(cons.TipoUsuario.choices)
-    doc_labels = dict(cons.TipoDocumento.choices)
+    import openpyxl
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Usuarios"
+
     headers = ["Nombres", "Apellidos", "Email", "Celular", "Tipo Usuario",
                "Tipo Documento", "N° Documento", "Ciudad", "Estado", "Fecha Registro"]
-    rows = [
-        [
-            u.nombres, u.apellidos, u.email, u.celular or "",
-            tipo_labels.get(u.tipo_usuario, u.tipo_usuario),
-            doc_labels.get(u.tipo_documento, u.tipo_documento),
-            u.numero_documento, u.ciudad or "",
-            "Activo" if u.is_active else "Inactivo",
-            u.date_joined.strftime("%Y-%m-%d") if u.date_joined else "",
-        ]
-        for u in Usuario.objects.all().order_by("apellidos", "nombres")
-    ]
-    data = _crear_libro_excel(headers, rows, "Usuarios")
-    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "usuarios.xlsx")
+    _escribir_encabezados_excel(ws, headers)
+
+    tipo_labels = dict(cons.TipoUsuario.choices)
+    doc_labels = dict(cons.TipoDocumento.choices)
+
+    usuarios = _filtrar_usuarios_export(request, list(Usuario.objects.all().order_by("apellidos", "nombres")))
+
+    for row, u in enumerate(usuarios, 2):
+        ws.cell(row=row, column=1, value=u.nombres)
+        ws.cell(row=row, column=2, value=u.apellidos)
+        ws.cell(row=row, column=3, value=u.email)
+        ws.cell(row=row, column=4, value=u.celular or "")
+        ws.cell(row=row, column=5, value=str(tipo_labels.get(u.tipo_usuario, u.tipo_usuario)))
+        ws.cell(row=row, column=6, value=str(doc_labels.get(u.tipo_documento, u.tipo_documento)))
+        ws.cell(row=row, column=7, value=u.numero_documento)
+        ws.cell(row=row, column=8, value=u.ciudad or "")
+        ws.cell(row=row, column=9, value="Activo" if u.is_active else "Inactivo")
+        ws.cell(row=row, column=10, value=u.date_joined.strftime("%Y-%m-%d") if u.date_joined else "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "usuarios.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -947,6 +1101,49 @@ def crear_usuario_admin(request):
     })
 
 
+def publicacion_to_dict(pub):
+    return {
+        "id": pub.id,
+        "titulo": pub.titulo,
+        "autor": f"{pub.usuario.nombres} {pub.usuario.apellidos}",
+        "categoria": pub.categoria.tipo if pub.categoria else "-",
+        "categoria_id": str(pub.categoria.id) if pub.categoria else "",
+        "estado": pub.estado,
+        "fecha_creacion": pub.fecha_creacion.strftime("%d/%m/%Y") if pub.fecha_creacion else "",
+        "contenido": pub.contenido or "",
+        "resumen": pub.resumen or "",
+        "destacado": pub.destacado,
+        "video_url": pub.video_url or "",
+        "is_active": pub.estado == "ACTIVO",
+        "view_url": reverse("panel_admin:ver_publicacion_admin", kwargs={"publicacion_id": pub.id}),
+        "action_url": reverse("panel_admin:editar_publicacion_admin", kwargs={"publicacion_id": pub.id}),
+    }
+
+
+def punto_eca_to_dict(punto):
+    return {
+        "id": punto.id,
+        "nombre": punto.nombre,
+        "direccion": punto.direccion or "",
+        "localidad": punto.localidad.nombre if punto.localidad else "-",
+        "localidad_id": str(punto.localidad.localidad_id) if punto.localidad else "",
+        "gestor": f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}" if punto.gestor_eca else "Sin gestor",
+        "estado": punto.estado,
+        "email": punto.email or "",
+        "celular": punto.celular or "",
+        "telefono_punto": punto.telefono_punto or "",
+        "sitio_web": punto.sitio_web or "",
+        "horario_atencion": punto.horario_atencion or "",
+        "logo_url_punto": punto.logo_url_punto or "",
+        "descripcion": punto.descripcion or "",
+        "latitud": str(punto.latitud) if punto.latitud else "",
+        "longitud": str(punto.longitud) if punto.longitud else "",
+        "is_active": punto.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_punto_eca_admin", kwargs={"punto_id": punto.id}),
+    }
+
+
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -958,29 +1155,97 @@ def listar_publicaciones_admin(request):
     try:
         from apps.publicaciones.models import CategoriaPublicacion, Publicacion
 
-        publicaciones = Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")
+        all_pubs = list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion"))
         categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
+        publicaciones_json = [publicacion_to_dict(p) for p in all_pubs]
         if q:
-            publicaciones = publicaciones.filter(
-                Q(titulo__icontains=q) |
-                Q(contenido__icontains=q) |
-                Q(usuario__nombres__icontains=q) |
-                Q(usuario__apellidos__icontains=q)
-            )
+            ql = q.lower()
+            all_pubs = [p for p in all_pubs if ql in (p.titulo.lower() + " " + (p.contenido or "").lower() + " " + p.usuario.nombres.lower() + " " + p.usuario.apellidos.lower())]
+        publicaciones = all_pubs
     except Exception:
         publicaciones_habilitadas = False
+        publicaciones_json = "[]"
 
     return render(
         request,
         "admin/Publicaciones/listPublicacion.html",
         {
             "publicaciones": publicaciones,
+            "publicaciones_json": publicaciones_json,
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "categorias": categorias,
             "search_query": q,
             "estados": cons.Estado.choices,
+            "dist_estado_pub": AdminDashboardService.obtener_distribucion_publicaciones_por_estado(),
+            "dist_categoria_pub": AdminDashboardService.obtener_distribucion_publicaciones_por_categoria(),
+            "dist_destacadas": AdminDashboardService.obtener_distribucion_publicaciones_destacadas(),
+            "tendencia_publicaciones": AdminDashboardService.obtener_tendencia_publicaciones(30),
         },
     )
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_publicaciones_pdf(request):
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    try:
+        from apps.publicaciones.models import Publicacion
+        publicaciones = _filtrar_publicaciones_export(request, list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")))
+    except Exception:
+        publicaciones = []
+    html = render_to_string("admin/Publicaciones/publicaciones_pdf.html", {"publicaciones": publicaciones})
+    pdf = HTML(string=html).write_pdf()
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "publicaciones.pdf")
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_publicaciones_excel(request):
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Publicaciones"
+
+    headers = ["Título", "Resumen", "Categoría", "Autor", "Estado", "Destacado", "Fecha Creación"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    try:
+        from apps.publicaciones.models import Publicacion
+        publicaciones = _filtrar_publicaciones_export(request, list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")))
+    except Exception:
+        publicaciones = []
+
+    for row, p in enumerate(publicaciones, 2):
+        ws.cell(row=row, column=1, value=p.titulo)
+        ws.cell(row=row, column=2, value=p.resumen or "")
+        ws.cell(row=row, column=3, value=p.categoria.nombre if p.categoria else "")
+        ws.cell(row=row, column=4, value=f"{p.usuario.nombres} {p.usuario.apellidos}" if p.usuario else "")
+        ws.cell(row=row, column=5, value=str(p.estado))
+        ws.cell(row=row, column=6, value="Sí" if p.destacado else "No")
+        ws.cell(row=row, column=7, value=p.fecha_creacion.strftime("%Y-%m-%d") if p.fecha_creacion else "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "publicaciones.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1021,6 +1286,7 @@ def crear_publicacion_admin(request):
     )
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1028,39 +1294,43 @@ def exportar_puntos_eca_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    puntos = _filtrar_puntos_eca_export(request, list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")))
     html = render_to_string("admin/PuntoECA/puntos_eca_pdf.html", {"puntos": puntos})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "puntos_eca.pdf")
 
 
-def _fila_punto_eca_excel(punto):
-    gestor = ""
-    if punto.gestor_eca:
-        gestor = f"{punto.gestor_eca.nombres} {punto.gestor_eca.apellidos}"
-    localidad = punto.localidad.nombre if punto.localidad else ""
-    return [
-        punto.nombre, punto.direccion or "",
-        localidad,
-        punto.ciudad or "", punto.telefono_punto or "",
-        punto.email or "", punto.celular or "",
-        gestor, punto.horario_atencion or "",
-        punto.sitio_web or "", punto.descripcion or "",
-        punto.logo_url_punto or "", punto.foto_url_punto or "",
-        punto.estado or "", punto.latitud or "", punto.longitud or "",
-    ]
-
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def exportar_puntos_eca_excel(request):
+    import io
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Puntos ECA"
+
     headers = ["Nombre", "Dirección", "Localidad", "Ciudad", "Teléfono", "Email",
-               "Celular", "Gestor", "Horario", "Sitio Web", "Descripción",
-               "Logo URL", "Foto URL", "Estado", "Latitud", "Longitud"]
-    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
-    rows = [_fila_punto_eca_excel(p) for p in puntos]
-    data = _crear_libro_excel(headers, rows, "Puntos ECA")
-    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "puntos_eca.xlsx")
+               "Celular", "Gestor", "Horario", "Sitio Web", "Estado", "Latitud", "Longitud"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    puntos = _filtrar_puntos_eca_export(request, list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")))
+    _escribir_puntos_eca_excel(ws, puntos)
+    _ajustar_ancho_columnas(ws)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "puntos_eca.xlsx")
 
 
 @login_required(login_url="/login/")
@@ -1107,27 +1377,30 @@ def crear_punto_eca_admin(request):
     })
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_puntos_eca_admin(request):
-    puntos = PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")
+    all_puntos = list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre"))
+    puntos_json = [punto_eca_to_dict(p) for p in all_puntos]
     q = request.GET.get('q', '').strip()
     if q:
-        puntos = puntos.filter(
-            Q(nombre__icontains=q) |
-            Q(direccion__icontains=q) |
-            Q(localidad__nombre__icontains=q)
-        )
+        ql = q.lower()
+        all_puntos = [p for p in all_puntos if ql in (p.nombre.lower() + " " + p.direccion.lower() + " " + p.localidad.nombre.lower())]
     return render(request, "admin/PuntoECA/listPuntoECA.html", {
-        "puntos": puntos,
+        "puntos": all_puntos,
+        "puntos_json": puntos_json,
         "search_query": q,
         "localidades": Localidad.objects.all().order_by("nombre"),
         "tipos_documento": cons.TipoDocumento.choices,
         "estados": cons.Estado.choices,
+        "dist_estado_punto": AdminDashboardService.obtener_distribucion_puntos_eca_por_estado(),
+        "dist_gestor_punto": AdminDashboardService.obtener_distribucion_puntos_eca_con_gestor(),
     })
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1135,44 +1408,67 @@ def exportar_materiales_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    materiales = _filtrar_materiales_export(request, list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre")))
     html = render_to_string("admin/Materiales/materiales_pdf.html", {"materiales": materiales})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "materiales.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def exportar_materiales_excel(request):
+    import io
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Materiales"
+
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Categoría", "Tipo", "Estado"]
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
-    rows = [
-        [m.nombre, m.descripcion or "",
-         m.categoria.nombre if m.categoria else "",
-         m.tipo.nombre if m.tipo else "",
-         m.estado or ""]
-        for m in materiales
-    ]
-    data = _crear_libro_excel(headers, rows, "Materiales")
-    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "materiales.xlsx")
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    materiales = _filtrar_materiales_export(request, list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre")))
+    for row, m in enumerate(materiales, 2):
+        ws.cell(row=row, column=1, value=m.nombre)
+        ws.cell(row=row, column=2, value=m.descripcion or "")
+        ws.cell(row=row, column=3, value=m.categoria.nombre if m.categoria else "")
+        ws.cell(row=row, column=4, value=m.tipo.nombre if m.tipo else "")
+        ws.cell(row=row, column=5, value=m.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "materiales.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_materiales_admin(request):
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
+    all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    materiales_json = [material_to_dict(m) for m in all_materiales]
     q = request.GET.get('q', '').strip()
     if q:
-        materiales = materiales.filter(
-            Q(nombre__icontains=q) |
-            Q(descripcion__icontains=q) |
-            Q(categoria__nombre__icontains=q)
-        )
-    return render(request, "admin/Materiales/listMaterial.html", {"materiales": materiales, "search_query": q})
+        ql = q.lower()
+        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower())]
+    return render(request, "admin/Materiales/listMaterial.html", {"materiales": all_materiales, "materiales_json": materiales_json, "search_query": q})
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1180,39 +1476,65 @@ def exportar_categorias_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    categorias = _filtrar_categorias_material_export(request, list(CategoriaMaterial.objects.all().order_by("nombre")))
     html = render_to_string("admin/CategoriasMateriales/categorias_material_pdf.html", {"categorias": categorias})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_material.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def exportar_categorias_material_excel(request):
+    import io
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Categorías de Materiales"
+
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
-    rows = [
-        [c.nombre, c.descripcion or "", c.estado or ""]
-        for c in CategoriaMaterial.objects.all().order_by("nombre")
-    ]
-    data = _crear_libro_excel(headers, rows, "Categorías de Materiales")
-    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "categorias_material.xlsx")
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    categorias = _filtrar_categorias_material_export(request, list(CategoriaMaterial.objects.all().order_by("nombre")))
+    for row, c in enumerate(categorias, 2):
+        ws.cell(row=row, column=1, value=c.nombre)
+        ws.cell(row=row, column=2, value=c.descripcion or "")
+        ws.cell(row=row, column=3, value=c.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_material.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_categorias_material_admin(request):
-    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    all_categorias = list(CategoriaMaterial.objects.all().order_by("nombre"))
+    categorias_json = [categoria_material_to_dict(c) for c in all_categorias]
     q = request.GET.get('q', '').strip()
     if q:
-        categorias = categorias.filter(
-            Q(nombre__icontains=q) |
-            Q(descripcion__icontains=q)
-        )
-    return render(request, "admin/CategoriasMateriales/listCategoriaMaterial.html", {"categorias": categorias, "search_query": q})
+        ql = q.lower()
+        all_categorias = [c for c in all_categorias if ql in (c.nombre.lower() + " " + (c.descripcion or "").lower())]
+    return render(request, "admin/CategoriasMateriales/listCategoriaMaterial.html", {"categorias": all_categorias, "categorias_json": categorias_json, "search_query": q})
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1222,7 +1544,7 @@ def exportar_categorias_publicacion_pdf(request):
 
     try:
         from apps.publicaciones.models import CategoriaPublicacion
-        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+        categorias = _filtrar_categorias_publicacion_export(request, list(CategoriaPublicacion.objects.all().order_by("tipo")))
     except Exception:
         categorias = []
     html = render_to_string("admin/CategoriasPublicaciones/categorias_publicacion_pdf.html", {"categorias": categorias})
@@ -1230,42 +1552,67 @@ def exportar_categorias_publicacion_pdf(request):
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_publicacion.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def exportar_categorias_publicacion_excel(request):
+    import io
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Categorías de Publicaciones"
+
+    headers = ["Tipo", EXCEL_DESCRIPTION_HEADER, "Estado"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
     try:
         from apps.publicaciones.models import CategoriaPublicacion
-        categorias = CategoriaPublicacion.objects.all().order_by("tipo")
+        categorias = _filtrar_categorias_publicacion_export(request, list(CategoriaPublicacion.objects.all().order_by("tipo")))
     except Exception:
         categorias = []
 
-    headers = ["Nombre", "Tipo", EXCEL_DESCRIPTION_HEADER, "Estado"]
-    rows = [
-        [c.nombre or "", c.tipo, c.descripcion or "", c.estado or ""]
-        for c in categorias
-    ]
-    data = _crear_libro_excel(headers, rows, "Categorías de Publicaciones")
-    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "categorias_publicacion.xlsx")
+    for row, c in enumerate(categorias, 2):
+        ws.cell(row=row, column=1, value=c.tipo)
+        ws.cell(row=row, column=2, value=c.descripcion or "")
+        ws.cell(row=row, column=3, value=c.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "categorias_publicacion.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_categorias_publicacion_admin(request):
     categorias = []
+    categorias_json = "[]"
     publicaciones_habilitadas = True
     q = request.GET.get('q', '').strip()
     try:
         from apps.publicaciones.models import CategoriaPublicacion
 
-        categorias = CategoriaPublicacion.objects.all().order_by("nombre", "tipo")
+        all_categorias = list(CategoriaPublicacion.objects.all().order_by("nombre", "tipo"))
+        categorias_json = [categoria_publicacion_to_dict(c) for c in all_categorias]
         if q:
-            categorias = categorias.filter(
-                Q(nombre__icontains=q) |
-                Q(tipo__icontains=q) |
-                Q(descripcion__icontains=q)
-            )
+            ql = q.lower()
+            all_categorias = [c for c in all_categorias if ql in (c.nombre.lower() + " " + c.tipo.lower() + " " + (c.descripcion or "").lower())]
+        categorias = all_categorias
     except Exception:
         publicaciones_habilitadas = False
 
@@ -1274,15 +1621,20 @@ def listar_categorias_publicacion_admin(request):
         "admin/CategoriasPublicaciones/listCategoriaPublicacion.html",
         {
             "categorias": categorias,
+            "categorias_json": categorias_json,
             "publicaciones_habilitadas": publicaciones_habilitadas,
             "search_query": q,
             "active_tab": "categorias_publicacion",
             "tipos_publicacion": AdminCatalogService._tipos_publicacion_disponibles(),
             "estados": cons.Estado.choices,
+            "dist_tipo_cat_pub": AdminDashboardService.obtener_distribucion_categorias_publicacion_por_tipo(),
+            "dist_estado_cat_pub": AdminDashboardService.obtener_distribucion_categorias_publicacion_por_estado(),
+            "tendencia_publicaciones": AdminDashboardService.obtener_tendencia_publicaciones(30),
         },
     )
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1290,37 +1642,113 @@ def exportar_tipos_material_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    tipos = TipoMaterial.objects.all().order_by("nombre")
+    tipos = _filtrar_tipos_material_export(request, list(TipoMaterial.objects.all().order_by("nombre")))
     html = render_to_string("admin/TiposMateriales/tipos_material_pdf.html", {"tipos": tipos})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_material.pdf")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def exportar_tipos_material_excel(request):
+    import io
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tipos de Material"
+
     headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
-    rows = [
-        [t.nombre, t.descripcion or "", t.estado or ""]
-        for t in TipoMaterial.objects.all().order_by("nombre")
-    ]
-    data = _crear_libro_excel(headers, rows, "Tipos de Material")
-    return _crear_respuesta_descarga(data, XLSX_MIME_TYPE, "tipos_material.xlsx")
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    tipos = _filtrar_tipos_material_export(request, list(TipoMaterial.objects.all().order_by("nombre")))
+
+    for row, t in enumerate(tipos, 2):
+        ws.cell(row=row, column=1, value=t.nombre)
+        ws.cell(row=row, column=2, value=t.descripcion or "")
+        ws.cell(row=row, column=3, value=t.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "tipos_material.xlsx")
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_tipos_material_admin(request):
-    tipos = TipoMaterial.objects.all().order_by("nombre")
+    all_tipos = list(TipoMaterial.objects.all().order_by("nombre"))
+    tipos_json = [tipo_material_to_dict(t) for t in all_tipos]
     q = request.GET.get('q', '').strip()
     if q:
-        tipos = tipos.filter(
-            Q(nombre__icontains=q) |
-            Q(descripcion__icontains=q)
-        )
-    return render(request, "admin/TiposMateriales/listTipoMaterial.html", {"tipos": tipos, "search_query": q})
+        ql = q.lower()
+        all_tipos = [t for t in all_tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
+    return render(request, "admin/TiposMateriales/listTipoMaterial.html", {"tipos": all_tipos, "tipos_json": tipos_json, "search_query": q})
+
+
+def _contexto_usuario_admin(usuario):
+    return {
+        "usuario": usuario,
+        "localidades": Localidad.objects.all().order_by("nombre"),
+        "tipos_documento": cons.TipoDocumento.choices,
+        "tipos_usuario": cons.TipoUsuario.choices,
+    }
+
+
+def _procesar_post_usuario_admin(request, usuario, is_ajax):
+    error = _aplicar_datos_usuario_admin(usuario, request.POST)
+    if error:
+        return _respuesta_error_usuario(request, is_ajax, error)
+
+    try:
+        usuario.full_clean()
+        usuario.save()
+        return _respuesta_exito_usuario(request, is_ajax, usuario)
+    except ValidationError as e:
+        return _manejar_error_validacion(request, is_ajax, e)
+    except Exception as e:
+        if is_ajax:
+            return JsonResponse({"ok": False, "errors": [str(e)], "message": str(e)})
+        messages.error(request, f"No se pudo actualizar el usuario: {e}")
+        return None
+
+
+def _respuesta_error_usuario(request, is_ajax, error):
+    if is_ajax:
+        return JsonResponse({"ok": False, "errors": [error], "message": error})
+    messages.error(request, error)
+    return None
+
+
+def _respuesta_exito_usuario(request, is_ajax, usuario):
+    if is_ajax:
+        return JsonResponse({"ok": True, "message": USUARIO_ACTUALIZADO_OK_MSG})
+    messages.success(request, USUARIO_ACTUALIZADO_OK_MSG)
+    return redirect("panel_admin:editar_usuario_admin", usuario_id=usuario.id)
+
+
+def _manejar_error_validacion(request, is_ajax, excepcion):
+    lista_errores = _errores_validacion_lista(excepcion)
+    if is_ajax:
+        return JsonResponse({"ok": False, "errors": lista_errores, "message": CORREGIR_CAMPOS_MSG})
+    mensajes_error = " ".join(lista_errores)
+    messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
+    return None
 
 
 @login_required(login_url="/login/")
@@ -1335,41 +1763,12 @@ def editar_usuario_admin(request, usuario_id):
         messages.error(request, "Usuario no encontrado.")
         return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
-    contexto = {
-        "usuario": usuario,
-        "localidades": Localidad.objects.all().order_by("nombre"),
-        "tipos_documento": cons.TipoDocumento.choices,
-        "tipos_usuario": cons.TipoUsuario.choices,
-    }
-    if request.method != "POST":
-        return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
+    if request.method == "POST":
+        respuesta = _procesar_post_usuario_admin(request, usuario, is_ajax)
+        if respuesta:
+            return respuesta
 
-    error = _aplicar_datos_usuario_admin(usuario, request.POST)
-    if error:
-        if is_ajax:
-            return JsonResponse({"ok": False, "errors": [error], "message": error})
-        messages.error(request, error)
-        return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
-
-    try:
-        usuario.full_clean()
-        usuario.save()
-        if is_ajax:
-            return JsonResponse({"ok": True, "message": "Usuario actualizado correctamente."})
-        messages.success(request, "Usuario actualizado correctamente.")
-        return redirect(ADMIN_LISTAR_USUARIOS_URL)
-    except ValidationError as e:
-        lista_errores = _errores_validacion_lista(e)
-        if is_ajax:
-            return JsonResponse({"ok": False, "errors": lista_errores, "message": CORREGIR_CAMPOS_MSG})
-        mensajes_error = " ".join(lista_errores)
-        messages.error(request, f"No se pudo actualizar el usuario: {mensajes_error}")
-    except Exception as e:
-        if is_ajax:
-            return JsonResponse({"ok": False, "errors": [str(e)], "message": str(e)})
-        messages.error(request, f"No se pudo actualizar el usuario: {e}")
-
-    return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, contexto)
+    return render(request, ADMIN_EDIT_USUARIO_TEMPLATE, _contexto_usuario_admin(usuario))
 
 
 @login_required(login_url="/login/")
@@ -1442,7 +1841,6 @@ def ver_publicacion_admin(request, publicacion_id):
     )
 
 
-
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "POST"])
@@ -1471,7 +1869,6 @@ def editar_punto_eca_admin(request, punto_id):
         {
             "punto": punto,
             "localidades": Localidad.objects.all().order_by("nombre"),
-            "tipos_documento": cons.TipoDocumento.choices,
             "estados": cons.Estado.choices,
         },
     )
@@ -1563,19 +1960,13 @@ def editar_categoria_publicacion_admin(request, categoria_id):
         messages.error(request, "Categoria de publicacion no encontrada.")
         return redirect(LISTAR_CATEGORIAS_PUBLICACION_URL)
 
+    tipos_publicacion = AdminCatalogService._tipos_publicacion_disponibles()
     form_data = {
         "nombre": getattr(categoria, "nombre", ""),
         "descripcion": getattr(categoria, "descripcion", ""),
-        "tipo": categoria.tipo,
-        "tipo_otro": "",
+        "tipo": categoria.tipo if categoria.tipo in {v for v, _ in tipos_publicacion} else "",
         "estado": categoria.estado,
     }
-
-    tipos_publicacion = AdminCatalogService._tipos_publicacion_disponibles()
-    tipos_validos = {value for value, _ in tipos_publicacion}
-    if categoria.tipo not in tipos_validos:
-        form_data["tipo"] = "__otro__"
-        form_data["tipo_otro"] = categoria.tipo
 
     if request.method == "POST":
         resultado = AdminCatalogService.actualizar_categoria_publicacion(categoria_id, request.POST)
@@ -1589,7 +1980,6 @@ def editar_categoria_publicacion_admin(request, categoria_id):
             "nombre": request.POST.get("nombre", ""),
             "descripcion": request.POST.get("descripcion", ""),
             "tipo": request.POST.get("tipo", ""),
-            "tipo_otro": request.POST.get("tipo_otro", ""),
             "estado": request.POST.get("estado", ""),
         }
 
@@ -1705,6 +2095,212 @@ def crear_material_admin(request):
     )
 
 
+def material_to_dict(m):
+    return {
+        "id": m.id,
+        "nombre": m.nombre,
+        "descripcion": m.descripcion or "",
+        "categoria_nombre": m.categoria.nombre if m.categoria else "-",
+        "categoria_id": str(m.categoria.id) if m.categoria else "",
+        "tipo_nombre": m.tipo.nombre if m.tipo else "-",
+        "tipo_id": str(m.tipo.id) if m.tipo else "",
+        "estado": m.estado,
+        "is_active": m.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_material_admin", kwargs={"material_id": m.id}),
+    }
+
+
+def tipo_material_to_dict(t):
+    return {
+        "id": t.id,
+        "nombre": t.nombre,
+        "descripcion": t.descripcion or "",
+        "estado": t.estado,
+        "is_active": t.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_tipo_material_admin", kwargs={"tipo_id": t.id}),
+    }
+
+
+def categoria_material_to_dict(c):
+    return {
+        "id": c.id,
+        "nombre": c.nombre,
+        "descripcion": c.descripcion or "",
+        "tipo_id": c.tipo.id if c.tipo else "",
+        "tipo_nombre": c.tipo.nombre if c.tipo else "-",
+        "estado": c.estado,
+        "is_active": c.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_categoria_material_admin", kwargs={"categoria_id": c.id}),
+    }
+
+
+def categoria_publicacion_to_dict(c):
+    return {
+        "id": c.id,
+        "nombre": c.nombre or c.tipo,
+        "tipo": c.tipo,
+        "get_tipo_display": c.get_tipo_display(),
+        "descripcion": c.descripcion or "",
+        "estado": c.estado,
+        "is_active": c.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_categoria_publicacion_admin", kwargs={"categoria_id": c.id}),
+    }
+
+
+def tipo_publicacion_to_dict(t):
+    return {
+        "id": t.id,
+        "nombre": t.nombre,
+        "descripcion": t.descripcion or "",
+        "estado": t.estado,
+        "is_active": t.estado == "ACTIVO",
+        "action_url": reverse("panel_admin:editar_tipo_publicacion_admin", kwargs={"tipo_id": t.id}),
+    }
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def listar_tipos_publicacion_admin(request):
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        all_tipos = _filtrar_tipos_publicacion_export(request, list(TipoPublicacion.objects.all().order_by("nombre")))
+        tipos_json = [tipo_publicacion_to_dict(t) for t in all_tipos]
+    except Exception:
+        all_tipos = []
+        tipos_json = []
+    from collections import Counter
+    dist_estado = Counter(t.estado for t in all_tipos)
+    dist_estado_tipo_pub = [{"estado": k, "count": v} for k, v in dist_estado.items()]
+    return render(
+        request,
+        "admin/Publicaciones/listTipoPublicacion.html",
+        {
+            "tipos": all_tipos,
+            "tipos_json": tipos_json,
+            "active_tab": "tipos_publicacion",
+            "estados": cons.Estado.choices,
+            "dist_estado_tipo_pub": dist_estado_tipo_pub,
+            "search_query": request.GET.get("q", "").strip(),
+        },
+    )
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_tipos_publicacion_pdf(request):
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        tipos = _filtrar_tipos_publicacion_export(request, list(TipoPublicacion.objects.all().order_by("nombre")))
+    except Exception:
+        tipos = []
+    html = render_to_string("admin/Publicaciones/tipos_publicacion_pdf.html", {"tipos": tipos})
+    pdf = HTML(string=html).write_pdf()
+    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_publicacion.pdf")
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def exportar_tipos_publicacion_excel(request):
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Tipos de Publicación"
+
+    headers = ["Nombre", "Descripción", "Estado"]
+    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
+    font = Font(color="FFFFFF", bold=True)
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = fill
+        cell.font = font
+        cell.alignment = Alignment(horizontal="center")
+
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        tipos = _filtrar_tipos_publicacion_export(request, list(TipoPublicacion.objects.all().order_by("nombre")))
+    except Exception:
+        tipos = []
+
+    for row, t in enumerate(tipos, 2):
+        ws.cell(row=row, column=1, value=t.nombre)
+        ws.cell(row=row, column=2, value=t.descripcion or "")
+        ws.cell(row=row, column=3, value=t.estado or "")
+
+    for col in ws.columns:
+        ancho = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "tipos_publicacion.xlsx")
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
+def crear_tipo_publicacion(request):
+    if request.method == "POST":
+        resultado = AdminCatalogService.crear_tipo_publicacion(request.POST)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(resultado)
+        if resultado["ok"]:
+            messages.success(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+        return redirect(LISTAR_TIPOS_PUBLICACION_URL)
+    return render(
+        request,
+        "admin/Publicaciones/createTipoPublicacion.html",
+        {"estados": cons.Estado.choices},
+    )
+
+
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "POST"])
+def editar_tipo_publicacion_admin(request, tipo_id):
+    try:
+        from apps.publicaciones.models import TipoPublicacion
+
+        tipo = TipoPublicacion.objects.filter(id=tipo_id).first()
+    except Exception:
+        tipo = None
+    if not tipo:
+        messages.error(request, RECURSO_NO_ENCONTRADO_MSG)
+        return         redirect(LISTAR_TIPOS_PUBLICACION_URL)
+
+    if request.method == "POST":
+        resultado = AdminCatalogService.actualizar_tipo_publicacion(tipo_id, request.POST)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(resultado)
+        if resultado["ok"]:
+            messages.success(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+        return redirect(LISTAR_TIPOS_PUBLICACION_URL)
+
+    return render(
+        request,
+        "admin/Publicaciones/editTipoPublicacion.html",
+        {"tipo": tipo, "estados": cons.Estado.choices},
+    )
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -1714,29 +2310,40 @@ def gestion_materiales(request):
     q_cat = request.GET.get('q_cat', '').strip()
     tab = request.GET.get('tab', 'materiales')
 
-    materiales = Material.objects.select_related("categoria", "tipo").all().order_by("nombre")
-    tipos = TipoMaterial.objects.all().order_by("nombre")
-    categorias = CategoriaMaterial.objects.all().order_by("nombre")
+    all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    tipos_qs = TipoMaterial.objects.all().order_by("nombre")
+    categorias_qs = CategoriaMaterial.objects.all().order_by("nombre")
+
+    materiales_json = [material_to_dict(m) for m in all_materiales]
+    tipos_json = [tipo_material_to_dict(t) for t in tipos_qs]
+    categorias_json = [categoria_material_to_dict(c) for c in categorias_qs]
 
     if q_mat:
-        materiales = materiales.filter(
-            Q(nombre__icontains=q_mat) | Q(descripcion__icontains=q_mat) |
-            Q(categoria__nombre__icontains=q_mat) | Q(tipo__nombre__icontains=q_mat)
-        )
+        ql = q_mat.lower()
+        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower() + " " + (m.tipo.nombre if m.tipo else "").lower())]
+
     if q_tipo:
-        tipos = tipos.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
+        tipos_qs = tipos_qs.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
     if q_cat:
-        categorias = categorias.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
+        categorias_qs = categorias_qs.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
 
     return render(request, "admin/materiales_gestion.html", {
-        "materiales": materiales,
-        "tipos": tipos,
-        "categorias": categorias,
+        "materiales": all_materiales,
+        "materiales_json": materiales_json,
+        "tipos": tipos_qs,
+        "tipos_json": tipos_json,
+        "categorias": categorias_qs,
+        "categorias_json": categorias_json,
         "q_mat": q_mat, "q_tipo": q_tipo, "q_cat": q_cat,
         "tab": tab,
         "estados": cons.Estado.choices,
         "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),
         "todos_tipos": TipoMaterial.objects.all().order_by("nombre"),
+        "dist_categoria_mat": AdminDashboardService.obtener_distribucion_materiales(),
+        "dist_tipo_mat": AdminDashboardService.obtener_distribucion_materiales_por_tipo(),
+        "dist_estado_mat": AdminDashboardService.obtener_distribucion_materiales_por_estado(),
+        "dist_estado_cat": AdminDashboardService.obtener_distribucion_categorias_material_por_estado(),
+        "dist_estado_tipo": AdminDashboardService.obtener_distribucion_tipos_material_por_estado(),
     })
 
 
@@ -1751,7 +2358,6 @@ def crear_categoria_publicacion(request):
             "nombre": "",
             "descripcion": "",
             "tipo": "",
-            "tipo_otro": "",
             "estado": "ACTIVO",
         },
         "active_tab": "categorias_publicacion",
@@ -1768,7 +2374,6 @@ def crear_categoria_publicacion(request):
             "nombre": request.POST.get("nombre", ""),
             "descripcion": request.POST.get("descripcion", ""),
             "tipo": request.POST.get("tipo", ""),
-            "tipo_otro": request.POST.get("tipo_otro", ""),
             "estado": request.POST.get("estado", "ACTIVO"),
         }
 
@@ -1783,6 +2388,7 @@ _PASSWORD_COMP = _re.compile(
 )
 
 
+@require_GET
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])

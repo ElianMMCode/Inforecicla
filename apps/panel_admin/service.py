@@ -1,4 +1,4 @@
-# apps/panel_admin/service.py
+﻿# apps/panel_admin/service.py
 import datetime
 import re as _regex
 from decimal import Decimal as decimal
@@ -28,6 +28,8 @@ DESCRIPCION_CATEGORIA_MAX_500_MSG = (
     "La descripción no puede exceder 500 caracteres."
 )
 RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado"
+TIPO_CATEGORIA_INVALIDO_MSG = "Tipo de categoria invalido."
+TIPO_MATERIAL_INVALIDO_MSG = "Tipo de material inválido."
 NOMBRE_SIN_LETRA_MSG = "El nombre debe contener al menos una letra."
 TIPO_DUPLICADO_MSG = "Ya existe un tipo con ese nombre."
 CATEGORIA_DUPLICADA_MSG = "Ya existe una categoría con ese nombre."
@@ -148,28 +150,236 @@ class AdminDashboardService:
             "total_categorias_materiales": 0,
             "total_categorias_publicaciones": 0,
             "total_tipos_material": 0,
+            "total_ciudadanos": 0,
+            "total_gestores": 0,
+            "total_administradores": 0,
+            "total_usuarios_activos": 0,
+            "total_usuarios_inactivos": 0,
+            "total_publicaciones_activas": 0,
+            "total_publicaciones_inactivas": 0,
+            "ultimas_publicaciones": [],
+            "ultimos_usuarios": [],
         }
 
-        # Conteos de apps siempre disponibles en la configuracion actual.
         try:
             resumen["total_usuarios"] = Usuario.objects.count()
             resumen["total_puntos_eca"] = PuntoECA.objects.count()
             resumen["total_materiales"] = Material.objects.count()
             resumen["total_categorias_materiales"] = CategoriaMaterial.objects.count()
             resumen["total_tipos_material"] = TipoMaterial.objects.count()
+            resumen["total_ciudadanos"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.CIUDADANO).count()
+            resumen["total_gestores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.GESTOR_ECA).count()
+            resumen["total_administradores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.ADMIN).count()
+            resumen["total_usuarios_activos"] = Usuario.objects.filter(is_active=True).count()
+            resumen["total_usuarios_inactivos"] = resumen["total_usuarios"] - resumen["total_usuarios_activos"]
+            ultimos_usuarios = Usuario.objects.order_by("-date_joined")[:5]
+            resumen["ultimos_usuarios"] = [
+                {
+                    "nombres": u.nombres,
+                    "apellidos": u.apellidos,
+                    "email": u.email,
+                    "tipo_usuario": u.get_tipo_usuario_display(),
+                    "is_active": u.is_active,
+                    "date_joined": u.date_joined,
+                }
+                for u in ultimos_usuarios
+            ]
         except Exception:
             return resumen
 
-        # Publicaciones puede estar deshabilitada en algunos entornos.
         try:
             from apps.publicaciones.models import Publicacion, CategoriaPublicacion
 
             resumen["total_publicaciones"] = Publicacion.objects.count()
             resumen["total_categorias_publicaciones"] = CategoriaPublicacion.objects.count()
+            resumen["total_publicaciones_activas"] = Publicacion.objects.filter(estado=cons.Estado.ACTIVO).count()
+            resumen["total_publicaciones_inactivas"] = resumen["total_publicaciones"] - resumen["total_publicaciones_activas"]
+            ultimas_pub = Publicacion.objects.select_related("categoria", "usuario").order_by("-fecha_creacion")[:5]
+            resumen["ultimas_publicaciones"] = [
+                {
+                    "titulo": p.titulo,
+                    "estado": p.estado,
+                    "categoria": p.categoria.nombre if p.categoria else None,
+                    "fecha_creacion": p.fecha_creacion,
+                    "usuario_nombre": f"{p.usuario.nombres} {p.usuario.apellidos}",
+                    "id": p.id,
+                }
+                for p in ultimas_pub
+            ]
         except Exception:
             return resumen
 
         return resumen
+
+    @staticmethod
+    def obtener_tendencia_usuarios(dias=30):
+        desde = timezone.now() - datetime.timedelta(days=dias)
+        usuarios = Usuario.objects.filter(date_joined__gte=desde)
+        dias_dict = {}
+        for i in range(dias):
+            fecha = (timezone.now() - datetime.timedelta(days=i)).date()
+            dias_dict[fecha.isoformat()] = 0
+        for u in usuarios:
+            d = u.date_joined.date()
+            if d.isoformat() in dias_dict:
+                dias_dict[d.isoformat()] += 1
+        fechas_ordenadas = sorted(dias_dict.keys())
+        return [{"date": f, "count": dias_dict[f]} for f in fechas_ordenadas]
+
+    @staticmethod
+    def obtener_distribucion_puntos_eca():
+        puntos = PuntoECA.objects.select_related("localidad").all()
+        dist = {}
+        for p in puntos:
+            nombre = p.localidad.nombre if p.localidad else "Sin localidad"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"localidad": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+
+    @staticmethod
+    def obtener_distribucion_materiales():
+        from django.db.models import Count
+        materiales = Material.objects.select_related("categoria").all()
+        dist = {}
+        for m in materiales:
+            nombre = m.categoria.nombre if m.categoria else "Sin categoría"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"categoria": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+
+    @staticmethod
+    def obtener_distribucion_usuarios_por_rol():
+        from django.db.models import Count
+        qs = Usuario.objects.values("tipo_usuario").annotate(count=Count("id"))
+        labels = dict(cons.TipoUsuario.choices)
+        return [
+            {"rol": i["tipo_usuario"], "display": labels.get(i["tipo_usuario"], i["tipo_usuario"]), "count": i["count"]}
+            for i in qs
+        ]
+
+    @staticmethod
+    def obtener_distribucion_usuarios_activos():
+        activos = Usuario.objects.filter(is_active=True).count()
+        inactivos = Usuario.objects.filter(is_active=False).count()
+        return [{"label": "Activos", "count": activos}, {"label": "Inactivos", "count": inactivos}]
+
+    @staticmethod
+    def obtener_distribucion_usuarios_por_localidad():
+        usuarios = Usuario.objects.select_related("localidad").all()
+        dist = {}
+        for u in usuarios:
+            nombre = u.localidad.nombre if u.localidad else "Sin localidad"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"localidad": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+
+    @staticmethod
+    def obtener_distribucion_publicaciones_por_estado():
+        try:
+            from apps.publicaciones.models import Publicacion
+            from django.db.models import Count
+            qs = Publicacion.objects.values("estado").annotate(count=Count("id"))
+            return [{"estado": i["estado"], "count": i["count"]} for i in qs]
+        except Exception:
+            return []
+
+    @staticmethod
+    def obtener_distribucion_publicaciones_por_categoria():
+        try:
+            from apps.publicaciones.models import Publicacion
+            pubs = Publicacion.objects.select_related("categoria").all()
+            dist = {}
+            for p in pubs:
+                nombre = p.categoria.tipo if p.categoria else "Sin categoría"
+                dist[nombre] = dist.get(nombre, 0) + 1
+            return [{"categoria": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+        except Exception:
+            return []
+
+    @staticmethod
+    def obtener_distribucion_publicaciones_destacadas():
+        try:
+            from apps.publicaciones.models import Publicacion
+            destacadas = Publicacion.objects.filter(destacado=True).count()
+            no_destacadas = Publicacion.objects.filter(destacado=False).count()
+            return [{"label": "Destacadas", "count": destacadas}, {"label": "No destacadas", "count": no_destacadas}]
+        except Exception:
+            return []
+
+    @staticmethod
+    def obtener_tendencia_publicaciones(dias=30):
+        try:
+            from apps.publicaciones.models import Publicacion
+            desde = timezone.now() - datetime.timedelta(days=dias)
+            pubs = Publicacion.objects.filter(fecha_creacion__gte=desde)
+            dias_dict = {}
+            for i in range(dias):
+                fecha = (timezone.now() - datetime.timedelta(days=i)).date()
+                dias_dict[fecha.isoformat()] = 0
+            for p in pubs:
+                d = p.fecha_creacion.date()
+                if d.isoformat() in dias_dict:
+                    dias_dict[d.isoformat()] += 1
+            fechas = sorted(dias_dict.keys())
+            return [{"date": f, "count": dias_dict[f]} for f in fechas]
+        except Exception:
+            return []
+
+    @staticmethod
+    def obtener_distribucion_puntos_eca_por_estado():
+        from django.db.models import Count
+        qs = PuntoECA.objects.values("estado").annotate(count=Count("id"))
+        return [{"estado": i["estado"], "count": i["count"]} for i in qs]
+
+    @staticmethod
+    def obtener_distribucion_puntos_eca_con_gestor():
+        con = PuntoECA.objects.filter(gestor_eca__isnull=False).count()
+        sin = PuntoECA.objects.filter(gestor_eca__isnull=True).count()
+        return [{"label": "Con gestor", "count": con}, {"label": "Sin gestor", "count": sin}]
+
+    @staticmethod
+    def obtener_distribucion_materiales_por_tipo():
+        materiales = Material.objects.select_related("tipo").all()
+        dist = {}
+        for m in materiales:
+            nombre = m.tipo.nombre if m.tipo else "Sin tipo"
+            dist[nombre] = dist.get(nombre, 0) + 1
+        return [{"tipo": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+
+    @staticmethod
+    def obtener_distribucion_materiales_por_estado():
+        from django.db.models import Count
+        qs = Material.objects.values("estado").annotate(count=Count("id"))
+        return [{"estado": i["estado"], "count": i["count"]} for i in qs]
+
+    @staticmethod
+    def obtener_distribucion_categorias_material_por_estado():
+        from django.db.models import Count
+        qs = CategoriaMaterial.objects.values("estado").annotate(count=Count("id"))
+        return [{"estado": i["estado"], "count": i["count"]} for i in qs]
+
+    @staticmethod
+    def obtener_distribucion_tipos_material_por_estado():
+        from django.db.models import Count
+        qs = TipoMaterial.objects.values("estado").annotate(count=Count("id"))
+        return [{"estado": i["estado"], "count": i["count"]} for i in qs]
+
+    @staticmethod
+    def obtener_distribucion_categorias_publicacion_por_tipo():
+        try:
+            from apps.publicaciones.models import CategoriaPublicacion
+            from django.db.models import Count
+            qs = CategoriaPublicacion.objects.values("tipo").annotate(count=Count("id"))
+            return [{"tipo": i["tipo"], "count": i["count"]} for i in qs]
+        except Exception:
+            return []
+
+    @staticmethod
+    def obtener_distribucion_categorias_publicacion_por_estado():
+        try:
+            from apps.publicaciones.models import CategoriaPublicacion
+            from django.db.models import Count
+            qs = CategoriaPublicacion.objects.values("estado").annotate(count=Count("id"))
+            return [{"estado": i["estado"], "count": i["count"]} for i in qs]
+        except Exception:
+            return []
 
 
 class AdminCatalogService:
@@ -206,32 +416,20 @@ class AdminCatalogService:
 
     @staticmethod
     def _tipos_publicacion_disponibles(excluir_categoria_id=None):
-        tipos = list(cons.TipoPublicacion.choices)
-        valores = {value for value, _ in tipos}
-
         try:
-            from apps.publicaciones.models import CategoriaPublicacion
+            from apps.publicaciones.models import TipoPublicacion
 
-            categorias = CategoriaPublicacion.objects.all()
+            tipos_qs = TipoPublicacion.objects.all()
             if excluir_categoria_id:
-                categorias = categorias.exclude(pk=excluir_categoria_id)
+                from apps.publicaciones.models import CategoriaPublicacion
 
-            nombres = (
-                categorias.exclude(nombre__isnull=True)
-                .exclude(nombre="")
-                .values_list("nombre", flat=True)
-                .distinct()
-                .order_by("nombre")
-            )
+                cat = CategoriaPublicacion.objects.filter(id=excluir_categoria_id).first()
+                if cat and cat.tipo:
+                    tipos_qs = tipos_qs.exclude(nombre=cat.tipo)
 
-            for nombre in nombres:
-                if nombre not in valores:
-                    tipos.append((nombre, nombre))
-                    valores.add(nombre)
+            return [(t.nombre, t.nombre) for t in tipos_qs.order_by("nombre")]
         except Exception:
-            return tipos
-
-        return tipos
+            return list(cons.TipoPublicacion.choices)
 
     @staticmethod
     @transaction.atomic
@@ -257,8 +455,12 @@ class AdminCatalogService:
             return error
         if CategoriaMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
             return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
+        tipo_id = (data.get("tipo_id") or "").strip()
+        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else None
+        if not tipo:
+            return {"ok": False, "errors": {"tipo_id": "Debe seleccionar un tipo de material."}, "message": "Debe seleccionar un tipo de material."}
         try:
-            obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
+            obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"], tipo=tipo)
             obj.full_clean()
             obj.save()
             return {"ok": True, "message": "Categoria de material creada correctamente."}
@@ -284,13 +486,30 @@ class AdminCatalogService:
         categoria = CategoriaMaterial.objects.filter(id=categoria_id).first() if categoria_id else None
         if categoria_id and not categoria:
             errores["categoria_id"] = "Categoría de material inválida."
+        if not categoria:
+            errores["categoria_id"] = "Debe seleccionar una categoría."
 
-        tipo_id = data.get("tipo_id")
-        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else None
-        if tipo_id and not tipo:
-            errores["tipo_id"] = "Tipo de material inválido."
+        tipo = categoria.tipo if categoria else None
 
         return nombre, descripcion, estado, categoria, tipo, errores
+
+    @staticmethod
+    def _resolver_categoria_material(categoria_id):
+        if not categoria_id:
+            return None
+        categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
+        if not categoria:
+            raise ValueError("Categoría de material inválida.")
+        return categoria
+
+    @staticmethod
+    def _resolver_tipo_material(tipo_id):
+        if not tipo_id:
+            return None
+        tipo = TipoMaterial.objects.filter(id=tipo_id).first()
+        if not tipo:
+            raise ValueError(TIPO_MATERIAL_INVALIDO_MSG)
+        return tipo
 
     @staticmethod
     @transaction.atomic
@@ -302,6 +521,8 @@ class AdminCatalogService:
             return {"ok": False, "message": msg, "errors": errores}
 
         try:
+            categoria = AdminCatalogService._resolver_categoria_material(data.get("categoria_id"))
+            tipo = categoria.tipo if categoria else AdminCatalogService._resolver_tipo_material(data.get("tipo_id"))
             obj = Material(nombre=nombre, descripcion=descripcion, estado=estado,
                            categoria=categoria, tipo=tipo)
             if files and "imagen" in files:
@@ -338,16 +559,15 @@ class AdminCatalogService:
         nombre = data.get("nombre", "").strip()
         descripcion = data.get("descripcion", "").strip()
         tipo = data.get("tipo", "").strip()
-        tipo_otro = data.get("tipo_otro", "").strip()
         estado = data.get("estado", "").strip().upper()
-
-        if tipo == "__otro__":
-            tipo = tipo_otro
 
         if not tipo:
             return None, {"ok": False, "errors": {"tipo": TIPO_OBLIGATORIO_MSG}, "message": TIPO_OBLIGATORIO_MSG}
         if len(tipo) > 30:
             return None, {"ok": False, "errors": {"tipo": TIPO_MAX_30_MSG}, "message": TIPO_MAX_30_MSG}
+        tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
+        if tipo not in tipos_validos:
+            return None, {"ok": False, "errors": {"tipo": TIPO_CATEGORIA_INVALIDO_MSG}, "message": TIPO_CATEGORIA_INVALIDO_MSG}
 
         if estado not in {value for value, _ in cons.Estado.choices}:
             return None, {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
@@ -372,7 +592,6 @@ class AdminCatalogService:
         except Exception:
             return {"ok": False, "message": PUBLICACIONES_NO_HABILITADAS_MSG}
 
-        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
 
         payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
@@ -381,10 +600,7 @@ class AdminCatalogService:
 
         try:
             obj = CategoriaPublicacion(**payload)
-            if payload["tipo"] in tipos_base:
-                obj.full_clean()
-            else:
-                obj.clean_fields(exclude=["tipo"])
+            obj.full_clean()
             obj.save()
             return {"ok": True, "message": "Categoria de publicacion creada correctamente."}
         except (ValidationError, IntegrityError) as e:
@@ -424,6 +640,61 @@ class AdminCatalogService:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
+    @staticmethod
+    def _validar_tipo_publicacion_common(data, exclude_id=None):
+        nombre = (data.get("nombre") or "").strip()
+        descripcion = (data.get("descripcion") or "").strip() or None
+        estado = (data.get("estado") or "").strip().upper()
+        if not nombre:
+            return None, {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
+        if len(nombre) < 3:
+            return None, {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
+        if not NOMBRE_REGEX.search(nombre):
+            return None, {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
+        estados_validos = {value for value, _ in cons.Estado.choices}
+        if estado not in estados_validos:
+            return None, {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
+        from apps.publicaciones.models import TipoPublicacion
+        qs = TipoPublicacion.objects.filter(nombre__iexact=nombre)
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+        if qs.exists():
+            return None, {"ok": False, "errors": {"nombre": TIPO_DUPLICADO_MSG}, "message": TIPO_DUPLICADO_MSG}
+        return {"nombre": nombre, "descripcion": descripcion, "estado": estado}, None
+
+    @staticmethod
+    def crear_tipo_publicacion(data):
+        campos, error = AdminCatalogService._validar_tipo_publicacion_common(data)
+        if error:
+            return error
+        from apps.publicaciones.models import TipoPublicacion
+        try:
+            obj = TipoPublicacion(**campos)
+            obj.full_clean()
+            obj.save()
+            return {"ok": True, "message": "Tipo de publicación creado correctamente."}
+        except (ValidationError, IntegrityError) as e:
+            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
+
+    @staticmethod
+    def actualizar_tipo_publicacion(tipo_id, data):
+        from apps.publicaciones.models import TipoPublicacion
+        tipo = TipoPublicacion.objects.filter(id=tipo_id).first()
+        if not tipo:
+            return {"ok": False, "errors": {"_general": RECURSO_NO_ENCONTRADO_MSG}, "message": RECURSO_NO_ENCONTRADO_MSG}
+        campos, error = AdminCatalogService._validar_tipo_publicacion_common(data, exclude_id=tipo_id)
+        if error:
+            return error
+        try:
+            for key, val in campos.items():
+                setattr(tipo, key, val)
+            tipo.full_clean()
+            tipo.save()
+            return {"ok": True, "message": "Tipo de publicación actualizado correctamente."}
+        except (ValidationError, IntegrityError) as e:
+            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+
+    @staticmethod
     @transaction.atomic
     def actualizar_categoria_material(categoria_id, data):
         categoria = CategoriaMaterial.objects.filter(id=categoria_id).first()
@@ -446,10 +717,15 @@ class AdminCatalogService:
         if CategoriaMaterial.objects.filter(nombre__iexact=nombre).exclude(id=categoria_id).exists():
             return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
 
+        tipo_id = (data.get("tipo_id") or "").strip()
+        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else categoria.tipo
+        if tipo_id and not tipo:
+            return {"ok": False, "errors": {"tipo_id": TIPO_MATERIAL_INVALIDO_MSG}, "message": TIPO_MATERIAL_INVALIDO_MSG}
         try:
             categoria.nombre = nombre
             categoria.descripcion = descripcion
             categoria.estado = estado
+            categoria.tipo = tipo
             categoria.full_clean()
             categoria.save()
             return {"ok": True, "message": "Categoria de material actualizada correctamente."}
@@ -473,7 +749,7 @@ class AdminCatalogService:
             material.descripcion = (data.get("descripcion") or "").strip() or None
             material.estado = (data.get("estado") or "").strip().upper()
             material.categoria = categoria
-            material.tipo = tipo
+            material.tipo = categoria.tipo if categoria else tipo
 
             if files and "imagen" in files:
                 material.imagen = files["imagen"]
@@ -496,7 +772,6 @@ class AdminCatalogService:
         punto.descripcion = data.get("descripcion", "").strip()
         punto.sitio_web = data.get("sitio_web", "").strip()
         punto.logo_url_punto = data.get("logo_url_punto", "").strip()
-        punto.foto_url_punto = data.get("foto_url_punto", "").strip()
         punto.estado = estado
 
         latitud = data.get("latitud")
@@ -510,32 +785,9 @@ class AdminCatalogService:
             punto.localidad = localidad
 
     @staticmethod
-    def _actualizar_gestor_punto_eca(gestor, data):
-        gestor_nombres = (data.get("gestor_nombres") or "").strip()
-        if gestor_nombres:
-            gestor.nombres = gestor_nombres
-        gestor_apellidos = (data.get("gestor_apellidos") or "").strip()
-        if gestor_apellidos:
-            gestor.apellidos = gestor_apellidos
-        gestor_email = (data.get("gestor_email") or "").strip()
-        if gestor_email:
-            gestor.email = gestor_email
-        gestor_tipo_doc = (data.get("gestor_tipo_documento") or "").strip()
-        if gestor_tipo_doc:
-            gestor.tipo_documento = gestor_tipo_doc
-        gestor_num_doc = (data.get("gestor_numero_documento") or "").strip()
-        if gestor_num_doc:
-            gestor.numero_documento = gestor_num_doc
-        gestor_password = data.get("gestor_password", "")
-        if gestor_password:
-            gestor.set_password(gestor_password)
-        gestor.full_clean()
-        gestor.save()
-
-    @staticmethod
     @transaction.atomic
     def actualizar_punto_eca(punto_id, data):
-        punto = PuntoECA.objects.select_related("gestor_eca").filter(id=punto_id).first()
+        punto = PuntoECA.objects.filter(id=punto_id).first()
         if not punto:
             return {"ok": False, "errors": {"_general": "Punto ECA no encontrado."}, "message": "Punto ECA no encontrado."}
 
@@ -545,8 +797,6 @@ class AdminCatalogService:
 
         try:
             AdminCatalogService._aplicar_campos_punto_eca(punto, data, estado)
-            if punto.gestor_eca:
-                AdminCatalogService._actualizar_gestor_punto_eca(punto.gestor_eca, data)
             punto.full_clean()
             punto.save()
             return {"ok": True, "message": "Punto ECA actualizado correctamente."}
@@ -555,7 +805,6 @@ class AdminCatalogService:
                 return {"ok": False, "errors": {"_general": str(e)}, "message": f"No se pudo actualizar: {e}"}
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
-    @staticmethod
     @staticmethod
     def _validar_publicacion_existente(publicacion_id):
         from apps.publicaciones.models import Publicacion
@@ -676,6 +925,33 @@ class AdminCatalogService:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
+    def _validar_tipo_categoria_publicacion(tipo):
+        if not tipo:
+            return "Debe seleccionar un tipo de publicación."
+        if len(tipo) > 30:
+            return "El tipo no puede superar 30 caracteres."
+        tipos_validos = {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()}
+        if tipo not in tipos_validos:
+            return TIPO_CATEGORIA_INVALIDO_MSG
+        return None
+
+    @staticmethod
+    def _asignar_campos_categoria_publicacion(categoria, nombre, descripcion):
+        from apps.publicaciones.models import CategoriaPublicacion
+        campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
+        if "nombre" in campos_modelo:
+            if not nombre:
+                return "El nombre de la categoría es obligatorio."
+            if len(nombre) > 30:
+                return "El nombre no puede exceder 30 caracteres."
+            categoria.nombre = nombre
+        if "descripcion" in campos_modelo:
+            if len(descripcion) > 500:
+                return "La descripción no puede exceder 500 caracteres."
+            categoria.descripcion = descripcion
+        return None
+
+    @staticmethod
     @transaction.atomic
     def actualizar_categoria_publicacion(categoria_id, data):
         try:
@@ -687,16 +963,11 @@ class AdminCatalogService:
         if not categoria:
             return {"ok": False, "errors": {"_general": "Categoria de publicacion no encontrada."}, "message": "Categoria de publicacion no encontrada."}
 
-        tipo_otro = (data.get("tipo_otro") or "").strip()
-        tipos_base = {value for value, _ in cons.TipoPublicacion.choices}
         campos_modelo = {f.name for f in CategoriaPublicacion._meta.fields}
 
         payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
         if error:
             return error
-
-        if payload["tipo"] not in {value for value, _ in AdminCatalogService._tipos_publicacion_disponibles()} and payload["tipo"] != tipo_otro:
-            return {"ok": False, "errors": {"tipo": "Tipo de categoria invalido."}, "message": "Tipo de categoria invalido."}
 
         try:
             if "nombre" in campos_modelo and "nombre" in payload:
@@ -705,10 +976,7 @@ class AdminCatalogService:
                 categoria.descripcion = payload["descripcion"]
             categoria.tipo = payload["tipo"]
             categoria.estado = payload["estado"]
-            if payload["tipo"] in tipos_base:
-                categoria.full_clean()
-            else:
-                categoria.clean_fields(exclude=["tipo"])
+            categoria.full_clean()
             categoria.save()
             return {"ok": True, "message": "Categoria de publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:

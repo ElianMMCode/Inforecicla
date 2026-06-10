@@ -7,40 +7,104 @@
     <title>{% block page_title %}Panel de Administración - InfoRecicla{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" integrity="sha384-Bk5cbLkZQ5raZ0+H2/+VbfYx3WpvxvQK4zqXZr7sYODuaX7bKXoSOnipQxkaS8sv" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/resumen.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/select2/css/select2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/select2/bootstrap-5-theme/select2-bootstrap-5-theme.min.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
     {% block extra_head %}{% endblock %}
     <style>
-        .admin-shell { min-height: 100vh; }
         .admin-main { min-width: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .bg-success { background-color: #145c3a !important; }
+        .text-success { color: #145c3a !important; }
         {% block extra_styles %}{% endblock %}
     </style>
 </head>
 <body class="{% block body_class %}bg-light{% endblock %}">
 
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active=active %}{% endblock %}
-
-<main class="col offset-md-2 p-4 admin-main">
-    {% block messages %}
-    {% if messages %}
-    <div class="mb-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="d-flex min-vh-100">
+    <nav class="sidebar sidebar-nav bg-success text-white p-3 d-none d-md-flex flex-column">
+        {% include "admin/partials/sidebar.html" %}
+    </nav>
+    <div class="offcanvas offcanvas-start sidebar-offcanvas bg-success text-white" tabindex="-1" id="sidebarOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">InfoRecicla</h5>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
         </div>
-        {% endfor %}
+        <div class="offcanvas-body p-0">
+            {% include "admin/partials/sidebar.html" %}
+        </div>
     </div>
-    {% endif %}
-    {% endblock %}
 
-    {% block content %}{% endblock %}
-</main>
+    <div class="flex-grow-1 d-flex flex-column" style="min-width:0;">
+        <div class="d-md-none d-flex align-items-center bg-success px-3 py-2 shadow position-sticky top-0" style="z-index:1045;">
+            <button class="btn btn-link text-white px-0 me-3" style="font-size:1.8rem;" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Abrir menú">
+                <i class="bi bi-list"></i>
+            </button>
+            <img src="{% static 'img/logo.png' %}" alt="Logo" width="40" height="40" class="rounded me-2"/>
+            <span class="fw-semibold">InfoRecicla</span>
+        </div>
+
+        {% block admin_header %}{% endblock %}
+
+        <main class="p-4 admin-main flex-grow-1">
+            {% block messages %}
+            {% if messages %}
+            <div class="mb-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endblock %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
 
 {% block extra_modals %}{% endblock %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.js" integrity="sha384-4W8gMhOYqk0FPg9sAMkb3g/P2fXtzbUyDUUgMlA1EEig8z/U/13EYUjErc1H382b" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"
     integrity="sha384-nLoOnA/BDh8A/jxqtckg4DumuCGOBYUnNJLZdQz/zfYNp3wcjGSoWTAzgko06G/2"
     crossorigin="anonymous"></script>
+<script src="{% static 'vendor/jquery/jquery-3.6.0.min.js' %}"></script>
+<script src="{% static 'vendor/select2/js/select2.min.js' %}"></script>
+<script src="{% static 'vendor/select2/js/i18n/es.js' %}"></script>
+<script src="{% static 'js/admin/charts-helper.js' %}"></script>
+<script src="{% static 'js/admin/panel-tables.js' %}"></script>
+<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+document.addEventListener('click', function(e) {
+    var link = e.target.closest('a.export-link');
+    if (!link) { return; }
+    e.preventDefault();
+    var baseUrl = link.getAttribute('data-export-base');
+    var filterStr = link.getAttribute('data-export-filters') || '';
+    var params = new URLSearchParams();
+    if (filterStr) {
+        filterStr.split(',').forEach(function(pair) {
+            var parts = pair.split(':');
+            if (parts.length === 2) {
+                var el = document.getElementById(parts[1]);
+                if (el && el.value) { params.set(parts[0], el.value); }
+            }
+        });
+    }
+    var qs = params.toString();
+    window.location.href = qs ? baseUrl + '?' + qs : baseUrl;
+});
+</script>
+<style>
+    .select2-container--bootstrap-5 .select2-dropdown { z-index: 2000 !important; }
+    .select2-container--bootstrap-5.select2-container--open { z-index: 2001 !important; }
+</style>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

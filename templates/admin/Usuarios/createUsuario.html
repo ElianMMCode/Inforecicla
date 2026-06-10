@@ -1,41 +1,78 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 
 {% block page_title %}Nuevo Usuario - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="usuarios" %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" integrity="sha384-b8ANgTJvdlAnWM5YGMpKn7Kodm+1k7NYNG9zdjTCcZcKatzYHwZ0RLdWarbJJVzU" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js" integrity="sha384-u5N8qJeJOO2iqNjIKTdl6KeKsEikMAmCUBPc6sC6uGpgL34aPJ4VgNhuhumedpEk" crossorigin="anonymous"></script>
+{% endblock %}
+
 {% block content %}
-  <div class="mb-4 d-flex justify-content-between align-items-center">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-person-plus me-2"></i>Nuevo Usuario</h1>
-      <p class="text-muted mb-0">Crea un nuevo usuario en el sistema.</p>
-    </div>
-    <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Volver
-    </a>
+<style>
+.usuario-section { display: none; }
+.usuario-section.visible { display: block; }
+#mapa-crear-usuario { height: 280px; border-radius: 8px; border: 2px solid #dee2e6; z-index: 1; }
+</style>
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-person-plus me-2"></i>Nuevo Usuario</h1>
+    <p class="text-muted mb-0">Crea un nuevo usuario en el sistema.</p>
   </div>
+  <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Volver
+  </a>
+</div>
 
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-success text-white"><i class="bi bi-person me-1"></i> Formulario</div>
-    <div class="card-body p-4">
-      <form method="post" id="createUserForm" class="needs-validation" novalidate>
-        {% csrf_token %}
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-success text-white"><i class="bi bi-person me-1"></i> Formulario</div>
+  <div class="card-body p-4">
+    <form method="post" id="createUserForm" class="needs-validation" novalidate>
+      {% csrf_token %}
 
+      <!-- TIPO DE USUARIO -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label for="createUserTipoUsuario" class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span></label>
+          <select id="createUserTipoUsuario" name="tipo_usuario" class="form-select" required>
+            {% for val, label in tipos_usuario %}
+              <option value="{{ val }}" {% if form_data.tipo_usuario == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Selecciona un tipo de usuario.</div>
+        </div>
+      </div>
+
+      <hr class="my-3">
+
+      <!-- DATOS PERSONALES -->
+      <div class="usuario-section visible" id="sec-datos">
+        <h6 class="fw-bold text-success mb-3"><i class="bi bi-person me-2"></i>Datos personales</h6>
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label for="createUserNombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span></label>
+            <label for="createUserNombres" class="form-label fw-semibold">
+              <span id="label-nombres">Nombres</span> <span class="text-danger">*</span>
+            </label>
             <input id="createUserNombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
                    value="{{ form_data.nombres|default:'' }}" placeholder="Nombres" autocomplete="given-name">
             <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras, espacios, guiones o apóstrofes.</div>
           </div>
           <div class="col-md-6">
-            <label for="createUserApellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span></label>
+            <label for="createUserApellidos" class="form-label fw-semibold">
+              <span id="label-apellidos">Apellidos</span> <span class="text-danger">*</span>
+            </label>
             <input id="createUserApellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
                    value="{{ form_data.apellidos|default:'' }}" placeholder="Apellidos" autocomplete="family-name">
             <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras, espacios, guiones o apóstrofes.</div>
           </div>
         </div>
+      </div>
 
+      <!-- CONTACTO -->
+      <div class="usuario-section visible" id="sec-contacto">
+        <h6 class="fw-bold text-success mb-3 mt-4"><i class="bi bi-envelope me-2"></i>Contacto</h6>
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="createUserEmail" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
@@ -51,11 +88,15 @@
             <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
           </div>
         </div>
+      </div>
 
+      <!-- DOCUMENTO (Admin: requerido, Gestor ECA: opcional) -->
+      <div class="usuario-section" id="sec-documento">
+        <h6 class="fw-bold text-success mb-3 mt-4"><i class="bi bi-card-text me-2"></i>Documento</h6>
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label for="createUserTipoDocumento" class="form-label fw-semibold">Tipo de Documento <span class="text-danger">*</span></label>
-            <select id="createUserTipoDocumento" name="tipoDocumento" class="form-select" required>
+            <label for="createUserTipoDocumento" class="form-label fw-semibold">Tipo de Documento</label>
+            <select id="createUserTipoDocumento" name="tipoDocumento" class="form-select">
               <option value="">Seleccionar...</option>
               {% for val, label in tipos_documento %}
                 <option value="{{ val }}" {% if form_data.tipoDocumento == val %}selected{% endif %}>{{ label }}</option>
@@ -64,15 +105,19 @@
             <div class="invalid-feedback">Selecciona un tipo de documento.</div>
           </div>
           <div class="col-md-6">
-            <label for="createUserNumeroDocumento" class="form-label fw-semibold">Número de Documento <span class="text-danger">*</span></label>
-            <input id="createUserNumeroDocumento" type="text" name="numeroDocumento" class="form-control" required minlength="6" maxlength="20" inputmode="numeric"
+            <label for="createUserNumeroDocumento" class="form-label fw-semibold">Número de Documento</label>
+            <input id="createUserNumeroDocumento" type="text" name="numeroDocumento" class="form-control" minlength="6" maxlength="20" inputmode="numeric"
                    value="{{ form_data.numeroDocumento|default:'' }}" placeholder="1234567890">
             <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos, sin letras ni caracteres especiales.</div>
           </div>
         </div>
+      </div>
 
+      <!-- UBICACIÓN (Admin y Gestor ECA) -->
+      <div class="usuario-section" id="sec-ubicacion">
+        <h6 class="fw-bold text-success mb-3 mt-4"><i class="bi bi-geo-alt me-2"></i>Ubicación</h6>
         <div class="row g-3 mb-3">
-          <div class="col-md-6">
+          <div class="col-md-6" id="wrapper-ciudad">
             <label for="createUserCiudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
             <input id="createUserCiudad" type="text" name="ciudad" class="form-control" value="Bogotá" readonly aria-readonly="true">
             <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
@@ -91,27 +136,35 @@
             <div class="invalid-feedback">Selecciona una localidad.</div>
           </div>
         </div>
+        <div id="wrapper-mapa" class="mb-3" style="display:none;">
+          <label for="mapa-crear-usuario" class="form-label fw-semibold">Ubica tu Punto ECA en el mapa</label>
+          <div class="map-info small text-muted mb-2">
+            <i class="bi bi-info-circle me-1"></i> Haz clic en el mapa para seleccionar coordenadas.
+          </div>
+          <div id="mapa-crear-usuario"></div>
+          <input type="hidden" id="latitud" name="latitud" value="{{ form_data.latitud|default:'' }}">
+          <input type="hidden" id="longitud" name="longitud" value="{{ form_data.longitud|default:'' }}">
+        </div>
+      </div>
 
+      <!-- FECHA DE NACIMIENTO (Admin, opcional) -->
+      <div class="usuario-section" id="sec-fecha">
+        <h6 class="fw-bold text-success mb-3 mt-4"><i class="bi bi-calendar me-2"></i>Información adicional</h6>
         <div class="row g-3 mb-3">
           <div class="col-md-6">
             <label for="createUserFechaNacimiento" class="form-label fw-semibold">Fecha de Nacimiento</label>
             <input id="createUserFechaNacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA"
                    value="{{ form_data.fechaNacimiento|default:'' }}">
-             <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 a\u00f1os.</div>
-          </div>
-          <div class="col-md-6">
-            <label for="createUserTipoUsuario" class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span></label>
-            <select id="createUserTipoUsuario" name="tipo_usuario" class="form-select" required>
-              {% for val, label in tipos_usuario %}
-                <option value="{{ val }}" {% if form_data.tipo_usuario == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-            <div class="invalid-feedback">Selecciona un tipo de usuario.</div>
+            <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 años.</div>
           </div>
         </div>
+      </div>
 
-        <hr class="my-3">
+      <hr class="my-3">
 
+      <!-- CONTRASEÑA -->
+      <div class="usuario-section visible" id="sec-password">
+        <h6 class="fw-bold text-success mb-3"><i class="bi bi-lock me-2"></i>Contraseña</h6>
         <div class="row g-3 mb-4">
           <div class="col-md-6">
             <label for="createUserPassword" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
@@ -148,26 +201,24 @@
           </ul>
           <div id="mensajeCoincidencia" class="mt-2 small"></div>
         </div>
+      </div>
 
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-person-check me-1"></i> Crear Usuario
-          </button>
-          <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-secondary">Cancelar</a>
-        </div>
-      </form>
-    </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-person-check me-1"></i> Crear Usuario
+        </button>
+        <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-outline-secondary">Cancelar</a>
+      </div>
+    </form>
   </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 {% if errores %}
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    if (typeof Swal === "undefined") {
-      return;
-    }
-
+    if (typeof Swal === "undefined") return;
     Swal.fire({
       icon: "error",
       title: "Revisa los campos",

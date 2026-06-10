@@ -6,11 +6,12 @@ app_name = "publicacion"
 urlpatterns = [
     path("", views.panel_publicaciones, name="publicaciones"),
     path("panel/", views.panel_publicaciones, name="panel_publicaciones"),
-    path("ajax/cards/", views.panel_publicaciones_ajax, name="ajax_cards"),
     path("<uuid:publicacion_id>/", views.publicacion, name="detalle_publicacion"),
     path("<uuid:publicacion_id>/comentar/", views.agregar_comentario, name="agregar_comentario"),
     path("<uuid:publicacion_id>/votar/", views.votar_publicacion, name="votar_publicacion"),
     path("<uuid:publicacion_id>/guardar/", views.toggle_guardado, name="toggle_guardado"),
+    path("notificacion/<int:notificacion_id>/abrir/", views.abrir_notificacion, name="abrir_notificacion"),
+    path("notificacion/<int:notificacion_id>/eliminar/", views.eliminar_notificacion, name="eliminar_notificacion"),
     path("comentario/<uuid:comentario_id>/editar/", views.editar_comentario, name="editar_comentario"),
     path("comentario/<uuid:comentario_id>/eliminar/", views.eliminar_comentario, name="eliminar_comentario"),
 ]

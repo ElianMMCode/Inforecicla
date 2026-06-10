@@ -5,3 +5,6 @@ class InventoryConfig(AppConfig):
     name = "apps.inventory"
     default_auto_field = "django.db.models.BigAutoField"
     label = "inventory"
+
+    def ready(self):
+        import apps.inventory.signals  # pyright: ignore[]

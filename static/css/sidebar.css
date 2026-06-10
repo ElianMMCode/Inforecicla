@@ -134,6 +134,38 @@
     }
 }
 
+/* En offcanvas mobile, mostrar siempre los dropdowns expandidos */
+.sidebar-offcanvas .sidebar-dropdown > .dropdown-menu {
+    display: block !important;
+    position: static !important;
+    max-height: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    border: 0 !important;
+    float: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+}
+.sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-item {
+    color: #fff !important;
+    background: transparent;
+    padding-left: 36px;
+    font-size: 0.9rem;
+    white-space: normal;
+    line-height: 1.25;
+}
+.sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-item:hover,
+.sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-item:focus {
+    color: #0f5132 !important;
+    background: #fff !important;
+}
+.sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-divider {
+    border-color: rgba(255, 255, 255, 0.25);
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
 /* Scroll offset para anchors de subseccion */
 .scroll-anchor-offset {
     scroll-margin-top: 40px;

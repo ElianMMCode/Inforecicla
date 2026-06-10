@@ -7,6 +7,17 @@ from config.base_models import CreacionModificacionModel, DescripcionModel
 
 
 ##########################################################
+class TipoPublicacion(DescripcionModel):
+    class Meta(DescripcionModel.Meta):
+        verbose_name = "Tipo de publicación"
+        verbose_name_plural = "Tipos de publicación"
+        db_table = "tipo_publicacion"
+
+    def __str__(self):
+        return self.nombre
+
+
+##########################################################
 class CategoriaPublicacion(DescripcionModel):
     tipo = models.CharField(
         max_length=30,
@@ -165,3 +176,40 @@ class Guardados(CreacionModificacionModel):
         verbose_name_plural = "Guardados"
         db_table = "tb_guardados"
         unique_together = ['usuario', 'publicacion']
+
+
+######################################################################
+class Notificacion(models.Model):
+    usuario = models.ForeignKey(
+        Usuario, on_delete=models.CASCADE, related_name="notificaciones"
+    )
+
+    publicacion = models.ForeignKey(
+        Publicacion, on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
+    )
+
+    mensaje = models.ForeignKey(
+        "chat.Mensaje", on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
+    )
+
+    inventario = models.ForeignKey(
+        "inventory.Inventario", on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
+    )
+
+    evento_instancia = models.ForeignKey(
+        "scheduling.EventoInstancia", on_delete=models.CASCADE, related_name="notificaciones",
+        null=True, blank=True,
+    )
+
+    leido = models.BooleanField(default=False)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Notificacion"
+        verbose_name_plural = "Notificaciones"
+        db_table = "notificacion"
+        ordering = ["-fecha_creacion"]

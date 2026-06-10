@@ -163,7 +163,59 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     else:
         context = _build_default_context(punto, seccion)
 
+    _add_notificacion_context(punto, request.user, context)
     return render(request, "ecas/puntoECA-layout.html", context)
+
+
+def _check_upcoming_event_notifications(punto, usuario):
+    """Crea notificaciones para eventos que ocurren en las próximas 24 horas si aún no existen."""
+    from apps.scheduling.models import EventoInstancia
+    from apps.publicaciones.models import Notificacion
+    from apps.core.notificaciones import enviar_notificacion_realtime
+    from datetime import timedelta
+
+    ahora = timezone.now()
+    limite = ahora + timedelta(hours=24)
+
+    proximos = EventoInstancia.objects.filter(
+        punto_eca=punto,
+        fecha_inicio__gte=ahora,
+        fecha_inicio__lte=limite,
+        es_completado=False,
+    ).select_related("evento_base")
+
+    for instancia in proximos:
+        notif, created = Notificacion.objects.get_or_create(
+            usuario=usuario,
+            evento_instancia=instancia,
+            defaults={"leido": False},
+        )
+        if created:
+            enviar_notificacion_realtime(usuario.pk, {
+                "id": notif.pk,
+                "tipo": "evento",
+                "titulo": f"Evento próximo: {instancia.evento_base.titulo} — {instancia.fecha_inicio.strftime('%d/%m/%Y %H:%M')}",
+                "fecha": notif.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                "url": f"/publicaciones/notificacion/{notif.pk}/abrir/",
+            })
+
+
+def _add_notificacion_context(punto, usuario, context):
+    from apps.publicaciones.models import Notificacion
+
+    _check_upcoming_event_notifications(punto, usuario)
+    context["mis_notificaciones"] = (
+        Notificacion.objects.filter(usuario=usuario)
+        .select_related(
+            "inventario__material",
+            "evento_instancia__evento_base",
+            "mensaje__chat__ciudadano",
+        )
+        .order_by("-fecha_creacion")[:20]
+    )
+    context["notificaciones_no_leidas"] = Notificacion.objects.filter(
+        usuario=usuario, leido=False
+    ).count()
 
 
 def _build_perfil_context(punto, perfil_tab="punto"):

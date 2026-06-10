@@ -219,6 +219,17 @@
             item.addEventListener('click', _chatClickHandler);
           });
         });
+
+        // Auto-abrir chat si viene ?chat_id=<id> desde la notificación
+        var urlParams = new URLSearchParams(location.search);
+        var autoOpenChatId = urlParams.get('chat_id');
+        if (autoOpenChatId && !currentChatIdEca) {
+          var chatItem = document.querySelector('[data-chat-id="' + autoOpenChatId + '"]');
+          if (chatItem) {
+            chatItem.click();
+            history.replaceState(null, '', '/punto-eca/mensajes/');
+          }
+        }
       })
       .catch(() => {
         ['chat-sidebar-eca', 'chat-sidebar-eca-mobile'].forEach(function(id) {
