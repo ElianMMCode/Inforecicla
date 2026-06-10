@@ -68,6 +68,7 @@
   justify-content: center;
   padding: 3rem 1.5rem;
   min-height: 320px;
+  background: linear-gradient(135deg, #198754, #146c43) !important;
 }
 .cta-benefits {
   padding: 2rem 1.5rem;
@@ -138,10 +139,10 @@
   padding: 1.5rem;
 }
 .flip-card-front {
-  background-color: #198754;
+  background: linear-gradient(135deg, #198754, #146c43);
 }
 .flip-card-back {
-  background-color: #198754;
+  background: linear-gradient(135deg, #146c43, #198754);
   color: #fff;
   transform: rotateY(180deg);
 }
