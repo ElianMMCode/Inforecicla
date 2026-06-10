@@ -99,6 +99,14 @@
   transform: translateY(0);
 }
 
+/* ─── Wave separators ──────────────────────────────────── */
+.section-wave {
+  display: block;
+  width: 100%;
+  height: 40px;
+  fill: #f8f9fa;
+}
+
 /* ─── Flip cards (How it works) ──────────────────────── */
 .flip-card {
   perspective: 1000px;
