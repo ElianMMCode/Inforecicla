@@ -113,7 +113,11 @@ document.addEventListener("DOMContentLoaded", function() {
   function actualizarEstadoCajaContrasena(cumpleTodo) {
     if (!passwordRequirementsBox) return;
     passwordRequirementsBox.classList.remove("alert-light", "alert-success", "border-success", "bg-success", "bg-opacity-10");
-    passwordRequirementsBox.classList.add(cumpleTodo ? "alert-success border-success bg-success bg-opacity-10" : "alert-light border");
+    if (cumpleTodo) {
+      passwordRequirementsBox.classList.add("alert-success", "border-success", "bg-success", "bg-opacity-10");
+    } else {
+      passwordRequirementsBox.classList.add("alert-light", "border");
+    }
   }
 
   function ejecutarValidacionesCrearUsuario() {
@@ -140,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   form.addEventListener("invalid", function(e) {
     e.preventDefault();
-    actualizarEstadoCampo(e.target);
+    e.target.classList.add("is-invalid");
   }, true);
 
   camposObligatorios.forEach(function(campo) {
