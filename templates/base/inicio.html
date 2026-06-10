@@ -316,8 +316,8 @@
               if (!entry.isIntersecting) return;
               const el = entry.target;
               obs.unobserve(el);
-              const raw = el.textContent.replace(/[^0-9]/g, '');
-              const target = parseInt(raw, 10);
+              const raw = el.textContent.replace(/\D/g, '');
+              const target = Number.parseInt(raw, 10);
               if (!target) return;
               const suffix = el.textContent.includes('+') ? '+' : '';
               let current = 0;
