@@ -206,7 +206,7 @@ AdminCharts.initAll([
   });
 
   initModalFormAjax('formCrearTipoPub', '{% url "panel_admin:listar_tipos_publicacion_admin" %}');
-  initModalFormAjax('formEditarTipoPub', window.location.href);
+  initModalFormAjax('formEditarTipoPub', globalThis.location.href);
 })();
 </script>
 {% include "admin/_messages_swal.html" %}
