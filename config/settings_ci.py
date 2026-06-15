@@ -26,3 +26,9 @@ DATABASES = {
         "NAME": Path(__file__).resolve().parent.parent / "ci_db.sqlite3",
     }
 }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
