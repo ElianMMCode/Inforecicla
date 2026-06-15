@@ -286,7 +286,7 @@ class RolRedireccionTests(TestCase):
             _LOGIN,
             {"email": "ciudadano@test.com", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu002_02_gestor_eca_redirige_a_punto_eca(self):
         """TC-CU00.2-02: tipo_usuario=GECA es redirigido a /punto-eca/ tras login."""

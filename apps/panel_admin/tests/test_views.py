@@ -256,13 +256,13 @@ class AdminViewsTestCase(TestCase):
         self.assertTemplateUsed(response, "admin/Usuarios/createUsuario.html")
         # Check for error messages in Spanish (actual messages from the view)
         self.assertContains(response, "El nombre debe tener al menos 3 caracteres")
-        self.assertContains(response, "Los apellidos deben tener al menos 3 caracteres")
+        self.assertContains(response, "El apellido debe tener al menos 3 caracteres")
         self.assertContains(
             response, "El celular debe iniciar con 3 y tener 10 dígitos"
         )
         # Instead of checking for exact error message which might vary,
         # let's check that we have error messages in the alert
-        self.assertContains(response, "Por favor corrige los siguientes errores:")
+        self.assertContains(response, "Revisa los campos")
 
     def test_crear_usuario_admin_duplicate_email(self):
         """Test creating a user with duplicate email"""

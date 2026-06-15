@@ -709,6 +709,9 @@ def _aplicar_datos_usuario_admin(usuario, data):
     usuario.apellidos = _normalizar_texto(data.get("apellidos"))
     usuario.email = _normalizar_texto(data.get("email")).lower()
     usuario.celular = _normalizar_texto(data.get("celular"))
+    ciudad = _normalizar_texto(data.get("ciudad"))
+    if ciudad:
+        usuario.ciudad = ciudad
     usuario.tipo_usuario = _normalizar_texto(data.get("tipo_usuario"), usuario.tipo_usuario).strip() or usuario.tipo_usuario
     usuario.tipo_documento = _normalizar_texto(data.get("tipoDocumento"), usuario.tipo_documento).strip() or usuario.tipo_documento
     usuario.numero_documento = _normalizar_texto(data.get("numeroDocumento"))
