@@ -36,7 +36,7 @@
 		const email = emailInput.value;
         const password = passwordInput.value;
         if (users[email] && password === users[email]) {
-          window.location.href = redirectMap[email];
+          globalThis.location.href = redirectMap[email];
         } else {
           errorDiv.style.display = 'block';
         }

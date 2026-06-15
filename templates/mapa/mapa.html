@@ -641,8 +641,8 @@
         <!-- Select2 JS -->
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3" crossorigin="anonymous"></script>
                 <script>
-                    window.MAPA_DEFAULT_LOGO_URL = "{% static 'img/logo.png' %}";
-                    window.MAPA_DEFAULT_FOTO_URL = "{% static 'img/eca-default.png' %}";
+                    globalThis.MAPA_DEFAULT_LOGO_URL = "{% static 'img/logo.png' %}";
+                    globalThis.MAPA_DEFAULT_FOTO_URL = "{% static 'img/eca-default.png' %}";
                 </script>
         <!-- JavaScript personalizado del mapa -->
         <script src="/static/js/Mapa/mapa-interactivo.js"></script>

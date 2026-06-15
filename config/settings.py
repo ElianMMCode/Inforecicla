@@ -30,7 +30,10 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False  
 
-ALLOWED_HOSTS = ['inforecicla.app', 'www.inforecicla.app', '127.0.0.1', 'localhost', '158.23.56.38']
+_allowed_extra = env("ALLOWED_HOST_EXTRA", default="")
+ALLOWED_HOSTS = ['inforecicla.app', 'www.inforecicla.app', '127.0.0.1', 'localhost']
+if _allowed_extra:
+    ALLOWED_HOSTS.append(_allowed_extra)
 
 CSRF_TRUSTED_ORIGINS = [
     'https://inforecicla.app',

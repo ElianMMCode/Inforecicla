@@ -3,12 +3,12 @@ from django.utils import timezone
 
 
 def convertir_fechas_naive(apps, schema_editor):
-    CompraInventario = apps.get_model("operations", "CompraInventario")
-    VentaInventario = apps.get_model("operations", "VentaInventario")
+    compra_inv_model = apps.get_model("operations", "CompraInventario")
+    venta_inv_model = apps.get_model("operations", "VentaInventario")
 
     for model, campo in [
-        (CompraInventario, "fecha_compra"),
-        (VentaInventario, "fecha_venta"),
+        (compra_inv_model, "fecha_compra"),
+        (venta_inv_model, "fecha_venta"),
     ]:
         for obj in model.objects.iterator():
             valor = getattr(obj, campo)
