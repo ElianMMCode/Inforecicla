@@ -41,9 +41,40 @@
                             <a href="/publicaciones/" class="btn btn-outline-success btn-lg">Ver Publicaciones</a>
                         </div>
                     </div>
-                    <div class="col-lg-5 text-center">
-                        <div class="hero-wrapper">
-                            <img src="{% static 'img/ParejaReciclando.png' %}" alt="Personas reciclando" class="img-fluid hero-img" loading="lazy">
+                    <div class="col-lg-5">
+                        <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
+                            <div class="carousel-indicators">
+                                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3" aria-label="Slide 4"></button>
+                                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="4" aria-label="Slide 5"></button>
+                            </div>
+                            <div class="carousel-inner rounded-4 shadow">
+                                <div class="carousel-item active">
+                                    <img src="{% static 'img/landing/bodega_con_empaques_de_reciclaje.jpg' %}" alt="Bodega con empaques de reciclaje" class="d-block w-100 hero-carousel-img" loading="lazy">
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="{% static 'img/landing/persona_separando_materiales.jpeg' %}" alt="Persona separando materiales" class="d-block w-100 hero-carousel-img" loading="lazy">
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="{% static 'img/landing/recicladora_separando_materiales.jpg' %}" alt="Recicladora separando materiales" class="d-block w-100 hero-carousel-img" loading="lazy">
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="{% static 'img/landing/persona_cargando_reciclaje.jpg' %}" alt="Persona cargando reciclaje" class="d-block w-100 hero-carousel-img" loading="lazy">
+                                </div>
+                                <div class="carousel-item">
+                                    <img src="{% static 'img/landing/bodega_reciclaje.jpg' %}" alt="Bodega de reciclaje" class="d-block w-100 hero-carousel-img" loading="lazy">
+                                </div>
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
                         </div>
                     </div>
                 </div>
