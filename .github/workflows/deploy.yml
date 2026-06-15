@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,7 +46,7 @@ jobs:
       - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
 
       - name: Transfer code to server via SCP
-        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -83,5 +86,6 @@ jobs:
             python manage.py migrate --noinput
             python manage.py collectstatic --noinput
             sudo systemctl reload nginx
+            sudo systemctl restart gunicorn
             sudo systemctl restart daphne
             echo "Deploy completed successfully."
