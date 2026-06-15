@@ -1,33 +1,77 @@
-/* ─── Hero ────────────────────────────────────────────── */
-.hero-wrapper {
+/* ─── Hero (full-width carousel with overlay) ────────── */
+.hero-fullwidth {
   position: relative;
-  display: inline-block;
+  width: 100%;
 }
-.hero-wrapper::before {
+.hero-carousel {
+  position: relative;
+}
+.hero-carousel .carousel-inner::after {
   content: '';
   position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-carousel-img {
+  height: calc(100vh - 90px);
+  min-height: 400px;
+  max-height: 700px;
+  object-fit: cover;
+  opacity: 0;
+  animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.hero-caption {
+  position: absolute;
+  z-index: 2;
   top: 50%;
   left: 50%;
-  width: 320px;
-  height: 320px;
   transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(25,135,84,0.08) 0%, transparent 70%);
-  pointer-events: none;
+  text-align: center;
+  width: 80%;
+  max-width: 800px;
+  padding: 0 1rem;
 }
-.hero-img {
-  max-width: 420px;
-  opacity: 0;
-  transform: scale(0.92);
-  animation: heroReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-             float 4s ease-in-out 0.8s infinite;
+.hero-caption h1 {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.hero-caption p {
+  color: #f0f0f0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.hero-caption .btn-outline-light {
+  border-width: 2px;
+}
+.hero-caption .btn-outline-light:hover {
+  background: #fff;
+  color: #198754;
+}
+.hero-carousel .carousel-control-prev,
+.hero-carousel .carousel-control-next {
+  z-index: 3;
+}
+.hero-carousel .carousel-indicators {
+  z-index: 3;
 }
 @keyframes heroReveal {
-  to { opacity: 1; transform: scale(1); }
+  to { opacity: 1; }
 }
-@keyframes float {
-  0%, 100% { transform: scale(1) translateY(0); }
-  50% { transform: scale(1) translateY(-8px); }
+
+@media (max-width: 576px) {
+  .hero-carousel-img { height: 60vh; min-height: 320px; }
+  .hero-caption { left: 5%; right: 5%; }
+  .hero-caption h1 { font-size: 1.5rem; }
+  .hero-caption p { font-size: 0.95rem; }
+}
+
+/* ─── Fixed navbar offset ──────────────────────────── */
+main {
+  padding-top: 90px;
 }
 
 /* ─── Animated cards (CTA bottom) ──────────────────── */
@@ -132,7 +176,7 @@
 /* ─── Flip cards (How it works) ──────────────────────── */
 .flip-card {
   perspective: 1000px;
-  height: 280px;
+  height: 320px;
   cursor: pointer;
   border: none;
   background: none;
@@ -143,6 +187,7 @@
   line-height: inherit;
   display: block;
   width: 100%;
+  text-decoration: none;
 }
 .flip-card-inner {
   position: relative;
@@ -177,12 +222,19 @@
   color: #fff;
   transform: rotateY(180deg);
 }
-.flip-card-img {
-  width: 100px;
-  height: 100px;
-  max-width: 90%;
-  object-fit: contain;
+.flip-card-icon-wrapper {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
   flex-shrink: 0;
+}
+.flip-card-icon-wrapper i {
+  font-size: 3.5rem;
+  color: #fff;
 }
 .flip-card-front h3 {
   margin-top: 0.75rem;
@@ -200,8 +252,9 @@
 }
 
 @media (max-width: 767.98px) {
-  .flip-card { height: 240px; }
-  .flip-card-img { width: 80px; height: 80px; }
+  .flip-card { height: 260px; }
+  .flip-card-icon-wrapper { width: 90px; height: 90px; }
+  .flip-card-icon-wrapper i { font-size: 2.5rem; }
   .flip-card-front h3 { font-size: 0.9rem; }
   .flip-card-back p { font-size: 0.8rem; }
 }
