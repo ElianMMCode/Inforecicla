@@ -108,6 +108,7 @@
                         <div class="col-md-6">
                             <div class="position-relative d-inline-block">
                                 <img id="previewLogoPunto" alt="Logo del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow bg-white" style="max-height: 150px; object-fit: contain" src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" data-original-src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" />
+                                <img id="previewLogoPunto" alt="Logo del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow bg-white" style="max-height: 150px; object-fit: contain" src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" onerror="this.onerror=null;this.src='{% static 'img/logo.png' %}';" />
                                 <button type="button" class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0" aria-label="Cambiar logo del punto" onclick="document.getElementById('inputLogoPunto').click()">
                                     <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
                                 </button>
@@ -121,6 +122,7 @@
                         <div class="col-md-6">
                             <div class="position-relative d-inline-block">
                                 <img id="previewFotoPunto" alt="Foto del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow" style="max-height: 150px; object-fit: cover" src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" data-original-src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" />
+                                <img id="previewFotoPunto" alt="Foto del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow" style="max-height: 150px; object-fit: cover" src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" onerror="this.onerror=null;this.src='{% static 'img/eca-default.png' %}';" />
                                 <button type="button" class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0" aria-label="Cambiar foto del punto" onclick="document.getElementById('inputFotoPunto').click()">
                                     <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
                                 </button>

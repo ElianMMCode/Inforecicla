@@ -60,7 +60,7 @@ def _attach_logo_to_msg(msg: EmailMultiAlternatives, logo_path: str, logo_cid: s
 
 
 def _get_site_url():
-    base_url = getattr(settings, "SITE_URL", "http://127.0.0.1:8000")
+    base_url = getattr(settings, "SITE_URL", "https://inforecicla.app/")
     return base_url.rstrip("/")
 
 

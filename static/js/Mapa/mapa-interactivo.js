@@ -506,29 +506,29 @@ class MapaInteractivo {
       const imgsContainer = document.getElementById("detalleImagenes");
       const logoImg = document.getElementById("detalleLogo");
       const fotoImg = document.getElementById("detalleFoto");
+      const defaultLogoUrl = window.MAPA_DEFAULT_LOGO_URL || "/static/img/logo.png";
+      const defaultFotoUrl = window.MAPA_DEFAULT_FOTO_URL || "/static/img/eca-default.png";
 
       const esPuntoPlataforma = (puntoId && !String(puntoId).startsWith("arcgis_")) || detalles?.source === "eca";
 
       const hasLogo = esPuntoPlataforma && this._tieneImagenReal(detalles.logoUrl);
       const hasFoto = esPuntoPlataforma && this._tieneImagenReal(detalles.fotoUrl);
+      const logoUrl = detalles.logoUrl?.toString().trim() || defaultLogoUrl;
+      const fotoUrl = detalles.fotoUrl?.toString().trim() || defaultFotoUrl;
 
-      if (hasLogo) {
-        logoImg.src = detalles.logoUrl;
+      if (esPuntoPlataforma) {
+        logoImg.src = logoUrl;
         logoImg.style.display = "inline-block";
+        fotoImg.src = fotoUrl;
+        fotoImg.style.display = "block";
+        imgsContainer.style.display = "block";
       } else {
         logoImg.src = "";
         logoImg.style.display = "none";
-      }
-
-      if (hasFoto) {
-        fotoImg.src = detalles.fotoUrl;
-        fotoImg.style.display = "block";
-      } else {
         fotoImg.src = "";
         fotoImg.style.display = "none";
+        imgsContainer.style.display = "none";
       }
-
-      imgsContainer.style.display = hasLogo || hasFoto ? "block" : "none";
     } catch (e) {
       console.warn("No se pudieron renderizar las imágenes del detalle:", e);
     }
