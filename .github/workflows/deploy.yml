@@ -82,5 +82,6 @@ jobs:
             pip install -r requirements.txt
             python manage.py migrate --noinput
             python manage.py collectstatic --noinput
+            sudo systemctl reload nginx
             sudo systemctl restart daphne
             echo "Deploy completed successfully."
