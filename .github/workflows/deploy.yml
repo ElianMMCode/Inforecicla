@@ -35,7 +35,35 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH — git pull + restart
+      - uses: actions/checkout@v4
+
+      - name: Transfer code to server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          source: '.'
+          target: /home/ubuntu/inforecicla_prod/Inforecicla
+          strip_components: 0
+          excludes: |
+            .env
+            .git/
+            .gitignore
+            .github/
+            .vscode/
+            .idea/
+            venv/
+            media/
+            staticfiles/
+            __pycache__/
+            *.pyc
+            *.pyo
+            django_errors.log
+            debug_*.py
+
+      - name: Post-deploy — migrations, static, restart
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -45,7 +73,6 @@ jobs:
           script: |
             set -e
             cd /home/ubuntu/inforecicla_prod/Inforecicla
-            git pull origin main
             source venv/bin/activate
             pip install -r requirements.txt
             python manage.py migrate --noinput
