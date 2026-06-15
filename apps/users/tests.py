@@ -149,7 +149,7 @@ class ValidarCredencialesTests(TestCase):
             numero_documento="7654321",
         )
         usuario.numero_documento = None
-        usuario.tipo_documento = None
+        usuario.tipo_documento = ""
         usuario.fecha_nacimiento = None
         usuario.localidad = None
         usuario.save(update_fields=["numero_documento", "tipo_documento", "fecha_nacimiento", "localidad"])
@@ -670,7 +670,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="María",
             apellidos="López",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )
@@ -693,7 +693,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="Carlos",
             apellidos="Rojas",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )
@@ -711,7 +711,7 @@ class RegistroCiudadanoTests(TestCase):
         usuario.refresh_from_db()
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(usuario.numero_documento)
-        self.assertIsNone(usuario.tipo_documento)
+        self.assertEqual(usuario.tipo_documento, "")
         self.assertIsNone(usuario.fecha_nacimiento)
         self.assertEqual(usuario.localidad_id, localidad.localidad_id)
         self.assertFalse(response.context["perfil_pendientes"]["localidad"])
@@ -727,7 +727,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="Laura",
             apellidos="Torres",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )
@@ -767,7 +767,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="Pedro",
             apellidos="Vega",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )
