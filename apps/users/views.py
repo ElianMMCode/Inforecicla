@@ -80,9 +80,9 @@ def perfil_incompleto(user):
 
 def _get_perfil_pendientes(user):
     return {
-        "documento": not bool(getattr(user, "tipo_documento", None)) or not bool(getattr(user, "numero_documento", None)),
+        "documento": not bool(getattr(user, "tipo_documento", "")) or not bool(getattr(user, "numero_documento", None)),
         "numero_documento": not bool(getattr(user, "numero_documento", None)),
-        "tipo_documento": not bool(getattr(user, "tipo_documento", None)),
+        "tipo_documento": not bool(getattr(user, "tipo_documento", "")),
         "localidad": not bool(getattr(user, "localidad", None)),
         "fecha_nacimiento": not bool(getattr(user, "fecha_nacimiento", None)),
     }
@@ -627,7 +627,7 @@ def _collect_registro_eca_fields(data):
         "apellidos": data.get("apellidos", "").strip(),
         # gestor email (login)
         "email": data.get("email", "").strip().lower(),
-        "tipo_documento": data.get("tipoDocumento") or None,
+        "tipo_documento": data.get("tipoDocumento", "").strip(),
         "numero_documento": data.get("numeroDocumento", "").strip(),
         "celular": data.get("celular", "").strip(),
         # Punto fields: most moved to step 2 (optional). Keep placeholders here

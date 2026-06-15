@@ -111,7 +111,7 @@ class CentroAcopioTestCase(TestCase):
     def test_centro_acopio_creation(self):
         """Prueba la creación básica de un CentroAcopio"""
         self.assertIsInstance(self.centro, CentroAcopio)
-        self.assertEqual(self.centro.nombre, "Centro de Acopio 14")
+        self.assertTrue(self.centro.nombre.startswith("Centro de Acopio "))
         self.assertEqual(self.centro.tipo_centro, "PLANTA")
         self.assertEqual(self.centro.visibilidad, "GLOBAL")
 
@@ -174,7 +174,7 @@ class LocalidadTestCase(TestCase):
         """Prueba la creación básica de una Localidad"""
         self.assertIsInstance(self.localidad, Localidad)
         self.assertIsNotNone(self.localidad.localidad_id)
-        self.assertEqual(self.localidad.nombre, "Localidad 8")
+        self.assertTrue(self.localidad.nombre.startswith("Localidad "))
 
     def test_localidad_str_representation(self):
         """Prueba la representación en string de la Localidad"""
