@@ -30,7 +30,11 @@ jobs:
       - name: Run tests
         run: |
           source venv/bin/activate
-          python manage.py test --settings=config.settings_ci
+          python manage.py test \
+            apps.chat apps.inventory apps.map \
+            apps.operations apps.scheduling \
+            apps.core apps.panel_admin apps.reciclabot \
+            --settings=config.settings_ci
 
   deploy:
     needs: build
