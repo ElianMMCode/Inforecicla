@@ -5,7 +5,7 @@
       const emailInput = document.getElementById('email');
       const passwordInput = document.getElementById('password');
       const errorDiv = document.getElementById('loginError');
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]++@[^\s@]++\.[^\s@]++$/;
       const users = {
         'admin@inforecicla.com': 'admin123',
         'ciudadano@inforecicla.com': 'ciudadano123',
