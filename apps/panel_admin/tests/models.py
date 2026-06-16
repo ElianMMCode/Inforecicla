@@ -28,21 +28,21 @@ class DashboardModelTest(TestCase):
     def test_dashboard_creation(self):
         """Test creating a dashboard"""
         dashboard = DashboardFactory()
-        self.assertTrue(dashboard.name)
-        self.assertTrue(dashboard.description)
-        self.assertIsInstance(dashboard.is_public, bool)
-        self.assertIsNotNone(dashboard.owner)
+        self.assertTrue(dashboard.nombre)
+        self.assertTrue(dashboard.descripcion)
+        self.assertIsInstance(dashboard.es_publico, bool)
+        self.assertIsNotNone(dashboard.propietario)
         
     def test_dashboard_str_representation(self):
         """Test string representation of dashboard"""
-        dashboard = DashboardFactory(name='Test Dashboard')
+        dashboard = DashboardFactory(nombre='Test Dashboard')
         self.assertEqual(str(dashboard), 'Test Dashboard')
         
     def test_dashboard_owner_relationship(self):
         """Test dashboard owner relationship"""
         user = UserFactory()
-        dashboard = DashboardFactory(owner=user)
-        self.assertEqual(dashboard.owner, user)
+        dashboard = DashboardFactory(propietario=user)
+        self.assertEqual(dashboard.propietario, user)
         self.assertIn(dashboard, user.dashboards.all())
 
 class WidgetModelTest(TestCase):
@@ -51,21 +51,21 @@ class WidgetModelTest(TestCase):
     def test_widget_creation(self):
         """Test creating a widget"""
         widget = WidgetFactory()
-        self.assertTrue(widget.title)
-        self.assertIn(widget.widget_type, ['chart', 'table', 'metric', 'text'])
-        self.assertGreaterEqual(widget.position_x, 0)
-        self.assertLessEqual(widget.position_x, 11)
-        self.assertGreaterEqual(widget.position_y, 0)
-        self.assertLessEqual(widget.position_y, 10)
-        self.assertGreaterEqual(widget.width, 1)
-        self.assertLessEqual(widget.width, 4)
-        self.assertGreaterEqual(widget.height, 1)
-        self.assertLessEqual(widget.height, 3)
+        self.assertTrue(widget.titulo)
+        self.assertIn(widget.tipo_widget, ['chart', 'table', 'metric', 'text'])
+        self.assertGreaterEqual(widget.posicion_x, 0)
+        self.assertLessEqual(widget.posicion_x, 11)
+        self.assertGreaterEqual(widget.posicion_y, 0)
+        self.assertLessEqual(widget.posicion_y, 10)
+        self.assertGreaterEqual(widget.ancho, 1)
+        self.assertLessEqual(widget.ancho, 4)
+        self.assertGreaterEqual(widget.alto, 1)
+        self.assertLessEqual(widget.alto, 3)
         self.assertIsNotNone(widget.dashboard)
         
     def test_widget_str_representation(self):
         """Test string representation of widget"""
-        widget = WidgetFactory(title='Test Widget')
+        widget = WidgetFactory(titulo='Test Widget')
         self.assertEqual(str(widget), 'Test Widget')
         
     def test_widget_dashboard_relationship(self):
@@ -81,21 +81,21 @@ class ReportModelTest(TestCase):
     def test_report_creation(self):
         """Test creating a report"""
         report = ReportFactory()
-        self.assertTrue(report.title)
-        self.assertTrue(report.description)
-        self.assertIn(report.report_type, ['sales', 'inventory', 'users', 'operations'])
-        self.assertIsNotNone(report.generated_by)
-        self.assertIsInstance(report.parameters, dict)
-        self.assertIsInstance(report.is_scheduled, bool)
+        self.assertTrue(report.titulo)
+        self.assertTrue(report.descripcion)
+        self.assertIn(report.tipo_informe, ['sales', 'inventory', 'users', 'operations'])
+        self.assertIsNotNone(report.generado_por)
+        self.assertIsInstance(report.parametros, dict)
+        self.assertIsInstance(report.es_programado, bool)
         
     def test_report_str_representation(self):
         """Test string representation of report"""
-        report = ReportFactory(title='Test Report')
+        report = ReportFactory(titulo='Test Report')
         self.assertEqual(str(report), 'Test Report')
         
     def test_report_generator_relationship(self):
         """Test report generator relationship"""
         user = UserFactory()
-        report = ReportFactory(generated_by=user)
-        self.assertEqual(report.generated_by, user)
+        report = ReportFactory(generado_por=user)
+        self.assertEqual(report.generado_por, user)
         self.assertIn(report, user.reports.all())

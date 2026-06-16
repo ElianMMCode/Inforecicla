@@ -5,21 +5,21 @@ from django.utils import timezone
 
 class Dashboard(models.Model):
     """Model representing an admin dashboard"""
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    is_public = models.BooleanField(default=False)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboards')
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True)
+    es_publico = models.BooleanField(default=False)
+    propietario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboards')
+    fecha_creacion = models.DateTimeField(default=timezone.now)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Tablero"
         verbose_name_plural = "Tableros"
         db_table = "adm_tablero"
-        ordering = ['-created_at']
+        ordering = ['-fecha_creacion']
 
     def __str__(self):
-        return self.name
+        return self.nombre
 
 
 class Widget(models.Model):
@@ -31,25 +31,25 @@ class Widget(models.Model):
         ('text', 'Text'),
     ]
 
-    title = models.CharField(max_length=200)
-    widget_type = models.CharField(max_length=20, choices=WIDGET_TYPES)
-    position_x = models.IntegerField(default=0)  # Grid position
-    position_y = models.IntegerField(default=0)  # Grid position
-    width = models.IntegerField(default=1)  # Grid columns
-    height = models.IntegerField(default=1)  # Grid rows
-    config = models.JSONField(default=dict, blank=True)  # Widget-specific configuration
+    titulo = models.CharField(max_length=200)
+    tipo_widget = models.CharField(max_length=20, choices=WIDGET_TYPES)
+    posicion_x = models.IntegerField(default=0)  # Grid position
+    posicion_y = models.IntegerField(default=0)  # Grid position
+    ancho = models.IntegerField(default=1)  # Grid columns
+    alto = models.IntegerField(default=1)  # Grid rows
+    configuracion = models.JSONField(default=dict, blank=True)  # Widget-specific configuration
     dashboard = models.ForeignKey('Dashboard', on_delete=models.CASCADE, related_name='widgets')
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
+    fecha_creacion = models.DateTimeField(default=timezone.now)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Widget"
         verbose_name_plural = "Widgets"
         db_table = "adm_widget"
-        ordering = ['position_y', 'position_x']
+        ordering = ['posicion_y', 'posicion_x']
 
     def __str__(self):
-        return self.title
+        return self.titulo
 
 
 class Report(models.Model):
@@ -61,20 +61,20 @@ class Report(models.Model):
         ('operations', 'Operations Report'),
     ]
 
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    report_type = models.CharField(max_length=20, choices=REPORT_TYPES)
-    generated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports')
-    parameters = models.JSONField(default=dict, blank=True)  # Report generation parameters
-    is_scheduled = models.BooleanField(default=False)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
+    titulo = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True)
+    tipo_informe = models.CharField(max_length=20, choices=REPORT_TYPES)
+    generado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports')
+    parametros = models.JSONField(default=dict, blank=True)  # Report generation parameters
+    es_programado = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(default=timezone.now)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Informe"
         verbose_name_plural = "Informes"
         db_table = "adm_informe"
-        ordering = ['-created_at']
+        ordering = ['-fecha_creacion']
 
     def __str__(self):
-        return self.title
+        return self.titulo
