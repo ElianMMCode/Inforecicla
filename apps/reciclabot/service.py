@@ -32,7 +32,7 @@ class AsistenteECAService:
         contexto += (
             f"Horario atención: {getattr(punto_eca, 'horario_atencion', '-') or '-'}\n"
         )
-        contexto += f"\n"
+        contexto += "\n"
         # -------------------
         # 2. Responsable/Gestor
         # -------------------
