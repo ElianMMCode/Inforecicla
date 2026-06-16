@@ -13,46 +13,28 @@ class AsistenteECAService:
             "llama-3.1-8b-instant"  # Balance perfecto entre velocidad y razonamiento
         )
 
-    def generar_contexto_eca(self, punto_eca):
-        """
-        Extrae todos los datos relevantes del Punto ECA para alimentar al asistente IA.
-        Incluye: info general, responsable, ubicación, horario, KPIs, inventario extendido, y resumen operativo.
-        """
-        from apps.users.models import Usuario
-        from apps.operations.models import CompraInventario, VentaInventario
-        import datetime
-
-        # -------------------
-        # 1. Datos del Punto ECA
-        # -------------------
-        contexto = f"Información del Punto ECA: {punto_eca.nombre}\n"
-        contexto += f"Dirección: {punto_eca.direccion}\n"
-        contexto += f"Descripción: {getattr(punto_eca, 'descripcion', '-') or '-'}\n"
-        contexto += f"Teléfono: {getattr(punto_eca, 'telefono_punto', '-') or '-'}\n"
-        contexto += (
-            f"Horario atención: {getattr(punto_eca, 'horario_atencion', '-') or '-'}\n"
-        )
+    def _contexto_datos_punto(self, punto_eca):
+        contexto = f"Informacion del Punto ECA: {punto_eca.nombre}\n"
+        contexto += f"Direccion: {punto_eca.direccion}\n"
+        contexto += f"Descripcion: {getattr(punto_eca, 'descripcion', '-') or '-'}\n"
+        contexto += f"Telefono: {getattr(punto_eca, 'telefono_punto', '-') or '-'}\n"
+        contexto += f"Horario atencion: {getattr(punto_eca, 'horario_atencion', '-') or '-'}\n"
         contexto += "\n"
-        # -------------------
-        # 2. Responsable/Gestor
-        # -------------------
+        return contexto
+
+    def _contexto_responsable(self, punto_eca):
+        from apps.users.models import Usuario
+        contexto = ""
         gestor = getattr(punto_eca, "gestor_eca", None)
         if gestor and isinstance(gestor, Usuario):
             contexto += f"Responsable: {gestor.get_full_name()}\n"
-            contexto += (
-                f"Email de responsable: {getattr(gestor, 'email', '-') or '-'}\n"
-            )
-            contexto += (
-                f"Celular de responsable: {getattr(gestor, 'celular', '-') or '-'}\n"
-            )
+            contexto += f"Email de responsable: {getattr(gestor, 'email', '-') or '-'}\n"
+            contexto += f"Celular de responsable: {getattr(gestor, 'celular', '-') or '-'}\n"
         contexto += "\n"
+        return contexto
 
-        # -------------------
-        # 3. KPIs principales (operativos y de inventario)
-        # -------------------
-        items = Inventario.objects.filter(punto_eca=punto_eca).select_related(
-            "material"
-        )
+    def _contexto_kpis(self, punto_eca):
+        items = Inventario.objects.filter(punto_eca=punto_eca).select_related("material")
         total_inventario = sum(item.stock_actual for item in items)
         total_capacidad = sum(item.capacidad_maxima for item in items)
         ocupacion_pct = (
@@ -67,35 +49,34 @@ class AsistenteECAService:
         materiales_critico = (
             items.filter(alerta="critico").count() if hasattr(items, "filter") else 0
         )
-
-        contexto += f"Inventario total: {total_inventario} unidades ({ocupacion_pct}% de capacidad; total máxima: {total_capacidad})\n"
+        contexto = f"Inventario total: {total_inventario} unidades ({ocupacion_pct}% de capacidad; total maxima: {total_capacidad})\n"
         contexto += f"Cantidad de materiales: {materiales_count}\n"
         contexto += f"Materiales (por llenarse): {materiales_alerta}, (llenos): {materiales_critico}\n"
         contexto += "\n"
+        return contexto, items
 
-        # -------------------
-        # 4. Detalle de materiales en inventario
-        # -------------------
-        contexto += "Inventario detallado por material:\n"
+    def _contexto_inventario_detallado(self, items):
+        contexto = "Inventario detallado por material:\n"
         if not items.exists():
-            contexto += "- El inventario está vacío actualmente.\n"
+            contexto += "- El inventario esta vacio actualmente.\n"
         else:
             for item in items:
                 estado = "Disponible"
                 if hasattr(item, "alerta") and item.alerta:
                     if item.alerta == "critico":
-                        estado = "Crítico"
+                        estado = "Critico"
                     elif item.alerta == "alerta":
                         estado = "Por llenarse"
                 contexto += (
                     f"- {item.material.nombre}: {item.stock_actual}/{item.capacidad_maxima} {item.unidad_medida}, "
-                    f"ocupación: {item.ocupacion_actual}%, precio compra: ${item.precio_compra}, precio venta: ${item.precio_venta} (Estado: {estado})\n"
+                    f"ocupacion: {item.ocupacion_actual}%, precio compra: ${item.precio_compra}, precio venta: ${item.precio_venta} (Estado: {estado})\n"
                 )
         contexto += "\n"
+        return contexto
 
-        # -------------------
-        # 5. KPIs de operaciones: entradas y salidas recientes
-        # -------------------
+    def _contexto_operaciones_mes(self, punto_eca):
+        from apps.operations.models import CompraInventario, VentaInventario
+        import datetime
         ahora = datetime.datetime.now()
         primero_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         entradas_mes = (
@@ -110,11 +91,14 @@ class AsistenteECAService:
             ).aggregate(total_salidas_sum=Sum("cantidad"))["total_salidas_sum"]
             or 0
         )
-        contexto += f"Entradas este mes: {entradas_mes} unidades\n"
+        contexto = f"Entradas este mes: {entradas_mes} unidades\n"
         contexto += f"Salidas este mes: {salidas_mes} unidades\n"
         contexto += "\n"
+        return contexto
 
-        # 6. Movimientos recientes (últimas 5 operaciones)
+    def _contexto_movimientos(self, punto_eca):
+        from apps.operations.models import CompraInventario, VentaInventario
+        contexto = ""
         movimientos = list(
             CompraInventario.objects.filter(inventario__punto_eca=punto_eca).order_by(
                 "-fecha_compra"
@@ -125,7 +109,6 @@ class AsistenteECAService:
                 "-fecha_venta"
             )[:3]
         )
-        # Filtrar movimientos sin fecha válida para evitar errores de ordenación
         movimientos = [
             mv
             for mv in movimientos
@@ -141,7 +124,7 @@ class AsistenteECAService:
             reverse=True,
         )[:5]
         if movimientos:
-            contexto += "Últimos movimientos:\n"
+            contexto += "Ultimos movimientos:\n"
             for mov in movimientos:
                 tipo = "Entrada" if isinstance(mov, CompraInventario) else "Salida"
                 fecha = getattr(mov, "fecha_compra", getattr(mov, "fecha_venta", "-"))
@@ -154,14 +137,12 @@ class AsistenteECAService:
                 )
                 contexto += f"- {tipo}: {mat_nombre}, {cantidad} unidades, {fecha}\n"
             contexto += "\n"
+        return contexto
 
-        # -------------------
-        # 7. Próximos eventos del calendario del punto ECA
-        # -------------------
-        contexto += "Calendario de actividades (próximos eventos):\n"
+    def _contexto_eventos(self, punto_eca):
+        import datetime
+        contexto = "Calendario de actividades (proximos eventos):\n"
         now = datetime.datetime.now(pytz.UTC)
-
-        # Buscar las próximas 5 instancias de eventos (reales, repetidos o únicos) para este punto
         instancias_proximas = EventoInstancia.objects.filter(
             punto_eca=punto_eca, fecha_inicio__gte=now
         ).order_by("fecha_inicio")[:5]
@@ -178,15 +159,14 @@ class AsistenteECAService:
                     contexto += f" | Observaciones: {instancia.observaciones}"
                 contexto += "\n"
         else:
-            contexto += "(No hay actividades calendarizadas próximas.)\n"
+            contexto += "(No hay actividades calendarizadas proximas.)\n"
         contexto += "\n"
-        # -------------------
-        # 8. Centros de Acopio asociados al Punto ECA
-        # -------------------
+        return contexto
+
+    def _contexto_centros(self, punto_eca):
         from apps.ecas.models import CentroAcopio
         from config.constants import Visibilidad
-
-        contexto += "Centros de Acopio asociados:\n"
+        contexto = "Centros de Acopio asociados:\n"
         centros_globales = CentroAcopio.objects.filter(visibilidad=Visibilidad.GLOBAL)
         centros_propios = CentroAcopio.objects.filter(
             puntos_eca=punto_eca, visibilidad=Visibilidad.ECA
@@ -206,6 +186,18 @@ class AsistenteECAService:
         else:
             contexto += "- Globales: Ninguno\n"
         contexto += "\n"
+        return contexto
+
+    def generar_contexto_eca(self, punto_eca):
+        contexto = self._contexto_datos_punto(punto_eca)
+        contexto += self._contexto_responsable(punto_eca)
+        kpis, items = self._contexto_kpis(punto_eca)
+        contexto += kpis
+        contexto += self._contexto_inventario_detallado(items)
+        contexto += self._contexto_operaciones_mes(punto_eca)
+        contexto += self._contexto_movimientos(punto_eca)
+        contexto += self._contexto_eventos(punto_eca)
+        contexto += self._contexto_centros(punto_eca)
         return contexto
 
     def generar_datos_resumen(self, punto_eca):
