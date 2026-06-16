@@ -28,7 +28,7 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False  
+DEBUG = env.bool("DEBUG", default=False)
 
 _allowed_extra = env("ALLOWED_HOST_EXTRA", default="")
 ALLOWED_HOSTS = ['inforecicla.app', 'www.inforecicla.app', '127.0.0.1', 'localhost']
@@ -41,8 +41,8 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Forzar a que las cookies de sesión y CSRF solo viajen por canales seguros (HTTPS)
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
 
 GROQ_API_KEY = env("GROQ_API_KEY")
 SITE_URL = env("SITE_URL", default="http://127.0.0.1:8000")
