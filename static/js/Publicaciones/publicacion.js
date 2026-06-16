@@ -120,21 +120,27 @@ commentForm.addEventListener('submit', (e) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
     }).catch(() => {
-        commentList.removeChild(card);
+        card.remove();
         commentCount.textContent = Number.parseInt(commentCount.textContent, 10) - 1;
     });
 });
 
 // ====== (Opcional) Cargar contenido desde la BD al abrir ======
-(async function cargarContenidoDesdeBD() {
-    if (!POST_ID) return;
+function _validarPostId(id) {
+    return /^[a-zA-Z0-9_-]+$/.test(id);
+}
+
+async function cargarContenidoDesdeBD() {
+    if (!POST_ID || !_validarPostId(POST_ID)) return;
     try {
-        const resp = await fetch(`/api/posts/${POST_ID}`);
+        const resp = await fetch(`/api/posts/${encodeURIComponent(POST_ID)}`);
         if (!resp.ok) return;
         const data = await resp.json();
         if (typeof renderPostContent === 'function') {
             renderPostContent(data);
         }
-    } catch (_) {
+    } catch (err) {
+        console.error('Error al cargar contenido desde BD:', err);
     }
-})();
+}
+cargarContenidoDesdeBD();
