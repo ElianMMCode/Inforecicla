@@ -15,6 +15,46 @@ function formatearFecha(fecha) {
     }
 }
 
+function _actualizarTarjetaInventario(tarjeta, datos) {
+    const heading = tarjeta.querySelector('h3, h6');
+    if (heading) {
+        heading.textContent = datos.inventarioTotal + ' kg';
+    }
+    const progreso = tarjeta.querySelector('.progress-bar');
+    if (progreso) {
+        progreso.style.width = datos.capacidadPorcentaje + '%';
+    }
+    const capacidad = tarjeta.querySelector('[class*="text-muted"]');
+    if (capacidad) {
+        capacidad.textContent = datos.capacidadPorcentaje + '% de capacidad';
+    }
+}
+
+function _actualizarTarjetaEntradas(tarjeta, datos) {
+    const heading = tarjeta.querySelector('h3, h6');
+    if (heading) {
+        heading.textContent = datos.entradasMes + ' kg';
+    }
+}
+
+function _actualizarTarjetaSalidas(tarjeta, datos) {
+    const heading = tarjeta.querySelector('h3, h6');
+    if (heading) {
+        heading.textContent = datos.salidasMes + ' kg';
+    }
+}
+
+function _actualizarTarjetaProximo(tarjeta, datos) {
+    const heading = tarjeta.querySelector('h3, h6');
+    if (heading) {
+        heading.textContent = datos.proximoDespacho;
+    }
+    const subtext = tarjeta.querySelector('[class*="text-muted"]');
+    if (subtext) {
+        subtext.textContent = datos.proximaFecha;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Script de resumen Bootstrap cargado');
 
@@ -99,46 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 location.reload();
             }, 1000);
         });
-    }
-
-    function _actualizarTarjetaInventario(tarjeta, datos) {
-        const heading = tarjeta.querySelector('h3, h6');
-        if (heading) {
-            heading.textContent = datos.inventarioTotal + ' kg';
-        }
-        const progreso = tarjeta.querySelector('.progress-bar');
-        if (progreso) {
-            progreso.style.width = datos.capacidadPorcentaje + '%';
-        }
-        const capacidad = tarjeta.querySelector('[class*="text-muted"]');
-        if (capacidad) {
-            capacidad.textContent = datos.capacidadPorcentaje + '% de capacidad';
-        }
-    }
-
-    function _actualizarTarjetaEntradas(tarjeta, datos) {
-        const heading = tarjeta.querySelector('h3, h6');
-        if (heading) {
-            heading.textContent = datos.entradasMes + ' kg';
-        }
-    }
-
-    function _actualizarTarjetaSalidas(tarjeta, datos) {
-        const heading = tarjeta.querySelector('h3, h6');
-        if (heading) {
-            heading.textContent = datos.salidasMes + ' kg';
-        }
-    }
-
-    function _actualizarTarjetaProximo(tarjeta, datos) {
-        const heading = tarjeta.querySelector('h3, h6');
-        if (heading) {
-            heading.textContent = datos.proximoDespacho;
-        }
-        const subtext = tarjeta.querySelector('[class*="text-muted"]');
-        if (subtext) {
-            subtext.textContent = datos.proximaFecha;
-        }
     }
 
     function actualizarUI(datos) {
