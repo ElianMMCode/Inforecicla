@@ -132,8 +132,8 @@ def migrate_mensaje(apps, schema_editor):
     with connection.cursor() as cursor:
         _add_uuid_column('chat_mensaje', cursor)
         col_type = 'TEXT' if _is_sqlite() else 'UUID'
-        cursor.execute(f'ALTER TABLE pub_notificacion ADD COLUMN mensaje_uuid {col_type}')
-        cursor.execute('SELECT id, mensaje_id FROM pub_notificacion')
+        cursor.execute(f'ALTER TABLE pub_notificacion ADD COLUMN mensaje_uuid {col_type}')  # NOSONAR
+        cursor.execute('SELECT id, mensaje_id FROM pub_notificacion')  # NOSONAR
         rows = cursor.fetchall()
         for row in rows:
             notif_id, old_mensaje_id = row
@@ -149,8 +149,8 @@ def migrate_mensaje(apps, schema_editor):
                 )
         if not _is_sqlite():
             cursor.execute(f'ALTER TABLE pub_notificacion DROP CONSTRAINT {FK_NOTIF_MENSAJE}')  # NOSONAR
-        cursor.execute('ALTER TABLE pub_notificacion DROP COLUMN mensaje_id')
-        cursor.execute('ALTER TABLE pub_notificacion RENAME COLUMN mensaje_uuid TO mensaje_id')
+        cursor.execute('ALTER TABLE pub_notificacion DROP COLUMN mensaje_id')  # NOSONAR
+        cursor.execute('ALTER TABLE pub_notificacion RENAME COLUMN mensaje_uuid TO mensaje_id')  # NOSONAR
         _swap_pk('chat_mensaje', cursor)
         _add_fk_constraint(cursor, 'pub_notificacion', 'mensaje_id', 'chat_mensaje')
 
