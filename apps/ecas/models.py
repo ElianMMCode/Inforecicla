@@ -40,7 +40,6 @@ class PuntoECA(LocalizacionWebHorarioModel):
         "Descripción del punto ECA",
         max_length=500,
         blank=True,
-        null=True,
         default="",
         help_text="Descripción detallada del punto ECA",
     )
@@ -221,7 +220,6 @@ class Localidad(models.Model):
     descripcion = models.CharField(
         max_length=100,
         blank=True,
-        null=True,
     )
 
     # Relaciones

@@ -33,8 +33,8 @@ class DescripcionModel(CreacionModificacionModel):
     )
 
     descripcion = models.CharField(
-        null=True,
         max_length=500,
+        blank=True,
     )
 
     class Meta(CreacionModificacionModel.Meta):
@@ -104,14 +104,12 @@ class LocalizacionWebHorarioModel(LocalizacionModel):
     sitio_web = models.CharField(
         max_length=255,
         blank=True,
-        null=True,
         help_text="URL del sitio web oficial, si aplica.",
     )
 
     horario_atencion = models.CharField(
         max_length=100,
         blank=True,
-        null=True,
         default="",
         help_text="Horario de atención al público, ej: L-V 8am-6pm",
     )
