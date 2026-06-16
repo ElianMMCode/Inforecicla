@@ -12,30 +12,74 @@ from apps.ecas.models import CentroAcopio
 _ISO_Z_REPLACEMENT = "+00:00"
 
 
-class CompraInventarioService:
-
-    @staticmethod
-    def _parse_fecha_aware(fecha_str):
-        if not isinstance(fecha_str, str):
-            return fecha_str, None
+def _parse_fecha_aware_util(fecha_str):
+    if not isinstance(fecha_str, str):
+        return fecha_str, None
+    try:
+        fecha_dt = datetime.datetime.fromisoformat(
+            fecha_str.replace("Z", _ISO_Z_REPLACEMENT)
+        )
+    except Exception:
         try:
-            fecha_dt = datetime.datetime.fromisoformat(
-                fecha_str.replace("Z", _ISO_Z_REPLACEMENT)
+            fecha_dt = datetime.datetime.strptime(
+                fecha_str, "%Y-%m-%d %H:%M:%S"
             )
         except Exception:
-            try:
-                fecha_dt = datetime.datetime.strptime(
-                    fecha_str, "%Y-%m-%d %H:%M:%S"
-                )
-            except Exception:
-                return None, {
-                    "error": True,
-                    "mensaje": "Formato de fecha invalido.",
-                    "status": 400,
-                }
-        if timezone.is_naive(fecha_dt):
-            fecha_dt = timezone.make_aware(fecha_dt)
-        return fecha_dt, None
+            return None, {
+                "error": True,
+                "mensaje": "Formato de fecha invalido.",
+                "status": 400,
+            }
+    if timezone.is_naive(fecha_dt):
+        fecha_dt = timezone.make_aware(fecha_dt)
+    return fecha_dt, None
+
+
+def _convertir_cantidades_decimal(cantidad, cantidad_original):
+    cantidad = decimal(str(cantidad))
+    cantidad_original = (
+        decimal(str(cantidad_original))
+        if cantidad_original is not None
+        else None
+    )
+    return cantidad, cantidad_original
+
+
+def _borrar_operacion(ModelClass, id_operacion, stock_updater):
+    try:
+        try:
+            operacion = ModelClass.objects.get(id=id_operacion)
+        except ModelClass.DoesNotExist:
+            return {
+                "error": True,
+                "mensaje": "Operacion no encontrada.",
+                "status": 404,
+            }
+        try:
+            result = stock_updater(operacion.inventario, 0, operacion.cantidad)
+            if result is not None:
+                return result
+            operacion.delete()
+            return {
+                "error": False,
+                "mensaje": "Operacion eliminada correctamente.",
+                "status": 200,
+            }
+        except Exception as e:
+            return {
+                "error": True,
+                "mensaje": f"Error al ajustar stock o eliminar: {str(e)}",
+                "status": 500,
+            }
+    except Exception as e:
+        return {
+            "error": True,
+            "mensaje": f"Fallo critico al borrar: {str(e)}",
+            "status": 500,
+        }
+
+
+class CompraInventarioService:
 
     @staticmethod
     def _obtener_inventario(inventario_id, punto_id=None, material_id=None):
@@ -91,7 +135,7 @@ class CompraInventarioService:
             if error:
                 return error
 
-            fecha_compra, error = CompraInventarioService._parse_fecha_aware(
+            fecha_compra, error = _parse_fecha_aware_util(
                 data["fechaCompra"]
             )
             if error:
@@ -158,7 +202,7 @@ class CompraInventarioService:
             if error:
                 return error
 
-            fecha_compra, error = CompraInventarioService._parse_fecha_aware(
+            fecha_compra, error = _parse_fecha_aware_util(
                 fecha_compra_str
             )
             if error:
@@ -202,54 +246,16 @@ class CompraInventarioService:
 
     @staticmethod
     def borrar_compra(request, compra_id):
-        try:
-            try:
-                compra = models.CompraInventario.objects.get(id=compra_id)
-            except models.CompraInventario.DoesNotExist:
-                return {
-                    "error": True,
-                    "mensaje": "Compra no encontrada.",
-                    "status": 404,
-                }
-            except Exception as e:
-                return {
-                    "error": True,
-                    "mensaje": f"Error al buscar la compra: {str(e)}",
-                    "status": 500,
-                }
-            try:
-                result = CompraInventarioService.actualizar_stock_por_compra(
-                    compra.inventario, 0, compra.cantidad
-                )
-                if result is not None:
-                    return result
-                compra.delete()
-                return {
-                    "error": False,
-                    "mensaje": "Compra eliminada correctamente.",
-                    "status": 200,
-                }
-            except Exception as e:
-                return {
-                    "error": True,
-                    "mensaje": f"Error al ajustar stock o eliminar: {str(e)}",
-                    "status": 500,
-                }
-        except Exception as e:
-            return {
-                "error": True,
-                "mensaje": f"Fallo critico en borrar_compra: {str(e)}",
-                "status": 500,
-            }
+        return _borrar_operacion(
+            models.CompraInventario, compra_id,
+            CompraInventarioService.actualizar_stock_por_compra,
+        )
 
     @staticmethod
     def actualizar_stock_por_compra(inventario, cantidad, cantidad_original=None):
         try:
-            cantidad = decimal(str(cantidad))
-            cantidad_original = (
-                decimal(str(cantidad_original))
-                if cantidad_original is not None
-                else None
+            cantidad, cantidad_original = _convertir_cantidades_decimal(
+                cantidad, cantidad_original
             )
         except Exception:
             return {
@@ -290,29 +296,6 @@ class CompraInventarioService:
 
 
 class VentaInventarioService:
-
-    @staticmethod
-    def _parse_fecha_aware(fecha_str):
-        if not isinstance(fecha_str, str):
-            return fecha_str, None
-        try:
-            fecha_dt = datetime.datetime.fromisoformat(
-                fecha_str.replace("Z", _ISO_Z_REPLACEMENT)
-            )
-        except Exception:
-            try:
-                fecha_dt = datetime.datetime.strptime(
-                    fecha_str, "%Y-%m-%d %H:%M:%S"
-                )
-            except Exception:
-                return None, {
-                    "error": True,
-                    "mensaje": "Formato de fecha invalido.",
-                    "status": 400,
-                }
-        if timezone.is_naive(fecha_dt):
-            fecha_dt = timezone.make_aware(fecha_dt)
-        return fecha_dt, None
 
     @staticmethod
     def _obtener_centro_acopio(centro_acopio_id):
@@ -376,7 +359,7 @@ class VentaInventarioService:
         if error:
             return error
 
-        fecha_venta, error = VentaInventarioService._parse_fecha_aware(
+        fecha_venta, error = _parse_fecha_aware_util(
             data["fechaVenta"]
         )
         if error:
@@ -439,7 +422,7 @@ class VentaInventarioService:
             if error:
                 return error
 
-            fecha_venta, error = VentaInventarioService._parse_fecha_aware(
+            fecha_venta, error = _parse_fecha_aware_util(
                 fecha_venta_str
             )
             if error:
@@ -490,54 +473,16 @@ class VentaInventarioService:
 
     @staticmethod
     def borrar_venta(request, venta_id):
-        try:
-            try:
-                venta = models.VentaInventario.objects.get(id=venta_id)
-            except models.VentaInventario.DoesNotExist:
-                return {
-                    "error": True,
-                    "mensaje": "Venta no encontrada.",
-                    "status": 404,
-                }
-            except Exception as e:
-                return {
-                    "error": True,
-                    "mensaje": f"Error al buscar la venta: {str(e)}",
-                    "status": 500,
-                }
-            try:
-                result = VentaInventarioService.actualizar_stock_por_venta(
-                    venta.inventario, 0, venta.cantidad
-                )
-                if result is not None:
-                    return result
-                venta.delete()
-                return {
-                    "error": False,
-                    "mensaje": "Venta eliminada correctamente.",
-                    "status": 200,
-                }
-            except Exception as e:
-                return {
-                    "error": True,
-                    "mensaje": f"Error al ajustar stock o eliminar: {str(e)}",
-                    "status": 500,
-                }
-        except Exception as e:
-            return {
-                "error": True,
-                "mensaje": f"Fallo critico en borrar_venta: {str(e)}",
-                "status": 500,
-            }
+        return _borrar_operacion(
+            models.VentaInventario, venta_id,
+            VentaInventarioService.actualizar_stock_por_venta,
+        )
 
     @staticmethod
     def actualizar_stock_por_venta(inventario, cantidad, cantidad_original=None):
         try:
-            cantidad = decimal(str(cantidad))
-            cantidad_original = (
-                decimal(str(cantidad_original))
-                if cantidad_original is not None
-                else None
+            cantidad, cantidad_original = _convertir_cantidades_decimal(
+                cantidad, cantidad_original
             )
         except Exception:
             return {
