@@ -143,4 +143,6 @@ async function cargarContenidoDesdeBD() {
         console.error('Error al cargar contenido desde BD:', err);
     }
 }
-cargarContenidoDesdeBD();
+cargarContenidoDesdeBD().catch(function(err) {
+    console.error('Error al cargar contenido:', err);
+});
