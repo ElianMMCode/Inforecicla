@@ -33,8 +33,8 @@ setActive(likeBtn, prev === 'like');
 setActive(dislikeBtn, prev === 'dislike');
 
 likeBtn.addEventListener('click', () => {
-    let likes = parseInt(likeCount.textContent, 10);
-    let dislikes = parseInt(dislikeCount.textContent, 10);
+    let likes = Number.parseInt(likeCount.textContent, 10);
+    let dislikes = Number.parseInt(dislikeCount.textContent, 10);
     const current = sessionStorage.getItem(SS_KEY);
 
     if (current === 'like') { // quitar like
@@ -57,12 +57,12 @@ likeBtn.addEventListener('click', () => {
     likeCount.textContent = likes;
     dislikeCount.textContent = dislikes;
 
-    // TODO: POST /api/posts/{id}/vote {value: 1}
+    // TODO(api): POST /api/posts/{id}/vote {value: 1} — persistir voto en backend
 });
 
 dislikeBtn.addEventListener('click', () => {
-    let likes = parseInt(likeCount.textContent, 10);
-    let dislikes = parseInt(dislikeCount.textContent, 10);
+    let likes = Number.parseInt(likeCount.textContent, 10);
+    let dislikes = Number.parseInt(dislikeCount.textContent, 10);
     const current = sessionStorage.getItem(SS_KEY);
 
     if (current === 'dislike') { // quitar dislike
@@ -85,7 +85,7 @@ dislikeBtn.addEventListener('click', () => {
     likeCount.textContent = likes;
     dislikeCount.textContent = dislikes;
 
-    // TODO: POST /api/posts/{id}/vote {value: -1}
+    // TODO(api): POST /api/posts/{id}/vote {value: -1} — persistir voto en backend
 });
 
 // ====== Comentarios (agregar en front; reemplazar por POST a tu API) ======
@@ -113,13 +113,12 @@ commentForm.addEventListener('submit', (e) => {
     card.querySelector('p').textContent = text;
     commentList.prepend(card);
     commentText.value = '';
-    commentCount.textContent = parseInt(commentCount.textContent, 10) + 1;
+    commentCount.textContent = Number.parseInt(commentCount.textContent, 10) + 1;
 
-    // TODO: POST /api/posts/{id}/comments {text}
-    // Si falla: revertir UI y mostrar alerta
+    // TODO(api): POST /api/posts/{id}/comments {text} — persistir comentario en backend, revertir UI si falla
 });
 
 // ====== (Opcional) Cargar contenido desde la BD al abrir ======
-// TODO: GET /api/posts/{id} -> {title, author, date, category, body, images[], videoUrl, documents[], links[]}
-// TODO: GET /api/posts/{id}/comments
-// TODO: GET /api/posts/{id}/related
+// TODO(api): GET /api/posts/{id} -> {title, author, date, category, body, images[], videoUrl, documents[], links[]} — cargar contenido desde BD
+// TODO(api): GET /api/posts/{id}/comments — cargar comentarios desde BD
+// TODO(api): GET /api/posts/{id}/related — cargar publicaciones relacionadas
