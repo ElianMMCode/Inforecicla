@@ -119,6 +119,6 @@ commentForm.addEventListener('submit', (e) => {
 });
 
 // ====== (Opcional) Cargar contenido desde la BD al abrir ======
-// TODO(api): GET /api/posts/{id} -> {title, author, date, category, body, images[], videoUrl, documents[], links[]} — cargar contenido desde BD
-// TODO(api): GET /api/posts/{id}/comments — cargar comentarios desde BD
-// TODO(api): GET /api/posts/{id}/related — cargar publicaciones relacionadas
+// TODO(api): GET /api/posts/{id} -> {title, author, date, category, body, images[], videoUrl, documents[], links[]} — cargar contenido desde BD al abrir publicacion
+// TODO(api): GET /api/posts/{id}/comments — cargar comentarios desde BD al abrir publicacion
+// TODO(api): GET /api/posts/{id}/related — cargar publicaciones relacionadas desde BD

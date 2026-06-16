@@ -229,51 +229,49 @@ class AsistenteECAService:
         ).aggregate(total_salidas_sum=Sum("cantidad"))["total_salidas_sum"] or 0
         return entradas_mes, salidas_mes
 
+    @staticmethod
+    def _obtener_usuario_operacion(mov):
+        for campo_usuario in ['creado_por', 'usuario', 'responsable']:
+            if hasattr(mov, campo_usuario):
+                usuario_obj = getattr(mov, campo_usuario, None)
+                if usuario_obj:
+                    return usuario_obj.get_full_name() if hasattr(usuario_obj, 'get_full_name') else str(usuario_obj)
+        return 'Sistema'
+
+    @staticmethod
+    def _procesar_movimientos_entrada(qs_entrada, tipo, fecha_attr, icono, color):
+        movimientos = []
+        for mov in qs_entrada:
+            fecha = getattr(mov, fecha_attr, None)
+            if not fecha:
+                continue
+            movimientos.append({
+                'tipo': tipo,
+                'cantidad': mov.cantidad,
+                'material': mov.inventario.material.nombre if mov.inventario and mov.inventario.material else 'Material desconocido',
+                'fecha': fecha,
+                'usuario': AsistenteECAService._obtener_usuario_operacion(mov),
+                'icono': icono,
+                'color': color,
+            })
+        return movimientos
+
     def _movimientos_recientes(self, punto_eca):
         from apps.operations.models import CompraInventario, VentaInventario
-        movimientos_entrada = list(CompraInventario.objects.filter(
-            inventario__punto_eca=punto_eca
-        ).order_by("-fecha_compra")[:3])
-        movimientos_salida = list(VentaInventario.objects.filter(
-            inventario__punto_eca=punto_eca
-        ).order_by("-fecha_venta")[:3])
-        movimientos = []
-        for mov in movimientos_entrada:
-            if mov.fecha_compra:
-                usuario = 'Sistema'
-                for campo_usuario in ['creado_por', 'usuario', 'responsable']:
-                    if hasattr(mov, campo_usuario):
-                        usuario_obj = getattr(mov, campo_usuario, None)
-                        if usuario_obj:
-                            usuario = usuario_obj.get_full_name() if hasattr(usuario_obj, 'get_full_name') else str(usuario_obj)
-                            break
-                movimientos.append({
-                    'tipo': 'Entrada',
-                    'cantidad': mov.cantidad,
-                    'material': mov.inventario.material.nombre if mov.inventario and mov.inventario.material else 'Material desconocido',
-                    'fecha': mov.fecha_compra,
-                    'usuario': usuario,
-                    'icono': 'arrow-down-circle',
-                    'color': 'text-success'
-                })
-        for mov in movimientos_salida:
-            if mov.fecha_venta:
-                usuario = 'Sistema'
-                for campo_usuario in ['creado_por', 'usuario', 'responsable']:
-                    if hasattr(mov, campo_usuario):
-                        usuario_obj = getattr(mov, campo_usuario, None)
-                        if usuario_obj:
-                            usuario = usuario_obj.get_full_name() if hasattr(usuario_obj, 'get_full_name') else str(usuario_obj)
-                            break
-                movimientos.append({
-                    'tipo': 'Salida',
-                    'cantidad': mov.cantidad,
-                    'material': mov.inventario.material.nombre if mov.inventario and mov.inventario.material else 'Material desconocido',
-                    'fecha': mov.fecha_venta,
-                    'usuario': usuario,
-                    'icono': 'arrow-up-circle',
-                    'color': 'text-warning'
-                })
+        movimientos = (
+            AsistenteECAService._procesar_movimientos_entrada(
+                CompraInventario.objects.filter(
+                    inventario__punto_eca=punto_eca
+                ).order_by("-fecha_compra")[:3],
+                'Entrada', 'fecha_compra', 'arrow-down-circle', 'text-success'
+            )
+            + AsistenteECAService._procesar_movimientos_entrada(
+                VentaInventario.objects.filter(
+                    inventario__punto_eca=punto_eca
+                ).order_by("-fecha_venta")[:3],
+                'Salida', 'fecha_venta', 'arrow-up-circle', 'text-warning'
+            )
+        )
         movimientos = sorted(movimientos, key=lambda x: x['fecha'], reverse=True)[:5]
         movimientos_formateados = []
         for mov in movimientos:

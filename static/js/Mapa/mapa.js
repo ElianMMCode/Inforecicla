@@ -58,39 +58,37 @@ function renderLista(items) {
   });
 }
 
-(async () => {
-  try {
-    const r = await fetch('/puntos.geojson');
-    const geo = await r.json();
-    const puntos = geo.features.map(f => ({
-      id: String(f.properties.id),
-      nombre: f.properties.nombre,
-      direccion: f.properties.direccion,
-      localidad: f.properties.localidad,
-      correo: f.properties.correo,
-      telefono: f.properties.telefono,
-      web: f.properties.web,
-      img: f.properties.img,
-      horario: f.properties.horario,
-      categoria: f.properties.categoria,
-      lng: f.geometry.coordinates[0],
-      lat: f.geometry.coordinates[1],
-    }));
-    globalThis.__PUNTOS = puntos;
+try {
+  const r = await fetch('/puntos.geojson');
+  const geo = await r.json();
+  const puntos = geo.features.map(f => ({
+    id: String(f.properties.id),
+    nombre: f.properties.nombre,
+    direccion: f.properties.direccion,
+    localidad: f.properties.localidad,
+    correo: f.properties.correo,
+    telefono: f.properties.telefono,
+    web: f.properties.web,
+    img: f.properties.img,
+    horario: f.properties.horario,
+    categoria: f.properties.categoria,
+    lng: f.geometry.coordinates[0],
+    lat: f.geometry.coordinates[1],
+  }));
+  globalThis.__PUNTOS = puntos;
 
-    puntos.forEach(p => {
-      const m = L.marker([p.lat, p.lng]).addTo(map);
-      m.bindPopup(`<strong>${p.nombre}</strong><br><small>${p.direccion || ''}</small>`);
-      m.on('click', () => abrirModal(p));
-      markers.set(String(p.id), m);
-    });
+  puntos.forEach(p => {
+    const m = L.marker([p.lat, p.lng]).addTo(map);
+    m.bindPopup(`<strong>${p.nombre}</strong><br><small>${p.direccion || ''}</small>`);
+    m.on('click', () => abrirModal(p));
+    markers.set(String(p.id), m);
+  });
 
-    renderLista(puntos);
-  } catch (err) {
-    console.error('Error cargando /puntos.geojson', err);
-    renderLista([]);
-  }
-})();
+  renderLista(puntos);
+} catch (err) {
+  console.error('Error cargando /puntos.geojson', err);
+  renderLista([]);
+}
 
 // Filtro
 const filtro = document.getElementById('filtro');
