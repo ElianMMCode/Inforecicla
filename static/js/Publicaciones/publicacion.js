@@ -57,7 +57,11 @@ likeBtn.addEventListener('click', () => {
     likeCount.textContent = likes;
     dislikeCount.textContent = dislikes;
 
-    // TODO(api): POST /api/posts/{id}/vote {value: 1} — persistir voto en backend
+    fetch(`/publicaciones/${POST_ID}/votar/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value },
+        body: 'value=1',
+    }).catch(function() {});
 });
 
 dislikeBtn.addEventListener('click', () => {
@@ -85,7 +89,11 @@ dislikeBtn.addEventListener('click', () => {
     likeCount.textContent = likes;
     dislikeCount.textContent = dislikes;
 
-    // TODO(api): POST /api/posts/{id}/vote {value: -1} — persistir voto en backend
+    fetch(`/publicaciones/${POST_ID}/votar/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value },
+        body: 'value=-1',
+    }).catch(function() {});
 });
 
 // ====== Comentarios (agregar en front; reemplazar por POST a tu API) ======
