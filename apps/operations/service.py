@@ -9,8 +9,64 @@ from django.utils import timezone
 import datetime
 from apps.ecas.models import CentroAcopio
 
+_ISO_Z_REPLACEMENT = "+00:00"
+
 
 class CompraInventarioService:
+
+    @staticmethod
+    def _parse_fecha_aware(fecha_str):
+        if not isinstance(fecha_str, str):
+            return fecha_str, None
+        try:
+            fecha_dt = datetime.datetime.fromisoformat(
+                fecha_str.replace("Z", _ISO_Z_REPLACEMENT)
+            )
+        except Exception:
+            try:
+                fecha_dt = datetime.datetime.strptime(
+                    fecha_str, "%Y-%m-%d %H:%M:%S"
+                )
+            except Exception:
+                return None, {
+                    "error": True,
+                    "mensaje": "Formato de fecha invalido.",
+                    "status": 400,
+                }
+        if timezone.is_naive(fecha_dt):
+            fecha_dt = timezone.make_aware(fecha_dt)
+        return fecha_dt, None
+
+    @staticmethod
+    def _obtener_inventario(inventario_id, punto_id=None, material_id=None):
+        try:
+            return Inventario.objects.get(id=inventario_id), None
+        except Inventario.DoesNotExist:
+            if punto_id and material_id:
+                try:
+                    return Inventario.objects.get(
+                        punto_eca_id=punto_id, material_id=material_id
+                    ), None
+                except Inventario.DoesNotExist:
+                    pass
+            return None, {
+                "error": True,
+                "mensaje": "Inventario no encontrado.",
+                "status": 404,
+            }
+
+    @staticmethod
+    def _validar_cantidad_precio(cantidad, precio, tipo):
+        cantidad = decimal(str(cantidad))
+        precio = decimal(str(precio))
+        if cantidad <= 0 or precio < 0:
+            return cantidad, precio, {
+                "error": True,
+                "mensaje": "Valores de cantidad o precio invalidos.",
+                "status": 400,
+            }
+        return cantidad, precio, None
+
     @staticmethod
     @transaction.atomic
     def registro_compra(request, data):
@@ -18,50 +74,28 @@ class CompraInventarioService:
             inventario_id = data.get("inventarioId")
             if not inventario_id:
                 return {"error": True, "mensaje": "Falta inventarioId.", "status": 400}
-            try:
-                inventario = get_object_or_404(Inventario, id=inventario_id)
-            except Inventario.DoesNotExist:
-                punto_id = data.get("puntoEcaId")
-                material_id = data.get("materialId")
-                if punto_id and material_id:
-                    try:
-                        inventario = Inventario.objects.get(
-                            punto_eca_id=punto_id, material_id=material_id
-                        )
-                    except Inventario.DoesNotExist:
-                        return {
-                            "error": True,
-                            "mensaje": "Inventario no encontrado por punto y material.",
-                            "status": 404,
-                        }
-                else:
-                    return {
-                        "error": True,
-                        "mensaje": "Inventario no encontrado.",
-                        "status": 404,
-                    }
 
-            cantidad = decimal(str(data["cantidad"]))
-            precio_compra = decimal(str(data["precioCompra"]))
-            if cantidad <= 0 or precio_compra < 0:
-                return {"error": True, "mensaje": "Valores inválidos.", "status": 400}
+            punto_id = data.get("puntoEcaId")
+            material_id = data.get("materialId")
+            inventario, error = CompraInventarioService._obtener_inventario(
+                inventario_id, punto_id, material_id
+            )
+            if error:
+                return error
 
-            # Parse fecha_compra a datetime aware si es string naive
-            fecha_compra = data["fechaCompra"]
-            if isinstance(fecha_compra, str):
-                try:
-                    # Intentar parsear en formato ISO con o sin Z
-                    fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_compra.replace("Z", _ISO_Z_REPLACEMENT)
-                    )
-                except Exception:
-                    # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
-                    fecha_dt = datetime.datetime.strptime(
-                        fecha_compra, "%Y-%m-%d %H:%M:%S"
-                    )
-                if timezone.is_naive(fecha_dt):
-                    fecha_dt = timezone.make_aware(fecha_dt)
-                fecha_compra = fecha_dt
+            cantidad, precio_compra, error = (
+                CompraInventarioService._validar_cantidad_precio(
+                    data["cantidad"], data["precioCompra"], "compra"
+                )
+            )
+            if error:
+                return error
+
+            fecha_compra, error = CompraInventarioService._parse_fecha_aware(
+                data["fechaCompra"]
+            )
+            if error:
+                return error
 
             models.CompraInventario.objects.create(
                 inventario=inventario,
@@ -71,7 +105,6 @@ class CompraInventarioService:
                 observaciones=data.get("observaciones", ""),
             )
 
-            # Actualizar el stock del inventario con la cantidad comprada
             result = CompraInventarioService.actualizar_stock_por_compra(
                 inventario, cantidad
             )
@@ -86,7 +119,7 @@ class CompraInventarioService:
         except KeyError as e:
             return {"error": True, "mensaje": f"Campo faltante: {e}", "status": 400}
         except ValueError as e:
-            return {"error": True, "mensaje": f"Valor inválido: {e}", "status": 400}
+            return {"error": True, "mensaje": f"Valor invalido: {e}", "status": 400}
         except Exception as e:
             return {
                 "error": True,
@@ -97,56 +130,39 @@ class CompraInventarioService:
     @staticmethod
     def editar_compra(request, data, compra_id):
         try:
-            compra_id_data = data.get("compraId")
-            compra_id = compra_id_data or compra_id
-            if not compra_id:
+            compra_id_from_data = data.get("compraId")
+            if not compra_id_from_data:
                 return {
                     "error": True,
                     "mensaje": "Falta compraId.",
                     "status": 400,
                 }
 
-            compra = get_object_or_404(models.CompraInventario, id=compra_id)
+            compra = get_object_or_404(models.CompraInventario, id=compra_id_from_data)
 
             cantidad = data.get("cantidad")
             precio_compra = data.get("precioCompra")
-            fecha_compra = data.get("fechaCompra")
-            if cantidad is None or precio_compra is None or fecha_compra is None:
+            fecha_compra_str = data.get("fechaCompra")
+            if cantidad is None or precio_compra is None or fecha_compra_str is None:
                 return {
                     "error": True,
                     "mensaje": "Faltan datos requeridos.",
                     "status": 400,
                 }
 
-            cantidad = decimal(str(cantidad))
-            precio_compra = decimal(str(precio_compra))
-            if cantidad <= 0 or precio_compra < 0:
-                return {
-                    "error": True,
-                    "mensaje": "Valores de cantidad o precio inválidos.",
-                    "status": 400,
-                }
+            cantidad, precio_compra, error = (
+                CompraInventarioService._validar_cantidad_precio(
+                    cantidad, precio_compra, "compra"
+                )
+            )
+            if error:
+                return error
 
-            # Parse fecha_compra a datetime aware si es string naive
-            if isinstance(fecha_compra, str):
-                try:
-                    fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_compra.replace("Z", _ISO_Z_REPLACEMENT)
-                    )
-                except Exception:
-                    try:
-                        fecha_dt = datetime.datetime.strptime(
-                            fecha_compra, "%Y-%m-%d %H:%M:%S"
-                        )
-                    except Exception:
-                        return {
-                            "error": True,
-                            "mensaje": "Formato de fecha inválido.",
-                            "status": 400,
-                        }
-                if timezone.is_naive(fecha_dt):
-                    fecha_dt = timezone.make_aware(fecha_dt)
-                fecha_compra = fecha_dt
+            fecha_compra, error = CompraInventarioService._parse_fecha_aware(
+                fecha_compra_str
+            )
+            if error:
+                return error
 
             result = CompraInventarioService.actualizar_stock_por_compra(
                 compra.inventario, cantidad, compra.cantidad
@@ -174,7 +190,7 @@ class CompraInventarioService:
         except ValueError as e:
             return {
                 "error": True,
-                "mensaje": f"Valor inválido: {e}",
+                "mensaje": f"Valor invalido: {e}",
                 "status": 400,
             }
         except Exception as e:
@@ -220,10 +236,9 @@ class CompraInventarioService:
                     "status": 500,
                 }
         except Exception as e:
-            # Redundante, pero garantiza que cualquier excepción inesperada siga devolviendo JSON
             return {
                 "error": True,
-                "mensaje": f"Fallo crítico en borrar_compra: {str(e)}",
+                "mensaje": f"Fallo critico en borrar_compra: {str(e)}",
                 "status": 500,
             }
 
@@ -239,7 +254,7 @@ class CompraInventarioService:
         except Exception:
             return {
                 "error": True,
-                "mensaje": "Cantidad inválida para la compra.",
+                "mensaje": "Cantidad invalida para la compra.",
                 "status": 400,
             }
 
@@ -248,7 +263,6 @@ class CompraInventarioService:
             str(getattr(inventario, "capacidad_maxima", None) or 0)
         )
 
-        # Calcular delta a ajustar
         if cantidad_original is not None:
             delta = cantidad - cantidad_original
         else:
@@ -259,14 +273,14 @@ class CompraInventarioService:
         if nuevo_stock < 0:
             return {
                 "error": True,
-                "mensaje": "La operación dejaría el stock negativo.",
+                "mensaje": "La operacion dejaria el stock negativo.",
                 "status": 400,
             }
 
         if capacidad_maxima_decimal and nuevo_stock > capacidad_maxima_decimal:
             return {
                 "error": True,
-                "mensaje": "No se puede realizar la compra porque el stock superaría la capacidad máxima del inventario.",
+                "mensaje": "No se puede realizar la compra porque el stock superaria la capacidad maxima del inventario.",
                 "status": 400,
             }
 
@@ -276,6 +290,65 @@ class CompraInventarioService:
 
 
 class VentaInventarioService:
+
+    @staticmethod
+    def _parse_fecha_aware(fecha_str):
+        if not isinstance(fecha_str, str):
+            return fecha_str, None
+        try:
+            fecha_dt = datetime.datetime.fromisoformat(
+                fecha_str.replace("Z", _ISO_Z_REPLACEMENT)
+            )
+        except Exception:
+            try:
+                fecha_dt = datetime.datetime.strptime(
+                    fecha_str, "%Y-%m-%d %H:%M:%S"
+                )
+            except Exception:
+                return None, {
+                    "error": True,
+                    "mensaje": "Formato de fecha invalido.",
+                    "status": 400,
+                }
+        if timezone.is_naive(fecha_dt):
+            fecha_dt = timezone.make_aware(fecha_dt)
+        return fecha_dt, None
+
+    @staticmethod
+    def _obtener_centro_acopio(centro_acopio_id):
+        if not centro_acopio_id:
+            return None, None
+        try:
+            return CentroAcopio.objects.get(id=centro_acopio_id), None
+        except CentroAcopio.DoesNotExist:
+            return None, {
+                "error": True,
+                "mensaje": "Centro de acopio no encontrado.",
+                "status": 404,
+            }
+
+    @staticmethod
+    def _actualizar_centro_acopio_en_venta(venta, centro_id):
+        if centro_id is None:
+            return None
+        try:
+            centro_id_str = str(centro_id) if centro_id != "" else ""
+        except Exception:
+            centro_id_str = ""
+        if centro_id_str:
+            try:
+                centro_inst = CentroAcopio.objects.get(id=centro_id_str)
+                venta.centro_acopio = centro_inst
+            except CentroAcopio.DoesNotExist:
+                return {
+                    "error": True,
+                    "mensaje": "Centro de acopio no encontrado.",
+                    "status": 404,
+                }
+        else:
+            venta.centro_acopio = None
+        return None
+
     @staticmethod
     def registrar_venta(request, data):
         inventario_id = data.get("inventarioId")
@@ -287,73 +360,38 @@ class VentaInventarioService:
                 "status": 400,
             }
 
-        try:
-            inventario = Inventario.objects.get(id=inventario_id)
-        except Inventario.DoesNotExist:
-            # Try to find by puntoEcaId and materialId
-            punto_id = data.get("puntoEcaId")
-            material_id = data.get("materialId")
-            if punto_id and material_id:
-                try:
-                    inventario = Inventario.objects.get(
-                        punto_eca_id=punto_id, material_id=material_id
-                    )
-                except Inventario.DoesNotExist:
-                    return {
-                        "error": True,
-                        "mensaje": "Inventario no encontrado por punto y material.",
-                        "status": 404,
-                    }
-            else:
-                return {
-                    "error": True,
-                    "mensaje": "Inventario no encontrado.",
-                    "status": 404,
-                }
+        punto_id = data.get("puntoEcaId")
+        material_id = data.get("materialId")
+        inventario, error = CompraInventarioService._obtener_inventario(
+            inventario_id, punto_id, material_id
+        )
+        if error:
+            return error
 
-        cantidad = decimal(str(data["cantidad"]))
-        precio_venta = decimal(str(data["precioVenta"]))
-        if cantidad <= 0 or precio_venta < 0:
-            return {
-                "error": True,
-                "mensaje": "Valores inválidos.",
-                "status": 400,
-            }
+        cantidad, precio_venta, error = (
+            CompraInventarioService._validar_cantidad_precio(
+                data["cantidad"], data["precioVenta"], "venta"
+            )
+        )
+        if error:
+            return error
 
-        fecha_compra = data["fechaVenta"]
-        if isinstance(fecha_compra, str):
-            try:
-                # Intentar parsear en formato ISO con o sin Z
-                fecha_dt = datetime.datetime.fromisoformat(
-                    fecha_compra.replace("Z", _ISO_Z_REPLACEMENT)
-                )
-            except Exception:
-                # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
-                fecha_dt = datetime.datetime.strptime(fecha_compra, "%Y-%m-%d %H:%M:%S")
-            if timezone.is_naive(fecha_dt):
-                fecha_dt = timezone.make_aware(fecha_dt)
-            fecha_compra = fecha_dt
+        fecha_venta, error = VentaInventarioService._parse_fecha_aware(
+            data["fechaVenta"]
+        )
+        if error:
+            return error
 
         centro_acopio_id = data.get("centroAcopioId")
-        centro_acopio_inst = None
-        if centro_acopio_id:
-from apps.ecas.models import CentroAcopio
-
-_ISO_Z_REPLACEMENT = "+00:00"
-
-
-            try:
-                centro_acopio_inst = CentroAcopio.objects.get(id=centro_acopio_id)
-            except CentroAcopio.DoesNotExist:
-                return {
-                    "error": True,
-                    "mensaje": "Centro de acopio no encontrado.",
-                    "status": 404,
-                }
+        centro_acopio_inst, error = VentaInventarioService._obtener_centro_acopio(
+            centro_acopio_id
+        )
+        if error:
+            return error
 
         models.VentaInventario.objects.create(
             inventario=inventario,
-            fecha_venta=fecha_compra,
+            fecha_venta=fecha_venta,
             cantidad=cantidad,
             precio_venta=precio_venta,
             observaciones=data.get("observaciones", ""),
@@ -373,56 +411,39 @@ _ISO_Z_REPLACEMENT = "+00:00"
     @staticmethod
     def editar_venta(request, data, venta_id):
         try:
-            venta_id_data = data.get("ventaId")
-            venta_id = venta_id_data or venta_id
-            if not venta_id:
+            venta_id_from_data = data.get("ventaId")
+            if not venta_id_from_data:
                 return {
                     "error": True,
                     "mensaje": "Falta ventaId.",
                     "status": 400,
                 }
 
-            venta = get_object_or_404(models.VentaInventario, id=venta_id)
+            venta = get_object_or_404(models.VentaInventario, id=venta_id_from_data)
 
             cantidad = data.get("cantidad")
             precio_venta = data.get("precioVenta")
-            fecha_venta = data.get("fechaVenta")
-            if cantidad is None or precio_venta is None or fecha_venta is None:
+            fecha_venta_str = data.get("fechaVenta")
+            if cantidad is None or precio_venta is None or fecha_venta_str is None:
                 return {
                     "error": True,
                     "mensaje": "Faltan datos requeridos.",
                     "status": 400,
                 }
 
-            cantidad = decimal(str(cantidad))
-            precio_venta = decimal(str(precio_venta))
-            if cantidad <= 0 or precio_venta < 0:
-                return {
-                    "error": True,
-                    "mensaje": "Valores de cantidad o precio inválidos.",
-                    "status": 400,
-                }
+            cantidad, precio_venta, error = (
+                CompraInventarioService._validar_cantidad_precio(
+                    cantidad, precio_venta, "venta"
+                )
+            )
+            if error:
+                return error
 
-            # Parse fecha_venta a datetime aware si es string naive
-            if isinstance(fecha_venta, str):
-                try:
-                    fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_venta.replace("Z", _ISO_Z_REPLACEMENT)
-                    )
-                except Exception:
-                    try:
-                        fecha_dt = datetime.datetime.strptime(
-                            fecha_venta, "%Y-%m-%d %H:%M:%S"
-                        )
-                    except Exception:
-                        return {
-                            "error": True,
-                            "mensaje": "Formato de fecha inválido.",
-                            "status": 400,
-                        }
-                if timezone.is_naive(fecha_dt):
-                    fecha_dt = timezone.make_aware(fecha_dt)
-                fecha_venta = fecha_dt
+            fecha_venta, error = VentaInventarioService._parse_fecha_aware(
+                fecha_venta_str
+            )
+            if error:
+                return error
 
             result = VentaInventarioService.actualizar_stock_por_venta(
                 venta.inventario, cantidad, venta.cantidad
@@ -434,26 +455,14 @@ _ISO_Z_REPLACEMENT = "+00:00"
             venta.precio_venta = precio_venta
             venta.observaciones = data.get("observaciones", "")
             venta.fecha_venta = fecha_venta
-            # Actualizar centro de acopio si se proporcionó
+
             centro_id = data.get("centroAcopioId") or data.get("centro_acopio")
-            if centro_id is not None:
-                # permitir cadena vacía para desasignar
-                try:
-                    centro_id_str = str(centro_id) if centro_id != "" else ""
-                except Exception:
-                    centro_id_str = ""
-                if centro_id_str:
-                    try:
-                        centro_inst = CentroAcopio.objects.get(id=centro_id_str)
-                        venta.centro_acopio = centro_inst
-                    except CentroAcopio.DoesNotExist:
-                        return {
-                            "error": True,
-                            "mensaje": "Centro de acopio no encontrado.",
-                            "status": 404,
-                        }
-                else:
-                    venta.centro_acopio = None
+            error = VentaInventarioService._actualizar_centro_acopio_en_venta(
+                venta, centro_id
+            )
+            if error:
+                return error
+
             venta.save()
             return {
                 "error": False,
@@ -469,7 +478,7 @@ _ISO_Z_REPLACEMENT = "+00:00"
         except ValueError as e:
             return {
                 "error": True,
-                "mensaje": f"Valor inválido: {e}",
+                "mensaje": f"Valor invalido: {e}",
                 "status": 400,
             }
         except Exception as e:
@@ -517,7 +526,7 @@ _ISO_Z_REPLACEMENT = "+00:00"
         except Exception as e:
             return {
                 "error": True,
-                "mensaje": f"Fallo crítico en borrar_venta: {str(e)}",
+                "mensaje": f"Fallo critico en borrar_venta: {str(e)}",
                 "status": 500,
             }
 
@@ -533,7 +542,7 @@ _ISO_Z_REPLACEMENT = "+00:00"
         except Exception:
             return {
                 "error": True,
-                "mensaje": "Cantidad inválida para la venta.",
+                "mensaje": "Cantidad invalida para la venta.",
                 "status": 400,
             }
 
@@ -550,11 +559,8 @@ _ISO_Z_REPLACEMENT = "+00:00"
                     "mensaje": f"No hay stock suficiente para realizar la venta. Stock disponible: {float(stock_disponible_para_vender)}.",
                     "status": 400,
                 }
-            delta = (
-                cantidad_original - cantidad
-            )  # El efecto que tiene sobre el stock actual
+            delta = cantidad_original - cantidad
         else:
-            # Venta "nueva"
             if cantidad > stock_actual_decimal:
                 return {
                     "error": True,
@@ -566,17 +572,16 @@ _ISO_Z_REPLACEMENT = "+00:00"
         nuevo_stock = stock_actual_decimal + delta
 
         if nuevo_stock < 0:
-            # Esto es protección extra por coherencia, aunque la lógica anterior ya lo evita
             return {
                 "error": True,
-                "mensaje": "La operación dejaría el stock negativo.",
+                "mensaje": "La operacion dejaria el stock negativo.",
                 "status": 400,
             }
 
         if capacidad_maxima_decimal and nuevo_stock > capacidad_maxima_decimal:
             return {
                 "error": True,
-                "mensaje": "La operación excede la capacidad máxima de inventario.",
+                "mensaje": "La operacion excede la capacidad maxima de inventario.",
                 "status": 400,
             }
 
