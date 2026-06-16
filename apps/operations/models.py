@@ -81,7 +81,7 @@ class CompraInventario(CreacionModificacionModel):
         return f"Compra {self.cantidad} - {self.inventario.material.nombre} ({self.fecha_compra.strftime('%d/%m/%Y')})"
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "compra_inventario"
+        db_table = "ope_compra_inventario"
         verbose_name = "Compra de Inventario"
         verbose_name_plural = "Compras de Inventario"
         ordering = ["-fecha_compra"]  # Ordenar por fecha de compra más reciente primero
@@ -156,7 +156,7 @@ class VentaInventario(CreacionModificacionModel):
         return f"Venta {self.cantidad} - {self.inventario.material.nombre} ({self.fecha_venta.strftime('%d/%m/%Y')})"
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "venta_inventario"
+        db_table = "ope_venta_inventario"
         verbose_name = "Venta de Inventario"
         verbose_name_plural = "Ventas de Inventario"
         ordering = ["-fecha_venta"]  # Ordenar por fecha de venta más reciente primero

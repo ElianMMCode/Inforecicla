@@ -13,8 +13,9 @@ class Dashboard(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Dashboard"
-        verbose_name_plural = "Dashboards"
+        verbose_name = "Tablero"
+        verbose_name_plural = "Tableros"
+        db_table = "adm_tablero"
         ordering = ['-created_at']
 
     def __str__(self):
@@ -44,6 +45,7 @@ class Widget(models.Model):
     class Meta:
         verbose_name = "Widget"
         verbose_name_plural = "Widgets"
+        db_table = "adm_widget"
         ordering = ['position_y', 'position_x']
 
     def __str__(self):
@@ -69,8 +71,9 @@ class Report(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Report"
-        verbose_name_plural = "Reports"
+        verbose_name = "Informe"
+        verbose_name_plural = "Informes"
+        db_table = "adm_informe"
         ordering = ['-created_at']
 
     def __str__(self):

@@ -42,7 +42,10 @@ class Evento(CreacionModificacionModel):
     es_evento_generado = models.BooleanField(default=False)
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "evento"
+        verbose_name = "Evento"
+        verbose_name_plural = "Eventos"
+        db_table = "age_evento"
+        ordering = ["-fecha_inicio"]
 
     def generar_titulo(self):
         if self.material and hasattr(self.material, "descripcion"):
@@ -92,4 +95,7 @@ class EventoInstancia(CreacionModificacionModel):
         return None
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "evento_instancia"
+        verbose_name = "Instancia de evento"
+        verbose_name_plural = "Instancias de evento"
+        db_table = "age_evento_instancia"
+        ordering = ["-fecha_inicio"]

@@ -396,6 +396,7 @@ class TokenValidacion(models.Model):
     class Meta:
         verbose_name = "Token de Validación"
         verbose_name_plural = "Tokens de Validación"
+        db_table = "users_token_validacion"
         ordering = ["-fecha_creacion"]
         indexes = [
             models.Index(fields=["email", "tipo"]),

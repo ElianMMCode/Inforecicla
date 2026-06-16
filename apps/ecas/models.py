@@ -104,7 +104,7 @@ class PuntoECA(LocalizacionWebHorarioModel):
     class Meta(LocalizacionWebHorarioModel.Meta):
         verbose_name = "Punto ECA"
         verbose_name_plural = "Puntos ECA"
-        db_table = "punto_eca"
+        db_table = "ecas_punto_eca"
 
     def __str__(self):
         return self.nombre
@@ -185,7 +185,7 @@ class CentroAcopio(LocalizacionWebHorarioModel):
     class Meta(LocalizacionWebHorarioModel.Meta):
         verbose_name = "Centro de Acopio"
         verbose_name_plural = "Centros de Acopio"
-        db_table = "centro_acopio"
+        db_table = "ecas_centro_acopio"
 
     def __str__(self):
         return self.nombre
@@ -226,7 +226,7 @@ class Localidad(models.Model):
     # Por convención Django, no se declara el reverse relation aquí.
 
     class Meta:
-        db_table = "localidad"
+        db_table = "ecas_localidad"
         verbose_name = "Localidad"
         verbose_name_plural = "Localidades"
         indexes = [

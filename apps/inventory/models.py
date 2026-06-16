@@ -124,6 +124,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         db_constraint=True,
+        related_name="inventarios",
         verbose_name="Material",
         help_text="Material asociado a este inventario",
     )
@@ -134,6 +135,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         db_constraint=True,
+        related_name="inventario_punto",
         verbose_name="Punto ECA",
         help_text="Punto de Entrega de Cartón y Afines donde se encuentra el inventario",
     )
@@ -144,6 +146,7 @@ class Inventario(CreacionModificacionModel):
         null=True,
         blank=True,
         db_constraint=True,
+        related_name="inventarios",
         verbose_name="Centro de Acopio",
         help_text="Centro de Acopio asociado al inventario",
     )
@@ -151,7 +154,7 @@ class Inventario(CreacionModificacionModel):
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Inventario"
         verbose_name_plural = "Inventarios"
-        db_table = "inventario"
+        db_table = "inv_inventario"
         # Se define combinación única para evitar que un mismo material tenga múltiples inventarios en el mismo Punto ECA
         constraints = [
             models.UniqueConstraint(
@@ -229,6 +232,7 @@ class Material(DescripcionModel):
         null=True,
         blank=False,
         db_constraint=True,
+        related_name="materiales",
         verbose_name="Categoría del material",
         help_text="Categoría a la que pertenece el material",
     )
@@ -239,6 +243,7 @@ class Material(DescripcionModel):
         null=True,
         blank=False,
         db_constraint=True,
+        related_name="materiales",
         verbose_name="Tipo del material",
         help_text="Tipo al que pertenece el material",
     )
@@ -246,7 +251,7 @@ class Material(DescripcionModel):
     class Meta(DescripcionModel.Meta):
         verbose_name = "Material"
         verbose_name_plural = "Materiales"
-        db_table = "material"
+        db_table = "inv_material"
 
     def __str__(self):
         return self.nombre
@@ -262,6 +267,7 @@ class CategoriaMaterial(DescripcionModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="categorias",
         verbose_name="Tipo de material",
         help_text="Tipo al que pertenece esta categoría",
     )
@@ -269,7 +275,7 @@ class CategoriaMaterial(DescripcionModel):
     class Meta(DescripcionModel.Meta):
         verbose_name = "Categoría de material"
         verbose_name_plural = "Categorías de material"
-        db_table = "categoria_material"
+        db_table = "inv_categoria_material"
 
     def __str__(self):
         return self.nombre
@@ -283,7 +289,7 @@ class TipoMaterial(DescripcionModel):
     class Meta(DescripcionModel.Meta):
         verbose_name = "Tipo de material"
         verbose_name_plural = "Tipos de material"
-        db_table = "tipo_material"
+        db_table = "inv_tipo_material"
 
     def __str__(self):
         return self.nombre

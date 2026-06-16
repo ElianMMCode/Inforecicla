@@ -39,10 +39,14 @@ class Chat(models.Model):
                 fields=["punto", "ciudadano"], name="unique_chat_punto_ciudadano"
             )
         ]
-        verbose_name = "Chat punto-ciudadano"
+        verbose_name = "Conversación"
+        verbose_name_plural = "Conversaciones"
+        db_table = "chat_conversacion"
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Chat {self.punto} - {self.ciudadano}"
+        return f"Conversación {self.punto} - {self.ciudadano}"
+
 
 class Mensaje(models.Model):
     """
@@ -66,6 +70,12 @@ class Mensaje(models.Model):
     enviado_en = models.DateTimeField(auto_now_add=True, help_text="Fecha/hora de envío.")
     leido = models.BooleanField(default=False, help_text="True si el mensaje fue leído por el destinatario.")
     editado = models.BooleanField(default=False, help_text="Indica si el mensaje fue editado luego de enviado.")
+
+    class Meta:
+        verbose_name = "Mensaje"
+        verbose_name_plural = "Mensajes"
+        db_table = "chat_mensaje"
+        ordering = ["enviado_en"]
 
     def __str__(self):
         return f"Mensaje de {self.remitente} en chat {self.chat.id}"
