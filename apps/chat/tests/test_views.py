@@ -144,12 +144,12 @@ class MensajeUpdateViewTestCase(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['texto'], 'Mensaje actualizado')
-        self.assertTrue(response.data['editado'])
+        self.assertTrue(response.data['es_editado'])
         
         # Verify the mensaje was updated in the database
         self.mensaje.refresh_from_db()
         self.assertEqual(self.mensaje.texto, 'Mensaje actualizado')
-        self.assertTrue(self.mensaje.editado)
+        self.assertTrue(self.mensaje.es_editado)
 
     def test_mensaje_update_cannot_be_empty(self):
         """Test that mensaje cannot be updated to empty text"""

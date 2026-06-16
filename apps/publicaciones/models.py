@@ -57,7 +57,7 @@ class Publicacion(CreacionModificacionModel):
         help_text="Resumen corto para vistas previas (máx. 500 caracteres)",
     )
 
-    destacado = models.BooleanField(
+    es_destacado = models.BooleanField(
         default=False,
         verbose_name="Destacado",
         help_text="Marcar para mostrar esta publicación en lugares destacados",
@@ -211,7 +211,7 @@ class Notificacion(models.Model):
         null=True, blank=True,
     )
 
-    leido = models.BooleanField(default=False)
+    es_leido = models.BooleanField(default=False)
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 

@@ -78,7 +78,7 @@
               </div>
               {% if mis_notificaciones %}
                 {% for notif in mis_notificaciones %}
-                <div class="dropdown-item d-flex gap-2 align-items-start py-2 px-3 border-bottom {% if not notif.leido %}bg-warning-subtle{% endif %}"
+                <div class="dropdown-item d-flex gap-2 align-items-start py-2 px-3 border-bottom {% if not notif.es_leido %}bg-warning-subtle{% endif %}"
                      style="white-space:normal;">
                   <a href="{% url 'publicacion:abrir_notificacion' notif.id %}"
                      class="d-flex gap-2 align-items-start flex-grow-1 text-decoration-none text-reset">
@@ -92,7 +92,7 @@
                       {% endif %}
                     </span>
                     <span class="flex-grow-1">
-                      <span class="d-block small {% if not notif.leido %}fw-semibold{% endif %} text-dark">
+                      <span class="d-block small {% if not notif.es_leido %}fw-semibold{% endif %} text-dark">
                         {% if notif.inventario %}
                           Alerta de stock: {{ notif.inventario.material.nombre }} ({{ notif.inventario.alerta }})
                         {% elif notif.evento_instancia %}
@@ -105,7 +105,7 @@
                         <i class="bi bi-clock me-1"></i>{{ notif.fecha_creacion|date:"d/m/Y H:i" }}
                       </span>
                     </span>
-                    {% if not notif.leido %}
+                    {% if not notif.es_leido %}
                     <span class="badge rounded-pill bg-success align-self-center" style="font-size:.55rem;">Nueva</span>
                     {% endif %}
                   </a>

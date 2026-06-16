@@ -49,14 +49,14 @@ class PublicacionService:
             queryset = queryset.filter(categoria_id=categoria_id)
 
         if solo_destacados:
-            queryset = queryset.filter(destacado=True)
+            queryset = queryset.filter(es_destacado=True)
 
         if orden == "valorados":
             queryset = queryset.order_by("-likes_count", "-fecha_creacion")
         elif orden == "comentados":
             queryset = queryset.order_by("-comentarios_total", "-fecha_creacion")
         elif orden == "destacados":
-            queryset = queryset.order_by("-destacado", "-fecha_creacion")
+            queryset = queryset.order_by("-es_destacado", "-fecha_creacion")
         else:
             queryset = queryset.order_by("-fecha_creacion")
 
@@ -75,7 +75,7 @@ class PublicacionService:
 
         paginator = Paginator(queryset, 6)
         publicaciones = paginator.get_page(request.GET.get("page"))
-        publicaciones_destacadas = cls._base_queryset().filter(destacado=True)[:5]
+        publicaciones_destacadas = cls._base_queryset().filter(es_destacado=True)[:5]
 
         return {
             "publicaciones": publicaciones,

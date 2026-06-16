@@ -297,8 +297,8 @@ class AdminDashboardService:
     def obtener_distribucion_publicaciones_destacadas():
         try:
             from apps.publicaciones.models import Publicacion
-            destacadas = Publicacion.objects.filter(destacado=True).count()
-            no_destacadas = Publicacion.objects.filter(destacado=False).count()
+            destacadas = Publicacion.objects.filter(es_destacado=True).count()
+            no_destacadas = Publicacion.objects.filter(es_destacado=False).count()
             return [{"label": "Destacadas", "count": destacadas}, {"label": "No destacadas", "count": no_destacadas}]
         except Exception:
             return []
@@ -852,7 +852,7 @@ class AdminCatalogService:
         publicacion.titulo = campos["titulo"]
         publicacion.contenido = campos["contenido"]
         publicacion.resumen = campos["resumen"]
-        publicacion.destacado = campos["destacado"]
+        publicacion.es_destacado = campos["destacado"]
         publicacion.estado = campos["estado"]
         publicacion.categoria = campos["categoria"]
         publicacion.video_url = campos["video_url"]

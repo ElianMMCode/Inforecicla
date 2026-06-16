@@ -367,7 +367,7 @@ class TokenValidacion(models.Model):
         unique=True,
         help_text="Código único de 6 dígitos para validación"
     )
-    activo = models.BooleanField(
+    es_activo = models.BooleanField(
         verbose_name="Activo",
         default=True,
         help_text="Indica si el token aún es válido"
@@ -402,7 +402,7 @@ class TokenValidacion(models.Model):
             models.Index(fields=["email", "tipo"]),
             models.Index(fields=["token"]),
             models.Index(fields=["usuario", "tipo"]),
-            models.Index(fields=["activo", "fecha_expiracion"]),
+            models.Index(fields=["es_activo", "fecha_expiracion"]),
         ]
 
     def __str__(self):
@@ -415,7 +415,7 @@ class TokenValidacion(models.Model):
 
     def puede_validarse(self):
         """Verifica si el token puede validarse (no expirado, activo, intentos disponibles)"""
-        return self.activo and not self.esta_expirado() and self.intentos_fallidos < 5
+        return self.es_activo and not self.esta_expirado() and self.intentos_fallidos < 5
 
     def incrementar_intentos(self):
         """Incrementa el contador de intentos fallidos"""
@@ -428,5 +428,5 @@ class TokenValidacion(models.Model):
         """Marca el token como validado"""
         from django.utils import timezone
         self.fecha_validacion = timezone.now()
-        self.activo = False
+        self.es_activo = False
         self.save()

@@ -99,7 +99,7 @@ def _obtener_token_recuperacion_valido(request, email):
         email=email,
         tipo="recuperacion",
         fecha_validacion__isnull=False,
-        activo=False,
+        es_activo=False,
     ).first()
     if token_obj is None:
         return None, "La validación de recuperación ya no es válida. Solicita un nuevo código."
@@ -871,7 +871,7 @@ def perfil_ciudadano(request, tab="datos"):
         .select_related("publicacion", "mensaje__chat__punto")
         .order_by("-fecha_creacion")[:20]
     )
-    notificaciones_no_leidas = notificaciones_disponibles.filter(leido=False).count()
+    notificaciones_no_leidas = notificaciones_disponibles.filter(es_leido=False).count()
     return render(
         request,
         "users/perfil_ciudadano.html",
