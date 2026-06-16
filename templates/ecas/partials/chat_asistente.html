@@ -199,6 +199,7 @@
           hx-swap="beforeend"
           class="chatbot-form">
         {% csrf_token %}
+        <label for="chat-user-input" class="visually-hidden">Escribe tu pregunta</label>
         <input type="text"
                name="pregunta"
                id="chat-user-input"

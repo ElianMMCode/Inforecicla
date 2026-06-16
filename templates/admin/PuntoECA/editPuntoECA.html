@@ -20,68 +20,68 @@
   <div class="row g-4">
     <div class="col-lg-8">
       <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-success text-white"><i class="bi bi-info-circle me-1"></i> Información General</div>
+        <div class="card-header bg-success text-white"><i class="bi bi-info-circle me-1"></i> Informacion General</div>
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
-              <input type="text" name="nombre" class="form-control" value="{{ punto.nombre }}" required maxlength="100">
+              <label class="form-label fw-semibold" for="id-nombre">Nombre <span class="text-danger">*</span></label>
+              <input type="text" name="nombre" id="id-nombre" class="form-control" value="{{ punto.nombre }}" required maxlength="100">
               <div class="invalid-feedback">El nombre es obligatorio.</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Dirección</label>
-              <input type="text" name="direccion" class="form-control" value="{{ punto.direccion|default:'' }}">
+              <label class="form-label fw-semibold" for="id-direccion">Direccion</label>
+              <input type="text" name="direccion" id="id-direccion" class="form-control" value="{{ punto.direccion|default:'' }}">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Email</label>
-              <input type="email" name="email" class="form-control" value="{{ punto.email|default:'' }}">
+              <label class="form-label fw-semibold" for="id-email">Email</label>
+              <input type="email" name="email" id="id-email" class="form-control" value="{{ punto.email|default:'' }}">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Celular</label>
-              <input type="text" name="celular" class="form-control" value="{{ punto.celular|default:'' }}" pattern="3[0-9]{9}" maxlength="10">
-              <div class="invalid-feedback">Debe iniciar con 3 y tener 10 dígitos.</div>
+              <label class="form-label fw-semibold" for="id-celular">Celular</label>
+              <input type="text" name="celular" id="id-celular" class="form-control" value="{{ punto.celular|default:'' }}" pattern="3[0-9]{9}" maxlength="10">
+              <div class="invalid-feedback">Debe iniciar con 3 y tener 10 digitos.</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Teléfono Punto</label>
-              <input type="text" name="telefono_punto" class="form-control" value="{{ punto.telefono_punto|default:'' }}" pattern="60[0-9]{8}" maxlength="10" placeholder="60XXXXXXXX">
-              <div class="invalid-feedback">Debe comenzar con 60 y tener 10 dígitos.</div>
+              <label class="form-label fw-semibold" for="id-telefono-punto">Telefono Punto</label>
+              <input type="text" name="telefono_punto" id="id-telefono-punto" class="form-control" value="{{ punto.telefono_punto|default:'' }}" pattern="60[0-9]{8}" maxlength="10" placeholder="60XXXXXXXX">
+              <div class="invalid-feedback">Debe comenzar con 60 y tener 10 digitos.</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Sitio Web</label>
-              <input type="text" name="sitio_web" class="form-control" value="{{ punto.sitio_web|default:'' }}">
+              <label class="form-label fw-semibold" for="id-sitio-web">Sitio Web</label>
+              <input type="text" name="sitio_web" id="id-sitio-web" class="form-control" value="{{ punto.sitio_web|default:'' }}">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Horario de Atención</label>
-              <input type="text" name="horario_atencion" class="form-control" value="{{ punto.horario_atencion|default:'' }}" placeholder="L-V 8am-6pm">
+              <label class="form-label fw-semibold" for="id-horario-atencion">Horario de Atencion</label>
+              <input type="text" name="horario_atencion" id="id-horario-atencion" class="form-control" value="{{ punto.horario_atencion|default:'' }}" placeholder="L-V 8am-6pm">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">URL Logo</label>
-              <input type="text" name="logo_url_punto" class="form-control" value="{{ punto.logo_url_punto|default:'' }}">
+              <label class="form-label fw-semibold" for="id-logo-url">URL Logo</label>
+              <input type="text" name="logo_url_punto" id="id-logo-url" class="form-control" value="{{ punto.logo_url_punto|default:'' }}">
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Descripción</label>
-              <textarea name="descripcion" class="form-control" rows="3">{{ punto.descripcion|default:'' }}</textarea>
+              <label class="form-label fw-semibold" for="id-descripcion">Descripcion</label>
+              <textarea name="descripcion" id="id-descripcion" class="form-control" rows="3">{{ punto.descripcion|default:'' }}</textarea>
             </div>
           </div>
         </div>
       </div>
       <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-success text-white"><i class="bi bi-geo me-1"></i> Ubicación</div>
+        <div class="card-header bg-success text-white"><i class="bi bi-geo me-1"></i> Ubicacion</div>
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Latitud</label>
-              <input type="text" name="latitud" class="form-control" value="{{ punto.latitud|default:'' }}" placeholder="4.6097">
-              <div class="invalid-feedback">Ingresa una latitud válida.</div>
+              <label class="form-label fw-semibold" for="id-latitud">Latitud</label>
+              <input type="text" name="latitud" id="id-latitud" class="form-control" value="{{ punto.latitud|default:'' }}" placeholder="4.6097">
+              <div class="invalid-feedback">Ingresa una latitud valida.</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Longitud</label>
-              <input type="text" name="longitud" class="form-control" value="{{ punto.longitud|default:'' }}" placeholder="-74.0817">
-              <div class="invalid-feedback">Ingresa una longitud válida.</div>
+              <label class="form-label fw-semibold" for="id-longitud">Longitud</label>
+              <input type="text" name="longitud" id="id-longitud" class="form-control" value="{{ punto.longitud|default:'' }}" placeholder="-74.0817">
+              <div class="invalid-feedback">Ingresa una longitud valida.</div>
             </div>
             <div class="col-12">
-              <label class="form-label fw-semibold">Localidad</label>
-              <select name="localidad_id" class="form-select">
+              <label class="form-label fw-semibold" for="id-localidad">Localidad</label>
+              <select name="localidad_id" id="id-localidad" class="form-select">
                 <option value="">Sin localidad</option>
                 {% for loc in localidades %}
                   <option value="{{ loc.localidad_id }}" {% if punto.localidad and punto.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>{{ loc.nombre }}</option>
@@ -97,7 +97,8 @@
       <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-success text-white"><i class="bi bi-shield me-1"></i> Estado</div>
         <div class="card-body">
-          <select name="estado" class="form-select" required>
+          <label class="form-label fw-semibold" for="id-estado">Estado</label>
+          <select name="estado" id="id-estado" class="form-select" required>
             {% for val, label in estados %}
               <option value="{{ val }}" {% if punto.estado == val %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
