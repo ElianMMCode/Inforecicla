@@ -68,12 +68,12 @@ def desactivar_tokens_previos(email, tipo, excluir_token_id=None):
     filtros = {
         "email": email,
         "tipo": tipo,
-        "activo": True,
+        "es_activo": True,
     }
     if excluir_token_id is not None:
-        TokenValidacion.objects.filter(**filtros).exclude(id=excluir_token_id).update(activo=False)
+        TokenValidacion.objects.filter(**filtros).exclude(id=excluir_token_id).update(es_activo=False)
         return
-    TokenValidacion.objects.filter(**filtros).update(activo=False)
+    TokenValidacion.objects.filter(**filtros).update(es_activo=False)
 
 
 def generar_token_aleatorio(longitud=6):
@@ -110,7 +110,7 @@ def crear_token_validacion(email, tipo, usuario=None, minutos_expiracion=15, des
     token = generar_token_aleatorio()
 
     # Asegurar que el token sea único
-    while TokenValidacion.objects.filter(token=token, activo=True).exists():
+    while TokenValidacion.objects.filter(token=token, es_activo=True).exists():
         token = generar_token_aleatorio()
 
     fecha_expiracion = timezone.now() + timedelta(minutes=minutos_expiracion)

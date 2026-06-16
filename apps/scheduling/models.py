@@ -42,7 +42,10 @@ class Evento(CreacionModificacionModel):
     es_evento_generado = models.BooleanField(default=False)
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "evento"
+        verbose_name = "Evento"
+        verbose_name_plural = "Eventos"
+        db_table = "age_evento"
+        ordering = ["-fecha_inicio"]
 
     def generar_titulo(self):
         if self.material and hasattr(self.material, "descripcion"):
@@ -73,18 +76,18 @@ class EventoInstancia(CreacionModificacionModel):
     fecha_fin = models.DateTimeField()
     numero_repeticion = models.IntegerField(null=True, blank=True)
     es_completado = models.BooleanField(default=False)
-    completado_en = models.DateTimeField(null=True, blank=True)
-    observaciones = models.TextField(blank=True)
+    fecha_completado = models.DateTimeField(null=True, blank=True)
+    observaciones = models.TextField(blank=True, null=True)
 
     def marcar_completada(self):
         self.es_completado = True
-        self.completado_en = timezone.now()
-        self.save(update_fields=["es_completado", "completado_en"])
+        self.fecha_completado = timezone.now()
+        self.save(update_fields=["es_completado", "fecha_completado"])
 
     def desmarcar_completada(self):
         self.es_completado = False
-        self.completado_en = None
-        self.save(update_fields=["es_completado", "completado_en"])
+        self.fecha_completado = None
+        self.save(update_fields=["es_completado", "fecha_completado"])
 
     def dias_desde_creacion(self):
         if self.fecha_creacion:
@@ -92,4 +95,7 @@ class EventoInstancia(CreacionModificacionModel):
         return None
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "evento_instancia"
+        verbose_name = "Instancia de evento"
+        verbose_name_plural = "Instancias de evento"
+        db_table = "age_evento_instancia"
+        ordering = ["-fecha_inicio"]

@@ -52,7 +52,7 @@ class ChatFactory(factory.django.DjangoModelFactory):
 
     punto = factory.SubFactory(PuntoECAFactory)
     ciudadano = factory.SubFactory(UsuarioFactory)
-    created_at = factory.Faker("date_time_this_year")
+    fecha_creacion = factory.Faker("date_time_this_year")
 
     @classmethod
     def con_gestor(cls):
@@ -66,7 +66,7 @@ class MensajeFactory(factory.django.DjangoModelFactory):
     chat = factory.SubFactory(ChatFactory)
     remitente = factory.SubFactory(UsuarioFactory)
     texto = factory.Faker("sentence")
-    enviado_en = factory.Faker("date_time_this_year")
-    leido = False
-    editado = False
+    fecha_envio = factory.Faker("date_time_this_year")
+    es_leido = False
+    es_editado = False
 

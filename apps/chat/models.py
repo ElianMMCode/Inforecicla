@@ -13,12 +13,14 @@ Lógica de negocio:
 from django.conf import settings
 from apps.ecas.models import PuntoECA
 from django.db import models
+import uuid
 
 class Chat(models.Model):
     """
     Representa la conversación 1 a 1 entre un ciudadano y un PuntoECA.
     Restricción: sólo puede haber un Chat por pareja punto-usuario.
     """
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     punto = models.ForeignKey(
         PuntoECA,
         on_delete=models.CASCADE,
@@ -31,7 +33,7 @@ class Chat(models.Model):
         related_name="chats_ciudadano",
         help_text="Ciudadano participante (usuario autenticado)"
     )
-    created_at = models.DateTimeField(auto_now_add=True, help_text="Fecha de inicio del chat.")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, help_text="Fecha de inicio del chat.")
 
     class Meta:
         constraints = [
@@ -39,10 +41,14 @@ class Chat(models.Model):
                 fields=["punto", "ciudadano"], name="unique_chat_punto_ciudadano"
             )
         ]
-        verbose_name = "Chat punto-ciudadano"
+        verbose_name = "Conversación"
+        verbose_name_plural = "Conversaciones"
+        db_table = "chat_conversacion"
+        ordering = ["-fecha_creacion"]
 
     def __str__(self):
-        return f"Chat {self.punto} - {self.ciudadano}"
+        return f"Conversación {self.punto} - {self.ciudadano}"
+
 
 class Mensaje(models.Model):
     """
@@ -50,6 +56,7 @@ class Mensaje(models.Model):
     Soporta control de mensaje leído y si fue editado.
     El remitente puede ser tanto el ciudadano como la cuenta de PuntoECA (usuario).
     """
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     chat = models.ForeignKey(
         Chat,
         on_delete=models.CASCADE,
@@ -63,9 +70,15 @@ class Mensaje(models.Model):
         help_text="Usuario que envía el mensaje (puede ser PuntoECA o ciudadano)."
     )
     texto = models.TextField(help_text="Contenido del mensaje.")
-    enviado_en = models.DateTimeField(auto_now_add=True, help_text="Fecha/hora de envío.")
-    leido = models.BooleanField(default=False, help_text="True si el mensaje fue leído por el destinatario.")
-    editado = models.BooleanField(default=False, help_text="Indica si el mensaje fue editado luego de enviado.")
+    fecha_envio = models.DateTimeField(auto_now_add=True, help_text="Fecha/hora de envío.")
+    es_leido = models.BooleanField(default=False, help_text="True si el mensaje fue leído por el destinatario.")
+    es_editado = models.BooleanField(default=False, help_text="Indica si el mensaje fue editado luego de enviado.")
+
+    class Meta:
+        verbose_name = "Mensaje"
+        verbose_name_plural = "Mensajes"
+        db_table = "chat_mensaje"
+        ordering = ["fecha_envio"]
 
     def __str__(self):
         return f"Mensaje de {self.remitente} en chat {self.chat.id}"

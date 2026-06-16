@@ -37,12 +37,12 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_no_leidos(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.mensajes.filter(leido=False).exclude(remitente=request.user).count()
+            return obj.mensajes.filter(es_leido=False).exclude(remitente=request.user).count()
         return 0
 
     class Meta:
         model = Chat
-        fields = ['id', 'punto', 'punto_nombre', 'ciudadano', 'ciudadano_nombre', 'no_leidos', 'created_at']
+        fields = ['id', 'punto', 'punto_nombre', 'ciudadano', 'ciudadano_nombre', 'no_leidos', 'fecha_creacion']
         read_only_fields = ['ciudadano']
 
 
@@ -70,5 +70,5 @@ class MensajeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Mensaje
-        fields = ['id', 'chat', 'remitente', 'remitente_nombre', 'texto', 'enviado_en', 'leido', 'editado']
-        read_only_fields = ['chat', 'remitente', 'enviado_en']
+        fields = ['id', 'chat', 'remitente', 'remitente_nombre', 'texto', 'fecha_envio', 'es_leido', 'es_editado']
+        read_only_fields = ['chat', 'remitente', 'fecha_envio']

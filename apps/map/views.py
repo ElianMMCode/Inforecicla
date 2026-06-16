@@ -171,7 +171,7 @@ def api_puntos_eca(request):
     puntos = []
     for punto in PuntoECA.objects.select_related(
         "localidad", "gestor_eca"
-    ).filter(visible_en_mapa=True):
+    ).filter(es_visible_en_mapa=True):
         try:
             localidad_nombre = punto.localidad.nombre
         except Exception:
@@ -205,7 +205,7 @@ def api_materiales(request):
     for m in materiales:
         cantidad = Inventario.objects.filter(
             material=m,
-            punto_eca__visible_en_mapa=True,
+            punto_eca__es_visible_en_mapa=True,
         ).count()
         data.append({
             "materialId": str(m.id),
@@ -227,7 +227,7 @@ def api_puntos_eca_detalle(request, punto_id):
     - Todos los campos relevantes para la gestión y visualización ya vienen "ready to use".
     """
     try:
-        punto = PuntoECA.objects.get(pk=punto_id, visible_en_mapa=True)
+        punto = PuntoECA.objects.get(pk=punto_id, es_visible_en_mapa=True)
     except PuntoECA.DoesNotExist:
         raise Http404("No existe el punto ECA")
 
@@ -291,7 +291,7 @@ def api_puntos_eca_por_material(request, material_id):
     puntos_ids = inventarios.values_list("punto_eca_id", flat=True)
     puntos = PuntoECA.objects.select_related(
         "localidad", "gestor_eca"
-    ).filter(pk__in=puntos_ids, visible_en_mapa=True).distinct()
+    ).filter(pk__in=puntos_ids, es_visible_en_mapa=True).distinct()
     lista = []
     for punto in puntos:
         try:

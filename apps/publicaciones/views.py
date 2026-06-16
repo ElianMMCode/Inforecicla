@@ -103,9 +103,9 @@ def abrir_notificacion(request, notificacion_id):
     from .models import Notificacion
     from config.constants import TipoUsuario
     notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
-    if not notificacion.leido:
-        notificacion.leido = True
-        notificacion.save(update_fields=["leido"])
+    if not notificacion.es_leido:
+        notificacion.es_leido = True
+        notificacion.save(update_fields=["es_leido"])
     if notificacion.publicacion_id:
         return redirect(_DETALLE_PUBLICACION, publicacion_id=notificacion.publicacion_id)
     if notificacion.mensaje_id:

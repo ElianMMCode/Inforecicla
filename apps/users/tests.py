@@ -219,7 +219,7 @@ class ValidarCredencialesTests(TestCase):
         usuario.refresh_from_db()
         token_obj.refresh_from_db()
         self.assertTrue(usuario.is_active)
-        self.assertFalse(token_obj.activo)
+        self.assertFalse(token_obj.es_activo)
         self.assertIsNotNone(token_obj.fecha_validacion)
         # Ensure session contains authenticated user
         session = self.client.session

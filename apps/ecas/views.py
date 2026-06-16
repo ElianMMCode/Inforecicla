@@ -36,9 +36,9 @@ def toggle_visible(request):
     """
     punto = buscar_puntos_eca(request)
     # Normalizar valor de checkbox
-    visible = request.POST.get("visible_en_mapa") in ("on", "1", "true", "True")
-    punto.visible_en_mapa = visible
-    punto.save(update_fields=["visible_en_mapa", "fecha_modificacion"])
+    visible = request.POST.get("es_visible_en_mapa") in ("on", "1", "true", "True")
+    punto.es_visible_en_mapa = visible
+    punto.save(update_fields=["es_visible_en_mapa", "fecha_modificacion"])
     messages.success(request, "Preferencias actualizadas correctamente.")
     return redirect(reverse(CONSTANTE_RENDER, kwargs={"seccion": "perfil"}) + "?tab=configuracion")
 
@@ -188,7 +188,7 @@ def _check_upcoming_event_notifications(punto, usuario):
         notif, created = Notificacion.objects.get_or_create(
             usuario=usuario,
             evento_instancia=instancia,
-            defaults={"leido": False},
+            defaults={"es_leido": False},
         )
         if created:
             enviar_notificacion_realtime(usuario.pk, {
@@ -214,7 +214,7 @@ def _add_notificacion_context(punto, usuario, context):
         .order_by("-fecha_creacion")[:20]
     )
     context["notificaciones_no_leidas"] = Notificacion.objects.filter(
-        usuario=usuario, leido=False
+        usuario=usuario, es_leido=False
     ).count()
 
 

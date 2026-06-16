@@ -633,7 +633,7 @@ def _procesar_creacion_publicacion_admin(admin_request, categorias, publicacione
         titulo=titulo,
         contenido=contenido,
         resumen=resumen,
-        destacado=destacado,
+        es_destacado=destacado,
         usuario=admin_request.user,
         categoria=categoria,
         video_url=video_url or None,
@@ -687,7 +687,7 @@ def _procesar_creacion_publicacion_admin_ajax(admin_request):
             titulo=titulo,
             contenido=contenido,
             resumen=resumen,
-            destacado=destacado,
+            es_destacado=destacado,
             usuario=admin_request.user,
             categoria=categoria,
             video_url=video_url or None,
@@ -1115,7 +1115,7 @@ def publicacion_to_dict(pub):
         "fecha_creacion": pub.fecha_creacion.strftime("%d/%m/%Y") if pub.fecha_creacion else "",
         "contenido": pub.contenido or "",
         "resumen": pub.resumen or "",
-        "destacado": pub.destacado,
+        "destacado": pub.es_destacado,
         "video_url": pub.video_url or "",
         "is_active": pub.estado == "ACTIVO",
         "view_url": reverse("panel_admin:ver_publicacion_admin", kwargs={"publicacion_id": pub.id}),
@@ -1238,7 +1238,7 @@ def exportar_publicaciones_excel(request):
         ws.cell(row=row, column=3, value=p.categoria.nombre if p.categoria else "")
         ws.cell(row=row, column=4, value=f"{p.usuario.nombres} {p.usuario.apellidos}" if p.usuario else "")
         ws.cell(row=row, column=5, value=str(p.estado))
-        ws.cell(row=row, column=6, value="Sí" if p.destacado else "No")
+        ws.cell(row=row, column=6, value="Sí" if p.es_destacado else "No")
         ws.cell(row=row, column=7, value=p.fecha_creacion.strftime("%Y-%m-%d") if p.fecha_creacion else "")
 
     for col in ws.columns:

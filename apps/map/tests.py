@@ -44,7 +44,7 @@ class MapViewsTest(TestCase):
 			telefono_punto="6012345678",
 			direccion="Calle 123",
 			localidad=self.localidad,
-			visible_en_mapa=True,
+			es_visible_en_mapa=True,
 		)
 
 	def test_api_puntos_eca_detalle_returns_absolute_image_urls(self):

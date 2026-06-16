@@ -38,31 +38,31 @@ class DashboardFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Dashboard
     
-    name = factory.Faker('catch_phrase')
-    description = factory.Faker('text', max_nb_chars=200)
-    is_public = factory.Faker('boolean')
-    owner = factory.SubFactory(UserFactory)
+    nombre = factory.Faker('catch_phrase')
+    descripcion = factory.Faker('text', max_nb_chars=200)
+    es_publico = factory.Faker('boolean')
+    propietario = factory.SubFactory(UserFactory)
 
 class WidgetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Widget
     
-    title = factory.Faker('sentence', nb_words=4)
-    widget_type = factory.Iterator(['chart', 'table', 'metric', 'text'])
-    position_x = factory.Faker('random_int', min=0, max=11)
-    position_y = factory.Faker('random_int', min=0, max=10)
-    width = factory.Faker('random_int', min=1, max=4)
-    height = factory.Faker('random_int', min=1, max=3)
+    titulo = factory.Faker('sentence', nb_words=4)
+    tipo_widget = factory.Iterator(['chart', 'table', 'metric', 'text'])
+    posicion_x = factory.Faker('random_int', min=0, max=11)
+    posicion_y = factory.Faker('random_int', min=0, max=10)
+    ancho = factory.Faker('random_int', min=1, max=4)
+    alto = factory.Faker('random_int', min=1, max=3)
     dashboard = factory.SubFactory(DashboardFactory)
-    config = factory.LazyAttribute(lambda obj: {})
+    configuracion = factory.LazyAttribute(lambda obj: {})
 
 class ReportFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Report
     
-    title = factory.Faker('sentence', nb_words=5)
-    description = factory.Faker('text', max_nb_chars=300)
-    report_type = factory.Iterator(['sales', 'inventory', 'users', 'operations'])
-    generated_by = factory.SubFactory(UserFactory)
-    parameters = factory.LazyAttribute(lambda obj: {})
-    is_scheduled = factory.Faker('boolean')
+    titulo = factory.Faker('sentence', nb_words=5)
+    descripcion = factory.Faker('text', max_nb_chars=300)
+    tipo_informe = factory.Iterator(['sales', 'inventory', 'users', 'operations'])
+    generado_por = factory.SubFactory(UserFactory)
+    parametros = factory.LazyAttribute(lambda obj: {})
+    es_programado = factory.Faker('boolean')
