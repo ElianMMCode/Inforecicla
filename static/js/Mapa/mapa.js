@@ -1,4 +1,4 @@
-const BOGOTA = [4.7110, -74.0721];
+const BOGOTA = [4.711, -74.0721];
 const map = L.map('map', { zoomControl: true }).setView(BOGOTA, 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap', maxZoom: 19
@@ -58,9 +58,10 @@ function renderLista(items) {
   });
 }
 
-fetch('/puntos.geojson')
-  .then(r => r.json())
-  .then(geo => {
+(async () => {
+  try {
+    const r = await fetch('/puntos.geojson');
+    const geo = await r.json();
     const puntos = geo.features.map(f => ({
       id: String(f.properties.id),
       nombre: f.properties.nombre,
@@ -77,7 +78,6 @@ fetch('/puntos.geojson')
     }));
     globalThis.__PUNTOS = puntos;
 
-    // Marcadores
     puntos.forEach(p => {
       const m = L.marker([p.lat, p.lng]).addTo(map);
       m.bindPopup(`<strong>${p.nombre}</strong><br><small>${p.direccion || ''}</small>`);
@@ -86,11 +86,11 @@ fetch('/puntos.geojson')
     });
 
     renderLista(puntos);
-  })
-  .catch(err => {
+  } catch (err) {
     console.error('Error cargando /puntos.geojson', err);
     renderLista([]);
-  });
+  }
+})();
 
 // Filtro
 const filtro = document.getElementById('filtro');
