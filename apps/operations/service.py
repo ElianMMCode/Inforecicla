@@ -52,7 +52,7 @@ class CompraInventarioService:
                 try:
                     # Intentar parsear en formato ISO con o sin Z
                     fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_compra.replace("Z", "+00:00")
+                        fecha_compra.replace("Z", _ISO_Z_REPLACEMENT)
                     )
                 except Exception:
                     # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
@@ -63,7 +63,7 @@ class CompraInventarioService:
                     fecha_dt = timezone.make_aware(fecha_dt)
                 fecha_compra = fecha_dt
 
-            entrada = models.CompraInventario.objects.create(
+            models.CompraInventario.objects.create(
                 inventario=inventario,
                 fecha_compra=fecha_compra,
                 cantidad=cantidad,
@@ -97,7 +97,8 @@ class CompraInventarioService:
     @staticmethod
     def editar_compra(request, data, compra_id):
         try:
-            compra_id = data.get("compraId")
+            compra_id_data = data.get("compraId")
+            compra_id = compra_id_data or compra_id
             if not compra_id:
                 return {
                     "error": True,
@@ -130,7 +131,7 @@ class CompraInventarioService:
             if isinstance(fecha_compra, str):
                 try:
                     fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_compra.replace("Z", "+00:00")
+                        fecha_compra.replace("Z", _ISO_Z_REPLACEMENT)
                     )
                 except Exception:
                     try:
@@ -324,7 +325,7 @@ class VentaInventarioService:
             try:
                 # Intentar parsear en formato ISO con o sin Z
                 fecha_dt = datetime.datetime.fromisoformat(
-                    fecha_compra.replace("Z", "+00:00")
+                    fecha_compra.replace("Z", _ISO_Z_REPLACEMENT)
                 )
             except Exception:
                 # Si falla, intentar parsearlo como "YYYY-MM-DD HH:MM:SS"
@@ -336,7 +337,10 @@ class VentaInventarioService:
         centro_acopio_id = data.get("centroAcopioId")
         centro_acopio_inst = None
         if centro_acopio_id:
-            from apps.ecas.models import CentroAcopio
+from apps.ecas.models import CentroAcopio
+
+_ISO_Z_REPLACEMENT = "+00:00"
+
 
             try:
                 centro_acopio_inst = CentroAcopio.objects.get(id=centro_acopio_id)
@@ -347,7 +351,7 @@ class VentaInventarioService:
                     "status": 404,
                 }
 
-        salida = models.VentaInventario.objects.create(
+        models.VentaInventario.objects.create(
             inventario=inventario,
             fecha_venta=fecha_compra,
             cantidad=cantidad,
@@ -369,7 +373,8 @@ class VentaInventarioService:
     @staticmethod
     def editar_venta(request, data, venta_id):
         try:
-            venta_id = data.get("ventaId")
+            venta_id_data = data.get("ventaId")
+            venta_id = venta_id_data or venta_id
             if not venta_id:
                 return {
                     "error": True,
@@ -402,7 +407,7 @@ class VentaInventarioService:
             if isinstance(fecha_venta, str):
                 try:
                     fecha_dt = datetime.datetime.fromisoformat(
-                        fecha_venta.replace("Z", "+00:00")
+                        fecha_venta.replace("Z", _ISO_Z_REPLACEMENT)
                     )
                 except Exception:
                     try:
