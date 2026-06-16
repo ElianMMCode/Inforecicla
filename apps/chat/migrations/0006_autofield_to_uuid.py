@@ -124,7 +124,7 @@ def migrate_notificacion(apps, schema_editor):
 
 
 def noop(apps, schema_editor):
-    pass
+    """Reverse operation is not supported (UUID→AutoField)."""
 
 
 class Migration(migrations.Migration):
