@@ -19,43 +19,43 @@ FK_MENSAJE_CHAT = 'chat_mensaje_chat_id_e5526d8d_fk_chat_chat_id'
 FK_NOTIF_MENSAJE = 'notificacion_mensaje_id_57fc57d3_fk_chat_mensaje_id'
 FK_WIDGET_DASHBOARD = 'panel_admin_widget_dashboard_id_5d62daf0_fk_panel_adm'
 
+# All table/column/constraint names are hardcoded constants above.
+# PostgreSQL DDL (ALTER TABLE, DROP CONSTRAINT, etc.) does not support
+# bind parameters for identifiers, so f-string interpolation is required.
+
 
 def _add_uuid_column(table_name, cursor):
-    cursor.execute(f'ALTER TABLE {table_name} ADD COLUMN uuid_new UUID')
-    cursor.execute(f'UPDATE {table_name} SET uuid_new = gen_random_uuid()')
-    cursor.execute(f'ALTER TABLE {table_name} ALTER COLUMN uuid_new SET NOT NULL')
-    cursor.execute(f'ALTER TABLE {table_name} ADD CONSTRAINT {table_name}_uuid_new_unique UNIQUE (uuid_new)')
+    cursor.execute(f'ALTER TABLE {table_name} ADD COLUMN uuid_new UUID')  # NOSONAR
+    cursor.execute(f'UPDATE {table_name} SET uuid_new = gen_random_uuid()')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {table_name} ALTER COLUMN uuid_new SET NOT NULL')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {table_name} ADD CONSTRAINT {table_name}_uuid_new_unique UNIQUE (uuid_new)')  # NOSONAR
 
 
 def _swap_pk(table_name, cursor):
     pk_name = PK_CONSTRAINTS[table_name]
-    cursor.execute(f'ALTER TABLE {table_name} DROP CONSTRAINT {pk_name}')
-    cursor.execute(f'ALTER TABLE {table_name} DROP COLUMN id')
-    cursor.execute(f'ALTER TABLE {table_name} RENAME COLUMN uuid_new TO id')
-    cursor.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id)')
+    cursor.execute(f'ALTER TABLE {table_name} DROP CONSTRAINT {pk_name}')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {table_name} DROP COLUMN id')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {table_name} RENAME COLUMN uuid_new TO id')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id)')  # NOSONAR
 
 
 def _migrate_fk_column(cursor, src_table, src_fk_col, dst_table, old_constraint_name):
     """Replace int FK column with UUID FK column (no constraint yet)."""
     tmp_col = f'{src_fk_col}_uuid'
-    cursor.execute(f'ALTER TABLE {src_table} ADD COLUMN {tmp_col} UUID')
-    cursor.execute(f'''
-        UPDATE {src_table} SET {tmp_col} = d.uuid_new
-        FROM {dst_table} d WHERE {src_table}.{src_fk_col} = d.id
-    ''')
-    cursor.execute(f'ALTER TABLE {src_table} ALTER COLUMN {tmp_col} SET NOT NULL')
-    cursor.execute(f'ALTER TABLE {src_table} DROP CONSTRAINT {old_constraint_name}')
-    cursor.execute(f'ALTER TABLE {src_table} DROP COLUMN {src_fk_col}')
-    cursor.execute(f'ALTER TABLE {src_table} RENAME COLUMN {tmp_col} TO {src_fk_col}')
+    cursor.execute(f'ALTER TABLE {src_table} ADD COLUMN {tmp_col} UUID')  # NOSONAR
+    sql = f'UPDATE {src_table} SET {tmp_col} = d.uuid_new FROM {dst_table} d WHERE {src_table}.{src_fk_col} = d.id'
+    cursor.execute(sql)  # NOSONAR
+    cursor.execute(f'ALTER TABLE {src_table} ALTER COLUMN {tmp_col} SET NOT NULL')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {src_table} DROP CONSTRAINT {old_constraint_name}')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {src_table} DROP COLUMN {src_fk_col}')  # NOSONAR
+    cursor.execute(f'ALTER TABLE {src_table} RENAME COLUMN {tmp_col} TO {src_fk_col}')  # NOSONAR
 
 
 def _add_fk_constraint(cursor, src_table, src_fk_col, dst_table):
     """Add FK constraint (call after destination PK is UUID)."""
     new_constraint = f'{src_table}_{src_fk_col}_uuid_fk'
-    cursor.execute(f'''
-        ALTER TABLE {src_table} ADD CONSTRAINT {new_constraint}
-        FOREIGN KEY ({src_fk_col}) REFERENCES {dst_table}(id) ON DELETE CASCADE
-    ''')
+    sql = f'ALTER TABLE {src_table} ADD CONSTRAINT {new_constraint} FOREIGN KEY ({src_fk_col}) REFERENCES {dst_table}(id) ON DELETE CASCADE'
+    cursor.execute(sql)  # NOSONAR
 
 
 def migrate_chat(apps, schema_editor):
@@ -72,18 +72,18 @@ def migrate_mensaje(apps, schema_editor):
     with connection.cursor() as cursor:
         _add_uuid_column('chat_mensaje', cursor)
         cursor.execute('ALTER TABLE pub_notificacion ADD COLUMN mensaje_uuid UUID')
-        cursor.execute('''
-            UPDATE pub_notificacion SET mensaje_uuid = m.uuid_new
-            FROM chat_mensaje m WHERE pub_notificacion.mensaje_id = m.id
-        ''')
-        cursor.execute(f'ALTER TABLE pub_notificacion DROP CONSTRAINT {FK_NOTIF_MENSAJE}')
+        cursor.execute(
+            'UPDATE pub_notificacion SET mensaje_uuid = m.uuid_new '
+            'FROM chat_mensaje m WHERE pub_notificacion.mensaje_id = m.id'
+        )
+        cursor.execute(f'ALTER TABLE pub_notificacion DROP CONSTRAINT {FK_NOTIF_MENSAJE}')  # NOSONAR
         cursor.execute('ALTER TABLE pub_notificacion DROP COLUMN mensaje_id')
         cursor.execute('ALTER TABLE pub_notificacion RENAME COLUMN mensaje_uuid TO mensaje_id')
         _swap_pk('chat_mensaje', cursor)
-        cursor.execute('''
-            ALTER TABLE pub_notificacion ADD CONSTRAINT pub_notificacion_mensaje_id_uuid_fk
-            FOREIGN KEY (mensaje_id) REFERENCES chat_mensaje(id) ON DELETE CASCADE
-        ''')
+        cursor.execute(
+            'ALTER TABLE pub_notificacion ADD CONSTRAINT pub_notificacion_mensaje_id_uuid_fk '
+            'FOREIGN KEY (mensaje_id) REFERENCES chat_mensaje(id) ON DELETE CASCADE'
+        )
 
 
 def migrate_dashboard(apps, schema_editor):
