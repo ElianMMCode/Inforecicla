@@ -31,8 +31,8 @@ def _add_uuid_column(table_name, cursor):
     cursor.execute(f'SELECT id FROM {table_name}')  # NOSONAR
     rows = cursor.fetchall()
     for row in rows:
-        cursor.execute(
-            f'UPDATE {table_name} SET uuid_new = %s WHERE id = %s',  # NOSONAR
+        cursor.execute(  # NOSONAR
+            f'UPDATE {table_name} SET uuid_new = %s WHERE id = %s',
             [str(uuid_mod.uuid4()), row[0]],
         )
     if not _is_sqlite():
@@ -55,13 +55,9 @@ def _swap_pk_sqlite(table_name, cursor):
     columns = cursor.fetchall()
 
     col_defs = []
-    pk_col = None
     for col in columns:
         col_name = col[1]
-        if col_name == 'id':
-            continue
-        if col_name == 'uuid_new':
-            pk_col = col
+        if col_name in ('id', 'uuid_new'):
             continue
         not_null = ' NOT NULL' if col[3] else ''
         default = f' DEFAULT {col[4]}' if col[4] else ''
@@ -87,20 +83,6 @@ def _swap_pk(table_name, cursor):
         _swap_pk_postgres(table_name, cursor)
 
 
-def _drop_indexes_on_column(cursor, table_name, column_name):
-    """Drop any SQLite indexes that reference a given column."""
-    if not _is_sqlite():
-        return
-    cursor.execute(f'PRAGMA index_list({table_name})')  # NOSONAR
-    indexes = cursor.fetchall()
-    for idx_row in indexes:
-        idx_name = idx_row[1]
-        cursor.execute(f'PRAGMA index_info({idx_name})')  # NOSONAR
-        info = cursor.fetchall()
-        if any(row[2] == column_name for row in info):
-            cursor.execute(f'DROP INDEX IF EXISTS "{idx_name}"')  # NOSONAR
-
-
 def _migrate_fk_column(cursor, src_table, src_fk_col, dst_table, old_constraint_name):
     """Replace int FK column with UUID FK column."""
     tmp_col = f'{src_fk_col}_uuid'
@@ -111,19 +93,18 @@ def _migrate_fk_column(cursor, src_table, src_fk_col, dst_table, old_constraint_
     for row in rows:
         row_id, old_fk = row
         if old_fk is not None:
-            cursor.execute(
-                f'SELECT uuid_new FROM {dst_table} WHERE id = %s',  # NOSONAR
+            cursor.execute(  # NOSONAR
+                f'SELECT uuid_new FROM {dst_table} WHERE id = %s',
                 [old_fk],
             )
             new_uuid = cursor.fetchone()[0]
-            cursor.execute(
-                f'UPDATE {src_table} SET {tmp_col} = %s WHERE id = %s',  # NOSONAR
+            cursor.execute(  # NOSONAR
+                f'UPDATE {src_table} SET {tmp_col} = %s WHERE id = %s',
                 [new_uuid, row_id],
             )
     if not _is_sqlite():
         cursor.execute(f'ALTER TABLE {src_table} ALTER COLUMN {tmp_col} SET NOT NULL')  # NOSONAR
         cursor.execute(f'ALTER TABLE {src_table} DROP CONSTRAINT {old_constraint_name}')  # NOSONAR
-    _drop_indexes_on_column(cursor, src_table, src_fk_col)
     cursor.execute(f'ALTER TABLE {src_table} DROP COLUMN {src_fk_col}')  # NOSONAR
     cursor.execute(f'ALTER TABLE {src_table} RENAME COLUMN {tmp_col} TO {src_fk_col}')  # NOSONAR
 
@@ -157,18 +138,17 @@ def migrate_mensaje(apps, schema_editor):
         for row in rows:
             notif_id, old_mensaje_id = row
             if old_mensaje_id is not None:
-                cursor.execute(
+                cursor.execute(  # NOSONAR
                     'SELECT uuid_new FROM chat_mensaje WHERE id = %s',
                     [old_mensaje_id],
                 )
                 new_uuid = cursor.fetchone()[0]
-                cursor.execute(
+                cursor.execute(  # NOSONAR
                     'UPDATE pub_notificacion SET mensaje_uuid = %s WHERE id = %s',
                     [new_uuid, notif_id],
                 )
         if not _is_sqlite():
             cursor.execute(f'ALTER TABLE pub_notificacion DROP CONSTRAINT {FK_NOTIF_MENSAJE}')  # NOSONAR
-        _drop_indexes_on_column(cursor, 'pub_notificacion', 'mensaje_id')
         cursor.execute('ALTER TABLE pub_notificacion DROP COLUMN mensaje_id')
         cursor.execute('ALTER TABLE pub_notificacion RENAME COLUMN mensaje_uuid TO mensaje_id')
         _swap_pk('chat_mensaje', cursor)
