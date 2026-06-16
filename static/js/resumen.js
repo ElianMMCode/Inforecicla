@@ -1,3 +1,20 @@
+function formatearFecha(fecha) {
+    if (!fecha || fecha === 'N/A') return 'N/A';
+
+    const date = new Date(fecha);
+    const hoy = new Date();
+    const ayer = new Date(hoy);
+    ayer.setDate(ayer.getDate() - 1);
+
+    if (date.toDateString() === hoy.toDateString()) {
+        return 'Hoy';
+    } else if (date.toDateString() === ayer.toDateString()) {
+        return 'Ayer';
+    } else {
+        return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Script de resumen Bootstrap cargado');
 
@@ -5,9 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const elementoResumen = document.querySelector('[data-resumen-datos]');
     let datosResumen = null;
 
-    if (elementoResumen && elementoResumen.getAttribute('data-resumen-datos')) {
+    if (elementoResumen?.dataset.resumenDatos) {
         try {
-            const datosString = elementoResumen.getAttribute('data-resumen-datos');
+            const datosString = elementoResumen.dataset.resumenDatos;
             console.log('📦 String de datos recibido:', datosString.substring(0, 100) + '...');
 
             // Parsear JSON
@@ -21,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (e) {
             console.error('❌ Error parsing datos del servidor:', e);
-            console.log('📝 String recibido:', elementoResumen.getAttribute('data-resumen-datos'));
+            console.log('📝 String recibido:', elementoResumen.dataset.resumenDatos);
             datosResumen = null;
         }
     }
@@ -84,65 +101,66 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Función para actualizar la UI con datos
+    function _actualizarTarjetaInventario(tarjeta, datos) {
+        const heading = tarjeta.querySelector('h3, h6');
+        if (heading) {
+            heading.textContent = datos.inventarioTotal + ' kg';
+        }
+        const progreso = tarjeta.querySelector('.progress-bar');
+        if (progreso) {
+            progreso.style.width = datos.capacidadPorcentaje + '%';
+        }
+        const capacidad = tarjeta.querySelector('[class*="text-muted"]');
+        if (capacidad) {
+            capacidad.textContent = datos.capacidadPorcentaje + '% de capacidad';
+        }
+    }
+
+    function _actualizarTarjetaEntradas(tarjeta, datos) {
+        const heading = tarjeta.querySelector('h3, h6');
+        if (heading) {
+            heading.textContent = datos.entradasMes + ' kg';
+        }
+    }
+
+    function _actualizarTarjetaSalidas(tarjeta, datos) {
+        const heading = tarjeta.querySelector('h3, h6');
+        if (heading) {
+            heading.textContent = datos.salidasMes + ' kg';
+        }
+    }
+
+    function _actualizarTarjetaProximo(tarjeta, datos) {
+        const heading = tarjeta.querySelector('h3, h6');
+        if (heading) {
+            heading.textContent = datos.proximoDespacho;
+        }
+        const subtext = tarjeta.querySelector('[class*="text-muted"]');
+        if (subtext) {
+            subtext.textContent = datos.proximaFecha;
+        }
+    }
+
     function actualizarUI(datos) {
         console.log('🎨 Actualizando UI con datos');
 
-        // Actualizar tarjetas de métricas
         const tarjetas = document.querySelectorAll('.card');
 
         tarjetas.forEach(tarjeta => {
             const texto = tarjeta.textContent;
 
-            // Inventario
             if (texto.includes('Inventario')) {
-                const heading = tarjeta.querySelector('h3, h6');
-                if (heading) {
-                    heading.textContent = datos.inventarioTotal + ' kg';
-                }
-                const progreso = tarjeta.querySelector('.progress-bar');
-                if (progreso) {
-                    progreso.style.width = datos.capacidadPorcentaje + '%';
-                }
-                const capacidad = tarjeta.querySelector('[class*="text-muted"]');
-                if (capacidad) {
-                    capacidad.textContent = datos.capacidadPorcentaje + '% de capacidad';
-                }
-            }
-
-            // Entradas
-            if (texto.includes('Entradas')) {
-                const heading = tarjeta.querySelector('h3, h6');
-                if (heading) {
-                    heading.textContent = datos.entradasMes + ' kg';
-                }
-            }
-
-            // Salidas
-            if (texto.includes('Salidas')) {
-                const heading = tarjeta.querySelector('h3, h6');
-                if (heading) {
-                    heading.textContent = datos.salidasMes + ' kg';
-                }
-            }
-
-            // Próximo despacho
-            if (texto.includes('Próximo') || texto.includes('Próx')) {
-                const heading = tarjeta.querySelector('h3, h6');
-                if (heading) {
-                    heading.textContent = datos.proximoDespacho;
-                }
-                const subtext = tarjeta.querySelector('[class*="text-muted"]');
-                if (subtext) {
-                    subtext.textContent = datos.proximaFecha;
-                }
+                _actualizarTarjetaInventario(tarjeta, datos);
+            } else if (texto.includes('Entradas')) {
+                _actualizarTarjetaEntradas(tarjeta, datos);
+            } else if (texto.includes('Salidas')) {
+                _actualizarTarjetaSalidas(tarjeta, datos);
+            } else if (texto.includes('Próximo') || texto.includes('Próx')) {
+                _actualizarTarjetaProximo(tarjeta, datos);
             }
         });
 
-        // Actualizar alertas
         actualizarAlertas(datos.alertas, datos.alertaCount);
-
-        // Actualizar movimientos
         cargarMovimientos(datos.movimientos);
 
         console.log('✅ UI actualizada correctamente');
@@ -168,7 +186,14 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 let html = '<div class="list-group list-group-flush">';
                 alertas.forEach(alerta => {
-                    const severidad = alerta.tipo === 'warning' ? 'warning' : (alerta.tipo === 'critico' ? 'danger' : 'info');
+                    let severidad;
+                    if (alerta.tipo === 'warning') {
+                        severidad = 'warning';
+                    } else if (alerta.tipo === 'critico') {
+                        severidad = 'danger';
+                    } else {
+                        severidad = 'info';
+                    }
                     html += `
                         <div class="alert alert-${severidad} alert-dismissible fade show" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -233,24 +258,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         html += '</div>';
         container.innerHTML = html;
-    }
-
-    // Función para formatear fechas
-    function formatearFecha(fecha) {
-        if (!fecha || fecha === 'N/A') return 'N/A';
-
-        const date = new Date(fecha);
-        const hoy = new Date();
-        const ayer = new Date(hoy);
-        ayer.setDate(ayer.getDate() - 1);
-
-        if (date.toDateString() === hoy.toDateString()) {
-            return 'Hoy';
-        } else if (date.toDateString() === ayer.toDateString()) {
-            return 'Ayer';
-        } else {
-            return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-        }
     }
 
     // Agregar estilos de animación
