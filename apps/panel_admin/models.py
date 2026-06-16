@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -5,6 +6,7 @@ from django.utils import timezone
 
 class Dashboard(models.Model):
     """Model representing an admin dashboard"""
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True)
     es_publico = models.BooleanField(default=False)
@@ -31,6 +33,7 @@ class Widget(models.Model):
         ('text', 'Text'),
     ]
 
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     titulo = models.CharField(max_length=200)
     tipo_widget = models.CharField(max_length=20, choices=WIDGET_TYPES)
     posicion_x = models.IntegerField(default=0)  # Grid position
@@ -61,6 +64,7 @@ class Report(models.Model):
         ('operations', 'Operations Report'),
     ]
 
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True)
     tipo_informe = models.CharField(max_length=20, choices=REPORT_TYPES)

@@ -13,12 +13,14 @@ Lógica de negocio:
 from django.conf import settings
 from apps.ecas.models import PuntoECA
 from django.db import models
+import uuid
 
 class Chat(models.Model):
     """
     Representa la conversación 1 a 1 entre un ciudadano y un PuntoECA.
     Restricción: sólo puede haber un Chat por pareja punto-usuario.
     """
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     punto = models.ForeignKey(
         PuntoECA,
         on_delete=models.CASCADE,
@@ -54,6 +56,7 @@ class Mensaje(models.Model):
     Soporta control de mensaje leído y si fue editado.
     El remitente puede ser tanto el ciudadano como la cuenta de PuntoECA (usuario).
     """
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     chat = models.ForeignKey(
         Chat,
         on_delete=models.CASCADE,

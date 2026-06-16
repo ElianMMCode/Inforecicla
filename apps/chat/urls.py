@@ -17,17 +17,17 @@ from .views import (
 urlpatterns = [
     path("", ChatListCreateView.as_view(), name="chat-list-create"),
     path(
-        "<int:chat_id>/mensajes/",
+        "<uuid:chat_id>/mensajes/",
         MensajeListCreateView.as_view(),
         name="mensaje-list-create",
     ),
     path(
-        "<int:chat_id>/mensajes/<int:mensaje_id>/editar/",
+        "<uuid:chat_id>/mensajes/<uuid:mensaje_id>/editar/",
         MensajeUpdateView.as_view(),
         name="mensaje-update",
     ),
     path(
-        "<int:chat_id>/leer/",
+        "<uuid:chat_id>/leer/",
         MarcarLeidosView.as_view(),
         name="marcar-leidos",
     ),

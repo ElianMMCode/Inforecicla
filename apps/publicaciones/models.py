@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 
 from apps.users.models import Usuario
@@ -96,6 +97,7 @@ class Publicacion(CreacionModificacionModel):
 
 
 class ImagenPublicacion(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     publicacion = models.ForeignKey(
         Publicacion,
         on_delete=models.CASCADE,
@@ -187,6 +189,7 @@ class Guardados(CreacionModificacionModel):
 
 ######################################################################
 class Notificacion(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     usuario = models.ForeignKey(
         Usuario, on_delete=models.CASCADE, related_name="notificaciones"
     )

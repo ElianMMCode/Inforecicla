@@ -42,10 +42,10 @@ class ChatListCreateViewTestCase(TestCase):
         self.assertEqual(len(response.data), 2)
         
         # Verify the chats belong to the authenticated user
-        chat_ids = [chat['id'] for chat in response.data]
-        self.assertIn(chat1.id, chat_ids)
-        self.assertIn(chat2.id, chat_ids)
-        self.assertNotIn(chat3.id, chat_ids)
+        chat_ids = [str(chat['id']) for chat in response.data]
+        self.assertIn(str(chat1.id), chat_ids)
+        self.assertIn(str(chat2.id), chat_ids)
+        self.assertNotIn(str(chat3.id), chat_ids)
 
     def test_chat_create_associates_with_authenticated_user(self):
         """Test that creating a chat associates it with the authenticated user"""
@@ -93,10 +93,10 @@ class MensajeListCreateViewTestCase(TestCase):
         self.assertEqual(len(response.data), 2)
         
         # Verify the messages belong to the correct chat
-        mensaje_ids = [mensaje['id'] for mensaje in response.data]
-        self.assertIn(mensaje1.id, mensaje_ids)
-        self.assertIn(mensaje2.id, mensaje_ids)
-        self.assertNotIn(mensaje3.id, mensaje_ids)
+        mensaje_ids = [str(mensaje['id']) for mensaje in response.data]
+        self.assertIn(str(mensaje1.id), mensaje_ids)
+        self.assertIn(str(mensaje2.id), mensaje_ids)
+        self.assertNotIn(str(mensaje3.id), mensaje_ids)
 
     def test_mensaje_create_associates_with_authenticated_user_and_chat(self):
         """Test that creating a mensaje associates it with the authenticated user and chat"""
@@ -104,8 +104,8 @@ class MensajeListCreateViewTestCase(TestCase):
         response = self.client.post(self.mensaje_url, {'texto': 'Hola mundo'})
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['remitente'], self.usuario.id)
-        self.assertEqual(response.data['chat'], self.chat.id)
+        self.assertEqual(str(response.data['remitente']), str(self.usuario.id))
+        self.assertEqual(str(response.data['chat']), str(self.chat.id))
         self.assertEqual(response.data['texto'], 'Hola mundo')
 
 
@@ -160,10 +160,11 @@ class MensajeUpdateViewTestCase(TestCase):
 
     def test_mensaje_update_nonexistent_mensaje_returns_404(self):
         """Test that updating a nonexistent mensaje returns 404"""
+        import uuid
         self.client.force_authenticate(user=self.usuario)
         url = reverse('mensaje-update', kwargs={
             'chat_id': self.chat.id,
-            'mensaje_id': 99999  # Non-existent ID
+            'mensaje_id': uuid.uuid4()  # Non-existent UUID
         })
         response = self.client.patch(url, {'texto': 'Mensaje'})
         
@@ -210,7 +211,7 @@ class PuntoChatListViewTestCase(TestCase):
         self.assertEqual(len(response.data), 2)
         
         # Verify the chats belong to the correct punto
-        chat_ids = [chat['id'] for chat in response.data]
-        self.assertIn(chat1.id, chat_ids)
-        self.assertIn(chat2.id, chat_ids)
-        self.assertNotIn(chat3.id, chat_ids)
+        chat_ids = [str(chat['id']) for chat in response.data]
+        self.assertIn(str(chat1.id), chat_ids)
+        self.assertIn(str(chat2.id), chat_ids)
+        self.assertNotIn(str(chat3.id), chat_ids)
