@@ -83,6 +83,20 @@ def _swap_pk(table_name, cursor):
         _swap_pk_postgres(table_name, cursor)
 
 
+def _drop_indexes_on_column(cursor, table_name, column_name):
+    """Drop any SQLite indexes that reference a given column."""
+    if not _is_sqlite():
+        return
+    cursor.execute(f'PRAGMA index_list({table_name})')  # NOSONAR
+    indexes = cursor.fetchall()
+    for idx_row in indexes:
+        idx_name = idx_row[1]
+        cursor.execute(f'PRAGMA index_info({idx_name})')  # NOSONAR
+        info = cursor.fetchall()
+        if any(row[2] == column_name for row in info):
+            cursor.execute(f'DROP INDEX IF EXISTS "{idx_name}"')  # NOSONAR
+
+
 def _migrate_fk_column(cursor, src_table, src_fk_col, dst_table, old_constraint_name):
     """Replace int FK column with UUID FK column."""
     tmp_col = f'{src_fk_col}_uuid'
@@ -105,6 +119,7 @@ def _migrate_fk_column(cursor, src_table, src_fk_col, dst_table, old_constraint_
     if not _is_sqlite():
         cursor.execute(f'ALTER TABLE {src_table} ALTER COLUMN {tmp_col} SET NOT NULL')  # NOSONAR
         cursor.execute(f'ALTER TABLE {src_table} DROP CONSTRAINT {old_constraint_name}')  # NOSONAR
+    _drop_indexes_on_column(cursor, src_table, src_fk_col)
     cursor.execute(f'ALTER TABLE {src_table} DROP COLUMN {src_fk_col}')  # NOSONAR
     cursor.execute(f'ALTER TABLE {src_table} RENAME COLUMN {tmp_col} TO {src_fk_col}')  # NOSONAR
 
@@ -149,6 +164,7 @@ def migrate_mensaje(apps, schema_editor):
                 )
         if not _is_sqlite():
             cursor.execute(f'ALTER TABLE pub_notificacion DROP CONSTRAINT {FK_NOTIF_MENSAJE}')  # NOSONAR
+        _drop_indexes_on_column(cursor, 'pub_notificacion', 'mensaje_id')
         cursor.execute('ALTER TABLE pub_notificacion DROP COLUMN mensaje_id')  # NOSONAR
         cursor.execute('ALTER TABLE pub_notificacion RENAME COLUMN mensaje_uuid TO mensaje_id')  # NOSONAR
         _swap_pk('chat_mensaje', cursor)
