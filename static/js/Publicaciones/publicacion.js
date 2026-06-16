@@ -115,10 +115,26 @@ commentForm.addEventListener('submit', (e) => {
     commentText.value = '';
     commentCount.textContent = Number.parseInt(commentCount.textContent, 10) + 1;
 
-    // TODO(api): POST /api/posts/{id}/comments {text} — persistir comentario en backend, revertir UI si falla
+    fetch(`/api/posts/${POST_ID}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+    }).catch(() => {
+        commentList.removeChild(card);
+        commentCount.textContent = Number.parseInt(commentCount.textContent, 10) - 1;
+    });
 });
 
 // ====== (Opcional) Cargar contenido desde la BD al abrir ======
-// TODO(api): GET /api/posts/{id} -> {title, author, date, category, body, images[], videoUrl, documents[], links[]} — cargar contenido desde BD al abrir publicacion
-// TODO(api): GET /api/posts/{id}/comments — cargar comentarios desde BD al abrir publicacion
-// TODO(api): GET /api/posts/{id}/related — cargar publicaciones relacionadas desde BD
+(async function cargarContenidoDesdeBD() {
+    if (!POST_ID) return;
+    try {
+        const resp = await fetch(`/api/posts/${POST_ID}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (typeof renderPostContent === 'function') {
+            renderPostContent(data);
+        }
+    } catch (_) {
+    }
+})();
