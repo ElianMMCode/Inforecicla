@@ -1,8 +1,13 @@
+from unittest import skipIf
+from django.db import connection
 from django.test import TestCase
 from apps.chat.models import Chat, Mensaje
 from apps.chat.tests.factories import ChatFactory, MensajeFactory, UsuarioFactory
 
+is_sqlite = connection.vendor == 'sqlite'
+
 class ChatModelTestCase(TestCase):
+    @skipIf(is_sqlite, "SQLite no UniqueConstraint enforcement")
     def test_unique_constraint_chat(self):
         chat1 = ChatFactory()
         with self.assertRaises(Exception):
