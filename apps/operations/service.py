@@ -45,11 +45,11 @@ def _convertir_cantidades_decimal(cantidad, cantidad_original):
     return cantidad, cantidad_original
 
 
-def _borrar_operacion(ModelClass, id_operacion, stock_updater):
+def _borrar_operacion(model_class, id_operacion, stock_updater):
     try:
         try:
-            operacion = ModelClass.objects.get(id=id_operacion)
-        except ModelClass.DoesNotExist:
+            operacion = model_class.objects.get(id=id_operacion)
+        except model_class.DoesNotExist:
             return {
                 "error": True,
                 "mensaje": "Operacion no encontrada.",
