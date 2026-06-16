@@ -62,6 +62,7 @@
           <form id="chat-form-eca" class="d-flex flex-column gap-1">
             {% csrf_token %}
             <div class="d-flex align-items-end gap-2">
+              <label for="chat-input-eca" class="visually-hidden">Escribe tu respuesta</label>
               <textarea id="chat-input-eca" class="form-control chat-textarea"
                         placeholder="Escribe tu respuesta..." maxlength="500" rows="1"
                         style="border-radius: 16px; border-color: #d0ead8;"></textarea>

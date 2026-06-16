@@ -206,7 +206,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
     biografia = models.TextField(
         verbose_name="Biografía",
         max_length=500,
-        null=True,
         blank=True,
         help_text="Breve descripción o biografía del usuario",
     )
@@ -214,7 +213,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
     celular = models.CharField(
         verbose_name="Número de celular",
         max_length=15,
-        null=True,
         blank=True,
         help_text="Número de teléfono celular (opcional)",
         validators=[

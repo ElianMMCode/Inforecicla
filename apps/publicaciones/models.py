@@ -142,7 +142,7 @@ class Comentario(CreacionModificacionModel):
 class Reaccion(CreacionModificacionModel):
     valor = models.CharField(
         max_length=30,
-        null=True,
+        blank=True,
         choices=constants.Votos,
     )
 
