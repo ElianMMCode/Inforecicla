@@ -390,7 +390,7 @@ class AdminCatalogService:
         Returns: (campos, error_dict) where error_dict includes "errors" with field-level messages.
         """
         nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
         estados_validos = {value for value, _ in cons.Estado.choices}
 
@@ -470,7 +470,7 @@ class AdminCatalogService:
     @staticmethod
     def _validar_material_data(data, default_estado="ACTIVO"):
         nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or default_estado).strip().upper()
         estado_valido = estado in {value for value, _ in cons.Estado.choices}
 
@@ -614,7 +614,7 @@ class AdminCatalogService:
             return {"ok": False, "errors": {"_general": "Tipo de material no encontrado."}, "message": "Tipo de material no encontrado."}
 
         nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
         estados_validos = {value for value, _ in cons.Estado.choices}
 
@@ -643,7 +643,7 @@ class AdminCatalogService:
     @staticmethod
     def _validar_tipo_publicacion_common(data, exclude_id=None):
         nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
         if not nombre:
             return None, {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
@@ -702,7 +702,7 @@ class AdminCatalogService:
             return {"ok": False, "errors": {"_general": "Categoria de material no encontrada."}, "message": "Categoria de material no encontrada."}
 
         nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip() or None
+        descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or "").strip().upper()
         estados_validos = {value for value, _ in cons.Estado.choices}
 
@@ -746,7 +746,7 @@ class AdminCatalogService:
 
         try:
             material.nombre = (data.get("nombre") or "").strip()
-            material.descripcion = (data.get("descripcion") or "").strip() or None
+            material.descripcion = (data.get("descripcion") or "").strip()
             material.estado = (data.get("estado") or "").strip().upper()
             material.categoria = categoria
             material.tipo = categoria.tipo if categoria else tipo
