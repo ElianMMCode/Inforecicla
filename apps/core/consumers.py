@@ -23,4 +23,4 @@ class NotificacionConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def notificacion_nueva(self, event):
-        await self.send(text_data=json.dumps(event.get('data', {})))
+        await self.send(text_data=json.dumps(event.get('data', {}), default=str))

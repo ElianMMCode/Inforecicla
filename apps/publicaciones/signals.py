@@ -21,7 +21,7 @@ def notificar_nueva_publicacion(sender, instance, created, **kwargs):
     for destinatario in destinatarios:
         notif = Notificacion.objects.create(usuario=destinatario, publicacion=instance)
         enviar_notificacion_realtime(destinatario.pk, {
-            "id": notif.pk,
+            "id": str(notif.pk),
             "tipo": "publicacion",
             "titulo": instance.titulo,
             "fecha": notif.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
