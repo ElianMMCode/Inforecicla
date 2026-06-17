@@ -94,9 +94,17 @@ def _texto_solo_letras(texto, permitir_apostrofo=False):
 
 def _validar_fecha_perfil_admin(fecha_str, errores):
     from datetime import date as date_type
+    import re
 
     if not fecha_str:
         return None
+
+    if re.match(r"^\d{2}-\d{2}-\d{4}$", fecha_str):
+        try:
+            from datetime import datetime
+            fecha_str = datetime.strptime(fecha_str, "%d-%m-%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            pass
 
     try:
         hoy = date_type.today()
