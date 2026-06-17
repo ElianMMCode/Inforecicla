@@ -22,6 +22,6 @@ from . import consumers
 # Lista de endpoints WebSocket utilizados por Django Channels.
 # - 'ws/chat/<chat_id>/': maneja un chat en tiempo real identificado por chat_id.
 websocket_urlpatterns = [
-    re_path(r"ws/chat/(?P<chat_id>\d+)/$", consumers.ChatConsumer.as_asgi()),
+    re_path(r"ws/chat/(?P<chat_id>[0-9a-f-]+)/$", consumers.ChatConsumer.as_asgi()),
 ]
 
