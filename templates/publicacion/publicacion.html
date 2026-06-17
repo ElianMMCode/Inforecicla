@@ -53,7 +53,7 @@
                         {% if publicacion.video_url %}
                         <div class="mb-4 rounded overflow-hidden shadow-sm">
                             <div class="ratio ratio-16x9">
-                                <iframe src="{{ publicacion.video_url|video_embed_url }}" title="Video de la publicación" allowfullscreen></iframe>
+                                <iframe src="{{ publicacion.video_url|video_embed_url }}" title="Video de la publicación" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                             </div>
                             <div class="p-2 text-center bg-light border-top">
                                 <a href="{{ publicacion.video_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
