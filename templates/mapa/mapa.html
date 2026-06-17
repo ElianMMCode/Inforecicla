@@ -392,12 +392,12 @@
                         {% else %}
                             <li class="nav-item dropdown">
                                 <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
-                                   href="/login"
+                                   href="{% url 'login' %}"
                                    data-bs-toggle="dropdown"
                                    aria-expanded="false">Acceder</a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="/login">Iniciar sesión</a>
+                                        <a class="dropdown-item" href="{% url 'login' %}">Iniciar sesión</a>
                                     </li>
                                     <li>
                                         <hr class="dropdown-divider" />
