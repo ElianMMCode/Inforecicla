@@ -192,7 +192,7 @@ def _check_upcoming_event_notifications(punto, usuario):
         )
         if created:
             enviar_notificacion_realtime(usuario.pk, {
-                "id": notif.pk,
+                "id": str(notif.pk),
                 "tipo": "evento",
                 "titulo": f"Evento próximo: {instancia.evento_base.titulo} — {instancia.fecha_inicio.strftime('%d/%m/%Y %H:%M')}",
                 "fecha": notif.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
