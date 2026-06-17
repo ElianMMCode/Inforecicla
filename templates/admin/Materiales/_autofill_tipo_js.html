@@ -1,0 +1,18 @@
+<script>
+(function() {
+  var catTipoMap = {
+    {% for cat in categorias_autofill %}
+      {% if cat.tipo_id %}
+        "{{ cat.id|escapejs }}": "{{ cat.tipo_id|escapejs }}",
+      {% endif %}
+    {% endfor %}
+  };
+  var catSelect = document.getElementById("material_categoria_id");
+  var tipoSelect = document.getElementById("material_tipo_id");
+  if (catSelect && tipoSelect) {
+    catSelect.addEventListener("change", function() {
+      tipoSelect.value = catTipoMap[this.value] || "";
+    });
+  }
+})();
+</script>

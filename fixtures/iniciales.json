@@ -7,7 +7,8 @@
       "fecha_creacion": "2026-05-17T16:11:24.687Z",
       "fecha_modificacion": "2026-05-17T16:11:24.687Z",
       "nombre": "Libro",
-      "descripcion": "asdf"
+      "descripcion": "asdf",
+      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -18,7 +19,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Envases Plásticos",
-      "descripcion": "Residuos de envases plásticos como botellas y empaques domésticos."
+      "descripcion": "Residuos de envases plásticos como botellas y empaques domésticos.",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -29,7 +31,8 @@
       "fecha_creacion": "2026-05-17T15:28:18.306Z",
       "fecha_modificacion": "2026-05-17T15:28:18.306Z",
       "nombre": "Plastico",
-      "descripcion": "asdf"
+      "descripcion": "asdf",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -51,7 +54,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Papel y Cartón",
-      "descripcion": "Residuos de papel y cartón limpios y secos, aptos para reciclaje."
+      "descripcion": "Residuos de papel y cartón limpios y secos, aptos para reciclaje.",
+      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -62,7 +66,8 @@
       "fecha_creacion": "2026-05-17T16:17:15.431Z",
       "fecha_modificacion": "2026-05-17T16:17:15.431Z",
       "nombre": "Pet 1",
-      "descripcion": "test"
+      "descripcion": "test",
+      "tipo": "9643d8d3-03fd-485d-b082-df5bdba6fa0c"
     }
   },
   {
@@ -73,7 +78,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Metales",
-      "descripcion": "Latas, chatarra liviana y otros metales reciclables."
+      "descripcion": "Latas, chatarra liviana y otros metales reciclables.",
+      "tipo": "f979766e-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -95,7 +101,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "PET",
-      "descripcion": "Polietileno tereftalato, usado en botellas y envases"
+      "descripcion": "Polietileno tereftalato, usado en botellas y envases",
+      "tipo": "9643d8d3-03fd-485d-b082-df5bdba6fa0c"
     }
   },
   {
@@ -106,7 +113,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "PEAD (HDPE)",
-      "descripcion": "Polietileno de alta densidad, usado en envases de limpieza y garrafas"
+      "descripcion": "Polietileno de alta densidad, usado en envases de limpieza y garrafas",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -117,7 +125,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "PVC",
-      "descripcion": "Policloruro de vinilo, usado en tuberías y perfiles"
+      "descripcion": "Policloruro de vinilo, usado en tuberías y perfiles",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -128,7 +137,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "PEBD (LDPE)",
-      "descripcion": "Polietileno de baja densidad, usado en bolsas y films"
+      "descripcion": "Polietileno de baja densidad, usado en bolsas y films",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -139,7 +149,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "PP",
-      "descripcion": "Polipropileno, usado en tapas, envases de yogur y salsas"
+      "descripcion": "Polipropileno, usado en tapas, envases de yogur y salsas",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -150,7 +161,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "PS",
-      "descripcion": "Poliestireno, incluye icopor y empaques"
+      "descripcion": "Poliestireno, incluye icopor y empaques",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -161,7 +173,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Otros Plásticos",
-      "descripcion": "Otros polímeros no comunes en reciclaje"
+      "descripcion": "Otros polímeros no comunes en reciclaje",
+      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -172,7 +185,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Cartón corrugado",
-      "descripcion": "Cajas corrugadas para embalaje"
+      "descripcion": "Cajas corrugadas para embalaje",
+      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -183,7 +197,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Cartón plegadizo",
-      "descripcion": "Empaques de cartón delgado"
+      "descripcion": "Empaques de cartón delgado",
+      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -194,7 +209,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Papel periódico",
-      "descripcion": "Papel prensa, limpio y seco"
+      "descripcion": "Papel prensa, limpio y seco",
+      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -205,7 +221,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Papel blanco (bond)",
-      "descripcion": "Hojas blancas de oficina"
+      "descripcion": "Hojas blancas de oficina",
+      "tipo": "d81329db-24fe-4821-b1be-1854766c6cc0"
     }
   },
   {
@@ -216,7 +233,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Revistas/mixtos",
-      "descripcion": "Revistas, catálogos y papeles mixtos"
+      "descripcion": "Revistas, catálogos y papeles mixtos",
+      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -227,7 +245,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Transparente",
-      "descripcion": "Vidrio incoloro reciclable"
+      "descripcion": "Vidrio incoloro reciclable",
+      "tipo": "f9781a33-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -238,7 +257,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Ámbar",
-      "descripcion": "Vidrio color ámbar usado en botellas"
+      "descripcion": "Vidrio color ámbar usado en botellas",
+      "tipo": "f9781a33-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -249,7 +269,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Verde",
-      "descripcion": "Vidrio verde reciclable"
+      "descripcion": "Vidrio verde reciclable",
+      "tipo": "f9781a33-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -260,7 +281,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Aluminio",
-      "descripcion": "Latas y envases de aluminio reciclables"
+      "descripcion": "Latas y envases de aluminio reciclables",
+      "tipo": "d5a3bf03-402c-460c-b569-311217c1ab8e"
     }
   },
   {
@@ -271,7 +293,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Acero/Hojalata",
-      "descripcion": "Latas de conservas y envases de hojalata"
+      "descripcion": "Latas de conservas y envases de hojalata",
+      "tipo": "f979766e-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -282,7 +305,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Chatarra férrica",
-      "descripcion": "Residuos metálicos férricos"
+      "descripcion": "Residuos metálicos férricos",
+      "tipo": "f979766e-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -293,7 +317,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Algodón",
-      "descripcion": "Textiles de fibra natural reciclables"
+      "descripcion": "Textiles de fibra natural reciclables",
+      "tipo": "f97adc17-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -304,7 +329,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Poliéster",
-      "descripcion": "Textiles de fibra sintética reciclables"
+      "descripcion": "Textiles de fibra sintética reciclables",
+      "tipo": "f97adc17-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -315,7 +341,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Mezcla (mixtos)",
-      "descripcion": "Combinación de fibras textiles"
+      "descripcion": "Combinación de fibras textiles",
+      "tipo": "f97adc17-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -326,7 +353,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Pallets",
-      "descripcion": "Pallets de madera reutilizables o reciclables"
+      "descripcion": "Pallets de madera reutilizables o reciclables",
+      "tipo": "f97c035e-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -337,7 +365,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-05-17T16:15:06.749Z",
       "nombre": "MDF",
-      "descripcion": "Tableros de aglomerado o MDF reciclables"
+      "descripcion": "Tableros de aglomerado o MDF reciclables",
+      "tipo": "f97c035e-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -348,7 +377,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Envase multicapa",
-      "descripcion": "Envases Tetra Pak reciclables"
+      "descripcion": "Envases Tetra Pak reciclables",
+      "tipo": "f97cfc41-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -359,7 +389,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Pequeños aparatos",
-      "descripcion": "Electrodomésticos pequeños fuera de uso"
+      "descripcion": "Electrodomésticos pequeños fuera de uso",
+      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -370,7 +401,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Grandes aparatos",
-      "descripcion": "Electrodomésticos grandes fuera de uso"
+      "descripcion": "Electrodomésticos grandes fuera de uso",
+      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -381,7 +413,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Periféricos/Accesorios",
-      "descripcion": "Accesorios electrónicos como teclados, ratones, cables"
+      "descripcion": "Accesorios electrónicos como teclados, ratones, cables",
+      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -392,7 +425,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-05-17T16:24:47.728Z",
       "nombre": "Pilas/Baterías",
-      "descripcion": "Pilas y baterías de diferentes tipos"
+      "descripcion": "Pilas y baterías de diferentes tipos",
+      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -403,7 +437,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Compostables",
-      "descripcion": "Residuos biodegradables para compostaje"
+      "descripcion": "Residuos biodegradables para compostaje",
+      "tipo": "f97f4b5d-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -414,7 +449,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Aceite de cocina usado",
-      "descripcion": "Aceite usado que requiere gestión especial"
+      "descripcion": "Aceite usado que requiere gestión especial",
+      "tipo": "f9807198-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
@@ -425,7 +461,8 @@
       "fecha_creacion": "2026-03-01T12:00:00Z",
       "fecha_modificacion": "2026-03-01T12:00:00Z",
       "nombre": "Llantas",
-      "descripcion": "Neumáticos y llantas usadas reciclables"
+      "descripcion": "Neumáticos y llantas usadas reciclables",
+      "tipo": "f9807198-97ed-11f0-a638-c4cbe12e39be"
     }
   },
   {
