@@ -26,6 +26,13 @@ def urlize_blank(value):
     return mark_safe(''.join(result))
 
 
+_YOUTUBE_ALLOWED_PARAMS = {
+    "autoplay", "cc_load_policy", "color", "controls", "end",
+    "hl", "iv_load_policy", "loop", "modestbranding", "mute",
+    "playlist", "playsinline", "rel", "si", "start",
+}
+
+
 def _youtube_embed_url(parsed):
     if parsed.netloc == "youtu.be":
         video_id = parsed.path.strip("/")
@@ -37,7 +44,16 @@ def _youtube_embed_url(parsed):
             if path.startswith(("embed/", "v/")):
                 video_id = path.split("/")[-1]
     if video_id:
-        return f"https://www.youtube.com/embed/{video_id}"
+        embed = f"https://www.youtube.com/embed/{video_id}"
+        params = parse_qs(parsed.query)
+        keep = sorted(
+            f"{k}={v[0]}"
+            for k, v in params.items()
+            if k in _YOUTUBE_ALLOWED_PARAMS
+        )
+        if keep:
+            embed += "?" + "&".join(keep)
+        return embed
     return None
 
 
