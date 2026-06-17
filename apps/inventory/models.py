@@ -241,11 +241,11 @@ class Material(DescripcionModel):
         "inventory.TipoMaterial",
         on_delete=models.SET_NULL,
         null=True,
-        blank=False,
+        blank=True,
         db_constraint=True,
         related_name="materiales",
         verbose_name="Tipo del material",
-        help_text="Tipo al que pertenece el material",
+        help_text="Tipo al que pertenece el material (se auto-asigna desde la categoría)",
     )
 
     class Meta(DescripcionModel.Meta):
