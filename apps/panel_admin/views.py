@@ -1023,8 +1023,10 @@ def exportar_usuarios_excel(request):
 
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
-@require_POST
+@require_http_methods(["GET", "POST"])
 def importar_usuarios_csv(request):
+    if request.method == "GET":
+        return redirect(ADMIN_LISTAR_USUARIOS_URL)
 
     archivo = request.FILES.get("archivo_csv")
     if not archivo:
