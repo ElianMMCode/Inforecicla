@@ -20,36 +20,6 @@
     </div>
   </div>
 
-  <!-- Modal Importar CSV -->
-  <div class="modal fade" id="modalImportCSV" tabindex="-1" aria-labelledby="modalImportCSVLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title" id="modalImportCSVLabel"><i class="bi bi-upload me-2"></i>Importar usuarios desde CSV</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <form method="post" enctype="multipart/form-data" action="{% url 'panel_admin:importar_usuarios_csv' %}">
-          {% csrf_token %}
-          <div class="modal-body">
-            <p class="text-muted small mb-3">El archivo CSV debe tener las siguientes columnas:</p>
-            <div class="bg-light border rounded p-2 mb-3">
-              <code class="small">nombres, apellidos, email, celular, password, tipo_usuario*, tipo_documento*, numero_documento*, ciudad*</code>
-            </div>
-            <p class="small text-muted mb-3">* Opcionales. Valores válidos para <strong>tipo_usuario</strong>: <code>ADM</code>, <code>CIU</code>, <code>GECA</code>. Para <strong>tipo_documento</strong>: <code>CC</code>, <code>TI</code>, <code>CE</code>, <code>PA</code>, <code>NIT</code>.</p>
-            <div class="mb-3">
-              <label for="import_archivo_csv" class="form-label fw-semibold">Archivo CSV <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="import_archivo_csv" type="file" name="archivo_csv" class="form-control" accept=".csv" required>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success"><i class="bi bi-upload me-1"></i> Importar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- Charts -->
   <div class="row g-3 mb-4">
     <div class="col-12 col-lg-4">
@@ -185,6 +155,36 @@
 {% endblock %}
 
 {% block extra_modals %}
+<!-- ===== MODAL IMPORTAR CSV ===== -->
+<div class="modal fade" id="modalImportCSV" tabindex="-1" aria-labelledby="modalImportCSVLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="modalImportCSVLabel"><i class="bi bi-upload me-2"></i>Importar usuarios desde CSV</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" enctype="multipart/form-data" action="{% url 'panel_admin:importar_usuarios_csv' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="text-muted small mb-3">El archivo CSV debe tener las siguientes columnas:</p>
+          <div class="bg-light border rounded p-2 mb-3">
+            <code class="small">nombres, apellidos, email, celular, password, tipo_usuario*, tipo_documento*, numero_documento*, ciudad*</code>
+          </div>
+          <p class="small text-muted mb-3">* Opcionales. Valores válidos para <strong>tipo_usuario</strong>: <code>ADM</code>, <code>CIU</code>, <code>GECA</code>. Para <strong>tipo_documento</strong>: <code>CC</code>, <code>TI</code>, <code>CE</code>, <code>PA</code>, <code>NIT</code>.</p>
+          <div class="mb-3">
+            <label for="import_archivo_csv" class="form-label fw-semibold">Archivo CSV <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="import_archivo_csv" type="file" name="archivo_csv" class="form-control" accept=".csv" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-upload me-1"></i> Importar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL EDITAR USUARIO ===== -->
 <div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="labelEditarUsuario" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -277,7 +277,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-{% include "admin/_messages_swal.html" %}
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script>
 AdminCharts.initAll([
