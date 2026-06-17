@@ -129,4 +129,5 @@
   {% include "admin/_messages_swal.html" %}
   <script src="{% static 'js/admin/materiales-form-comun.js' %}"></script>
   <script src="{% static 'js/admin/material-crear.js' %}"></script>
+  {% include "admin/Materiales/_autofill_tipo_js.html" with categorias_autofill=todas_categorias %}
 {% endblock %}
