@@ -198,27 +198,27 @@ globalThis.getCSRFToken = function () {
             <div class="card-header bg-white border-0 p-0">
                 <ul class="nav nav-tabs nav-tabs-inventario px-3 pt-2" id="otrasVistasTabs">
                     <li class="nav-item">
-                        <button class="nav-link active" data-ovtab="ovtab-inventario" type="button">
+                        <button class="nav-link {% if ovtab == 'ovtab-inventario' or not ovtab %}active{% endif %}" data-ovtab="ovtab-inventario" type="button">
                             <i class="bi bi-collection me-1"></i>Inventario
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" data-ovtab="ovtab-buscar" type="button">
+                        <button class="nav-link {% if ovtab == 'ovtab-buscar' %}active{% endif %}" data-ovtab="ovtab-buscar" type="button">
                             <i class="bi bi-search-plus me-1"></i>Buscar / Crear
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" data-ovtab="ovtab-historial" type="button">
+                        <button class="nav-link {% if ovtab == 'ovtab-historial' %}active{% endif %}" data-ovtab="ovtab-historial" type="button">
                             <i class="bi bi-clock-history me-1"></i>Historial General
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" data-ovtab="ovtab-flujo" type="button">
+                        <button class="nav-link {% if ovtab == 'ovtab-flujo' %}active{% endif %}" data-ovtab="ovtab-flujo" type="button">
                             <i class="bi bi-graph-up me-1"></i>Flujo de Stock
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" data-ovtab="ovtab-bulk" type="button">
+                        <button class="nav-link {% if ovtab == 'ovtab-bulk' %}active{% endif %}" data-ovtab="ovtab-bulk" type="button">
                             <i class="bi bi-upload me-1"></i>Carga Masiva
                         </button>
                     </li>
@@ -228,7 +228,7 @@ globalThis.getCSRFToken = function () {
             <div class="tab-content p-4 bg-light">
 
                 {# ============== TAB: INVENTARIO (cards + filtros) ============== #}
-                <div class="ovtab-pane active" id="ovtab-inventario">
+                <div class="ovtab-pane {% if ovtab == 'ovtab-inventario' or not ovtab %}active{% endif %}" id="ovtab-inventario">
                     <div class="card border-start border-5 border-success shadow-sm mb-4">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -376,7 +376,7 @@ globalThis.getCSRFToken = function () {
                     </div>
                 </div>
                 {# ============== TAB: BUSCAR / CREAR (form inline) ============== #}
-                <div class="ovtab-pane" id="ovtab-buscar">
+                <div class="ovtab-pane {% if ovtab == 'ovtab-buscar' %}active{% endif %}" id="ovtab-buscar">
                     <div class="card border-start border-5 border-info shadow-sm mb-4">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -529,7 +529,7 @@ globalThis.getCSRFToken = function () {
                 </div>
 
                 {# ============== TAB: HISTORIAL GENERAL ============== #}
-                <div class="ovtab-pane" id="ovtab-historial">
+                <div class="ovtab-pane {% if ovtab == 'ovtab-historial' %}active{% endif %}" id="ovtab-historial">
                     <div class="card shadow-sm mb-4">
                         <div class="card-header bg-light border-0 px-4 py-3">
                             <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
@@ -660,7 +660,7 @@ globalThis.getCSRFToken = function () {
                 </div>
 
                 {# ============== TAB: FLUJO DE STOCK ============== #}
-                <div class="ovtab-pane" id="ovtab-flujo">
+                <div class="ovtab-pane {% if ovtab == 'ovtab-flujo' %}active{% endif %}" id="ovtab-flujo">
                     <ul class="nav nav-tabs nav-subtabs-inventario mb-3" id="ovFlujoSubtabs">
                         <li class="nav-item">
                             <button class="nav-link active" data-ovsub="ovstock" type="button">
@@ -806,7 +806,7 @@ globalThis.getCSRFToken = function () {
                 </div>
 
                 {# ============== TAB: CARGA MASIVA ============== #}
-                <div class="ovtab-pane" id="ovtab-bulk">
+                <div class="ovtab-pane {% if ovtab == 'ovtab-bulk' %}active{% endif %}" id="ovtab-bulk">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="card text-center p-4 h-100">

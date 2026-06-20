@@ -2805,16 +2805,19 @@
         }
     }
     function _procesarOvtabDeferred() {
-        const urlOvtab = new URLSearchParams(globalThis.location.search).get("ovtab");
-        if (!urlOvtab) return;
+        const params = new URLSearchParams(globalThis.location.search);
+        const hash = globalThis.location.hash.replace("#", "");
+        const target = params.get("ovtab") || hash;
+        if (!target) return;
         const valid = ["ovtab-inventario", "ovtab-buscar", "ovtab-bulk", "ovtab-historial", "ovtab-flujo"];
-        if (valid.includes(urlOvtab)) activarOvTab(urlOvtab);
+        if (valid.includes(target)) activarOvTab(target);
     }
+    document.addEventListener("DOMContentLoaded", _procesarOvtabDeferred);
+    if (document.readyState !== "loading") _procesarOvtabDeferred();
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => { _initDeepLink(); bind(); _procesarOvtabDeferred(); });
+        document.addEventListener("DOMContentLoaded", () => { _initDeepLink(); bind(); });
     } else {
         _initDeepLink();
         bind();
-        _procesarOvtabDeferred();
     }
 })();
