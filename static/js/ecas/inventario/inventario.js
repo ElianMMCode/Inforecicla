@@ -1125,12 +1125,33 @@
     function poblarInfoMaterial(prefix) {
         if (!currentMaterial) return;
         const inv = currentMaterial;
+        const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? ""; };
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
+        const fmt = (v) => (v ?? 0).toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        const unidad = inv.unidad || "";
         setVal(`${prefix}MaterialTipo`, inv.tipo);
         setVal(`${prefix}MaterialCategoria`, inv.categoria);
-        setVal(`${prefix}MaterialUnidad`, inv.unidad);
+        setVal(`${prefix}MaterialUnidad`, unidad);
         setVal(`${prefix}StockActual`, inv.stockActual);
         setVal(`${prefix}CapacidadMaxima`, inv.capacidadMaxima);
+
+        const stockBase = Number(inv.stockActual || 0);
+        const capacidad = Number(inv.capacidadMaxima || 0);
+
+        setText(`${prefix}StockActualLabel`, `${fmt(stockBase)} ${unidad}`);
+        setText(`${prefix}CapMaxLabel`, `${fmt(capacidad)} ${unidad}`);
+
+        const cantEl = document.getElementById(`${prefix}Cantidad`);
+        if (cantEl) {
+            if (!cantEl.value) cantEl.value = 0;
+            const esEntrada = prefix === "formEntrada";
+            const maxLogico = esEntrada
+                ? capacidad
+                : stockBase;
+            if (maxLogico > 0) cantEl.setAttribute("max", maxLogico);
+            else cantEl.removeAttribute("max");
+        }
+
         // Autorrellenar precio unitario desde el backend (el usuario puede
         // sobrescribirlo). Es un buen default porque evita teclear el precio
         // estándar del material y reduce errores.
@@ -1145,13 +1166,6 @@
                 precioEl.value = inv.precioVenta;
             }
         }
-        // Sugerir cantidad=0 como punto de partida, si el campo está vacío.
-        // El usuario lo sobrescribe; con 0 el Total queda vacío y el
-        // stock preview muestra el stock base (sin cambio). Obliga al
-        // usuario a tipear la cantidad real, evitando registrar valores
-        // случайные (ej. 1) que el usuario podría olvidar cambiar.
-        const cantEl = document.getElementById(`${prefix}Cantidad`);
-        if (cantEl && !cantEl.value) cantEl.value = 0;
         // Recalcular total con el precio recién autorrellenado
         if (prefix === "formEntrada") actualizarTotalEntrada();
         if (prefix === "formSalida") actualizarTotalVenta();
