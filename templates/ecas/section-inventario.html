@@ -1156,6 +1156,22 @@ globalThis.getCSRFToken = function () {
                                 <div class="invalid-feedback">Ingresa la cantidad vendida (mayor a 0).</div>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold small" for="formSalidaStockRestante">Stock restante</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control form-control-sm fw-semibold" id="formSalidaStockRestante" readonly
+                                           style="background-color: #d1e7dd; color: #0a3622;">
+                                    <span class="input-group-text" id="formSalidaStockRestanteUnidad">unidades</span>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted mt-1">
+                                    <span>Actual: <strong id="formSalidaStockActualLabel">0</strong></span>
+                                    <span>Máx: <strong id="formSalidaCapMaxLabel">0</strong></span>
+                                </div>
+                                <div class="progress mt-1" style="height: 6px;">
+                                    <div class="progress-bar bg-success" id="formSalidaStockBar" style="width: 0%; min-width: 2px;"></div>
+                                </div>
+                                <small class="text-muted" id="formSalidaStockHint">Quedan <strong id="formSalidaDisponibles">0</strong> disponibles tras la venta</small>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaPrecio">Precio Unitario <small class="text-muted fw-normal">(COP)</small> <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-sm has-validation">
                                     <span class="input-group-text">$</span>
@@ -1167,13 +1183,6 @@ globalThis.getCSRFToken = function () {
                                 <div class="invalid-feedback">Ingresa el precio unitario de venta.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold small" for="formSalidaCentro">Centro de Acopio <small class="text-muted fw-normal">(opcional)</small></label>
-                                <select class="form-select form-select-sm border-success border-2" id="formSalidaCentro" name="centroAcopioId">
-                                    <option value="">Sin centro de acopio</option>
-                                    {% for c in centros %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaTotalVenta">Total Venta <small class="text-muted fw-normal">(COP)</small></label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">$</span>
@@ -1182,15 +1191,13 @@ globalThis.getCSRFToken = function () {
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold small" for="formSalidaStockRestante">Stock restante (referencia)</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="text" class="form-control form-control-sm fw-semibold" id="formSalidaStockRestante" readonly
-                                           style="background-color: #d1e7dd; color: #0a3622;">
-                                    <span class="input-group-text" id="formSalidaStockRestanteUnidad">unidades</span>
-                                </div>
-                                <small class="text-muted">Se recalcula en tiempo real. Se muestra en rojo si el resultado es negativo.</small>
+                                <label class="form-label fw-semibold small" for="formSalidaCentro">Centro de Acopio <small class="text-muted fw-normal">(opcional)</small></label>
+                                <select class="form-select form-select-sm border-success border-2" id="formSalidaCentro" name="centroAcopioId">
+                                    <option value="">Sin centro de acopio</option>
+                                    {% for c in centros %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                                </select>
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label fw-semibold small" for="formSalidaObservaciones">Observaciones</label>
                                 <textarea class="form-control form-control-sm" id="formSalidaObservaciones" name="observaciones" rows="2"></textarea>
                             </div>
