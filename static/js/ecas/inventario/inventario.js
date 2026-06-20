@@ -749,6 +749,17 @@
         document.getElementById("inv-filter-limpiar")?.addEventListener("click", limpiarFiltrosCards);
         document.getElementById("inv-filter-limpiar-vacio")?.addEventListener("click", limpiarFiltrosCards);
 
+        // Deep-link de filtro: ?estado=critico|alerta|ok
+        const urlEstado = new URLSearchParams(globalThis.location.search).get("estado");
+        if (urlEstado && ["ok", "alerta", "critico"].includes(urlEstado)) {
+            if (globalThis.jQuery) {
+                globalThis.jQuery("#inv-filter-estado").val(urlEstado).trigger("change");
+            } else {
+                const sel = document.getElementById("inv-filter-estado");
+                if (sel) { sel.value = urlEstado; aplicarFiltrosCards(); }
+            }
+        }
+
         // KPI cards clickeables: navegan a la sección correspondiente
         document.getElementById("kpi-fisico-card")?.addEventListener("click", () => {
             activarOvTab("ovtab-inventario");

@@ -224,8 +224,8 @@
             cardClass: "kpi-primary",
             extra: `
                 <div class="d-flex gap-2 mt-2">
-                    <span class="badge bg-danger">${criticos} críticos</span>
-                    <span class="badge bg-warning text-dark">${alertas} alertas</span>
+                    <span class="badge bg-danger kpi-clickable" data-url="/punto-eca/inventario/?ovtab=ovtab-inventario&estado=critico" title="Filtrar críticos en inventario">${criticos} críticos</span>
+                    <span class="badge bg-warning text-dark kpi-clickable" data-url="/punto-eca/inventario/?ovtab=ovtab-inventario&estado=alerta" title="Filtrar alertas en inventario">${alertas} alertas</span>
                 </div>
             `,
         });
