@@ -1177,22 +1177,51 @@
         actualizarStockPreviewSalida();
     }
     // Preview de stock resultante: muestra en tiempo real cuánto stock
-    // quedará tras aplicar este movimiento. Color verde si el resultado
-    // es válido; rojo si excede la capacidad máxima (compra) o resulta
-    // negativo (venta). Es solo referencia visual; el backend re-valida.
+    // quedará tras aplicar este movimiento. Incluye barra de progreso,
+    // labels de capacidad y texto de disponibles. Color verde si el
+    // resultado es válido; amarillo si supera 70%; rojo si supera 90%
+    // o excede la capacidad máxima. Es solo referencia visual; el
+    // backend re-valida.
     function actualizarStockPreviewEntrada() {
         const stockEl = document.getElementById("formEntradaStockResultante");
         const unidadEl = document.getElementById("formEntradaStockResultanteUnidad");
-        const capEl = document.getElementById("formEntradaStockResultanteCap");
         if (!stockEl) return;
         const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
         const capacidad = Number(document.getElementById("formEntradaCapacidadMaxima")?.value || 0);
         const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
         const unidad = document.getElementById("formEntradaMaterialUnidad")?.value || "";
         const resultante = stockBase + cant;
+
         stockEl.value = resultante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
         if (unidadEl) unidadEl.textContent = unidad || "unidades";
-        if (capEl) capEl.textContent = capacidad > 0 ? `/ máx. ${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })}` : "";
+
+        const actualLabel = document.getElementById("formEntradaStockActualLabel");
+        const capMaxLabel = document.getElementById("formEntradaCapMaxLabel");
+        const bar = document.getElementById("formEntradaStockBar");
+        const disponibles = document.getElementById("formEntradaDisponibles");
+
+        if (actualLabel) actualLabel.textContent = `${stockBase.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
+        if (capMaxLabel) capMaxLabel.textContent = `${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
+
+        if (capacidad > 0) {
+            const pct = Math.min((resultante / capacidad) * 100, 100);
+            if (bar) {
+                bar.style.width = pct + "%";
+                bar.className = "progress-bar";
+                if (resultante > capacidad) bar.classList.add("bg-danger");
+                else if (pct >= 90) bar.classList.add("bg-danger");
+                else if (pct >= 70) bar.classList.add("bg-warning");
+                else bar.classList.add("bg-success");
+            }
+            const restante = capacidad - resultante;
+            if (disponibles) {
+                disponibles.textContent = `${Math.max(restante, 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
+            }
+        } else {
+            if (bar) { bar.style.width = "0%"; bar.className = "progress-bar bg-success"; }
+            if (disponibles) disponibles.textContent = "—";
+        }
+
         if (capacidad > 0 && resultante > capacidad) {
             stockEl.style.backgroundColor = "#f8d7da";
             stockEl.style.color = "#58151c";
@@ -1206,11 +1235,40 @@
         const unidadEl = document.getElementById("formSalidaStockRestanteUnidad");
         if (!stockEl) return;
         const stockBase = Number(document.getElementById("formSalidaStockActual")?.value || 0);
+        const capacidad = Number(document.getElementById("formSalidaCapacidadMaxima")?.value || 0);
         const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
         const unidad = document.getElementById("formSalidaMaterialUnidad")?.value || "";
         const restante = stockBase - cant;
+
         stockEl.value = restante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
         if (unidadEl) unidadEl.textContent = unidad || "unidades";
+
+        const actualLabel = document.getElementById("formSalidaStockActualLabel");
+        const capMaxLabel = document.getElementById("formSalidaCapMaxLabel");
+        const bar = document.getElementById("formSalidaStockBar");
+        const disponibles = document.getElementById("formSalidaDisponibles");
+
+        if (actualLabel) actualLabel.textContent = `${stockBase.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
+        if (capMaxLabel) capMaxLabel.textContent = `${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
+
+        if (capacidad > 0) {
+            const pct = Math.max((restante / capacidad) * 100, 0);
+            if (bar) {
+                bar.style.width = Math.min(pct, 100) + "%";
+                bar.className = "progress-bar";
+                if (restante < 0) bar.classList.add("bg-danger");
+                else if (pct <= 10) bar.classList.add("bg-danger");
+                else if (pct <= 30) bar.classList.add("bg-warning");
+                else bar.classList.add("bg-success");
+            }
+            if (disponibles) {
+                disponibles.textContent = `${Math.max(restante, 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
+            }
+        } else {
+            if (bar) { bar.style.width = "0%"; bar.className = "progress-bar bg-success"; }
+            if (disponibles) disponibles.textContent = "—";
+        }
+
         if (restante < 0) {
             stockEl.style.backgroundColor = "#f8d7da";
             stockEl.style.color = "#58151c";
