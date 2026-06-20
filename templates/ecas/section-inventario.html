@@ -69,6 +69,10 @@ globalThis.getCSRFToken = function () {
     .estado-section.active { display: block; }
     .ovtab-pane { display: none; }
     .ovtab-pane.active { display: block; }
+    .kpi-clickable { cursor: pointer; transition: box-shadow .15s ease, transform .15s ease; }
+    .kpi-clickable:hover { box-shadow: 0 .25rem .75rem rgba(0,0,0,.15) !important; transform: translateY(-1px); }
+    .badge.kpi-clickable { cursor: pointer; transition: filter .15s ease; }
+    .badge.kpi-clickable:hover { filter: brightness(1.2); }
     .ovsub-pane { display: none; }
     .ovsub-pane.active { display: block; }
     .tab-pane-stack { display: none; }
@@ -111,7 +115,7 @@ globalThis.getCSRFToken = function () {
         {# --- 3 KPI blocks compactos (decisión 14) --- #}
         <div class="row g-3 mb-3">
             <div class="col-lg-4 col-md-6">
-                <div class="card border-start border-5 border-success shadow-sm h-100 p-3">
+                <div class="card border-start border-5 border-success shadow-sm h-100 p-3 kpi-clickable" id="kpi-fisico-card" title="Ver inventario de materiales">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between align-items-center">
@@ -129,6 +133,7 @@ globalThis.getCSRFToken = function () {
                                 Cap. Máx: {{ total_capacidad|floatformat:0 }}{% if total_capacidad == 0 %} <span class="text-warning">(sin inventario)</span>{% endif %}
                             </small>
                         </div>
+                        <span class="text-muted opacity-25 ms-2"><i class="bi bi-chevron-right"></i></span>
                     </div>
                 </div>
             </div>
@@ -140,9 +145,9 @@ globalThis.getCSRFToken = function () {
                                 <i class="bi bi-shield-exclamation me-1"></i>Salud
                             </span>
                             <div class="mt-1">
-                                <span class="badge bg-success me-1" style="font-size: 0.75rem;">OK {{ total_ok }}</span>
-                                <span class="badge bg-warning text-dark me-1" style="font-size: 0.75rem;">Alerta {{ total_alerta }}</span>
-                                <span class="badge bg-danger" style="font-size: 0.75rem;">Crítico {{ total_critico }}</span>
+                                <span class="badge bg-success me-1 kpi-clickable" style="font-size: 0.75rem;" id="kpi-salud-ok" data-estado="ok" title="Filtrar materiales OK">OK {{ total_ok }}</span>
+                                <span class="badge bg-warning text-dark me-1 kpi-clickable" style="font-size: 0.75rem;" id="kpi-salud-alerta" data-estado="alerta" title="Filtrar materiales en Alerta">Alerta {{ total_alerta }}</span>
+                                <span class="badge bg-danger kpi-clickable" style="font-size: 0.75rem;" id="kpi-salud-critico" data-estado="critico" title="Filtrar materiales Críticos">Crítico {{ total_critico }}</span>
                             </div>
                         </div>
                         <div class="text-end">
@@ -153,7 +158,7 @@ globalThis.getCSRFToken = function () {
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
-                <div class="card border-start border-5 border-warning shadow-sm h-100 p-3">
+                <div class="card border-start border-5 border-warning shadow-sm h-100 p-3 kpi-clickable" id="kpi-valor-card" title="Ver flujo de stock y ganancias">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <span class="fw-bold text-muted" style="font-size: 0.75rem;">
@@ -174,6 +179,7 @@ globalThis.getCSRFToken = function () {
                             {% endif %}
                         </div>
                     </div>
+                    <span class="text-muted opacity-25 position-absolute top-0 end-0 mt-1 me-1"><i class="bi bi-chevron-right"></i></span>
                 </div>
             </div>
         </div>

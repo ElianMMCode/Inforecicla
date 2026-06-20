@@ -292,6 +292,19 @@
     // ============================================================
     // FILTROS DE CARDS EN LANDING
     // ============================================================
+    function _filtrarPorEstado(estado) {
+        const el = document.getElementById("inv-filter-estado");
+        if (!el) return;
+        el.value = estado;
+        if (globalThis.jQuery) {
+            globalThis.jQuery("#inv-filter-estado").val(estado).trigger("change");
+        } else {
+            aplicarFiltrosCards();
+        }
+        activarOvTab("ovtab-inventario");
+        const pane = document.getElementById("ovtab-inventario");
+        if (pane) pane.scrollIntoView({ behavior: "smooth" });
+    }
     function aplicarFiltrosCards() {
         const nombre = (document.getElementById("inv-filter-nombre")?.value || "").toLowerCase().trim();
         const cat = document.getElementById("inv-filter-categoria")?.value || "";
@@ -735,6 +748,26 @@
         }
         document.getElementById("inv-filter-limpiar")?.addEventListener("click", limpiarFiltrosCards);
         document.getElementById("inv-filter-limpiar-vacio")?.addEventListener("click", limpiarFiltrosCards);
+
+        // KPI cards clickeables: navegan a la sección correspondiente
+        document.getElementById("kpi-fisico-card")?.addEventListener("click", () => {
+            activarOvTab("ovtab-inventario");
+            document.getElementById("ovtab-inventario")?.scrollIntoView({ behavior: "smooth" });
+        });
+        document.getElementById("kpi-valor-card")?.addEventListener("click", () => {
+            activarOvTab("ovtab-flujo");
+            document.getElementById("ovtab-flujo")?.scrollIntoView({ behavior: "smooth" });
+        });
+        // Badges de salud: filtran tarjetas por estado
+        ["kpi-salud-ok", "kpi-salud-alerta", "kpi-salud-critico"].forEach((id) => {
+            const badge = document.getElementById(id);
+            if (badge) {
+                badge.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    _filtrarPorEstado(badge.dataset.estado);
+                });
+            }
+        });
 
         // Cards → workspace (delegado en el grid, captura clicks en card o botón)
         const cardsGrid = document.getElementById("inv-cards-grid");
