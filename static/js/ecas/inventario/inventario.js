@@ -1227,56 +1227,39 @@
     }
 
     function actualizarStockPreviewEntrada() {
-        const stockEl = document.getElementById("formEntradaStockResultante");
-        const unidadEl = document.getElementById("formEntradaStockResultanteUnidad");
-        if (!stockEl) return;
-        const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
-        const capacidad = Number(document.getElementById("formEntradaCapacidadMaxima")?.value || 0);
-        const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
-        const unidad = document.getElementById("formEntradaMaterialUnidad")?.value || "";
-        const resultante = stockBase + cant;
-
-        stockEl.value = resultante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        if (unidadEl) unidadEl.textContent = unidad || "unidades";
-
-        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        const actualLabel = document.getElementById("formEntradaStockActualLabel");
-        const capMaxLabel = document.getElementById("formEntradaCapMaxLabel");
-        if (actualLabel) actualLabel.textContent = `${fmt(stockBase)} ${unidad}`;
-        if (capMaxLabel) capMaxLabel.textContent = `${fmt(capacidad)} ${unidad}`;
-
-        _renderStockBar(
-            document.getElementById("formEntradaStockBar"),
-            document.getElementById("formEntradaDisponibles"),
-            stockEl, unidad,
-            { resultado: resultante, capacidad, stockBase, esEntrada: true }
-        );
+        _actualizarStockPreview("formEntrada");
     }
 
     function actualizarStockPreviewSalida() {
-        const stockEl = document.getElementById("formSalidaStockRestante");
-        const unidadEl = document.getElementById("formSalidaStockRestanteUnidad");
-        if (!stockEl) return;
-        const stockBase = Number(document.getElementById("formSalidaStockActual")?.value || 0);
-        const capacidad = Number(document.getElementById("formSalidaCapacidadMaxima")?.value || 0);
-        const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
-        const unidad = document.getElementById("formSalidaMaterialUnidad")?.value || "";
-        const restante = stockBase - cant;
+        _actualizarStockPreview("formSalida");
+    }
 
-        stockEl.value = restante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        if (unidadEl) unidadEl.textContent = unidad || "unidades";
+    function _actualizarStockPreview(prefix) {
+        const esEntrada = prefix === "formEntrada";
+        const suffix = esEntrada ? "Resultante" : "Restante";
+        const stockEl = document.getElementById(`${prefix}Stock${suffix}`);
+        const unidadEl = document.getElementById(`${prefix}Stock${suffix}Unidad`);
+        if (!stockEl) return;
+        const stockBase = Number(document.getElementById(`${prefix}StockActual`)?.value || 0);
+        const capacidad = Number(document.getElementById(`${prefix}CapacidadMaxima`)?.value || 0);
+        const cant = Number(document.getElementById(`${prefix}Cantidad`)?.value || 0);
+        const unidad = document.getElementById(`${prefix}MaterialUnidad`)?.value || "";
+        const resultado = esEntrada ? stockBase + cant : stockBase - cant;
 
         const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        const actualLabel = document.getElementById("formSalidaStockActualLabel");
-        const capMaxLabel = document.getElementById("formSalidaCapMaxLabel");
+        stockEl.value = fmt(resultado);
+        if (unidadEl) unidadEl.textContent = unidad || "unidades";
+
+        const actualLabel = document.getElementById(`${prefix}StockActualLabel`);
+        const capMaxLabel = document.getElementById(`${prefix}CapMaxLabel`);
         if (actualLabel) actualLabel.textContent = `${fmt(stockBase)} ${unidad}`;
         if (capMaxLabel) capMaxLabel.textContent = `${fmt(capacidad)} ${unidad}`;
 
         _renderStockBar(
-            document.getElementById("formSalidaStockBar"),
-            document.getElementById("formSalidaDisponibles"),
+            document.getElementById(`${prefix}StockBar`),
+            document.getElementById(`${prefix}Disponibles`),
             stockEl, unidad,
-            { resultado: restante, capacidad, stockBase, esEntrada: false }
+            { resultado, capacidad, stockBase, esEntrada }
         );
     }
     function actualizarStockPreview(prefix) {
