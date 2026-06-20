@@ -1200,7 +1200,7 @@
     /** Actualiza barra de progreso, disponibles y estilo del input de stock. */
     function _renderStockBar(bar, disponibles, stockEl, unidad, opts) {
         const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        const { resultado, capacidad,stockBase, esEntrada } = opts;
+        const { resultado, capacidad, esEntrada } = opts;
         if (!bar || !stockEl) return;
 
         if (capacidad > 0) {
@@ -1259,7 +1259,7 @@
             document.getElementById(`${prefix}StockBar`),
             document.getElementById(`${prefix}Disponibles`),
             stockEl, unidad,
-            { resultado, capacidad, stockBase, esEntrada }
+            { resultado, capacidad, esEntrada }
         );
     }
     function actualizarStockPreview(prefix) {
