@@ -1182,6 +1182,50 @@
     // resultado es válido; amarillo si supera 70%; rojo si supera 90%
     // o excede la capacidad máxima. Es solo referencia visual; el
     // backend re-valida.
+
+    /** Determina la clase de color para la barra de progreso según el porcentaje. */
+    function _claseBarraStock(pct, sobreCapacidad) {
+        if (sobreCapacidad || pct >= 90) return "bg-danger";
+        if (pct >= 70) return "bg-warning";
+        return "bg-success";
+    }
+
+    /** Determina la clase de color para la barra de stock restante (venta). */
+    function _claseBarraRestante(pct, negativo) {
+        if (negativo || pct <= 10) return "bg-danger";
+        if (pct <= 30) return "bg-warning";
+        return "bg-success";
+    }
+
+    /** Actualiza barra de progreso, disponibles y estilo del input de stock. */
+    function _renderStockBar(bar, disponibles, stockEl, unidad, opts) {
+        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        const { resultado, capacidad,stockBase, esEntrada } = opts;
+        if (!bar || !stockEl) return;
+
+        if (capacidad > 0) {
+            const pct = esEntrada
+                ? Math.min((resultado / capacidad) * 100, 100)
+                : Math.max((resultado / capacidad) * 100, 0);
+            const clase = esEntrada
+                ? _claseBarraStock(pct, resultado > capacidad)
+                : _claseBarraRestante(pct, resultado < 0);
+            bar.style.width = Math.min(pct, 100) + "%";
+            bar.className = "progress-bar " + clase;
+            if (disponibles) {
+                disponibles.textContent = `${fmt(Math.max(resultado, 0))} ${unidad}`;
+            }
+        } else {
+            bar.style.width = "0%";
+            bar.className = "progress-bar bg-success";
+            if (disponibles) disponibles.textContent = "—";
+        }
+
+        const excede = esEntrada ? (capacidad > 0 && resultado > capacidad) : resultado < 0;
+        stockEl.style.backgroundColor = excede ? "#f8d7da" : "#d1e7dd";
+        stockEl.style.color = excede ? "#58151c" : "#0a3622";
+    }
+
     function actualizarStockPreviewEntrada() {
         const stockEl = document.getElementById("formEntradaStockResultante");
         const unidadEl = document.getElementById("formEntradaStockResultanteUnidad");
@@ -1195,41 +1239,20 @@
         stockEl.value = resultante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
         if (unidadEl) unidadEl.textContent = unidad || "unidades";
 
+        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
         const actualLabel = document.getElementById("formEntradaStockActualLabel");
         const capMaxLabel = document.getElementById("formEntradaCapMaxLabel");
-        const bar = document.getElementById("formEntradaStockBar");
-        const disponibles = document.getElementById("formEntradaDisponibles");
+        if (actualLabel) actualLabel.textContent = `${fmt(stockBase)} ${unidad}`;
+        if (capMaxLabel) capMaxLabel.textContent = `${fmt(capacidad)} ${unidad}`;
 
-        if (actualLabel) actualLabel.textContent = `${stockBase.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
-        if (capMaxLabel) capMaxLabel.textContent = `${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
-
-        if (capacidad > 0) {
-            const pct = Math.min((resultante / capacidad) * 100, 100);
-            if (bar) {
-                bar.style.width = pct + "%";
-                bar.className = "progress-bar";
-                if (resultante > capacidad) bar.classList.add("bg-danger");
-                else if (pct >= 90) bar.classList.add("bg-danger");
-                else if (pct >= 70) bar.classList.add("bg-warning");
-                else bar.classList.add("bg-success");
-            }
-            const restante = capacidad - resultante;
-            if (disponibles) {
-                disponibles.textContent = `${Math.max(restante, 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
-            }
-        } else {
-            if (bar) { bar.style.width = "0%"; bar.className = "progress-bar bg-success"; }
-            if (disponibles) disponibles.textContent = "—";
-        }
-
-        if (capacidad > 0 && resultante > capacidad) {
-            stockEl.style.backgroundColor = "#f8d7da";
-            stockEl.style.color = "#58151c";
-        } else {
-            stockEl.style.backgroundColor = "#d1e7dd";
-            stockEl.style.color = "#0a3622";
-        }
+        _renderStockBar(
+            document.getElementById("formEntradaStockBar"),
+            document.getElementById("formEntradaDisponibles"),
+            stockEl, unidad,
+            { resultado: resultante, capacidad, stockBase, esEntrada: true }
+        );
     }
+
     function actualizarStockPreviewSalida() {
         const stockEl = document.getElementById("formSalidaStockRestante");
         const unidadEl = document.getElementById("formSalidaStockRestanteUnidad");
@@ -1243,39 +1266,18 @@
         stockEl.value = restante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
         if (unidadEl) unidadEl.textContent = unidad || "unidades";
 
+        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
         const actualLabel = document.getElementById("formSalidaStockActualLabel");
         const capMaxLabel = document.getElementById("formSalidaCapMaxLabel");
-        const bar = document.getElementById("formSalidaStockBar");
-        const disponibles = document.getElementById("formSalidaDisponibles");
+        if (actualLabel) actualLabel.textContent = `${fmt(stockBase)} ${unidad}`;
+        if (capMaxLabel) capMaxLabel.textContent = `${fmt(capacidad)} ${unidad}`;
 
-        if (actualLabel) actualLabel.textContent = `${stockBase.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
-        if (capMaxLabel) capMaxLabel.textContent = `${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
-
-        if (capacidad > 0) {
-            const pct = Math.max((restante / capacidad) * 100, 0);
-            if (bar) {
-                bar.style.width = Math.min(pct, 100) + "%";
-                bar.className = "progress-bar";
-                if (restante < 0) bar.classList.add("bg-danger");
-                else if (pct <= 10) bar.classList.add("bg-danger");
-                else if (pct <= 30) bar.classList.add("bg-warning");
-                else bar.classList.add("bg-success");
-            }
-            if (disponibles) {
-                disponibles.textContent = `${Math.max(restante, 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })} ${unidad}`;
-            }
-        } else {
-            if (bar) { bar.style.width = "0%"; bar.className = "progress-bar bg-success"; }
-            if (disponibles) disponibles.textContent = "—";
-        }
-
-        if (restante < 0) {
-            stockEl.style.backgroundColor = "#f8d7da";
-            stockEl.style.color = "#58151c";
-        } else {
-            stockEl.style.backgroundColor = "#d1e7dd";
-            stockEl.style.color = "#0a3622";
-        }
+        _renderStockBar(
+            document.getElementById("formSalidaStockBar"),
+            document.getElementById("formSalidaDisponibles"),
+            stockEl, unidad,
+            { resultado: restante, capacidad, stockBase, esEntrada: false }
+        );
     }
     function actualizarStockPreview(prefix) {
         if (prefix === "formEntrada") actualizarStockPreviewEntrada();
