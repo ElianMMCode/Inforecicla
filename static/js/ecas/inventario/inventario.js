@@ -1143,13 +1143,11 @@
 
         const cantEl = document.getElementById(`${prefix}Cantidad`);
         if (cantEl) {
-            if (!cantEl.value) cantEl.value = 0;
             const esEntrada = prefix === "formEntrada";
-            const maxLogico = esEntrada
-                ? capacidad
-                : stockBase;
+            const maxLogico = esEntrada ? capacidad : stockBase;
             if (maxLogico > 0) cantEl.setAttribute("max", maxLogico);
             else cantEl.removeAttribute("max");
+            cantEl.value = "";
         }
 
         // Autorrellenar precio unitario desde el backend (el usuario puede
@@ -1174,7 +1172,16 @@
         // el stock actual como punto de partida).
         actualizarStockPreview(prefix);
     }
+    function _clampMax(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const maxVal = parseFloat(el.getAttribute("max"));
+        if (isNaN(maxVal)) return;
+        const val = parseFloat(el.value || 0);
+        if (val > maxVal) el.value = maxVal;
+    }
     function actualizarTotalEntrada() {
+        _clampMax("formEntradaCantidad");
         const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
         const precio = Number(document.getElementById("formEntradaPrecio")?.value || 0);
         const total = cant * precio;
@@ -1183,6 +1190,7 @@
         actualizarStockPreviewEntrada();
     }
     function actualizarTotalVenta() {
+        _clampMax("formSalidaCantidad");
         const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
         const precio = Number(document.getElementById("formSalidaPrecio")?.value || 0);
         const total = cant * precio;
@@ -1227,7 +1235,10 @@
             bar.style.width = Math.min(pct, 100) + "%";
             bar.className = "progress-bar " + clase;
             if (disponibles) {
-                disponibles.textContent = `${fmt(Math.max(resultado, 0))} ${unidad}`;
+                const dispVal = esEntrada
+                    ? Math.max(capacidad - resultado, 0)
+                    : Math.max(resultado, 0);
+                disponibles.textContent = `${fmt(dispVal)} ${unidad}`;
             }
         } else {
             bar.style.width = "0%";
