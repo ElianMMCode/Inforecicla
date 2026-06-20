@@ -260,7 +260,7 @@
                 <small class="text-muted mt-1 d-block">${escapeHTML(opts.pctLabel || "")}</small>
             `
             : "";
-        root.className = "kpi-card " + opts.cardClass;
+        root.className = "kpi-card kpi-clickable " + opts.cardClass;
         root.innerHTML = `
             <div class="p-3">
                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -683,12 +683,14 @@
         const btn = document.getElementById("btnActualizarResumen");
         if (btn) btn.addEventListener("click", refrescar);
 
-        // KPI cards clickeables: navegan a la URL del data-url
-        document.querySelectorAll(".kpi-clickable[data-url]").forEach((el) => {
-            el.addEventListener("click", () => {
-                const url = el.dataset.url;
-                if (url) window.location.href = url;
-            });
+        // KPI cards + headers clickeables: event delegation para que sobreviva re-renders
+        document.addEventListener("click", (e) => {
+            const el = e.target.closest(".kpi-clickable[data-url]");
+            if (!el) return;
+            // No navegar si el click viene de un <a> o <button> anidado
+            if (e.target.closest("a, button")) return;
+            const url = el.dataset.url;
+            if (url) window.location.href = url;
         });
 
         // Salud badge: click = scroll a sección de alertas + toggle visibilidad
