@@ -108,6 +108,12 @@
     box-shadow: var(--resumen-shadow-md);
 }
 
+.kpi-clickable { cursor: pointer; }
+.salud-badge.clickable { cursor: pointer; transition: filter .15s ease; }
+.salud-badge.clickable:hover { filter: brightness(1.2); }
+.card-header .kpi-clickable { border-radius: .35rem; padding: .25rem .5rem; margin: -.25rem -.5rem; transition: background-color .15s ease; }
+.card-header .kpi-clickable:hover { background-color: rgba(0, 0, 0, .05); }
+
 .kpi-card.kpi-success::before { background: var(--resumen-success); }
 .kpi-card.kpi-info::before    { background: var(--resumen-info); }
 .kpi-card.kpi-warning::before { background: var(--resumen-warning); }

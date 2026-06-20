@@ -224,8 +224,8 @@
             cardClass: "kpi-primary",
             extra: `
                 <div class="d-flex gap-2 mt-2">
-                    <span class="badge bg-danger">${criticos} críticos</span>
-                    <span class="badge bg-warning text-dark">${alertas} alertas</span>
+                    <span class="badge bg-danger kpi-clickable" data-url="/punto-eca/inventario/?ovtab=ovtab-inventario&estado=critico" title="Filtrar críticos en inventario">${criticos} críticos</span>
+                    <span class="badge bg-warning text-dark kpi-clickable" data-url="/punto-eca/inventario/?ovtab=ovtab-inventario&estado=alerta" title="Filtrar alertas en inventario">${alertas} alertas</span>
                 </div>
             `,
         });
@@ -260,7 +260,7 @@
                 <small class="text-muted mt-1 d-block">${escapeHTML(opts.pctLabel || "")}</small>
             `
             : "";
-        root.className = "kpi-card " + opts.cardClass;
+        root.className = "kpi-card kpi-clickable " + opts.cardClass;
         root.innerHTML = `
             <div class="p-3">
                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -403,7 +403,8 @@
         const criticosHTML = criticos.length === 0
             ? '<p class="text-muted small mb-0"><i class="bi bi-check2-circle me-1"></i>Sin materiales críticos</p>'
             : criticos.map(m => `
-                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-danger bg-opacity-10 rounded">
+                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-danger bg-opacity-10 rounded kpi-clickable"
+                     data-inv-id="${m.id || ""}" title="Ver en inventario">
                     <div class="min-w-0">
                         <strong class="text-danger d-block text-truncate">${escapeHTML(m.nombre)}</strong>
                         <small class="text-muted">${fmtNum(m.stock_actual, 1)} / ${fmtNum(m.capacidad_maxima, 1)} ${escapeHTML(m.unidad || "")}</small>
@@ -414,7 +415,8 @@
         const alertasHTML = alertas.length === 0
             ? '<p class="text-muted small mb-0"><i class="bi bi-check2-circle me-1"></i>Sin alertas de stock</p>'
             : alertas.map(m => `
-                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-warning bg-opacity-10 rounded">
+                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-warning bg-opacity-10 rounded kpi-clickable"
+                     data-inv-id="${m.id || ""}" title="Ver en inventario">
                     <div class="min-w-0">
                         <strong class="text-warning d-block text-truncate">${escapeHTML(m.nombre)}</strong>
                         <small class="text-muted">${fmtNum(m.stock_actual, 1)} / ${fmtNum(m.capacidad_maxima, 1)} ${escapeHTML(m.unidad || "")}</small>
@@ -680,7 +682,45 @@
 
         const btn = document.getElementById("btnActualizarResumen");
         if (btn) btn.addEventListener("click", refrescar);
+
+        // Salud badge: click = scroll a sección de alertas + toggle visibilidad
+        const saludBadge = document.getElementById("resumenSaludBadge");
+        const alertasSec = document.getElementById("seccionAlertas");
+        if (saludBadge && alertasSec) {
+            saludBadge.classList.add("clickable");
+            saludBadge.setAttribute("title", "Ver alertas de inventario");
+            saludBadge.addEventListener("click", () => {
+                const isHidden = alertasSec.style.display === "none" || !alertasSec.style.display;
+                alertasSec.style.display = isHidden ? "" : "none";
+                if (!isHidden) return;
+                alertasSec.scrollIntoView({ behavior: "smooth" });
+            });
+        }
+
+        // Alertas items: cada material clickeable → va a inventario
+        ["materialesCriticosList", "materialesAlertasList"].forEach((listId) => {
+            const listEl = document.getElementById(listId);
+            if (listEl) {
+                listEl.addEventListener("click", (e) => {
+                    const target = e.target.closest("[data-inv-id]");
+                    if (target && target.dataset.invId) {
+                        window.location.href = "/punto-eca/inventario/?inv=" + target.dataset.invId;
+                    }
+                });
+            }
+        });
     }
+
+    // Event delegation global: KPIs + headers clickeables siempre activos,
+    // sin depender de que init() haya corrido o que los datos estén listos.
+    document.addEventListener("click", (e) => {
+        const el = e.target?.closest?.(".kpi-clickable[data-url]");
+        if (!el) return;
+        // No navegar si el click viene de un <a> o <button> anidado
+        if (e.target?.closest?.("a, button")) return;
+        const url = el.dataset.url;
+        if (url) window.location.href = url;
+    });
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", init);

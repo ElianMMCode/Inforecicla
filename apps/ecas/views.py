@@ -153,7 +153,8 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
             if deep_inv and deep_tab
             else None
         )
-        context = _build_inventario_context(punto, deep_link=deep_link)
+        ovtab = request.GET.get("ovtab", "")
+        context = _build_inventario_context(punto, deep_link=deep_link, ovtab=ovtab)
     elif seccion == "centros":
         context = _build_centros_context(punto)
     elif seccion == "calendario":
@@ -302,7 +303,7 @@ def _build_centros_context(punto):
     }
 
 
-def _build_inventario_context(punto, deep_link=None):
+def _build_inventario_context(punto, deep_link=None, ovtab=""):
     """
     Construye el contexto unificado para la nueva sección /inventario/.
 
@@ -420,6 +421,7 @@ def _build_inventario_context(punto, deep_link=None):
         "inv_data_json": inv_data,
         "now": timezone.now(),
         "deep_link": deep_link,
+        "ovtab": ovtab,
     }
 
 

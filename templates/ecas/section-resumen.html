@@ -28,22 +28,22 @@
     <!-- Tarjetas de Estadísticas Principales (6 KPIs) -->
     <div class="row g-3 mb-4 resumen-stagger">
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiInventario" class="kpi-card kpi-success"></div>
+            <div id="kpiInventario" class="kpi-card kpi-success kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-inventario" title="Ver inventario de materiales"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiEntradas" class="kpi-card kpi-info"></div>
+            <div id="kpiEntradas" class="kpi-card kpi-info kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-historial" title="Ver historial de compras"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiSalidas" class="kpi-card kpi-warning"></div>
+            <div id="kpiSalidas" class="kpi-card kpi-warning kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-historial" title="Ver historial de ventas"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiBalance" class="kpi-card kpi-dark"></div>
+            <div id="kpiBalance" class="kpi-card kpi-dark kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-flujo" title="Ver flujo de stock"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiMateriales" class="kpi-card kpi-primary"></div>
+            <div id="kpiMateriales" class="kpi-card kpi-primary kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-inventario" title="Ver materiales del inventario"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiValor" class="kpi-card kpi-dark"></div>
+            <div id="kpiValor" class="kpi-card kpi-dark kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-flujo" title="Ver valor del inventario"></div>
         </div>
     </div>
 
@@ -52,7 +52,7 @@
         <div class="col-12 col-lg-7">
             <div class="card border-0 shadow-sm hover-lift h-100">
                 <div class="card-header bg-white border-bottom">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-flujo" title="Ver flujo de stock">
                         <i class="bi bi-bar-chart-line text-primary"></i>
                         <h6 class="mb-0 fw-bold">Tendencia últimos 7 días</h6>
                     </div>
@@ -69,7 +69,7 @@
         <div class="col-12 col-lg-5">
             <div class="card border-0 shadow-sm hover-lift h-100">
                 <div class="card-header bg-white border-bottom">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-inventario" title="Ver inventario de materiales">
                         <i class="bi bi-trophy text-warning"></i>
                         <h6 class="mb-0 fw-bold">Top materiales del mes</h6>
                     </div>
@@ -90,7 +90,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm hover-lift">
                 <div class="card-header bg-white border-bottom">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:inventario' %}?ovtab=ovtab-inventario" title="Ver inventario por categoría">
                         <i class="bi bi-pie-chart text-success"></i>
                         <h6 class="mb-0 fw-bold">Distribución por categoría</h6>
                     </div>
@@ -141,7 +141,7 @@
         <div class="col-12 col-lg-5">
             <div class="card border-0 shadow-sm hover-lift h-100">
                 <div class="card-header bg-white border-bottom">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:configuracion' %}" title="Ver configuración del punto">
                         <i class="bi bi-building text-success"></i>
                         <h6 class="mb-0 fw-bold">Información del Punto</h6>
                     </div>
@@ -159,7 +159,7 @@
             <div class="card border-0 shadow-sm hover-lift h-100">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:calendario' %}" title="Ver calendario">
                             <i class="bi bi-calendar-event text-primary"></i>
                             <h6 class="mb-0 fw-bold">Próximos Eventos</h6>
                         </div>
@@ -185,7 +185,7 @@
             <div class="card border-0 shadow-sm hover-lift">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:inventario' %}" title="Ver inventario">
                             <i class="bi bi-clock-history text-success"></i>
                             <h6 class="mb-0 fw-bold">Últimos Movimientos</h6>
                         </div>
@@ -211,7 +211,7 @@
             <div class="card border-0 shadow-sm hover-lift">
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:centros' %}" title="Ver centros de acopio">
                             <i class="bi bi-geo-alt text-info"></i>
                             <h6 class="mb-0 fw-bold">Centros de Acopio</h6>
                         </div>
