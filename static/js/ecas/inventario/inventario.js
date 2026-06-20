@@ -854,12 +854,6 @@
         renderHistorialGeneral();
         bindExtras();
         renderFlujoMaterialesList();
-        // Deep-link desde sidebar: ?ovtab=ovtab-xxx
-        const urlOvtab = new URLSearchParams(globalThis.location.search).get("ovtab");
-        if (urlOvtab) {
-            const valid = ["ovtab-inventario", "ovtab-buscar", "ovtab-bulk", "ovtab-historial", "ovtab-flujo"];
-            if (valid.includes(urlOvtab)) activarOvTab(urlOvtab);
-        }
         // Render charts tras primer paint (espera CSS)
         setTimeout(() => {
             if (document.getElementById("inv-stock-time-chart")) renderOvtabChart();
@@ -2810,10 +2804,17 @@
             console.warn("[inv] deep-link apunta a inventarioId inexistente:", dl.inv);
         }
     }
+    function _procesarOvtabDeferred() {
+        const urlOvtab = new URLSearchParams(globalThis.location.search).get("ovtab");
+        if (!urlOvtab) return;
+        const valid = ["ovtab-inventario", "ovtab-buscar", "ovtab-bulk", "ovtab-historial", "ovtab-flujo"];
+        if (valid.includes(urlOvtab)) activarOvTab(urlOvtab);
+    }
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => { _initDeepLink(); bind(); });
+        document.addEventListener("DOMContentLoaded", () => { _initDeepLink(); bind(); _procesarOvtabDeferred(); });
     } else {
         _initDeepLink();
         bind();
+        _procesarOvtabDeferred();
     }
 })();

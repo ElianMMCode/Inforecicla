@@ -683,16 +683,6 @@
         const btn = document.getElementById("btnActualizarResumen");
         if (btn) btn.addEventListener("click", refrescar);
 
-        // KPI cards + headers clickeables: event delegation para que sobreviva re-renders
-        document.addEventListener("click", (e) => {
-            const el = e.target.closest(".kpi-clickable[data-url]");
-            if (!el) return;
-            // No navegar si el click viene de un <a> o <button> anidado
-            if (e.target.closest("a, button")) return;
-            const url = el.dataset.url;
-            if (url) window.location.href = url;
-        });
-
         // Salud badge: click = scroll a sección de alertas + toggle visibilidad
         const saludBadge = document.getElementById("resumenSaludBadge");
         const alertasSec = document.getElementById("seccionAlertas");
@@ -720,6 +710,17 @@
             }
         });
     }
+
+    // Event delegation global: KPIs + headers clickeables siempre activos,
+    // sin depender de que init() haya corrido o que los datos estén listos.
+    document.addEventListener("click", (e) => {
+        const el = e.target?.closest?.(".kpi-clickable[data-url]");
+        if (!el) return;
+        // No navegar si el click viene de un <a> o <button> anidado
+        if (e.target?.closest?.("a, button")) return;
+        const url = el.dataset.url;
+        if (url) window.location.href = url;
+    });
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", init);
