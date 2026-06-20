@@ -1122,45 +1122,56 @@
     // y total auto-calculado (cantidad × precio) en tiempo real.
     // Se invoca desde irWorkspace() y cada vez que se selecciona un material.
     // ============================================================
+    function _autorrellenarPrecio(prefix, inv) {
+        const esEntrada = prefix === "formEntrada";
+        const el = document.getElementById(esEntrada ? "formEntradaPrecio" : "formSalidaPrecio");
+        const precio = esEntrada ? inv.precioCompra : inv.precioVenta;
+        if (el && precio != null && !el.value) el.value = precio;
+    }
     function poblarInfoMaterial(prefix) {
         if (!currentMaterial) return;
         const inv = currentMaterial;
+        const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? ""; };
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
+        const fmt = (v) => (v ?? 0).toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        const unidad = inv.unidad || "";
         setVal(`${prefix}MaterialTipo`, inv.tipo);
         setVal(`${prefix}MaterialCategoria`, inv.categoria);
-        setVal(`${prefix}MaterialUnidad`, inv.unidad);
+        setVal(`${prefix}MaterialUnidad`, unidad);
         setVal(`${prefix}StockActual`, inv.stockActual);
         setVal(`${prefix}CapacidadMaxima`, inv.capacidadMaxima);
-        // Autorrellenar precio unitario desde el backend (el usuario puede
-        // sobrescribirlo). Es un buen default porque evita teclear el precio
-        // estándar del material y reduce errores.
-        if (prefix === "formEntrada") {
-            const precioEl = document.getElementById("formEntradaPrecio");
-            if (precioEl && inv.precioCompra != null && !precioEl.value) {
-                precioEl.value = inv.precioCompra;
-            }
-        } else if (prefix === "formSalida") {
-            const precioEl = document.getElementById("formSalidaPrecio");
-            if (precioEl && inv.precioVenta != null && !precioEl.value) {
-                precioEl.value = inv.precioVenta;
-            }
-        }
-        // Sugerir cantidad=0 como punto de partida, si el campo está vacío.
-        // El usuario lo sobrescribe; con 0 el Total queda vacío y el
-        // stock preview muestra el stock base (sin cambio). Obliga al
-        // usuario a tipear la cantidad real, evitando registrar valores
-        // случайные (ej. 1) que el usuario podría olvidar cambiar.
+
+        const stockBase = Number(inv.stockActual || 0);
+        const capacidad = Number(inv.capacidadMaxima || 0);
+
+        setText(`${prefix}StockActualLabel`, `${fmt(stockBase)} ${unidad}`);
+        setText(`${prefix}CapMaxLabel`, `${fmt(capacidad)} ${unidad}`);
+
         const cantEl = document.getElementById(`${prefix}Cantidad`);
-        if (cantEl && !cantEl.value) cantEl.value = 0;
-        // Recalcular total con el precio recién autorrellenado
+        if (cantEl) {
+            const esEntrada = prefix === "formEntrada";
+            const maxLogico = esEntrada ? capacidad : stockBase;
+            if (maxLogico > 0) cantEl.setAttribute("max", maxLogico);
+            else cantEl.removeAttribute("max");
+            cantEl.value = "";
+        }
+
+        _autorrellenarPrecio(prefix, inv);
+
         if (prefix === "formEntrada") actualizarTotalEntrada();
-        if (prefix === "formSalida") actualizarTotalVenta();
-        // Pintar el preview de stock resultante con el stock base del material
-        // (aunque el usuario todavía no haya tipeado cantidad, queremos ver
-        // el stock actual como punto de partida).
+        else actualizarTotalVenta();
         actualizarStockPreview(prefix);
     }
+    function _clampMax(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const maxVal = Number.parseFloat(el.getAttribute("max"));
+        if (Number.isNaN(maxVal)) return;
+        const val = Number.parseFloat(el.value || 0);
+        if (val > maxVal) el.value = maxVal;
+    }
     function actualizarTotalEntrada() {
+        _clampMax("formEntradaCantidad");
         const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
         const precio = Number(document.getElementById("formEntradaPrecio")?.value || 0);
         const total = cant * precio;
@@ -1169,6 +1180,7 @@
         actualizarStockPreviewEntrada();
     }
     function actualizarTotalVenta() {
+        _clampMax("formSalidaCantidad");
         const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
         const precio = Number(document.getElementById("formSalidaPrecio")?.value || 0);
         const total = cant * precio;
@@ -1177,47 +1189,101 @@
         actualizarStockPreviewSalida();
     }
     // Preview de stock resultante: muestra en tiempo real cuánto stock
-    // quedará tras aplicar este movimiento. Color verde si el resultado
-    // es válido; rojo si excede la capacidad máxima (compra) o resulta
-    // negativo (venta). Es solo referencia visual; el backend re-valida.
-    function actualizarStockPreviewEntrada() {
-        const stockEl = document.getElementById("formEntradaStockResultante");
-        const unidadEl = document.getElementById("formEntradaStockResultanteUnidad");
-        const capEl = document.getElementById("formEntradaStockResultanteCap");
-        if (!stockEl) return;
-        const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
-        const capacidad = Number(document.getElementById("formEntradaCapacidadMaxima")?.value || 0);
-        const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
-        const unidad = document.getElementById("formEntradaMaterialUnidad")?.value || "";
-        const resultante = stockBase + cant;
-        stockEl.value = resultante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        if (unidadEl) unidadEl.textContent = unidad || "unidades";
-        if (capEl) capEl.textContent = capacidad > 0 ? `/ máx. ${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })}` : "";
-        if (capacidad > 0 && resultante > capacidad) {
-            stockEl.style.backgroundColor = "#f8d7da";
-            stockEl.style.color = "#58151c";
-        } else {
-            stockEl.style.backgroundColor = "#d1e7dd";
-            stockEl.style.color = "#0a3622";
+    // quedará tras aplicar este movimiento. Incluye barra de progreso,
+    // labels de capacidad y texto de disponibles. Color verde si el
+    // resultado es válido; amarillo si supera 70%; rojo si supera 90%
+    // o excede la capacidad máxima. Es solo referencia visual; el
+    // backend re-valida.
+
+    /** Determina la clase de color para la barra de progreso según el porcentaje. */
+    function _claseBarraStock(pct, sobreCapacidad) {
+        if (sobreCapacidad || pct >= 90) return "bg-danger";
+        if (pct >= 70) return "bg-warning";
+        return "bg-success";
+    }
+
+    /** Determina la clase de color para la barra de stock restante (venta). */
+    function _claseBarraRestante(pct, negativo) {
+        if (negativo || pct <= 10) return "bg-danger";
+        if (pct <= 30) return "bg-warning";
+        return "bg-success";
+    }
+
+    /** Caso capacidad > 0: calcula porcentaje, clase, disponibles y renderiza barra. */
+    function _renderStockBarActivo(bar, disponibles, stockEl, unidad, resultado, capacidad, esEntrada) {
+        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        const pct = esEntrada
+            ? Math.min((resultado / capacidad) * 100, 100)
+            : Math.max((resultado / capacidad) * 100, 0);
+        const clase = esEntrada
+            ? _claseBarraStock(pct, resultado > capacidad)
+            : _claseBarraRestante(pct, resultado < 0);
+        bar.style.width = Math.min(pct, 100) + "%";
+        bar.className = "progress-bar " + clase;
+        if (disponibles) {
+            const dispVal = esEntrada
+                ? Math.max(capacidad - resultado, 0)
+                : Math.max(resultado, 0);
+            disponibles.textContent = `${fmt(dispVal)} ${unidad}`;
         }
     }
-    function actualizarStockPreviewSalida() {
-        const stockEl = document.getElementById("formSalidaStockRestante");
-        const unidadEl = document.getElementById("formSalidaStockRestanteUnidad");
-        if (!stockEl) return;
-        const stockBase = Number(document.getElementById("formSalidaStockActual")?.value || 0);
-        const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
-        const unidad = document.getElementById("formSalidaMaterialUnidad")?.value || "";
-        const restante = stockBase - cant;
-        stockEl.value = restante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        if (unidadEl) unidadEl.textContent = unidad || "unidades";
-        if (restante < 0) {
-            stockEl.style.backgroundColor = "#f8d7da";
-            stockEl.style.color = "#58151c";
+
+    /** Actualiza estilos (fondo/color) del elemento de stock según si excede el límite. */
+    function _setStockElColor(stockEl, resultado, capacidad, esEntrada) {
+        const excede = esEntrada ? (capacidad > 0 && resultado > capacidad) : resultado < 0;
+        stockEl.style.backgroundColor = excede ? "#f8d7da" : "#d1e7dd";
+        stockEl.style.color = excede ? "#58151c" : "#0a3622";
+    }
+
+    /** Actualiza barra de progreso, disponibles y estilo del display de stock. */
+    function _renderStockBar(bar, disponibles, stockEl, unidad, opts) {
+        const { resultado, capacidad, esEntrada } = opts;
+        if (!bar || !stockEl) return;
+        if (capacidad > 0) {
+            _renderStockBarActivo(bar, disponibles, stockEl, unidad, resultado, capacidad, esEntrada);
         } else {
-            stockEl.style.backgroundColor = "#d1e7dd";
-            stockEl.style.color = "#0a3622";
+            bar.style.width = "0%";
+            bar.className = "progress-bar bg-success";
+            if (disponibles) disponibles.textContent = "—";
         }
+        _setStockElColor(stockEl, resultado, capacidad, esEntrada);
+    }
+
+    function actualizarStockPreviewEntrada() {
+        _actualizarStockPreview("formEntrada");
+    }
+
+    function actualizarStockPreviewSalida() {
+        _actualizarStockPreview("formSalida");
+    }
+
+    function _actualizarStockPreview(prefix) {
+        const esEntrada = prefix === "formEntrada";
+        const suffix = esEntrada ? "Resultante" : "Restante";
+        const stockEl = document.getElementById(`${prefix}Stock${suffix}`);
+        const unidadEl = document.getElementById(`${prefix}Stock${suffix}Unidad`);
+        if (!stockEl) return;
+        const stockBase = Number(document.getElementById(`${prefix}StockActual`)?.value || 0);
+        const capacidad = Number(document.getElementById(`${prefix}CapacidadMaxima`)?.value || 0);
+        const cant = Number(document.getElementById(`${prefix}Cantidad`)?.value || 0);
+        const unidad = document.getElementById(`${prefix}MaterialUnidad`)?.value || "";
+        const resultado = esEntrada ? stockBase + cant : stockBase - cant;
+
+        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        stockEl.textContent = fmt(resultado);
+        if (unidadEl) unidadEl.textContent = unidad || "unidades";
+
+        const actualLabel = document.getElementById(`${prefix}StockActualLabel`);
+        const capMaxLabel = document.getElementById(`${prefix}CapMaxLabel`);
+        if (actualLabel) actualLabel.textContent = `${fmt(stockBase)} ${unidad}`;
+        if (capMaxLabel) capMaxLabel.textContent = `${fmt(capacidad)} ${unidad}`;
+
+        _renderStockBar(
+            document.getElementById(`${prefix}StockBar`),
+            document.getElementById(`${prefix}Disponibles`),
+            stockEl, unidad,
+            { resultado, capacidad, esEntrada }
+        );
     }
     function actualizarStockPreview(prefix) {
         if (prefix === "formEntrada") actualizarStockPreviewEntrada();
