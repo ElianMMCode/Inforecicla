@@ -309,6 +309,7 @@ class AsistenteECAService:
         materiales_alertas = []
         for item in items:
             material_info = {
+                'id': item.id,
                 'nombre': item.material.nombre,
                 'stock_actual': item.stock_actual,
                 'capacidad_maxima': item.capacidad_maxima,

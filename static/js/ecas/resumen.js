@@ -403,7 +403,8 @@
         const criticosHTML = criticos.length === 0
             ? '<p class="text-muted small mb-0"><i class="bi bi-check2-circle me-1"></i>Sin materiales críticos</p>'
             : criticos.map(m => `
-                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-danger bg-opacity-10 rounded">
+                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-danger bg-opacity-10 rounded kpi-clickable"
+                     data-inv-id="${m.id || ""}" title="Ver en inventario">
                     <div class="min-w-0">
                         <strong class="text-danger d-block text-truncate">${escapeHTML(m.nombre)}</strong>
                         <small class="text-muted">${fmtNum(m.stock_actual, 1)} / ${fmtNum(m.capacidad_maxima, 1)} ${escapeHTML(m.unidad || "")}</small>
@@ -414,7 +415,8 @@
         const alertasHTML = alertas.length === 0
             ? '<p class="text-muted small mb-0"><i class="bi bi-check2-circle me-1"></i>Sin alertas de stock</p>'
             : alertas.map(m => `
-                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-warning bg-opacity-10 rounded">
+                <div class="d-flex align-items-center justify-content-between p-2 mb-2 bg-warning bg-opacity-10 rounded kpi-clickable"
+                     data-inv-id="${m.id || ""}" title="Ver en inventario">
                     <div class="min-w-0">
                         <strong class="text-warning d-block text-truncate">${escapeHTML(m.nombre)}</strong>
                         <small class="text-muted">${fmtNum(m.stock_actual, 1)} / ${fmtNum(m.capacidad_maxima, 1)} ${escapeHTML(m.unidad || "")}</small>
@@ -680,6 +682,41 @@
 
         const btn = document.getElementById("btnActualizarResumen");
         if (btn) btn.addEventListener("click", refrescar);
+
+        // KPI cards clickeables: navegan a la URL del data-url
+        document.querySelectorAll(".kpi-clickable[data-url]").forEach((el) => {
+            el.addEventListener("click", () => {
+                const url = el.dataset.url;
+                if (url) window.location.href = url;
+            });
+        });
+
+        // Salud badge: click = scroll a sección de alertas + toggle visibilidad
+        const saludBadge = document.getElementById("resumenSaludBadge");
+        const alertasSec = document.getElementById("seccionAlertas");
+        if (saludBadge && alertasSec) {
+            saludBadge.classList.add("clickable");
+            saludBadge.setAttribute("title", "Ver alertas de inventario");
+            saludBadge.addEventListener("click", () => {
+                const isHidden = alertasSec.style.display === "none" || !alertasSec.style.display;
+                alertasSec.style.display = isHidden ? "" : "none";
+                if (!isHidden) return;
+                alertasSec.scrollIntoView({ behavior: "smooth" });
+            });
+        }
+
+        // Alertas items: cada material clickeable → va a inventario
+        ["materialesCriticosList", "materialesAlertasList"].forEach((listId) => {
+            const listEl = document.getElementById(listId);
+            if (listEl) {
+                listEl.addEventListener("click", (e) => {
+                    const target = e.target.closest("[data-inv-id]");
+                    if (target && target.dataset.invId) {
+                        window.location.href = "/punto-eca/inventario/?inv=" + target.dataset.invId;
+                    }
+                });
+            }
+        });
     }
 
     if (document.readyState === "loading") {

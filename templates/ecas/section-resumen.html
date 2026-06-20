@@ -28,22 +28,22 @@
     <!-- Tarjetas de Estadísticas Principales (6 KPIs) -->
     <div class="row g-3 mb-4 resumen-stagger">
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiInventario" class="kpi-card kpi-success"></div>
+            <div id="kpiInventario" class="kpi-card kpi-success kpi-clickable" data-url="{% url 'punto-eca:inventario' %}" title="Ver inventario"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiEntradas" class="kpi-card kpi-info"></div>
+            <div id="kpiEntradas" class="kpi-card kpi-info kpi-clickable" data-url="{% url 'punto-eca:inventario' %}" title="Ver historial de compras"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiSalidas" class="kpi-card kpi-warning"></div>
+            <div id="kpiSalidas" class="kpi-card kpi-warning kpi-clickable" data-url="{% url 'punto-eca:inventario' %}" title="Ver historial de ventas"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiBalance" class="kpi-card kpi-dark"></div>
+            <div id="kpiBalance" class="kpi-card kpi-dark kpi-clickable" data-url="{% url 'punto-eca:inventario' %}" title="Ver flujo de stock"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiMateriales" class="kpi-card kpi-primary"></div>
+            <div id="kpiMateriales" class="kpi-card kpi-primary kpi-clickable" data-url="{% url 'punto-eca:inventario' %}" title="Ver materiales"></div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div id="kpiValor" class="kpi-card kpi-dark"></div>
+            <div id="kpiValor" class="kpi-card kpi-dark kpi-clickable" data-url="{% url 'punto-eca:inventario' %}" title="Ver valor del inventario"></div>
         </div>
     </div>
 
