@@ -1261,7 +1261,7 @@
         const resultado = esEntrada ? stockBase + cant : stockBase - cant;
 
         const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        stockEl.value = fmt(resultado);
+        stockEl.textContent = fmt(resultado);
         if (unidadEl) unidadEl.textContent = unidad || "unidades";
 
         const actualLabel = document.getElementById(`${prefix}StockActualLabel`);
