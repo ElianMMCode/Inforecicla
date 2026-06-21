@@ -915,9 +915,9 @@ def _filtrar_materiales_export(request, materiales):
     categoria = request.GET.get('categoria', '').strip()
     if categoria:
         materiales = [m for m in materiales if m.categoria and m.categoria.nombre == categoria]
-    tipo = request.GET.get('tipo', '').strip()
-    if tipo:
-        materiales = [m for m in materiales if m.tipo and m.tipo.nombre == tipo]
+    clasificacion = request.GET.get('clasificacion', '').strip()
+    if clasificacion:
+        materiales = [m for m in materiales if m.clasificacion and m.clasificacion.upper() == clasificacion.upper()]
     return materiales
 
 
@@ -929,9 +929,6 @@ def _filtrar_categorias_material_export(request, categorias):
     estado = request.GET.get('estado', '').strip()
     if estado:
         categorias = [c for c in categorias if c.estado == estado]
-    tipo = request.GET.get('tipo', '').strip()
-    if tipo:
-        categorias = [c for c in categorias if c.tipo and c.tipo.nombre == tipo]
     return categorias
 
 
@@ -1421,7 +1418,7 @@ def exportar_materiales_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
 
-    materiales = _filtrar_materiales_export(request, list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre")))
+    materiales = _filtrar_materiales_export(request, list(Material.objects.select_related("categoria").all().order_by("nombre")))
     html = render_to_string("admin/Materiales/materiales_pdf.html", {"materiales": materiales})
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "materiales.pdf")
@@ -1440,7 +1437,7 @@ def exportar_materiales_excel(request):
     ws = wb.active
     ws.title = "Materiales"
 
-    headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Categoría", "Tipo", "Estado"]
+    headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Categoría", "Clasificación", "Estado"]
     fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
     font = Font(color="FFFFFF", bold=True)
     for col, h in enumerate(headers, 1):
@@ -1449,12 +1446,12 @@ def exportar_materiales_excel(request):
         cell.font = font
         cell.alignment = Alignment(horizontal="center")
 
-    materiales = _filtrar_materiales_export(request, list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre")))
+    materiales = _filtrar_materiales_export(request, list(Material.objects.select_related("categoria").all().order_by("nombre")))
     for row, m in enumerate(materiales, 2):
         ws.cell(row=row, column=1, value=m.nombre)
         ws.cell(row=row, column=2, value=m.descripcion or "")
         ws.cell(row=row, column=3, value=m.categoria.nombre if m.categoria else "")
-        ws.cell(row=row, column=4, value=m.tipo.nombre if m.tipo else "")
+        ws.cell(row=row, column=4, value=m.clasificacion or "")
         ws.cell(row=row, column=5, value=m.estado or "")
 
     for col in ws.columns:
@@ -1472,7 +1469,7 @@ def exportar_materiales_excel(request):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def listar_materiales_admin(request):
-    all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    all_materiales = list(Material.objects.select_related("categoria").all().order_by("nombre"))
     materiales_json = [material_to_dict(m) for m in all_materiales]
     q = request.GET.get('q', '').strip()
     if q:
@@ -1892,7 +1889,7 @@ def editar_punto_eca_admin(request, punto_id):
 @require_http_methods(["GET", "POST"])
 def editar_material_admin(request, material_id):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-    material = Material.objects.select_related("categoria", "tipo").filter(id=material_id).first()
+    material = Material.objects.select_related("categoria").filter(id=material_id).first()
     if not material:
         if is_ajax:
             return JsonResponse({"ok": False, "message": "Material no encontrado."})
@@ -2115,8 +2112,7 @@ def material_to_dict(m):
         "descripcion": m.descripcion or "",
         "categoria_nombre": m.categoria.nombre if m.categoria else "-",
         "categoria_id": str(m.categoria.id) if m.categoria else "",
-        "tipo_nombre": m.tipo.nombre if m.tipo else "-",
-        "tipo_id": str(m.tipo.id) if m.tipo else "",
+        "clasificacion": m.clasificacion,
         "estado": m.estado,
         "is_active": m.estado == "ACTIVO",
         "action_url": reverse("panel_admin:editar_material_admin", kwargs={"material_id": m.id}),
@@ -2139,11 +2135,7 @@ def categoria_material_to_dict(c):
         "id": c.id,
         "nombre": c.nombre,
         "descripcion": c.descripcion or "",
-        "tipo_id": c.tipo.id if c.tipo else "",
-        "tipo_nombre": c.tipo.nombre if c.tipo else "-",
         "estado": c.estado,
-        "is_active": c.estado == "ACTIVO",
-        "action_url": reverse("panel_admin:editar_categoria_material_admin", kwargs={"categoria_id": c.id}),
     }
 
 
@@ -2323,7 +2315,7 @@ def gestion_materiales(request):
     q_cat = request.GET.get('q_cat', '').strip()
     tab = request.GET.get('tab', 'materiales')
 
-    all_materiales = list(Material.objects.select_related("categoria", "tipo").all().order_by("nombre"))
+    all_materiales = list(Material.objects.select_related("categoria").all().order_by("nombre"))
     tipos_qs = TipoMaterial.objects.all().order_by("nombre")
     categorias_qs = CategoriaMaterial.objects.all().order_by("nombre")
 
@@ -2333,7 +2325,7 @@ def gestion_materiales(request):
 
     if q_mat:
         ql = q_mat.lower()
-        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower() + " " + (m.tipo.nombre if m.tipo else "").lower())]
+        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower() + " " + (m.clasificacion or "").lower())]
 
     if q_tipo:
         tipos_qs = tipos_qs.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
@@ -2353,7 +2345,7 @@ def gestion_materiales(request):
         "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),
         "todos_tipos": TipoMaterial.objects.all().order_by("nombre"),
         "dist_categoria_mat": AdminDashboardService.obtener_distribucion_materiales(),
-        "dist_tipo_mat": AdminDashboardService.obtener_distribucion_materiales_por_tipo(),
+        "dist_clasificacion_mat": AdminDashboardService.obtener_distribucion_materiales_por_clasificacion(),
         "dist_estado_mat": AdminDashboardService.obtener_distribucion_materiales_por_estado(),
         "dist_estado_cat": AdminDashboardService.obtener_distribucion_categorias_material_por_estado(),
         "dist_estado_tipo": AdminDashboardService.obtener_distribucion_tipos_material_por_estado(),
