@@ -809,6 +809,24 @@ function limpiarFiltrosInventario(){
   document.getElementById('inv-orden').value='nombre';
   renderInventario();
 }
+function _renderInventarioCharts(items){
+  if(typeof Chart==='undefined')return;
+  destroyChart('invCategorias');destroyChart('invStock');destroyChart('invMargen');
+  const catData={};items.forEach(x=>{catData[x.cat]=(catData[x.cat]||0)+x.stock});
+  const catEntries=Object.entries(catData).sort((a,b)=>b[1]-a[1]);
+  const ccCanvas=document.getElementById('chartInvCategorias');
+  if(ccCanvas){
+    charts.invCategorias=new Chart(ccCanvas,{type:'doughnut',data:{labels:catEntries.map(e=>e[0]),datasets:[{data:catEntries.map(e=>e[1]),backgroundColor:['#198754','#0d6efd','#ffc107','#dc3545','#0dcaf0','#6f42c1']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+  }
+  const csCanvas=document.getElementById('chartInvStock');
+  if(csCanvas){
+    charts.invStock=new Chart(csCanvas,{type:'bar',data:{labels:items.map(x=>x.mat),datasets:[{label:'% Ocupacion',data:items.map(x=>Math.round(x.stock/x.cap*100)),backgroundColor:items.map(x=>{const ibg=x.stock/x.cap<.5?'#ffc107':'#198754';return x.stock/x.cap<.3?'#dc3545':ibg;}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'%'}}}}});
+  }
+  const cmCanvas=document.getElementById('chartInvMargen');
+  if(cmCanvas){
+    charts.invMargen=new Chart(cmCanvas,{type:'bar',data:{labels:items.map(x=>x.mat),datasets:[{label:'Margen',data:items.map(x=>x.venta-x.compra),backgroundColor:items.map(x=>(x.venta-x.compra)>=0?'#198754':'#dc3545'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'$'}}}}});
+  }
+}
 function renderInventario(){
   if(!currentPuntoId)return;
   let items=invData.filter(x=>x.puntoId===currentPuntoId);
@@ -830,23 +848,7 @@ function renderInventario(){
   document.getElementById('inv-capacidad-prom').textContent=capProm.toLocaleString()+' u';
   document.getElementById('inv-bajo-stock').textContent=bajoStock;
 
-  if(typeof Chart!=='undefined'){
-    destroyChart('invCategorias');destroyChart('invStock');destroyChart('invMargen');
-    const catData={};items.forEach(x=>{catData[x.cat]=(catData[x.cat]||0)+x.stock});
-    const catEntries=Object.entries(catData).sort((a,b)=>b[1]-a[1]);
-    const ccCanvas=document.getElementById('chartInvCategorias');
-    if(ccCanvas){
-      charts.invCategorias=new Chart(ccCanvas,{type:'doughnut',data:{labels:catEntries.map(e=>e[0]),datasets:[{data:catEntries.map(e=>e[1]),backgroundColor:['#198754','#0d6efd','#ffc107','#dc3545','#0dcaf0','#6f42c1']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
-    }
-    const csCanvas=document.getElementById('chartInvStock');
-    if(csCanvas){
-      charts.invStock=new Chart(csCanvas,{type:'bar',data:{labels:items.map(x=>x.mat),datasets:[{label:'% Ocupacion',data:items.map(x=>Math.round(x.stock/x.cap*100)),backgroundColor:items.map(x=>{const ibg=x.stock/x.cap<.5?'#ffc107':'#198754';return x.stock/x.cap<.3?'#dc3545':ibg;}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'%'}}}}});
-    }
-    const cmCanvas=document.getElementById('chartInvMargen');
-    if(cmCanvas){
-      charts.invMargen=new Chart(cmCanvas,{type:'bar',data:{labels:items.map(x=>x.mat),datasets:[{label:'Margen',data:items.map(x=>x.venta-x.compra),backgroundColor:items.map(x=>(x.venta-x.compra)>=0?'#198754':'#dc3545'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'$'}}}}});
-    }
-  }
+  _renderInventarioCharts(items);
 
   document.getElementById('inv-cards').innerHTML=items.map(x=>{
     const pct=Math.round(x.stock/x.cap*100);
