@@ -23,7 +23,8 @@ urlpatterns = [
     path('publicaciones/<uuid:publicacion_id>/editar/', views.editar_publicacion_admin, name='editar_publicacion_admin'),
 
     # Puntos ECA
-    path('puntos-eca/', views.listar_puntos_eca_admin, name='listar_puntos_eca_admin'),
+    path('puntos-eca/', views.puntos_eca_dashboard, name='dashboard_puntos_eca'),
+    path('puntos-eca/listado/', views.listar_puntos_eca_admin, name='listar_puntos_eca_admin'),
     path('puntos-eca/crear/', views.crear_punto_eca_admin, name='crear_punto_eca_admin'),
     path('puntos-eca/exportar/pdf/', views.exportar_puntos_eca_pdf, name='exportar_puntos_eca_pdf'),
     path('puntos-eca/exportar/excel/', views.exportar_puntos_eca_excel, name='exportar_puntos_eca_excel'),
