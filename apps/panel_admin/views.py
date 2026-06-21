@@ -36,6 +36,7 @@ RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado."
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
 USUARIO_ACTUALIZADO_OK_MSG = "Usuario actualizado correctamente."
+GESTOR_CONTRASENA_REQUERIDA_MSG = "Debe asignar una contrasena al nuevo gestor."
 CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
 LISTAR_PUNTOS_ECA_URL = "panel_admin:dashboard_puntos_eca"
 LISTAR_CATEGORIAS_PUBLICACION_URL = "panel_admin:listar_categorias_publicacion_admin"
@@ -1873,6 +1874,51 @@ def ver_publicacion_admin(request, publicacion_id):
     )
 
 
+def _actualizar_gestor_eca(punto, request, is_ajax):
+    gestor_nombres = (request.POST.get("nombres") or "").strip()
+    gestor_apellidos = (request.POST.get("apellidos") or "").strip()
+    gestor_email = (request.POST.get("email_gestor") or "").strip()
+    if not (gestor_nombres or gestor_apellidos or gestor_email):
+        return None
+
+    gestor = punto.gestor_eca
+    gestor_tipo_doc = (request.POST.get("tipoDocumento") or "").strip()
+    gestor_num_doc = (request.POST.get("numeroDocumento") or "").strip()
+    gestor_celular = (request.POST.get("celular") or "").strip()
+    password = (request.POST.get("password") or "").strip()
+
+    if gestor:
+        if gestor_nombres:
+            gestor.nombres = gestor_nombres
+        if gestor_apellidos:
+            gestor.apellidos = gestor_apellidos
+        if gestor_tipo_doc:
+            gestor.tipo_documento = gestor_tipo_doc
+        if gestor_num_doc:
+            gestor.numero_documento = gestor_num_doc
+        if gestor_celular:
+            gestor.celular = gestor_celular
+        gestor.save()
+        return None
+
+    if not password:
+        return GESTOR_CONTRASENA_REQUERIDA_MSG
+
+    gestor = Usuario(
+        email=gestor_email or f"gestor_{punto.id}@eca.com",
+        numero_documento=gestor_num_doc or f"GESTORECA_{punto.id}",
+        nombres=gestor_nombres, apellidos=gestor_apellidos,
+        tipo_documento=gestor_tipo_doc or cons.TipoDocumento.CC,
+        tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+        celular=gestor_celular,
+    )
+    gestor.set_password(password)
+    gestor.save()
+    punto.gestor_eca = gestor
+    punto.save(update_fields=["gestor_eca"])
+    return None
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "POST"])
@@ -1888,55 +1934,17 @@ def editar_punto_eca_admin(request, punto_id):
     if request.method == "POST":
         try:
             with transaction.atomic():
-                # 1. Actualizar o crear gestor si hay campos de gestor en el POST
-                gestor = punto.gestor_eca
-                gestor_nombres = (request.POST.get("nombres") or "").strip()
-                gestor_apellidos = (request.POST.get("apellidos") or "").strip()
-                gestor_email = (request.POST.get("email_gestor") or "").strip()
-                gestor_tipo_doc = (request.POST.get("tipoDocumento") or "").strip()
-                gestor_num_doc = (request.POST.get("numeroDocumento") or "").strip()
-                gestor_celular = (request.POST.get("celular") or "").strip()
-                password = (request.POST.get("password") or "").strip()
-
-                if gestor_nombres or gestor_apellidos or gestor_email:
-                    if not gestor:
-                        if not password:
-                            if is_ajax:
-                                return JsonResponse({"ok": False, "message": "Debe asignar una contrasena al nuevo gestor."})
-                            messages.error(request, "Debe asignar una contrasena al nuevo gestor.")
-                            punto.refresh_from_db()
-                            return render(
-                                request, "admin/PuntoECA/editPuntoECA.html",
-                                {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
-                                 "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
-                                 "form_data": request.POST, "errores": ["Debe asignar una contrasena al nuevo gestor."]},
-                            )
-                        gestor = Usuario(
-                            email=gestor_email or f"gestor_{punto_id}@eca.com",
-                            numero_documento=gestor_num_doc or f"GESTORECA_{punto_id}",
-                            nombres=gestor_nombres, apellidos=gestor_apellidos,
-                            tipo_documento=gestor_tipo_doc or cons.TipoDocumento.CC,
-                            tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
-                            celular=gestor_celular,
-                        )
-                        gestor.set_password(password)
-                        gestor.save()
-                        punto.gestor_eca = gestor
-                        punto.save(update_fields=["gestor_eca"])
-                    else:
-                        if gestor_nombres:
-                            gestor.nombres = gestor_nombres
-                        if gestor_apellidos:
-                            gestor.apellidos = gestor_apellidos
-                        if gestor_tipo_doc:
-                            gestor.tipo_documento = gestor_tipo_doc
-                        if gestor_num_doc:
-                            gestor.numero_documento = gestor_num_doc
-                        if gestor_celular:
-                            gestor.celular = gestor_celular
-                        gestor.save()
-
-                # 2. Actualizar PuntoECA via servicio existente
+                error_gestor = _actualizar_gestor_eca(punto, request, is_ajax)
+                if error_gestor:
+                    if is_ajax:
+                        return JsonResponse({"ok": False, "message": error_gestor})
+                    messages.error(request, error_gestor)
+                    return render(
+                        request, "admin/PuntoECA/editPuntoECA.html",
+                        {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
+                         "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
+                         "form_data": request.POST, "errores": [error_gestor]},
+                    )
                 resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
 
             if is_ajax:

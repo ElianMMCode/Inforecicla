@@ -18,7 +18,7 @@ const msgsPorPunto = puntos.map(p => {
 });
 
 /* Asegurar tipos compatibles con el mockup (id como numero para comparaciones) */
-puntos.forEach(p => { p._id = p.id; p.id = parseInt(p.id, 16) || Math.random() * 1e6; });
+puntos.forEach(p => { p._id = p.id; p.id = Number.parseInt(p.id, 16) || Math.random() * 1e6; });
 invData.forEach(i => { i.puntoId = puntos.find(p => p._id === i.puntoId)?.id || 0; });
 historial.forEach(h => { h.puntoId = puntos.find(p => p._id === h.puntoId)?.id || 0; });
 eventos.forEach(e => { e.puntoId = puntos.find(p => p._id === e.puntoId)?.id || 0; });
@@ -87,16 +87,17 @@ function openDetalle(id){
     '</tbody></table>';
 
   const sorted=items.slice().sort((a,b)=>b.stock-a.stock).slice(0,3);
-  document.getElementById('resumen-top3').innerHTML=sorted.map((m,i)=>
-    '<div class="rank-item"><span class="rank-num '+(i<3?'rank-'+(i+1):'')+'">'+(i+1)+'</span><div class="flex-grow-1"><div class="fw-semibold" style="font-size:.8rem">'+m.mat+'</div><div class="inv-summary">'+Math.round((m.stock/m.cap)*100)+'% ocupacion</div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+(m.stock/m.cap*100)+'%;background:'+(m.stock/m.cap<.3?'#dc3545':m.stock/m.cap<.5?'#ffc107':'#198754')+'"></div></div></div></div>'
-  ).join('');
+  document.getElementById('resumen-top3').innerHTML=sorted.map((m,i)=>{
+    const mBg=m.stock/m.cap<.5?'#ffc107':'#198754';
+    return '<div class="rank-item"><span class="rank-num '+(i<3?'rank-'+(i+1):'')+'">'+(i+1)+'</span><div class="flex-grow-1"><div class="fw-semibold" style="font-size:.8rem">'+m.mat+'</div><div class="inv-summary">'+Math.round((m.stock/m.cap)*100)+'% ocupacion</div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+(m.stock/m.cap*100)+'%;background:'+(m.stock/m.cap<.3?'#dc3545':mBg)+'"></div></div></div></div>';
+  }).join('');
 
   document.getElementById('resumen-movimientos').innerHTML='<table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo</th><th>Material</th><th>Kg</th><th>Valor</th></tr></thead><tbody>'+
     historial.slice(0,5).map(m=>'<tr><td class="text-muted" style="font-size:.75rem">'+m.fecha+'</td><td><span class="mov-tipo '+(m.tipo==='Compra'?'mov-compra':'mov-venta')+'"><i class="bi bi-'+(m.tipo==='Compra'?'arrow-down-circle':'arrow-up-circle')+'"></i> '+m.tipo+'</span></td><td class="fw-semibold" style="font-size:.8rem">'+m.mat+'</td><td style="font-size:.8rem">'+m.kg+'</td><td style="font-size:.8rem">$'+m.valor.toLocaleString()+'</td></tr>').join('')+
     '</tbody></table>';
 
   const hoy=new Date();
-  const sinMov=items.filter(x=>{const d=new Date(x.ultimoMov);return isNaN(d.getTime())?false:(hoy-d)/(1000*86400)>30}).map(x=>
+  const sinMov=items.filter(x=>{const d=new Date(x.ultimoMov);return Number.isNaN(d.getTime())?false:(hoy-d)/(1000*86400)>30}).map(x=>
     '<tr><td class="fw-semibold" style="font-size:.8rem">'+x.mat+'</td><td style="font-size:.78rem">Stock: '+x.stock+' u</td><td style="font-size:.78rem" class="text-muted">Ult. mov: '+x.ultimoMov+'</td><td><span class="badge bg-danger-subtle text-danger" style="font-size:.65rem">'+Math.round((hoy-new Date(x.ultimoMov))/(1000*86400))+'d sin mov</span></td></tr>'
   ).join('');
   document.getElementById('resumen-sin-mov').innerHTML=sinMov?
@@ -124,7 +125,7 @@ function initResumenCharts(p){
 
 /* ===== LISTADO ===== */
 function buildSaludBadge(s){return'<span class="salud-badge-sm salud-'+s.toLowerCase()+'"><i class="bi bi-heart-fill"></i> '+s+'</span>';}
-function buildInvSummary(p){const pct=pctOcupacionPunto(p);return'<div class="inv-summary"><strong>'+pct+'%</strong> Ocupacion</div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+pct+'%;background:'+(pct<30?'#dc3545':pct<50?'#ffc107':'#198754')+'"></div></div>';}
+function buildInvSummary(p){const pct=pctOcupacionPunto(p);const bg=pct<50?'#ffc107':'#198754';return'<div class="inv-summary"><strong>'+pct+'%</strong> Ocupacion</div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+pct+'%;background:'+(pct<30?'#dc3545':bg)+'"></div></div>';}
 
 /* ===== LISTADO - KPIs ALWAYS-ON ===== */
 function renderKPIs(pts){
@@ -160,8 +161,8 @@ function renderKPIs(pts){
 
   document.getElementById('panel-kpis').innerHTML=
     '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'resumen\')"><div class="kpi-card-eca kpi-success p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-success-subtle text-success"><i class="bi bi-speedometer2"></i></div><div><div class="kpi-value text-success">'+avgOcupacion+'%'+deltaBadge(dOcup)+'</div><div class="kpi-label text-muted">% Ocupacion</div></div></div></div></div>'+
-    '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'flujos\')"><div class="kpi-card-eca kpi-info p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-info-subtle text-info"><i class="bi bi-arrow-down-circle"></i></div><div><div class="kpi-value text-info">'+totalFlujoIn.toLocaleString()+deltaBadge(dFlujoIn)+'</div><div class="kpi-label text-muted">Flujo In Total</div></div></div></div></div>'+
-    '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'flujos\')"><div class="kpi-card-eca kpi-primary p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-primary-subtle text-primary"><i class="bi bi-arrow-up-circle"></i></div><div><div class="kpi-value text-primary">'+totalFlujoOut.toLocaleString()+deltaBadge(dFlujoOut)+'</div><div class="kpi-label text-muted">Flujo Out Total</div></div></div></div></div>'+
+    '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'flujos\')"><div class="kpi-card-eca kpi-info p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-info-subtle text-info"><i class="bi bi-arrow-down-circle"></i></div><div><div class="kpi-value text-info">'+totalFlujoIn.toLocaleString()+deltaBadge(dFlujoIn)+'</div><div class="kpi-label text-muted">Entradas Totales</div></div></div></div></div>'+
+    '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'flujos\')"><div class="kpi-card-eca kpi-primary p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-primary-subtle text-primary"><i class="bi bi-arrow-up-circle"></i></div><div><div class="kpi-value text-primary">'+totalFlujoOut.toLocaleString()+deltaBadge(dFlujoOut)+'</div><div class="kpi-label text-muted">Salidas Totales</div></div></div></div></div>'+
     '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'flujos\')"><div class="kpi-card-eca kpi-warning p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-warning-subtle text-warning"><i class="bi bi-cash-stack"></i></div><div><div class="kpi-value text-warning">'+avgMargen+'%'+deltaBadge(dMargen)+'</div><div class="kpi-label text-muted">Margen Promedio</div></div></div></div></div>'+
     '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'flujos\')"><div class="kpi-card-eca kpi-dark p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-dark-subtle text-dark"><i class="bi bi-currency-dollar"></i></div><div><div class="kpi-value text-dark">$'+Math.round(gananciaTotal).toLocaleString()+deltaBadge(dGanancia)+'</div><div class="kpi-label text-muted">Ganancia Total</div></div></div></div></div>'+
     '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'estados\')"><div class="kpi-card-eca kpi-success p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-success-subtle text-success"><i class="bi bi-geo-alt-fill"></i></div><div><div class="kpi-value text-success">'+activos+deltaBadge(dActivos)+'</div><div class="kpi-label text-muted">Pts Activos</div></div></div></div></div>'+
@@ -233,8 +234,8 @@ function renderResumen(){
   const tFlujoIn=top10.map(p=>flujoInPunto(p));
   const tFlujoOut=top10.map(p=>flujoOutPunto(p));
   charts.panelTop=new Chart(document.getElementById('chartPanelTop'),{type:'bar',data:{labels:tLabels,datasets:[
-    {label:'Flujo In',data:tFlujoIn,backgroundColor:'#0d6efd',borderRadius:4,barPercentage:.7},
-    {label:'Flujo Out',data:tFlujoOut,backgroundColor:'#198754',borderRadius:4,barPercentage:.7}
+    {label:'Entradas',data:tFlujoIn,backgroundColor:'#0d6efd',borderRadius:4,barPercentage:.7},
+    {label:'Salidas',data:tFlujoOut,backgroundColor:'#198754',borderRadius:4,barPercentage:.7}
   ]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'items'}}},plugins:{legend:{position:'bottom'}}}});
 
   /* Table auxiliar */
@@ -252,7 +253,8 @@ function renderResumen(){
   /* Capacidad General */
   const capTotal=pts.length?pts.reduce((s,p)=>s+pctOcupacionPunto(p),0)/pts.length:0;
   const activosRes=pts.filter(p=>p.estado==='Activo').length;
-  const capColor=capTotal<30?'#dc3545':capTotal<50?'#ffc107':'#198754';
+  const capTmp=capTotal<50?'#ffc107':'#198754';
+  const capColor=capTotal<30?'#dc3545':capTmp;
   document.getElementById('res-capacidad-general').innerHTML=
     '<div class="text-center"><div style="font-size:2.8rem;font-weight:800;color:'+capColor+'">'+Math.round(capTotal)+'%</div>'+
     '<div style="font-size:.75rem;color:#6c757d;margin-bottom:8px">Ocupacion promedio del sistema</div>'+
@@ -281,7 +283,7 @@ function renderResumen(){
   if(typeof Chart!=='undefined'){
     const mesesOrden=['Ene','Feb','Mar','Abr','May','Jun'];const mesesData={};
   mesesOrden.forEach(m=>{mesesData[m]={compras:0,ventas:0}});
-  historial.forEach(h=>{const m=h.fecha.split('-')[1];const idx=parseInt(m)-1;if(idx>=0&&idx<6){const mn=mesesOrden[idx];mesesData[mn][h.tipo.toLowerCase()]=(mesesData[mn][h.tipo.toLowerCase()]||0)+h.valor;}});
+  historial.forEach(h=>{const m=h.fecha.split('-')[1];const idx=Number.parseInt(m)-1;if(idx>=0&&idx<6){const mn=mesesOrden[idx];mesesData[mn][h.tipo.toLowerCase()]=(mesesData[mn][h.tipo.toLowerCase()]||0)+h.valor;}});
   destroyChart('resActividadTemporal');
   const atCanvas=document.getElementById('chartResActividadTemporal');
   if(atCanvas){
@@ -335,8 +337,8 @@ function renderRanking(resetPage){
   const fltLoc=document.getElementById('rank-flt-localidad')?.value||'';
   const fltEstado=document.getElementById('rank-flt-estado')?.value||'';
   const fltSalud=document.getElementById('rank-flt-salud')?.value||'';
-  const fltOcupMin=parseInt(document.getElementById('rank-flt-ocup-min')?.value)||0;
-  const fltOcupMax=parseInt(document.getElementById('rank-flt-ocup-max')?.value)||100;
+  const fltOcupMin=Number.parseInt(document.getElementById('rank-flt-ocup-min')?.value)||0;
+  const fltOcupMax=Number.parseInt(document.getElementById('rank-flt-ocup-max')?.value)||100;
 
   const enriched=pts.map(p=>{
     const flujoIn=flujoInPunto(p);
@@ -384,14 +386,15 @@ function renderRanking(resetPage){
   const headers=[
     {col:'nombre',l:'Punto'},{col:'localidad',l:'Localidad'},{col:'gestor',l:'Gestor'},
     {col:'invEstado',l:'Salud'},{col:'ocupacion',l:'% Ocupacion'},
-    {col:'flujoIn',l:'Flujo In'},{col:'flujoOut',l:'Flujo Out'},
+    {col:'flujoIn',l:'Entradas'},{col:'flujoOut',l:'Salidas'},
     {col:'comprasCOP',l:'Compras $'},{col:'ventasCOP',l:'Ventas $'},
     {col:'ganancia',l:'Ganancia $'},{col:'margenProm',l:'Margen %'},
     {col:'estado',l:'Estado'},{col:'totalMsgs',l:'Msgs'},
     {col:'sinResp',l:'Sin Resp'}
   ];
   const totalCols=headers.length+2;
-  document.getElementById('ranking-thead').innerHTML='<tr><th style="width:40px">#</th>'+headers.map(h=>'<th style="cursor:pointer;white-space:nowrap" onclick="sortRanking(\''+h.col+'\')">'+h.l+(h.col===col?(dir===1?' <i class="bi bi-sort-up"></i>':' <i class="bi bi-sort-down"></i>'):'')+'</th>').join('')+'<th class="text-center">Accion</th></tr>';
+  const sortIcon=dir===1?' <i class="bi bi-sort-up"></i>':' <i class="bi bi-sort-down"></i>';
+  document.getElementById('ranking-thead').innerHTML='<tr><th style="width:40px">#</th>'+headers.map(h=>'<th style="cursor:pointer;white-space:nowrap" onclick="sortRanking(\''+h.col+'\')">'+h.l+(h.col===col?sortIcon:'')+'</th>').join('')+'<th class="text-center">Accion</th></tr>';
 
   /* Paginacion */
   const totalRegistros=sorted.length;
@@ -402,7 +405,7 @@ function renderRanking(resetPage){
 
   document.getElementById('ranking-tbody').innerHTML=pagina.map((p,i)=>{
     const pctOcu=p.ocupacion;
-    const barColor=pctOcu<30?'#dc3545':pctOcu<50?'#ffc107':'#198754';
+    const barTmp=pctOcu<50?'#ffc107':'#198754';const barColor=pctOcu<30?'#dc3545':barTmp;
     return'<tr style="cursor:pointer" onclick="openDetalle('+p.id+')"><td class="fw-bold text-muted">'+(inicio+i+1)+'</td>'+
       '<td class="fw-semibold text-success" style="font-size:.82rem">'+p.nombre+'</td>'+
       '<td style="font-size:.78rem" class="text-muted">'+p.localidad+'</td>'+
@@ -464,7 +467,6 @@ function renderEstados(){
   const estSalud=document.getElementById('est-salud-filter')?.value||'';
   if(estSalud)pts=pts.filter(p=>p.invEstado===estSalud);
 
-  const totalPts=pts.length;
   const okPts=pts.filter(p=>p.invEstado==='OK').length;
   const alertPts=pts.filter(p=>p.invEstado==='Alerta').length;
   const critPts=pts.filter(p=>p.invEstado==='Critico').length;
@@ -507,13 +509,13 @@ function renderEstados(){
 
   function alertGroup(title,items,color,icon){
     if(!items.length)return'';
-    return'<div class="col-12"><div class="card shadow-sm border-0"><div class="card-header bg-'+color+'-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-'+color+'"><i class="bi bi-'+icon+' me-2"></i>'+title+' ('+items.length+')</h6></div><div class="card-body p-0">'+items.map(p=>'<div class="alerta-item border-bottom px-4 py-2"><div class="alerta-dot" style="background:'+(color==='danger'?'#dc3545':color==='warning'?'#ffc107':'#198754')+'"></div><div class="flex-grow-1 min-w-0"><div class="fw-semibold" style="font-size:.82rem">'+p.nombre+'</div><div class="text-muted" style="font-size:.72rem"><i class="bi bi-geo-alt me-1"></i>'+p.localidad+' — '+p.direccion+'</div><div style="font-size:.72rem" class="text-muted"><i class="bi bi-person me-1"></i>'+p.gestor+'</div></div><button class="btn btn-sm btn-outline-'+color+' flex-shrink-0" onclick="openDetalle('+p.id+')" style="font-size:.7rem"><i class="bi bi-eye"></i></button></div>').join('')+'</div></div></div>';
+    const dotColor=color==='warning'?'#ffc107':'#198754';
+    return'<div class="col-12"><div class="card shadow-sm border-0"><div class="card-header bg-'+color+'-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-'+color+'"><i class="bi bi-'+icon+' me-2"></i>'+title+' ('+items.length+')</h6></div><div class="card-body p-0">'+items.map(p=>'<div class="alerta-item border-bottom px-4 py-2"><div class="alerta-dot" style="background:'+(color==='danger'?'#dc3545':dotColor)+'"></div><div class="flex-grow-1 min-w-0"><div class="fw-semibold" style="font-size:.82rem">'+p.nombre+'</div><div class="text-muted" style="font-size:.72rem"><i class="bi bi-geo-alt me-1"></i>'+p.localidad+' — '+p.direccion+'</div><div style="font-size:.72rem" class="text-muted"><i class="bi bi-person me-1"></i>'+p.gestor+'</div></div><button class="btn btn-sm btn-outline-'+color+' flex-shrink-0" onclick="openDetalle('+p.id+')" style="font-size:.7rem"><i class="bi bi-eye"></i></button></div>').join('')+'</div></div></div>';
   }
   const activos=pts.filter(p=>p.estado==='Activo');
   const inactivos=pts.filter(p=>p.estado==='Inactivo');
   const criticos=activos.filter(p=>p.invEstado==='Critico');
   const alerta=activos.filter(p=>p.invEstado==='Alerta');
-  const ok=activos.filter(p=>p.invEstado==='OK');
   document.getElementById('estados-alertas').innerHTML=
     alertGroup('Inventarios Criticos',criticos,'danger','x-circle-fill')+
     alertGroup('Inventarios en Alerta',alerta,'warning','exclamation-triangle-fill')+
@@ -572,8 +574,8 @@ function renderFlujoVolumen(){
   const totalOut=ptsFlujo.reduce((s,p)=>s+p.flujoOut,0);
   const mayorPunto=ptsFlujo.length?ptsFlujo[0]:null;
   document.getElementById('flujos-stats').innerHTML=
-    '<div class="col-12 col-md-4"><div class="kpi-mini"><div class="kpi-val text-primary">'+totalIn.toLocaleString()+'</div><div class="kpi-lbl">Total Flujo In</div></div></div>'+
-    '<div class="col-12 col-md-4"><div class="kpi-mini"><div class="kpi-val text-success">'+totalOut.toLocaleString()+'</div><div class="kpi-lbl">Total Flujo Out</div></div></div>'+
+    '<div class="col-12 col-md-4"><div class="kpi-mini"><div class="kpi-val text-primary">'+totalIn.toLocaleString()+'</div><div class="kpi-lbl">Total Entradas</div></div></div>'+
+    '<div class="col-12 col-md-4"><div class="kpi-mini"><div class="kpi-val text-success">'+totalOut.toLocaleString()+'</div><div class="kpi-lbl">Total Salidas</div></div></div>'+
     '<div class="col-12 col-md-4"><div class="kpi-mini"><div class="kpi-val text-warning" style="font-size:1rem">'+(mayorPunto?mayorPunto.nombre:'-')+'</div><div class="kpi-lbl">Punto con Mayor Flujo</div></div></div>';
 }
 
@@ -627,7 +629,7 @@ function renderFlujoGanancias(){
     const margenCombined=[...top5m,{nombre:'——',margen:0,totalComprasCOP:0,totalVentasCOP:0,ganancia:0},...bot5m];
     const mrCanvas=document.getElementById('chartFlujoMargenRank');
     if(mrCanvas){
-      charts.flujoMargenRank=new Chart(mrCanvas,{type:'bar',data:{labels:margenCombined.map(d=>d.nombre.substring(0,14)),datasets:[{label:'Margen %',data:margenCombined.map(d=>d.margen),backgroundColor:margenCombined.map(d=>d.nombre==='——'?'transparent':d.margen>=0?'#198754':'#dc3545'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'%'}}}}});
+      charts.flujoMargenRank=new Chart(mrCanvas,{type:'bar',data:{labels:margenCombined.map(d=>d.nombre.substring(0,14)),datasets:[{label:'Margen %',data:margenCombined.map(d=>d.margen),backgroundColor:margenCombined.map(d=>{const mc=d.margen>=0?'#198754':'#dc3545';return d.nombre==='——'?'transparent':mc;}),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'%'}}}}});
     }
   }
 
@@ -645,7 +647,7 @@ function renderFlujoDetalleMat(){
   let pts=_fitrarPtsTab('flu-det-search-input','flu-det-loc-filter',null);
   const fluDetMat=document.getElementById('flu-det-mat-filter')?.value||'';
 
-  const allMaterials=[...new Set(invData.map(x=>x.mat))].sort();
+  const allMaterials=[...new Set(invData.map(x=>x.mat))].sort((a,b)=>a.localeCompare(b));
   let filteredMaterials=fluDetMat?[fluDetMat]:allMaterials;
 
   let totalGananciaCOP=0,totalVolumen=0;
@@ -773,8 +775,6 @@ function renderInventario(){
   const totalCap=items.reduce((s,x)=>s+x.cap,0);
   const capProm=items.length?Math.round(totalCap/items.length):0;
   const bajoStock=items.filter(x=>x.stock/x.cap<.3).length;
-  const p=puntos.find(x=>x.id===currentPuntoId);
-
   document.getElementById('inv-total-stock').textContent=totalCap?Math.round((totalStock/totalCap)*100)+'%':'0%';
   document.getElementById('inv-total-materiales').textContent=items.length;
   document.getElementById('inv-capacidad-prom').textContent=capProm.toLocaleString()+' u';
@@ -790,7 +790,7 @@ function renderInventario(){
     }
     const csCanvas=document.getElementById('chartInvStock');
     if(csCanvas){
-      charts.invStock=new Chart(csCanvas,{type:'bar',data:{labels:items.map(x=>x.mat),datasets:[{label:'% Ocupacion',data:items.map(x=>Math.round(x.stock/x.cap*100)),backgroundColor:items.map(x=>x.stock/x.cap<.3?'#dc3545':x.stock/x.cap<.5?'#ffc107':'#198754'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'%'}}}}});
+      charts.invStock=new Chart(csCanvas,{type:'bar',data:{labels:items.map(x=>x.mat),datasets:[{label:'% Ocupacion',data:items.map(x=>Math.round(x.stock/x.cap*100)),backgroundColor:items.map(x=>{const ibg=x.stock/x.cap<.5?'#ffc107':'#198754';return x.stock/x.cap<.3?'#dc3545':ibg;}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'%'}}}}});
     }
     const cmCanvas=document.getElementById('chartInvMargen');
     if(cmCanvas){
@@ -801,9 +801,8 @@ function renderInventario(){
   document.getElementById('inv-cards').innerHTML=items.map(x=>{
     const pct=Math.round(x.stock/x.cap*100);
     const margenUnit=x.venta-x.compra;
-    const ventasCOP=x.ventasKg*x.venta;
-    const comprasCOP=x.comprasKg*x.compra;
-    return'<div class="col-12 col-md-6 col-lg-4"><div class="inv-card" onclick="this.classList.toggle(\'selected\')"><div class="d-flex justify-content-between align-items-start mb-2"><div class="fw-semibold" style="font-size:.82rem">'+x.mat+'</div>'+buildSaludBadge(x.estado)+'</div><div class="inv-summary">Stock: '+x.stock+' / '+x.cap+' u</div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+Math.round(x.stock/x.cap*100)+'%;background:'+(pct<30?'#dc3545':pct<50?'#ffc107':'#198754')+'"></div></div><div class="d-flex justify-content-between mt-2" style="font-size:.7rem"><span class="text-muted">Compra: $'+x.compra+'</span><span class="text-muted">Venta: $'+x.venta+'</span><span class="fw-bold '+(margenUnit>=0?'text-success':'text-danger')+'">Margen: $'+margenUnit.toLocaleString()+'</span></div><div class="d-flex justify-content-between mt-1" style="font-size:.68rem"><span class="text-muted">Periodo: '+x.comprasKg+' / '+x.ventasKg+' u</span><span class="text-muted">Ult: '+x.ultimoMov+'</span></div></div></div>';
+    const pctColor=pct<50?'#ffc107':'#198754';
+    return'<div class="col-12 col-md-6 col-lg-4"><div class="inv-card" onclick="this.classList.toggle(\'selected\')"><div class="d-flex justify-content-between align-items-start mb-2"><div class="fw-semibold" style="font-size:.82rem">'+x.mat+'</div>'+buildSaludBadge(x.estado)+'</div><div class="inv-summary">Stock: '+x.stock+' / '+x.cap+' u</div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+Math.round(x.stock/x.cap*100)+'%;background:'+(pct<30?'#dc3545':pctColor)+'"></div></div><div class="d-flex justify-content-between mt-2" style="font-size:.7rem"><span class="text-muted">Compra: $'+x.compra+'</span><span class="text-muted">Venta: $'+x.venta+'</span><span class="fw-bold '+(margenUnit>=0?'text-success':'text-danger')+'">Margen: $'+margenUnit.toLocaleString()+'</span></div><div class="d-flex justify-content-between mt-1" style="font-size:.68rem"><span class="text-muted">Periodo: '+x.comprasKg+' / '+x.ventasKg+' u</span><span class="text-muted">Ult: '+x.ultimoMov+'</span></div></div></div>';
   }).join('')||'<div class="col-12 text-center text-muted py-3">Sin inventario para este punto.</div>';
 }
 
@@ -834,7 +833,6 @@ function switchFlujo(sub,el){
 
 function renderFlujo(){
   if(!currentPuntoId)return;
-  const p=puntos.find(x=>x.id===currentPuntoId);if(!p)return;
   const items=invData.filter(x=>x.puntoId===currentPuntoId);
   const totalStock=items.reduce((s,x)=>s+x.stock,0);
   const totalCompras=items.reduce((s,x)=>s+x.comprasKg,0);
@@ -886,7 +884,6 @@ function renderCalendario(){
 function renderMensajes(){
   if(!currentPuntoId)return;
   const convs=conversaciones.filter(c=>c.puntoId===currentPuntoId);
-  const p=puntos.find(x=>x.id===currentPuntoId);
   document.getElementById('msg-total').textContent=convs.length;
   document.getElementById('msg-total-msgs').textContent=convs.reduce((s,c)=>s+(c.msgs||0),0);
   document.getElementById('msg-no-leidos').textContent=convs.length;
@@ -905,8 +902,8 @@ renderRanking();
 
 /* === populate filters === */
 function populatePanelFilters(){
-  const locs=[...new Set(puntos.map(p=>p.localidad))].sort();
-  const mats=[...new Set(invData.map(x=>x.mat))].sort();
+  const locs=[...new Set(puntos.map(p=>p.localidad))].sort((a,b)=>a.localeCompare(b));
+  const mats=[...new Set(invData.map(x=>x.mat))].sort((a,b)=>a.localeCompare(b));
 
   // Resumen
   const resLoc=document.getElementById('res-loc-filter');
@@ -939,7 +936,7 @@ function populatePanelFilters(){
   if(rankLoc)locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l;rankLoc.appendChild(o)});
 
   // Inventario filters
-  const cats=[...new Set(invData.map(x=>x.cat))].sort();
+  const cats=[...new Set(invData.map(x=>x.cat))].sort((a,b)=>a.localeCompare(b));
   const invCat=document.getElementById('inv-cat-filter');
   if(invCat)cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;invCat.appendChild(o)});
 

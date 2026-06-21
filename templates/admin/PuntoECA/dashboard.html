@@ -29,20 +29,20 @@
 
   <!-- Tabs -->
   <ul class="nav tab-nav mb-0" id="listado-tabs">
-    <li class="nav-item"><a class="nav-link active" href="#" onclick="switchListadoTab('resumen',this);return false"><i class="bi bi-speedometer2 me-1"></i>Resumen</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchListadoTab('estados',this);return false"><i class="bi bi-geo-alt me-1"></i>Estados Inventarios</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchListadoTab('flujos',this);return false"><i class="bi bi-arrow-left-right me-1"></i>Flujos</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchListadoTab('mensajes',this);return false"><i class="bi bi-chat-dots me-1"></i>Mensajes</a></li>
+    <li class="nav-item"><a class="nav-link active" href="#" onclick="switchListadoTab('resumen',this);return false" role="button"><i class="bi bi-speedometer2 me-1"></i>Resumen</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchListadoTab('estados',this);return false" role="button"><i class="bi bi-geo-alt me-1"></i>Estados Inventarios</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchListadoTab('flujos',this);return false" role="button"><i class="bi bi-arrow-left-right me-1"></i>Flujos</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchListadoTab('mensajes',this);return false" role="button"><i class="bi bi-chat-dots me-1"></i>Mensajes</a></li>
   </ul>
 
   <!-- TAB RESUMEN -->
   <div id="tab-listado-resumen">
     <div class="d-flex gap-2 align-items-center flex-wrap mt-3 mb-3">
-      <input type="text" class="form-control form-control-sm" style="width:160px" id="res-search-input" placeholder="Buscar..." oninput="renderResumen()">
-      <select class="form-select form-select-sm js-select2" style="width:auto" id="res-loc-filter" onchange="renderResumen()"><option value="">Todas las localidades</option></select>
-      <select class="form-select form-select-sm js-select2" style="width:auto" id="res-estado-filter" onchange="renderResumen()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
-      <select class="form-select form-select-sm js-select2" style="width:auto" id="res-mat-filter" onchange="renderResumen()"><option value="">Todos los materiales</option></select>
-      <select class="form-select form-select-sm" style="width:auto" id="res-orden" onchange="renderResumen()"><option value="mov">Orden: Movimiento</option><option value="ventas">Orden: Flujo In</option><option value="compras">Orden: Flujo Out</option><option value="margen">Orden: Margen</option></select>
+      <input type="text" class="form-control form-control-sm" style="width:160px" id="res-search-input" placeholder="Buscar..." oninput="renderResumen()" aria-label="res search input">
+      <select aria-label="res loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="res-loc-filter" onchange="renderResumen()"><option value="">Todas las localidades</option></select>
+      <select aria-label="res estado filter" class="form-select form-select-sm js-select2" style="width:auto" id="res-estado-filter" onchange="renderResumen()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
+      <select aria-label="res mat filter" class="form-select form-select-sm js-select2" style="width:auto" id="res-mat-filter" onchange="renderResumen()"><option value="">Todos los materiales</option></select>
+      <select aria-label="res orden" class="form-select form-select-sm" style="width:auto" id="res-orden" onchange="renderResumen()"><option value="mov">Orden: Movimiento</option><option value="ventas">Orden: Flujo In</option><option value="compras">Orden: Flujo Out</option><option value="margen">Orden: Margen</option></select>
       <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosResumen()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
     </div>
 
@@ -70,10 +70,10 @@
   <!-- TAB ESTADOS -->
   <div id="tab-listado-estados" style="display:none">
     <div class="d-flex gap-2 align-items-center flex-wrap mt-3 mb-3">
-      <input type="text" class="form-control form-control-sm" style="width:160px" id="est-search-input" placeholder="Buscar..." oninput="renderEstados()">
-      <select class="form-select form-select-sm js-select2" style="width:auto" id="est-loc-filter" onchange="renderEstados()"><option value="">Todas las localidades</option></select>
-      <select class="form-select form-select-sm js-select2" style="width:auto" id="est-estado-filter" onchange="renderEstados()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
-      <select class="form-select form-select-sm js-select2" style="width:auto" id="est-salud-filter" onchange="renderEstados()"><option value="">Toda salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+      <input type="text" class="form-control form-control-sm" style="width:160px" id="est-search-input" placeholder="Buscar..." oninput="renderEstados()" aria-label="est search input">
+      <select aria-label="est loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="est-loc-filter" onchange="renderEstados()"><option value="">Todas las localidades</option></select>
+      <select aria-label="est estado filter" class="form-select form-select-sm js-select2" style="width:auto" id="est-estado-filter" onchange="renderEstados()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
+      <select aria-label="est salud filter" class="form-select form-select-sm js-select2" style="width:auto" id="est-salud-filter" onchange="renderEstados()"><option value="">Toda salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
       <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosEstados()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
     </div>
     <div class="row g-3 mb-3" id="estados-stats"></div>
@@ -99,16 +99,16 @@
   <!-- TAB FLUJOS -->
   <div id="tab-listado-flujos" style="display:none">
     <ul class="nav nav-pills mb-3 mt-3" id="flujos-lst-subtabs">
-      <li class="nav-item"><a class="nav-link active" href="#" onclick="switchFlujoListado('volumen',this);return false"><i class="bi bi-arrow-left-right me-1"></i>Volumen</a></li>
-      <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujoListado('ganancias',this);return false"><i class="bi bi-cash-stack me-1"></i>Ganancias</a></li>
-      <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujoListado('detalle_mat',this);return false"><i class="bi bi-box-seam me-1"></i>Detalle por Material</a></li>
+      <li class="nav-item"><a class="nav-link active" href="#" onclick="switchFlujoListado('volumen',this);return false" role="button"><i class="bi bi-arrow-left-right me-1"></i>Volumen</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujoListado('ganancias',this);return false" role="button"><i class="bi bi-cash-stack me-1"></i>Ganancias</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujoListado('detalle_mat',this);return false" role="button"><i class="bi bi-box-seam me-1"></i>Detalle por Material</a></li>
     </ul>
 
     <div id="flujo-sub-volumen">
       <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
-        <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-search-input" placeholder="Buscar..." oninput="renderFlujoVolumen()">
-        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-loc-filter" onchange="renderFlujoVolumen()"><option value="">Todas las localidades</option></select>
-        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-mat-filter" onchange="renderFlujoVolumen()"><option value="">Todos los materiales</option></select>
+        <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-search-input" placeholder="Buscar..." oninput="renderFlujoVolumen()" aria-label="flu search input">
+        <select aria-label="flu loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-loc-filter" onchange="renderFlujoVolumen()"><option value="">Todas las localidades</option></select>
+        <select aria-label="flu mat filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-mat-filter" onchange="renderFlujoVolumen()"><option value="">Todos los materiales</option></select>
         <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoVolumen()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
       </div>
       <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-arrow-left-right me-1"></i> Flujo de Compras y Ventas por Punto (items)</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoGeneral"></canvas></div></div>
@@ -116,7 +116,7 @@
     </div>
 
     <div id="flujo-sub-ganancias" style="display:none">
-      <div class="d-flex gap-2 align-items-center flex-wrap mb-3"><input type="text" class="form-control form-control-sm" style="width:160px" id="flu-gan-search-input" placeholder="Buscar..." oninput="renderFlujoGanancias()"><select class="form-select form-select-sm js-select2" style="width:auto" id="flu-gan-loc-filter" onchange="renderFlujoGanancias()"><option value="">Todas las localidades</option></select><button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoGanancias()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button></div>
+      <div class="d-flex gap-2 align-items-center flex-wrap mb-3"><input type="text" class="form-control form-control-sm" style="width:160px" id="flu-gan-search-input" placeholder="Buscar..." oninput="renderFlujoGanancias()" aria-label="flu gan search input"><select aria-label="flu gan loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-gan-loc-filter" onchange="renderFlujoGanancias()"><option value="">Todas las localidades</option></select><button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoGanancias()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button></div>
       <div class="row g-3 mb-3" id="flujo-gan-stats"></div>
       <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-cash-stack me-1"></i> Compras vs Ventas ($ COP) por Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoGanancias"></canvas></div></div>
       <div class="row g-3 mb-3">
@@ -127,9 +127,9 @@
 
     <div id="flujo-sub-detalle_mat" style="display:none">
       <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
-        <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-det-search-input" placeholder="Buscar..." oninput="renderFlujoDetalleMat()">
-        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-loc-filter" onchange="renderFlujoDetalleMat()"><option value="">Todas las localidades</option></select>
-        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-mat-filter" onchange="renderFlujoDetalleMat()"><option value="">Todos los materiales</option></select>
+        <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-det-search-input" placeholder="Buscar..." oninput="renderFlujoDetalleMat()" aria-label="flu det search input">
+        <select aria-label="flu det loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-loc-filter" onchange="renderFlujoDetalleMat()"><option value="">Todas las localidades</option></select>
+        <select aria-label="flu det mat filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-mat-filter" onchange="renderFlujoDetalleMat()"><option value="">Todos los materiales</option></select>
         <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoDetalleMat()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
       </div>
       <div class="row g-3 mb-3" id="flujo-det-stats"></div>
@@ -156,13 +156,13 @@
     </div>
     <div class="px-4 py-3 border-bottom bg-light" id="ranking-filters-row">
       <div class="d-flex gap-2 align-items-center flex-wrap">
-        <input type="text" class="form-control form-control-sm" style="width:160px" id="rank-flt-nombre" placeholder="Buscar punto..." oninput="renderRanking()">
-        <select class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-localidad" onchange="renderRanking()"><option value="">Localidad</option></select>
-        <select class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-estado" onchange="renderRanking()"><option value="">Estado</option><option>Activo</option><option>Inactivo</option></select>
-        <select class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-salud" onchange="renderRanking()"><option value="">Salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
-        <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-min" placeholder="Ocup min%" min="0" max="100" oninput="renderRanking()">
+        <input type="text" class="form-control form-control-sm" style="width:160px" id="rank-flt-nombre" placeholder="Buscar punto..." oninput="renderRanking()" aria-label="rank flt nombre">
+        <select aria-label="rank flt localidad" class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-localidad" onchange="renderRanking()"><option value="">Localidad</option></select>
+        <select aria-label="rank flt estado" class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-estado" onchange="renderRanking()"><option value="">Estado</option><option>Activo</option><option>Inactivo</option></select>
+        <select aria-label="rank flt salud" class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-salud" onchange="renderRanking()"><option value="">Salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+        <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-min" placeholder="Ocup min%" min="0" max="100" oninput="renderRanking()" aria-label="rank flt ocup min">
         <span class="text-muted small">-</span>
-        <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-max" placeholder="Ocup max%" min="0" max="100" oninput="renderRanking()">
+        <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-max" placeholder="Ocup max%" min="0" max="100" oninput="renderRanking()" aria-label="rank flt ocup max">
         <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosRanking()"><i class="bi bi-eraser"></i></button>
       </div>
     </div>
@@ -176,24 +176,24 @@
   <div class="detalle-header mb-4">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
       <div>
-        <nav><ol class="breadcrumb mb-2"><li class="breadcrumb-item"><a href="#" onclick="volverListado();return false">Puntos ECA</a></li><li class="breadcrumb-item active text-white" id="detalle-breadcrumb-name">--</li></ol></nav>
+        <nav><ol class="breadcrumb mb-2"><li class="breadcrumb-item"><a href="#" onclick="volverListado();return false" role="button">Puntos ECA</a></li><li class="breadcrumb-item active text-white" id="detalle-breadcrumb-name">--</li></ol></nav>
         <h2 id="detalle-nombre">--</h2>
         <p class="mb-1 opacity-75 small" id="detalle-direccion">--</p>
         <div class="d-flex flex-wrap gap-2 mt-2" id="detalle-badges"></div>
       </div>
       <div class="text-end d-flex flex-column align-items-end gap-2">
         <span id="detalle-salud"></span>
-        <div class="d-flex gap-2"><a class="btn btn-light btn-sm fw-semibold" id="detalle-edit-link" href="#"><i class="bi bi-pencil-square me-1"></i>Editar punto</a></div>
+        <div class="d-flex gap-2"><a class="btn btn-light btn-sm fw-semibold" id="detalle-edit-link" href="#" role="button"><i class="bi bi-pencil-square me-1"></i>Editar punto</a></div>
       </div>
     </div>
   </div>
   <ul class="nav tab-nav mb-0" id="detalle-tabs">
-    <li class="nav-item"><a class="nav-link active" href="#" onclick="switchTab('resumen',this);return false"><i class="bi bi-speedometer2 me-1"></i>Resumen</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('inventario',this);return false"><i class="bi bi-box-seam me-1"></i>Inventario</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('historial',this);return false"><i class="bi bi-clock-history me-1"></i>Historial</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('flujo',this);return false"><i class="bi bi-graph-up me-1"></i>Flujo</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('calendario',this);return false"><i class="bi bi-calendar3 me-1"></i>Calendario</a></li>
-    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('mensajes',this);return false"><i class="bi bi-chat-dots me-1"></i>Mensajes</a></li>
+    <li class="nav-item"><a class="nav-link active" href="#" onclick="switchTab('resumen',this);return false" role="button"><i class="bi bi-speedometer2 me-1"></i>Resumen</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('inventario',this);return false" role="button"><i class="bi bi-box-seam me-1"></i>Inventario</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('historial',this);return false" role="button"><i class="bi bi-clock-history me-1"></i>Historial</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('flujo',this);return false" role="button"><i class="bi bi-graph-up me-1"></i>Flujo</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('calendario',this);return false" role="button"><i class="bi bi-calendar3 me-1"></i>Calendario</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('mensajes',this);return false" role="button"><i class="bi bi-chat-dots me-1"></i>Mensajes</a></li>
   </ul>
 
   <div class="tab-content">
@@ -221,9 +221,9 @@
     <div class="tab-pane fade" id="tab-inventario">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div class="d-flex gap-2 align-items-center flex-wrap">
-          <select class="form-select form-select-sm" style="width:auto" id="inv-cat-filter"><option value="">Todas</option></select>
-          <select class="form-select form-select-sm" style="width:auto" id="inv-estado-filter"><option value="">Todos</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
-          <select class="form-select form-select-sm" style="width:auto" id="inv-orden"><option value="nombre">Orden: Nombre</option><option value="stock">Orden: % Ocupacion</option><option value="capacidad">Orden: Capacidad</option><option value="margen">Orden: Margen</option></select>
+          <select aria-label="inv cat filter" class="form-select form-select-sm" style="width:auto" id="inv-cat-filter"><option value="">Todas</option></select>
+          <select aria-label="inv estado filter" class="form-select form-select-sm" style="width:auto" id="inv-estado-filter"><option value="">Todos</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+          <select aria-label="inv orden" class="form-select form-select-sm" style="width:auto" id="inv-orden"><option value="nombre">Orden: Nombre</option><option value="stock">Orden: % Ocupacion</option><option value="capacidad">Orden: Capacidad</option><option value="margen">Orden: Margen</option></select>
           <button class="btn btn-sm btn-outline-success" onclick="renderInventario()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Consulta exclusiva</span>
@@ -245,11 +245,11 @@
     <div class="tab-pane fade" id="tab-historial">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div class="d-flex gap-2 align-items-center flex-wrap">
-          <select class="form-select form-select-sm" style="width:auto" id="hist-material-filter"><option value="">Todos</option></select>
-          <select class="form-select form-select-sm" style="width:auto" id="hist-tipo-filter"><option value="">Todos los tipos</option><option>Compra</option><option>Venta</option></select>
-          <input type="date" class="form-control form-control-sm" style="width:auto" id="hist-ft-ini">
+          <select aria-label="hist material filter" class="form-select form-select-sm" style="width:auto" id="hist-material-filter"><option value="">Todos</option></select>
+          <select aria-label="hist tipo filter" class="form-select form-select-sm" style="width:auto" id="hist-tipo-filter"><option value="">Todos los tipos</option><option>Compra</option><option>Venta</option></select>
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="hist-ft-ini" aria-label="hist ft ini">
           <span class="text-muted small">a</span>
-          <input type="date" class="form-control form-control-sm" style="width:auto" id="hist-ft-fin">
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="hist-ft-fin" aria-label="hist ft fin">
           <button class="btn btn-sm btn-outline-success" onclick="renderHistorial()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Solo lectura</span>
@@ -265,9 +265,9 @@
 
     <div class="tab-pane fade" id="tab-flujo">
       <ul class="nav nav-pills mb-3" id="flujo-subtabs">
-        <li class="nav-item"><a class="nav-link active" href="#" onclick="switchFlujo('stock',this);return false"><i class="bi bi-box-seam me-1"></i>Stock</a></li>
-        <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujo('ganancias',this);return false"><i class="bi bi-cash-stack me-1"></i>Ganancias</a></li>
-        <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujo('precios',this);return false"><i class="bi bi-tag me-1"></i>Precios</a></li>
+        <li class="nav-item"><a class="nav-link active" href="#" onclick="switchFlujo('stock',this);return false" role="button"><i class="bi bi-box-seam me-1"></i>Stock</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujo('ganancias',this);return false" role="button"><i class="bi bi-cash-stack me-1"></i>Ganancias</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchFlujo('precios',this);return false" role="button"><i class="bi bi-tag me-1"></i>Precios</a></li>
       </ul>
       <div class="row g-3 mb-4">
         <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="flujo-actual">--</div><div class="kpi-lbl">% Ocupacion</div></div></div>
@@ -281,8 +281,8 @@
     <div class="tab-pane fade" id="tab-calendario">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div class="d-flex gap-2 align-items-center">
-          <select class="form-select form-select-sm" style="width:auto" id="cal-estado-filter"><option value="">Todos los estados</option><option>Completado</option><option>Pendiente</option></select>
-          <input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-fin">
+          <select aria-label="cal estado filter" class="form-select form-select-sm" style="width:auto" id="cal-estado-filter"><option value="">Todos los estados</option><option>Completado</option><option>Pendiente</option></select>
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-ini" aria-label="cal ft ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-fin" aria-label="cal ft fin">
           <button class="btn btn-sm btn-outline-success" onclick="renderCalendario()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Gestionado por el gestor del punto -- solo consulta</span>
@@ -298,8 +298,8 @@
     <div class="tab-pane fade" id="tab-mensajes">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div class="d-flex gap-2 align-items-center">
-          <input type="text" class="form-control form-control-sm" style="width:auto" id="msg-search" placeholder="Buscar ciudadano...">
-          <input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-fin">
+          <input type="text" class="form-control form-control-sm" style="width:auto" id="msg-search" placeholder="Buscar ciudadano..." aria-label="msg search">
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-ini" aria-label="msg ft ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-fin" aria-label="msg ft fin">
           <button class="btn btn-sm btn-outline-success" onclick="renderMensajes()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Gestionado por el gestor del punto -- solo consulta</span>
