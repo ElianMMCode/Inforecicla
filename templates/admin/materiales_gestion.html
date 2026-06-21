@@ -46,13 +46,18 @@
 {% block content %}
 
 {% if messages %}
-<div class="mb-3">
-  {% for message in messages %}
-  <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-    {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-  {% endfor %}
-</div>
+<script>
+  (function(){
+    var _msgs = [{% for m in messages %}{"tags":"{{ m.tags }}","text":"{{ m|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(function(){
+        _msgs.forEach(function(m){
+          Swal.fire({icon:['success','error','warning','info'].includes(m.tags)?m.tags:'info',title:m.text,toast:true,position:'top-end',showConfirmButton:false,timer:4000,timerProgressBar:true});
+        });
+      }, 350);
+    });
+  })();
+</script>
 {% endif %}
 
 <!-- HEADER -->
@@ -326,7 +331,7 @@
     <form method="POST" action="{% url 'panel_admin:crear_categoria_material' %}" novalidate id="formCrearCategoria">
       {% csrf_token %}
       <div class="modal-body p-4">
-        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" name="nombre" class="form-control form-control-sm" placeholder="Ej: Plásticos, Metales..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" name="nombre" id="ncat-nombre" class="form-control form-control-sm" placeholder="Ej: Plásticos, Metales..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
         <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea name="descripcion" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Describe brevemente la categoría..."></textarea></div>
       </div>
       <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-success btn-sm fw-semibold"><i class="bi bi-check-lg me-1"></i>Guardar Categoría</button></div>
@@ -1008,23 +1013,50 @@
   function guardarEdicionMaterial(){
     const id = document.getElementById('em-id').value;
     const m = getMatById(id); if(!m.id)return;
-    m.nombre = document.getElementById('em-nombre').value.trim();
+    const nombre = document.getElementById('em-nombre').value.trim();
+    const categoria = document.getElementById('em-categoria').value;
+    const clasificacion = document.getElementById('em-clasificacion').value;
+    const errores = [];
+    if(!nombre || nombre.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(nombre.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(!categoria) errores.push('Categoría: selecciona una categoría.');
+    if(!clasificacion) errores.push('Clasificación: selecciona una clasificación.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
+    }
+    m.nombre = nombre;
     m.descripcion = document.getElementById('em-descripcion').value.trim();
-    m.categoria_nombre = document.getElementById('em-categoria').value;
-    m.clasificacion = document.getElementById('em-clasificacion').value;
+    m.categoria_nombre = categoria;
+    m.clasificacion = clasificacion;
     m.estado = document.getElementById('em-estado').value;
     bootstrap.Modal.getInstance(document.getElementById('modalEditarMaterial')).hide();
+    Swal.fire({icon:'success',title:'Material actualizado',text:'Los cambios en "'+escapeHTML(nombre)+'" se guardaron correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
     renderCatalogo();
-    // In production: submit form via AJAX to update server
+    renderInventarioPorMaterial();
+    renderGestionCategorias();
+    renderGestionClasificaciones();
   }
   function crearClasificacion(){
     const nombre = document.getElementById('ncl-nombre').value.trim().toUpperCase();
     const desc = document.getElementById('ncl-descripcion').value.trim();
-    if(!nombre||!desc){alert('Completa nombre y descripción.');return;}
-    if(clasificaciones.some(c=>c.nombre===nombre)){alert('Ya existe una clasificación con ese nombre.');return;}
-    clasificaciones.push({id:Math.max(...clasificaciones.map(c=>c.id),0)+1,nombre,descripcion:desc});
+    const errores = [];
+    if(!nombre||nombre.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(nombre.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(!desc) errores.push('Descripción: es obligatoria.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
+    }
+    if(clasificaciones.some(function(c){return c.nombre===nombre})){
+      Swal.fire({icon:'warning',title:'Nombre duplicado',text:'Ya existe una clasificación llamada "'+escapeHTML(nombre)+'".',confirmButtonColor:'#198754'});
+      return;
+    }
+    const maxId = clasificaciones.reduce(function(m,c){return c.id>m?c.id:m},0);
+    clasificaciones.push({id:maxId+1,nombre:nombre,descripcion:desc});
     bootstrap.Modal.getInstance(document.getElementById('modalNuevaClasificacion')).hide();
     document.getElementById('ncl-nombre').value='';document.getElementById('ncl-descripcion').value='';
+    Swal.fire({icon:'success',title:'Clasificación creada',text:'"'+escapeHTML(nombre)+'" se agregó correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
     renderGestionClasificaciones();renderCatalogo();
   }
   function abrirEditarClasificacion(id){
@@ -1035,10 +1067,20 @@
   }
   function guardarEdicionClasificacion(){
     const id=parseInt(document.getElementById('ecl-id').value);
-    const c=clasificaciones.find(x=>x.id===id);if(!c)return;
-    c.nombre=document.getElementById('ecl-nombre').value.trim().toUpperCase();
-    c.descripcion=document.getElementById('ecl-descripcion').value.trim();
+    const c=clasificaciones.find(function(x){return x.id===id});if(!c)return;
+    const nombre=document.getElementById('ecl-nombre').value.trim().toUpperCase();
+    const desc=document.getElementById('ecl-descripcion').value.trim();
+    const errores = [];
+    if(!nombre||nombre.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(nombre.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(!desc) errores.push('Descripción: es obligatoria.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
+    }
+    c.nombre=nombre;c.descripcion=desc;
     bootstrap.Modal.getInstance(document.getElementById('modalEditarClasificacion')).hide();
+    Swal.fire({icon:'success',title:'Clasificación actualizada',text:'Los cambios en "'+escapeHTML(nombre)+'" se guardaron correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
     renderGestionClasificaciones();renderCatalogo();
   }
   function abrirEditarCategoria(nombre){
@@ -1053,13 +1095,43 @@
     const newName=document.getElementById('ec-nombre').value.trim();
     const desc=document.getElementById('ec-descripcion').value.trim();
     const estado=document.getElementById('ec-estado').value;
-    if(!newName){alert('Ingresa el nombre.');return;}
-    materiales.forEach(m=>{if(m.categoria_nombre===oldName){m.categoria_nombre=newName;m.estado=estado;}});
+    const errores = [];
+    if(!newName||newName.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(newName.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
+    }
+    materiales.forEach(function(m){if(m.categoria_nombre===oldName){m.categoria_nombre=newName;m.estado=estado;}});
     bootstrap.Modal.getInstance(document.getElementById('modalEditarCategoria')).hide();
+    Swal.fire({icon:'success',title:'Categoría actualizada',text:'Los cambios en "'+escapeHTML(newName)+'" se guardaron correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
     renderCatalogo();renderGestionCategorias();
   }
 
   function escapeHTML(str){if(!str)return'';const d=document.createElement('div');d.textContent=str;return d.innerHTML;}
+
+  // ===== FORM SUBMIT HANDLERS (Swal validation + confirmation) =====
+  function bindFormSwal(formId, camposReq, formLabel){
+    var form = document.getElementById(formId); if(!form)return;
+    form.addEventListener('submit', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var errores = [];
+      camposReq.forEach(function(cfg){
+        var el = document.getElementById(cfg.id);
+        var val = (el ? (el.value||'').trim() : '');
+        if(!val) errores.push(cfg.label+': es obligatorio.');
+        else if(cfg.min && val.length<cfg.min) errores.push(cfg.label+': mínimo '+cfg.min+' caracteres.');
+        else if(cfg.max && val.length>cfg.max) errores.push(cfg.label+': máximo '+cfg.max+' caracteres.');
+      });
+      if(errores.length){
+        Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+        return;
+      }
+      Swal.fire({icon:'question',title:'¿Guardar '+formLabel+'?',text:'Revisa los datos antes de continuar.',showCancelButton:true,confirmButtonText:'Sí, guardar',cancelButtonText:'Cancelar',confirmButtonColor:'#198754',cancelButtonColor:'#6c757d'}).then(function(r){
+        if(r.isConfirmed) form.submit();
+      });
+    });
+  }
 
   // ===== BOOT =====
   $(function(){
@@ -1069,7 +1141,8 @@
       $('#cat-filtro-clasificacion').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:-1});
       $('#inv-mat-selector').select2({theme:'bootstrap-5',width:'100%',placeholder:'-- Selecciona un material --'});
       initFlujoSelect();
-    } catch(e) {}
+      bindFormSwal('formCrearMaterial', [{id:'nm-nombre',label:'Nombre',min:3,max:30},{id:'nm-categoria',label:'Categoría'},{id:'nm-clasificacion',label:'Clasificación'}], 'Material');
+      bindFormSwal('formCrearCategoria', [{id:'ncat-nombre',label:'Nombre',min:3,max:30}], 'Categoría');
   });
   updateGlobalKPIs();
   renderCatalogo();
