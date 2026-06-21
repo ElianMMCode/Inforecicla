@@ -53,11 +53,11 @@
 .rank-1{background:#ffc107}.rank-2{background:#adb5bd}.rank-3{background:#cd7f32}
 .rank-bar{height:4px;border-radius:2px;background:#e9ecef;flex-grow:1;overflow:hidden}
 .rank-bar-fill{height:100%;border-radius:2px;background:var(--green)}
-.readonly-badge{font-size:.65rem;padding:2px 6px;border-radius:4px;background:#e9ecef;color:#6c757d;font-weight:600}
+.readonly-badge{font-size:.65rem;padding:2px 6px;border-radius:4px;background:#e9ecef;color:#495057;font-weight:600}
 .alerta-card{border:0;border-radius:12px;overflow:hidden}
 .alerta-card .card-body{padding:.75rem 1rem}
 .efi-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700}
-.efi-optimo{background:#d1e7dd;color:#0f5132}.efi-alto{background:#fff3cd;color:#664d03}.efi-bajo{background:#e9ecef;color:#6c757d}
+.efi-optimo{background:#d1e7dd;color:#0f5132}.efi-alto{background:#fff3cd;color:#664d03}.efi-bajo{background:#e9ecef;color:#495057}
 .price-tag{border-radius:6px;padding:2px 8px;font-size:.7rem;font-weight:700}
 .price-best{background:#d1e7dd;color:#0f5132}.price-worst{background:#f8d7da;color:#842029}
 #mapa-eca{height:480px;border-radius:12px;border:1px solid #e9ecef}

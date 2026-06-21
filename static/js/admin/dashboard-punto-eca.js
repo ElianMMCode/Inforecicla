@@ -1,5 +1,5 @@
 /* ===== DATA — cargada desde json_script tags del template ===== */
-function _mockRandom(){return (window.crypto||window.msCrypto).getRandomValues(new Uint32Array(1))[0] / 0xffffffff;}
+function _mockRandom(){return (globalThis.crypto||globalThis.msCrypto).getRandomValues(new Uint32Array(1))[0] / 0xffffffff;}
 const _from = (id) => JSON.parse(document.getElementById(id).textContent);
 const puntos = _from('puntos-data');
 const usuarios = _from('usuarios-data');
@@ -214,7 +214,7 @@ function renderResumen(){
   const resMat=document.getElementById('res-mat-filter')?.value||'';
   const resOrden=document.getElementById('res-orden')?.value||'mov';
   if(resMat)data=data.filter(x=>x.mat===resMat);
-  data=data.filter(x=>pts.some(p=>p.id===x.puntoId));
+  data=data.filter(x=>pts.some(p=>p.id===x.puntoId)); var _=data;
 
   if(typeof Chart==='undefined'){
     document.getElementById('chartPanelTop').parentElement.innerHTML='<div class="p-4 text-center text-muted"><i class="bi bi-info-circle me-1"></i>Graficas no disponibles — requiere Chart.js CDN</div>';
@@ -460,6 +460,11 @@ function filtrarEstadosEstado(v){
   const selS=document.getElementById('est-salud-filter');if(selS)selS.value='';
   goToTab('estados');
 }
+function alertGroup(title,items,color,icon){
+    if(!items.length)return'';
+    const dotColor=color==='warning'?'#ffc107':'#198754';
+    return'<div class="col-12"><div class="card shadow-sm border-0"><div class="card-header bg-'+color+'-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-'+color+'"><i class="bi bi-'+icon+' me-2"></i>'+title+' ('+items.length+')</h6></div><div class="card-body p-0">'+items.map(p=>'<div class="alerta-item border-bottom px-4 py-2"><div class="alerta-dot" style="background:'+(color==='danger'?'#dc3545':dotColor)+'"></div><div class="flex-grow-1 min-w-0"><div class="fw-semibold" style="font-size:.82rem">'+p.nombre+'</div><div class="text-muted" style="font-size:.72rem"><i class="bi bi-geo-alt me-1"></i>'+p.localidad+' — '+p.direccion+'</div><div style="font-size:.72rem" class="text-muted"><i class="bi bi-person me-1"></i>'+p.gestor+'</div></div><button class="btn btn-sm btn-outline-'+color+' flex-shrink-0" onclick="openDetalle('+p.id+')" style="font-size:.7rem"><i class="bi bi-eye"></i></button></div>').join('')+'</div></div></div>';
+}
 function renderEstados(){
   let pts=_fitrarPtsTab('est-search-input','est-loc-filter','est-estado-filter');
   const estSalud=document.getElementById('est-salud-filter')?.value||'';
@@ -505,11 +510,6 @@ function renderEstados(){
 
   }
 
-  function alertGroup(title,items,color,icon){
-    if(!items.length)return'';
-    const dotColor=color==='warning'?'#ffc107':'#198754';
-    return'<div class="col-12"><div class="card shadow-sm border-0"><div class="card-header bg-'+color+'-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-'+color+'"><i class="bi bi-'+icon+' me-2"></i>'+title+' ('+items.length+')</h6></div><div class="card-body p-0">'+items.map(p=>'<div class="alerta-item border-bottom px-4 py-2"><div class="alerta-dot" style="background:'+(color==='danger'?'#dc3545':dotColor)+'"></div><div class="flex-grow-1 min-w-0"><div class="fw-semibold" style="font-size:.82rem">'+p.nombre+'</div><div class="text-muted" style="font-size:.72rem"><i class="bi bi-geo-alt me-1"></i>'+p.localidad+' — '+p.direccion+'</div><div style="font-size:.72rem" class="text-muted"><i class="bi bi-person me-1"></i>'+p.gestor+'</div></div><button class="btn btn-sm btn-outline-'+color+' flex-shrink-0" onclick="openDetalle('+p.id+')" style="font-size:.7rem"><i class="bi bi-eye"></i></button></div>').join('')+'</div></div></div>';
-  }
   const activos=pts.filter(p=>p.estado==='Activo');
   const inactivos=pts.filter(p=>p.estado==='Inactivo');
   const criticos=activos.filter(p=>p.invEstado==='Critico');
