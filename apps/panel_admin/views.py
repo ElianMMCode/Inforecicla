@@ -2310,45 +2310,70 @@ def editar_tipo_publicacion_admin(request, tipo_id):
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def gestion_materiales(request):
-    q_mat = request.GET.get('q_mat', '').strip()
-    q_tipo = request.GET.get('q_tipo', '').strip()
-    q_cat = request.GET.get('q_cat', '').strip()
     tab = request.GET.get('tab', 'materiales')
 
     all_materiales = list(Material.objects.select_related("categoria").all().order_by("nombre"))
-    tipos_qs = TipoMaterial.objects.all().order_by("nombre")
     categorias_qs = CategoriaMaterial.objects.all().order_by("nombre")
 
     materiales_json = [material_to_dict(m) for m in all_materiales]
-    tipos_json = [tipo_material_to_dict(t) for t in tipos_qs]
     categorias_json = [categoria_material_to_dict(c) for c in categorias_qs]
 
-    if q_mat:
-        ql = q_mat.lower()
-        all_materiales = [m for m in all_materiales if ql in (m.nombre.lower() + " " + (m.descripcion or "").lower() + " " + (m.categoria.nombre if m.categoria else "").lower() + " " + (m.clasificacion or "").lower())]
+    # Inventario data for mockup tabs
+    from apps.inventory.models import Inventario
+    from apps.ecas.models import PuntoECA
 
-    if q_tipo:
-        tipos_qs = tipos_qs.filter(Q(nombre__icontains=q_tipo) | Q(descripcion__icontains=q_tipo))
-    if q_cat:
-        categorias_qs = categorias_qs.filter(Q(nombre__icontains=q_cat) | Q(descripcion__icontains=q_cat))
+    inv_items = list(Inventario.objects.select_related("material__categoria", "punto_eca").all())
+    inventario_json = []
+    for inv in inv_items:
+        inventario_json.append({
+            "matId": str(inv.material_id),
+            "puntoId": str(inv.punto_eca_id),
+            "stock": float(inv.stock_actual or 0),
+            "cap": float(inv.capacidad_maxima or 0),
+            "compra": float(inv.precio_compra or 0),
+            "venta": float(inv.precio_venta or 0),
+            "unidad": inv.unidad_medida,
+        })
+
+    puntos_qs = list(PuntoECA.objects.all().order_by("nombre"))
+    puntos_json = [{"id": str(p.id), "nombre": p.nombre, "localidad": p.localidad.nombre if p.localidad else "", "gestor": p.gestor_eca.get_full_name() if p.gestor_eca else "", "estado": p.estado} for p in puntos_qs]
+
+    # Historial consolidado
+    from apps.operations.models import CompraInventario, VentaInventario
+    compras = list(CompraInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_compra")[:200])
+    ventas = list(VentaInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_venta")[:200])
+    historial_json = []
+    for c in compras:
+        historial_json.append({
+            "fecha": c.fecha_compra.strftime("%Y-%m-%d %H:%M") if c.fecha_compra else "",
+            "tipo": "Compra", "mat": c.inventario.material.nombre if c.inventario and c.inventario.material else "-",
+            "punto": c.inventario.punto_eca.nombre if c.inventario and c.inventario.punto_eca else "-",
+            "kg": float(c.cantidad or 0), "unitario": float(c.precio_compra or 0),
+            "total": float((c.cantidad or 0) * (c.precio_compra or 0)),
+            "centro": c.inventario.centro_acopio.nombre if c.inventario and c.inventario.centro_acopio else "-",
+        })
+    for v in ventas:
+        historial_json.append({
+            "fecha": v.fecha_venta.strftime("%Y-%m-%d %H:%M") if v.fecha_venta else "",
+            "tipo": "Venta", "mat": v.inventario.material.nombre if v.inventario and v.inventario.material else "-",
+            "punto": v.inventario.punto_eca.nombre if v.inventario and v.inventario.punto_eca else "-",
+            "kg": float(v.cantidad or 0), "unitario": float(v.precio_venta or 0),
+            "total": float((v.cantidad or 0) * (v.precio_venta or 0)),
+            "centro": v.centro_acopio.nombre if v.centro_acopio else "-",
+        })
 
     return render(request, "admin/materiales_gestion.html", {
-        "materiales": all_materiales,
         "materiales_json": materiales_json,
-        "tipos": tipos_qs,
-        "tipos_json": tipos_json,
-        "categorias": categorias_qs,
         "categorias_json": categorias_json,
-        "q_mat": q_mat, "q_tipo": q_tipo, "q_cat": q_cat,
+        "inventario_json": inventario_json,
+        "puntos_json": puntos_json,
+        "historial_json": historial_json,
         "tab": tab,
         "estados": cons.Estado.choices,
         "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),
-        "todos_tipos": TipoMaterial.objects.all().order_by("nombre"),
         "dist_categoria_mat": AdminDashboardService.obtener_distribucion_materiales(),
         "dist_clasificacion_mat": AdminDashboardService.obtener_distribucion_materiales_por_clasificacion(),
         "dist_estado_mat": AdminDashboardService.obtener_distribucion_materiales_por_estado(),
-        "dist_estado_cat": AdminDashboardService.obtener_distribucion_categorias_material_por_estado(),
-        "dist_estado_tipo": AdminDashboardService.obtener_distribucion_tipos_material_por_estado(),
     })
 
 
