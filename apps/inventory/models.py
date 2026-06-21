@@ -269,17 +269,3 @@ class CategoriaMaterial(DescripcionModel):
 
     def __str__(self):
         return self.nombre
-
-
-class TipoMaterial(DescripcionModel):
-    """
-    Especifica subtipos particulares para materiales reciclables permitiendo analizar, filtrar o definir reglas de negocio a un nivel más fino. Relación 1 a N con Material.
-    """
-
-    class Meta(DescripcionModel.Meta):
-        verbose_name = "Tipo de material"
-        verbose_name_plural = "Tipos de material"
-        db_table = "inv_tipo_material"
-
-    def __str__(self):
-        return self.nombre

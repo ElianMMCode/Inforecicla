@@ -151,7 +151,7 @@
         const ocupacionNum = Number(inv.ocupacion);
         setText("inv-ws-nombre", nombre);
         setText("inv-ws-categoria", inv.categoria);
-        setText("inv-ws-tipo", inv.tipo);
+        setText("inv-ws-clasificacion", inv.clasificacion);
         setText("inv-ws-ultact", "—");
         setText("inv-ws-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-pcompra", Number(inv.precioCompra).toLocaleString("es-CO"));
@@ -172,7 +172,9 @@
         setText("inv-ws-datos-nombre", nombre);
         setText("inv-ws-datos-material", nombre);
         setText("inv-ws-datos-categoria", inv.categoria);
-        setText("inv-ws-datos-tipo", inv.tipo);
+        setText("inv-ws-datos-clasificacion", inv.clasificacion);
+        setText("inv-ws-datos-descripcion", inv.descripcion || "—");
+        setText("inv-ws-datos-clasif-desc", inv.descripcionClasificacion || "—");
         setText("inv-ws-datos-cap", `${formatQty(inv.capacidadMaxima, inv.unidad)}`);
         setText("inv-ws-datos-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-datos-unidad", inv.unidad);
@@ -308,7 +310,7 @@
     function aplicarFiltrosCards() {
         const nombre = (document.getElementById("inv-filter-nombre")?.value || "").toLowerCase().trim();
         const cat = document.getElementById("inv-filter-categoria")?.value || "";
-        const tipo = document.getElementById("inv-filter-tipo")?.value || "";
+        const tipo = document.getElementById("inv-filter-clasificacion")?.value || "";
         const estado = document.getElementById("inv-filter-estado")?.value || "";
         const ocupacionSel = document.getElementById("inv-filter-ocupacion")?.value || "";
 
@@ -318,7 +320,7 @@
         document.querySelectorAll(".inv-tarjeta-material").forEach((card) => {
             const matchNombre = !nombre || (card.dataset.nombre || "").includes(nombre);
             const matchCat = !cat || card.dataset.categoria === cat;
-            const matchTipo = !tipo || card.dataset.tipo === tipo;
+            const matchTipo = !tipo || card.dataset.clasificacion === tipo;
             const matchEstado = !estado || card.dataset.estado === estado;
             let matchOcup = true;
             if (ocupacionSel) {
@@ -340,7 +342,7 @@
     }
 
     function limpiarFiltrosCards() {
-        ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
+            ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-clasificacion", "inv-filter-estado", "inv-filter-ocupacion"]
             .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
         aplicarFiltrosCards();
     }
@@ -485,7 +487,7 @@
         if (!lista) return;
 
         const filtrados = pickerCatalogo.filter((m) => {
-            const matchQ = !q || (m.nmbMaterial || "").toLowerCase().includes(q) || (m.dscMaterial || "").toLowerCase().includes(q) || (m.nmbTipo || "").toLowerCase().includes(q);
+            const matchQ = !q || (m.nmbMaterial || "").toLowerCase().includes(q) || (m.dscMaterial || "").toLowerCase().includes(q) || (m.nmbClasificacion || "").toLowerCase().includes(q);
             const matchC = !cat || m.nmbCategoria === cat;
             const matchF = filtro === "todos" || (filtro === "en-inventario" && m.enInventario) || (filtro === "disponibles" && !m.enInventario);
             return matchQ && matchC && matchF;
@@ -508,7 +510,7 @@
                 <div class="flex-grow-1 text-start">
                     <div class="fw-semibold">${escapeHtml(m.nmbMaterial)}</div>
                     <small class="text-muted d-block mb-1">${escapeHtml(m.dscMaterial || "")}</small>
-                    <span class="badge bg-primary me-1">${escapeHtml(m.nmbTipo || "")}</span>
+                    <span class="badge bg-primary me-1">${escapeHtml(m.nmbClasificacion || "")}</span>
                     <span class="badge bg-secondary">${escapeHtml(m.nmbCategoria || "")}</span>
                     <span class="badge bg-light text-dark ms-1">${escapeHtml(m.unidad || "")}</span>
                     ${estado}
@@ -660,13 +662,13 @@
         };
 
         // 1) Filtros landing (cards)
-        apply("#inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion");
+        apply("#inv-filter-categoria, #inv-filter-clasificacion, #inv-filter-estado, #inv-filter-ocupacion");
 
         // 2) Filtros historial general (Select2 en todos MENOS tipo de
         // movimiento, que debe permanecer como <select> nativo para que el
         // listener de 'change' dispare confiablemente el toggle del centro
         // de acopio al elegir "Venta").
-        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-tipo-material, #inv-hfiltro-centro");
+        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-clasificacion, #inv-hfiltro-centro");
 
         // 3) Filtro chart
         apply("#inv-flujo-granularidad");
@@ -739,11 +741,11 @@
         // que el handler quede en el sistema de eventos de jQuery.
         if (globalThis.jQuery) {
             const $filtrosLanding = globalThis.jQuery(
-                "#inv-filter-nombre, #inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion"
+                "#inv-filter-nombre, #inv-filter-categoria, #inv-filter-clasificacion, #inv-filter-estado, #inv-filter-ocupacion"
             );
             $filtrosLanding.on("input change", aplicarFiltrosCards);
         } else {
-            ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
+        ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-clasificacion", "inv-filter-estado", "inv-filter-ocupacion"]
                 .forEach((id) => document.getElementById(id)?.addEventListener("input", aplicarFiltrosCards));
         }
         document.getElementById("inv-filter-limpiar")?.addEventListener("click", limpiarFiltrosCards);
@@ -1062,7 +1064,7 @@
                     title: null,
                     html: renderComprobante("compra", {
                         materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formEntradaMaterialTipo")?.value || "—",
+                        materialTipo: document.getElementById("formEntradaMaterialClasificacion")?.value || "—",
                         materialCategoria: document.getElementById("formEntradaMaterialCategoria")?.value || "—",
                         unidad: document.getElementById("formEntradaMaterialUnidad")?.value || "",
                         cantidad: cant,
@@ -1128,7 +1130,7 @@
                     title: null,
                     html: renderComprobante("venta", {
                         materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formSalidaMaterialTipo")?.value || "—",
+                        materialTipo: document.getElementById("formSalidaMaterialClasificacion")?.value || "—",
                         materialCategoria: document.getElementById("formSalidaMaterialCategoria")?.value || "—",
                         unidad: document.getElementById("formSalidaMaterialUnidad")?.value || "",
                         cantidad: cant,
@@ -1173,7 +1175,7 @@
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
         const fmt = (v) => (v ?? 0).toLocaleString("es-CO", { maximumFractionDigits: 2 });
         const unidad = inv.unidad || "";
-        setVal(`${prefix}MaterialTipo`, inv.tipo);
+        setVal(`${prefix}MaterialClasificacion`, inv.clasificacion);
         setVal(`${prefix}MaterialCategoria`, inv.categoria);
         setVal(`${prefix}MaterialUnidad`, unidad);
         setVal(`${prefix}StockActual`, inv.stockActual);
@@ -1608,7 +1610,7 @@
         const filtros = [
             ["material", materialNombre],
             ["categoria", _q("inv-hfiltro-categoria")?.value],
-            ["tipo", _q("inv-hfiltro-tipo-material")?.value],
+            ["tipo", _q("inv-hfiltro-clasificacion")?.value],
             ["tipo_movimiento", _q("inv-hfiltro-tipo")?.value],
             ["fecha_desde", _q("inv-hfiltro-desde")?.value],
             ["fecha_hasta", _q("inv-hfiltro-hasta")?.value],
@@ -1692,7 +1694,7 @@
         return {
             effectiveMaterialId,
             categoria: _q("inv-hfiltro-categoria")?.value || "",
-            tipoMaterial: _q("inv-hfiltro-tipo-material")?.value || "",
+            tipoMaterial: _q("inv-hfiltro-clasificacion")?.value || "",
             tipo: _q("inv-hfiltro-tipo")?.value || "",
             centro: _q("inv-hfiltro-centro")?.value || "",
             cantidadMin: Number.parseFloat(_q("inv-hfiltro-cantidad-min")?.value),
@@ -1904,7 +1906,7 @@
         [
             "inv-hfiltro-material",
             "inv-hfiltro-categoria",
-            "inv-hfiltro-tipo-material",
+            "inv-hfiltro-clasificacion",
             "inv-hfiltro-tipo",
             "inv-hfiltro-desde",
             "inv-hfiltro-hasta",
@@ -2831,4 +2833,8 @@
         _initDeepLink();
         bind();
     }
+
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el);
+    });
 })();

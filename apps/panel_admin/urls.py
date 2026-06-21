@@ -59,13 +59,6 @@ urlpatterns = [
     path('tipos-publicaciones/crear/', views.crear_tipo_publicacion, name='crear_tipo_publicacion'),
     path('tipos-publicaciones/<uuid:tipo_id>/editar/', views.editar_tipo_publicacion_admin, name='editar_tipo_publicacion_admin'),
 
-    # Tipos de materiales
-    path('tipos-materiales/', views.listar_tipos_material_admin, name='listar_tipos_material_admin'),
-    path('tipos-materiales/exportar/pdf/', views.exportar_tipos_material_pdf, name='exportar_tipos_material_pdf'),
-    path('tipos-materiales/exportar/excel/', views.exportar_tipos_material_excel, name='exportar_tipos_material_excel'),
-    path('tipos-materiales/crear/', views.crear_tipo_material, name='crear_tipo_material'),
-    path('tipos-materiales/<uuid:tipo_id>/editar/', views.editar_tipo_material_admin, name='editar_tipo_material_admin'),
-
     # Perfil del administrador
     path('perfil/', views.perfil_admin, name='perfil_admin'),
     path('perfil/actualizar/', views.actualizar_datos_admin, name='actualizar_datos_admin'),

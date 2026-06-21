@@ -147,6 +147,7 @@ class Reaccion(CreacionModificacionModel):
     valor = models.CharField(
         max_length=30,
         blank=True,
+        null=True,
         choices=constants.Votos,
     )
 

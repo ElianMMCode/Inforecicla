@@ -15,7 +15,7 @@ from django.db.models import Q
 
 from apps.users.models import Usuario
 from apps.ecas.models import Localidad, PuntoECA
-from apps.inventory.models import CategoriaMaterial, Material, TipoMaterial
+from apps.inventory.models import CategoriaMaterial, Material
 from apps.panel_admin.service import AdminCatalogService, AdminDashboardService, AdminPuntoECAService
 from config import constants as cons
 
@@ -948,17 +948,6 @@ def _filtrar_categorias_publicacion_export(request, categorias):
     return categorias
 
 
-def _filtrar_tipos_material_export(request, tipos):
-    q = request.GET.get('q', '').strip()
-    if q:
-        ql = q.lower()
-        tipos = [t for t in tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
-    estado = request.GET.get('estado', '').strip()
-    if estado:
-        tipos = [t for t in tipos if t.estado == estado]
-    return tipos
-
-
 def _filtrar_tipos_publicacion_export(request, tipos):
     q = request.GET.get('q', '').strip()
     if q:
@@ -1671,73 +1660,6 @@ def listar_categorias_publicacion_admin(request):
     )
 
 
-@require_GET
-@login_required(login_url="/login/")
-@user_passes_test(es_administrador, login_url="/inicio/")
-@require_http_methods(["GET", "HEAD"])
-def exportar_tipos_material_pdf(request):
-    from django.template.loader import render_to_string
-    from weasyprint import HTML
-
-    tipos = _filtrar_tipos_material_export(request, list(TipoMaterial.objects.all().order_by("nombre")))
-    html = render_to_string("admin/TiposMateriales/tipos_material_pdf.html", {"tipos": tipos})
-    pdf = HTML(string=html).write_pdf()
-    return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_material.pdf")
-
-
-@require_GET
-@login_required(login_url="/login/")
-@user_passes_test(es_administrador, login_url="/inicio/")
-@require_http_methods(["GET", "HEAD"])
-def exportar_tipos_material_excel(request):
-    import io
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Tipos de Material"
-
-    headers = ["Nombre", EXCEL_DESCRIPTION_HEADER, "Estado"]
-    fill = PatternFill(start_color="1A7A3A", end_color="1A7A3A", fill_type="solid")
-    font = Font(color="FFFFFF", bold=True)
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill = fill
-        cell.font = font
-        cell.alignment = Alignment(horizontal="center")
-
-    tipos = _filtrar_tipos_material_export(request, list(TipoMaterial.objects.all().order_by("nombre")))
-
-    for row, t in enumerate(tipos, 2):
-        ws.cell(row=row, column=1, value=t.nombre)
-        ws.cell(row=row, column=2, value=t.descripcion or "")
-        ws.cell(row=row, column=3, value=t.estado or "")
-
-    for col in ws.columns:
-        ancho = max(len(str(cell.value or "")) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(ancho + 4, 40)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return _crear_respuesta_descarga(buf.read(), XLSX_MIME_TYPE, "tipos_material.xlsx")
-
-
-@require_GET
-@login_required(login_url="/login/")
-@user_passes_test(es_administrador, login_url="/inicio/")
-@require_http_methods(["GET", "HEAD"])
-def listar_tipos_material_admin(request):
-    all_tipos = list(TipoMaterial.objects.all().order_by("nombre"))
-    tipos_json = [tipo_material_to_dict(t) for t in all_tipos]
-    q = request.GET.get('q', '').strip()
-    if q:
-        ql = q.lower()
-        all_tipos = [t for t in all_tipos if ql in (t.nombre.lower() + " " + (t.descripcion or "").lower())]
-    return render(request, "admin/TiposMateriales/listTipoMaterial.html", {"tipos": all_tipos, "tipos_json": tipos_json, "search_query": q})
-
-
 def _contexto_usuario_admin(usuario):
     return {
         "usuario": usuario,
@@ -2011,7 +1933,6 @@ def editar_material_admin(request, material_id):
         {
             "material": material,
             "categorias": CategoriaMaterial.objects.all().order_by("nombre"),
-            "tipos": TipoMaterial.objects.all().order_by("nombre"),
             "estados": cons.Estado.choices,
         },
     )
@@ -2108,59 +2029,6 @@ def editar_categoria_publicacion_admin(request, categoria_id):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "POST"])
-def editar_tipo_material_admin(request, tipo_id):
-    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-    tipo = TipoMaterial.objects.filter(id=tipo_id).first()
-    if not tipo:
-        if is_ajax:
-            return JsonResponse({"ok": False, "message": "Tipo de material no encontrado."})
-        messages.error(request, "Tipo de material no encontrado.")
-        return redirect("panel_admin:listar_tipos_material_admin")
-
-    if request.method == "POST":
-        resultado = AdminCatalogService.actualizar_tipo_material(tipo_id, request.POST)
-        if is_ajax:
-            return JsonResponse(resultado)
-        if resultado["ok"]:
-            messages.success(request, resultado["message"])
-            return redirect("/panel_admin/materiales/gestion/?tab=tipos")
-        messages.error(request, resultado["message"])
-        tipo.refresh_from_db()
-
-    return render(
-        request,
-        "admin/TiposMateriales/editTipoMaterial.html",
-        {
-            "tipo": tipo,
-            "estados": cons.Estado.choices,
-        },
-    )
-
-
-@login_required(login_url="/login/")
-@user_passes_test(es_administrador, login_url="/inicio/")
-@require_http_methods(["GET", "POST"])
-def crear_tipo_material(request):
-    if request.method == "POST":
-        resultado = AdminCatalogService.crear_tipo_material(request.POST)
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return JsonResponse(resultado)
-        if resultado["ok"]:
-            messages.success(request, resultado["message"])
-        else:
-            messages.error(request, resultado["message"])
-        return redirect("/panel_admin/materiales/gestion/?tab=tipos")
-
-    return render(
-        request,
-        "admin/TiposMateriales/createTipoMaterial.html",
-        {"estados": cons.Estado.choices},
-    )
-
-
-@login_required(login_url="/login/")
-@user_passes_test(es_administrador, login_url="/inicio/")
-@require_http_methods(["GET", "POST"])
 def crear_categoria_material(request):
     if request.method == "POST":
         resultado = AdminCatalogService.crear_categoria_material(request.POST)
@@ -2199,7 +2067,6 @@ def crear_material_admin(request):
         {
             "estados": cons.Estado.choices,
             "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),
-            "todos_tipos": TipoMaterial.objects.all().order_by("nombre"),
         },
     )
 
@@ -2215,17 +2082,6 @@ def material_to_dict(m):
         "estado": m.estado,
         "is_active": m.estado == "ACTIVO",
         "action_url": reverse("panel_admin:editar_material_admin", kwargs={"material_id": m.id}),
-    }
-
-
-def tipo_material_to_dict(t):
-    return {
-        "id": t.id,
-        "nombre": t.nombre,
-        "descripcion": t.descripcion or "",
-        "estado": t.estado,
-        "is_active": t.estado == "ACTIVO",
-        "action_url": reverse("panel_admin:editar_tipo_material_admin", kwargs={"tipo_id": t.id}),
     }
 
 
