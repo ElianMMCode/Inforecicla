@@ -60,17 +60,18 @@
           </div>
 
           <div class="col-md-6">
-            <label for="material_tipo_id" class="form-label fw-semibold">Tipo <small class="text-muted fw-normal">(opcional)</small></label>
-            <select id="material_tipo_id" name="tipo_id" class="form-select">
-              <option value="">Sin tipo</option>
-              {% for tipo in todos_tipos %}
-                <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
-              {% endfor %}
+            <label for="material_clasificacion" class="form-label fw-semibold">Clasificación <span class="text-danger">*</span> <small class="text-muted fw-normal">(obligatorio)</small></label>
+            <select id="material_clasificacion" name="clasificacion" class="form-select" required>
+              <option value="">Seleccionar clasificación...</option>
+              <option value="ESTANDAR">ESTANDAR</option>
+              <option value="MANEJO_ESPECIAL">MANEJO ESPECIAL</option>
+              <option value="PELIGROSO">PELIGROSO</option>
+              <option value="HAZMAT">HAZMAT</option>
             </select>
-            <div class="invalid-feedback">Selecciona un tipo válido o déjalo en blanco.</div>
+            <div class="invalid-feedback">Selecciona una clasificación válida.</div>
             <div class="form-text">
               <i class="bi bi-info-circle me-1"></i>
-              <strong>Campo opcional</strong> &middot; subclasifica el material dentro de la categoría.
+              <strong>Campo obligatorio</strong> &middot; clasificación normativa del material.
             </div>
           </div>
 
@@ -129,5 +130,5 @@
   {% include "admin/_messages_swal.html" %}
   <script src="{% static 'js/admin/materiales-form-comun.js' %}"></script>
   <script src="{% static 'js/admin/material-crear.js' %}"></script>
-  {% include "admin/Materiales/_autofill_tipo_js.html" with categorias_autofill=todas_categorias %}
+
 {% endblock %}

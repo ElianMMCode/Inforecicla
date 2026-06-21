@@ -22,7 +22,7 @@
       <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-box-seam me-2"></i>Gestión de Materiales</h1>
       <p class="text-muted mb-0">Administra materiales reciclables, sus tipos y categorías desde un solo lugar.</p>
     </div>
-    <div id="btn-group-materiales" class="d-flex flex-wrap gap-2 {% if tab != 'tipos' and tab != 'categorias' %}d-flex{% else %}d-none{% endif %}">
+    <div id="btn-group-materiales" class="d-flex flex-wrap gap-2 {% if tab != 'clasificaciones' and tab != 'categorias' %}d-flex{% else %}d-none{% endif %}">
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearMaterial">
         <i class="bi bi-plus-circle me-1"></i> Nuevo Material
       </button>
@@ -32,9 +32,9 @@
         <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
       </button>
     </div>
-    <div id="btn-group-tipos" class="d-flex flex-wrap gap-2 {% if tab == 'tipos' %}d-flex{% else %}d-none{% endif %}">
+    <div id="btn-group-clasificaciones" class="d-flex flex-wrap gap-2 {% if tab == 'clasificaciones' %}d-flex{% else %}d-none{% endif %}">
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipo">
-        <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
+        <i class="bi bi-plus-circle me-1"></i> Nueva Clasificación
       </button>
     </div>
   </div>
@@ -62,10 +62,10 @@
         <div class="col-12 col-lg-4">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-recycle text-info me-1"></i>Por Tipo</h6>
+              <h6 class="mb-0 fw-bold small"><i class="bi bi-recycle text-info me-1"></i>Por Clasificación</h6>
             </div>
             <div class="card-body py-2">
-              <canvas id="chartMatTipo" style="max-height:150px;"></canvas>
+              <canvas id="chartMatClasificacion" style="max-height:150px;"></canvas>
             </div>
           </div>
         </div>
@@ -98,9 +98,9 @@
               </select>
             </div>
             <div class="col-md-2">
-              <label for="mat-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
-              <select class="form-select js-select2" id="mat-filter-tipo">
-                <option value="">Todos los tipos</option>
+              <label for="mat-filter-clasificacion" class="form-label fw-semibold text-muted mb-1">Clasificación</label>
+              <select class="form-select js-select2" id="mat-filter-clasificacion">
+                <option value="">Todas las clasificaciones</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -121,14 +121,14 @@
                class="btn btn-sm btn-outline-success fw-semibold export-link"
                title="Exportar Excel"
                data-export-base="{% url 'panel_admin:exportar_materiales_excel' %}"
-               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,tipo:mat-filter-tipo">
+               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,clasificacion:mat-filter-clasificacion">
               <i class="bi bi-file-earmark-excel me-1"></i> Excel
             </a>
             <a href="{% url 'panel_admin:exportar_materiales_pdf' %}"
                class="btn btn-sm btn-outline-danger fw-semibold export-link"
                title="Exportar PDF"
                data-export-base="{% url 'panel_admin:exportar_materiales_pdf' %}"
-               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,tipo:mat-filter-tipo">
+               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,clasificacion:mat-filter-clasificacion">
               <i class="bi bi-file-earmark-pdf me-1"></i> PDF
             </a>
           </div>
@@ -141,7 +141,7 @@
                 <th class="fw-bold small">Nombre</th>
                 <th class="fw-bold small">Descripción</th>
                 <th class="fw-bold small">Categoría</th>
-                <th class="fw-bold small">Tipo</th>
+                <th class="fw-bold small">Clasificación</th>
                 <th class="fw-bold small">Estado</th>
                 <th class="fw-bold small text-center">Acciones</th>
               </tr>
@@ -194,9 +194,9 @@
               <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" id="categorias-search-input">
             </div>
             <div class="col-md-3">
-              <label for="cat-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
-              <select class="form-select js-select2" id="cat-filter-tipo">
-                <option value="">Todos los tipos</option>
+              <label for="cat-filter-clasificacion" class="form-label fw-semibold text-muted mb-1">Clasificación</label>
+              <select class="form-select js-select2" id="cat-filter-clasificacion">
+                <option value="">Todas las clasificaciones</option>
               </select>
             </div>
             <div class="col-md-2">
@@ -225,14 +225,14 @@
                class="btn btn-sm btn-outline-success fw-semibold export-link"
                title="Exportar Excel"
                data-export-base="{% url 'panel_admin:exportar_categorias_material_excel' %}"
-               data-export-filters="q:categorias-search-input,estado:cat-filter-estado,tipo:cat-filter-tipo">
+               data-export-filters="q:categorias-search-input,estado:cat-filter-estado,clasificacion:cat-filter-clasificacion">
               <i class="bi bi-file-earmark-excel me-1"></i> Excel
             </a>
             <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
                class="btn btn-sm btn-outline-danger fw-semibold export-link"
                title="Exportar PDF"
                data-export-base="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
-               data-export-filters="q:categorias-search-input,estado:cat-filter-estado,tipo:cat-filter-tipo">
+               data-export-filters="q:categorias-search-input,estado:cat-filter-estado,clasificacion:cat-filter-clasificacion">
               <i class="bi bi-file-earmark-pdf me-1"></i> PDF
             </a>
           </div>
@@ -244,7 +244,7 @@
               <tr>
                 <th class="fw-bold small">Nombre</th>
                 <th class="fw-bold small">Descripción</th>
-                <th class="fw-bold small">Tipo</th>
+                <th class="fw-bold small">Clasificación</th>
                 <th class="fw-bold small">Estado</th>
                 <th class="fw-bold small text-center">Acciones</th>
               </tr>
@@ -258,29 +258,29 @@
       </div>
     </div>
 
-    <!-- ===== TAB TIPOS ===== -->
-    <div class="tab-pane fade {% if tab == 'tipos' %}show active{% endif %}"
-         id="pane-tipos" role="tabpanel">
+    <!-- ===== TAB CLASIFICACIONES ===== -->
+    <div class="tab-pane fade {% if tab == 'clasificaciones' %}show active{% endif %}"
+         id="pane-clasificaciones" role="tabpanel">
 
       <!-- Charts Tipos -->
       <div class="row g-3 mb-4">
         <div class="col-12 col-lg-6">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Tipos por Estado</h6>
+              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Clasificaciones por Estado</h6>
             </div>
             <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:200px;width:100%;"><canvas id="chartTipoEstado"></canvas></div>
+              <div style="max-width:200px;width:100%;"><canvas id="chartClasificacionEstado"></canvas></div>
             </div>
           </div>
         </div>
         <div class="col-12 col-lg-6">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Materiales por Tipo</h6>
+              <h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Materiales por Clasificación</h6>
             </div>
             <div class="card-body py-2">
-              <canvas id="chartMatPorTipo" style="max-height:150px;"></canvas>
+              <canvas id="chartMatPorClasificacion" style="max-height:150px;"></canvas>
             </div>
           </div>
         </div>
@@ -291,14 +291,14 @@
           <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
         </div>
         <div class="card-body">
-          <div class="row g-3 align-items-end" id="tipos-filter-form">
+          <div class="row g-3 align-items-end" id="clasificaciones-filter-form">
             <div class="col-md-6">
-              <label for="tipos-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
-              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" id="tipos-search-input">
+              <label for="clasificaciones-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" id="clasificaciones-search-input">
             </div>
             <div class="col-md-3">
-              <label for="tipo-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
-              <select class="form-select js-select2" id="tipo-filter-estado">
+              <label for="clasificacion-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+              <select class="form-select js-select2" id="clasificacion-filter-estado">
                 <option value="">Todos</option>
                 <option value="ACTIVO">Activo</option>
                 <option value="INACTIVO">Inactivo</option>
@@ -306,8 +306,8 @@
             </div>
             <div class="col-md-3">
               <div class="d-flex gap-2">
-                <button type="button" class="btn btn-success flex-grow-1" id="tipos-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
-                <button type="button" class="btn btn-outline-secondary" id="tipo-filter-limpiar"><i class="bi bi-eraser"></i></button>
+                <button type="button" class="btn btn-success flex-grow-1" id="clasificaciones-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+                <button type="button" class="btn btn-outline-secondary" id="clasificacion-filter-limpiar"><i class="bi bi-eraser"></i></button>
               </div>
             </div>
           </div>
@@ -333,7 +333,7 @@
               <i class="bi bi-file-earmark-pdf me-1"></i> PDF
             </a>
           </div>
-          <span class="badge bg-secondary rounded-pill" id="tipos-count-badge">{{ tipos|length }} registros</span>
+          <span class="badge bg-secondary rounded-pill" id="clasificaciones-count-badge">{{ tipos|length }} registros</span>
         </div>
         <div class="table-responsive">
           <table class="table table-sm table-hover align-middle mb-0">
@@ -345,11 +345,11 @@
                 <th class="fw-bold small text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody class="border-top" id="tipos-tbody"></tbody>
+            <tbody class="border-top" id="clasificaciones-tbody"></tbody>
           </table>
         </div>
         <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
-          <ul class="pagination pagination-sm mb-0" id="tipos-pager"></ul>
+          <ul class="pagination pagination-sm mb-0" id="clasificaciones-pager"></ul>
         </nav>
       </div>
     </div>
@@ -357,10 +357,10 @@
   </div><!-- /tab-content -->
 
 {{ materiales_json|json_script:"materiales-data" }}
-{{ tipos_json|json_script:"tipos-data" }}
+{{ tipos_json|json_script:"clasificaciones-data" }}
 {{ categorias_json|json_script:"categorias-data" }}
 {{ dist_categoria_mat|json_script:"dist-categoria-mat-data" }}
-{{ dist_tipo_mat|json_script:"dist-tipo-mat-data" }}
+{{ dist_clasificacion_mat|json_script:"dist-clasificacion-mat-data" }}
 {{ dist_estado_mat|json_script:"dist-estado-mat-data" }}
 {{ dist_estado_cat|json_script:"dist-estado-cat-data" }}
 {{ dist_estado_tipo|json_script:"dist-estado-tipo-data" }}
@@ -685,12 +685,12 @@
     <script>
     AdminCharts.initAll([
       { type: 'barH', canvas: 'chartMatCategoria', dataId: 'dist-categoria-mat-data', labelKey: 'categoria', color: AdminCharts.C.warning },
-      { type: 'barH', canvas: 'chartMatTipo', dataId: 'dist-tipo-mat-data', labelKey: 'tipo', color: AdminCharts.C.info },
+      { type: 'barH', canvas: 'chartMatClasificacion', dataId: 'dist-clasificacion-mat-data', labelKey: 'clasificacion', color: AdminCharts.C.info },
       { type: 'doughnut', canvas: 'chartMatEstado', dataId: 'dist-estado-mat-data', labelKey: 'estado' },
-      { type: 'doughnut', canvas: 'chartTipoEstado', dataId: 'dist-estado-tipo-data', labelKey: 'estado' },
+      { type: 'doughnut', canvas: 'chartClasificacionEstado', dataId: 'dist-estado-tipo-data', labelKey: 'estado' },
       { type: 'doughnut', canvas: 'chartCatEstado', dataId: 'dist-estado-cat-data', labelKey: 'estado' },
       { type: 'barH', canvas: 'chartMatPorCategoria', dataId: 'dist-categoria-mat-data', labelKey: 'categoria', color: AdminCharts.C.info },
-      { type: 'barH', canvas: 'chartMatPorTipo', dataId: 'dist-tipo-mat-data', labelKey: 'tipo', color: AdminCharts.C.warning },
+      { type: 'barH', canvas: 'chartMatPorClasificacion', dataId: 'dist-clasificacion-mat-data', labelKey: 'clasificacion', color: AdminCharts.C.warning },
     ]);
     </script>
     <script>
@@ -705,7 +705,7 @@
         ' data-nombre="' + escapeAttr(row.nombre) + '"' +
         ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
         ' data-categoria_id="' + escapeAttr(row.categoria_id) + '"' +
-        ' data-tipo_id="' + escapeAttr(row.tipo_id) + '"' +
+        ' data-clasificacion="' + escapeAttr(row.clasificacion) + '"' +
         ' data-estado="' + escapeAttr(row.estado) + '"' +
         ' data-action="' + escapeAttr(row.action_url) + '">' +
         '<i class="bi bi-pencil"></i></button>';
@@ -755,7 +755,7 @@
         pagerId: 'materiales-pager',
         rowIdPrefix: 'mat-',
         filterFns: [
-          function(row, q) { return (row.nombre + ' ' + row.descripcion + ' ' + row.categoria_nombre + ' ' + row.tipo_nombre).toLowerCase().indexOf(q) !== -1; }
+          function(row, q) { return (row.nombre + ' ' + row.descripcion + ' ' + row.categoria_nombre + ' ' + row.clasificacion).toLowerCase().indexOf(q) !== -1; }
         ],
         defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
         onAfterRender: reinitEditModales,
@@ -763,7 +763,7 @@
           { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
           { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
           { render: function(r) { return escapeHTML(r.categoria_nombre); } },
-          { render: function(r) { return escapeHTML(r.tipo_nombre); } },
+          { render: function(r) { return escapeHTML(r.clasificacion); } },
           { render: estadoBadge },
           { className: 'text-center', render: accionBtnMaterial }
         ]
@@ -782,14 +782,14 @@
           catSel.appendChild(opt);
         });
       }
-      var tipos = [...new Set(data.map(function(m) { return m.tipo_nombre; }))].sort();
-      var tipSel = document.getElementById('mat-filter-tipo');
-      if (tipSel) {
-        tipos.forEach(function(t) {
-          if (!t || t === '-') return;
+      var clasifs = [...new Set(data.map(function(m) { return m.clasificacion; }))].sort();
+      var clasifSel = document.getElementById('mat-filter-clasificacion');
+      if (clasifSel) {
+        clasifs.forEach(function(c) {
+          if (!c || c === '-') return;
           var opt = document.createElement('option');
-          opt.value = t; opt.textContent = t;
-          tipSel.appendChild(opt);
+          opt.value = c; opt.textContent = c;
+          clasifSel.appendChild(opt);
         });
       }
       $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
@@ -799,31 +799,31 @@
         var cat = $('#mat-filter-categoria').val() || '';
         if (cat) table.setExtraFilter('categoria_nombre', cat);
         else table.removeExtraFilter('categoria_nombre');
-        var tip = $('#mat-filter-tipo').val() || '';
-        if (tip) table.setExtraFilter('tipo_nombre', tip);
-        else table.removeExtraFilter('tipo_nombre');
+        var clasif = $('#mat-filter-clasificacion').val() || '';
+        if (clasif) table.setExtraFilter('clasificacion', clasif);
+        else table.removeExtraFilter('clasificacion');
       }
       function limpiarFiltros() {
         document.getElementById('materiales-search-input').value = '';
         $('#mat-filter-categoria').val('').trigger('change');
-        $('#mat-filter-tipo').val('').trigger('change');
+        $('#mat-filter-clasificacion').val('').trigger('change');
         table.setFilters('', {});
       }
       document.getElementById('materiales-search-btn').addEventListener('click', aplicarFiltros);
       document.getElementById('mat-filter-limpiar').addEventListener('click', limpiarFiltros);
-      $('#mat-filter-categoria, #mat-filter-tipo').on('change', aplicarFiltros);
+      $('#mat-filter-categoria, #mat-filter-clasificacion').on('change', aplicarFiltros);
       document.getElementById('materiales-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
       return table;
     }
 
-    function initTablaTipos() {
+    function initTablaClasificaciones() {
       var table = new AdminTable({
-        containerId: 'tipos-tbody',
-        data: readJSONData('tipos-data'),
+        containerId: 'clasificaciones-tbody',
+        data: readJSONData('clasificaciones-data'),
         pageSize: 10,
-        countBadgeId: 'tipos-count-badge',
-        pagerId: 'tipos-pager',
-        rowIdPrefix: 'tipo-',
+        countBadgeId: 'clasificaciones-count-badge',
+        pagerId: 'clasificaciones-pager',
+        rowIdPrefix: 'clasif-',
         filterFns: [
           function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
         ],
@@ -840,21 +840,21 @@
       table.setFilters('{{ q_tipo|escapejs }}', {});
       {% endif %}
       function aplicarFiltros() {
-        var q = document.getElementById('tipos-search-input')?.value || '';
+        var q = document.getElementById('clasificaciones-search-input')?.value || '';
         table.setSearch(q);
-        var est = $('#tipo-filter-estado').val() || '';
+        var est = $('#clasificacion-filter-estado').val() || '';
         if (est) table.setExtraFilter('estado', est);
         else table.removeExtraFilter('estado');
       }
       function limpiarFiltros() {
-        document.getElementById('tipos-search-input').value = '';
-        $('#tipo-filter-estado').val('').trigger('change');
+        document.getElementById('clasificaciones-search-input').value = '';
+        $('#clasificacion-filter-estado').val('').trigger('change');
         table.setFilters('', {});
       }
-      document.getElementById('tipos-search-btn').addEventListener('click', aplicarFiltros);
-      document.getElementById('tipo-filter-limpiar').addEventListener('click', limpiarFiltros);
-      $('#tipo-filter-estado').on('change', aplicarFiltros);
-      document.getElementById('tipos-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+      document.getElementById('clasificaciones-search-btn').addEventListener('click', aplicarFiltros);
+      document.getElementById('clasificacion-filter-limpiar').addEventListener('click', limpiarFiltros);
+      $('#clasificacion-filter-estado').on('change', aplicarFiltros);
+      document.getElementById('clasificaciones-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
       return table;
     }
 
@@ -878,7 +878,7 @@
         columns: [
           { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
           { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
-          { render: function(r) { return '<span class="badge bg-info text-dark">' + escapeHTML(r.tipo_nombre) + '</span>'; } },
+          { render: function(r) { return '<span class="badge bg-info text-dark">' + escapeHTML(r.clasificacion) + '</span>'; } },
           { render: estadoBadge },
           { className: 'text-center', render: accionBtnCategoria }
         ]
@@ -887,13 +887,13 @@
       table.setFilters('{{ q_cat|escapejs }}', {});
       {% endif %}
       function populateTipoFilter() {
-        var tipos = [...new Set(catData.map(function(c) { return c.tipo_nombre; }))].sort();
-        var sel = document.getElementById('cat-filter-tipo');
+        var clasifs = [...new Set(catData.map(function(c) { return c.clasificacion; }))].sort();
+        var sel = document.getElementById('cat-filter-clasificacion');
         if (!sel) return;
-        tipos.forEach(function(t) {
-          if (!t || t === '-') return;
+        clasifs.forEach(function(c) {
+          if (!c || c === '-') return;
           var opt = document.createElement('option');
-          opt.value = t; opt.textContent = t;
+          opt.value = c; opt.textContent = c;
           sel.appendChild(opt);
         });
       }
@@ -901,33 +901,33 @@
       function aplicarFiltros() {
         var q = document.getElementById('categorias-search-input')?.value || '';
         table.setSearch(q);
-        var tip = $('#cat-filter-tipo').val() || '';
-        if (tip) table.setExtraFilter('tipo_nombre', tip);
-        else table.removeExtraFilter('tipo_nombre');
+        var clasif = $('#cat-filter-clasificacion').val() || '';
+        if (clasif) table.setExtraFilter('clasificacion', clasif);
+        else table.removeExtraFilter('clasificacion');
         var est = $('#cat-filter-estado').val() || '';
         if (est) table.setExtraFilter('estado', est);
         else table.removeExtraFilter('estado');
       }
       function limpiarFiltros() {
         document.getElementById('categorias-search-input').value = '';
-        $('#cat-filter-tipo').val('').trigger('change');
+        $('#cat-filter-clasificacion').val('').trigger('change');
         $('#cat-filter-estado').val('').trigger('change');
         table.setFilters('', {});
       }
       document.getElementById('categorias-search-btn').addEventListener('click', aplicarFiltros);
       document.getElementById('cat-filter-limpiar').addEventListener('click', limpiarFiltros);
-      $('#cat-filter-tipo, #cat-filter-estado').on('change', aplicarFiltros);
+      $('#cat-filter-clasificacion, #cat-filter-estado').on('change', aplicarFiltros);
       document.getElementById('categorias-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
       return table;
     }
 
-    if (tab === 'tipos') { initTablaTipos(); }
+    if (tab === 'clasificaciones') { initTablaClasificaciones(); }
     else if (tab === 'categorias') { initTablaCategorias(); }
     else { initTablaMateriales(); }
 
     var materialesGestionUrl = '/panel_admin/materiales/gestion/';
     initModalFormAjax('formCrearMaterial', materialesGestionUrl + '?tab=materiales');
-    initModalFormAjax('formCrearTipo', materialesGestionUrl + '?tab=tipos');
+    initModalFormAjax('formCrearTipo', materialesGestionUrl + '?tab=clasificaciones');
     initModalFormAjax('formCrearCategoria', materialesGestionUrl + '?tab=categorias');
 
     initModalFormAjax('formEditarMaterial', globalThis.location.href);

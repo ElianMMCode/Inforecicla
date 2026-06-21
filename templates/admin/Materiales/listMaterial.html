@@ -47,9 +47,9 @@
           </select>
         </div>
         <div class="col-md-2">
-          <label for="mat-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
-          <select class="form-select js-select2" id="mat-filter-tipo">
-            <option value="">Todos los tipos</option>
+          <label for="mat-filter-clasificacion" class="form-label fw-semibold text-muted mb-1">Clasificación</label>
+          <select class="form-select js-select2" id="mat-filter-clasificacion">
+            <option value="">Todas las clasificaciones</option>
           </select>
         </div>
         <div class="col-md-3">
@@ -90,7 +90,7 @@
             <th class="fw-bold small">Nombre</th>
             <th class="fw-bold small">Descripción</th>
             <th class="fw-bold small">Categoría</th>
-            <th class="fw-bold small">Tipo</th>
+            <th class="fw-bold small">Clasificación</th>
             <th class="fw-bold small">Estado</th>
             <th class="fw-bold small text-center">Acciones</th>
           </tr>
@@ -131,7 +131,7 @@
       { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
       { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
       { render: function(r) { return escapeHTML(r.categoria_nombre); } },
-      { render: function(r) { return escapeHTML(r.tipo_nombre); } },
+      { render: function(r) { return escapeHTML(r.clasificacion); } },
       { render: estadoBadge },
       { className: 'text-center', render: function(r) { return '<a href="' + escapeAttr(r.action_url) + '" class="btn btn-outline-success btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>'; } }
     ]
@@ -150,15 +150,15 @@
         catSel.appendChild(opt);
       });
     }
-    // Populate tipo select
-    var tipos = [...new Set(data.map(function(m) { return m.tipo_nombre; }))].sort();
-    var tipSel = document.getElementById('mat-filter-tipo');
-    if (tipSel) {
-      tipos.forEach(function(t) {
-        if (!t || t === '-') return;
+    // Populate clasificacion select
+    var clasifs = [...new Set(data.map(function(m) { return m.clasificacion; }))].sort();
+    var clasifSel = document.getElementById('mat-filter-clasificacion');
+    if (clasifSel) {
+      clasifs.forEach(function(c) {
+        if (!c || c === '-') return;
         var opt = document.createElement('option');
-        opt.value = t; opt.textContent = t;
-        tipSel.appendChild(opt);
+        opt.value = c; opt.textContent = c;
+        clasifSel.appendChild(opt);
       });
     }
 
@@ -172,21 +172,21 @@
       if (cat) table.setExtraFilter('categoria_nombre', cat);
       else table.removeExtraFilter('categoria_nombre');
 
-      var tip = $('#mat-filter-tipo').val() || '';
-      if (tip) table.setExtraFilter('tipo_nombre', tip);
-      else table.removeExtraFilter('tipo_nombre');
+      var clasif = $('#mat-filter-clasificacion').val() || '';
+      if (clasif) table.setExtraFilter('clasificacion', clasif);
+      else table.removeExtraFilter('clasificacion');
     }
 
     function limpiarFiltros() {
       document.getElementById('mat-list-search').value = '';
       $('#mat-filter-categoria').val('').trigger('change');
-      $('#mat-filter-tipo').val('').trigger('change');
+      $('#mat-filter-clasificacion').val('').trigger('change');
       table.setFilters('', {});
     }
 
     document.getElementById('materiales-list-search-btn').addEventListener('click', aplicarFiltros);
     document.getElementById('mat-filter-limpiar').addEventListener('click', limpiarFiltros);
-    $('#mat-filter-categoria, #mat-filter-tipo').on('change', aplicarFiltros);
+    $('#mat-filter-categoria, #mat-filter-clasificacion').on('change', aplicarFiltros);
     document.getElementById('mat-list-search').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
 
     {% if search_query %}
