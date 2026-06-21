@@ -822,6 +822,13 @@
   // ===== MODAL CRUD =====
   function abrirEditarMaterial(matId){
     const m = getMatById(matId); if(!m.id)return;
+    // Populate category select
+    var catSel = document.getElementById('em-categoria');
+    if(catSel && catSel.options.length <= 1){
+      var catOpts = [...new Set(materiales.map(function(x){return x.categoria_nombre}).filter(Boolean))].sort();
+      catSel.innerHTML = '<option value="">Seleccionar categoría...</option>';
+      catOpts.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o)});
+    }
     document.getElementById('em-id').value = m.id;
     document.getElementById('em-nombre').value = m.nombre||'';
     document.getElementById('em-descripcion').value = m.descripcion||'';
