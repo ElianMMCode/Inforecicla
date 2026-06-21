@@ -963,6 +963,16 @@ globalThis.getCSRFToken = function () {
 
         {# TAB DATOS #}
         <div class="tab-pane-stack active" id="tab-datos">
+            {# Banner de alerta de clasificación (se muestra dinámicamente para PELIGROSO/HAZMAT) #}
+            <div id="inv-ws-clasificacion-alerta" class="alert d-none mb-3" role="alert">
+                <div class="d-flex align-items-start gap-3">
+                    <i id="inv-ws-clasificacion-alerta-icono" class="bi fs-2 flex-shrink-0"></i>
+                    <div>
+                        <h6 id="inv-ws-clasificacion-alerta-titulo" class="alert-heading fw-bold mb-1"></h6>
+                        <p id="inv-ws-clasificacion-alerta-desc" class="mb-0 small"></p>
+                    </div>
+                </div>
+            </div>
             <div class="card shadow-sm mb-3">
                 <div class="card-header bg-success-subtle border-0 px-4 py-3">
                     <h6 class="mb-0 fw-bold text-success">
@@ -976,7 +986,10 @@ globalThis.getCSRFToken = function () {
                             <dl class="row mb-0 small">
                                 <dt class="col-5 text-muted">Material</dt><dd class="col-7 fw-semibold" id="inv-ws-datos-material">—</dd>
                                 <dt class="col-5 text-muted">Categoría</dt><dd class="col-7" id="inv-ws-datos-categoria">—</dd>
-                                <dt class="col-5 text-muted">Clasificación</dt><dd class="col-7" id="inv-ws-datos-clasificacion">—</dd>
+                                <dt class="col-5 text-muted">Clasificación</dt>
+                                <dd class="col-7" id="inv-ws-datos-clasificacion">
+                                    <span id="inv-ws-datos-clasif-badge" class="d-inline-flex align-items-center gap-1"></span>
+                                </dd>
                                 <dt class="col-5 text-muted">Descripción</dt><dd class="col-7" id="inv-ws-datos-descripcion">—</dd>
                                 <dt class="col-5 text-muted">Info. Clasificación</dt><dd class="col-7 small text-muted" id="inv-ws-datos-clasif-desc">—</dd>
                             </dl>

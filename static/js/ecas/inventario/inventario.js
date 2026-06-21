@@ -172,9 +172,45 @@
         setText("inv-ws-datos-nombre", nombre);
         setText("inv-ws-datos-material", nombre);
         setText("inv-ws-datos-categoria", inv.categoria);
-        setText("inv-ws-datos-clasificacion", inv.clasificacion);
         setText("inv-ws-datos-descripcion", inv.descripcion || "—");
         setText("inv-ws-datos-clasif-desc", inv.descripcionClasificacion || "—");
+
+        // Clasificación con icono y badge en Hoja Técnica
+        const cls = inv.clasificacion || "";
+        const descCls = inv.descripcionClasificacion || "";
+        const clsConfig = {
+            'ESTANDAR':      { icon: 'bi-check-circle-fill',       color: 'text-success',  badge: 'bg-success',  label: 'Estándar' },
+            'MANEJO_ESPECIAL':{ icon: 'bi-exclamation-triangle-fill', color: 'text-warning', badge: 'bg-warning text-dark', label: 'Manejo Especial' },
+            'PELIGROSO':     { icon: 'bi-shield-exclamation-fill',  color: 'text-danger',   badge: 'bg-danger',   label: 'Peligroso' },
+            'HAZMAT':        { icon: 'bi-radiation',               color: 'text-dark',     badge: 'bg-dark',     label: 'HAZMAT' }
+        };
+        const clsInfo = clsConfig[cls] || { icon: 'bi-question-circle-fill', color: 'text-secondary', badge: 'bg-secondary', label: cls || '—' };
+
+        const clasifBadge = document.getElementById("inv-ws-datos-clasif-badge");
+        if (clasifBadge) {
+            clasifBadge.innerHTML = `<i class="bi ${clsInfo.icon} ${clsInfo.color}"></i> <span class="badge ${clsInfo.badge}">${escapeHtml(clsInfo.label)}</span>`;
+        }
+
+        // Banner de alerta para clasificaciones de riesgo
+        const alertaBanner = document.getElementById("inv-ws-clasificacion-alerta");
+        const alertaIcono = document.getElementById("inv-ws-clasificacion-alerta-icono");
+        const alertaTitulo = document.getElementById("inv-ws-clasificacion-alerta-titulo");
+        const alertaDesc = document.getElementById("inv-ws-clasificacion-alerta-desc");
+        if (alertaBanner && alertaIcono && alertaTitulo && alertaDesc) {
+            if (cls === 'PELIGROSO') {
+                alertaBanner.className = "alert alert-danger d-flex mb-3";
+                alertaIcono.className = "bi bi-shield-exclamation fs-2 flex-shrink-0 text-danger";
+                alertaTitulo.textContent = "⚠ Material Peligroso — Requiere manejo autorizado";
+                alertaDesc.textContent = descCls || "Riesgo químico o eléctrico. Requiere EPP y manejo autorizado.";
+            } else if (cls === 'HAZMAT') {
+                alertaBanner.className = "alert alert-dark d-flex mb-3";
+                alertaIcono.className = "bi bi-radiation fs-2 flex-shrink-0";
+                alertaTitulo.textContent = "☢ Residuo Peligroso HAZMAT — Solo gestores autorizados";
+                alertaDesc.textContent = descCls || "Residuo peligroso regulado. Transporte con manifiesto, disposición certificada.";
+            } else {
+                alertaBanner.className = "alert d-none mb-3";
+            }
+        }
         setText("inv-ws-datos-cap", `${formatQty(inv.capacidadMaxima, inv.unidad)}`);
         setText("inv-ws-datos-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-datos-unidad", inv.unidad);
