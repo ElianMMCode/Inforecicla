@@ -310,7 +310,25 @@ function renderResumen(){
   ).join('')||'<div class="p-3 text-muted text-center">Sin actividad reciente</div>';
 }
 
-/* ===== LISTADO - RANKING ===== */
+/* ===== PAGINATION HELPER ===== */
+function _goRankingPage(p){rankingPage=p;renderRanking(false);}
+function _goMsgsPage(p){msgsPage=p;renderMensajesListado(false);}
+
+function _renderPagination(page, total, setPageFn, containerId){
+  if(total<=1){document.getElementById(containerId).innerHTML='';return;}
+  let cls,h='<div class="d-flex align-items-center gap-1 flex-wrap"><span class="text-muted small me-2">Pag '+page+' de '+total+'</span>';
+  h+='<button class="btn btn-sm btn-outline-secondary" onclick="'+setPageFn+'(1)"'+(page<=1?' disabled':'')+'><i class="bi bi-chevron-double-left"></i></button>';
+  h+='<button class="btn btn-sm btn-outline-secondary" onclick="'+setPageFn+'('+(page-1)+')"'+(page<=1?' disabled':'')+'><i class="bi bi-chevron-left"></i></button>';
+  var s=Math.max(1,page-2),e=Math.min(total,page+2);
+  for(var p=s;p<=e;p++){
+    cls=p===page?'btn-success':'btn-outline-secondary';
+    h+='<button class="btn btn-sm '+cls+'" onclick="'+setPageFn+'('+p+')">'+p+'</button>';
+  }
+  h+='<button class="btn btn-sm btn-outline-secondary" onclick="'+setPageFn+'('+(page+1)+')"'+(page>=total?' disabled':'')+'><i class="bi bi-chevron-right"></i></button>';
+  h+='<button class="btn btn-sm btn-outline-secondary" onclick="'+setPageFn+'('+total+')"'+(page>=total?' disabled':'')+'><i class="bi bi-chevron-double-right"></i></button>';
+  h+='</div>';
+  document.getElementById(containerId).innerHTML=h;
+}
 let rankingSortCol='mov',rankingSortDir=-1;
 let rankingPage=1,rankingPerPage=20;
 function sortRanking(col){
@@ -425,28 +443,7 @@ function renderRanking(resetPage){
   }).join('')||'<tr><td colspan="'+totalCols+'" class="text-center text-muted py-3">Sin puntos con los filtros actuales.</td></tr>';
 
   document.getElementById('ranking-count-badge').textContent=totalRegistros+' registros';
-
-  /* Controles paginacion */
-  let pagHtml='';
-  if(totalPaginas>1){
-    pagHtml+='<div class="d-flex align-items-center gap-1 flex-wrap">';
-    pagHtml+='<span class="text-muted small me-2">Pag '+rankingPage+' de '+totalPaginas+'</span>';
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage=1;renderRanking(false)" '
-    + (rankingPage<=1?'disabled':'')+'><i class="bi bi-chevron-double-left"></i></button>';
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage--;renderRanking(false)" '
-    + (rankingPage<=1?'disabled':'')+'><i class="bi bi-chevron-left"></i></button>';
-    const startP=Math.max(1,rankingPage-2);const endP=Math.min(totalPaginas,rankingPage+2);
-    for(let pp=startP;pp<=endP;pp++){
-      pagHtml+='<button class="btn btn-sm '+(pp===rankingPage?'btn-success':'btn-outline-secondary')
-        +'" onclick="rankingPage='+pp+';renderRanking(false)">'+pp+'</button>';
-    }
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage++;renderRanking(false)" '
-    + (rankingPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-right"></i></button>';
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage='+totalPaginas+';renderRanking(false)" '
-    + (rankingPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-double-right"></i></button>';
-    pagHtml+='</div>';
-  }
-  document.getElementById('ranking-pagination').innerHTML=pagHtml;
+  _renderPagination(rankingPage,totalPaginas,'_goRankingPage','ranking-pagination');
 }
 
 /* ===== LISTADO - ESTADOS ===== */
@@ -736,22 +733,7 @@ function renderMensajesListado(resetPage){
 
   document.getElementById('msgs-tbody').innerHTML=pagina.map((c,i)=>'<tr><td class="fw-bold text-muted">'+(inicio+i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+c.punto+'</td><td style="font-size:.78rem">'+c.ciudadano+'</td><td style="font-size:.78rem;color:#6c757d">'+c.fecha+'</td><td class="text-center">'+c.msgs+'</td><td style="font-size:.78rem;max-width:200px" class="text-truncate">'+c.ultimo+'</td></tr>').join('')||'<tr><td colspan="6" class="text-center text-muted py-3">Sin conversaciones.</td></tr>';
   document.getElementById('msgs-count-badge').textContent=totalConvs+' conversaciones';
-
-  let pagHtml='';
-  if(totalPaginas>1){
-    pagHtml+='<div class="d-flex align-items-center gap-1 flex-wrap">';
-    pagHtml+='<span class="text-muted small me-2">Pag '+msgsPage+' de '+totalPaginas+'</span>';
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage=1;renderMensajesListado(false)" '+(msgsPage<=1?'disabled':'')+'><i class="bi bi-chevron-double-left"></i></button>';
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage--;renderMensajesListado(false)" '+(msgsPage<=1?'disabled':'')+'><i class="bi bi-chevron-left"></i></button>';
-    const startP=Math.max(1,msgsPage-2);const endP=Math.min(totalPaginas,msgsPage+2);
-    for(let pp=startP;pp<=endP;pp++){
-      pagHtml+='<button class="btn btn-sm '+(pp===msgsPage?'btn-success':'btn-outline-secondary')+'" onclick="msgsPage='+pp+';renderMensajesListado(false)">'+pp+'</button>';
-    }
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage++;renderMensajesListado(false)" '+(msgsPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-right"></i></button>';
-    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage='+totalPaginas+';renderMensajesListado(false)" '+(msgsPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-double-right"></i></button>';
-    pagHtml+='</div>';
-  }
-  document.getElementById('msgs-pagination').innerHTML=pagHtml;
+  _renderPagination(msgsPage,totalPaginas,'_goMsgsPage','msgs-pagination');
 }
 
 /* ===== DETALLE - TABS ===== */
