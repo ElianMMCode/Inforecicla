@@ -81,8 +81,8 @@
                             </a>
                         </div>
                         <div class="col-md-4 col-lg-2 col-6">
-                            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos" class="btn btn-outline-secondary w-100 py-2">
-                                <i class="bi bi-recycle me-1"></i> Nuevo Tipo Material
+                            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="btn btn-outline-secondary w-100 py-2">
+                                <i class="bi bi-shield-check me-1"></i> Nueva Clasificación
                             </a>
                         </div>
                         <div class="col-md-4 col-lg-2 col-6">
@@ -179,16 +179,16 @@
             </a>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos" class="text-decoration-none">
+            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="text-decoration-none">
                 <div class="kpi-card kpi-dark">
                     <div class="d-flex align-items-center gap-3 p-3">
                         <div class="kpi-icon-circle bg-dark bg-opacity-10 text-dark">
-                            <i class="bi bi-recycle"></i>
+                            <i class="bi bi-shield-check"></i>
                         </div>
                         <div>
                             <div class="kpi-value">{{ resumen_general.total_tipos_material }}</div>
-                            <div class="kpi-label">Tipos Material</div>
-                            <div class="kpi-sub">Clasificaciones</div>
+                            <div class="kpi-label">Clasificaciones</div>
+                            <div class="kpi-sub">Manejo de materiales</div>
                         </div>
                     </div>
                 </div>
@@ -333,7 +333,7 @@
         </div>
     </div>
 
-    <!-- ===== Charts: Puntos ECA por localidad + Materiales por categoría ===== -->
+    <!-- ===== Charts: Puntos ECA por localidad + Materiales por clasificacion ===== -->
     <div class="row g-3 mb-4">
         <div class="col-12 col-lg-6">
             <div class="card border-0 shadow-sm hover-lift h-100">
@@ -358,8 +358,8 @@
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-box-seam text-warning"></i>
-                            <h6 class="mb-0 fw-bold">Materiales por Categoría</h6>
+                            <i class="bi bi-shield-check text-warning"></i>
+                            <h6 class="mb-0 fw-bold">Materiales por Clasificación</h6>
                         </div>
                         <a href="{% url 'panel_admin:gestion_materiales' %}" class="btn btn-sm btn-outline-warning">
                             <i class="bi bi-arrow-right me-1"></i>Ver detalle
@@ -477,6 +477,7 @@
 {{ tendencia_usuarios|json_script:"tendencia-usuarios-data" }}
 {{ dist_puntos_eca|json_script:"puntos-eca-data" }}
 {{ dist_materiales|json_script:"materiales-data" }}
+{{ dist_clasificacion_mat|json_script:"clasificacion-data" }}
 <script>
 (function() {
     const COLORS = {
@@ -566,17 +567,17 @@
         });
     }
 
-    // 4. Materiales por categoría (Doughnut)
-    const catColors = ['#198754','#0dcaf0','#ffc107','#0d6efd','#6f42c1','#fd7e14','#20c997','#d63384','#6610f2','#dc3545'];
-    const datosMateriales = JSON.parse(document.getElementById('materiales-data').textContent);
-    if (datosMateriales.length) {
+    // 4. Materiales por clasificacion (Doughnut)
+    const clasifColors = ['#198754','#ffc107','#dc3545','#212529'];
+    const datosClasif = JSON.parse(document.getElementById('clasificacion-data').textContent);
+    if (datosClasif.length) {
         new Chart(document.getElementById('chartMateriales'), {
             type: 'doughnut',
             data: {
-                labels: datosMateriales.map(d => d.categoria),
+                labels: datosClasif.map(d => d.clasificacion),
                 datasets: [{
-                    data: datosMateriales.map(d => d.count),
-                    backgroundColor: catColors.slice(0, datosMateriales.length),
+                    data: datosClasif.map(d => d.count),
+                    backgroundColor: clasifColors.slice(0, datosClasif.length),
                     borderColor: '#fff',
                     borderWidth: 2,
                 }]

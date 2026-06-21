@@ -448,6 +448,20 @@ class AdminDashboardService:
             return {"count": 0, "materiales": []}
 
     @staticmethod
+    def obtener_materiales_sin_clasificacion():
+        try:
+            from django.db.models import Q
+            materiales = Material.objects.filter(
+                Q(clasificacion__isnull=True) | Q(clasificacion="")
+            ).only("id", "nombre")
+            return {
+                "count": materiales.count(),
+                "materiales": [{"id": m.id, "nombre": m.nombre} for m in materiales[:5]],
+            }
+        except Exception:
+            return {"count": 0, "materiales": []}
+
+    @staticmethod
     def obtener_publicaciones_pendientes():
         try:
             from apps.publicaciones.models import Publicacion

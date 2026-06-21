@@ -92,6 +92,24 @@
     </div>
     {% endif %}
 
+    {% if materiales_sin_clasificacion.count %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:gestion_materiales' %}" class="text-decoration-none">
+            <div class="alert-action-card border-warning">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-shield-exclamation"></i>
+                    </span>
+                    <span class="fw-bold text-warning small">Sin Clasificación</span>
+                </div>
+                <div class="alert-value text-warning">{{ materiales_sin_clasificacion.count }}</div>
+                <div class="alert-label">materiales sin clasificación de manejo</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Asignar clasificación</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
     {% if publicaciones_pendientes.count %}
     <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
         <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="text-decoration-none">

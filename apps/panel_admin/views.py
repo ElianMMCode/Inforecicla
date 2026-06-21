@@ -820,6 +820,8 @@ def admin(request):
         "gestores_sin_punto": AdminDashboardService.obtener_gestores_sin_punto(),
         "materiales_inactivos": AdminDashboardService.obtener_materiales_inactivos(),
         "publicaciones_pendientes": AdminDashboardService.obtener_publicaciones_pendientes(),
+        "materiales_sin_clasificacion": AdminDashboardService.obtener_materiales_sin_clasificacion(),
+        "dist_clasificacion_mat": AdminDashboardService.obtener_distribucion_materiales_por_clasificacion(),
     }
     return render(request, "admin/admin.html", contexto)
 
