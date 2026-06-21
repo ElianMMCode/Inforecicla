@@ -995,13 +995,26 @@ class AdminPuntoECAService:
     # ----------------------------------------------------------------
 
     @staticmethod
+    def _estado_inventario(invs):
+        criticos = sum(1 for i in invs if i.alerta == cons.Alerta.CRITICO)
+        alertas = sum(1 for i in invs if i.alerta == cons.Alerta.ALERTA)
+        oks = sum(1 for i in invs if i.alerta == cons.Alerta.OK)
+        if criticos:
+            return "Critico"
+        if alertas:
+            return "Alerta"
+        if oks:
+            return "OK"
+        return "Inactivo"
+
+    @staticmethod
     def obtener_puntos_dashboard():
         """Retorna lista de puntos con campos calculados (inventario,
         financieros, mensajes)."""
         from apps.inventory.models import Inventario
         from apps.operations.models import CompraInventario, VentaInventario
         from apps.chat.models import Chat, Mensaje
-        from django.db.models import Sum, Count, Max
+        from django.db.models import Sum
 
         puntos = []
         try:
@@ -1021,20 +1034,7 @@ class AdminPuntoECAService:
             invs = list(p.inventario_punto.all())
             stock_total = float(sum((i.ocupacion_actual or 0) for i in invs))
             cap_max = float(sum(i.capacidad_maxima for i in invs))
-
-            # peor estado entre los inventarios del punto
-            criticos = sum(1 for i in invs if i.alerta == cons.Alerta.CRITICO)
-            alertas = sum(1 for i in invs if i.alerta == cons.Alerta.ALERTA)
-            oks = sum(1 for i in invs if i.alerta == cons.Alerta.OK)
-            if criticos:
-                inv_estado = "Critico"
-            elif alertas:
-                inv_estado = "Alerta"
-            elif oks:
-                inv_estado = "OK"
-            else:
-                inv_estado = "Inactivo"
-
+            inv_estado = AdminPuntoECAService._estado_inventario(invs)
             estado_display = "Activo" if p.estado == cons.Estado.ACTIVO else "Inactivo"
 
             # Financiero: compras y ventas ultimo trimestre
@@ -1215,36 +1215,34 @@ class AdminPuntoECAService:
     # ----------------------------------------------------------------
 
     @staticmethod
+    @staticmethod
+    def _calcular_delta(actual, anterior):
+        return round(((actual - anterior) / anterior * 100), 1) if anterior else 0
+
+    @staticmethod
     def obtener_kpis(puntos=None):
         """Calcula los 8 KPIs globales a partir de la lista de puntos."""
         if puntos is None:
             puntos = AdminPuntoECAService.obtener_puntos_dashboard()
 
         total = len(puntos)
-        activos = [p for p in puntos if p["estado"] == "Activo"]
-        n_activos = len(activos)
+        n_activos = sum(1 for p in puntos if p["estado"] == "Activo")
         n_inactivos = total - n_activos
 
-        # Ocupacion promedio del sistema
         cap_total = sum(p["capMax"] for p in puntos)
         stock_total = sum(p["stockTotal"] for p in puntos)
         ocupacion_pct = round((stock_total / cap_total * 100), 1) if cap_total > 0 else 0
-
-        # Capacidad sistema
         capacidad_pct = round((cap_total / (cap_total or 1) * 100), 1)
 
-        # Flujo in/out (suma de cantidades en historial)
         historial = AdminPuntoECAService.obtener_historial(3)
         flujo_in = sum(h["kg"] for h in historial if h["tipo"] == "Compra")
         flujo_out = sum(h["kg"] for h in historial if h["tipo"] == "Venta")
 
-        # Ganancias y margen
         compras_total = sum(p["compras"] for p in puntos)
         ventas_total = sum(p["ventas"] for p in puntos)
         ganancia = round(ventas_total - compras_total, 2)
         margen_avg = round(((ventas_total - compras_total) / compras_total * 100), 1) if compras_total > 0 else 0
 
-        # Msgs sin respuesta
         from apps.chat.models import Mensaje as MsgModel
         sin_resp = 0
         try:
@@ -1252,9 +1250,7 @@ class AdminPuntoECAService:
         except Exception:
             pass
 
-        # Deltas (comparacion con trimestre anterior — placeholder si no hay datos)
-        delta = lambda actual, anterior: round(((actual - anterior) / anterior * 100), 1) if anterior else 0
-
+        _d = AdminPuntoECAService._calcular_delta
         return {
             "total_puntos": total,
             "activos": n_activos,
@@ -1269,14 +1265,14 @@ class AdminPuntoECAService:
             "margen_pct": margen_avg,
             "msgs_sin_resp": sin_resp,
             "deltas": {
-                "ocupacion": delta(ocupacion_pct, ocupacion_pct * 0.92),
-                "flujo_in": delta(flujo_in, flujo_in * 0.88),
-                "flujo_out": delta(flujo_out, flujo_out * 1.05),
-                "margen": delta(margen_avg, margen_avg * 0.85),
-                "ganancia": delta(ganancia, ganancia * 0.78),
-                "activos": delta(n_activos, n_activos * 0.9),
-                "capacidad": delta(capacidad_pct, capacidad_pct * 0.95),
-                "msgs": delta(sin_resp, sin_resp * 1.2),
+                "ocupacion": _d(ocupacion_pct, ocupacion_pct * 0.92),
+                "flujo_in": _d(flujo_in, flujo_in * 0.88),
+                "flujo_out": _d(flujo_out, flujo_out * 1.05),
+                "margen": _d(margen_avg, margen_avg * 0.85),
+                "ganancia": _d(ganancia, ganancia * 0.78),
+                "activos": _d(n_activos, n_activos * 0.9),
+                "capacidad": _d(capacidad_pct, capacidad_pct * 0.95),
+                "msgs": _d(sin_resp, sin_resp * 1.2),
             },
             "puntos_por_gestor": AdminPuntoECAService._agrupar_por_gestor(puntos),
             "top_materiales": AdminPuntoECAService._top_materiales(),
