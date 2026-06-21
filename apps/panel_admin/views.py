@@ -1915,36 +1915,39 @@ def _actualizar_gestor_eca(punto, request):
 
 
 def _procesar_edicion_punto(punto, punto_id, request, is_ajax):
+    resultado = None
+    error_gestor = None
     try:
         with transaction.atomic():
             error_gestor = _actualizar_gestor_eca(punto, request)
-            if error_gestor:
-                if is_ajax:
-                    return JsonResponse({"ok": False, "message": error_gestor})
-                messages.error(request, error_gestor)
-                return render(
-                    request, "admin/PuntoECA/editPuntoECA.html",
-                    {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
-                     "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
-                     "form_data": request.POST, "errores": [error_gestor]},
-                )
-            resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
-
-        if is_ajax:
-            return JsonResponse(resultado)
-        if resultado["ok"]:
-            messages.success(request, resultado["message"])
-            return redirect(LISTAR_PUNTOS_ECA_URL)
-        messages.error(request, resultado["message"])
-        punto.refresh_from_db()
-        return None
+            if not error_gestor:
+                resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
     except (IntegrityError, ValidationError) as e:
-        error_msg = f"Error al actualizar: {e}"
-        if is_ajax:
-            return JsonResponse({"ok": False, "message": error_msg})
-        messages.error(request, error_msg)
+        error_gestor = f"Error al actualizar: {e}"
+
+    if error_gestor:
         punto.refresh_from_db()
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": error_gestor})
+        messages.error(request, error_gestor)
+        return render(
+            request, "admin/PuntoECA/editPuntoECA.html",
+            {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
+             "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
+             "form_data": request.POST, "errores": [error_gestor]},
+        )
+
+    if resultado is None:
         return None
+
+    if is_ajax:
+        return JsonResponse(resultado)
+    if resultado["ok"]:
+        messages.success(request, resultado["message"])
+        return redirect(LISTAR_PUNTOS_ECA_URL)
+    messages.error(request, resultado["message"])
+    punto.refresh_from_db()
+    return None
 
 
 @login_required(login_url="/login/")

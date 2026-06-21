@@ -1008,10 +1008,37 @@ class AdminPuntoECAService:
         return "Inactivo"
 
     @staticmethod
+    def _punto_to_dict(p, stock_total, cap_max, inv_estado, estado_display, compras, ventas, margen, msgs):
+        return {
+            "id": str(p.id),
+            "nombre": p.nombre or "",
+            "direccion": p.direccion or "",
+            "localidad": p.localidad.nombre if p.localidad else "-",
+            "localidad_id": str(p.localidad.localidad_id) if p.localidad else "",
+            "gestor": f"{p.gestor_eca.nombres} {p.gestor_eca.apellidos}" if p.gestor_eca else "Sin gestor",
+            "estado": estado_display,
+            "invEstado": inv_estado,
+            "stockTotal": stock_total,
+            "capMax": cap_max,
+            "lat": float(p.latitud) if p.latitud else 4.6097,
+            "lng": float(p.longitud) if p.longitud else -74.0818,
+            "compras": compras,
+            "ventas": ventas,
+            "margen": margen,
+            "msgs": msgs,
+            "fecha_creacion": p.fecha_creacion.strftime("%Y-%m-%d") if p.fecha_creacion else "",
+            "email": p.email or "",
+            "celular": p.celular or "",
+            "telefono_punto": p.telefono_punto or "",
+            "sitio_web": p.sitio_web or "",
+            "horario_atencion": p.horario_atencion or "",
+            "descripcion": p.descripcion or "",
+        }
+
+    @staticmethod
     def obtener_puntos_dashboard():
         """Retorna lista de puntos con campos calculados (inventario,
         financieros, mensajes)."""
-        from apps.inventory.models import Inventario
         from apps.operations.models import CompraInventario, VentaInventario
         from apps.chat.models import Chat, Mensaje
         from django.db.models import Sum
@@ -1037,49 +1064,22 @@ class AdminPuntoECAService:
             inv_estado = AdminPuntoECAService._estado_inventario(invs)
             estado_display = "Activo" if p.estado == cons.Estado.ACTIVO else "Inactivo"
 
-            # Financiero: compras y ventas ultimo trimestre
             inv_ids = [i.id for i in invs]
-            compras_qs = (
-                CompraInventario.objects.filter(inventario_id__in=inv_ids, fecha_compra__gte=inicio_trimestre)
-                .aggregate(total=Sum("precio_compra"))
-            )
-            ventas_qs = (
-                VentaInventario.objects.filter(inventario_id__in=inv_ids, fecha_venta__gte=inicio_trimestre)
-                .aggregate(total=Sum("precio_venta"))
-            )
-            compras = float(compras_qs["total"] or 0)
-            ventas = float(ventas_qs["total"] or 0)
+            compras = float((
+                CompraInventario.objects.filter(
+                    inventario_id__in=inv_ids, fecha_compra__gte=inicio_trimestre
+                ).aggregate(total=Sum("precio_compra"))["total"] or 0))
+            ventas = float((
+                VentaInventario.objects.filter(
+                    inventario_id__in=inv_ids, fecha_venta__gte=inicio_trimestre
+                ).aggregate(total=Sum("precio_venta"))["total"] or 0))
             margen = round(((ventas - compras) / compras * 100), 1) if compras > 0 else 0
 
-            # Mensajes totales en todos los chats del punto
             chats_ids = Chat.objects.filter(punto=p).values_list("id", flat=True)
             msgs = Mensaje.objects.filter(chat_id__in=chats_ids).count()
 
-            puntos.append({
-                "id": str(p.id),
-                "nombre": p.nombre or "",
-                "direccion": p.direccion or "",
-                "localidad": p.localidad.nombre if p.localidad else "-",
-                "localidad_id": str(p.localidad.localidad_id) if p.localidad else "",
-                "gestor": f"{p.gestor_eca.nombres} {p.gestor_eca.apellidos}" if p.gestor_eca else "Sin gestor",
-                "estado": estado_display,
-                "invEstado": inv_estado,
-                "stockTotal": stock_total,
-                "capMax": cap_max,
-                "lat": float(p.latitud) if p.latitud else 4.6097,
-                "lng": float(p.longitud) if p.longitud else -74.0818,
-                "compras": compras,
-                "ventas": ventas,
-                "margen": margen,
-                "msgs": msgs,
-                "fecha_creacion": p.fecha_creacion.strftime("%Y-%m-%d") if p.fecha_creacion else "",
-                "email": p.email or "",
-                "celular": p.celular or "",
-                "telefono_punto": p.telefono_punto or "",
-                "sitio_web": p.sitio_web or "",
-                "horario_atencion": p.horario_atencion or "",
-                "descripcion": p.descripcion or "",
-            })
+            puntos.append(AdminPuntoECAService._punto_to_dict(
+                p, stock_total, cap_max, inv_estado, estado_display, compras, ventas, margen, msgs))
         return puntos
 
     @staticmethod
@@ -1250,7 +1250,15 @@ class AdminPuntoECAService:
         except Exception:
             pass
 
-        _d = AdminPuntoECAService._calcular_delta
+        d_ocupacion = AdminPuntoECAService._calcular_delta(ocupacion_pct, ocupacion_pct * 0.92)
+        d_flujo_in = AdminPuntoECAService._calcular_delta(flujo_in, flujo_in * 0.88)
+        d_flujo_out = AdminPuntoECAService._calcular_delta(flujo_out, flujo_out * 1.05)
+        d_margen = AdminPuntoECAService._calcular_delta(margen_avg, margen_avg * 0.85)
+        d_ganancia = AdminPuntoECAService._calcular_delta(ganancia, ganancia * 0.78)
+        d_activos = AdminPuntoECAService._calcular_delta(n_activos, n_activos * 0.9)
+        d_capacidad = AdminPuntoECAService._calcular_delta(capacidad_pct, capacidad_pct * 0.95)
+        d_msgs = AdminPuntoECAService._calcular_delta(sin_resp, sin_resp * 1.2)
+
         return {
             "total_puntos": total,
             "activos": n_activos,
@@ -1265,14 +1273,10 @@ class AdminPuntoECAService:
             "margen_pct": margen_avg,
             "msgs_sin_resp": sin_resp,
             "deltas": {
-                "ocupacion": _d(ocupacion_pct, ocupacion_pct * 0.92),
-                "flujo_in": _d(flujo_in, flujo_in * 0.88),
-                "flujo_out": _d(flujo_out, flujo_out * 1.05),
-                "margen": _d(margen_avg, margen_avg * 0.85),
-                "ganancia": _d(ganancia, ganancia * 0.78),
-                "activos": _d(n_activos, n_activos * 0.9),
-                "capacidad": _d(capacidad_pct, capacidad_pct * 0.95),
-                "msgs": _d(sin_resp, sin_resp * 1.2),
+                "ocupacion": d_ocupacion, "flujo_in": d_flujo_in,
+                "flujo_out": d_flujo_out, "margen": d_margen,
+                "ganancia": d_ganancia, "activos": d_activos,
+                "capacidad": d_capacidad, "msgs": d_msgs,
             },
             "puntos_por_gestor": AdminPuntoECAService._agrupar_por_gestor(puntos),
             "top_materiales": AdminPuntoECAService._top_materiales(),
