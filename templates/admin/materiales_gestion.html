@@ -821,7 +821,7 @@
         return [...new Set(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.categoria_nombre===c.nombre}).map(function(inv){return String(inv.puntoId)}))].length;
       });
       if(document.getElementById('chartCatPuntosPorCat')){
-        charts.catPuntosPorCat = new Chart(document.getElementById('chartCatPuntosPorCat'),{type:'bar',data:{labels:catNames,datasets:[{label:'Puntos ECA',data:catPuntos,backgroundColor:['#ffc107','#198754','#0dcaf0','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2'].slice(0,catNames.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'puntos'},ticks:{stepSize:1}}}}});
+        charts.catPuntosPorCat = new Chart(document.getElementById('chartCatPuntosPorCat'),{type:'bar',data:{labels:catNames,datasets:[{label:'Puntos ECA',data:catPuntos,backgroundColor:['#ffc107','#198754','#0dcaf0','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2'].slice(0,catNames.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'puntos'},ticks:{precision:0}}}}});
       }
     }
 
