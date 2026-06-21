@@ -85,8 +85,6 @@
   <li class="nav-item"><button class="nav-link" onclick="switchMatTab('inventario',this)"><i class="bi bi-diagram-3 me-1"></i>Inventario por Material</button></li>
   <li class="nav-item"><button class="nav-link" onclick="switchMatTab('flujo',this)"><i class="bi bi-graph-up me-1"></i>Flujo de Materiales</button></li>
   <li class="nav-item"><button class="nav-link" onclick="switchMatTab('historial',this)"><i class="bi bi-clock-history me-1"></i>Historial Global</button></li>
-  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('kpis',this)"><i class="bi bi-bar-chart-line me-1"></i>KPIs Agregados</button></li>
-  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('categorias',this)"><i class="bi bi-folder me-1"></i>Categorías</button></li>
   <li class="nav-item"><button class="nav-link" onclick="switchMatTab('clasificaciones',this)"><i class="bi bi-shield-check me-1"></i>Clasificaciones</button></li>
 </ul>
 
@@ -96,6 +94,10 @@
     <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Por Categoría</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:280px;width:100%"><canvas id="chartCatCategoria" style="max-height:260px"></canvas></div></div></div></div>
     <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-shield-check text-info me-1"></i>Por Clasificación</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:280px;width:100%"><canvas id="chartCatClasificacion" style="max-height:260px"></canvas></div></div></div></div>
     <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:200px;width:100%"><canvas id="chartCatEstado" style="max-height:260px"></canvas></div></div></div></div>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Top 10 Materiales por Stock Total</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopStock"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash-stack text-warning me-1"></i>Top 10 Materiales por Valor</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopValor"></canvas></div></div></div>
   </div>
 
   <div class="card shadow-sm border-0">
@@ -190,6 +192,10 @@
     <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="flujo-utilidad-periodo">--</div><div class="kpi-lbl">Utilidad Estimada</div></div></div>
   </div>
   <div class="card chart-card mb-3"><div class="card-body" style="height:380px"><canvas id="chartFlujo"></canvas></div></div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto (Compras vs Ventas)</h6></div><div class="card-body" style="height:260px"><canvas id="chartKPIsFlujoNeto"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:240px;width:100%"><canvas id="chartKPIsSalud"></canvas></div></div></div></div>
+  </div>
   <div id="flujo-detalle-pane" style="display:none">
     <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash me-1"></i>Ganancia ($) por Material × Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoDetalle"></canvas></div></div>
     <div class="card shadow-sm border-0"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark small"><i class="bi bi-trophy me-1"></i>Ranking de Materiales</h6></div><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Material</th><th>Ganancia Total</th><th>Volumen</th><th>Margen Prom.</th><th>Puntos</th></tr></thead><tbody id="flujo-rank-tbody"></tbody></table></div></div>
@@ -238,48 +244,30 @@
   </div>
 </div>
 
-<!-- ===== TAB 5: KPIs AGREGADOS ===== -->
-<div class="mat-tab-pane" id="mat-pane-kpis">
-  <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="kpis-total-stock">--</div><div class="kpi-lbl">Stock Total (kg)</div></div></div>
-    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-info" id="kpis-cap-total">--</div><div class="kpi-lbl">Cap. Total</div></div></div>
-    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="kpis-valor-total">--</div><div class="kpi-lbl">Valor Inventario</div></div></div>
-    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="kpis-ocupacion-prom">--</div><div class="kpi-lbl">Ocupación Prom.</div></div></div>
-  </div>
-  <div class="row g-3 mb-3">
-    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Top 10 Materiales por Stock Total</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopStock"></canvas></div></div></div>
-    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash-stack text-warning me-1"></i>Top 10 Materiales por Valor</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopValor"></canvas></div></div></div>
-  </div>
-  <div class="row g-3 mb-3">
-    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:220px;width:100%"><canvas id="chartKPIsSalud"></canvas></div></div></div></div>
-    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto</h6></div><div class="card-body" style="height:260px"><canvas id="chartKPIsFlujoNeto"></canvas></div></div></div>
-    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-shield-check text-info me-1"></i>Dist. de Clasificaciones</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:220px;width:100%"><canvas id="chartKPIsClasif"></canvas></div></div></div></div>
-  </div>
-  <div class="row g-3 mb-3">
-    <div class="col-12 col-lg-8"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Top 10 Puntos por Movimiento</h6></div><div class="card-body" style="height:300px"><canvas id="chartKPIsClasifPorPunto"></canvas></div></div></div>
-    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-geo-alt text-primary me-1"></i>Distribución por Punto</h6></div><div class="card-body" style="height:300px;overflow-y:auto" id="kpis-pts-list"></div></div></div>
-  </div>
-  <div class="row g-3">
-    <div class="col-12"><div class="card chart-card"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-table text-success me-1"></i>Resumen Agregado de Materiales</h6></div><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Material</th><th>Clasificación</th><th>Stock Total</th><th>Ocupación</th><th>Puntos</th><th>Precio Compra</th><th>Precio Venta</th><th>Margen</th><th>Vol. Compras</th><th>Vol. Ventas</th><th>Estado</th></tr></thead><tbody id="kpis-resumen-tbody"></tbody></table></div></div></div>
-  </div>
-</div>
-
-<!-- ===== TAB 6: CATEGORÍAS ===== -->
+<!-- ===== TAB 5: CATEGORÍAS ===== -->
 <div class="mat-tab-pane" id="mat-pane-categorias">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div><h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-folder me-2"></i>Categorías de Materiales</h2><p class="text-muted small mb-0">Administra las categorías que agrupan los materiales reciclables.</p></div>
     <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gcat-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gcat')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gcat')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria"><i class="bi bi-plus-circle me-1"></i> Nueva Categoría</button></div>
   </div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-info me-1"></i>Materiales por Categoría</h6></div><div class="card-body" style="height:280px"><canvas id="chartCatMatPorCat"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-warning me-1"></i>Distribución de Estados</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:200px;width:100%"><canvas id="chartCatEstadoCat"></canvas></div></div></div></div>
+  </div>
   <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción</th><th>Materiales</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gcat-tbody"></tbody></table></div><div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gcat-pager-info"></small><nav><ul class="pagination pagination-sm mb-0" id="gcat-pager"></ul></nav></div></div>
 </div>
 
-<!-- ===== TAB 7: CLASIFICACIONES ===== -->
+<!-- ===== TAB 6: CLASIFICACIONES ===== -->
 <div class="mat-tab-pane" id="mat-pane-clasificaciones">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div><h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-shield-check me-2"></i>Clasificaciones de Manejo</h2><p class="text-muted small mb-0">Define los niveles de riesgo y advertencias de manipulación para los materiales.</p></div>
     <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gclas-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gclas')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gclas')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaClasificacion"><i class="bi bi-plus-circle me-1"></i> Nueva Clasificación</button></div>
   </div>
   <div class="alert alert-info small py-2 mb-3"><i class="bi bi-info-circle me-1"></i>Las clasificaciones definen el nivel de riesgo y las advertencias de manipulación para cada material.</div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-shield-check text-info me-1"></i>Distribución de Clasificaciones</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:220px;width:100%"><canvas id="chartKPIsClasif"></canvas></div></div></div></div>
+    <div class="col-12 col-lg-8"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Top 10 Puntos por Movimiento</h6></div><div class="card-body" style="height:300px"><canvas id="chartKPIsClasifPorPunto"></canvas></div></div></div>
+  </div>
   <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción (advertencia de manejo)</th><th>Materiales</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gclas-tbody"></tbody></table></div><div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gclas-pager-info"></small><nav><ul class="pagination pagination-sm mb-0" id="gclas-pager"></ul></nav></div></div>
 </div>
 
@@ -476,7 +464,6 @@
     if(tab==='inventario') renderInventarioPorMaterial();
     if(tab==='flujo') renderFlujo();
     if(tab==='historial') renderHistorial();
-    if(tab==='kpis') renderKPIs();
     if(tab==='categorias') renderGestionCategorias();
     if(tab==='clasificaciones') renderGestionClasificaciones();
   }
@@ -504,6 +491,17 @@
         charts.catClasificacion=new Chart(document.getElementById('chartCatClasificacion'),{type:'doughnut',data:{labels:Object.keys(clas),datasets:[{data:Object.values(clas),backgroundColor:['#198754','#ffc107','#fd7e14','#212529','#adb5bd']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
         const ests={};materiales.forEach(m=>{ests[m.estado||'?']=(ests[m.estado||'?']||0)+1});
         charts.catEstado=new Chart(document.getElementById('chartCatEstado'),{type:'doughnut',data:{labels:Object.keys(ests),datasets:[{data:Object.values(ests),backgroundColor:['#198754','#adb5bd','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+      }
+      // Top 10 Stock + Top 10 Valor (moved from old KPIs tab)
+      var matStock={};inventario.forEach(function(inv){var k=String(inv.matId);matStock[k]=(matStock[k]||0)+inv.stock});
+      var topStock=Object.entries(matStock).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
+      if(document.getElementById('chartKPIsTopStock')){
+        charts.catTopStock=new Chart(document.getElementById('chartKPIsTopStock'),{type:'bar',data:{labels:topStock.map(function(e){return (getMatById(e[0]).nombre||'').substring(0,12)}),datasets:[{label:'Stock (kg)',data:topStock.map(function(e){return e[1]}),backgroundColor:'#198754',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+      }
+      var matValor={};inventario.forEach(function(inv){var k=String(inv.matId);matValor[k]=(matValor[k]||0)+inv.stock*inv.venta});
+      var topValor=Object.entries(matValor).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
+      if(document.getElementById('chartKPIsTopValor')){
+        charts.catTopValor=new Chart(document.getElementById('chartKPIsTopValor'),{type:'bar',data:{labels:topValor.map(function(e){return (getMatById(e[0]).nombre||'').substring(0,12)}),datasets:[{label:'Valor ($)',data:topValor.map(function(e){return Math.round(e[1])}),backgroundColor:'#ffc107',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'\$ COP'}}}}});
       }
       charts._catalogoInit = true;
     }
@@ -648,6 +646,21 @@
     });
     charts.flujo = new Chart(document.getElementById('chartFlujo'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});
 
+    // Flujo Neto + Salud charts (first time only)
+    if(!charts._flujoExtraInit && document.getElementById('chartKPIsFlujoNeto')){
+      charts._flujoExtraInit = true;
+      var flujoLabels = ['Ene','Feb','Mar','Abr','May','Jun'];
+      var flujoCompras = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Compra'}).reduce(function(s,m){return s+m.kg},0)/6)});
+      var flujoVentas = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Venta'}).reduce(function(s,m){return s+m.kg},0)/6)});
+      charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:flujoLabels,datasets:[{label:'Compras',data:flujoCompras,backgroundColor:'#198754',borderRadius:4},{label:'Ventas',data:flujoVentas,backgroundColor:'#dc3545',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+
+      var salud = {OK:0,Alerta:0,'Crítico':0};
+      inventario.forEach(function(inv){salud[getInvEstado(inv).estado]++});
+      if(document.getElementById('chartKPIsSalud')){
+        charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'doughnut',data:{labels:Object.keys(salud),datasets:[{data:Object.values(salud),backgroundColor:['#198754','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+      }
+    }
+
     if(flujoSubMode==='detalle'){
       destroyChart('flujoDetalle');
       const ptLabels = puntos.slice(0,8).map(p=>(p.nombre||'').substring(0,14));
@@ -714,86 +727,7 @@
     histPage = 1;renderHistorial();
   }
 
-  // ===== TAB 5: KPIs AGREGADOS =====
-  function renderKPIs(){
-    const invs = inventario;
-    const totalStock = invs.reduce((s,inv)=>s+inv.stock,0);
-    const capTotal = invs.reduce((s,inv)=>s+inv.cap,0);
-    const valorTotal = Math.round(invs.reduce((s,inv)=>s+inv.stock*inv.venta,0));
-    const occProm = capTotal>0 ? Math.round(totalStock/capTotal*100) : 0;
-    const ptsCriticos = invs.filter(inv=>getInvEstado(inv).estado==='Crítico').length;
-    const matsUnicos = [...new Set(invs.map(inv=>String(inv.matId)))].length;
-
-    document.getElementById('kpis-total-stock').textContent = totalStock.toLocaleString();
-    document.getElementById('kpis-cap-total').textContent = capTotal.toLocaleString();
-    document.getElementById('kpis-valor-total').textContent = '$'+valorTotal.toLocaleString();
-    document.getElementById('kpis-ocupacion-prom').textContent = occProm+'%';
-    const elCrit = document.getElementById('kpis-pts-criticos'); if(elCrit) elCrit.textContent = ptsCriticos;
-    const elUni = document.getElementById('kpis-mat-unicos'); if(elUni) elUni.textContent = matsUnicos;
-
-    if(typeof Chart!=='undefined'){
-      destroyChart('kpisTopStock');destroyChart('kpisTopValor');destroyChart('kpisSalud');destroyChart('kpisFlujoNeto');destroyChart('kpisClasif');destroyChart('kpisClasifPorPunto');
-      const matStock = {};invs.forEach(inv=>{matStock[String(inv.matId)] = (matStock[String(inv.matId)]||0)+inv.stock});
-      const topStock = Object.entries(matStock).sort((a,b)=>b[1]-a[1]).slice(0,10);
-      charts.kpisTopStock = new Chart(document.getElementById('chartKPIsTopStock'),{type:'bar',data:{labels:topStock.map(([id])=>(getMatById(id).nombre||'').substring(0,12)),datasets:[{label:'Stock (kg)',data:topStock.map(([,v])=>v),backgroundColor:'#198754',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
-      const matValor = {};invs.forEach(inv=>{matValor[String(inv.matId)] = (matValor[String(inv.matId)]||0)+inv.stock*inv.venta});
-      const topValor = Object.entries(matValor).sort((a,b)=>b[1]-a[1]).slice(0,10);
-      charts.kpisTopValor = new Chart(document.getElementById('chartKPIsTopValor'),{type:'bar',data:{labels:topValor.map(([id])=>(getMatById(id).nombre||'').substring(0,12)),datasets:[{label:'Valor ($)',data:topValor.map(([,v])=>Math.round(v)),backgroundColor:'#ffc107',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'$ COP'}}}}});
-      const salud = {OK:0,Alerta:0,'Crítico':0};invs.forEach(inv=>{salud[getInvEstado(inv).estado]++});
-      charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'doughnut',data:{labels:Object.keys(salud),datasets:[{data:Object.values(salud),backgroundColor:['#198754','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
-      const flujoLabels = ['Ene','Feb','Mar','Abr','May','Jun'];
-      const flujoCompras = flujoLabels.map(()=>Math.round(historialMov.filter(m=>m.tipo==='Compra').reduce((s,m)=>s+m.kg,0)/6));
-      const flujoVentas = flujoLabels.map(()=>Math.round(historialMov.filter(m=>m.tipo==='Venta').reduce((s,m)=>s+m.kg,0)/6));
-      charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:flujoLabels,datasets:[{label:'Compras',data:flujoCompras,backgroundColor:'#198754',borderRadius:4},{label:'Ventas',data:flujoVentas,backgroundColor:'#dc3545',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
-
-      const clasCount = {};clasificaciones.forEach(c=>{clasCount[c.nombre]=0});
-      invs.forEach(inv=>{const m=getMatById(inv.matId);if(m.clasificacion)clasCount[m.clasificacion]=(clasCount[m.clasificacion]||0)+1;});
-      const clasLabels = Object.keys(clasCount).filter(k=>clasCount[k]>0);
-      charts.kpisClasif = new Chart(document.getElementById('chartKPIsClasif'),{type:'doughnut',data:{labels:clasLabels,datasets:[{data:clasLabels.map(k=>clasCount[k]),backgroundColor:['#198754','#ffc107','#fd7e14','#212529']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
-
-      const clasLevels = clasificaciones.map(c=>c.nombre);
-      const clasColorsMap = {'ESTANDAR':'#198754','MANEJO_ESPECIAL':'#ffc107','PELIGROSO':'#fd7e14','HAZMAT':'#212529'};
-      const puntosRank = puntos.map(p=>{const total = inventario.filter(inv=>String(inv.puntoId)===String(p.id)).length;return {punto:p, total};}).sort((a,b)=>b.total-a.total).slice(0,10);
-      const ptLabels = puntosRank.map(r=>(r.punto.nombre||'').substring(0,16));
-      const datasetsClasPunto = clasLevels.map(clas=>({label:clas,data:puntosRank.map(r=>inventario.filter(inv=>String(inv.puntoId)===String(r.punto.id)&&getMatById(inv.matId).clasificacion===clas).length),backgroundColor:clasColorsMap[clas]||'#6c757d',borderRadius:0})).filter(ds=>ds.data.some(v=>v>0));
-      charts.kpisClasifPorPunto = new Chart(document.getElementById('chartKPIsClasifPorPunto'),{type:'bar',data:{labels:ptLabels,datasets:datasetsClasPunto},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'# materiales'}},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
-    }
-
-    document.getElementById('kpis-pts-list').innerHTML = puntos.map(p=>{
-      const ptInvs = invs.filter(inv=>String(inv.puntoId)===String(p.id));
-      const stock = ptInvs.reduce((s,inv)=>s+inv.stock,0);
-      const cap = ptInvs.reduce((s,inv)=>s+inv.cap,0);
-      const pct = cap>0 ? Math.round(stock/cap*100) : 0;
-      const color = pct>=90?'#dc3545':pct>=70?'#ffc107':'#198754';
-      return '<div class="d-flex align-items-center gap-2 mb-2 p-2 rounded" style="background:#f8f9fa"><span class="fw-semibold" style="font-size:.78rem;flex:1">'+escapeHTML((p.nombre||'').substring(0,20))+'</span><span style="font-size:.75rem;color:#6c757d">'+stock+'/'+cap+'</span><span class="badge" style="font-size:.65rem;background:'+color+';color:#fff">'+pct+'%</span></div>';
-    }).join('');
-
-    const resumenData = [...new Set(invs.map(inv=>String(inv.matId)))].map(matId=>{
-      const matInvs = invs.filter(inv=>String(inv.matId)===matId);
-      const mat = getMatById(matId);
-      const totalS = matInvs.reduce((s,inv)=>s+inv.stock,0);
-      const totalC = matInvs.reduce((s,inv)=>s+inv.cap,0);
-      const occ = totalC>0?Math.round(totalS/totalC*100):0;
-      const pts = matInvs.length;
-      const compraProm = Math.round(matInvs.reduce((s,inv)=>s+inv.compra,0)/pts);
-      const ventaProm = Math.round(matInvs.reduce((s,inv)=>s+inv.venta,0)/pts);
-      const margen = ventaProm-compraProm;
-      const volCompra = Math.round(matInvs.reduce((s,inv)=>s+inv.stock*0.3,0));
-      const volVenta = Math.round(matInvs.reduce((s,inv)=>s+inv.stock*0.15,0));
-      const saludPts = {OK:0,Alerta:0,'Crítico':0};
-      matInvs.forEach(inv=>{saludPts[getInvEstado(inv).estado]++});
-      const peorEstado = saludPts['Crítico']>0?'Crítico':saludPts['Alerta']>0?'Alerta':'OK';
-      return {mat,totalS,occ,pts,compraProm,ventaProm,margen,volCompra,volVenta,peorEstado};
-    }).sort((a,b)=>b.totalS-a.totalS);
-
-    document.getElementById('kpis-resumen-tbody').innerHTML = resumenData.map((r,i)=>{
-      const estCls = r.peorEstado==='Crítico'?'salud-critico':r.peorEstado==='Alerta'?'salud-alerta':'salud-ok';
-      const clasBadge = (r.mat.clasificacion||'')==='ESTANDAR'?'bg-success':(r.mat.clasificacion||'')==='MANEJO_ESPECIAL'?'bg-warning text-dark':(r.mat.clasificacion||'')==='PELIGROSO'?'bg-danger':'bg-dark';
-      return '<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+escapeHTML(r.mat.nombre||'?')+'</td><td><span class="badge '+clasBadge+'" style="font-size:.68rem">'+escapeHTML(r.mat.clasificacion||'-')+'</span></td><td style="font-size:.82rem">'+r.totalS.toLocaleString()+'</td><td style="font-size:.82rem">'+r.occ+'%</td><td style="font-size:.82rem">'+r.pts+'</td><td style="font-size:.82rem">$'+r.compraProm.toLocaleString()+'</td><td style="font-size:.82rem">$'+r.ventaProm.toLocaleString()+'</td><td class="fw-semibold '+(r.margen>=0?'text-success':'text-danger')+'" style="font-size:.82rem">$'+r.margen.toLocaleString()+'</td><td style="font-size:.82rem">'+r.volCompra.toLocaleString()+'</td><td style="font-size:.82rem">'+r.volVenta.toLocaleString()+'</td><td><span class="salud-badge-sm '+estCls+'">'+r.peorEstado+'</span></td></tr>';
-    }).join('');
-  }
-
-  // ===== TAB 6: CATEGORÍAS =====
+  // ===== TAB 5: CATEGORÍAS =====
   let gcatPage = 1;
   function gcatGoPage(p){ gcatPage = p; renderGestionCategorias(); }
   function getCategoriasList(){
@@ -814,6 +748,22 @@
     const tbody = document.getElementById('gcat-tbody');if(!tbody)return;
     const cats = getCategoriasList();
     document.getElementById('gcat-count').textContent = cats.length+' categorías';
+
+    // Category charts (first time only)
+    if(!charts._catChartsInit && typeof Chart!=='undefined'){
+      charts._catChartsInit = true;
+      if(document.getElementById('chartCatMatPorCat')){
+        var catNames = cats.map(function(c){return c.nombre});
+        var catCounts = cats.map(function(c){return c.count});
+        charts.catMatPorCat = new Chart(document.getElementById('chartCatMatPorCat'),{type:'bar',data:{labels:catNames,datasets:[{label:'# Materiales',data:catCounts,backgroundColor:'#0dcaf0',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'materiales'}}},indexAxis:'y'}});
+      }
+      if(document.getElementById('chartCatEstadoCat')){
+        var catEstados={Activo:0,Inactivo:0};
+        materiales.forEach(function(m){catEstados[m.estado==='ACTIVO'?'Activo':'Inactivo']++});
+        charts.catEstadoCat = new Chart(document.getElementById('chartCatEstadoCat'),{type:'doughnut',data:{labels:Object.keys(catEstados),datasets:[{data:Object.values(catEstados),backgroundColor:['#198754','#adb5bd']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+      }
+    }
+
     renderPaginated(cats, 'gcat-tbody', 'gcat-pager-info', 'gcat-pager', function(c){
       const estado = materiales.filter(m=>m.categoria_nombre===c.nombre&&m.estado==='ACTIVO').length>0?'ACTIVO':'INACTIVO';
       const estBadge = estado==='ACTIVO'?'<span class="badge bg-success">Activo</span>':'<span class="badge bg-secondary">Inactivo</span>';
@@ -821,12 +771,32 @@
     }, gcatPage, gcatGoPage);
   }
 
-  // ===== TAB 7: CLASIFICACIONES =====
+  // ===== TAB 6: CLASIFICACIONES =====
   let gclasPage = 1;
   function gclasGoPage(p){ gclasPage = p; renderGestionClasificaciones(); }
   function renderGestionClasificaciones(){
     const tbody = document.getElementById('gclas-tbody');if(!tbody)return;
     document.getElementById('gclas-count').textContent = clasificaciones.length+' clasificaciones';
+
+    // Classification charts (first time only)
+    if(!charts._clasifChartsInit && typeof Chart!=='undefined'){
+      charts._clasifChartsInit = true;
+      if(document.getElementById('chartKPIsClasif')){
+        var clasCount = {};clasificaciones.forEach(function(c){clasCount[c.nombre]=0});
+        inventario.forEach(function(inv){var m=getMatById(inv.matId);if(m.clasificacion)clasCount[m.clasificacion]=(clasCount[m.clasificacion]||0)+1});
+        var clasLabels = Object.keys(clasCount).filter(function(k){return clasCount[k]>0});
+        charts.kpisClasif = new Chart(document.getElementById('chartKPIsClasif'),{type:'doughnut',data:{labels:clasLabels,datasets:[{data:clasLabels.map(function(k){return clasCount[k]}),backgroundColor:['#198754','#ffc107','#fd7e14','#212529']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+      }
+      if(document.getElementById('chartKPIsClasifPorPunto')){
+        var clasLevels = clasificaciones.map(function(c){return c.nombre});
+        var clasColorsMap = {'ESTANDAR':'#198754','MANEJO_ESPECIAL':'#ffc107','PELIGROSO':'#fd7e14','HAZMAT':'#212529'};
+        var puntosRank = puntos.map(function(p){var total = inventario.filter(function(inv){return String(inv.puntoId)===String(p.id)}).length;return {punto:p, total:total}}).sort(function(a,b){return b.total-a.total}).slice(0,10);
+        var ptLabels = puntosRank.map(function(r){return (r.punto.nombre||'').substring(0,16)});
+        var datasetsClasPunto = clasLevels.map(function(clas){return {label:clas,data:puntosRank.map(function(r){return inventario.filter(function(inv){return String(inv.puntoId)===String(r.punto.id)&&getMatById(inv.matId).clasificacion===clas}).length}),backgroundColor:clasColorsMap[clas]||'#6c757d',borderRadius:0}}).filter(function(ds){return ds.data.some(function(v){return v>0})});
+        charts.kpisClasifPorPunto = new Chart(document.getElementById('chartKPIsClasifPorPunto'),{type:'bar',data:{labels:ptLabels,datasets:datasetsClasPunto},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'# materiales'}},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+      }
+    }
+
     const clasColors = {'ESTANDAR':'bg-success','MANEJO_ESPECIAL':'bg-warning text-dark','PELIGROSO':'bg-danger','HAZMAT':'bg-dark'};
     renderPaginated(clasificaciones, 'gclas-tbody', 'gclas-pager-info', 'gclas-pager', function(c){
       const count = materiales.filter(m=>m.clasificacion===c.nombre).length;
@@ -934,7 +904,6 @@
   window.renderInventarioPorMaterial = renderInventarioPorMaterial;
   window.renderFlujo = renderFlujo;
   window.renderHistorial = renderHistorial;
-  window.renderKPIs = renderKPIs;
   window.renderGestionCategorias = renderGestionCategorias;
   window.renderGestionClasificaciones = renderGestionClasificaciones;
   window.flujoSelectMat = flujoSelectMat;
