@@ -279,7 +279,7 @@
   <div class="alert alert-info small py-2 mb-3"><i class="bi bi-info-circle me-1"></i>Las clasificaciones definen el nivel de riesgo y las advertencias de manipulación para cada material.</div>
   <div class="row g-3 mb-3">
     <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Stock Total por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifStock"></canvas></div></div></div>
-    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-info me-1"></i>Materiales por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifMatCount"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Puntos ECA por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifPuntosPorCat"></canvas></div></div></div>
   </div>
   <div class="card shadow-sm border-0">
     <div class="card-header bg-light border-0 px-3 py-2">
@@ -862,12 +862,13 @@
       if(document.getElementById('chartClasifStock')){
         charts.clasifStock = new Chart(document.getElementById('chartClasifStock'),{type:'bar',data:{labels:clasLevels,datasets:[{label:'Stock (kg)',data:clasStock,backgroundColor:['#198754','#ffc107','#fd7e14','#212529'].slice(0,clasLevels.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
       }
-      // Materiales por clasificación
-      if(document.getElementById('chartClasifMatCount')){
-        var clasMatCount = clasificaciones.map(function(c){
-          return materiales.filter(function(m){return m.clasificacion===c.nombre}).length;
+      // Puntos ECA por clasificación
+      if(document.getElementById('chartClasifPuntosPorCat')){
+        var clasPuntos = clasificaciones.map(function(c){
+          return [...new Set(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.clasificacion===c.nombre}).map(function(inv){return String(inv.puntoId)}))].length;
         });
-        charts.clasifMatCount = new Chart(document.getElementById('chartClasifMatCount'),{type:'bar',data:{labels:clasLevels,datasets:[{label:'# Materiales',data:clasMatCount,backgroundColor:['#198754','#ffc107','#fd7e14','#212529'].slice(0,clasLevels.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'materiales'},ticks:{stepSize:1}}}}});
+        var maxClasPts = Math.max.apply(null, clasPuntos.concat([1]));
+        charts.clasifPuntosPorCat = new Chart(document.getElementById('chartClasifPuntosPorCat'),{type:'bar',data:{labels:clasLevels,datasets:[{label:'Puntos ECA',data:clasPuntos,backgroundColor:['#198754','#ffc107','#fd7e14','#212529'].slice(0,clasLevels.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,suggestedMax:maxClasPts+1,title:{display:true,text:'puntos'},ticks:{stepSize:maxClasPts>10?undefined:1}}}}});
       }
     }
 
