@@ -14,7 +14,7 @@
     <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-plus-circle me-2"></i>Nuevo Punto ECA</h1>
     <p class="text-muted mb-0">Registra una nueva estación de clasificación y aprovechamiento.</p>
   </div>
-  <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="btn btn-outline-secondary">
+  <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="btn btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i> Volver
   </a>
 </div>
@@ -211,7 +211,7 @@
     <button type="submit" class="btn btn-success btn-lg px-4">
       <i class="bi bi-save me-2"></i> Crear Punto ECA
     </button>
-    <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="btn btn-outline-secondary btn-lg px-4">Cancelar</a>
+    <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="btn btn-outline-secondary btn-lg px-4">Cancelar</a>
   </div>
 
 </form>

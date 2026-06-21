@@ -62,12 +62,12 @@
 
         <li class="nav-item dropdown sidebar-dropdown">
             <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/puntos-eca' in request.path %}active{% endif %} sidebar-dropdown-toggle"
-               href="{% url 'panel_admin:listar_puntos_eca_admin' %}">
+               href="{% url 'panel_admin:dashboard_puntos_eca' %}">
                 <i class="bi bi-geo-alt-fill me-2"></i>Puntos ECA
                 <i class="bi bi-chevron-down ms-auto small"></i>
             </a>
             <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'listar_puntos_eca_admin' %}active{% endif %}" href="{% url 'panel_admin:listar_puntos_eca_admin' %}">Listar Puntos ECA</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'dashboard_puntos_eca' %}active{% endif %}" href="{% url 'panel_admin:dashboard_puntos_eca' %}">Dashboard</a></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_punto_eca_admin' %}active{% endif %}" href="{% url 'panel_admin:crear_punto_eca_admin' %}">Crear Punto ECA</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_puntos_eca_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF</a></li>
