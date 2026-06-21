@@ -1875,40 +1875,38 @@ def ver_publicacion_admin(request, publicacion_id):
 
 
 def _actualizar_gestor_eca(punto, request):
-    gestor_nombres = (request.POST.get("nombres") or "").strip()
-    gestor_apellidos = (request.POST.get("apellidos") or "").strip()
-    gestor_email = (request.POST.get("email_gestor") or "").strip()
-    if not (gestor_nombres or gestor_apellidos or gestor_email):
+    data = {k: (request.POST.get(k) or "").strip() for k in (
+        "nombres", "apellidos", "email_gestor", "tipoDocumento",
+        "numeroDocumento", "celular", "password",
+    )}
+    nombres, apellidos, email, tipo_doc, num_doc, celular, password = (
+        data["nombres"], data["apellidos"], data["email_gestor"],
+        data["tipoDocumento"], data["numeroDocumento"], data["celular"], data["password"],
+    )
+    if not (nombres or apellidos or email):
         return None
 
     gestor = punto.gestor_eca
-    gestor_tipo_doc = (request.POST.get("tipoDocumento") or "").strip()
-    gestor_num_doc = (request.POST.get("numeroDocumento") or "").strip()
-    gestor_celular = (request.POST.get("celular") or "").strip()
-    password = (request.POST.get("password") or "").strip()
-
     if gestor:
-        gestor.nombres = gestor_nombres or gestor.nombres
-        gestor.apellidos = gestor_apellidos or gestor.apellidos
-        gestor.tipo_documento = gestor_tipo_doc or gestor.tipo_documento
-        gestor.numero_documento = gestor_num_doc or gestor.numero_documento
-        gestor.celular = gestor_celular or gestor.celular
+        gestor.nombres = nombres or gestor.nombres
+        gestor.apellidos = apellidos or gestor.apellidos
+        gestor.tipo_documento = tipo_doc or gestor.tipo_documento
+        gestor.numero_documento = num_doc or gestor.numero_documento
+        gestor.celular = celular or gestor.celular
         gestor.save()
         return None
 
     if not password:
         return GESTOR_CONTRASENA_REQUERIDA_MSG
 
-    defaults = {
-        "email": gestor_email or f"gestor_{punto.id}@eca.com",
-        "numero_documento": gestor_num_doc or f"GESTORECA_{punto.id}",
-        "tipo_documento": gestor_tipo_doc or cons.TipoDocumento.CC,
-        "tipo_usuario": cons.TipoUsuario.GESTOR_ECA,
-        "celular": gestor_celular,
-        "nombres": gestor_nombres,
-        "apellidos": gestor_apellidos,
-    }
-    gestor = Usuario(**defaults)
+    gestor = Usuario(
+        nombres=nombres, apellidos=apellidos,
+        email=email or f"gestor_{punto.id}@eca.com",
+        numero_documento=num_doc or f"GESTORECA_{punto.id}",
+        tipo_documento=tipo_doc or cons.TipoDocumento.CC,
+        tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+        celular=celular,
+    )
     gestor.set_password(password)
     gestor.save()
     punto.gestor_eca = gestor
