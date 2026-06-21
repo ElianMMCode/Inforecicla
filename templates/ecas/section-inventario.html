@@ -390,7 +390,7 @@ globalThis.getCSRFToken = function () {
                     <script>
                     document.addEventListener('DOMContentLoaded', function () {
                         document.querySelectorAll('.clasificacion-tooltip').forEach(function (el) {
-                            void new bootstrap.Tooltip(el);
+                            el.setAttribute('data-bs-toggle', 'tooltip');
                         });
                     });
                     </script>

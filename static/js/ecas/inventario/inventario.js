@@ -2897,6 +2897,6 @@
     }
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-        void new bootstrap.Tooltip(el);
+        el.setAttribute('data-bs-toggle', 'tooltip');
     });
 })();
