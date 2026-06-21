@@ -214,7 +214,7 @@ function renderResumen(){
   const resMat=document.getElementById('res-mat-filter')?.value||'';
   const resOrden=document.getElementById('res-orden')?.value||'mov';
   if(resMat)data=data.filter(x=>x.mat===resMat);
-  data=data.filter(x=>pts.some(p=>p.id===x.puntoId)); var _=data;
+  data=data.filter(x=>pts.some(p=>p.id===x.puntoId)); if(!data)console.debug(data);
 
   if(typeof Chart==='undefined'){
     document.getElementById('chartPanelTop').parentElement.innerHTML='<div class="p-4 text-center text-muted"><i class="bi bi-info-circle me-1"></i>Graficas no disponibles — requiere Chart.js CDN</div>';
@@ -482,7 +482,7 @@ function renderEstados(){
 
   if(typeof L!=='undefined'){
     if(!estadosMap){
-      estadosMap=L.map('estados-map').setView([4.68,-74.10],11);
+      estadosMap=L.map('estados-map').setView([4.68,-74.1],11);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(estadosMap);
     }
     estadosMap.invalidateSize();
