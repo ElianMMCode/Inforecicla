@@ -1899,14 +1899,16 @@ def _actualizar_gestor_eca(punto, request):
     if not password:
         return GESTOR_CONTRASENA_REQUERIDA_MSG
 
-    gestor = Usuario(
-        email=gestor_email or f"gestor_{punto.id}@eca.com",
-        numero_documento=gestor_num_doc or f"GESTORECA_{punto.id}",
-        nombres=gestor_nombres, apellidos=gestor_apellidos,
-        tipo_documento=gestor_tipo_doc or cons.TipoDocumento.CC,
-        tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
-        celular=gestor_celular,
-    )
+    defaults = {
+        "email": gestor_email or f"gestor_{punto.id}@eca.com",
+        "numero_documento": gestor_num_doc or f"GESTORECA_{punto.id}",
+        "tipo_documento": gestor_tipo_doc or cons.TipoDocumento.CC,
+        "tipo_usuario": cons.TipoUsuario.GESTOR_ECA,
+        "celular": gestor_celular,
+        "nombres": gestor_nombres,
+        "apellidos": gestor_apellidos,
+    }
+    gestor = Usuario(**defaults)
     gestor.set_password(password)
     gestor.save()
     punto.gestor_eca = gestor
