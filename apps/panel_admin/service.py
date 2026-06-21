@@ -1217,7 +1217,7 @@ class AdminPuntoECAService:
     @staticmethod
     @staticmethod
     def _calcular_delta(actual, anterior):
-        return round(((actual - anterior) / anterior * 100), 1) if anterior else 0
+        return round(((actual - anterior) / (anterior or 1) * 100), 1)
 
     @staticmethod
     def obtener_kpis(puntos=None):
@@ -1228,20 +1228,17 @@ class AdminPuntoECAService:
         total = len(puntos)
         n_activos = sum(1 for p in puntos if p["estado"] == "Activo")
         n_inactivos = total - n_activos
-
         cap_total = sum(p["capMax"] for p in puntos)
         stock_total = sum(p["stockTotal"] for p in puntos)
-        ocupacion_pct = round((stock_total / cap_total * 100), 1) if cap_total > 0 else 0
+        ocupacion_pct = round((stock_total / (cap_total or 1) * 100), 1)
         capacidad_pct = round((cap_total / (cap_total or 1) * 100), 1)
-
         historial = AdminPuntoECAService.obtener_historial(3)
         flujo_in = sum(h["kg"] for h in historial if h["tipo"] == "Compra")
         flujo_out = sum(h["kg"] for h in historial if h["tipo"] == "Venta")
-
         compras_total = sum(p["compras"] for p in puntos)
         ventas_total = sum(p["ventas"] for p in puntos)
         ganancia = round(ventas_total - compras_total, 2)
-        margen_avg = round(((ventas_total - compras_total) / compras_total * 100), 1) if compras_total > 0 else 0
+        margen_avg = round(((ventas_total - compras_total) / (compras_total or 1) * 100), 1)
 
         from apps.chat.models import Mensaje as MsgModel
         sin_resp = 0
@@ -1250,36 +1247,32 @@ class AdminPuntoECAService:
         except Exception:
             pass
 
-        d_ocupacion = AdminPuntoECAService._calcular_delta(ocupacion_pct, ocupacion_pct * 0.92)
-        d_flujo_in = AdminPuntoECAService._calcular_delta(flujo_in, flujo_in * 0.88)
-        d_flujo_out = AdminPuntoECAService._calcular_delta(flujo_out, flujo_out * 1.05)
-        d_margen = AdminPuntoECAService._calcular_delta(margen_avg, margen_avg * 0.85)
-        d_ganancia = AdminPuntoECAService._calcular_delta(ganancia, ganancia * 0.78)
-        d_activos = AdminPuntoECAService._calcular_delta(n_activos, n_activos * 0.9)
-        d_capacidad = AdminPuntoECAService._calcular_delta(capacidad_pct, capacidad_pct * 0.95)
-        d_msgs = AdminPuntoECAService._calcular_delta(sin_resp, sin_resp * 1.2)
-
         return {
-            "total_puntos": total,
-            "activos": n_activos,
-            "inactivos": n_inactivos,
-            "ocupacion_pct": ocupacion_pct,
-            "capacidad_pct": capacidad_pct,
-            "flujo_in": round(flujo_in, 1),
-            "flujo_out": round(flujo_out, 1),
-            "compras_total": round(compras_total, 2),
-            "ventas_total": round(ventas_total, 2),
-            "ganancia": ganancia,
-            "margen_pct": margen_avg,
-            "msgs_sin_resp": sin_resp,
-            "deltas": {
-                "ocupacion": d_ocupacion, "flujo_in": d_flujo_in,
-                "flujo_out": d_flujo_out, "margen": d_margen,
-                "ganancia": d_ganancia, "activos": d_activos,
-                "capacidad": d_capacidad, "msgs": d_msgs,
-            },
+            "total_puntos": total, "activos": n_activos, "inactivos": n_inactivos,
+            "ocupacion_pct": ocupacion_pct, "capacidad_pct": capacidad_pct,
+            "flujo_in": round(flujo_in, 1), "flujo_out": round(flujo_out, 1),
+            "compras_total": round(compras_total, 2), "ventas_total": round(ventas_total, 2),
+            "ganancia": ganancia, "margen_pct": margen_avg, "msgs_sin_resp": sin_resp,
+            "deltas": AdminPuntoECAService._calcular_deltas(
+                ocupacion_pct, flujo_in, flujo_out, margen_avg,
+                ganancia, n_activos, capacidad_pct, sin_resp,
+            ),
             "puntos_por_gestor": AdminPuntoECAService._agrupar_por_gestor(puntos),
             "top_materiales": AdminPuntoECAService._top_materiales(),
+        }
+
+    @staticmethod
+    def _calcular_deltas(ocupacion, flujo_in, flujo_out, margen, ganancia, activos, capacidad, msgs):
+        _d = AdminPuntoECAService._calcular_delta
+        return {
+            "ocupacion": _d(ocupacion, ocupacion * 0.92),
+            "flujo_in": _d(flujo_in, flujo_in * 0.88),
+            "flujo_out": _d(flujo_out, flujo_out * 1.05),
+            "margen": _d(margen, margen * 0.85),
+            "ganancia": _d(ganancia, ganancia * 0.78),
+            "activos": _d(activos, activos * 0.9),
+            "capacidad": _d(capacidad, capacidad * 0.95),
+            "msgs": _d(msgs, msgs * 1.2),
         }
 
     # ----------------------------------------------------------------
