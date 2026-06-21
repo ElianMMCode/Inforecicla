@@ -179,11 +179,11 @@
     <div class="card-header bg-info-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-info small"><i class="bi bi-sliders me-2"></i>Filtros</h6></div>
     <div class="card-body">
       <div class="row g-3 align-items-end">
-        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Materiales</label><div id="flujo-mat-chips" class="d-flex flex-wrap gap-1"></div><div class="d-flex gap-2 mt-2"><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoToggleAll(true)">Todos</button><button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoToggleAll(false)">Ninguno</button></div></div>
+        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Materiales</label><div id="flujo-mat-chips" class="d-flex flex-wrap gap-1"></div><div class="d-flex gap-2 mt-2"><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(5)">Top 5</button><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(10)">Top 10</button><button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoSelectTop(0)">Ninguno</button></div></div>
         <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Desde</label><input type="date" class="form-control form-control-sm" id="flujo-ft-desde" value="2026-01-01" onchange="renderFlujo()"></div>
         <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Hasta</label><input type="date" class="form-control form-control-sm" id="flujo-ft-hasta" value="2026-12-31" onchange="renderFlujo()"></div>
         <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Granularidad</label><select class="form-select form-select-sm" id="flujo-gran" onchange="renderFlujo()"><option value="dia">Día</option><option value="semana">Semana</option><option value="mes" selected>Mes</option></select></div>
-        <div class="col-md-1"><button class="btn btn-sm btn-outline-secondary" onclick="flujoToggleAll(true);document.getElementById('flujo-ft-desde').value='2026-01-01';document.getElementById('flujo-ft-hasta').value='2026-12-31';$('#flujo-gran').val('mes');renderFlujo()" title="Restaurar valores"><i class="bi bi-arrow-counterclockwise"></i></button></div>
+        <div class="col-md-1"><button class="btn btn-sm btn-outline-secondary" onclick="flujoSelectTop(5);document.getElementById('flujo-ft-desde').value='2026-01-01';document.getElementById('flujo-ft-hasta').value='2026-12-31';document.getElementById('flujo-gran').value='mes';renderFlujo()" title="Restaurar valores"><i class="bi bi-arrow-counterclockwise"></i></button></div>
       </div>
     </div>
   </div>
@@ -598,21 +598,39 @@
 
   function renderFlujoChips(){
     const container = document.getElementById('flujo-mat-chips');
-    const uniqueMats = [...new Set(inventario.map(inv=>inv.matId))].map(id=>getMatById(id)).filter(m=>m.id).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
-    if(flujoSelectedMats.length===0) flujoSelectedMats = uniqueMats.slice(0,6).map(m=>String(m.id));
-    container.innerHTML = uniqueMats.map(m=>{
-      const sel = flujoSelectedMats.includes(String(m.id));
-      return '<span class="mat-select-chip'+(sel?' selected':'')+'" onclick="flujoSelectMat(\''+m.id+'\',this)">'+escapeHTML(m.nombre||'?')+'</span>';
+    // Ordenar por stock total (mayor primero)
+    const uniqueMats = [...new Set(inventario.map(inv=>inv.matId))]
+      .map(function(id){var m=getMatById(id);if(!m.id)return null;
+        var total = inventario.filter(function(inv){return String(inv.matId)===String(m.id)}).reduce(function(s,inv){return s+inv.stock},0);
+        return {m:m, total:total};
+      }).filter(Boolean).sort(function(a,b){return b.total-a.total});
+    if(flujoSelectedMats.length===0) flujoSelectedMats = uniqueMats.slice(0,5).map(function(x){return String(x.m.id)});
+    var selCount = flujoSelectedMats.length;
+    var html = '<div class="small text-muted mb-1">'+selCount+' de '+uniqueMats.length+' seleccionados | <a href="#" onclick="event.preventDefault();flujoSelectTop(5)">Top 5</a> · <a href="#" onclick="event.preventDefault();flujoSelectTop(10)">Top 10</a></div>';
+    html += uniqueMats.map(function(x){
+      var m = x.m;
+      var sel = flujoSelectedMats.includes(String(m.id));
+      return '<span class="mat-select-chip'+(sel?' selected':'')+'" onclick="flujoSelectMat(\''+m.id+'\',this)" title="'+escapeHTML(m.nombre||'?')+' ('+Math.round(x.total)+' kg)">'+escapeHTML((m.nombre||'?').substring(0,18))+'</span>';
     }).join('');
+    container.innerHTML = html;
+  }
+  function flujoSelectTop(n){
+    var uniqueMats = [...new Set(inventario.map(function(inv){return inv.matId}))]
+      .map(function(id){var m=getMatById(id);if(!m.id)return null;
+        var total = inventario.filter(function(inv){return String(inv.matId)===String(m.id)}).reduce(function(s,inv){return s+inv.stock},0);
+        return {id:String(m.id), total:total};
+      }).filter(Boolean).sort(function(a,b){return b.total-a.total});
+    flujoSelectedMats = uniqueMats.slice(0,n).map(function(x){return x.id});
+    renderFlujoChips();renderFlujo();
   }
   function flujoSelectMat(matId,el){
     const sid = String(matId);
-    if(flujoSelectedMats.includes(sid)){flujoSelectedMats = flujoSelectedMats.filter(id=>id!==sid);el.classList.remove('selected');}
+    if(flujoSelectedMats.includes(sid)){flujoSelectedMats = flujoSelectedMats.filter(function(id){return id!==sid});el.classList.remove('selected');}
     else {flujoSelectedMats.push(sid);el.classList.add('selected');}
     renderFlujo();
   }
   function flujoToggleAll(on){
-    flujoSelectedMats = on ? [...new Set(inventario.map(inv=>String(inv.matId)))]: [];
+    flujoSelectedMats = on ? [...new Set(inventario.map(function(inv){return String(inv.matId)}))]: [];
     renderFlujoChips();renderFlujo();
   }
   function switchFlujoSub(mode,el){
@@ -644,7 +662,7 @@
     const datasets = selMats.map((mat,mi)=>{
       const items = inventario.filter(inv=>String(inv.matId)===String(mat.id));
       const base = items.reduce((s,inv)=>s+inv.stock,0);
-      return {label:mat.nombre||'?',data:labels.map((_,i)=>Math.round(base*(0.7+i*0.05))),borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
+      return {label:(mat.nombre||'?').substring(0,14),data:labels.map((_,i)=>Math.round(base*(0.7+i*0.05))),borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
     });
     charts.flujo = new Chart(document.getElementById('chartFlujo'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});
 
@@ -917,6 +935,7 @@
   window.renderGestionClasificaciones = renderGestionClasificaciones;
   window.flujoSelectMat = flujoSelectMat;
   window.flujoToggleAll = flujoToggleAll;
+  window.flujoSelectTop = flujoSelectTop;
   window.switchFlujoSub = switchFlujoSub;
   window.limpiarFiltrosHistorial = limpiarFiltrosHistorial;
   window.exportarTabla = exportarTabla;
