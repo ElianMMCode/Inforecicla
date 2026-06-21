@@ -124,31 +124,12 @@ function initResumenCharts(p){
 function buildSaludBadge(s){return'<span class="salud-badge-sm salud-'+s.toLowerCase()+'"><i class="bi bi-heart-fill"></i> '+s+'</span>';}
 function buildInvSummary(p){const pct=pctOcupacionPunto(p);return'<div class="inv-summary"><strong>'+pct+'%</strong> Ocupacion</div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+pct+'%;background:'+(pct<30?'#dc3545':pct<50?'#ffc107':'#198754')+'"></div></div>';}
 
-/* ===== LISTADO - FILTROS Y KPIs ===== */
-function limpiarFiltrosPanel(){
-  document.getElementById('panel-search-input').value='';
-  document.getElementById('panel-loc-filter').value='';
-  document.getElementById('panel-mat-filter').value='';
-  document.getElementById('panel-estado-filter').value='';
-  renderPanelFiltros();
-}
+/* ===== LISTADO - KPIs ALWAYS-ON ===== */
+function renderKPIs(pts){
+  const kpts=pts||puntos;
+  let data=invData.filter(x=>kpts.some(p=>p.id===x.puntoId));
 
-function renderPanelFiltros(){
-  const search=(document.getElementById('panel-search-input')?.value||'').toLowerCase();
-  const locFilter=document.getElementById('panel-loc-filter')?.value||'';
-  const matFilter=document.getElementById('panel-mat-filter')?.value||'';
-  const estFilter=document.getElementById('panel-estado-filter')?.value||'';
-
-  let pts=puntos.slice();
-  if(search)pts=pts.filter(p=>p.nombre.toLowerCase().includes(search)||p.direccion.toLowerCase().includes(search));
-  if(locFilter)pts=pts.filter(p=>p.localidad===locFilter);
-  if(estFilter)pts=pts.filter(p=>p.estado===estFilter);
-
-  let data=invData.slice();
-  if(matFilter)data=data.filter(x=>x.mat===matFilter);
-  data=data.filter(x=>pts.some(p=>p.id===x.puntoId));
-
-  const ptStats=pts.map(p=>{
+  const ptStats=kpts.map(p=>{
     const items=data.filter(x=>x.puntoId===p.id);
     const ventas=items.reduce((s,x)=>s+(x.ventasKg||0),0);
     const compras=items.reduce((s,x)=>s+(x.comprasKg||0),0);
@@ -162,7 +143,7 @@ function renderPanelFiltros(){
   const totalFlujoOut=ptStats.reduce((s,p)=>s+flujoOutPunto(p),0);
   const avgMargen=ptStats.length?Math.round(ptStats.reduce((s,p)=>s+margenPunto(p),0)/ptStats.length):0;
   const activos=ptStats.filter(p=>p.estado==='Activo').length;
-  const sinResp=msgsPorPunto.filter(m=>pts.some(p=>p.id===m.puntoId)).reduce((s,m)=>s+m.sinResponder,0);
+  const sinResp=msgsPorPunto.filter(m=>kpts.some(p=>p.id===m.puntoId)).reduce((s,m)=>s+m.sinResponder,0);
   const gananciaTotal=ptStats.reduce((s,p)=>{
     const items=data.filter(x=>x.puntoId===p.id);
     return s+items.reduce((ss,x)=>ss+(x.ventasKg||0)*x.venta-(x.comprasKg||0)*x.compra,0);
@@ -184,15 +165,19 @@ function renderPanelFiltros(){
     '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'estados\')"><div class="kpi-card-eca kpi-success p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-success-subtle text-success"><i class="bi bi-geo-alt-fill"></i></div><div><div class="kpi-value text-success">'+activos+deltaBadge(dActivos)+'</div><div class="kpi-label text-muted">Pts Activos</div></div></div></div></div>'+
     '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'estados\')"><div class="kpi-card-eca kpi-info p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-info-subtle text-info"><i class="bi bi-boxes"></i></div><div><div class="kpi-value text-info">'+capSistema+'%'+deltaBadge(dCap)+'</div><div class="kpi-label text-muted">Capacidad Sistema</div></div></div></div></div>'+
     '<div class="col-6 col-md-3 fade-in-up" style="cursor:pointer" onclick="goToTab(\'mensajes\')"><div class="kpi-card-eca kpi-danger p-3"><div class="d-flex align-items-center gap-3"><div class="kpi-icon bg-danger-subtle text-danger"><i class="bi bi-chat-dots"></i></div><div><div class="kpi-value text-danger">'+sinResp+deltaBadge(dSinResp)+'</div><div class="kpi-label text-muted">Msgs Sin Resp</div></div></div></div></div>';
+}
 
-  window._filteredPts=pts;
-  window._filteredData=data;
-  window._filteredPtStats=ptStats;
-  renderRanking();
-  if(activeListadoTab==='resumen')renderResumen();
-  else if(activeListadoTab==='estados')renderEstados();
-  else if(activeListadoTab==='flujos'){if(activeFlujoSubTab==='volumen')renderFlujoVolumen();else if(activeFlujoSubTab==='ganancias')renderFlujoGanancias();else if(activeFlujoSubTab==='detalle_mat')renderFlujoDetalleMat();}
-  else if(activeListadoTab==='mensajes')renderMensajesListado();
+/* ===== HELPER — filtro por tab ===== */
+function _fitrarPtsTab(searchId, locId, estadoId){
+  if(!searchId)return puntos.slice();
+  const search=(document.getElementById(searchId)?.value||'').toLowerCase();
+  const locVal=locId?(document.getElementById(locId)?.value||''):'';
+  const estVal=estadoId?(document.getElementById(estadoId)?.value||''):'';
+  let pts=puntos.slice();
+  if(search)pts=pts.filter(p=>p.nombre.toLowerCase().includes(search)||p.direccion.toLowerCase().includes(search));
+  if(locVal)pts=pts.filter(p=>p.localidad===locVal);
+  if(estVal)pts=pts.filter(p=>p.estado===estVal);
+  return pts;
 }
 
 /* ===== LISTADO - TABS ===== */
@@ -219,13 +204,13 @@ function switchListadoTab(tab,el){
 
 /* ===== LISTADO - RESUMEN ===== */
 function renderResumen(){
-  const pts=window._filteredPts||puntos;
-  let data=window._filteredData||invData;
-  const ptStats=window._filteredPtStats||pts.map(p=>({...p,mov:0,ventas:0,compras:0,margenProm:0}));
+  const pts=_fitrarPtsTab('res-search-input','res-loc-filter','res-estado-filter');
+  let data=invData.slice();
 
   const resMat=document.getElementById('res-mat-filter')?.value||'';
   const resOrden=document.getElementById('res-orden')?.value||'mov';
   if(resMat)data=data.filter(x=>x.mat===resMat);
+  data=data.filter(x=>pts.some(p=>p.id===x.puntoId));
 
   if(typeof Chart==='undefined'){
     document.getElementById('chartPanelTop').parentElement.innerHTML='<div class="p-4 text-center text-muted"><i class="bi bi-info-circle me-1"></i>Graficas no disponibles — requiere Chart.js CDN</div>';
@@ -337,7 +322,7 @@ function limpiarFiltrosRanking(){
   renderRanking();
 }
 function renderRanking(){
-  let pts=window._filteredPts||puntos;
+  let pts=puntos.slice();
   const col=rankingSortCol,dir=rankingSortDir;
 
   const fltNombre=(document.getElementById('rank-flt-nombre')?.value||'').toLowerCase();
@@ -440,12 +425,8 @@ function filtrarEstadosEstado(v){
   goToTab('estados');
 }
 function renderEstados(){
-  let pts=window._filteredPts||puntos;
-  const estLoc=document.getElementById('est-loc-filter')?.value||'';
-  const estEst=document.getElementById('est-estado-filter')?.value||'';
+  let pts=_fitrarPtsTab('est-search-input','est-loc-filter','est-estado-filter');
   const estSalud=document.getElementById('est-salud-filter')?.value||'';
-  if(estLoc)pts=pts.filter(p=>p.localidad===estLoc);
-  if(estEst)pts=pts.filter(p=>p.estado===estEst);
   if(estSalud)pts=pts.filter(p=>p.invEstado===estSalud);
 
   const totalPts=pts.length;
@@ -529,10 +510,8 @@ function switchFlujoListado(sub,el){
 }
 function renderFlujoVolumen(){
   if(activeFlujoSubTab!=='volumen')return;
-  let pts=window._filteredPts||puntos;
-  const fluLoc=document.getElementById('flu-loc-filter')?.value||'';
+  let pts=_fitrarPtsTab('flu-search-input','flu-loc-filter',null);
   const fluMat=document.getElementById('flu-mat-filter')?.value||'';
-  if(fluLoc)pts=pts.filter(p=>p.localidad===fluLoc);
 
   const ptsFlujo=pts.map(p=>{
     let flujoIn,flujoOut;
@@ -572,9 +551,7 @@ function renderFlujoVolumen(){
 
 function renderFlujoGanancias(){
   if(activeFlujoSubTab!=='ganancias')return;
-  let pts=window._filteredPts||puntos;
-  const fluGanLoc=document.getElementById('flu-gan-loc-filter')?.value||'';
-  if(fluGanLoc)pts=pts.filter(p=>p.localidad===fluGanLoc);
+  let pts=_fitrarPtsTab('flu-gan-search-input','flu-gan-loc-filter',null);
 
   const ganData=pts.map(p=>{
     const items=invData.filter(x=>x.puntoId===p.id);
@@ -637,10 +614,8 @@ function renderFlujoGanancias(){
 
 function renderFlujoDetalleMat(){
   if(activeFlujoSubTab!=='detalle_mat')return;
-  let pts=window._filteredPts||puntos;
-  const fluDetLoc=document.getElementById('flu-det-loc-filter')?.value||'';
+  let pts=_fitrarPtsTab('flu-det-search-input','flu-det-loc-filter',null);
   const fluDetMat=document.getElementById('flu-det-mat-filter')?.value||'';
-  if(fluDetLoc)pts=pts.filter(p=>p.localidad===fluDetLoc);
 
   const allMaterials=[...new Set(invData.map(x=>x.mat))].sort();
   let filteredMaterials=fluDetMat?[fluDetMat]:allMaterials;
@@ -892,24 +867,22 @@ function guardarEdicionPunto(){
   p.capMax=parseInt(document.getElementById('edit-capacidad').value)||p.capMax;
   const modal=bootstrap.Modal.getInstance(document.getElementById('editPuntoModal'));
   if(modal)modal.hide();
-  renderPanelFiltros();
+  renderKPIs();
   openDetalle(currentPuntoId);
 }
 
 /* ===== BOOT ===== */
 populatePanelFilters();
-renderPanelFiltros();
+renderKPIs();
 
 /* === populate filters === */
 function populatePanelFilters(){
   const locs=[...new Set(puntos.map(p=>p.localidad))].sort();
-  const locSelect=document.getElementById('panel-loc-filter');
-  if(locSelect)locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l;locSelect.appendChild(o)});
-
   const mats=[...new Set(invData.map(x=>x.mat))].sort();
-  const matSelect=document.getElementById('panel-mat-filter');
-  if(matSelect)mats.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;matSelect.appendChild(o)});
 
+  // Resumen
+  const resLoc=document.getElementById('res-loc-filter');
+  if(resLoc)locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l;resLoc.appendChild(o)});
   const resMat=document.getElementById('res-mat-filter');
   if(resMat)mats.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;resMat.appendChild(o)});
 
