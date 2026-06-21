@@ -2418,30 +2418,35 @@ def _build_puntos_json():
     return [{"id": str(p.id), "nombre": p.nombre, "localidad": p.localidad.nombre if p.localidad else "", "gestor": p.gestor_eca.get_full_name() if p.gestor_eca else "", "estado": p.estado} for p in puntos_qs]
 
 
+def _compra_to_dict(c):
+    inv = c.inventario
+    return {
+        "fecha": c.fecha_compra.strftime("%Y-%m-%d %H:%M") if c.fecha_compra else "",
+        "tipo": "Compra", "mat": inv.material.nombre if inv and inv.material else "-",
+        "punto": inv.punto_eca.nombre if inv and inv.punto_eca else "-",
+        "kg": float(c.cantidad or 0), "unitario": float(c.precio_compra or 0),
+        "total": float((c.cantidad or 0) * (c.precio_compra or 0)),
+        "centro": inv.centro_acopio.nombre if inv and inv.centro_acopio else "-",
+    }
+
+
+def _venta_to_dict(v):
+    inv = v.inventario
+    return {
+        "fecha": v.fecha_venta.strftime("%Y-%m-%d %H:%M") if v.fecha_venta else "",
+        "tipo": "Venta", "mat": inv.material.nombre if inv and inv.material else "-",
+        "punto": inv.punto_eca.nombre if inv and inv.punto_eca else "-",
+        "kg": float(v.cantidad or 0), "unitario": float(v.precio_venta or 0),
+        "total": float((v.cantidad or 0) * (v.precio_venta or 0)),
+        "centro": v.centro_acopio.nombre if v.centro_acopio else "-",
+    }
+
+
 def _build_historial_json():
     from apps.operations.models import CompraInventario, VentaInventario
     compras = list(CompraInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_compra")[:200])
     ventas = list(VentaInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_venta")[:200])
-    historial = []
-    for c in compras:
-        historial.append({
-            "fecha": c.fecha_compra.strftime("%Y-%m-%d %H:%M") if c.fecha_compra else "",
-            "tipo": "Compra", "mat": c.inventario.material.nombre if c.inventario and c.inventario.material else "-",
-            "punto": c.inventario.punto_eca.nombre if c.inventario and c.inventario.punto_eca else "-",
-            "kg": float(c.cantidad or 0), "unitario": float(c.precio_compra or 0),
-            "total": float((c.cantidad or 0) * (c.precio_compra or 0)),
-            "centro": c.inventario.centro_acopio.nombre if c.inventario and c.inventario.centro_acopio else "-",
-        })
-    for v in ventas:
-        historial.append({
-            "fecha": v.fecha_venta.strftime("%Y-%m-%d %H:%M") if v.fecha_venta else "",
-            "tipo": "Venta", "mat": v.inventario.material.nombre if v.inventario and v.inventario.material else "-",
-            "punto": v.inventario.punto_eca.nombre if v.inventario and v.inventario.punto_eca else "-",
-            "kg": float(v.cantidad or 0), "unitario": float(v.precio_venta or 0),
-            "total": float((v.cantidad or 0) * (v.precio_venta or 0)),
-            "centro": v.centro_acopio.nombre if v.centro_acopio else "-",
-        })
-    return historial
+    return [_compra_to_dict(c) for c in compras] + [_venta_to_dict(v) for v in ventas]
 
 
 @login_required(login_url="/login/")
