@@ -1060,6 +1060,7 @@ class AdminPuntoECAService:
                 "nombre": p.nombre or "",
                 "direccion": p.direccion or "",
                 "localidad": p.localidad.nombre if p.localidad else "-",
+                "localidad_id": str(p.localidad.localidad_id) if p.localidad else "",
                 "gestor": f"{p.gestor_eca.nombres} {p.gestor_eca.apellidos}" if p.gestor_eca else "Sin gestor",
                 "estado": estado_display,
                 "invEstado": inv_estado,
@@ -1072,6 +1073,12 @@ class AdminPuntoECAService:
                 "margen": margen,
                 "msgs": msgs,
                 "fecha_creacion": p.fecha_creacion.strftime("%Y-%m-%d") if p.fecha_creacion else "",
+                "email": p.email or "",
+                "celular": p.celular or "",
+                "telefono_punto": p.telefono_punto or "",
+                "sitio_web": p.sitio_web or "",
+                "horario_atencion": p.horario_atencion or "",
+                "descripcion": p.descripcion or "",
             })
         return puntos
 

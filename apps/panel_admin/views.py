@@ -37,7 +37,7 @@ CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
 USUARIO_ACTUALIZADO_OK_MSG = "Usuario actualizado correctamente."
 CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
-LISTAR_PUNTOS_ECA_URL = "panel_admin:listar_puntos_eca_admin"
+LISTAR_PUNTOS_ECA_URL = "panel_admin:dashboard_puntos_eca"
 LISTAR_CATEGORIAS_PUBLICACION_URL = "panel_admin:listar_categorias_publicacion_admin"
 LISTAR_TIPOS_PUBLICACION_URL = "panel_admin:listar_tipos_publicacion_admin"
 
@@ -1427,6 +1427,7 @@ def puntos_eca_dashboard(request):
         "kpis": AdminPuntoECAService.obtener_kpis(),
         "inv_data": AdminPuntoECAService.obtener_inventario_desglosado(),
         "localidades": Localidad.objects.all().order_by("nombre"),
+        "estados": cons.Estado.choices,
     }
     return render(request, "admin/PuntoECA/dashboard.html", contexto)
 

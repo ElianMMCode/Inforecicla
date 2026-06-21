@@ -550,7 +550,7 @@ function renderFlujoVolumen(){
       flujoOut=flujoOutPunto(p);
     }
     return{...p,flujoIn,flujoOut,total:flujoIn+flujoOut};
-  }).sort((a,b)=>b.total-a.total);
+  }).sort((a,b)=>b.total-a.total).slice(0,10);
 
   if(typeof Chart!=='undefined'){
     destroyChart('flujoGeneral');
@@ -602,7 +602,7 @@ function renderFlujoGanancias(){
     '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-'+(totGanancia>=0?'success':'danger')+'">$'+Math.round(totGanancia).toLocaleString()+'</div><div class="kpi-lbl">Ganancia Bruta</div></div></div>'+
     '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning">'+avgMargen+'%</div><div class="kpi-lbl">Margen Promedio</div></div></div>';
 
-  const sortedGan=[...ganData].sort((a,b)=>(b.totalVentasCOP+b.totalComprasCOP)-(a.totalVentasCOP+a.totalComprasCOP));
+  const sortedGan=[...ganData].sort((a,b)=>(b.totalVentasCOP+b.totalComprasCOP)-(a.totalVentasCOP+a.totalComprasCOP)).slice(0,10);
   if(typeof Chart!=='undefined'){
     destroyChart('flujoGanancias');
     const gCanvas=document.getElementById('chartFlujoGanancias');
@@ -898,26 +898,72 @@ function renderMensajes(){
 function openEditModal(){
   if(!currentPuntoId)return;
   const p=puntos.find(x=>x.id===currentPuntoId);if(!p)return;
-  document.getElementById('edit-nombre').value=p.nombre;
-  document.getElementById('edit-direccion').value=p.direccion;
-  document.getElementById('edit-localidad').value=p.localidad;
-  document.getElementById('edit-gestor').value=p.gestor;
-  document.getElementById('edit-estado').value=p.estado;
-  document.getElementById('edit-capacidad').value=p.capMax;
+  document.getElementById('edit-nombre').value=p.nombre||'';
+  document.getElementById('edit-direccion').value=p.direccion||'';
+  document.getElementById('edit-email').value=p.email||'';
+  document.getElementById('edit-celular').value=p.celular||'';
+  document.getElementById('edit-telefono_punto').value=p.telefono_punto||'';
+  document.getElementById('edit-sitio_web').value=p.sitio_web||'';
+  document.getElementById('edit-horario_atencion').value=p.horario_atencion||'';
+  document.getElementById('edit-descripcion').value=p.descripcion||'';
+  document.getElementById('edit-latitud').value=p.lat||'';
+  document.getElementById('edit-longitud').value=p.lng||'';
+
+  if(typeof $!=='undefined'){
+    $('#edit-localidad_id').val(p.localidad_id||'').trigger('change');
+    if(!$('#edit-localidad_id').data('select2')){
+      $('#edit-localidad_id').select2({theme:'bootstrap-5',width:'100%',dropdownParent:$('#editPuntoModal')});
+    }
+  }
+  document.getElementById('edit-estado').value=p.estado==='Activo'?'ACTIVO':p.estado==='Inactivo'?'INACTIVO':p.estado||'ACTIVO';
+
   new bootstrap.Modal(document.getElementById('editPuntoModal')).show();
 }
+
 function guardarEdicionPunto(){
   const p=puntos.find(x=>x.id===currentPuntoId);if(!p)return;
-  p.nombre=document.getElementById('edit-nombre').value;
-  p.direccion=document.getElementById('edit-direccion').value;
-  p.localidad=document.getElementById('edit-localidad').value;
-  p.gestor=document.getElementById('edit-gestor').value;
-  p.estado=document.getElementById('edit-estado').value;
-  p.capMax=parseInt(document.getElementById('edit-capacidad').value)||p.capMax;
-  const modal=bootstrap.Modal.getInstance(document.getElementById('editPuntoModal'));
-  if(modal)modal.hide();
-  renderKPIs();
-  openDetalle(currentPuntoId);
+  const uuid=p._id;if(!uuid)return;
+
+  const btn=document.getElementById('edit-btn-guardar');
+  const origHTML=btn.innerHTML;
+  btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+
+  const formData=new FormData();
+  formData.append('nombre',document.getElementById('edit-nombre').value);
+  formData.append('direccion',document.getElementById('edit-direccion').value);
+  formData.append('email',document.getElementById('edit-email').value);
+  formData.append('celular',document.getElementById('edit-celular').value);
+  formData.append('telefono_punto',document.getElementById('edit-telefono_punto').value);
+  formData.append('sitio_web',document.getElementById('edit-sitio_web').value);
+  formData.append('horario_atencion',document.getElementById('edit-horario_atencion').value);
+  formData.append('descripcion',document.getElementById('edit-descripcion').value);
+  formData.append('latitud',document.getElementById('edit-latitud').value);
+  formData.append('longitud',document.getElementById('edit-longitud').value);
+  formData.append('localidad_id',document.getElementById('edit-localidad_id').value);
+  formData.append('estado',document.getElementById('edit-estado').value);
+
+  const csrf=document.querySelector('[name=csrfmiddlewaretoken]');
+  if(!csrf){btn.innerHTML=origHTML;btn.disabled=false;return;}
+
+  fetch('/panel_admin/puntos-eca/'+uuid+'/editar/',{
+    method:'POST',
+    headers:{'X-Requested-With':'XMLHttpRequest'},
+    body:formData
+  }).then(r=>r.json()).then(data=>{
+    btn.innerHTML=origHTML;btn.disabled=false;
+    if(data.ok){
+      const modal=bootstrap.Modal.getInstance(document.getElementById('editPuntoModal'));
+      if(modal)modal.hide();
+      location.reload();
+    }else{
+      const msg=data.message||'Error al guardar.';
+      if(typeof Swal!=='undefined')Swal.fire({icon:'error',title:'Error',text:msg});
+      else alert(msg);
+    }
+  }).catch(err=>{
+    btn.innerHTML=origHTML;btn.disabled=false;
+    alert('Error de conexion: '+err.message);
+  });
 }
 
 /* ===== CLEAR FILTERS POR TAB ===== */
