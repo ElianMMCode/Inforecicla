@@ -722,8 +722,8 @@
     document.getElementById('kpis-cap-total').textContent = capTotal.toLocaleString();
     document.getElementById('kpis-valor-total').textContent = '$'+valorTotal.toLocaleString();
     document.getElementById('kpis-ocupacion-prom').textContent = occProm+'%';
-    document.getElementById('kpis-pts-criticos').textContent = ptsCriticos;
-    (document.getElementById('kpis-mat-unicos')||{}).textContent = matsUnicos;
+    const elCrit = document.getElementById('kpis-pts-criticos'); if(elCrit) elCrit.textContent = ptsCriticos;
+    const elUni = document.getElementById('kpis-mat-unicos'); if(elUni) elUni.textContent = matsUnicos;
 
     if(typeof Chart!=='undefined'){
       destroyChart('kpisTopStock');destroyChart('kpisTopValor');destroyChart('kpisSalud');destroyChart('kpisFlujoNeto');destroyChart('kpisClasif');destroyChart('kpisClasifPorPunto');
