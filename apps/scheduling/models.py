@@ -37,6 +37,7 @@ class Evento(CreacionModificacionModel):
             ("MENSUAL", "Mensual"),
         ],
         blank=True,
+        null=True,
     )
     fecha_fin_repeticion = models.DateTimeField(null=True, blank=True)
     es_evento_generado = models.BooleanField(default=False)
@@ -58,7 +59,7 @@ class Evento(CreacionModificacionModel):
         self.descripcion = desc
 
     def asignar_color_por_material(self):
-        if self.material and hasattr(self.material, "tipo_material"):
+        if self.material and hasattr(self.material, "clasificacion"):
             self.color = "#28a745"  # Verde Inforecicla por defecto
 
 

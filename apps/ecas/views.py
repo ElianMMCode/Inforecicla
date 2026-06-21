@@ -414,6 +414,7 @@ def _build_inventario_context(punto, deep_link=None, ovtab=""):
         **kpis,
         "categoria_inventario": categoria_inventario,
         "clasificacion_inventario": clasificacion_inventario,
+        "desc_clasificaciones": cons.DESCRIPCIONES_CLASIFICACION,
         "centros": centros,
         "historial_compras": historial_compras,
         "historial_ventas": historial_ventas,
@@ -539,13 +540,16 @@ def _serializar_compra(c):
 def _serializar_venta(v):
     """Convierte una VentaInventario al dict que consume el template y el JS."""
     tiene_centro = getattr(v, "centro_acopio", None) is not None
+    clasificacion = getattr(v.inventario.material, "clasificacion", "")
+    from config.constants import DESCRIPCIONES_CLASIFICACION
     return {
         "ventaId": str(v.id),
         "inventarioId": str(v.inventario.id),
         "materialId": str(v.inventario.material.id),
         "nombreMaterial": v.inventario.material.nombre,
         "nombreCategoria": getattr(v.inventario.material.categoria, "nombre", ""),
-        "nombreTipo": getattr(v.inventario.material, "clasificacion", ""),
+        "nombreClasificacion": clasificacion,
+        "descripcionClasificacion": DESCRIPCIONES_CLASIFICACION.get(clasificacion, ""),
         "cantidad": float(v.cantidad),
         "fechaVenta": v.fecha_venta.isoformat(),
         "precioVenta": float(v.precio_venta or 0),
@@ -565,13 +569,17 @@ def _consolidar_centros(centros_globales, centros_locales):
 
 def _serializar_inventario_para_json(inv):
     """Convierte un Inventario al dict que va al JSON del template."""
+    from config.constants import DESCRIPCIONES_CLASIFICACION
     fecha_mod = getattr(inv, "fecha_modificacion", None)
+    clasificacion = inv.material.clasificacion or ""
     return {
         "inventarioId": str(inv.id),
         "materialId": str(inv.material.id),
         "nombre": inv.material.nombre,
         "categoria": getattr(inv.material.categoria, "nombre", ""),
-        "clasificacion": inv.material.clasificacion,
+        "clasificacion": clasificacion,
+        "descripcionClasificacion": DESCRIPCIONES_CLASIFICACION.get(clasificacion, ""),
+        "descripcion": inv.material.descripcion or "",
         "unidad": inv.unidad_medida,
         "stockActual": float(inv.stock_actual or 0),
         "capacidadMaxima": float(inv.capacidad_maxima or 0),

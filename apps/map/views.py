@@ -247,7 +247,7 @@ def api_puntos_eca_detalle(request, punto_id):
             {
                 "nombreMaterial": m.nombre,
                 "categoriaMaterial": getattr(m.categoria, "nombre", ""),
-                "tipoMaterial": getattr(m.tipo, "nombre", ""),
+                "tipoMaterial": m.clasificacion or "",
                 "stockActual": float(inv.stock_actual),
                 "capacidadMaxima": float(inv.capacidad_maxima),
                 "unidadMedida": inv.unidad_medida,

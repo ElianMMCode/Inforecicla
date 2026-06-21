@@ -75,7 +75,7 @@ class CompraInventario(CreacionModificacionModel):
         help_text="Precio unitario de compra del material (opcional)",
     )
 
-    observaciones = models.TextField(max_length=500, blank=True)
+    observaciones = models.TextField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return f"Compra {self.cantidad} - {self.inventario.material.nombre} ({self.fecha_compra.strftime('%d/%m/%Y')})"
@@ -139,7 +139,7 @@ class VentaInventario(CreacionModificacionModel):
         help_text="Precio unitario de venta del material (opcional)",
     )
 
-    observaciones = models.TextField(max_length=500, blank=True)
+    observaciones = models.TextField(max_length=500, blank=True, null=True)
 
     centro_acopio = models.ForeignKey(
         "ecas.CentroAcopio",

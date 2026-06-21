@@ -458,13 +458,6 @@ class AdminViewsTestCase(TestCase):
             response, "admin/CategoriasMateriales/listCategoriaMaterial.html"
         )
 
-    def test_listar_tipos_material_admin_view(self):
-        """Test listar_tipos_material_admin view"""
-        self.client.login(email="admin@example.com", password=self.admin_password)
-        response = self.client.get(reverse("panel_admin:listar_tipos_material_admin"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "admin/TiposMateriales/listTipoMaterial.html")
-
     def test_perfil_admin_view(self):
         """Test perfil_admin view"""
         self.client.login(email="admin@example.com", password=self.admin_password)

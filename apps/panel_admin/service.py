@@ -6,7 +6,7 @@ from decimal import Decimal as decimal
 from django.db import transaction
 from apps.ecas.models import Localidad, PuntoECA
 from apps.users.models import Usuario
-from apps.inventory.models import Inventario, TipoMaterial, CategoriaMaterial, Material
+from apps.inventory.models import Inventario, CategoriaMaterial, Material
 from config import constants as cons
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -358,12 +358,6 @@ class AdminDashboardService:
         return [{"estado": i["estado"], "count": i["count"]} for i in qs]
 
     @staticmethod
-    def obtener_distribucion_tipos_material_por_estado():
-        from django.db.models import Count
-        qs = TipoMaterial.objects.values("estado").annotate(count=Count("id"))
-        return [{"estado": i["estado"], "count": i["count"]} for i in qs]
-
-    @staticmethod
     def obtener_distribucion_categorias_publicacion_por_tipo():
         try:
             from apps.publicaciones.models import CategoriaPublicacion
@@ -527,22 +521,6 @@ class AdminCatalogService:
 
     @staticmethod
     @transaction.atomic
-    def crear_tipo_material(data):
-        campos, error = AdminCatalogService._validar_campos_catalogo(data)
-        if error:
-            return error
-        if TipoMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
-            return {"ok": False, "errors": {"nombre": TIPO_DUPLICADO_MSG}, "message": TIPO_DUPLICADO_MSG}
-        try:
-            obj = TipoMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
-            obj.full_clean()
-            obj.save()
-            return {"ok": True, "message": "Tipo de material creado correctamente."}
-        except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
-
-    @staticmethod
-    @transaction.atomic
     def crear_categoria_material(data):
         campos, error = AdminCatalogService._validar_campos_catalogo(data)
         if error:
@@ -596,15 +574,6 @@ class AdminCatalogService:
         if not categoria:
             raise ValueError("Categoría de material inválida.")
         return categoria
-
-    @staticmethod
-    def _resolver_tipo_material(tipo_id):
-        if not tipo_id:
-            return None
-        tipo = TipoMaterial.objects.filter(id=tipo_id).first()
-        if not tipo:
-            raise ValueError(TIPO_MATERIAL_INVALIDO_MSG)
-        return tipo
 
     @staticmethod
     @transaction.atomic
@@ -699,39 +668,6 @@ class AdminCatalogService:
             return {"ok": True, "message": "Categoria de publicacion creada correctamente."}
         except (ValidationError, IntegrityError) as e:
             return {"ok": False, "errors": {"_general": str(e)}, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
-
-    @staticmethod
-    @transaction.atomic
-    def actualizar_tipo_material(tipo_id, data):
-        tipo = TipoMaterial.objects.filter(id=tipo_id).first()
-        if not tipo:
-            return {"ok": False, "errors": {"_general": "Tipo de material no encontrado."}, "message": "Tipo de material no encontrado."}
-
-        nombre = (data.get("nombre") or "").strip()
-        descripcion = (data.get("descripcion") or "").strip()
-        estado = (data.get("estado") or "").strip().upper()
-        estados_validos = {value for value, _ in cons.Estado.choices}
-
-        if not nombre:
-            return {"ok": False, "errors": {"nombre": NOMBRE_OBLIGATORIO_MSG}, "message": NOMBRE_OBLIGATORIO_MSG}
-        if len(nombre) < 3:
-            return {"ok": False, "errors": {"nombre": NOMBRE_MIN_3_MSG}, "message": NOMBRE_MIN_3_MSG}
-        if not NOMBRE_REGEX.search(nombre):
-            return {"ok": False, "errors": {"nombre": NOMBRE_SIN_LETRA_MSG}, "message": NOMBRE_SIN_LETRA_MSG}
-        if estado not in estados_validos:
-            return {"ok": False, "errors": {"estado": ESTADO_INVALIDO_MSG}, "message": ESTADO_INVALIDO_MSG}
-        if TipoMaterial.objects.filter(nombre__iexact=nombre).exclude(id=tipo_id).exists():
-            return {"ok": False, "errors": {"nombre": TIPO_DUPLICADO_MSG}, "message": TIPO_DUPLICADO_MSG}
-
-        try:
-            tipo.nombre = nombre
-            tipo.descripcion = descripcion
-            tipo.estado = estado
-            tipo.full_clean()
-            tipo.save()
-            return {"ok": True, "message": "Tipo de material actualizado correctamente."}
-        except (ValidationError, IntegrityError) as e:
-            return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
 
     @staticmethod
     @staticmethod

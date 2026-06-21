@@ -142,6 +142,24 @@
         globalThis.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    function _actualizarBannerClasificacion(cls, descCls) {
+        const banner = document.getElementById("inv-ws-clasificacion-alerta");
+        const icono = document.getElementById("inv-ws-clasificacion-alerta-icono");
+        const titulo = document.getElementById("inv-ws-clasificacion-alerta-titulo");
+        const desc = document.getElementById("inv-ws-clasificacion-alerta-desc");
+        if (!banner || !icono || !titulo || !desc) return;
+        const cfg = {
+            PELIGROSO: { cls: "alert alert-danger d-flex mb-3", icon: "bi bi-shield-exclamation fs-2 flex-shrink-0 text-danger", title: "⚠ Material Peligroso — Requiere manejo autorizado", fallback: "Riesgo químico o eléctrico. Requiere EPP y manejo autorizado." },
+            HAZMAT:    { cls: "alert alert-dark d-flex mb-3", icon: "bi bi-radiation fs-2 flex-shrink-0", title: "☢ Residuo Peligroso HAZMAT — Solo gestores autorizados", fallback: "Residuo peligroso regulado. Transporte con manifiesto, disposición certificada." }
+        };
+        const c = cfg[cls];
+        if (!c) { banner.className = "alert d-none mb-3"; return; }
+        banner.className = c.cls;
+        icono.className = c.icon;
+        titulo.textContent = c.title;
+        desc.textContent = descCls || c.fallback;
+    }
+
     function poblarWorkspace(inv) {
         const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? "—"; };
         const nombre = inv.nombre;
@@ -151,7 +169,7 @@
         const ocupacionNum = Number(inv.ocupacion);
         setText("inv-ws-nombre", nombre);
         setText("inv-ws-categoria", inv.categoria);
-        setText("inv-ws-tipo", inv.tipo);
+        setText("inv-ws-clasificacion", inv.clasificacion);
         setText("inv-ws-ultact", "—");
         setText("inv-ws-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-pcompra", Number(inv.precioCompra).toLocaleString("es-CO"));
@@ -172,7 +190,27 @@
         setText("inv-ws-datos-nombre", nombre);
         setText("inv-ws-datos-material", nombre);
         setText("inv-ws-datos-categoria", inv.categoria);
-        setText("inv-ws-datos-tipo", inv.tipo);
+        setText("inv-ws-datos-descripcion", inv.descripcion || "—");
+        setText("inv-ws-datos-clasif-desc", inv.descripcionClasificacion || "—");
+
+        // Clasificación con icono y badge en Hoja Técnica
+        const cls = inv.clasificacion || "";
+        const descCls = inv.descripcionClasificacion || "";
+        const clsConfig = {
+            'ESTANDAR':      { icon: 'bi-check-circle-fill',       color: 'text-success',  badge: 'bg-success',  label: 'Estándar' },
+            'MANEJO_ESPECIAL':{ icon: 'bi-exclamation-triangle-fill', color: 'text-warning', badge: 'bg-warning text-dark', label: 'Manejo Especial' },
+            'PELIGROSO':     { icon: 'bi-shield-exclamation-fill',  color: 'text-danger',   badge: 'bg-danger',   label: 'Peligroso' },
+            'HAZMAT':        { icon: 'bi-radiation',               color: 'text-dark',     badge: 'bg-dark',     label: 'HAZMAT' }
+        };
+        const clsInfo = clsConfig[cls] || { icon: 'bi-question-circle-fill', color: 'text-secondary', badge: 'bg-secondary', label: cls || '—' };
+
+        const clasifBadge = document.getElementById("inv-ws-datos-clasif-badge");
+        if (clasifBadge) {
+            clasifBadge.innerHTML = `<i class="bi ${clsInfo.icon} ${clsInfo.color}"></i> <span class="badge ${clsInfo.badge}">${escapeHtml(clsInfo.label)}</span>`;
+        }
+
+        // Banner de alerta para clasificaciones de riesgo
+        _actualizarBannerClasificacion(cls, descCls);
         setText("inv-ws-datos-cap", `${formatQty(inv.capacidadMaxima, inv.unidad)}`);
         setText("inv-ws-datos-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-datos-unidad", inv.unidad);
@@ -308,7 +346,7 @@
     function aplicarFiltrosCards() {
         const nombre = (document.getElementById("inv-filter-nombre")?.value || "").toLowerCase().trim();
         const cat = document.getElementById("inv-filter-categoria")?.value || "";
-        const tipo = document.getElementById("inv-filter-tipo")?.value || "";
+        const tipo = document.getElementById("inv-filter-clasificacion")?.value || "";
         const estado = document.getElementById("inv-filter-estado")?.value || "";
         const ocupacionSel = document.getElementById("inv-filter-ocupacion")?.value || "";
 
@@ -318,7 +356,7 @@
         document.querySelectorAll(".inv-tarjeta-material").forEach((card) => {
             const matchNombre = !nombre || (card.dataset.nombre || "").includes(nombre);
             const matchCat = !cat || card.dataset.categoria === cat;
-            const matchTipo = !tipo || card.dataset.tipo === tipo;
+            const matchTipo = !tipo || card.dataset.clasificacion === tipo;
             const matchEstado = !estado || card.dataset.estado === estado;
             let matchOcup = true;
             if (ocupacionSel) {
@@ -340,7 +378,7 @@
     }
 
     function limpiarFiltrosCards() {
-        ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
+            ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-clasificacion", "inv-filter-estado", "inv-filter-ocupacion"]
             .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
         aplicarFiltrosCards();
     }
@@ -485,7 +523,7 @@
         if (!lista) return;
 
         const filtrados = pickerCatalogo.filter((m) => {
-            const matchQ = !q || (m.nmbMaterial || "").toLowerCase().includes(q) || (m.dscMaterial || "").toLowerCase().includes(q) || (m.nmbTipo || "").toLowerCase().includes(q);
+            const matchQ = !q || (m.nmbMaterial || "").toLowerCase().includes(q) || (m.dscMaterial || "").toLowerCase().includes(q) || (m.nmbClasificacion || "").toLowerCase().includes(q);
             const matchC = !cat || m.nmbCategoria === cat;
             const matchF = filtro === "todos" || (filtro === "en-inventario" && m.enInventario) || (filtro === "disponibles" && !m.enInventario);
             return matchQ && matchC && matchF;
@@ -508,7 +546,7 @@
                 <div class="flex-grow-1 text-start">
                     <div class="fw-semibold">${escapeHtml(m.nmbMaterial)}</div>
                     <small class="text-muted d-block mb-1">${escapeHtml(m.dscMaterial || "")}</small>
-                    <span class="badge bg-primary me-1">${escapeHtml(m.nmbTipo || "")}</span>
+                    <span class="badge bg-primary me-1">${escapeHtml(m.nmbClasificacion || "")}</span>
                     <span class="badge bg-secondary">${escapeHtml(m.nmbCategoria || "")}</span>
                     <span class="badge bg-light text-dark ms-1">${escapeHtml(m.unidad || "")}</span>
                     ${estado}
@@ -524,6 +562,26 @@
         bootstrap.Modal.getInstance(document.getElementById("inv-modal-picker"))?.hide();
         document.getElementById("inv-crear-material-id").value = item.materialId;
         document.getElementById("inv-crear-material-nombre").value = item.nmbMaterial || "";
+        document.getElementById("inv-crear-material-categoria").value = item.nmbCategoria || "";
+        document.getElementById("inv-crear-material-descripcion").value = item.dscMaterial || "";
+
+        const clasificacion = item.nmbClasificacion || "";
+        const descClasif = item.descripcionClasificacion || "";
+        const iconEl = document.getElementById("inv-crear-material-clasificacion-icono");
+        const nombreEl = document.getElementById("inv-crear-material-clasificacion-nombre");
+        const descEl = document.getElementById("inv-crear-material-clasificacion-desc");
+        if (iconEl) {
+            const iconMap = {
+                'ESTANDAR': '<i class="bi bi-check-circle-fill text-success"></i>',
+                'MANEJO_ESPECIAL': '<i class="bi bi-exclamation-triangle-fill text-warning"></i>',
+                'PELIGROSO': '<i class="bi bi-shield-exclamation-fill text-danger"></i>',
+                'HAZMAT': '<i class="bi bi-radiation text-dark"></i>'
+            };
+            iconEl.innerHTML = iconMap[clasificacion] || '<i class="bi bi-question-circle-fill text-secondary"></i>';
+        }
+        if (nombreEl) nombreEl.textContent = clasificacion || "—";
+        if (descEl) descEl.value = descClasif;
+
         const sel = document.getElementById("inv-crear-unidad-medida");
         if (sel && item.unidad) sel.value = item.unidad;
         document.getElementById("inv-tab-buscar-placeholder").style.display = "none";
@@ -536,10 +594,16 @@
     }
 
     function limpiarSeleccionCrear() {
-        ["inv-crear-material-id", "inv-crear-material-nombre", "inv-crear-stock-inicial",
-         "inv-crear-capacidad-maxima", "inv-crear-unidad-medida", "inv-crear-precio-compra",
-         "inv-crear-precio-venta", "inv-crear-umbral-alerta", "inv-crear-umbral-critico"]
+        ["inv-crear-material-id", "inv-crear-material-nombre", "inv-crear-material-categoria",
+         "inv-crear-material-descripcion", "inv-crear-material-clasificacion-desc",
+         "inv-crear-stock-inicial", "inv-crear-capacidad-maxima", "inv-crear-unidad-medida",
+         "inv-crear-precio-compra", "inv-crear-precio-venta", "inv-crear-umbral-alerta",
+         "inv-crear-umbral-critico"]
             .forEach((id) => { const el = document.getElementById(id); if (el) { el.value = ""; el.classList.remove("is-invalid"); } });
+        const iconEl = document.getElementById("inv-crear-material-clasificacion-icono");
+        if (iconEl) iconEl.innerHTML = "";
+        const nombreEl = document.getElementById("inv-crear-material-clasificacion-nombre");
+        if (nombreEl) nombreEl.textContent = "";
         document.getElementById("inv-crear-mensaje-estado").style.display = "none";
         document.getElementById("inv-tab-buscar-form-container").style.display = "none";
         document.getElementById("inv-tab-buscar-placeholder").style.display = "block";
@@ -660,13 +724,13 @@
         };
 
         // 1) Filtros landing (cards)
-        apply("#inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion");
+        apply("#inv-filter-categoria, #inv-filter-clasificacion, #inv-filter-estado, #inv-filter-ocupacion");
 
         // 2) Filtros historial general (Select2 en todos MENOS tipo de
         // movimiento, que debe permanecer como <select> nativo para que el
         // listener de 'change' dispare confiablemente el toggle del centro
         // de acopio al elegir "Venta").
-        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-tipo-material, #inv-hfiltro-centro");
+        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-clasificacion, #inv-hfiltro-centro");
 
         // 3) Filtro chart
         apply("#inv-flujo-granularidad");
@@ -739,11 +803,11 @@
         // que el handler quede en el sistema de eventos de jQuery.
         if (globalThis.jQuery) {
             const $filtrosLanding = globalThis.jQuery(
-                "#inv-filter-nombre, #inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion"
+                "#inv-filter-nombre, #inv-filter-categoria, #inv-filter-clasificacion, #inv-filter-estado, #inv-filter-ocupacion"
             );
             $filtrosLanding.on("input change", aplicarFiltrosCards);
         } else {
-            ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
+        ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-clasificacion", "inv-filter-estado", "inv-filter-ocupacion"]
                 .forEach((id) => document.getElementById(id)?.addEventListener("input", aplicarFiltrosCards));
         }
         document.getElementById("inv-filter-limpiar")?.addEventListener("click", limpiarFiltrosCards);
@@ -1062,7 +1126,7 @@
                     title: null,
                     html: renderComprobante("compra", {
                         materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formEntradaMaterialTipo")?.value || "—",
+                        materialTipo: document.getElementById("formEntradaMaterialClasificacion")?.value || "—",
                         materialCategoria: document.getElementById("formEntradaMaterialCategoria")?.value || "—",
                         unidad: document.getElementById("formEntradaMaterialUnidad")?.value || "",
                         cantidad: cant,
@@ -1128,7 +1192,7 @@
                     title: null,
                     html: renderComprobante("venta", {
                         materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formSalidaMaterialTipo")?.value || "—",
+                        materialTipo: document.getElementById("formSalidaMaterialClasificacion")?.value || "—",
                         materialCategoria: document.getElementById("formSalidaMaterialCategoria")?.value || "—",
                         unidad: document.getElementById("formSalidaMaterialUnidad")?.value || "",
                         cantidad: cant,
@@ -1173,7 +1237,7 @@
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
         const fmt = (v) => (v ?? 0).toLocaleString("es-CO", { maximumFractionDigits: 2 });
         const unidad = inv.unidad || "";
-        setVal(`${prefix}MaterialTipo`, inv.tipo);
+        setVal(`${prefix}MaterialClasificacion`, inv.clasificacion);
         setVal(`${prefix}MaterialCategoria`, inv.categoria);
         setVal(`${prefix}MaterialUnidad`, unidad);
         setVal(`${prefix}StockActual`, inv.stockActual);
@@ -1608,7 +1672,7 @@
         const filtros = [
             ["material", materialNombre],
             ["categoria", _q("inv-hfiltro-categoria")?.value],
-            ["tipo", _q("inv-hfiltro-tipo-material")?.value],
+            ["tipo", _q("inv-hfiltro-clasificacion")?.value],
             ["tipo_movimiento", _q("inv-hfiltro-tipo")?.value],
             ["fecha_desde", _q("inv-hfiltro-desde")?.value],
             ["fecha_hasta", _q("inv-hfiltro-hasta")?.value],
@@ -1692,7 +1756,7 @@
         return {
             effectiveMaterialId,
             categoria: _q("inv-hfiltro-categoria")?.value || "",
-            tipoMaterial: _q("inv-hfiltro-tipo-material")?.value || "",
+            tipoMaterial: _q("inv-hfiltro-clasificacion")?.value || "",
             tipo: _q("inv-hfiltro-tipo")?.value || "",
             centro: _q("inv-hfiltro-centro")?.value || "",
             cantidadMin: Number.parseFloat(_q("inv-hfiltro-cantidad-min")?.value),
@@ -1904,7 +1968,7 @@
         [
             "inv-hfiltro-material",
             "inv-hfiltro-categoria",
-            "inv-hfiltro-tipo-material",
+            "inv-hfiltro-clasificacion",
             "inv-hfiltro-tipo",
             "inv-hfiltro-desde",
             "inv-hfiltro-hasta",
@@ -2831,4 +2895,8 @@
         _initDeepLink();
         bind();
     }
+
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        void new bootstrap.Tooltip(el);
+    });
 })();

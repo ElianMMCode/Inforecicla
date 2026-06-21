@@ -1,6 +1,6 @@
 """
 InventoryService centraliza la lógica del inventario para materiales asociados a puntos ECA.
-Existen funciones para buscar, filtrar, crear, actualizar y eliminar materiales en inventario, así como obtener detalle y categorías/tipos válidos.
+Existen funciones para buscar, filtrar, crear, actualizar y eliminar materiales en inventario, así como obtener detalle y categorías/clasificaciones válidos.
 Las operaciones aplican validaciones, manejo de errores y formateo de respuestas para integración directa con vistas o APIs.
 """
 
@@ -15,8 +15,8 @@ from apps.inventory.models import (
     CategoriaMaterial,
     Inventario,
     Material,
-    TipoMaterial,
 )
+from config.constants import DESCRIPCIONES_CLASIFICACION
 
 
 MENSAJE_RECURSO_NO_ENCONTRADO = "Recurso no encontrado"
@@ -25,7 +25,7 @@ IMAGEN_MATERIAL_DEFECTO = "/static/img/materiales.png"
 
 class InventoryService:
     @staticmethod
-    def _validar_parametros_busqueda_fuera(punto_id, query, categoria, tipo):
+    def _validar_parametros_busqueda_fuera(punto_id, query, categoria, clasificacion):
         """Valida los parámetros de entrada para búsqueda de materiales fuera de inventario.
         Retorna dict con error y status si algo falla, o None si todo es válido.
         """
@@ -45,7 +45,7 @@ class InventoryService:
             }
         filtros_invalidos = [
             nombre
-            for nombre, valor in (("query", query), ("categoria", categoria), ("tipo", tipo))
+            for nombre, valor in (("query", query), ("categoria", categoria), ("clasificacion", clasificacion))
             if valor is not None and not isinstance(valor, str)
         ]
         if filtros_invalidos:
@@ -72,28 +72,30 @@ class InventoryService:
             }
 
     @staticmethod
-    def _aplicar_filtros_catalogo(queryset, query, categoria, tipo):
-        """Aplica filtros opcionales (query, categoria, tipo) al queryset del catálogo."""
+    def _aplicar_filtros_catalogo(queryset, query, categoria, clasificacion):
+        """Aplica filtros opcionales (query, categoria, clasificacion) al queryset del catálogo."""
         if query:
             queryset = queryset.filter(
                 Q(nombre__unaccent__icontains=query)
                 | Q(categoria__nombre__unaccent__icontains=query)
-                | Q(tipo__nombre__unaccent__icontains=query)
+                | Q(clasificacion__icontains=query)
             )
         if categoria:
             queryset = queryset.filter(categoria__nombre__unaccent__iexact=categoria)
-        if tipo:
-            queryset = queryset.filter(tipo__nombre__unaccent__iexact=tipo)
+        if clasificacion:
+            queryset = queryset.filter(clasificacion__iexact=clasificacion)
         return queryset
 
     @staticmethod
     def _formatear_material_fuera_inventario(material):
         """Proyecta un Material a la estructura de respuesta del catálogo."""
+        clasificacion = material.clasificacion or ""
         return {
             "materialId": str(material.id),
             "nmbMaterial": material.nombre,
             "nmbCategoria": material.categoria.nombre if material.categoria else "General",
-            "nmbClasificacion": material.clasificacion or "N/A",
+            "nmbClasificacion": clasificacion or "N/A",
+            "descripcionClasificacion": DESCRIPCIONES_CLASIFICACION.get(clasificacion, ""),
             "dscMaterial": material.descripcion,
             "unidad": "",
             "imagenUrl": material.imagen_url if material.imagen_url else IMAGEN_MATERIAL_DEFECTO,
@@ -101,15 +103,15 @@ class InventoryService:
 
     @staticmethod
     @transaction.atomic
-    def buscar_materiales_fuera_inventario(punto_id, query, categoria, tipo):
+    def buscar_materiales_fuera_inventario(punto_id, query, categoria, clasificacion):
         """
         Retorna los materiales del catálogo que aún no han sido agregados al inventario de un PuntoECA.
-        Sirve para sugerir materiales a cargar. Se puede filtrar por texto, categoría y tipo.
+        Sirve para sugerir materiales a cargar. Se puede filtrar por texto, categoría y clasificación.
         Parámetros:
             punto_id (UUID): ID del Punto ECA a analizar
-            query (str): texto a buscar en nombre/categoría/tipo del material
+            query (str): texto a buscar en nombre/categoría/clasificación del material
             categoria (str): nombre de la categoría a filtrar
-            tipo (str): nombre del tipo de material a filtrar
+            clasificacion (str): clasificación de manejo del material a filtrar
         Retorna:
             list[dict] con los materiales encontrados, o dict con error y status HTTP sugerido.
             Errores posibles:
@@ -118,7 +120,7 @@ class InventoryService:
                 - 500: error técnico inesperado al consultar el catálogo.
         """
         error = InventoryService._validar_parametros_busqueda_fuera(
-            punto_id, query, categoria, tipo
+            punto_id, query, categoria, clasificacion
         )
         if error:
             return error
@@ -133,12 +135,12 @@ class InventoryService:
             ).values_list("material_id", flat=True)
 
             materiales_catalogo = (
-                Material.objects.select_related("categoria", "tipo")
+                Material.objects.select_related("categoria")
                 .exclude(id__in=materiales_en_inventario)
                 .distinct()
             )
             materiales_catalogo = InventoryService._aplicar_filtros_catalogo(
-                materiales_catalogo, query, categoria, tipo
+                materiales_catalogo, query, categoria, clasificacion
             )
 
             return [
@@ -166,15 +168,15 @@ class InventoryService:
         return Inventario.objects.filter(punto_eca=punto_eca).select_related("material")
 
     @staticmethod
-    def _filtrar_materiales_inventario(queryset, query, categoria, tipo, unidad):
+    def _filtrar_materiales_inventario(queryset, query, categoria, clasificacion, unidad):
         if query:
             queryset = queryset.filter(Q(material__nombre__unaccent__icontains=query))
         if categoria:
             queryset = queryset.filter(
                 material__categoria__nombre__unaccent__icontains=categoria
             )
-        if tipo:
-            queryset = queryset.filter(material__clasificacion__iexact=tipo)
+        if clasificacion:
+            queryset = queryset.filter(material__clasificacion__iexact=clasificacion)
         if unidad:
             queryset = queryset.filter(unidad_medida=unidad)
         return queryset
@@ -201,12 +203,14 @@ class InventoryService:
                 item, porcentaje_ocupacion
             )
             material = item.material
+            clasificacion = material.clasificacion or ""
             return {
                 "inventarioId": str(item.id),
                 "materialId": str(material.id),
                 "nmbMaterial": material.nombre,
                 "nmbCategoria": material.categoria.nombre if material.categoria else "General",
-                "nmbClasificacion": material.clasificacion or "N/A",
+                "nmbClasificacion": clasificacion or "N/A",
+                "descripcionClasificacion": DESCRIPCIONES_CLASIFICACION.get(clasificacion, ""),
                 "dscMaterial": material.descripcion,
                 "stockActual": item.stock_actual,
                 "capacidadMaxima": item.capacidad_maxima,
@@ -252,7 +256,7 @@ class InventoryService:
     def buscar_materiales_dentro_inventario(data):
         """
         Busca y filtra materiales dentro del inventario de un Punto ECA.
-        Permite filtrar por texto, categoría, tipo, unidad, alerta y rango de ocupación indicada.
+        Permite filtrar por texto, categoría, clasificación, unidad, alerta y rango de ocupación indicada.
         Aplica reglas de negocio para determinar el estado de alerta:
             - Si el porcentaje de ocupación >= umbral_critico: "Crítico"
             - Si el porcentaje de ocupación >= umbral_alerta: "Alerta"
@@ -262,7 +266,7 @@ class InventoryService:
                 puntoId (UUID): ID del Punto ECA
                 texto (str): Texto para buscar por nombre de material
                 categoria (str): Filtro por nombre de categoría
-                tipo (str): Filtro por tipo de material
+                clasificacion (str): Filtro por clasificación de manejo
                 unidad (str): Filtro por unidad de medida
                 alerta (str): Filtro de estado de alerta ('OK' | 'Alerta' | 'Crítico')
                 ocupacion (str): Rango de porcentaje 'min-max' para filtrar por ocupación
@@ -273,7 +277,7 @@ class InventoryService:
             punto_id = data.get("puntoId", "").strip()
             query = data.get("texto", "").strip()
             categoria = data.get("categoria", "").strip()
-            tipo = data.get("tipo", "").strip()
+            clasificacion = data.get("clasificacion", "").strip()
             unidad = data.get("unidad", "").strip()
             alerta = data.get("alerta", "").strip()
             ocupacion = data.get("ocupacion", "").strip()
@@ -298,7 +302,7 @@ class InventoryService:
                     }
                 ]
             materiales_inventario = InventoryService._filtrar_materiales_inventario(
-                materiales_inventario, query, categoria, tipo, unidad
+                materiales_inventario, query, categoria, clasificacion, unidad
             ).order_by("fecha_modificacion")
 
             resultados = [
@@ -323,17 +327,16 @@ class InventoryService:
     @staticmethod
     def categorias_tipos_posibles_para_punto(punto_id=None):
         """
-        Retorna los nombres de todas las categorías y tipos posibles para materiales.
+        Retorna los nombres de todas las categorías y clasificaciones posibles para materiales.
         Si se indica 'punto_id', restringe a los utilizados o disponibles en el inventario de ese PuntoECA; caso contrario devuelve todo el catálogo del sistema.
 
         Args:
             punto_id (UUID, opcional): Limita búsqueda a materiales asociados a este punto ECA.
         Returns:
-            dict: {'categorias': list[str], 'tipos': list[str]} o dict de error
+            dict: {'categorias': list[str], 'clasificaciones': list[str]} o dict de error
         """
 
         try:
-            # Opcional: Limitar sólo a materiales usados en inventario para ese punto
             if punto_id:
                 materiales_en_punto = Material.objects.filter(
                     inventario__punto_eca_id=punto_id
@@ -345,18 +348,19 @@ class InventoryService:
                 .distinct()
                 .order_by("nombre")
             )
-            tipos = (
-                TipoMaterial.objects.filter(material__in=materiales_en_punto)
+            clasificaciones = (
+                materiales_en_punto
+                .values_list("clasificacion", flat=True)
                 .distinct()
-                .order_by("nombre")
+                .order_by("clasificacion")
             )
             return {
                 "categorias": [c.nombre for c in categorias],
-                "tipos": [t.nombre for t in tipos],
+                "clasificaciones": [c for c in clasificaciones if c],
             }
         except Exception as e:
             return {
-                "error": f"Error técnico en categorías/tipos: {str(e)}",
+                "error": f"Error técnico en categorías/clasificaciones: {str(e)}",
                 "status": 500,
             }
 
@@ -379,7 +383,10 @@ class InventoryService:
             return {
                 "nmbMaterial": inventario_item.material.nombre,
                 "nmbCategoria": inventario_item.material.categoria.nombre,
-                "nmbTipo": inventario_item.material.clasificacion,
+                "nmbClasificacion": inventario_item.material.clasificacion,
+                "descripcionClasificacion": DESCRIPCIONES_CLASIFICACION.get(
+                    inventario_item.material.clasificacion, ""
+                ),
                 "dscMaterial": inventario_item.material.descripcion,
                 "stockActual": inventario_item.stock_actual,
                 "capacidadMaxima": inventario_item.capacidad_maxima,

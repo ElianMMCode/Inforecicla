@@ -62,19 +62,16 @@ class PuntoECATestCase(TestCase):
             Inventario,
             Material,
             CategoriaMaterial,
-            TipoMaterial,
         )
 
         # Create required related objects
         categoria1 = CategoriaMaterial.objects.create(nombre="Categoria 1")
-        tipo1 = TipoMaterial.objects.create(nombre="Tipo 1")
         categoria2 = CategoriaMaterial.objects.create(nombre="Categoria 2")
-        tipo2 = TipoMaterial.objects.create(nombre="Tipo 2")
         material1 = Material.objects.create(
-            nombre="Material 1", categoria=categoria1, tipo=tipo1
+            nombre="Material 1", categoria=categoria1, clasificacion="ESTANDAR"
         )
         material2 = Material.objects.create(
-            nombre="Material 2", categoria=categoria2, tipo=tipo2
+            nombre="Material 2", categoria=categoria2, clasificacion="ESTANDAR"
         )
 
         inventario1 = Inventario.objects.create(

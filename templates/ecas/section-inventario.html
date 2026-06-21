@@ -259,8 +259,8 @@ globalThis.getCSRFToken = function () {
                                     </select>
                                 </div>
                                 <div class="col-md-2">
-                                    <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-tipo">Tipo</label>
-                                    <select class="form-select border-2 border-success" id="inv-filter-tipo">
+                                    <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-clasificacion">Clasificación</label>
+                                    <select class="form-select border-2 border-success" id="inv-filter-clasificacion">
                                         <option value="">Todos</option>
                                         {% for t in clasificacion_inventario %}<option value="{{ t|slugify }}">{{ t }}</option>{% endfor %}
                                     </select>
@@ -309,7 +309,7 @@ globalThis.getCSRFToken = function () {
                                  data-inv-id="{{ inv.id }}"
                                  data-nombre="{{ inv.material.nombre|lower }}"
                                  data-categoria="{{ inv.material.categoria.nombre|default_if_none:''|slugify }}"
-                                 data-tipo="{{ inv.material.clasificacion|default_if_none:''|slugify }}"
+                                 data-clasificacion="{{ inv.material.clasificacion|default_if_none:''|slugify }}"
                                  data-estado="{% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}critico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}alerta{% else %}ok{% endif %}"
                                  data-ocupacion="{{ inv.ocupacion_actual|floatformat:0 }}">
                                 <button type="button" class="card h-100 shadow-sm border-0 position-relative inv-tarjeta text-start w-100">
@@ -324,7 +324,19 @@ globalThis.getCSRFToken = function () {
                                                 {% else %}bg-success-subtle text-success-emphasis{% endif %}">
                                         <div>
                                             <h5 class="card-title mb-0 fw-bold">{{ inv.material.nombre }}</h5>
-                                            <small class="opacity-75">{{ inv.material.clasificacion|default:'—' }}</small>
+                                            {% with cls=inv.material.clasificacion %}
+                                            <span class="clasificacion-tooltip d-inline-flex align-items-center gap-1 small opacity-75"
+                                                  data-bs-toggle="tooltip" data-bs-placement="top"
+                                                  title="{% for k,v in desc_clasificaciones.items %}{% if k == cls %}{{ v }}{% endif %}{% endfor %}"
+                                                  style="cursor:help;">
+                                                {% if cls == 'ESTANDAR' %}<i class="bi bi-check-circle-fill text-success"></i>
+                                                {% elif cls == 'MANEJO_ESPECIAL' %}<i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                                {% elif cls == 'PELIGROSO' %}<i class="bi bi-shield-exclamation-fill text-danger"></i>
+                                                {% elif cls == 'HAZMAT' %}<i class="bi bi-radiation text-dark"></i>
+                                                {% else %}<i class="bi bi-question-circle-fill text-secondary"></i>{% endif %}
+                                                {{ cls|default:'—' }}
+                                            </span>
+                                            {% endwith %}
                                         </div>
                                         <span class="badge {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}bg-danger{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}bg-warning text-dark{% else %}bg-success{% endif %}">
                                             {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}Crítico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}Alerta{% else %}OK{% endif %}
@@ -374,6 +386,14 @@ globalThis.getCSRFToken = function () {
                         Ningún material coincide con los filtros aplicados.
                         <button class="btn btn-sm btn-link p-0 ms-2" type="button" id="inv-filter-limpiar-vacio">Limpiar filtros</button>
                     </div>
+
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        document.querySelectorAll('.clasificacion-tooltip').forEach(function (el) {
+                            void new bootstrap.Tooltip(el);
+                        });
+                    });
+                    </script>
                 </div>
                 {# ============== TAB: BUSCAR / CREAR (form inline) ============== #}
                 <div class="ovtab-pane {% if ovtab == 'ovtab-buscar' %}active{% endif %}" id="ovtab-buscar">
@@ -427,6 +447,25 @@ globalThis.getCSRFToken = function () {
                                     <div class="col-12">
                                         <label for="inv-crear-material-nombre" class="form-label fw-semibold">Material Seleccionado</label>
                                         <input type="text" class="form-control" id="inv-crear-material-nombre" readonly style="background-color: #f5f5f5">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inv-crear-material-categoria" class="form-label fw-semibold text-muted small">Categoría</label>
+                                        <input type="text" class="form-control form-control-sm" id="inv-crear-material-categoria" readonly style="background-color: #f5f5f5">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inv-crear-material-clasificacion-display" class="form-label fw-semibold text-muted small">Clasificación</label>
+                                        <div class="form-control form-control-sm d-flex align-items-center gap-2" id="inv-crear-material-clasificacion-display" readonly style="background-color: #f5f5f5; height:auto; min-height:38px;">
+                                            <span id="inv-crear-material-clasificacion-icono"></span>
+                                            <span id="inv-crear-material-clasificacion-nombre"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inv-crear-material-clasificacion-desc" class="form-label fw-semibold text-muted small">Descripción Clasificación</label>
+                                        <input type="text" class="form-control form-control-sm" id="inv-crear-material-clasificacion-desc" readonly style="background-color: #f5f5f5; font-size:0.8rem;">
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="inv-crear-material-descripcion" class="form-label fw-semibold text-muted small">Descripción del Material</label>
+                                        <textarea class="form-control form-control-sm" id="inv-crear-material-descripcion" rows="2" readonly style="background-color: #f5f5f5; resize:none;"></textarea>
                                     </div>
                                 </div>
                                 <hr class="my-4">
@@ -555,8 +594,8 @@ globalThis.getCSRFToken = function () {
                                     </select>
                                 </div>
                                 <div class="col-md-2">
-                                    <label class="form-label fw-semibold small" for="inv-hfiltro-tipo-material">Tipo material</label>
-                                    <select class="form-select form-select-sm" id="inv-hfiltro-tipo-material">
+                                    <label class="form-label fw-semibold small" for="inv-hfiltro-clasificacion">Clasificación</label>
+                                    <select class="form-select form-select-sm" id="inv-hfiltro-clasificacion">
                                         <option value="">-- Todos --</option>
                                         {% for tip in clasificacion_inventario %}
                                             <option value="{{ tip }}">{{ tip }}</option>
@@ -868,7 +907,7 @@ globalThis.getCSRFToken = function () {
                         </h4>
                         <div class="d-flex flex-wrap gap-3 small text-muted">
                             <span><i class="bi bi-tag me-1"></i><span id="inv-ws-categoria">—</span></span>
-                            <span><i class="bi bi-circle me-1"></i><span id="inv-ws-tipo">—</span></span>
+                            <span><i class="bi bi-circle me-1"></i><span id="inv-ws-clasificacion">—</span></span>
                             <span><i class="bi bi-clock me-1"></i>Última act.: <span id="inv-ws-ultact">—</span></span>
                         </div>
                     </div>
@@ -924,6 +963,16 @@ globalThis.getCSRFToken = function () {
 
         {# TAB DATOS #}
         <div class="tab-pane-stack active" id="tab-datos">
+            {# Banner de alerta de clasificación (se muestra dinámicamente para PELIGROSO/HAZMAT) #}
+            <div id="inv-ws-clasificacion-alerta" class="alert d-none mb-3" role="alert">
+                <div class="d-flex align-items-start gap-3">
+                    <i id="inv-ws-clasificacion-alerta-icono" class="bi fs-2 flex-shrink-0"></i>
+                    <div>
+                        <h6 id="inv-ws-clasificacion-alerta-titulo" class="alert-heading fw-bold mb-1"><span class="visually-hidden">Alerta de clasificación</span></h6>
+                        <p id="inv-ws-clasificacion-alerta-desc" class="mb-0 small"></p>
+                    </div>
+                </div>
+            </div>
             <div class="card shadow-sm mb-3">
                 <div class="card-header bg-success-subtle border-0 px-4 py-3">
                     <h6 class="mb-0 fw-bold text-success">
@@ -937,7 +986,12 @@ globalThis.getCSRFToken = function () {
                             <dl class="row mb-0 small">
                                 <dt class="col-5 text-muted">Material</dt><dd class="col-7 fw-semibold" id="inv-ws-datos-material">—</dd>
                                 <dt class="col-5 text-muted">Categoría</dt><dd class="col-7" id="inv-ws-datos-categoria">—</dd>
-                                <dt class="col-5 text-muted">Tipo</dt><dd class="col-7" id="inv-ws-datos-tipo">—</dd>
+                                <dt class="col-5 text-muted">Clasificación</dt>
+                                <dd class="col-7" id="inv-ws-datos-clasificacion">
+                                    <span id="inv-ws-datos-clasif-badge" class="d-inline-flex align-items-center gap-1"></span>
+                                </dd>
+                                <dt class="col-5 text-muted">Descripción</dt><dd class="col-7" id="inv-ws-datos-descripcion">—</dd>
+                                <dt class="col-5 text-muted">Info. Clasificación</dt><dd class="col-7 small text-muted" id="inv-ws-datos-clasif-desc">—</dd>
                             </dl>
                         </div>
                         <div class="col-md-6">
@@ -987,8 +1041,8 @@ globalThis.getCSRFToken = function () {
                         <input type="hidden" id="formEntradaPuntoId" name="puntoId" value="{{ punto.id }}">
                         <div class="row g-2 mb-3 p-2 bg-light rounded">
                             <div class="col-md-2">
-                                <label class="form-label small mb-0 text-muted" for="formEntradaMaterialTipo">Tipo</label>
-                                <input type="text" class="form-control form-control-sm bg-white" id="formEntradaMaterialTipo" readonly>
+                                <label class="form-label small mb-0 text-muted" for="formEntradaMaterialClasificacion">Clasificación</label>
+                                <input type="text" class="form-control form-control-sm bg-white" id="formEntradaMaterialClasificacion" readonly>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label small mb-0 text-muted" for="formEntradaMaterialCategoria">Categoría</label>
@@ -1126,8 +1180,8 @@ globalThis.getCSRFToken = function () {
                         <input type="hidden" id="formSalidaPuntoId" name="puntoId" value="{{ punto.id }}">
                         <div class="row g-2 mb-3 p-2 bg-light rounded">
                             <div class="col-md-2">
-                                <label class="form-label small mb-0 text-muted" for="formSalidaMaterialTipo">Tipo</label>
-                                <input type="text" class="form-control form-control-sm bg-white" id="formSalidaMaterialTipo" readonly>
+                                <label class="form-label small mb-0 text-muted" for="formSalidaMaterialClasificacion">Clasificación</label>
+                                <input type="text" class="form-control form-control-sm bg-white" id="formSalidaMaterialClasificacion" readonly>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label small mb-0 text-muted" for="formSalidaMaterialCategoria">Categoría</label>
@@ -1275,8 +1329,8 @@ globalThis.getCSRFToken = function () {
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold small" for="inv-ws-hfiltro-tipo-material">Tipo material</label>
-                            <select class="form-select form-select-sm inv-ws-hfiltro" id="inv-ws-hfiltro-tipo-material">
+                            <label class="form-label fw-semibold small" for="inv-ws-hfiltro-clasificacion">Clasificación</label>
+                            <select class="form-select form-select-sm inv-ws-hfiltro" id="inv-ws-hfiltro-clasificacion">
                                 <option value="">-- Todos --</option>
                                 {% for tip in clasificacion_inventario %}
                                     <option value="{{ tip }}">{{ tip }}</option>
