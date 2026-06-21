@@ -871,8 +871,18 @@ function guardarEdicionPunto(){
   openDetalle(currentPuntoId);
 }
 
+/* ===== CLEAR FILTERS POR TAB ===== */
+function _clearInput(id){const el=document.getElementById(id);if(el)el.value='';}
+function _clearSelect(id){if(typeof $!=='undefined'){$('#'+id).val('').trigger('change');}else{const el=document.getElementById(id);if(el)el.value='';}}
+function limpiarFiltrosResumen(){_clearInput('res-search-input');_clearSelect('res-loc-filter');_clearSelect('res-estado-filter');_clearSelect('res-mat-filter');document.getElementById('res-orden').value='mov';renderResumen();}
+function limpiarFiltrosEstados(){_clearInput('est-search-input');_clearSelect('est-loc-filter');_clearSelect('est-estado-filter');_clearSelect('est-salud-filter');renderEstados();}
+function limpiarFiltrosFlujoVolumen(){_clearInput('flu-search-input');_clearSelect('flu-loc-filter');_clearSelect('flu-mat-filter');renderFlujoVolumen();}
+function limpiarFiltrosFlujoGanancias(){_clearInput('flu-gan-search-input');_clearSelect('flu-gan-loc-filter');renderFlujoGanancias();}
+function limpiarFiltrosFlujoDetalleMat(){_clearInput('flu-det-search-input');_clearSelect('flu-det-loc-filter');_clearSelect('flu-det-mat-filter');renderFlujoDetalleMat();}
+
 /* ===== BOOT ===== */
 populatePanelFilters();
+if(typeof $!=='undefined'){$('.js-select2').select2({theme:'bootstrap-5',width:'auto',allowClear:true,placeholder:function(){return $(this).find('option:first').text()||'Selecciona...';}});}
 renderKPIs();
 renderResumen();
 renderRanking();

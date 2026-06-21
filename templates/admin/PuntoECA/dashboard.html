@@ -39,10 +39,11 @@
   <div id="tab-listado-resumen">
     <div class="d-flex gap-2 align-items-center flex-wrap mt-3 mb-3">
       <input type="text" class="form-control form-control-sm" style="width:160px" id="res-search-input" placeholder="Buscar..." oninput="renderResumen()">
-      <select class="form-select form-select-sm" style="width:auto" id="res-loc-filter" onchange="renderResumen()"><option value="">Todas las localidades</option></select>
-      <select class="form-select form-select-sm" style="width:auto" id="res-estado-filter" onchange="renderResumen()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
-      <select class="form-select form-select-sm" style="width:auto" id="res-mat-filter" onchange="renderResumen()"><option value="">Todos los materiales</option></select>
+      <select class="form-select form-select-sm js-select2" style="width:auto" id="res-loc-filter" onchange="renderResumen()"><option value="">Todas las localidades</option></select>
+      <select class="form-select form-select-sm js-select2" style="width:auto" id="res-estado-filter" onchange="renderResumen()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
+      <select class="form-select form-select-sm js-select2" style="width:auto" id="res-mat-filter" onchange="renderResumen()"><option value="">Todos los materiales</option></select>
       <select class="form-select form-select-sm" style="width:auto" id="res-orden" onchange="renderResumen()"><option value="mov">Orden: Movimiento</option><option value="ventas">Orden: Flujo In</option><option value="compras">Orden: Flujo Out</option><option value="margen">Orden: Margen</option></select>
+      <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosResumen()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
     </div>
 
     <div class="row g-3 mb-3">
@@ -70,9 +71,10 @@
   <div id="tab-listado-estados" style="display:none">
     <div class="d-flex gap-2 align-items-center flex-wrap mt-3 mb-3">
       <input type="text" class="form-control form-control-sm" style="width:160px" id="est-search-input" placeholder="Buscar..." oninput="renderEstados()">
-      <select class="form-select form-select-sm" style="width:auto" id="est-loc-filter" onchange="renderEstados()"><option value="">Todas las localidades</option></select>
-      <select class="form-select form-select-sm" style="width:auto" id="est-estado-filter" onchange="renderEstados()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
-      <select class="form-select form-select-sm" style="width:auto" id="est-salud-filter" onchange="renderEstados()"><option value="">Toda salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+      <select class="form-select form-select-sm js-select2" style="width:auto" id="est-loc-filter" onchange="renderEstados()"><option value="">Todas las localidades</option></select>
+      <select class="form-select form-select-sm js-select2" style="width:auto" id="est-estado-filter" onchange="renderEstados()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
+      <select class="form-select form-select-sm js-select2" style="width:auto" id="est-salud-filter" onchange="renderEstados()"><option value="">Toda salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+      <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosEstados()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
     </div>
     <div class="row g-3 mb-3" id="estados-stats"></div>
     <div class="card shadow-sm border-0 mb-3">
@@ -106,15 +108,16 @@
     <div id="flujo-sub-volumen">
       <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
         <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-search-input" placeholder="Buscar..." oninput="renderFlujoVolumen()">
-        <select class="form-select form-select-sm" style="width:auto" id="flu-loc-filter" onchange="renderFlujoVolumen()"><option value="">Todas las localidades</option></select>
-        <select class="form-select form-select-sm" style="width:auto" id="flu-mat-filter" onchange="renderFlujoVolumen()"><option value="">Todos los materiales</option></select>
+        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-loc-filter" onchange="renderFlujoVolumen()"><option value="">Todas las localidades</option></select>
+        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-mat-filter" onchange="renderFlujoVolumen()"><option value="">Todos los materiales</option></select>
+        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoVolumen()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
       </div>
       <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-arrow-left-right me-1"></i> Flujo de Compras y Ventas por Punto (items)</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoGeneral"></canvas></div></div>
       <div class="row g-3 mb-3" id="flujos-stats"></div>
     </div>
 
     <div id="flujo-sub-ganancias" style="display:none">
-      <div class="d-flex gap-2 align-items-center flex-wrap mb-3"><input type="text" class="form-control form-control-sm" style="width:160px" id="flu-gan-search-input" placeholder="Buscar..." oninput="renderFlujoGanancias()"><select class="form-select form-select-sm" style="width:auto" id="flu-gan-loc-filter" onchange="renderFlujoGanancias()"><option value="">Todas las localidades</option></select></div>
+      <div class="d-flex gap-2 align-items-center flex-wrap mb-3"><input type="text" class="form-control form-control-sm" style="width:160px" id="flu-gan-search-input" placeholder="Buscar..." oninput="renderFlujoGanancias()"><select class="form-select form-select-sm js-select2" style="width:auto" id="flu-gan-loc-filter" onchange="renderFlujoGanancias()"><option value="">Todas las localidades</option></select><button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoGanancias()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button></div>
       <div class="row g-3 mb-3" id="flujo-gan-stats"></div>
       <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-cash-stack me-1"></i> Compras vs Ventas ($ COP) por Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoGanancias"></canvas></div></div>
       <div class="row g-3 mb-3">
@@ -126,8 +129,9 @@
     <div id="flujo-sub-detalle_mat" style="display:none">
       <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
         <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-det-search-input" placeholder="Buscar..." oninput="renderFlujoDetalleMat()">
-        <select class="form-select form-select-sm" style="width:auto" id="flu-det-loc-filter" onchange="renderFlujoDetalleMat()"><option value="">Todas las localidades</option></select>
-        <select class="form-select form-select-sm" style="width:auto" id="flu-det-mat-filter" onchange="renderFlujoDetalleMat()"><option value="">Todos los materiales</option></select>
+        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-loc-filter" onchange="renderFlujoDetalleMat()"><option value="">Todas las localidades</option></select>
+        <select class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-mat-filter" onchange="renderFlujoDetalleMat()"><option value="">Todos los materiales</option></select>
+        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoDetalleMat()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
       </div>
       <div class="row g-3 mb-3" id="flujo-det-stats"></div>
       <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-diagram-3 me-1"></i> Ventas en $ COP por Material y Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoDetalleMat"></canvas></div></div>
@@ -153,9 +157,9 @@
     <div class="px-4 py-2 border-bottom bg-light" id="ranking-filters-row">
       <div class="d-flex gap-2 align-items-center flex-wrap">
         <input type="text" class="form-control form-control-sm" style="width:160px" id="rank-flt-nombre" placeholder="Buscar punto..." oninput="renderRanking()">
-        <select class="form-select form-select-sm" style="width:auto" id="rank-flt-localidad" onchange="renderRanking()"><option value="">Localidad</option></select>
-        <select class="form-select form-select-sm" style="width:auto" id="rank-flt-estado" onchange="renderRanking()"><option value="">Estado</option><option>Activo</option><option>Inactivo</option></select>
-        <select class="form-select form-select-sm" style="width:auto" id="rank-flt-salud" onchange="renderRanking()"><option value="">Salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+        <select class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-localidad" onchange="renderRanking()"><option value="">Localidad</option></select>
+        <select class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-estado" onchange="renderRanking()"><option value="">Estado</option><option>Activo</option><option>Inactivo</option></select>
+        <select class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-salud" onchange="renderRanking()"><option value="">Salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
         <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-min" placeholder="Ocup min%" min="0" max="100" oninput="renderRanking()">
         <span class="text-muted small">-</span>
         <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-max" placeholder="Ocup max%" min="0" max="100" oninput="renderRanking()">
