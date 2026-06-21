@@ -2895,8 +2895,4 @@
         _initDeepLink();
         bind();
     }
-
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-        el.setAttribute('data-bs-toggle', 'tooltip');
-    });
 })();

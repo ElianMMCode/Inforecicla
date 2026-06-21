@@ -387,13 +387,6 @@ globalThis.getCSRFToken = function () {
                         <button class="btn btn-sm btn-link p-0 ms-2" type="button" id="inv-filter-limpiar-vacio">Limpiar filtros</button>
                     </div>
 
-                    <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        document.querySelectorAll('.clasificacion-tooltip').forEach(function (el) {
-                            el.setAttribute('data-bs-toggle', 'tooltip');
-                        });
-                    });
-                    </script>
                 </div>
                 {# ============== TAB: BUSCAR / CREAR (form inline) ============== #}
                 <div class="ovtab-pane {% if ovtab == 'ovtab-buscar' %}active{% endif %}" id="ovtab-buscar">
