@@ -2398,6 +2398,52 @@ def editar_tipo_publicacion_admin(request, tipo_id):
     )
 
 
+def _build_inventario_json():
+    from apps.inventory.models import Inventario
+    inv_items = list(Inventario.objects.select_related("material__categoria", "punto_eca").all())
+    return [{
+        "matId": str(inv.material_id),
+        "puntoId": str(inv.punto_eca_id),
+        "stock": float(inv.stock_actual or 0),
+        "cap": float(inv.capacidad_maxima or 0),
+        "compra": float(inv.precio_compra or 0),
+        "venta": float(inv.precio_venta or 0),
+        "unidad": inv.unidad_medida,
+    } for inv in inv_items]
+
+
+def _build_puntos_json():
+    from apps.ecas.models import PuntoECA
+    puntos_qs = list(PuntoECA.objects.all().order_by("nombre"))
+    return [{"id": str(p.id), "nombre": p.nombre, "localidad": p.localidad.nombre if p.localidad else "", "gestor": p.gestor_eca.get_full_name() if p.gestor_eca else "", "estado": p.estado} for p in puntos_qs]
+
+
+def _build_historial_json():
+    from apps.operations.models import CompraInventario, VentaInventario
+    compras = list(CompraInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_compra")[:200])
+    ventas = list(VentaInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_venta")[:200])
+    historial = []
+    for c in compras:
+        historial.append({
+            "fecha": c.fecha_compra.strftime("%Y-%m-%d %H:%M") if c.fecha_compra else "",
+            "tipo": "Compra", "mat": c.inventario.material.nombre if c.inventario and c.inventario.material else "-",
+            "punto": c.inventario.punto_eca.nombre if c.inventario and c.inventario.punto_eca else "-",
+            "kg": float(c.cantidad or 0), "unitario": float(c.precio_compra or 0),
+            "total": float((c.cantidad or 0) * (c.precio_compra or 0)),
+            "centro": c.inventario.centro_acopio.nombre if c.inventario and c.inventario.centro_acopio else "-",
+        })
+    for v in ventas:
+        historial.append({
+            "fecha": v.fecha_venta.strftime("%Y-%m-%d %H:%M") if v.fecha_venta else "",
+            "tipo": "Venta", "mat": v.inventario.material.nombre if v.inventario and v.inventario.material else "-",
+            "punto": v.inventario.punto_eca.nombre if v.inventario and v.inventario.punto_eca else "-",
+            "kg": float(v.cantidad or 0), "unitario": float(v.precio_venta or 0),
+            "total": float((v.cantidad or 0) * (v.precio_venta or 0)),
+            "centro": v.centro_acopio.nombre if v.centro_acopio else "-",
+        })
+    return historial
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
@@ -2410,56 +2456,12 @@ def gestion_materiales(request):
     materiales_json = [material_to_dict(m) for m in all_materiales]
     categorias_json = [categoria_material_to_dict(c) for c in categorias_qs]
 
-    # Inventario data for mockup tabs
-    from apps.inventory.models import Inventario
-    from apps.ecas.models import PuntoECA
-
-    inv_items = list(Inventario.objects.select_related("material__categoria", "punto_eca").all())
-    inventario_json = []
-    for inv in inv_items:
-        inventario_json.append({
-            "matId": str(inv.material_id),
-            "puntoId": str(inv.punto_eca_id),
-            "stock": float(inv.stock_actual or 0),
-            "cap": float(inv.capacidad_maxima or 0),
-            "compra": float(inv.precio_compra or 0),
-            "venta": float(inv.precio_venta or 0),
-            "unidad": inv.unidad_medida,
-        })
-
-    puntos_qs = list(PuntoECA.objects.all().order_by("nombre"))
-    puntos_json = [{"id": str(p.id), "nombre": p.nombre, "localidad": p.localidad.nombre if p.localidad else "", "gestor": p.gestor_eca.get_full_name() if p.gestor_eca else "", "estado": p.estado} for p in puntos_qs]
-
-    # Historial consolidado
-    from apps.operations.models import CompraInventario, VentaInventario
-    compras = list(CompraInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_compra")[:200])
-    ventas = list(VentaInventario.objects.select_related("inventario__material", "inventario__punto_eca").order_by("-fecha_venta")[:200])
-    historial_json = []
-    for c in compras:
-        historial_json.append({
-            "fecha": c.fecha_compra.strftime("%Y-%m-%d %H:%M") if c.fecha_compra else "",
-            "tipo": "Compra", "mat": c.inventario.material.nombre if c.inventario and c.inventario.material else "-",
-            "punto": c.inventario.punto_eca.nombre if c.inventario and c.inventario.punto_eca else "-",
-            "kg": float(c.cantidad or 0), "unitario": float(c.precio_compra or 0),
-            "total": float((c.cantidad or 0) * (c.precio_compra or 0)),
-            "centro": c.inventario.centro_acopio.nombre if c.inventario and c.inventario.centro_acopio else "-",
-        })
-    for v in ventas:
-        historial_json.append({
-            "fecha": v.fecha_venta.strftime("%Y-%m-%d %H:%M") if v.fecha_venta else "",
-            "tipo": "Venta", "mat": v.inventario.material.nombre if v.inventario and v.inventario.material else "-",
-            "punto": v.inventario.punto_eca.nombre if v.inventario and v.inventario.punto_eca else "-",
-            "kg": float(v.cantidad or 0), "unitario": float(v.precio_venta or 0),
-            "total": float((v.cantidad or 0) * (v.precio_venta or 0)),
-            "centro": v.centro_acopio.nombre if v.centro_acopio else "-",
-        })
-
     return render(request, "admin/materiales_gestion.html", {
         "materiales_json": materiales_json,
         "categorias_json": categorias_json,
-        "inventario_json": inventario_json,
-        "puntos_json": puntos_json,
-        "historial_json": historial_json,
+        "inventario_json": _build_inventario_json(),
+        "puntos_json": _build_puntos_json(),
+        "historial_json": _build_historial_json(),
         "tab": tab,
         "estados": cons.Estado.choices,
         "todas_categorias": CategoriaMaterial.objects.all().order_by("nombre"),

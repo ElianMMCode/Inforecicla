@@ -75,10 +75,10 @@
 
 <!-- KPIs GLOBALES -->
 <div class="row g-3 mb-4" id="mat-global-kpis">
-  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-success p-3" onclick="kpiGo('catalogo')" title="Ir al catálogo"><div class="kpi-label">Total Materiales</div><div class="kpi-value text-success" id="kpi-total-mat">--</div><div class="inv-summary mt-1">en catálogo</div></div></div>
-  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-info p-3" onclick="kpiGo('inventario')" title="Ir a inventario"><div class="kpi-label">Total Inventarios</div><div class="kpi-value text-info" id="kpi-total-inv">--</div><div class="inv-summary mt-1">en puntos ECA</div></div></div>
-  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-warning p-3" onclick="kpiGo('historial')" title="Ir al historial"><div class="kpi-label">Movimientos</div><div class="kpi-value text-warning" id="kpi-total-mov">--</div><div class="inv-summary mt-1">compras + ventas</div></div></div>
-  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-danger p-3" onclick="kpiGo('flujo')" title="Ir a flujo (salud inventario)"><div class="kpi-label">Pts. Críticos</div><div class="kpi-value text-danger" id="kpi-total-crit">--</div><div class="inv-summary mt-1">inventario en estado crítico</div></div></div>
+  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-success p-3" role="button" tabindex="0" aria-label="Ir al catalogo" onclick="kpiGo('catalogo')" onkeydown="if(event.key==='Enter')kpiGo('catalogo')" title="Ir al catálogo"><div class="kpi-label">Total Materiales</div><div class="kpi-value text-success" id="kpi-total-mat">--</div><div class="inv-summary mt-1">en catálogo</div></div></div>
+  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-info p-3" role="button" tabindex="0" aria-label="Ir al inventario" onclick="kpiGo('inventario')" onkeydown="if(event.key==='Enter')kpiGo('inventario')" title="Ir a inventario"><div class="kpi-label">Total Inventarios</div><div class="kpi-value text-info" id="kpi-total-inv">--</div><div class="inv-summary mt-1">en puntos ECA</div></div></div>
+  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-warning p-3" role="button" tabindex="0" aria-label="Ir al historial" onclick="kpiGo('historial')" onkeydown="if(event.key==='Enter')kpiGo('historial')" title="Ir al historial"><div class="kpi-label">Movimientos</div><div class="kpi-value text-warning" id="kpi-total-mov">--</div><div class="inv-summary mt-1">compras + ventas</div></div></div>
+  <div class="col-6 col-md-3"><div class="kpi-card-mat kpi-danger p-3" role="button" tabindex="0" aria-label="Ir a flujo de materiales" onclick="kpiGo('flujo')" onkeydown="if(event.key==='Enter')kpiGo('flujo')" title="Ir a flujo (salud inventario)"><div class="kpi-label">Pts. Críticos</div><div class="kpi-value text-danger" id="kpi-total-crit">--</div><div class="inv-summary mt-1">inventario en estado crítico</div></div></div>
 </div>
 
 <!-- TABS -->
