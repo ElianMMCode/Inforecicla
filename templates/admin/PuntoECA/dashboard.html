@@ -28,10 +28,10 @@
 
   <!-- Tabs -->
   <ul class="nav tab-nav mb-0" id="listado-tabs">
-    <li class="nav-item"><a role="tab" class="nav-link active" href="#" onclick="switchListadoTab('resumen',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-speedometer2 me-1"></i>Resumen</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchListadoTab('estados',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-geo-alt me-1"></i>Estados Inventarios</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchListadoTab('flujos',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-arrow-left-right me-1"></i>Flujos</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchListadoTab('mensajes',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-chat-dots me-1"></i>Mensajes</a></li>
+    <li class="nav-item"><button class="nav-link active" onclick="switchListadoTab('resumen',this);return false"><i class="bi bi-speedometer2 me-1"></i>Resumen</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchListadoTab('estados',this);return false"><i class="bi bi-geo-alt me-1"></i>Estados Inventarios</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchListadoTab('flujos',this);return false"><i class="bi bi-arrow-left-right me-1"></i>Flujos</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchListadoTab('mensajes',this);return false"><i class="bi bi-chat-dots me-1"></i>Mensajes</button></li>
   </ul>
 
   <!-- TAB RESUMEN -->
@@ -98,9 +98,9 @@
   <!-- TAB FLUJOS -->
   <div id="tab-listado-flujos" style="display:none">
     <ul class="nav nav-pills mb-3 mt-3" id="flujos-lst-subtabs">
-      <li class="nav-item"><a role="tab" class="nav-link active" href="#" onclick="switchFlujoListado('volumen',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-arrow-left-right me-1"></i>Volumen</a></li>
-      <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchFlujoListado('ganancias',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-cash-stack me-1"></i>Ganancias</a></li>
-      <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchFlujoListado('detalle_mat',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-box-seam me-1"></i>Detalle por Material</a></li>
+      <li class="nav-item"><button class="nav-link active" onclick="switchFlujoListado('volumen',this);return false"><i class="bi bi-arrow-left-right me-1"></i>Volumen</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="switchFlujoListado('ganancias',this);return false"><i class="bi bi-cash-stack me-1"></i>Ganancias</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="switchFlujoListado('detalle_mat',this);return false"><i class="bi bi-box-seam me-1"></i>Detalle por Material</button></li>
     </ul>
 
     <div id="flujo-sub-volumen">
@@ -175,7 +175,7 @@
   <div class="detalle-header mb-4">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
       <div>
-        <nav><ol class="breadcrumb mb-2"><li class="breadcrumb-item"><a role="tab" href="#" onclick="volverListado();return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()">Puntos ECA</a></li><li class="breadcrumb-item active text-white" id="detalle-breadcrumb-name">--</li></ol></nav>
+        <nav><ol class="breadcrumb mb-2"><li class="breadcrumb-item"><button class="btn btn-link p-0 border-0 breadcrumb-item" onclick="volverListado();return false">Puntos ECA</button></li><li class="breadcrumb-item active text-white" id="detalle-breadcrumb-name">--</li></ol></nav>
         <h2 id="detalle-nombre">--</h2>
         <p class="mb-1 opacity-75 small" id="detalle-direccion">--</p>
         <div class="d-flex flex-wrap gap-2 mt-2" id="detalle-badges"></div>
@@ -187,12 +187,12 @@
     </div>
   </div>
   <ul class="nav tab-nav mb-0" id="detalle-tabs">
-    <li class="nav-item"><a role="tab" class="nav-link active" href="#" onclick="switchTab('resumen',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-speedometer2 me-1"></i>Resumen</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchTab('inventario',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-box-seam me-1"></i>Inventario</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchTab('historial',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-clock-history me-1"></i>Historial</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchTab('flujo',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-graph-up me-1"></i>Flujo</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchTab('calendario',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-calendar3 me-1"></i>Calendario</a></li>
-    <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchTab('mensajes',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-chat-dots me-1"></i>Mensajes</a></li>
+    <li class="nav-item"><button class="nav-link active" onclick="switchTab('resumen',this);return false"><i class="bi bi-speedometer2 me-1"></i>Resumen</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('inventario',this);return false"><i class="bi bi-box-seam me-1"></i>Inventario</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('historial',this);return false"><i class="bi bi-clock-history me-1"></i>Historial</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('flujo',this);return false"><i class="bi bi-graph-up me-1"></i>Flujo</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('calendario',this);return false"><i class="bi bi-calendar3 me-1"></i>Calendario</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('mensajes',this);return false"><i class="bi bi-chat-dots me-1"></i>Mensajes</button></li>
   </ul>
 
   <div class="tab-content">
@@ -264,9 +264,9 @@
 
     <div class="tab-pane fade" id="tab-flujo">
       <ul class="nav nav-pills mb-3" id="flujo-subtabs">
-        <li class="nav-item"><a role="tab" class="nav-link active" href="#" onclick="switchFlujo('stock',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-box-seam me-1"></i>Stock</a></li>
-        <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchFlujo('ganancias',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-cash-stack me-1"></i>Ganancias</a></li>
-        <li class="nav-item"><a role="tab" class="nav-link" href="#" onclick="switchFlujo('precios',this);return false"Enter")this.click()" onkeydown="if(event.key==='Enter')this.click()"><i class="bi bi-tag me-1"></i>Precios</a></li>
+        <li class="nav-item"><button class="nav-link active" onclick="switchFlujo('stock',this);return false"><i class="bi bi-box-seam me-1"></i>Stock</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchFlujo('ganancias',this);return false"><i class="bi bi-cash-stack me-1"></i>Ganancias</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchFlujo('precios',this);return false"><i class="bi bi-tag me-1"></i>Precios</button></li>
       </ul>
       <div class="row g-3 mb-4">
         <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="flujo-actual">--</div><div class="kpi-lbl">% Ocupacion</div></div></div>
