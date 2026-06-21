@@ -5,6 +5,7 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/dashboard-eca.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 {% endblock %}
 
 {% block content %}
@@ -86,7 +87,7 @@
           <span class="badge bg-secondary-subtle text-secondary" style="font-size:.65rem"><i class="bi bi-circle-fill me-1"></i>Inactivo</span>
         </div>
       </div>
-      <div class="card-body p-2"><div id="estados-map"></div></div>
+      <div class="card-body p-2"><div id="estados-map" style="height:380px"></div></div>
     </div>
     <div class="row g-3 mb-3">
       <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-danger me-1"></i>Distribucion por Estado</h6></div><div class="card-body d-flex align-items-center justify-content-center" style="height:180px"><div style="max-width:180px;width:100%"><canvas id="chartEstDist"></canvas></div></div></div></div>
@@ -329,5 +330,6 @@
 {{ kpis|json_script:"kpis-data" }}
 {{ inv_data|json_script:"inv-data" }}
 
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 <script src="{% static 'js/admin/dashboard-punto-eca.js' %}"></script>
 {% endblock %}
