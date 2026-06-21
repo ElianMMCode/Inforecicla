@@ -1,4 +1,5 @@
 /* ===== DATA — cargada desde json_script tags del template ===== */
+function _mockRandom(){return (window.crypto||window.msCrypto).getRandomValues(new Uint32Array(1))[0] / 0xffffffff;}
 const _from = (id) => JSON.parse(document.getElementById(id).textContent);
 const puntos = _from('puntos-data');
 const usuarios = _from('usuarios-data');
@@ -18,7 +19,7 @@ const msgsPorPunto = puntos.map(p => {
 });
 
 /* Asegurar tipos compatibles con el mockup (id como numero para comparaciones) */
-puntos.forEach(p => { p._id = p.id; p.id = Number.parseInt(p.id, 16) || Math.random() * 1e6; });
+puntos.forEach(p => { p._id = p.id; p.id = Number.parseInt(p.id, 16) || _mockRandom() * 1e6; });
 invData.forEach(i => { i.puntoId = puntos.find(p => p._id === i.puntoId)?.id || 0; });
 historial.forEach(h => { h.puntoId = puntos.find(p => p._id === h.puntoId)?.id || 0; });
 eventos.forEach(e => { e.puntoId = puntos.find(p => p._id === e.puntoId)?.id || 0; });
@@ -153,10 +154,10 @@ function renderKPIs(pts){
   },0);
   const capSistema=ptStats.length?Math.round(ptStats.reduce((s,p)=>s+pctOcupacionPunto(p),0)/ptStats.length):0;
 
-  const dOcup=Math.round((Math.random()*10-3));const dFlujoIn=Math.round((Math.random()*20-5));
-  const dFlujoOut=Math.round((Math.random()*18-4));const dMargen=Math.round((Math.random()*12-4));
-  const dActivos=Math.round((Math.random()*4-1));const dSinResp=Math.round((Math.random()*6-4));
-  const dGanancia=Math.round((Math.random()*25-8));const dCap=Math.round((Math.random()*8-3));
+  const dOcup=Math.round((_mockRandom()*10-3));const dFlujoIn=Math.round((_mockRandom()*20-5));
+  const dFlujoOut=Math.round((_mockRandom()*18-4));const dMargen=Math.round((_mockRandom()*12-4));
+  const dActivos=Math.round((_mockRandom()*4-1));const dSinResp=Math.round((_mockRandom()*6-4));
+  const dGanancia=Math.round((_mockRandom()*25-8));const dCap=Math.round((_mockRandom()*8-3));
   function deltaBadge(v){return v>=0?'<span class="badge bg-success-subtle text-success ms-1" style="font-size:.6rem">\u2191'+v+'%</span>':'<span class="badge bg-danger-subtle text-danger ms-1" style="font-size:.6rem">\u2193'+Math.abs(v)+'%</span>';}
 
   document.getElementById('panel-kpis').innerHTML=
@@ -836,8 +837,8 @@ function renderFlujo(){
     const fCanvas=document.getElementById('chartFlujo');
     if(fCanvas){
       const dias=['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
-      const comprasSim=dias.map(()=>Math.round(Math.random()*500+100));
-      const ventasSim=dias.map(()=>Math.round(Math.random()*400+80));
+      const comprasSim=dias.map(()=>Math.round(_mockRandom()*500+100));
+      const ventasSim=dias.map(()=>Math.round(_mockRandom()*400+80));
       charts.flujo=new Chart(fCanvas,{type:'line',data:{labels:dias,datasets:[
         {label:'Compras',data:comprasSim,borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,.05)',fill:true,tension:.4},
         {label:'Ventas',data:ventasSim,borderColor:'#dc3545',backgroundColor:'rgba(220,53,69,.05)',fill:true,tension:.4}
