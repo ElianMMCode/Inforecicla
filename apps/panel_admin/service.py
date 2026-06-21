@@ -166,7 +166,9 @@ class AdminDashboardService:
             resumen["total_puntos_eca"] = PuntoECA.objects.count()
             resumen["total_materiales"] = Material.objects.count()
             resumen["total_categorias_materiales"] = CategoriaMaterial.objects.count()
-            resumen["total_tipos_material"] = TipoMaterial.objects.count()
+            resumen["total_tipos_material"] = Material.objects.exclude(
+                clasificacion=""
+            ).values("clasificacion").distinct().count()
             resumen["total_ciudadanos"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.CIUDADANO).count()
             resumen["total_gestores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.GESTOR_ECA).count()
             resumen["total_administradores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.ADMIN).count()

@@ -126,7 +126,7 @@
                         <div>
                             <div class="kpi-value">{{ resumen_general.total_categorias_materiales }}</div>
                             <div class="kpi-label">Cat. Materiales</div>
-                            <div class="kpi-sub">+{{ resumen_general.total_tipos_material }} tipos</div>
+                            <div class="kpi-sub">+{{ resumen_general.total_tipos_material }} clasificaciones</div>
                         </div>
                     </div>
                 </div>
@@ -279,7 +279,7 @@
                                     </div>
                                 </a>
                                 <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3">
-                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_tipos_material }} tipos</span>
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_tipos_material }} clasificaciones</span>
                                     <div class="d-flex gap-1">
                                         <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;">Ver</a>
                                         <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="btn btn-sm btn-secondary" style="font-size:0.72rem;">+ Nueva</a>

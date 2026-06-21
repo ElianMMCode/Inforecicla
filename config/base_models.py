@@ -35,6 +35,7 @@ class DescripcionModel(CreacionModificacionModel):
     descripcion = models.CharField(
         max_length=500,
         blank=True,
+        default="",
     )
 
     class Meta(CreacionModificacionModel.Meta):
@@ -104,6 +105,7 @@ class LocalizacionWebHorarioModel(LocalizacionModel):
     sitio_web = models.CharField(
         max_length=255,
         blank=True,
+        default="",
         help_text="URL del sitio web oficial, si aplica.",
     )
 
