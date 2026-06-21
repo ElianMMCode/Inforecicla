@@ -691,13 +691,13 @@ function renderFlujoDetalleMat(){
 
   document.getElementById('flujo-det-tabla').innerHTML='<table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Material</th><th>Ganancia Total</th><th>Volumen Total</th><th>Margen Prom</th></tr></thead><tbody>'+
     matRanking.map((m,i)=>{
-      var totals=_calcMatTotals(filteredMaterials,pts);
+      const totals=_calcMatTotals(filteredMaterials,pts);
       const margenProm=totals.compras?Math.round(((totals.ventas-totals.compras)/totals.compras)*100):0;
       return'<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+m.mat+'</td><td class="fw-bold '+(m.ganancia>=0?'text-success':'text-danger')+'" style="font-size:.82rem">$'+m.ganancia.toLocaleString()+'</td><td style="font-size:.82rem">'+m.volumen.toLocaleString()+' u</td><td style="font-size:.82rem">'+margenProm+'%</td></tr>';
     }).join('')+'</tbody></table>';
 }
 function _calcMatTotals(mats,pts){
-  var compras=0,ventas=0;
+  let compras=0,ventas=0;
   mats.forEach(function(mat){
     pts.forEach(function(p){
       invData.filter(function(x){return x.puntoId===p.id&&x.mat===mat;}).forEach(function(x){
