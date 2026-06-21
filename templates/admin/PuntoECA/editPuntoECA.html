@@ -4,117 +4,259 @@
 {% block body_class %}bg-light{% endblock %}
 
 {% block content %}
+<style>
+  #mapa { height: 300px; border-radius: 8px; border: 1px solid #dee2e6; z-index: 1; }
+  .map-info { background: #f8f9fa; border-left: 4px solid #145c3a; padding: .75rem 1rem; border-radius: 6px; font-size: .88rem; }
+</style>
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
   <div>
     <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-pencil me-2"></i>Editar Punto ECA</h1>
     <p class="text-muted mb-0">{{ punto.nombre }}</p>
   </div>
-  <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="btn btn-outline-secondary">
+  <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="btn btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i> Volver
   </a>
 </div>
 
-<form method="post" novalidate id="editEcaForm" class="needs-validation">
+{% if errores %}
+<div class="alert alert-danger alert-dismissible fade show mb-4">
+  <strong>Por favor corrige los siguientes errores:</strong>
+  <ul class="mb-0 mt-2">
+    {% for error in errores %}
+      <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<form method="post" id="editEcaForm" class="needs-validation" novalidate>
   {% csrf_token %}
-  <div class="row g-4">
-    <div class="col-lg-8">
-      <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-success text-white"><i class="bi bi-info-circle me-1"></i> Informacion General</div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-nombre">Nombre <span class="text-danger">*</span></label>
-              <input type="text" name="nombre" id="id-nombre" class="form-control" value="{{ punto.nombre }}" required maxlength="100">
-              <div class="invalid-feedback">El nombre es obligatorio.</div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-direccion">Direccion</label>
-              <input type="text" name="direccion" id="id-direccion" class="form-control" value="{{ punto.direccion|default:'' }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-email">Email</label>
-              <input type="email" name="email" id="id-email" class="form-control" value="{{ punto.email|default:'' }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-celular">Celular</label>
-              <input type="text" name="celular" id="id-celular" class="form-control" value="{{ punto.celular|default:'' }}" pattern="3[0-9]{9}" maxlength="10">
-              <div class="invalid-feedback">Debe iniciar con 3 y tener 10 digitos.</div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-telefono-punto">Telefono Punto</label>
-              <input type="text" name="telefono_punto" id="id-telefono-punto" class="form-control" value="{{ punto.telefono_punto|default:'' }}" pattern="60[0-9]{8}" maxlength="10" placeholder="60XXXXXXXX">
-              <div class="invalid-feedback">Debe comenzar con 60 y tener 10 digitos.</div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-sitio-web">Sitio Web</label>
-              <input type="text" name="sitio_web" id="id-sitio-web" class="form-control" value="{{ punto.sitio_web|default:'' }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-horario-atencion">Horario de Atencion</label>
-              <input type="text" name="horario_atencion" id="id-horario-atencion" class="form-control" value="{{ punto.horario_atencion|default:'' }}" placeholder="L-V 8am-6pm">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-logo-url">URL Logo</label>
-              <input type="text" name="logo_url_punto" id="id-logo-url" class="form-control" value="{{ punto.logo_url_punto|default:'' }}">
-            </div>
-            <div class="col-12">
-              <label class="form-label fw-semibold" for="id-descripcion">Descripcion</label>
-              <textarea name="descripcion" id="id-descripcion" class="form-control" rows="3">{{ punto.descripcion|default:'' }}</textarea>
-            </div>
-          </div>
+
+  <!-- Datos del Punto ECA -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-success text-white"><i class="bi bi-building me-1"></i> Datos del Punto ECA</div>
+    <div class="card-body p-4">
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_nombre_punto" class="form-label fw-semibold">Nombre del Punto ECA <span class="text-danger">*</span></label>
+          <input id="eca_nombre_punto" type="text" name="nombre_punto" class="form-control" required maxlength="100"
+                 value="{{ form_data.nombre_punto|default:punto.nombre }}">
+          <div class="invalid-feedback">El nombre del punto ECA es obligatorio.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_direccion" class="form-label fw-semibold">Direccion <span class="text-danger">*</span></label>
+          <input id="eca_direccion" type="text" name="direccion" class="form-control" required
+                 value="{{ form_data.direccion|default:punto.direccion|default:'' }}">
+          <div class="invalid-feedback">La direccion es obligatoria.</div>
         </div>
       </div>
-      <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-success text-white"><i class="bi bi-geo me-1"></i> Ubicacion</div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-latitud">Latitud</label>
-              <input type="text" name="latitud" id="id-latitud" class="form-control" value="{{ punto.latitud|default:'' }}" placeholder="4.6097">
-              <div class="invalid-feedback">Ingresa una latitud valida.</div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold" for="id-longitud">Longitud</label>
-              <input type="text" name="longitud" id="id-longitud" class="form-control" value="{{ punto.longitud|default:'' }}" placeholder="-74.0817">
-              <div class="invalid-feedback">Ingresa una longitud valida.</div>
-            </div>
-            <div class="col-12">
-              <label class="form-label fw-semibold" for="id-localidad">Localidad</label>
-              <select name="localidad_id" id="id-localidad" class="form-select">
-                <option value="">Sin localidad</option>
-                {% for loc in localidades %}
-                  <option value="{{ loc.localidad_id }}" {% if punto.localidad and punto.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>{{ loc.nombre }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona una localidad.</div>
-            </div>
-          </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_email" class="form-label fw-semibold">Email del Punto ECA <span class="text-danger">*</span></label>
+          <input id="eca_email" type="text" name="email" class="form-control" required
+                 value="{{ form_data.email|default:punto.email|default:'' }}" placeholder="punto@eca.com">
+          <div class="invalid-feedback">Ingresa un email valido.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_telefono_punto" class="form-label fw-semibold">Telefono Fijo <span class="text-danger">*</span></label>
+          <input id="eca_telefono_punto" type="text" name="telefono_punto" class="form-control" required
+                 pattern="60[0-9]{8}" maxlength="10"
+                 value="{{ form_data.telefono_punto|default:punto.telefono_punto|default:'' }}" placeholder="6012345678">
+          <div class="invalid-feedback">Debe comenzar con 60 y tener 10 digitos.</div>
         </div>
       </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_celular" class="form-label fw-semibold">Celular de contacto <span class="text-danger">*</span></label>
+          <input id="eca_celular" type="text" name="celular" class="form-control" required
+                 pattern="3[0-9]{9}" maxlength="10"
+                 value="{{ form_data.celular|default:punto.celular|default:'' }}" placeholder="3101234567">
+          <div class="invalid-feedback">Debe iniciar con 3 y tener 10 digitos.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span></label>
+          <input id="eca_ciudad" type="text" name="ciudad" class="form-control" required
+                 value="{{ form_data.ciudad|default:punto.ciudad|default:'Bogota' }}" readonly aria-readonly="true">
+          <div class="form-text">La ciudad esta fija en Bogota para este sistema.</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span></label>
+          <select id="eca_localidad" name="localidad" class="form-select" required>
+            <option value="">Seleccionar localidad...</option>
+            {% for loc in localidades %}
+              <option value="{{ loc.localidad_id }}"
+                {% if form_data.localidad == loc.localidad_id|stringformat:'s' or punto.localidad.localidad_id == loc.localidad_id %}selected{% endif %}>
+                {{ loc.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Selecciona una localidad.</div>
+        </div>
+      </div>
+
+      <hr class="my-3">
+      <h6 class="fw-semibold text-success mb-3"><i class="bi bi-geo-alt me-1"></i> Ubicacion en el mapa</h6>
+
+      <div class="map-info mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Haz clic en el mapa para seleccionar las coordenadas del punto ECA.
+      </div>
+      <div id="mapa" class="mb-3"></div>
+
+      <input type="hidden" name="latitud" id="latitud" value="{{ form_data.latitud|default:punto.latitud|default:'' }}">
+      <input type="hidden" name="longitud" id="longitud" value="{{ form_data.longitud|default:punto.longitud|default:'' }}">
+
     </div>
-    <div class="col-lg-4">
-      <div class="card shadow-sm border-0 mb-4">
+  </div>
+
+  <!-- Datos del Gestor -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-primary text-white"><i class="bi bi-person-badge me-1"></i> Datos del Gestor</div>
+    <div class="card-body p-4">
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_nombres" class="form-label fw-semibold">Nombres del Gestor <span class="text-danger">*</span></label>
+          <input id="eca_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                 value="{{ form_data.nombres|default:punto.gestor_eca.nombres|default:'' }}" placeholder="Ej: Juan Carlos">
+          <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_apellidos" class="form-label fw-semibold">Apellidos del Gestor <span class="text-danger">*</span></label>
+          <input id="eca_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$"
+                 value="{{ form_data.apellidos|default:punto.gestor_eca.apellidos|default:'' }}" placeholder="Ej: Perez Garcia">
+          <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_email_gestor" class="form-label fw-semibold">Email del Gestor <span class="text-danger">*</span></label>
+          <input id="eca_email_gestor" type="text" name="email_gestor" class="form-control" required
+                 value="{{ form_data.email_gestor|default:punto.gestor_eca.email|default:'' }}" placeholder="gestor@mail.com" {% if punto.gestor_eca %}readonly{% endif %}>
+          <div class="form-text">Este correo es el usuario de acceso al sistema. No se puede modificar.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="eca_tipoDocumento" class="form-label fw-semibold">Tipo de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+          <select id="eca_tipoDocumento" name="tipoDocumento" class="form-select">
+            <option value="">Seleccionar...</option>
+            {% for val, label in tipos_documento %}
+              <option value="{{ val }}"
+                {% if form_data.tipoDocumento == val or punto.gestor_eca.tipo_documento == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="eca_numeroDocumento" class="form-label fw-semibold">Numero de Documento <small class="text-muted fw-normal">(opcional)</small></label>
+          <input id="eca_numeroDocumento" type="text" name="numeroDocumento" class="form-control"
+                 value="{{ form_data.numeroDocumento|default:punto.gestor_eca.numero_documento|default:'' }}" placeholder="123456789">
+        </div>
+      </div>
+
+      {% if not punto.gestor_eca %}
+      <hr class="my-3">
+      <h6 class="fw-semibold mb-3">Contrasena de Acceso</h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="password" class="form-label fw-semibold">Contrasena <span class="text-danger">*</span></label>
+          <input type="password" name="password" id="password" class="form-control" required minlength="8" placeholder="Minimo 8 caracteres">
+          <div class="invalid-feedback">La contrasena debe tener al menos 8 caracteres.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="passwordConfirm" class="form-label fw-semibold">Confirmar Contrasena <span class="text-danger">*</span></label>
+          <input type="password" name="passwordConfirm" id="passwordConfirm" class="form-control" required minlength="8" placeholder="Repite la contrasena">
+          <div class="invalid-feedback">Las contrasenas deben coincidir.</div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- Estado -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0">
         <div class="card-header bg-success text-white"><i class="bi bi-shield me-1"></i> Estado</div>
         <div class="card-body">
-          <label class="form-label fw-semibold" for="id-estado">Estado</label>
           <select name="estado" id="id-estado" class="form-select" required>
             {% for val, label in estados %}
-              <option value="{{ val }}" {% if punto.estado == val %}selected{% endif %}>{{ label }}</option>
+              <option value="{{ val }}"
+                {% if form_data.estado == val or punto.estado == val %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
           <div class="invalid-feedback">Selecciona un estado.</div>
         </div>
       </div>
-      <button type="submit" class="btn btn-success w-100 py-2">
-        <i class="bi bi-save me-1"></i> Guardar Cambios
-      </button>
     </div>
   </div>
-</form>
 
+  <div class="d-flex gap-2 mb-5">
+    <button type="submit" class="btn btn-success btn-lg px-4">
+      <i class="bi bi-save me-2"></i> Guardar Cambios
+    </button>
+    <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="btn btn-outline-secondary btn-lg px-4">Cancelar</a>
+  </div>
+
+</form>
 {% endblock %}
 
 {% block extra_scripts %}
-{% include "admin/PuntoECA/_form_scripts.html" with form_id="editEcaForm" %}
+<script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
+<script>
+  function loadLeafletAndInit() {
+    if (document.querySelector('link[href*="leaflet"]')) { initLeaflet(); return; }
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css';
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
+    s.crossOrigin = 'anonymous';
+    s.onload = initLeaflet;
+    document.body.appendChild(s);
+  }
+
+  function initLeaflet() {
+    var latInput = document.getElementById('latitud');
+    var lngInput = document.getElementById('longitud');
+    var initLat = Number.parseFloat(latInput?.value) || 4.711;
+    var initLng = Number.parseFloat(lngInput?.value) || -74.072;
+    var mapa = L.map('mapa').setView([initLat, initLng], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(mapa);
+    var marcador = null;
+    if (latInput?.value && lngInput?.value) marcador = L.marker([initLat, initLng]).addTo(mapa);
+    mapa.on('click', function(e) {
+      if (marcador) mapa.removeLayer(marcador);
+      marcador = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapa);
+      if (latInput) latInput.value = e.latlng.lat.toFixed(4);
+      if (lngInput) lngInput.value = e.latlng.lng.toFixed(4);
+    });
+  }
+
+  loadLeafletAndInit();
+</script>
+{% if not punto.gestor_eca %}
+<script>
+  initPasswordVisibilityToggle();
+  bindPasswordRealtime(
+    document.getElementById('password'),
+    document.getElementById('passwordConfirm'),
+    document.getElementById('mensajeCoincidencia')
+  );
+</script>
+{% endif %}
+{% include "admin/PuntoECA/_form_scripts.html" with form_id="editEcaForm" check_passwords=not punto.gestor_eca %}
 {% endblock %}

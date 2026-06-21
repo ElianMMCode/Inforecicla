@@ -1886,14 +1886,72 @@ def editar_punto_eca_admin(request, punto_id):
         return redirect(LISTAR_PUNTOS_ECA_URL)
 
     if request.method == "POST":
-        resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
-        if is_ajax:
-            return JsonResponse(resultado)
-        if resultado["ok"]:
-            messages.success(request, resultado["message"])
-            return redirect(LISTAR_PUNTOS_ECA_URL)
-        messages.error(request, resultado["message"])
-        punto.refresh_from_db()
+        try:
+            with transaction.atomic():
+                # 1. Actualizar o crear gestor si hay campos de gestor en el POST
+                gestor = punto.gestor_eca
+                gestor_nombres = (request.POST.get("nombres") or "").strip()
+                gestor_apellidos = (request.POST.get("apellidos") or "").strip()
+                gestor_email = (request.POST.get("email_gestor") or "").strip()
+                gestor_tipo_doc = (request.POST.get("tipoDocumento") or "").strip()
+                gestor_num_doc = (request.POST.get("numeroDocumento") or "").strip()
+                gestor_celular = (request.POST.get("celular") or "").strip()
+                password = (request.POST.get("password") or "").strip()
+
+                if gestor_nombres or gestor_apellidos or gestor_email:
+                    if not gestor:
+                        if not password:
+                            if is_ajax:
+                                return JsonResponse({"ok": False, "message": "Debe asignar una contrasena al nuevo gestor."})
+                            messages.error(request, "Debe asignar una contrasena al nuevo gestor.")
+                            punto.refresh_from_db()
+                            return render(
+                                request, "admin/PuntoECA/editPuntoECA.html",
+                                {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
+                                 "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
+                                 "form_data": request.POST, "errores": ["Debe asignar una contrasena al nuevo gestor."]},
+                            )
+                        gestor = Usuario(
+                            email=gestor_email or f"gestor_{punto_id}@eca.com",
+                            numero_documento=gestor_num_doc or f"GESTORECA_{punto_id}",
+                            nombres=gestor_nombres, apellidos=gestor_apellidos,
+                            tipo_documento=gestor_tipo_doc or cons.TipoDocumento.CC,
+                            tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+                            celular=gestor_celular,
+                        )
+                        gestor.set_password(password)
+                        gestor.save()
+                        punto.gestor_eca = gestor
+                        punto.save(update_fields=["gestor_eca"])
+                    else:
+                        if gestor_nombres:
+                            gestor.nombres = gestor_nombres
+                        if gestor_apellidos:
+                            gestor.apellidos = gestor_apellidos
+                        if gestor_tipo_doc:
+                            gestor.tipo_documento = gestor_tipo_doc
+                        if gestor_num_doc:
+                            gestor.numero_documento = gestor_num_doc
+                        if gestor_celular:
+                            gestor.celular = gestor_celular
+                        gestor.save()
+
+                # 2. Actualizar PuntoECA via servicio existente
+                resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
+
+            if is_ajax:
+                return JsonResponse(resultado)
+            if resultado["ok"]:
+                messages.success(request, resultado["message"])
+                return redirect(LISTAR_PUNTOS_ECA_URL)
+            messages.error(request, resultado["message"])
+            punto.refresh_from_db()
+        except (IntegrityError, ValidationError) as e:
+            error_msg = f"Error al actualizar: {e}"
+            if is_ajax:
+                return JsonResponse({"ok": False, "message": error_msg})
+            messages.error(request, error_msg)
+            punto.refresh_from_db()
 
     return render(
         request,
@@ -1902,6 +1960,7 @@ def editar_punto_eca_admin(request, punto_id):
             "punto": punto,
             "localidades": Localidad.objects.all().order_by("nombre"),
             "estados": cons.Estado.choices,
+            "tipos_documento": cons.TipoDocumento.choices,
         },
     )
 
