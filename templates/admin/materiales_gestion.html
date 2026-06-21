@@ -110,10 +110,10 @@
         <button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('cat','excel')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
         <button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('cat','pdf')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         <div class="d-flex flex-wrap align-items-center gap-1 flex-grow-1">
-          <input type="text" class="form-control form-control-sm" style="width:160px" id="cat-search" placeholder="Buscar..." oninput="renderCatalogo()">
-          <select class="form-select form-select-sm" style="width:150px" id="cat-filtro-categoria" onchange="renderCatalogo()"><option value="">Todas las categorías</option></select>
-          <select class="form-select form-select-sm clasificacion-sel" style="width:170px" id="cat-filtro-clasificacion" onchange="renderCatalogo()"><option value="">Todas las clasificaciones</option></select>
-          <select class="form-select form-select-sm" style="width:130px" id="cat-filtro-estado" onchange="renderCatalogo()"><option value="">Todos los estados</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select>
+          <input type="text" class="form-control form-control-sm" style="width:160px" id="cat-search" placeholder="Buscar..." aria-label="Buscar material" oninput="renderCatalogo()">
+          <select class="form-select form-select-sm" style="width:150px" id="cat-filtro-categoria" aria-label="Filtrar por categoria" onchange="renderCatalogo()"><option value="">Todas las categorías</option></select>
+          <select class="form-select form-select-sm clasificacion-sel" style="width:170px" id="cat-filtro-clasificacion" aria-label="Filtrar por clasificacion" onchange="renderCatalogo()"><option value="">Todas las clasificaciones</option></select>
+          <select class="form-select form-select-sm" style="width:130px" id="cat-filtro-estado" aria-label="Filtrar por estado" onchange="renderCatalogo()"><option value="">Todos los estados</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select>
           <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar filtros" onclick="catPage=1;document.getElementById('cat-search').value='';['cat-filtro-categoria','cat-filtro-clasificacion','cat-filtro-estado'].forEach(id=>{$('#'+id).val('').trigger('change')});renderCatalogo()"><i class="bi bi-eraser"></i></button>
         </div>
         <span class="badge bg-secondary rounded-pill" id="cat-count-badge">--</span>
@@ -140,9 +140,9 @@
     </div>
     <div class="card-body">
       <div class="row g-3 align-items-end">
-        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Material</label><select class="form-select" id="inv-mat-selector" onchange="renderInventarioPorMaterial()"><option value="">-- Selecciona un material --</option></select></div>
-        <div class="col-md-3"><label class="form-label fw-semibold small text-muted">Filtrar por estado</label><select class="form-select form-select-sm" id="inv-mat-estado-filter" onchange="renderInventarioPorMaterial()"><option value="">Todos</option><option value="OK">OK</option><option value="Alerta">Alerta</option><option value="Crítico">Crítico</option></select></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Ordenar por</label><select class="form-select form-select-sm" id="inv-mat-orden" onchange="renderInventarioPorMaterial()"><option value="stock-desc">Mayor Stock</option><option value="stock-asc">Menor Stock</option><option value="punto-asc">Punto A-Z</option></select></div>
+        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Material</label><select class="form-select" id="inv-mat-selector" aria-label="Seleccionar material para inventario" onchange="renderInventarioPorMaterial()"><option value="">-- Selecciona un material --</option></select></div>
+        <div class="col-md-3"><label class="form-label fw-semibold small text-muted">Filtrar por estado</label><select class="form-select form-select-sm" id="inv-mat-estado-filter" aria-label="Filtrar inventario por estado" onchange="renderInventarioPorMaterial()"><option value="">Todos</option><option value="OK">OK</option><option value="Alerta">Alerta</option><option value="Crítico">Crítico</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Ordenar por</label><select class="form-select form-select-sm" id="inv-mat-orden" aria-label="Ordenar resultados del inventario" onchange="renderInventarioPorMaterial()"><option value="stock-desc">Mayor Stock</option><option value="stock-asc">Menor Stock</option><option value="punto-asc">Punto A-Z</option></select></div>
         <div class="col-md-2"><button class="btn btn-sm btn-outline-secondary w-100" onclick="document.getElementById('inv-mat-estado-filter').value='';document.getElementById('inv-mat-orden').value='stock-desc';renderInventarioPorMaterial()" title="Limpiar filtros"><i class="bi bi-eraser me-1"></i>Limpiar</button></div>
       </div>
     </div>
@@ -183,10 +183,10 @@
     <div class="card-header bg-info-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-info small"><i class="bi bi-sliders me-2"></i>Filtros</h6></div>
     <div class="card-body">
       <div class="row g-3 align-items-end">
-        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Materiales</label><select class="form-select form-select-sm" id="flujo-mat-select" multiple="multiple" onchange="renderFlujo()"></select><div class="d-flex gap-2 mt-2"><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(5)">Top 5</button><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(10)">Top 10</button><button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoSelectTop(0)">Ninguno</button></div></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Desde</label><input type="date" class="form-control form-control-sm" id="flujo-ft-desde" value="2026-01-01" onchange="renderFlujo()"></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Hasta</label><input type="date" class="form-control form-control-sm" id="flujo-ft-hasta" value="2026-12-31" onchange="renderFlujo()"></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Granularidad</label><select class="form-select form-select-sm" id="flujo-gran" onchange="renderFlujo()"><option value="dia">Día</option><option value="semana">Semana</option><option value="mes" selected>Mes</option></select></div>
+        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Materiales</label><select class="form-select form-select-sm" id="flujo-mat-select" aria-label="Seleccionar materiales para el flujo" multiple="multiple" onchange="renderFlujo()"></select><div class="d-flex gap-2 mt-2"><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(5)">Top 5</button><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(10)">Top 10</button><button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoSelectTop(0)">Ninguno</button></div></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Desde</label><input type="date" class="form-control form-control-sm" id="flujo-ft-desde" aria-label="Fecha desde para flujo de materiales" value="2026-01-01" onchange="renderFlujo()"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Hasta</label><input type="date" class="form-control form-control-sm" id="flujo-ft-hasta" aria-label="Fecha hasta para flujo de materiales" value="2026-12-31" onchange="renderFlujo()"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Granularidad</label><select class="form-select form-select-sm" id="flujo-gran" aria-label="Granularidad del flujo de materiales" onchange="renderFlujo()"><option value="dia">Día</option><option value="semana">Semana</option><option value="mes" selected>Mes</option></select></div>
         <div class="col-md-1"><button class="btn btn-sm btn-outline-secondary" onclick="flujoSelectTop(5);document.getElementById('flujo-ft-desde').value='2026-01-01';document.getElementById('flujo-ft-hasta').value='2026-12-31';document.getElementById('flujo-gran').value='mes';renderFlujo()" title="Restaurar valores"><i class="bi bi-arrow-counterclockwise"></i></button></div>
       </div>
     </div>
@@ -218,18 +218,18 @@
     <div class="card-header bg-success-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-success small"><i class="bi bi-funnel me-2"></i>Filtros</h6></div>
     <div class="card-body">
       <div class="row g-3">
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Material</label><select class="form-select form-select-sm" id="hist-mat-filter"><option value="">Todos</option></select></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Categoría</label><select class="form-select form-select-sm" id="hist-cat-filter"><option value="">Todas</option></select></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Tipo mov.</label><select class="form-select form-select-sm" id="hist-tipo-filter"><option value="">Todos</option><option value="Compra">Compra</option><option value="Venta">Venta</option></select></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Desde</label><input type="date" class="form-control form-control-sm" id="hist-ft-desde"></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Hasta</label><input type="date" class="form-control form-control-sm" id="hist-ft-hasta"></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Punto ECA</label><select class="form-select form-select-sm" id="hist-punto-filter"><option value="">Todos</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Material</label><select class="form-select form-select-sm" id="hist-mat-filter" aria-label="Filtrar historial por material"><option value="">Todos</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Categoría</label><select class="form-select form-select-sm" id="hist-cat-filter" aria-label="Filtrar historial por categoría"><option value="">Todas</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Tipo mov.</label><select class="form-select form-select-sm" id="hist-tipo-filter" aria-label="Filtrar historial por tipo de movimiento"><option value="">Todos</option><option value="Compra">Compra</option><option value="Venta">Venta</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Desde</label><input type="date" class="form-control form-control-sm" id="hist-ft-desde" aria-label="Fecha desde para historial global"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Hasta</label><input type="date" class="form-control form-control-sm" id="hist-ft-hasta" aria-label="Fecha hasta para historial global"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Punto ECA</label><select class="form-select form-select-sm" id="hist-punto-filter" aria-label="Filtrar historial por punto ECA"><option value="">Todos</option></select></div>
       </div>
       <div class="row g-3 mt-1">
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Cantidad mín.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-min" placeholder="0"></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Cantidad máx.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-max"></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Monto mín.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-min" placeholder="0"></div>
-        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Monto máx.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-max"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Cantidad mín.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-min" aria-label="Cantidad mínima del historial" placeholder="0"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Cantidad máx.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-max" aria-label="Cantidad máxima del historial"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Monto mín.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-min" aria-label="Monto mínimo del historial" placeholder="0"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Monto máx.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-max" aria-label="Monto máximo del historial"></div>
         <div class="col-md-2 d-flex align-items-end gap-1">
           <button class="btn btn-success btn-sm fw-semibold flex-grow-1" onclick="renderHistorial()"><i class="bi bi-search me-1"></i>Filtrar</button>
           <button class="btn btn-outline-secondary btn-sm" onclick="limpiarFiltrosHistorial()"><i class="bi bi-arrow-counterclockwise"></i></button>
@@ -268,7 +268,7 @@
     <div class="card-header bg-light border-0 px-3 py-2">
       <div class="d-flex flex-wrap align-items-center gap-2">
         <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i>Listado</h6>
-        <input type="text" class="form-control form-control-sm" style="width:180px" id="gcat-search" placeholder="Buscar..." oninput="renderGestionCategorias()">
+        <input type="text" class="form-control form-control-sm" style="width:180px" id="gcat-search" aria-label="Buscar categorías" placeholder="Buscar..." oninput="renderGestionCategorias()">
         <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar" onclick="document.getElementById('gcat-search').value='';renderGestionCategorias()"><i class="bi bi-eraser"></i></button>
       </div>
     </div>
@@ -291,7 +291,7 @@
     <div class="card-header bg-light border-0 px-3 py-2">
       <div class="d-flex flex-wrap align-items-center gap-2">
         <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i>Listado</h6>
-        <input type="text" class="form-control form-control-sm" style="width:180px" id="gclas-search" placeholder="Buscar..." oninput="renderGestionClasificaciones()">
+        <input type="text" class="form-control form-control-sm" style="width:180px" id="gclas-search" aria-label="Buscar clasificaciones" placeholder="Buscar..." oninput="renderGestionClasificaciones()">
         <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar" onclick="document.getElementById('gclas-search').value='';renderGestionClasificaciones()"><i class="bi bi-eraser"></i></button>
       </div>
     </div>
@@ -311,12 +311,12 @@
       <form method="POST" action="{% url 'panel_admin:crear_material_admin' %}" novalidate id="formCrearMaterial" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row g-3">
-          <div class="col-12"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" id="nm-nombre" name="nombre" class="form-control form-control-sm" placeholder="Ej: Botella PET, Cartón..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="invalid-feedback">Mínimo 3 caracteres, incluir letras (máx. 30).</div></div>
-          <div class="col-12"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea id="nm-descripcion" name="descripcion" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Características y usos del material..."></textarea></div>
-          <div class="col-md-6"><label class="form-label fw-semibold small text-muted">Categoría <span class="text-danger">*</span></label><select id="nm-categoria" name="categoria_id" class="form-select form-select-sm" required><option value="">Seleccionar categoría...</option>{% for cat in todas_categorias %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}</select></div>
-          <div class="col-md-3"><label class="form-label fw-semibold small text-muted">Clasificación <span class="text-danger">*</span></label><select id="nm-clasificacion" name="clasificacion" class="form-select form-select-sm" required><option value="">Seleccionar...</option><option value="ESTANDAR">ESTANDAR</option><option value="MANEJO_ESPECIAL">MANEJO ESPECIAL</option><option value="PELIGROSO">PELIGROSO</option><option value="HAZMAT">HAZMAT</option></select></div>
-          <div class="col-md-3"><label class="form-label fw-semibold small text-muted">Estado <span class="text-danger">*</span></label><select id="nm-estado" name="estado" class="form-select form-select-sm" required>{% for val, label in estados %}<option value="{{ val }}" {% if val == 'ACTIVO' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-          <div class="col-md-6"><label class="form-label fw-semibold small text-muted">Imagen</label><input type="file" name="imagen" class="form-control form-control-sm" accept="image/*"></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="nm-nombre">Nombre <span class="text-danger">*</span></label><input type="text" id="nm-nombre" name="nombre" class="form-control form-control-sm" placeholder="Ej: Botella PET, Cartón..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="invalid-feedback">Mínimo 3 caracteres, incluir letras (máx. 30).</div></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="nm-descripcion">Descripción</label><textarea id="nm-descripcion" name="descripcion" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Características y usos del material..."></textarea></div>
+          <div class="col-md-6"><label class="form-label fw-semibold small text-muted" for="nm-categoria">Categoría <span class="text-danger">*</span></label><select id="nm-categoria" name="categoria_id" class="form-select form-select-sm" required><option value="">Seleccionar categoría...</option>{% for cat in todas_categorias %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}</select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold small text-muted" for="nm-clasificacion">Clasificación <span class="text-danger">*</span></label><select id="nm-clasificacion" name="clasificacion" class="form-select form-select-sm" required><option value="">Seleccionar...</option><option value="ESTANDAR">ESTANDAR</option><option value="MANEJO_ESPECIAL">MANEJO ESPECIAL</option><option value="PELIGROSO">PELIGROSO</option><option value="HAZMAT">HAZMAT</option></select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold small text-muted" for="nm-estado">Estado <span class="text-danger">*</span></label><select id="nm-estado" name="estado" class="form-select form-select-sm" required>{% for val, label in estados %}<option value="{{ val }}" {% if val == 'ACTIVO' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+          <div class="col-md-6"><label class="form-label fw-semibold small text-muted" for="nm-imagen">Imagen</label><input type="file" name="imagen" id="nm-imagen" class="form-control form-control-sm" accept="image/*"></div>
         </div>
         <div class="modal-footer border-0 px-0 pb-0 pt-3"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-success btn-sm fw-semibold"><i class="bi bi-check-lg me-1"></i>Guardar Material</button></div>
       </form>
@@ -331,8 +331,8 @@
     <form method="POST" action="{% url 'panel_admin:crear_categoria_material' %}" novalidate id="formCrearCategoria">
       {% csrf_token %}
       <div class="modal-body p-4">
-        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" name="nombre" id="ncat-nombre" class="form-control form-control-sm" placeholder="Ej: Plásticos, Metales..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
-        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea name="descripcion" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Describe brevemente la categoría..."></textarea></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncat-nombre">Nombre <span class="text-danger">*</span></label><input type="text" name="nombre" id="ncat-nombre" class="form-control form-control-sm" placeholder="Ej: Plásticos, Metales..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncat-descripcion">Descripción</label><textarea name="descripcion" id="ncat-descripcion" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Describe brevemente la categoría..."></textarea></div>
       </div>
       <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-success btn-sm fw-semibold"><i class="bi bi-check-lg me-1"></i>Guardar Categoría</button></div>
     </form>
@@ -344,8 +344,8 @@
   <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
     <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-shield-plus me-2"></i>Nueva Clasificación</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body p-4">
-      <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ncl-nombre" placeholder="Ej: BIOLÓGICO, RADIACTIVO..." required minlength="3" maxlength="30"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
-      <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción (advertencia) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ncl-descripcion" rows="3" maxlength="500" placeholder="Instrucciones de manejo, riesgos, EPP requerido..."></textarea></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncl-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ncl-nombre" placeholder="Ej: BIOLÓGICO, RADIACTIVO..." required minlength="3" maxlength="30"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncl-descripcion">Descripción (advertencia) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ncl-descripcion" rows="3" maxlength="500" placeholder="Instrucciones de manejo, riesgos, EPP requerido..."></textarea></div>
     </div>
     <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="crearClasificacion()"><i class="bi bi-check-lg me-1"></i>Guardar Clasificación</button></div>
   </div></div>
@@ -359,11 +359,11 @@
       <form id="formEditarMaterial" novalidate>
         {% csrf_token %}<input type="hidden" id="em-id">
         <div class="row g-3">
-          <div class="col-12"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="em-nombre" required minlength="3" maxlength="30"></div>
-          <div class="col-12"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea class="form-control form-control-sm" id="em-descripcion" rows="2" maxlength="500"></textarea></div>
-          <div class="col-md-4"><label class="form-label fw-semibold small text-muted">Categoría <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="em-categoria"></select></div>
-          <div class="col-md-4"><label class="form-label fw-semibold small text-muted">Clasificación <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="em-clasificacion"><option value="ESTANDAR">ESTANDAR</option><option value="MANEJO_ESPECIAL">MANEJO ESPECIAL</option><option value="PELIGROSO">PELIGROSO</option><option value="HAZMAT">HAZMAT</option></select></div>
-          <div class="col-md-4"><label class="form-label fw-semibold small text-muted">Estado</label><select class="form-select form-select-sm" id="em-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="em-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="em-nombre" required minlength="3" maxlength="30"></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="em-descripcion">Descripción</label><textarea class="form-control form-control-sm" id="em-descripcion" rows="2" maxlength="500"></textarea></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted" for="em-categoria">Categoría <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="em-categoria"></select></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted" for="em-clasificacion">Clasificación <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="em-clasificacion"><option value="ESTANDAR">ESTANDAR</option><option value="MANEJO_ESPECIAL">MANEJO ESPECIAL</option><option value="PELIGROSO">PELIGROSO</option><option value="HAZMAT">HAZMAT</option></select></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted" for="em-estado">Estado</label><select class="form-select form-select-sm" id="em-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
         </div>
         <div class="modal-footer border-0 px-0 pb-0 pt-3"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionMaterial()"><i class="bi bi-save me-1"></i>Guardar Cambios</button></div>
       </form>
@@ -376,9 +376,9 @@
   <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
     <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Categoría</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body p-4"><input type="hidden" id="ec-id">
-      <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ec-nombre" required minlength="3" maxlength="30"></div>
-      <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea class="form-control form-control-sm" id="ec-descripcion" rows="2" maxlength="500"></textarea></div>
-      <div class="mb-3"><label class="form-label fw-semibold small text-muted">Estado</label><select class="form-select form-select-sm" id="ec-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ec-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ec-nombre" required minlength="3" maxlength="30"></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ec-descripcion">Descripción</label><textarea class="form-control form-control-sm" id="ec-descripcion" rows="2" maxlength="500"></textarea></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ec-estado">Estado</label><select class="form-select form-select-sm" id="ec-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
     </div>
     <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionCategoria()"><i class="bi bi-save me-1"></i>Guardar Cambios</button></div>
   </div></div>
@@ -389,8 +389,8 @@
   <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
     <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Clasificación</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body p-4"><input type="hidden" id="ecl-id">
-      <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ecl-nombre" required minlength="3" maxlength="30"></div>
-      <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción (advertencia) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ecl-descripcion" rows="3" maxlength="500"></textarea></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ecl-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ecl-nombre" required minlength="3" maxlength="30"></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ecl-descripcion">Descripción (advertencia) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ecl-descripcion" rows="3" maxlength="500"></textarea></div>
     </div>
     <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionClasificacion()"><i class="bi bi-save me-1"></i>Guardar Cambios</button></div>
   </div></div>
