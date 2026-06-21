@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from config.base_models import CreacionModificacionModel, DescripcionModel
-from config.constants import Alerta, UnidadMedida
+from config.constants import Alerta, UnidadMedida, ClasificacionMaterial
 
 
 class Inventario(CreacionModificacionModel):
@@ -217,14 +217,24 @@ class Inventario(CreacionModificacionModel):
 
 class Material(DescripcionModel):
     """
-    Representa un tipo de material reciclable, vinculado a una categoría y un tipo específico.
+    Representa un tipo de material reciclable, vinculado a una categoría y una clasificación de manejo.
 
     Relaciones clave:
     - Relación 1 a N con Inventario: Un material puede estar presente en varios inventarios, pero en cada punto ECA existe solo un inventario por material.
     - Categoría (ForeignKey): Agrupa materiales según su función o naturaleza (por ejemplo, plásticos, metales).
-    - Tipo (ForeignKey): Subclasifica el material para análisis más detallados o reglas de negocio.
+    - Clasificación (CharField): Nivel de riesgo o manejo especial requerido (ESTANDAR, MANEJO_ESPECIAL, PELIGROSO, HAZMAT).
     """
     imagen_url = models.URLField("Foto material", max_length=200, blank=True)
+
+    clasificacion = models.CharField(
+        max_length=20,
+        choices=ClasificacionMaterial.choices,
+        default=ClasificacionMaterial.ESTANDAR,
+        null=False,
+        blank=False,
+        verbose_name="Clasificación de manejo",
+        help_text="Nivel de riesgo o manejo especial requerido para este material",
+    )
 
     categoria = models.ForeignKey(
         "inventory.CategoriaMaterial",
@@ -237,15 +247,17 @@ class Material(DescripcionModel):
         help_text="Categoría a la que pertenece el material",
     )
 
+    # Campo deprecado — se mantiene en BD por compatibilidad.
+    # Reemplazado por `clasificacion`.
     tipo = models.ForeignKey(
         "inventory.TipoMaterial",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         db_constraint=True,
-        related_name="materiales",
-        verbose_name="Tipo del material",
-        help_text="Tipo al que pertenece el material (se auto-asigna desde la categoría)",
+        related_name="materiales_deprecados",
+        verbose_name="Tipo del material (deprecado)",
+        help_text="Campo deprecado. Usar clasificacion en su lugar.",
     )
 
     class Meta(DescripcionModel.Meta):
@@ -262,15 +274,6 @@ class CategoriaMaterial(DescripcionModel):
     Categoría para clasificar materiales reciclables (ejemplo: Plástico, Metal).
     Relación 1 a N con Material: una categoría puede contener varios materiales.
     """
-    tipo = models.ForeignKey(
-        "inventory.TipoMaterial",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="categorias",
-        verbose_name="Tipo de material",
-        help_text="Tipo al que pertenece esta categoría",
-    )
 
     class Meta(DescripcionModel.Meta):
         verbose_name = "Categoría de material"
