@@ -105,8 +105,8 @@
     <div class="card-header bg-light border-0 px-3 py-2">
       <div class="d-flex flex-wrap align-items-center gap-2">
         <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i> Listado</h6>
-        <button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('cat')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
-        <button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('cat')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        <button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('cat','excel')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        <button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('cat','pdf')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         <div class="d-flex flex-wrap align-items-center gap-1 flex-grow-1">
           <input type="text" class="form-control form-control-sm" style="width:160px" id="cat-search" placeholder="Buscar..." oninput="renderCatalogo()">
           <select class="form-select form-select-sm" style="width:150px" id="cat-filtro-categoria" onchange="renderCatalogo()"><option value="">Todas las categorías</option></select>
@@ -227,8 +227,8 @@
           <button class="btn btn-outline-secondary btn-sm" onclick="limpiarFiltrosHistorial()"><i class="bi bi-arrow-counterclockwise"></i></button>
         </div>
         <div class="col-md-2 d-flex align-items-end gap-1">
-          <button class="btn btn-sm btn-outline-success" onclick="exportarTabla('hist')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
-          <button class="btn btn-sm btn-outline-danger" onclick="exportarTabla('hist')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+          <button class="btn btn-sm btn-outline-success" onclick="exportarTabla('hist','excel')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="exportarTabla('hist','pdf')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
         </div>
       </div>
     </div>
@@ -250,7 +250,7 @@
 <div class="mat-tab-pane" id="mat-pane-categorias">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div><h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-folder me-2"></i>Categorías de Materiales</h2><p class="text-muted small mb-0">Administra las categorías que agrupan los materiales reciclables.</p></div>
-    <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gcat-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gcat')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gcat')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria"><i class="bi bi-plus-circle me-1"></i> Nueva Categoría</button></div>
+    <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gcat-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gcat','excel')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gcat','pdf')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria"><i class="bi bi-plus-circle me-1"></i> Nueva Categoría</button></div>
   </div>
   <div class="row g-3 mb-3">
     <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-info me-1"></i>Materiales por Categoría</h6></div><div class="card-body" style="height:280px"><canvas id="chartCatMatPorCat"></canvas></div></div></div>
@@ -263,7 +263,7 @@
 <div class="mat-tab-pane" id="mat-pane-clasificaciones">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div><h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-shield-check me-2"></i>Clasificaciones de Manejo</h2><p class="text-muted small mb-0">Define los niveles de riesgo y advertencias de manipulación para los materiales.</p></div>
-    <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gclas-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gclas')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gclas')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaClasificacion"><i class="bi bi-plus-circle me-1"></i> Nueva Clasificación</button></div>
+    <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gclas-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gclas','excel')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gclas','pdf')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaClasificacion"><i class="bi bi-plus-circle me-1"></i> Nueva Clasificación</button></div>
   </div>
   <div class="alert alert-info small py-2 mb-3"><i class="bi bi-info-circle me-1"></i>Las clasificaciones definen el nivel de riesgo y las advertencias de manipulación para cada material.</div>
   <div class="row g-3 mb-3">
@@ -826,15 +826,58 @@
   }
 
   // ===== EXPORT =====
-  function exportarTabla(tab){
-    let data = [], label = '';
-    const f = {};
-    if(tab==='cat'){data = [...materiales]; f.buscar = document.getElementById('cat-search')?.value||''; f.cat = $('#cat-filtro-categoria').val()||''; f.clas = $('#cat-filtro-clasificacion').val()||''; f.est = $('#cat-filtro-estado').val()||''; label = 'materiales';}
-    else if(tab==='hist'){data = [...historialMov]; f.cat = $('#hist-cat-filter').val()||''; f.tipoMov = $('#hist-tipo-filter').val()||''; label = 'historial_movimientos';}
-    else if(tab==='gcat'){data = getCategoriasList(); label = 'categorias_material';}
-    else if(tab==='gclas'){data = clasificaciones; label = 'clasificaciones_material';}
-    const filtros = Object.entries(f).filter(([,v])=>v).map(([k,v])=>k+':'+v).join(', ');
-    alert('Exportación '+(filtros?'(filtros: '+filtros+') ':'')+'de '+data.length+' registros como '+label+'.csv / .pdf\n\nEn producción esto generaría el archivo real con los filtros aplicados.');
+  function descargarCSV(data, columnas, nombreArchivo){
+    var csv = columnas.join(',') + '\n';
+    data.forEach(function(row){
+      csv += columnas.map(function(col){var v=row[col]||'';return '"'+String(v).replace(/"/g,'""')+'"';}).join(',') + '\n';
+    });
+    var blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');a.href=url;a.download=nombreArchivo+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+  function exportarTabla(tab, formato){
+    if(tab==='cat'){
+      var params = new URLSearchParams();
+      var q = document.getElementById('cat-search')?.value||'';
+      if(q) params.set('q',q);
+      var cat = document.getElementById('cat-filtro-categoria')?.value||'';
+      if(cat) params.set('categoria',cat);
+      var clas = document.getElementById('cat-filtro-clasificacion')?.value||'';
+      if(clas) params.set('clasificacion',clas);
+      var url = '/panel_admin/materiales/exportar/'+(formato==='pdf'?'pdf':'excel')+'/';
+      window.location = url + (params.toString()?'?'+params.toString():'');
+    } else if(tab==='gcat'){
+      var params = new URLSearchParams();
+      var url = '/panel_admin/categorias-materiales/exportar/'+(formato==='pdf'?'pdf':'excel')+'/';
+      window.location = url;
+    } else if(tab==='hist'){
+      // Apply current filters
+      var matF = document.getElementById('hist-mat-filter')?.value||'';
+      var catF = document.getElementById('hist-cat-filter')?.value||'';
+      var tipoF = document.getElementById('hist-tipo-filter')?.value||'';
+      var ptoF = document.getElementById('hist-punto-filter')?.value||'';
+      var ftDesde = document.getElementById('hist-ft-desde')?.value||'';
+      var ftHasta = document.getElementById('hist-ft-hasta')?.value||'';
+      var kgMin = parseFloat(document.getElementById('hist-cantidad-min')?.value)||0;
+      var kgMax = parseFloat(document.getElementById('hist-cantidad-max')?.value)||Infinity;
+      var montoMin = parseFloat(document.getElementById('hist-monto-min')?.value)||0;
+      var montoMax = parseFloat(document.getElementById('hist-monto-max')?.value)||Infinity;
+      var filtered = [...historialMov];
+      if(matF) filtered = filtered.filter(function(m){return m.mat===matF});
+      if(catF) filtered = filtered.filter(function(m){var mat=materiales.find(function(x){return x.nombre===m.mat});return mat&&mat.categoria_nombre===catF});
+      if(tipoF) filtered = filtered.filter(function(m){return m.tipo===tipoF});
+      if(ptoF) filtered = filtered.filter(function(m){return m.punto===ptoF});
+      if(kgMin) filtered = filtered.filter(function(m){return m.kg>=kgMin});
+      if(kgMax<Infinity) filtered = filtered.filter(function(m){return m.kg<=kgMax});
+      if(montoMin) filtered = filtered.filter(function(m){return m.total>=montoMin});
+      if(montoMax<Infinity) filtered = filtered.filter(function(m){return m.total<=montoMax});
+      if(ftDesde) filtered = filtered.filter(function(m){return m.fecha.split(' ')[0]>=ftDesde});
+      if(ftHasta) filtered = filtered.filter(function(m){return m.fecha.split(' ')[0]<=ftHasta});
+      descargarCSV(filtered, ['fecha','tipo','mat','punto','kg','unitario','total','centro'], 'historial_movimientos');
+    } else if(tab==='gclas'){
+      descargarCSV(clasificaciones, ['nombre','descripcion'], 'clasificaciones_material');
+    }
   }
 
   // ===== MODAL CRUD =====
