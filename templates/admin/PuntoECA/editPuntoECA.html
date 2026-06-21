@@ -258,5 +258,9 @@
   );
 </script>
 {% endif %}
-{% include "admin/PuntoECA/_form_scripts.html" with form_id="editEcaForm" check_passwords=not punto.gestor_eca %}
+{% if punto.gestor_eca %}
+{% include "admin/PuntoECA/_form_scripts.html" with form_id="editEcaForm" check_passwords=False %}
+{% else %}
+{% include "admin/PuntoECA/_form_scripts.html" with form_id="editEcaForm" check_passwords=True %}
+{% endif %}
 {% endblock %}
