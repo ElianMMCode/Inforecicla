@@ -4,8 +4,6 @@
 {% block body_class %}bg-light{% endblock %}
 
 {% block extra_head %}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
 <style>
   .kpi-card-mat{background:linear-gradient(135deg,#fff,#f8f9fa);border:1px solid #e9ecef;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .25s,box-shadow .25s;overflow:hidden;position:relative;height:100%}
   .kpi-card-mat::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;border-radius:14px 0 0 14px}
@@ -384,10 +382,8 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
+{# Base template already loads: jQuery, Chart.js, Select2, Bootstrap JS #}
+{# We only add the unique JS for this page #}
 {{ materiales_json|json_script:"materiales-data" }}
 {{ categorias_json|json_script:"categorias-data" }}
 {{ inventario_json|json_script:"inventario-data" }}
@@ -400,12 +396,22 @@
 <script>
 (function(){
   // ===== DATA FROM SERVER =====
-  const materiales = JSON.parse(document.getElementById('materiales-data').textContent);
-  const categoriasServer = JSON.parse(document.getElementById('categorias-data').textContent);
-  const inventario = JSON.parse(document.getElementById('inventario-data').textContent);
-  const puntos = JSON.parse(document.getElementById('puntos-data').textContent);
-  const historialMov = JSON.parse(document.getElementById('historial-data').textContent);
-  const PAGE_SIZE = 20;
+  function safeParse(id, fallback){
+    try {
+      var el = document.getElementById(id);
+      if(!el){ console.warn('Missing json_script:', id); return fallback; }
+      return JSON.parse(el.textContent);
+    } catch(e) {
+      console.error('JSON parse error for', id, e);
+      return fallback;
+    }
+  }
+  var materiales = safeParse('materiales-data', []);
+  var categoriasServer = safeParse('categorias-data', []);
+  var inventario = safeParse('inventario-data', []);
+  var puntos = safeParse('puntos-data', []);
+  var historialMov = safeParse('historial-data', []);
+  var PAGE_SIZE = 20;
 
   // Fixed classifications
   const clasificaciones = [
@@ -910,14 +916,41 @@
 
   // ===== BOOT =====
   $(function(){
-    $('select.form-select').not('#cat-filtro-clasificacion,#inv-mat-selector').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:5});
-    $('#cat-filtro-clasificacion').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:-1});
-    $('#inv-mat-selector').select2({theme:'bootstrap-5',width:'100%',placeholder:'-- Selecciona un material --'});
+    // Initialize Select2 on filter selects (base template may not cover these)
+    try {
+      $('#cat-filtro-categoria,#cat-filtro-estado,#hist-mat-filter,#hist-cat-filter,#hist-tipo-filter,#hist-punto-filter').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:5});
+      $('#cat-filtro-clasificacion').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:-1});
+      $('#inv-mat-selector').select2({theme:'bootstrap-5',width:'100%',placeholder:'-- Selecciona un material --'});
+    } catch(e) {}
   });
   updateGlobalKPIs();
   renderCatalogo();
   renderGestionCategorias();
   renderGestionClasificaciones();
+
+  // Export functions needed by inline onclick handlers
+  window.switchMatTab = switchMatTab;
+  window.renderCatalogo = renderCatalogo;
+  window.renderInventarioPorMaterial = renderInventarioPorMaterial;
+  window.renderFlujo = renderFlujo;
+  window.renderHistorial = renderHistorial;
+  window.renderKPIs = renderKPIs;
+  window.renderGestionCategorias = renderGestionCategorias;
+  window.renderGestionClasificaciones = renderGestionClasificaciones;
+  window.flujoSelectMat = flujoSelectMat;
+  window.flujoToggleAll = flujoToggleAll;
+  window.switchFlujoSub = switchFlujoSub;
+  window.limpiarFiltrosHistorial = limpiarFiltrosHistorial;
+  window.exportarTabla = exportarTabla;
+  window.abrirEditarMaterial = abrirEditarMaterial;
+  window.guardarEdicionMaterial = guardarEdicionMaterial;
+  window.crearClasificacion = crearClasificacion;
+  window.abrirEditarClasificacion = abrirEditarClasificacion;
+  window.guardarEdicionClasificacion = guardarEdicionClasificacion;
+  window.abrirEditarCategoria = abrirEditarCategoria;
+  window.guardarEdicionCategoria = guardarEdicionCategoria;
+  window.catGoPage = catGoPage;
+  console.log('Materiales dashboard: ready');
 })();
 </script>
 {% endblock %}
