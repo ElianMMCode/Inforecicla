@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mockup — Gestión de Materiales | InfoRecicla Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <style>
+    :root{--green:#145c3a;--bs-success:var(--green)}
+    body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f8f9fa}
+    .bg-success{background-color:var(--green)!important}.text-success{color:var(--green)!important}
+    .sidebar{width:240px;min-height:100vh;background:var(--green);color:#fff;position:fixed;top:0;left:0;z-index:1030;padding:1rem}
+    .sidebar a{color:rgba(255,255,255,.75);text-decoration:none;display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;border-radius:8px;font-size:.85rem;transition:all .2s}
+    .sidebar a:hover,.sidebar a.active{color:#fff;background:rgba(255,255,255,.12)}
+    .sidebar .brand{font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;padding-bottom:.8rem;border-bottom:1px solid rgba(255,255,255,.15)}
+    .main-content{margin-left:240px;padding:1.5rem}
+
+    /* KPIs */
+    .kpi-card-mat{background:linear-gradient(135deg,#fff,#f8f9fa);border:1px solid #e9ecef;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .25s,box-shadow .25s;overflow:hidden;position:relative;height:100%}
+    .kpi-card-mat::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;border-radius:14px 0 0 14px}
+    .kpi-card-mat.kpi-success::before{background:#198754}.kpi-card-mat.kpi-info::before{background:#0dcaf0}
+    .kpi-card-mat.kpi-warning::before{background:#ffc107}.kpi-card-mat.kpi-primary::before{background:#0d6efd}
+    .kpi-card-mat.kpi-danger::before{background:#dc3545}.kpi-card-mat.kpi-dark::before{background:#212529}
+    .kpi-card-mat:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+    .kpi-card-mat .kpi-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+    .kpi-card-mat .kpi-value{font-size:1.6rem;font-weight:700;line-height:1.1}
+    .kpi-card-mat .kpi-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;opacity:.7}
+
+    /* KPI Mini */
+    .kpi-mini{background:#fff;border:1px solid #e9ecef;border-radius:12px;padding:.65rem .5rem;text-align:center}
+    .kpi-mini .kpi-val{font-size:1.3rem;font-weight:700}
+    .kpi-mini .kpi-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.2px;color:#6c757d;font-weight:600;line-height:1.2}
+
+    /* Charts */
+    .chart-card{border:0;box-shadow:0 2px 8px rgba(0,0,0,.06);border-radius:12px}
+    .chart-card .card-header{background:#fff;border-bottom:1px solid #e9ecef}
+
+    /* Tabs */
+    .tab-nav-mat{border-bottom:2px solid #e9ecef;gap:0;flex-wrap:wrap}
+    .tab-nav-mat .nav-link{border:none;color:#6c757d;font-weight:600;font-size:.82rem;padding:.6rem 1rem;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap}
+    .tab-nav-mat .nav-link:hover{color:#145c3a;border-bottom-color:#dee2e6}
+    .tab-nav-mat .nav-link.active{color:#145c3a;border-bottom-color:#198754;background:transparent}
+    .mat-tab-pane{display:none}
+    .mat-tab-pane.show.active{display:block}
+
+    /* Badges */
+    .salud-ok{background:#d1e7dd;color:#0f5132}.salud-alerta{background:#fff3cd;color:#664d03}.salud-critico{background:#f8d7da;color:#842029}
+    .salud-badge-sm{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.72rem;font-weight:600}
+    .mov-tipo{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:600}
+    .mov-compra{background:#d1e7dd;color:#0f5132}.mov-venta{background:#f8d7da;color:#842029}
+    .inv-summary{font-size:.78rem;color:#6c757d}.inv-summary strong{color:#212529}
+
+    /* Inventory cards */
+    .inv-card{border:1px solid #e9ecef;border-radius:10px;padding:.8rem;transition:box-shadow .2s;cursor:pointer}
+    .inv-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#198754}
+    .stock-bar{height:6px;border-radius:3px;background:#e9ecef;overflow:hidden;margin-top:4px}
+    .stock-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+
+    /* Animations */
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .fade-in-up{animation:fadeInUp .4s ease-out both}
+    .fade-in-up:nth-child(1){animation-delay:.05s}.fade-in-up:nth-child(2){animation-delay:.1s}
+
+    /* Material selector */
+    .mat-select-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;border:2px solid #dee2e6;background:#fff;transition:all .15s}
+    .mat-select-chip.selected{border-color:#198754;background:#d1e7dd;color:#0f5132}
+    .mat-select-chip:hover{border-color:#adb5bd}
+
+    /* Flow sub-tabs */
+    .nav-subtabs .nav-link{color:#6c757d;font-weight:500;font-size:.85rem;padding:.35rem .9rem}
+    .nav-subtabs .nav-link.active{color:#0f5132;font-weight:600;background-color:#e8f5ed;border-color:#198754 #198754 #fff}
+
+    /* Tables */
+    .table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:#6c757d}
+    .readonly-badge{font-size:.65rem;padding:2px 6px;border-radius:4px;background:#e9ecef;color:#6c757d;font-weight:600}
+
+    /* Pagination */
+    .pager-info{font-size:.72rem;color:#6c757d}
+    .pagination-sm .page-link{font-size:.75rem;padding:.25rem .55rem}
+    .pagination-sm .page-item.active .page-link{background:var(--green);border-color:var(--green)}
+  </style>
+</head>
+<body>
+<!-- SIDEBAR -->
+<nav class="sidebar d-none d-md-flex flex-column">
+  <div class="brand"><i class="bi bi-recycle me-2"></i>InfoRecicla</div>
+  <a href="#"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  <a href="#"><i class="bi bi-people"></i> Usuarios</a>
+  <a href="#"><i class="bi bi-geo-alt-fill"></i> Puntos ECA</a>
+  <a href="#" class="active"><i class="bi bi-boxes"></i> Materiales</a>
+  <a href="#"><i class="bi bi-folder"></i> Categorias</a>
+  <a href="#"><i class="bi bi-shield-check"></i> Clasificaciones</a>
+  <a href="#"><i class="bi bi-newspaper"></i> Publicaciones</a>
+  <a href="#"><i class="bi bi-gear"></i> Configuracion</a>
+</nav>
+
+<div class="main-content">
+
+<!-- HEADER -->
+<div class="mb-3 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-boxes me-2"></i>Gestión de Materiales</h1>
+    <p class="text-muted mb-0">Administra materiales reciclables, inventarios, flujos y movimientos desde un solo lugar.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoMaterial"><i class="bi bi-plus-circle me-1"></i> Nuevo Material</button>
+    <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria"><i class="bi bi-folder-plus me-1"></i> Nueva Categoría</button>
+    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaClasificacion"><i class="bi bi-shield-plus me-1"></i> Nueva Clasificación</button>
+    <button class="btn btn-outline-warning btn-sm" title="Ver materiales críticos"><i class="bi bi-exclamation-triangle me-1"></i>Alertas</button>
+    <button class="btn btn-outline-secondary btn-sm" title="Exportar reporte"><i class="bi bi-download me-1"></i>Exportar</button>
+  </div>
+</div>
+
+<!-- KPIs GLOBALES -->
+<div class="row g-3 mb-4" id="mat-global-kpis">
+  <div class="col-6 col-md-3">
+    <div class="kpi-card-mat kpi-success p-3">
+      <div class="kpi-label">Total Materiales</div>
+      <div class="kpi-value text-success" id="kpi-total-mat">--</div>
+      <div class="inv-summary mt-1">categorías activas</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card-mat kpi-info p-3">
+      <div class="kpi-label">Total Inventarios</div>
+      <div class="kpi-value text-info" id="kpi-total-inv">--</div>
+      <div class="inv-summary mt-1">en puntos ECA</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card-mat kpi-warning p-3">
+      <div class="kpi-label">Movimientos (30d)</div>
+      <div class="kpi-value text-warning" id="kpi-total-mov">--</div>
+      <div class="inv-summary mt-1">compras + ventas</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card-mat kpi-danger p-3">
+      <div class="kpi-label">Materiales Críticos</div>
+      <div class="kpi-value text-danger" id="kpi-total-crit">--</div>
+      <div class="inv-summary mt-1">puntos en estado crítico</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<ul class="nav tab-nav-mat mb-3" id="materiales-tabs">
+  <li class="nav-item"><button class="nav-link active" onclick="switchMatTab('catalogo',this)"><i class="bi bi-collection me-1"></i>Catálogo</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('inventario',this)"><i class="bi bi-diagram-3 me-1"></i>Inventario por Material</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('flujo',this)"><i class="bi bi-graph-up me-1"></i>Flujo de Materiales</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('historial',this)"><i class="bi bi-clock-history me-1"></i>Historial Global</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('kpis',this)"><i class="bi bi-bar-chart-line me-1"></i>KPIs Agregados</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('categorias',this)"><i class="bi bi-folder me-1"></i>Categorías</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('clasificaciones',this)"><i class="bi bi-shield-check me-1"></i>Clasificaciones</button></li>
+</ul>
+
+<!-- ==================== TAB 1: CATÁLOGO ==================== -->
+<div class="mat-tab-pane show active" id="mat-pane-catalogo">
+  <!-- Charts row -->
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Por Categoría</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:280px;width:100%"><canvas id="chartCatCategoria" style="max-height:260px"></canvas></div></div></div></div>
+    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-shield-check text-info me-1"></i>Por Clasificación</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:280px;width:100%"><canvas id="chartCatClasificacion" style="max-height:260px"></canvas></div></div></div></div>
+    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:200px;width:100%"><canvas id="chartCatEstado" style="max-height:260px"></canvas></div></div></div></div>
+  </div>
+
+  <!-- Listado con filtros integrados -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-3 py-2">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i> Listado</h6>
+        <button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('cat')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        <button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('cat')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        <div class="d-flex flex-wrap align-items-center gap-1 flex-grow-1">
+          <input type="text" class="form-control form-control-sm" style="width:160px" id="cat-search" placeholder="Buscar..." oninput="renderCatalogo()">
+          <select class="form-select form-select-sm" style="width:150px" id="cat-filtro-categoria" onchange="renderCatalogo()"><option value="">Todas las categorías</option></select>
+          <select class="form-select form-select-sm clasificacion-sel" style="width:170px" id="cat-filtro-clasificacion" onchange="renderCatalogo()"><option value="">Todas las clasificaciones</option></select>
+          <select class="form-select form-select-sm" style="width:130px" id="cat-filtro-estado" onchange="renderCatalogo()"><option value="">Todos los estados</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select>
+          <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar filtros" onclick="catPage=1;document.getElementById('cat-search').value='';['cat-filtro-categoria','cat-filtro-clasificacion','cat-filtro-estado'].forEach(id=>{$('#'+id).val('').trigger('change')});renderCatalogo()"><i class="bi bi-eraser"></i></button>
+        </div>
+        <span class="badge bg-secondary rounded-pill" id="cat-count-badge">--</span>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Nombre</th><th>Descripción</th><th>Categoría</th><th>Clasificación</th><th>Estado</th><th>Puntos</th><th>Acción</th></tr></thead>
+        <tbody class="border-top" id="cat-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
+      <small class="pager-info" id="cat-pager-info"></small>
+      <nav><ul class="pagination pagination-sm mb-0" id="cat-pager"></ul></nav>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 2: INVENTARIO POR MATERIAL ==================== -->
+<div class="mat-tab-pane" id="mat-pane-inventario">
+  <!-- Selector de material -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-info-subtle border-0 px-4 py-2">
+      <h6 class="mb-0 fw-bold text-info small"><i class="bi bi-search me-2"></i>Selecciona un material para ver su inventario en todos los puntos</h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label fw-semibold small text-muted">Material</label>
+          <select class="form-select" id="inv-mat-selector" onchange="renderInventarioPorMaterial()">
+            <option value="">-- Selecciona un material --</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold small text-muted">Filtrar por estado</label>
+          <select class="form-select form-select-sm" id="inv-mat-estado-filter" onchange="renderInventarioPorMaterial()">
+            <option value="">Todos</option><option value="OK">OK</option><option value="Alerta">Alerta</option><option value="Crítico">Crítico</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Ordenar por</label>
+          <select class="form-select form-select-sm" id="inv-mat-orden" onchange="renderInventarioPorMaterial()">
+            <option value="stock-desc">Mayor Stock</option><option value="stock-asc">Menor Stock</option><option value="punto-asc">Punto A-Z</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Consulta</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs del material seleccionado -->
+  <div class="row g-3 mb-3" id="inv-mat-kpis" style="display:none"></div>
+
+  <!-- Header material info -->
+  <div class="card border-start border-5 border-success shadow-sm mb-3" id="inv-mat-header" style="display:none">
+    <div class="card-body py-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <span class="fw-bold text-success" style="font-size:1.2rem" id="inv-mat-nombre-selec">--</span>
+          <span class="badge bg-info" id="inv-mat-cat-selec">--</span>
+          <span class="badge bg-warning text-dark" id="inv-mat-clas-selec">--</span>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge bg-secondary" id="inv-mat-puntos">0 puntos</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards de inventario por punto -->
+  <div class="row g-3 mb-3" id="inv-mat-cards"></div>
+
+  <!-- Placeholder -->
+  <div id="inv-mat-placeholder">
+    <div class="alert alert-info text-center py-4">
+      <i class="bi bi-hand-index display-4 text-muted mb-3 d-block"></i>
+      <h6 class="text-muted mb-1">Selecciona un material del catálogo</h6>
+      <p class="text-muted small mb-0">Usa el selector de arriba para ver en qué puntos ECA está disponible este material, con su stock actual, estado y flujo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 3: FLUJO DE MATERIALES ==================== -->
+<div class="mat-tab-pane" id="mat-pane-flujo">
+  <ul class="nav nav-subtabs mb-3" id="flujo-subtabs">
+    <li class="nav-item"><button class="nav-link active" onclick="switchFlujoSub('stock',this)"><i class="bi bi-box-seam me-1"></i>Stock</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchFlujoSub('ganancias',this)"><i class="bi bi-cash-stack me-1"></i>Ganancias</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchFlujoSub('detalle',this)"><i class="bi bi-bar-chart me-1"></i>Detalle por Material</button></li>
+  </ul>
+
+  <!-- Filtros -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-info-subtle border-0 px-4 py-2">
+      <h6 class="mb-0 fw-bold text-info small"><i class="bi bi-sliders me-2"></i>Filtros de la gráfica</h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label fw-semibold small text-muted">Materiales a comparar</label>
+          <div id="flujo-mat-chips" class="d-flex flex-wrap gap-1"></div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-sm btn-outline-info" type="button" onclick="flujoToggleAll(true)">Todos</button>
+            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoToggleAll(false)">Ninguno</button>
+  </div><!-- /mat-pane-gestion -->
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Desde</label>
+          <input type="date" class="form-control form-control-sm" id="flujo-ft-desde" value="2026-05-01" onchange="renderFlujo()">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Hasta</label>
+          <input type="date" class="form-control form-control-sm" id="flujo-ft-hasta" value="2026-06-20" onchange="renderFlujo()">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Granularidad</label>
+          <select class="form-select form-select-sm" id="flujo-gran" onchange="renderFlujo()">
+            <option value="dia">Día</option><option value="semana">Semana</option><option value="mes" selected>Mes</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Consulta</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs del flujo -->
+  <div class="row g-3 mb-3" id="flujo-kpis">
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="flujo-stock-actual">--</div><div class="kpi-lbl">Stock Actual Total</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="flujo-compras-periodo">--</div><div class="kpi-lbl">Compras (kg)</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="flujo-ventas-periodo">--</div><div class="kpi-lbl">Ventas (kg)</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="flujo-utilidad-periodo">--</div><div class="kpi-lbl">Utilidad Estimada</div></div></div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card chart-card mb-3"><div class="card-body" style="height:380px"><canvas id="chartFlujo"></canvas></div></div>
+
+  <!-- Sub-pane Detalle por Material -->
+  <div id="flujo-detalle-pane" style="display:none">
+    <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash me-1"></i>Ganancia ($) por Material x Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoDetalle"></canvas></div></div>
+    <div class="card shadow-sm border-0"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark small"><i class="bi bi-trophy me-1"></i>Ranking de Materiales por Rentabilidad</h6></div><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Material</th><th>Ganancia Total</th><th>Volumen</th><th>Margen Prom.</th><th>Puntos</th></tr></thead><tbody id="flujo-rank-tbody"></tbody></table></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 4: HISTORIAL GLOBAL ==================== -->
+<div class="mat-tab-pane" id="mat-pane-historial">
+  <!-- Filtros -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-success-subtle border-0 px-4 py-2">
+      <h6 class="mb-0 fw-bold text-success small"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Material</label>
+          <select class="form-select form-select-sm" id="hist-mat-filter"><option value="">Todos</option></select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Categoría</label>
+          <select class="form-select form-select-sm" id="hist-cat-filter"><option value="">Todas</option></select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Tipo mov.</label>
+          <select class="form-select form-select-sm" id="hist-tipo-filter"><option value="">Todos</option><option value="Compra">Compra</option><option value="Venta">Venta</option></select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Desde</label>
+          <input type="date" class="form-control form-control-sm" id="hist-ft-desde">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Hasta</label>
+          <input type="date" class="form-control form-control-sm" id="hist-ft-hasta">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Punto ECA</label>
+          <select class="form-select form-select-sm" id="hist-punto-filter"><option value="">Todos</option></select>
+        </div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Cantidad mín.</label>
+          <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-min" placeholder="0">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Cantidad máx.</label>
+          <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-max">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Monto mín.</label>
+          <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-min" placeholder="0">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold small text-muted">Monto máx.</label>
+          <input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-max">
+        </div>
+        <div class="col-md-2 d-flex align-items-end gap-1">
+          <button class="btn btn-success btn-sm fw-semibold flex-grow-1" type="button" onclick="renderHistorial()"><i class="bi bi-search me-1"></i>Filtrar</button>
+          <button class="btn btn-outline-secondary btn-sm" type="button" onclick="limpiarFiltrosHistorial()"><i class="bi bi-arrow-counterclockwise"></i></button>
+        </div>
+        <div class="col-md-2 d-flex align-items-end gap-1">
+          <button class="btn btn-sm btn-outline-success" type="button" onclick="exportarTabla('hist')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button class="btn btn-sm btn-outline-danger" type="button" onclick="exportarTabla('hist')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="hist-kpi-compras">--</div><div class="kpi-lbl">Total Compras</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="hist-kpi-ventas">--</div><div class="kpi-lbl">Total Ventas</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="hist-kpi-registros">--</div><div class="kpi-lbl">Registros</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="hist-kpi-kg">--</div><div class="kpi-lbl">Unidades Movidas</div></div></div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-4 py-2 d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-bold text-dark small">Todos los movimientos</h6>
+      <span class="badge bg-secondary rounded-pill" id="hist-count-badge">--</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Fecha</th><th>Tipo</th><th>Material</th><th>Punto ECA</th><th class="text-end">Cantidad</th><th class="text-end">$ Unit.</th><th>Total</th><th>Centro</th></tr></thead>
+        <tbody class="border-top" id="hist-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
+      <small class="pager-info" id="hist-pager-info"></small>
+      <nav><ul class="pagination pagination-sm mb-0" id="hist-pager"></ul></nav>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 5: KPIs AGREGADOS ==================== -->
+<div class="mat-tab-pane" id="mat-pane-kpis">
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="kpi-mini">
+        <div class="kpi-val text-success" id="kpis-total-stock">--</div>
+        <div class="kpi-lbl">Stock Total (kg)</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-mini">
+        <div class="kpi-val text-info" id="kpis-cap-total">--</div>
+        <div class="kpi-lbl">Cap. Total</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-mini">
+        <div class="kpi-val text-primary" id="kpis-valor-total">--</div>
+        <div class="kpi-lbl">Valor Inventario</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-mini">
+        <div class="kpi-val text-warning" id="kpis-ocupacion-prom">--</div>
+        <div class="kpi-lbl">Ocup. Prom.</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-mini">
+        <div class="kpi-val text-danger" id="kpis-pts-criticos">--</div>
+        <div class="kpi-lbl">Críticos</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-mini">
+        <div class="kpi-val text-dark" id="kpis-mat-unicos">--</div>
+        <div class="kpi-lbl">Mat. Únicos</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6">
+      <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Top 10 Materiales por Stock Total</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopStock"></canvas></div></div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash-stack text-warning me-1"></i>Top 10 Materiales por Valor</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopValor"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-4">
+      <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:220px;width:100%"><canvas id="chartKPIsSalud"></canvas></div></div></div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto (Compras vs Ventas)</h6></div><div class="card-body" style="height:260px"><canvas id="chartKPIsFlujoNeto"></canvas></div></div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-shield-check text-info me-1"></i>Distribución de Clasificaciones</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:220px;width:100%"><canvas id="chartKPIsClasif"></canvas></div></div></div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-8">
+      <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Top 10 Puntos por Movimiento</h6></div><div class="card-body" style="height:300px"><canvas id="chartKPIsClasifPorPunto"></canvas></div></div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-geo-alt text-primary me-1"></i>Distribución por Punto</h6></div><div class="card-body" style="height:300px;overflow-y:auto" id="kpis-pts-list"></div></div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="card chart-card"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-table text-success me-1"></i>Resumen Agregado de Materiales</h6></div>
+        <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Material</th><th>Clasificación</th><th>Stock Total</th><th>Ocupación</th><th>Puntos</th><th>Precio Compra</th><th>Precio Venta</th><th>Margen</th><th>Vol. Compras</th><th>Vol. Ventas</th><th>Estado</th></tr></thead><tbody id="kpis-resumen-tbody"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 6: CATEGORÍAS ==================== -->
+<div class="mat-tab-pane" id="mat-pane-categorias">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-folder me-2"></i>Categorías de Materiales</h2>
+      <p class="text-muted small mb-0">Administra las categorías que agrupan los materiales reciclables.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <span class="badge bg-secondary rounded-pill fs-6" id="gcat-count">--</span>
+      <button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gcat')"><i class="bi bi-file-earmark-excel"></i></button>
+      <button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gcat')"><i class="bi bi-file-earmark-pdf"></i></button>
+      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria"><i class="bi bi-plus-circle me-1"></i> Nueva Categoría</button>
+    </div>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Nombre</th><th>Descripción</th><th>Materiales</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+        <tbody class="border-top" id="gcat-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
+      <small class="pager-info" id="gcat-pager-info"></small>
+      <nav><ul class="pagination pagination-sm mb-0" id="gcat-pager"></ul></nav>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 7: CLASIFICACIONES ==================== -->
+<div class="mat-tab-pane" id="mat-pane-clasificaciones">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-shield-check me-2"></i>Clasificaciones de Manejo</h2>
+      <p class="text-muted small mb-0">Define los niveles de riesgo y advertencias de manipulación para los materiales.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <span class="badge bg-secondary rounded-pill fs-6" id="gclas-count">--</span>
+      <button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gclas')"><i class="bi bi-file-earmark-excel"></i></button>
+      <button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gclas')"><i class="bi bi-file-earmark-pdf"></i></button>
+      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaClasificacion"><i class="bi bi-plus-circle me-1"></i> Nueva Clasificación</button>
+    </div>
+  </div>
+  <div class="alert alert-info small py-2 mb-3">
+    <i class="bi bi-info-circle me-1"></i>Las clasificaciones definen el nivel de riesgo y las advertencias de manipulación para cada material.
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Nombre</th><th>Descripción (advertencia de manejo)</th><th>Materiales</th><th class="text-center">Acciones</th></tr></thead>
+        <tbody class="border-top" id="gclas-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
+      <small class="pager-info" id="gclas-pager-info"></small>
+      <nav><ul class="pagination pagination-sm mb-0" id="gclas-pager"></ul></nav>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== MODAL NUEVO MATERIAL ===== -->
+<div class="modal fade" id="modalNuevoMaterial" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white border-0">
+        <h6 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Nuevo Material</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="nm-nombre" placeholder="Ej: Botella PET, Cartón, Papel..." required minlength="3" maxlength="30"><div class="form-text">Obligatorio · máximo 30 caracteres</div></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea class="form-control form-control-sm" id="nm-descripcion" rows="2" maxlength="500" placeholder="Características y usos del material..."></textarea><div class="form-text">Opcional · máximo 500 caracteres</div></div>
+          <div class="col-md-6"><label class="form-label fw-semibold small text-muted">Categoría <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="nm-categoria"><option value="">Seleccionar categoría...</option></select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold small text-muted">Clasificación <span class="text-danger">*</span></label><select class="form-select form-select-sm clasificacion-sel" id="nm-clasificacion"><option value="">Seleccionar...</option></select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold small text-muted">Estado</label><select class="form-select form-select-sm" id="nm-estado"><option value="ACTIVO" selected>Activo</option><option value="INACTIVO">Inactivo</option></select></div>
+        </div>
+        <div class="alert alert-info py-2 small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>El material se agregará al catálogo. Luego podrás asignarlo a inventarios de puntos ECA.</div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm fw-semibold" onclick="crearMaterial()"><i class="bi bi-check-lg me-1"></i>Guardar Material</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR MATERIAL ===== -->
+<div class="modal fade" id="modalEditarMaterial" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white border-0">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Material</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="em-id">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="em-nombre" required minlength="3" maxlength="30"></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea class="form-control form-control-sm" id="em-descripcion" rows="2" maxlength="500"></textarea></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted">Categoría <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="em-categoria"></select></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted">Clasificación <span class="text-danger">*</span></label><select class="form-select form-select-sm clasificacion-sel" id="em-clasificacion"><option value="">Seleccionar...</option></select></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted">Estado</label><select class="form-select form-select-sm" id="em-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionMaterial()"><i class="bi bi-save me-1"></i>Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL NUEVA CATEGORÍA ===== -->
+<div class="modal fade" id="modalNuevaCategoria" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white border-0">
+        <h6 class="modal-title fw-bold"><i class="bi bi-folder-plus me-2"></i>Nueva Categoría de Material</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="nc-nombre" placeholder="Ej: Plásticos, Metales, Madera..." required minlength="3" maxlength="30"><div class="form-text">Obligatorio · máximo 30 caracteres · único en el catálogo</div></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea class="form-control form-control-sm" id="nc-descripcion" rows="2" maxlength="500" placeholder="Describe brevemente la categoría..."></textarea><div class="form-text">Opcional · máximo 500 caracteres</div></div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm fw-semibold" onclick="crearCategoria()"><i class="bi bi-check-lg me-1"></i>Guardar Categoría</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR CATEGORÍA ===== -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white border-0">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Categoría</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="ec-id">
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ec-nombre" required minlength="3" maxlength="30"></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción</label><textarea class="form-control form-control-sm" id="ec-descripcion" rows="2" maxlength="500"></textarea></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Estado</label><select class="form-select form-select-sm" id="ec-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionCategoria()"><i class="bi bi-save me-1"></i>Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL NUEVA CLASIFICACIÓN ===== -->
+<div class="modal fade" id="modalNuevaClasificacion" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white border-0">
+        <h6 class="modal-title fw-bold"><i class="bi bi-shield-plus me-2"></i>Nueva Clasificación</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ncl-nombre" placeholder="Ej: BIOLÓGICO, RADIACTIVO..." required minlength="3" maxlength="30"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción (advertencia de manejo) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ncl-descripcion" rows="3" maxlength="500" placeholder="Instrucciones de manejo, riesgos, EPP requerido..."></textarea><div class="form-text">Obligatorio · máximo 500 caracteres · se mostrará como nota de advertencia al manipular el material</div></div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm fw-semibold" onclick="crearClasificacion()"><i class="bi bi-check-lg me-1"></i>Guardar Clasificación</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR CLASIFICACIÓN ===== -->
+<div class="modal fade" id="modalEditarClasificacion" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white border-0">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Clasificación</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="ecl-id">
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ecl-nombre" required minlength="3" maxlength="30"></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Descripción (advertencia de manejo) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ecl-descripcion" rows="3" maxlength="500"></textarea></div>
+      </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionClasificacion()"><i class="bi bi-save me-1"></i>Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main-content -->
+
+<!-- ===== DUMMY DATA ===== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+/* ===== DATA ===== */
+const materiales = [
+  {id:1,nombre:'Cartón',descripcion:'Cartón corrugado y liso reciclable',categoria:'Papel y Cartón',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:2,nombre:'Papel Blanco',descripcion:'Papel bond, archivo y oficina',categoria:'Papel y Cartón',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:3,nombre:'Plástico PET',descripcion:'Botellas y envases PET transparentes',categoria:'Plástico',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:4,nombre:'Plástico HDPE',descripcion:'Envases de detergente, shampoo',categoria:'Plástico',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:5,nombre:'Vidrio',descripcion:'Botellas y frascos de vidrio',categoria:'Vidrio',clasificacion:'MANEJO_ESPECIAL',estado:'Activo',imagen:''},
+  {id:6,nombre:'Aluminio',descripcion:'Latas de aluminio y perfiles',categoria:'Metal',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:7,nombre:'Chatarra',descripcion:'Acero y hierro reciclable',categoria:'Metal',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:8,nombre:'Cartón Compactado',descripcion:'Cartón prensado de alta densidad',categoria:'Papel y Cartón',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:9,nombre:'Plástico PP',descripcion:'Tapas, envases de yogurt, sillas',categoria:'Plástico',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:10,nombre:'Tetrapak',descripcion:'Envases multicapa de bebidas',categoria:'Papel y Cartón',clasificacion:'MANEJO_ESPECIAL',estado:'Activo',imagen:''},
+  {id:11,nombre:'Vidrio Plano',descripcion:'Ventanas y espejos',categoria:'Vidrio',clasificacion:'MANEJO_ESPECIAL',estado:'Inactivo',imagen:''},
+  {id:12,nombre:'Cobre',descripcion:'Cableado y tubería de cobre',categoria:'Metal',clasificacion:'PELIGROSO',estado:'Activo',imagen:''},
+  {id:13,nombre:'Plástico PS',descripcion:'Icopor, vasos desechables',categoria:'Plástico',clasificacion:'MANEJO_ESPECIAL',estado:'Activo',imagen:''},
+  {id:14,nombre:'Archivo',descripcion:'Papel de archivo histórico',categoria:'Papel y Cartón',clasificacion:'ESTANDAR',estado:'Activo',imagen:''},
+  {id:15,nombre:'Bronce',descripcion:'Llaves, válvulas de bronce',categoria:'Metal',clasificacion:'PELIGROSO',estado:'Inactivo',imagen:''}
+];
+
+const clasificaciones = [
+  {id:1,nombre:'ESTANDAR',descripcion:'Manipulación normal. Material reciclable convencional sin riesgos especiales.'},
+  {id:2,nombre:'MANEJO_ESPECIAL',descripcion:'Requiere cuidados específicos durante la manipulación. Vidrio frágil, cartón contaminado, multicapas.'},
+  {id:3,nombre:'PELIGROSO',descripcion:'Riesgo químico o eléctrico. Pilas, baterías, aceites usados, RAEE. Requiere EPP y manejo autorizado.'},
+  {id:4,nombre:'HAZMAT',descripcion:'Residuo peligroso regulado. Transporte con manifiesto, disposición certificada. Solo gestores autorizados.'}
+];
+
+const puntos = [
+  {id:1,nombre:'ECA Chapinero Norte',localidad:'Chapinero',gestor:'María López',estado:'Activo'},
+  {id:2,nombre:'ECA Usaquén Central',localidad:'Usaquén',gestor:'Carlos Ruiz',estado:'Activo'},
+  {id:3,nombre:'ECA Suba Villa',localidad:'Suba',gestor:'Ana García',estado:'Activo'},
+  {id:4,nombre:'ECA Engativá Norte',localidad:'Engativá',gestor:'Pedro Martínez',estado:'Activo'},
+  {id:5,nombre:'ECA Kennedy Sur',localidad:'Kennedy',gestor:'Laura Sánchez',estado:'Activo'},
+  {id:6,nombre:'ECA Teusaquillo Centro',localidad:'Teusaquillo',gestor:'Diego Ramírez',estado:'Activo'},
+  {id:7,nombre:'ECA Barrios Unidos',localidad:'Barrios Unidos',gestor:'Sofía Herrera',estado:'Activo'},
+  {id:8,nombre:'ECA Chapinero Sur',localidad:'Chapinero',gestor:'Andrés Moreno',estado:'Inactivo'},
+  {id:9,nombre:'ECA Usaquén Sur',localidad:'Usaquén',gestor:'Camila Torres',estado:'Activo'},
+  {id:10,nombre:'ECA Suba Centro',localidad:'Suba',gestor:'Luis Fernández',estado:'Activo'},
+  {id:11,nombre:'ECA Engativá Sur',localidad:'Engativá',gestor:'Valentina Rojas',estado:'Activo'},
+  {id:12,nombre:'ECA Kennedy Norte',localidad:'Kennedy',gestor:'Jorge Castillo',estado:'Activo'}
+];
+
+// Inventario: material × punto
+const inventario = [
+  {matId:1,puntoId:1,stock:150,cap:200,compra:280,venta:380,unidad:'KG'},
+  {matId:1,puntoId:2,stock:130,cap:200,compra:290,venta:400,unidad:'KG'},
+  {matId:1,puntoId:3,stock:100,cap:150,compra:260,venta:370,unidad:'KG'},
+  {matId:1,puntoId:4,stock:200,cap:250,compra:310,venta:420,unidad:'KG'},
+  {matId:1,puntoId:5,stock:80,cap:160,compra:300,venta:420,unidad:'KG'},
+  {matId:1,puntoId:6,stock:140,cap:200,compra:275,venta:385,unidad:'KG'},
+  {matId:1,puntoId:8,stock:95,cap:300,compra:270,venta:390,unidad:'KG'},
+  {matId:1,puntoId:9,stock:160,cap:220,compra:285,venta:395,unidad:'KG'},
+  {matId:1,puntoId:10,stock:80,cap:160,compra:265,venta:375,unidad:'KG'},
+  {matId:1,puntoId:12,stock:170,cap:220,compra:295,venta:410,unidad:'KG'},
+  {matId:2,puntoId:4,stock:140,cap:200,compra:210,venta:310,unidad:'KG'},
+  {matId:2,puntoId:6,stock:80,cap:100,compra:195,venta:290,unidad:'KG'},
+  {matId:2,puntoId:10,stock:120,cap:140,compra:205,venta:305,unidad:'KG'},
+  {matId:2,puntoId:11,stock:100,cap:140,compra:200,venta:300,unidad:'KG'},
+  {matId:3,puntoId:1,stock:120,cap:180,compra:370,venta:520,unidad:'KG'},
+  {matId:3,puntoId:2,stock:160,cap:200,compra:380,venta:530,unidad:'KG'},
+  {matId:3,puntoId:4,stock:180,cap:250,compra:390,venta:540,unidad:'KG'},
+  {matId:3,puntoId:6,stock:120,cap:150,compra:375,venta:525,unidad:'KG'},
+  {matId:3,puntoId:9,stock:150,cap:200,compra:385,venta:535,unidad:'KG'},
+  {matId:3,puntoId:11,stock:140,cap:180,compra:372,venta:518,unidad:'KG'},
+  {matId:3,puntoId:12,stock:55,cap:100,compra:365,venta:510,unidad:'KG'},
+  {matId:4,puntoId:5,stock:40,cap:120,compra:330,venta:470,unidad:'KG'},
+  {matId:4,puntoId:7,stock:95,cap:150,compra:340,venta:480,unidad:'KG'},
+  {matId:4,puntoId:11,stock:80,cap:120,compra:325,venta:460,unidad:'KG'},
+  {matId:5,puntoId:1,stock:180,cap:220,compra:85,venta:140,unidad:'KG'},
+  {matId:5,puntoId:3,stock:190,cap:200,compra:90,venta:145,unidad:'KG'},
+  {matId:5,puntoId:7,stock:160,cap:200,compra:88,venta:160,unidad:'KG'},
+  {matId:5,puntoId:10,stock:60,cap:80,compra:82,venta:130,unidad:'KG'},
+  {matId:5,puntoId:12,stock:130,cap:160,compra:95,venta:155,unidad:'KG'},
+  {matId:6,puntoId:2,stock:90,cap:100,compra:880,venta:1150,unidad:'KG'},
+  {matId:6,puntoId:5,stock:100,cap:120,compra:920,venta:1250,unidad:'KG'},
+  {matId:6,puntoId:7,stock:115,cap:200,compra:850,venta:1180,unidad:'KG'},
+  {matId:6,puntoId:9,stock:100,cap:130,compra:910,venta:1220,unidad:'KG'},
+  {matId:6,puntoId:11,stock:70,cap:100,compra:870,venta:1190,unidad:'KG'},
+  {matId:7,puntoId:3,stock:110,cap:150,compra:210,venta:310,unidad:'KG'},
+  {matId:7,puntoId:8,stock:45,cap:100,compra:195,venta:290,unidad:'KG'},
+  {matId:7,puntoId:10,stock:80,cap:120,compra:200,venta:295,unidad:'KG'},
+  {matId:8,puntoId:1,stock:90,cap:150,compra:320,venta:460,unidad:'KG'},
+  {matId:8,puntoId:4,stock:120,cap:180,compra:340,venta:500,unidad:'KG'},
+  {matId:8,puntoId:7,stock:65,cap:100,compra:310,venta:440,unidad:'KG'},
+  {matId:9,puntoId:3,stock:70,cap:120,compra:450,venta:620,unidad:'KG'},
+  {matId:9,puntoId:6,stock:90,cap:140,compra:470,venta:650,unidad:'KG'},
+  {matId:9,puntoId:9,stock:55,cap:100,compra:440,venta:600,unidad:'KG'},
+  {matId:10,puntoId:2,stock:45,cap:80,compra:240,venta:380,unidad:'KG'},
+  {matId:10,puntoId:8,stock:30,cap:60,compra:230,venta:360,unidad:'KG'},
+  {matId:10,puntoId:12,stock:70,cap:100,compra:250,venta:390,unidad:'KG'},
+  {matId:12,puntoId:1,stock:25,cap:40,compra:2800,venta:4100,unidad:'KG'},
+  {matId:12,puntoId:5,stock:15,cap:30,compra:2900,venta:4200,unidad:'KG'},
+  {matId:12,puntoId:9,stock:35,cap:50,compra:2750,venta:4050,unidad:'KG'},
+  {matId:13,puntoId:4,stock:60,cap:100,compra:180,venta:250,unidad:'KG'},
+  {matId:13,puntoId:6,stock:40,cap:80,compra:170,venta:240,unidad:'KG'},
+  {matId:13,puntoId:11,stock:50,cap:90,compra:175,venta:245,unidad:'KG'},
+  {matId:14,puntoId:2,stock:110,cap:150,compra:190,venta:280,unidad:'KG'},
+  {matId:14,puntoId:7,stock:75,cap:100,compra:185,venta:270,unidad:'KG'},
+  {matId:14,puntoId:10,stock:90,cap:130,compra:180,venta:260,unidad:'KG'}
+];
+
+// Historial de movimientos (compras + ventas)
+const historialMov = [
+  {fecha:'2026-06-20 09:15',tipo:'Compra',mat:'Cartón',punto:'ECA Chapinero Norte',kg:120,unitario:280,total:33600,centro:'Centro Chapinero'},
+  {fecha:'2026-06-20 10:30',tipo:'Venta',mat:'Plástico PET',punto:'ECA Engativá Norte',kg:60,unitario:540,total:32400,centro:'Centro Engativá'},
+  {fecha:'2026-06-19 14:15',tipo:'Compra',mat:'Vidrio',punto:'ECA Suba Villa',kg:180,unitario:90,total:16200,centro:'Centro Suba'},
+  {fecha:'2026-06-19 16:30',tipo:'Venta',mat:'Cartón',punto:'ECA Usaquén Central',kg:95,unitario:400,total:38000,centro:'Centro Usaquén'},
+  {fecha:'2026-06-18 08:45',tipo:'Compra',mat:'Aluminio',punto:'ECA Kennedy Sur',kg:45,unitario:920,total:41400,centro:'Centro Kennedy'},
+  {fecha:'2026-06-18 11:20',tipo:'Venta',mat:'Papel Blanco',punto:'ECA Engativá Norte',kg:70,unitario:310,total:21700,centro:'Centro Engativá'},
+  {fecha:'2026-06-17 09:00',tipo:'Compra',mat:'Plástico HDPE',punto:'ECA Barrios Unidos',kg:55,unitario:340,total:18700,centro:'Centro Barrios Unidos'},
+  {fecha:'2026-06-17 14:40',tipo:'Venta',mat:'Chatarra',punto:'ECA Suba Villa',kg:150,unitario:310,total:46500,centro:'Centro Suba'},
+  {fecha:'2026-06-16 10:15',tipo:'Compra',mat:'Cartón Compactado',punto:'ECA Chapinero Norte',kg:80,unitario:340,total:27200,centro:'Centro Chapinero'},
+  {fecha:'2026-06-16 15:55',tipo:'Venta',mat:'Plástico PP',punto:'ECA Teusaquillo Centro',kg:65,unitario:650,total:42250,centro:'Centro Teusaquillo'},
+  {fecha:'2026-06-15 08:30',tipo:'Compra',mat:'Vidrio',punto:'ECA Kennedy Norte',kg:200,unitario:95,total:19000,centro:'Centro Kennedy'},
+  {fecha:'2026-06-15 12:10',tipo:'Venta',mat:'Cartón',punto:'ECA Usaquén Sur',kg:85,unitario:395,total:33575,centro:'Centro Usaquén'},
+  {fecha:'2026-06-14 09:45',tipo:'Compra',mat:'Plástico PET',punto:'ECA Engativá Sur',kg:70,unitario:372,total:26040,centro:'Centro Engativá'},
+  {fecha:'2026-06-14 16:20',tipo:'Venta',mat:'Aluminio',punto:'ECA Usaquén Central',kg:30,unitario:1150,total:34500,centro:'Centro Usaquén'},
+  {fecha:'2026-06-13 11:00',tipo:'Compra',mat:'Cobre',punto:'ECA Chapinero Norte',kg:10,unitario:2800,total:28000,centro:'Centro Chapinero'},
+  {fecha:'2026-06-13 14:50',tipo:'Venta',mat:'Tetrapak',punto:'ECA Kennedy Norte',kg:50,unitario:390,total:19500,centro:'Centro Kennedy'},
+  {fecha:'2026-06-12 08:15',tipo:'Compra',mat:'Cartón',punto:'ECA Teusaquillo Centro',kg:110,unitario:275,total:30250,centro:'Centro Teusaquillo'},
+  {fecha:'2026-06-12 13:30',tipo:'Venta',mat:'Plástico HDPE',punto:'ECA Engativá Sur',kg:40,unitario:460,total:18400,centro:'Centro Engativá'},
+  {fecha:'2026-06-11 10:05',tipo:'Compra',mat:'Archivo',punto:'ECA Usaquén Central',kg:130,unitario:190,total:24700,centro:'Centro Usaquén'},
+  {fecha:'2026-06-11 15:40',tipo:'Venta',mat:'Vidrio',punto:'ECA Barrios Unidos',kg:90,unitario:160,total:14400,centro:'Centro Barrios Unidos'},
+  {fecha:'2026-06-10 09:30',tipo:'Compra',mat:'Plástico PS',punto:'ECA Engativá Norte',kg:50,unitario:180,total:9000,centro:'Centro Engativá'},
+  {fecha:'2026-06-10 14:25',tipo:'Venta',mat:'Cartón Compactado',punto:'ECA Engativá Norte',kg:95,unitario:500,total:47500,centro:'Centro Engativá'},
+  {fecha:'2026-06-08 11:10',tipo:'Compra',mat:'Papel Blanco',punto:'ECA Suba Centro',kg:140,unitario:205,total:28700,centro:'Centro Suba'},
+  {fecha:'2026-06-08 16:00',tipo:'Venta',mat:'Chatarra',punto:'ECA Barrios Unidos',kg:80,unitario:295,total:23600,centro:'Centro Barrios Unidos'},
+  {fecha:'2026-06-05 08:50',tipo:'Compra',mat:'Plástico PET',punto:'ECA Usaquén Sur',kg:55,unitario:385,total:21175,centro:'Centro Usaquén'},
+  {fecha:'2026-06-05 13:15',tipo:'Venta',mat:'Cobre',punto:'ECA Kennedy Sur',kg:8,unitario:4200,total:33600,centro:'Centro Kennedy'},
+  {fecha:'2026-06-04 10:40',tipo:'Compra',mat:'Aluminio',punto:'ECA Usaquén Sur',kg:35,unitario:910,total:31850,centro:'Centro Usaquén'},
+  {fecha:'2026-06-04 15:25',tipo:'Venta',mat:'Plástico PP',punto:'ECA Suba Villa',kg:40,unitario:620,total:24800,centro:'Centro Suba'},
+  {fecha:'2026-06-03 09:20',tipo:'Compra',mat:'Cartón',punto:'ECA Kennedy Sur',kg:95,unitario:300,total:28500,centro:'Centro Kennedy'},
+  {fecha:'2026-06-03 14:35',tipo:'Venta',mat:'Plástico PET',punto:'ECA Chapinero Norte',kg:75,unitario:520,total:39000,centro:'Centro Chapinero'},
+  {fecha:'2026-06-01 11:50',tipo:'Compra',mat:'Archivo',punto:'ECA Barrios Unidos',kg:100,unitario:185,total:18500,centro:'Centro Barrios Unidos'},
+  {fecha:'2026-06-01 16:10',tipo:'Venta',mat:'Vidrio',punto:'ECA Suba Centro',kg:70,unitario:130,total:9100,centro:'Centro Suba'},
+  {fecha:'2026-05-28 08:30',tipo:'Compra',mat:'Plástico HDPE',punto:'ECA Kennedy Sur',kg:65,unitario:330,total:21450,centro:'Centro Kennedy'},
+  {fecha:'2026-05-28 13:45',tipo:'Venta',mat:'Tetrapak',punto:'ECA Chapinero Sur',kg:25,unitario:360,total:9000,centro:'Centro Chapinero'},
+  {fecha:'2026-05-25 09:10',tipo:'Compra',mat:'Chatarra',punto:'ECA Suba Centro',kg:200,unitario:200,total:40000,centro:'Centro Suba'},
+  {fecha:'2026-05-25 14:20',tipo:'Venta',mat:'Archivo',punto:'ECA Suba Centro',kg:60,unitario:260,total:15600,centro:'Centro Suba'},
+  {fecha:'2026-05-22 10:35',tipo:'Compra',mat:'Plástico PS',punto:'ECA Teusaquillo Centro',kg:70,unitario:170,total:11900,centro:'Centro Teusaquillo'},
+  {fecha:'2026-05-22 15:50',tipo:'Venta',mat:'Cartón',punto:'ECA Kennedy Norte',kg:130,unitario:410,total:53300,centro:'Centro Kennedy'},
+  {fecha:'2026-05-20 11:25',tipo:'Compra',mat:'Plástico PP',punto:'ECA Usaquén Sur',kg:45,unitario:440,total:19800,centro:'Centro Usaquén'},
+  {fecha:'2026-05-20 16:05',tipo:'Venta',mat:'Plástico PET',punto:'ECA Kennedy Sur',kg:50,unitario:510,total:25500,centro:'Centro Kennedy'},
+  {fecha:'2026-05-18 08:55',tipo:'Compra',mat:'Cartón Compactado',punto:'ECA Barrios Unidos',kg:55,unitario:310,total:17050,centro:'Centro Barrios Unidos'},
+  {fecha:'2026-05-18 14:30',tipo:'Venta',mat:'Cobre',punto:'ECA Chapinero Norte',kg:12,unitario:4100,total:49200,centro:'Centro Chapinero'},
+  {fecha:'2026-05-15 09:40',tipo:'Compra',mat:'Vidrio',punto:'ECA Teusaquillo Centro',kg:150,unitario:88,total:13200,centro:'Centro Teusaquillo'},
+  {fecha:'2026-05-15 13:55',tipo:'Venta',mat:'Papel Blanco',punto:'ECA Engativá Sur',kg:90,unitario:300,total:27000,centro:'Centro Engativá'},
+  {fecha:'2026-05-12 10:15',tipo:'Compra',mat:'Cartón',punto:'ECA Suba Villa',kg:85,unitario:260,total:22100,centro:'Centro Suba'},
+  {fecha:'2026-05-12 15:30',tipo:'Venta',mat:'Aluminio',punto:'ECA Barrios Unidos',kg:40,unitario:1180,total:47200,centro:'Centro Barrios Unidos'}
+];
+
+// ===== HELPERS ===== 
+const charts = {};
+function destroyChart(id){if(charts[id]){charts[id].destroy();charts[id]=null;}}
+const PAGE_SIZE = 20;
+
+// Pagination helper — renders slice + info + pager buttons, returns current page
+function renderPaginated(data, tbodyId, infoId, pagerId, rowFn, page, onPageChange){
+  if(!page) page = 1;
+  const total = data.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if(page > totalPages) page = totalPages;
+  const start = (page-1)*PAGE_SIZE;
+  const slice = data.slice(start, start+PAGE_SIZE);
+  document.getElementById(tbodyId).innerHTML = slice.map(rowFn).join('')||'<tr><td colspan="99" class="text-center py-3 text-muted">Sin resultados.</td></tr>';
+  if(infoId){
+    const el = document.getElementById(infoId);
+    if(el) el.textContent = total ? `Mostrando ${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total}` : '0 registros';
+  }
+  if(pagerId){
+    const pager = document.getElementById(pagerId);
+    if(pager){
+      let html = '';
+      for(let p=1; p<=totalPages; p++){
+        html += `<li class="page-item${p===page?' active':''}"><a class="page-link" href="#" onclick="event.preventDefault();(${onPageChange.toString()})(${p})">${p}</a></li>`;
+      }
+      pager.innerHTML = html;
+    }
+  }
+  return page;
+}
+
+function getInvEstado(inv){
+  const pct = inv.cap > 0 ? inv.stock / inv.cap * 100 : 0;
+  if(pct >= 90) return {estado:'Crítico',cls:'salud-critico',color:'#dc3545'};
+  if(pct >= 70) return {estado:'Alerta',cls:'salud-alerta',color:'#ffc107'};
+  return {estado:'OK',cls:'salud-ok',color:'#198754'};
+}
+
+function getMatById(id){return materiales.find(m=>m.id===id)||{};}
+function getPuntoById(id){return puntos.find(p=>p.id===id)||{};}
+
+// ===== TAB NAVIGATION =====
+function switchMatTab(tab,el){
+  document.querySelectorAll('#materiales-tabs .nav-link').forEach(a=>a.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.mat-tab-pane').forEach(p=>{p.classList.remove('show','active');p.style.display='none'});
+  document.getElementById('mat-pane-'+tab).classList.add('show','active');
+  document.getElementById('mat-pane-'+tab).style.display='block';
+  if(tab==='catalogo') renderCatalogo();
+  if(tab==='inventario') renderInventarioPorMaterial();
+  if(tab==='flujo') renderFlujo();
+  if(tab==='historial') renderHistorial();
+  if(tab==='kpis') renderKPIs();
+  if(tab==='categorias') renderGestionCategorias();
+  if(tab==='clasificaciones') renderGestionClasificaciones();
+}
+
+// ===== TAB 1: CATÁLOGO =====
+let catPage = 1;
+function catGoPage(p){ catPage = p; renderCatalogo(); }
+function renderCatalogo(){
+  const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
+  const catF = document.getElementById('cat-filtro-categoria')?.value||'';
+  const clasF = document.getElementById('cat-filtro-clasificacion')?.value||'';
+  const estF = document.getElementById('cat-filtro-estado')?.value||'';
+  // Reset page on filter change
+  if(q || catF || clasF || estF) catPage = 1;
+  let filtered = [...materiales];
+  if(q) filtered = filtered.filter(m=>(m.nombre+' '+m.descripcion+' '+m.categoria+' '+m.clasificacion).toLowerCase().includes(q));
+  if(catF) filtered = filtered.filter(m=>m.categoria===catF);
+  if(clasF) filtered = filtered.filter(m=>m.clasificacion===clasF);
+  if(estF) filtered = filtered.filter(m=>m.estado===estF);
+
+  // Charts — solo se construyen la primera vez (datos siempre completos)
+  if(!charts._catalogoInit){
+    if(typeof Chart!=='undefined'){
+      const cats={};materiales.forEach(m=>{cats[m.categoria]=(cats[m.categoria]||0)+1});
+      charts.catCategoria=new Chart(document.getElementById('chartCatCategoria'),{type:'doughnut',data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:['#198754','#0dcaf0','#ffc107','#0d6efd','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+      const clas={};materiales.forEach(m=>{clas[m.clasificacion]=(clas[m.clasificacion]||0)+1});
+      charts.catClasificacion=new Chart(document.getElementById('chartCatClasificacion'),{type:'doughnut',data:{labels:Object.keys(clas),datasets:[{data:Object.values(clas),backgroundColor:['#198754','#ffc107','#fd7e14','#dc3545','#adb5bd']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+      const ests={};materiales.forEach(m=>{ests[m.estado]=(ests[m.estado]||0)+1});
+      charts.catEstado=new Chart(document.getElementById('chartCatEstado'),{type:'doughnut',data:{labels:Object.keys(ests),datasets:[{data:Object.values(ests),backgroundColor:['#198754','#adb5bd','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+    }
+    charts._catalogoInit = true;
+  }
+
+  // Table — paginada
+  document.getElementById('cat-count-badge').textContent = filtered.length+' materiales';
+  renderPaginated(filtered, 'cat-tbody', 'cat-pager-info', 'cat-pager', function(m){
+    const nPuntos = inventario.filter(inv=>inv.matId===m.id).length;
+    const estadoBadge = m.estado==='Activo'?'<span class="badge bg-success">Activo</span>':'<span class="badge bg-secondary">Inactivo</span>';
+    const clasBadge = m.clasificacion==='ESTANDAR'?'bg-success':m.clasificacion==='MANEJO_ESPECIAL'?'bg-warning text-dark':m.clasificacion==='PELIGROSO'?'bg-danger':'bg-dark';
+    return '<tr><td class="fw-semibold" style="font-size:.85rem">'+m.nombre+'</td><td style="font-size:.78rem;color:#6c757d;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(m.descripcion||'-')+'</td><td><span class="badge bg-info">'+m.categoria+'</span></td><td><span class="badge '+clasBadge+'">'+(m.clasificacion||'-')+'</span></td><td>'+estadoBadge+'</td><td class="text-center"><span class="badge bg-light text-dark">'+nPuntos+' pts</span></td><td><div class="d-flex gap-1 justify-content-center"><button class="btn btn-outline-success btn-sm" onclick="switchMatTab(\'inventario\',document.querySelectorAll(\'#materiales-tabs .nav-link\')[1]);document.getElementById(\'inv-mat-selector\').value='+m.id+';renderInventarioPorMaterial()" title="Ver inventario"><i class="bi bi-eye"></i></button><button class="btn btn-outline-primary btn-sm" onclick="abrirEditarMaterial('+m.id+')" title="Editar"><i class="bi bi-pencil"></i></button></div></td></tr>';
+  }, catPage, catGoPage);
+
+  // Populate filter selects — solo la primera vez
+  if(!charts._catalogoSelectsInit){
+    const catOpts = [...new Set(materiales.map(m=>m.categoria))].sort();
+    const catSel = document.getElementById('cat-filtro-categoria');
+    if(catSel && catSel.options.length<=1) catOpts.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o)});
+
+    const clasOpts = ['ESTANDAR','MANEJO_ESPECIAL','PELIGROSO','HAZMAT'];
+    const clasSel = document.getElementById('cat-filtro-clasificacion');
+    if(clasSel && clasSel.options.length<=1) clasOpts.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;clasSel.appendChild(o)});
+
+    // Populate material selector for other tabs
+    const invSel = document.getElementById('inv-mat-selector');
+    if(invSel && invSel.options.length<=1) materiales.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.nombre+' ('+m.categoria+')';invSel.appendChild(o)});
+
+    const histMatSel = document.getElementById('hist-mat-filter');
+    if(histMatSel && histMatSel.options.length<=1) materiales.forEach(m=>{const o=document.createElement('option');o.value=m.nombre;o.textContent=m.nombre;histMatSel.appendChild(o)});
+
+    const histCatSel = document.getElementById('hist-cat-filter');
+    if(histCatSel && histCatSel.options.length<=1) catOpts.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;histCatSel.appendChild(o)});
+
+    const histPtoSel = document.getElementById('hist-punto-filter');
+    if(histPtoSel && histPtoSel.options.length<=1) puntos.forEach(p=>{const o=document.createElement('option');o.value=p.nombre;o.textContent=p.nombre;histPtoSel.appendChild(o)});
+
+    charts._catalogoSelectsInit = true;
+  }
+}
+
+// ===== TAB 2: INVENTARIO POR MATERIAL =====
+function renderInventarioPorMaterial(){
+  const matId = parseInt(document.getElementById('inv-mat-selector').value);
+  const estF = document.getElementById('inv-mat-estado-filter')?.value||'';
+  const orden = document.getElementById('inv-mat-orden')?.value||'stock-desc';
+
+  if(!matId){
+    document.getElementById('inv-mat-kpis').style.display='none';
+    document.getElementById('inv-mat-header').style.display='none';
+    document.getElementById('inv-mat-cards').innerHTML='';
+    document.getElementById('inv-mat-placeholder').style.display='block';
+    return;
+  }
+
+  document.getElementById('inv-mat-placeholder').style.display='none';
+  const mat = getMatById(matId);
+  let invs = inventario.filter(inv=>inv.matId===matId);
+
+  if(estF) invs = invs.filter(inv=>getInvEstado(inv).estado===estF);
+
+  if(orden==='stock-desc') invs.sort((a,b)=>b.stock-a.stock);
+  else if(orden==='stock-asc') invs.sort((a,b)=>a.stock-b.stock);
+  else if(orden==='punto-asc') invs.sort((a,b)=>(getPuntoById(a.puntoId).nombre||'').localeCompare(getPuntoById(b.puntoId).nombre||''));
+
+  // KPIs
+  const totalStock = invs.reduce((s,inv)=>s+inv.stock,0);
+  const capTotal = invs.reduce((s,inv)=>s+inv.cap,0);
+  const valorTotal = invs.reduce((s,inv)=>s+(inv.stock*inv.venta),0);
+  const ptsCriticos = invs.filter(inv=>getInvEstado(inv).estado==='Crítico').length;
+  const occProm = capTotal>0 ? Math.round(totalStock/capTotal*100) : 0;
+
+  document.getElementById('inv-mat-kpis').style.display='flex';
+  document.getElementById('inv-mat-kpis').innerHTML = 
+    '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success">'+totalStock.toLocaleString()+'</div><div class="kpi-lbl">Stock Total</div></div></div>'+
+    '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary">'+occProm+'%</div><div class="kpi-lbl">Ocupación Prom.</div></div></div>'+
+    '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning">$'+Math.round(valorTotal).toLocaleString()+'</div><div class="kpi-lbl">Valor Total</div></div></div>'+
+    '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger">'+ptsCriticos+'</div><div class="kpi-lbl">Puntos Críticos</div></div></div>';
+
+  // Header
+  document.getElementById('inv-mat-header').style.display='block';
+  document.getElementById('inv-mat-nombre-selec').textContent = mat.nombre;
+  document.getElementById('inv-mat-cat-selec').textContent = mat.categoria;
+  document.getElementById('inv-mat-clas-selec').textContent = mat.clasificacion;
+  document.getElementById('inv-mat-puntos').textContent = invs.length+' puntos ECA';
+
+  // Cards
+  document.getElementById('inv-mat-cards').innerHTML = invs.map(inv=>{
+    const p = getPuntoById(inv.puntoId);
+    const est = getInvEstado(inv);
+    const pct = inv.cap>0 ? Math.round(inv.stock/inv.cap*100) : 0;
+    const margen = inv.venta - inv.compra;
+    return '<div class="col-12 col-md-6 col-lg-4 fade-in-up"><div class="inv-card card shadow-sm h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start mb-2"><div><h6 class="fw-bold mb-0" style="font-size:.9rem">'+p.nombre+'</h6><div class="inv-summary">'+p.localidad+' &middot; '+p.gestor+'</div></div><span class="salud-badge-sm '+est.cls+'">'+est.estado+'</span></div><div class="mb-2"><div class="d-flex justify-content-between mb-1"><span class="inv-summary">Stock: <strong>'+inv.stock+' '+inv.unidad+'</strong></span><span class="inv-summary">'+pct+'%</span></div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+pct+'%;background:'+est.color+'"></div></div><div class="d-flex justify-content-between mt-1"><span class="inv-summary">Cap: '+inv.cap+' '+inv.unidad+'</span><span class="inv-summary"><strong>Margen: $'+margen.toLocaleString()+'/'+inv.unidad+'</strong></span></div></div><div class="d-flex justify-content-between border-top pt-2" style="font-size:.75rem"><div class="text-muted">Compra: <strong>$'+inv.compra.toLocaleString()+'</strong></div><div class="text-muted">Venta: <strong>$'+inv.venta.toLocaleString()+'</strong></div></div></div></div></div>';
+  }).join('')||'<div class="col-12"><div class="alert alert-warning text-center py-3">No hay inventario para este material con los filtros actuales.</div></div>';
+}
+
+// ===== TAB 3: FLUJO DE MATERIALES =====
+let flujoSelectedMats = [];
+let flujoSubMode = 'stock';
+
+function renderFlujoChips(){
+  const container = document.getElementById('flujo-mat-chips');
+  const uniqueMats = [...new Set(inventario.map(inv=>inv.matId))].map(id=>getMatById(id)).filter(Boolean).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  if(flujoSelectedMats.length===0) flujoSelectedMats = uniqueMats.slice(0,6).map(m=>m.id);
+  container.innerHTML = uniqueMats.map(m=>{
+    const sel = flujoSelectedMats.includes(m.id);
+    return '<span class="mat-select-chip'+(sel?' selected':'')+'" onclick="flujoSelectMat('+m.id+',this)" data-matid="'+m.id+'">'+m.nombre+'</span>';
+  }).join('');
+}
+
+function flujoSelectMat(matId,el){
+  if(flujoSelectedMats.includes(matId)){
+    flujoSelectedMats = flujoSelectedMats.filter(id=>id!==matId);
+    el.classList.remove('selected');
+  } else {
+    flujoSelectedMats.push(matId);
+    el.classList.add('selected');
+  }
+  renderFlujo();
+}
+
+function flujoToggleAll(on){
+  flujoSelectedMats = on ? [...new Set(inventario.map(inv=>inv.matId))].filter(id=>getMatById(id).estado==='Activo') : [];
+  renderFlujoChips();
+  renderFlujo();
+}
+
+function switchFlujoSub(mode,el){
+  flujoSubMode = mode;
+  document.querySelectorAll('#flujo-subtabs .nav-link').forEach(a=>a.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('flujo-detalle-pane').style.display = (mode==='detalle')?'block':'none';
+  renderFlujo();
+}
+
+function renderFlujo(){
+  if(typeof Chart==='undefined') return;
+
+  // Ensure chips rendered
+  if(document.getElementById('flujo-mat-chips').children.length===0) renderFlujoChips();
+
+  const gran = document.getElementById('flujo-gran')?.value||'mes';
+  const labels = gran==='dia'?['Jun 1','Jun 5','Jun 10','Jun 15','Jun 20']:gran==='semana'?['Sem 1','Sem 2','Sem 3','Sem 4']:['Ene','Feb','Mar','Abr','May','Jun'];
+
+  const selMats = flujoSelectedMats.map(id=>getMatById(id)).filter(Boolean);
+  if(selMats.length===0){document.getElementById('flujo-stock-actual').textContent='--';return;}
+
+  // KPIs
+  const stockActualTotal = inventario.filter(inv=>flujoSelectedMats.includes(inv.matId)).reduce((s,inv)=>s+inv.stock,0);
+  const invItems = inventario.filter(inv=>flujoSelectedMats.includes(inv.matId));
+  const comprasPeriodo = Math.round(invItems.reduce((s,inv)=>s+inv.stock*0.3,0));
+  const ventasPeriodo = Math.round(invItems.reduce((s,inv)=>s+inv.stock*0.15,0));
+  const utilidadPeriodo = Math.round(invItems.reduce((s,inv)=>s+(inv.stock*0.15*(inv.venta-inv.compra)),0));
+
+  if(flujoSubMode==='stock'){
+    document.getElementById('flujo-stock-actual').textContent = stockActualTotal.toLocaleString()+' kg';
+    document.getElementById('flujo-compras-periodo').textContent = comprasPeriodo.toLocaleString();
+    document.getElementById('flujo-ventas-periodo').textContent = ventasPeriodo.toLocaleString();
+    document.getElementById('flujo-utilidad-periodo').textContent = '$'+utilidadPeriodo.toLocaleString();
+  } else {
+    document.getElementById('flujo-stock-actual').textContent = '$'+Math.round(invItems.reduce((s,inv)=>s+inv.stock*inv.venta,0)).toLocaleString();
+    document.getElementById('flujo-compras-periodo').textContent = '$'+Math.round(invItems.reduce((s,inv)=>s+inv.stock*inv.compra,0)).toLocaleString();
+    document.getElementById('flujo-ventas-periodo').textContent = '$'+Math.round(invItems.reduce((s,inv)=>s+inv.stock*inv.venta,0)).toLocaleString();
+    document.getElementById('flujo-utilidad-periodo').textContent = '$'+Math.round(invItems.reduce((s,inv)=>s+inv.stock*(inv.venta-inv.compra),0)).toLocaleString();
+  }
+
+  // Main chart
+  destroyChart('flujo');
+  const colors = ['#198754','#0d6efd','#dc3545','#ffc107','#0dcaf0','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2','#17a2b8','#28a745'];
+  const datasets = selMats.map((mat,mi)=>{
+    const invItems = inventario.filter(inv=>inv.matId===mat.id);
+    const base = invItems.reduce((s,inv)=>s+inv.stock,0);
+    let data;
+    if(flujoSubMode==='stock'){
+      data = labels.map((_,i)=>Math.round(base*(0.7+i*0.05)));
+    } else if(flujoSubMode==='ganancias'){
+      const gananciaBase = invItems.reduce((s,inv)=>s+inv.stock*(inv.venta-inv.compra),0);
+      data = labels.map((_,i)=>Math.round(gananciaBase*(0.1+i*0.15)));
+    } else {
+      data = labels.map((_,i)=>Math.round(base*(0.7+i*0.05)));
+    }
+    return {label:mat.nombre,data,borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
+  });
+
+  charts.flujo = new Chart(document.getElementById('chartFlujo'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:flujoSubMode==='stock'?'kg':flujoSubMode==='ganancias'?'$ COP':'kg'}}}}});
+
+  // Detalle por material
+  if(flujoSubMode==='detalle'){
+    destroyChart('flujoDetalle');
+    const ptLabels = puntos.slice(0,8).map(p=>p.nombre.substring(0,14));
+    const detDatasets = selMats.slice(0,5).map((mat,mi)=>({label:mat.nombre,data:ptLabels.map(pn=>{
+      const p = puntos.find(pt=>pt.nombre.startsWith(pn));
+      if(!p) return 0;
+      const inv = inventario.find(i=>i.matId===mat.id&&i.puntoId===p.id);
+      return inv ? Math.round(inv.stock*(inv.venta-inv.compra)) : 0;
+    }),backgroundColor:colors[mi%colors.length],borderRadius:0}));
+    charts.flujoDetalle = new Chart(document.getElementById('chartFlujoDetalle'),{type:'bar',data:{labels:ptLabels,datasets:detDatasets},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:'$ COP'}}},plugins:{legend:{position:'bottom'}}}});
+
+    // Ranking
+    const ranking = selMats.map(mat=>{
+      const invs = inventario.filter(inv=>inv.matId===mat.id);
+      const ganancia = Math.round(invs.reduce((s,inv)=>s+inv.stock*(inv.venta-inv.compra),0));
+      const volumen = invs.reduce((s,inv)=>s+inv.stock,0);
+      const margenProm = invs.length ? Math.round(invs.reduce((s,inv)=>s+((inv.venta-inv.compra)/inv.compra)*100,0)/invs.length) : 0;
+      const pts = invs.length;
+      return {mat,ganancia,volumen,margenProm,pts};
+    }).filter(r=>r.ganancia>0).sort((a,b)=>b.ganancia-a.ganancia);
+
+    document.getElementById('flujo-rank-tbody').innerHTML = ranking.map((r,i)=>
+      '<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold">'+r.mat.nombre+'</td><td class="fw-bold text-success">$'+r.ganancia.toLocaleString()+'</td><td>'+r.volumen.toLocaleString()+' kg</td><td>'+r.margenProm+'%</td><td>'+r.pts+'</td></tr>'
+    ).join('');
+  }
+}
+
+// ===== TAB 4: HISTORIAL GLOBAL =====
+let histPage = 1;
+function histGoPage(p){ histPage = p; renderHistorial(); }
+function renderHistorial(){
+  const matF = document.getElementById('hist-mat-filter')?.value||'';
+  const catF = document.getElementById('hist-cat-filter')?.value||'';
+  const tipoF = document.getElementById('hist-tipo-filter')?.value||'';
+  const ptoF = document.getElementById('hist-punto-filter')?.value||'';
+  const kgMin = parseFloat(document.getElementById('hist-cantidad-min')?.value)||0;
+  const kgMax = parseFloat(document.getElementById('hist-cantidad-max')?.value)||Infinity;
+  const montoMin = parseFloat(document.getElementById('hist-monto-min')?.value)||0;
+  const montoMax = parseFloat(document.getElementById('hist-monto-max')?.value)||Infinity;
+  const ftDesde = document.getElementById('hist-ft-desde')?.value||'';
+  const ftHasta = document.getElementById('hist-ft-hasta')?.value||'';
+  histPage = 1;
+
+  let filtered = [...historialMov];
+  if(matF) filtered = filtered.filter(m=>m.mat===matF);
+  if(catF) filtered = filtered.filter(m=>{const mat=materiales.find(x=>x.nombre===m.mat);return mat&&mat.categoria===catF;});
+  if(tipoF) filtered = filtered.filter(m=>m.tipo===tipoF);
+  if(ptoF) filtered = filtered.filter(m=>m.punto===ptoF);
+  if(kgMin) filtered = filtered.filter(m=>m.kg>=kgMin);
+  if(kgMax<Infinity) filtered = filtered.filter(m=>m.kg<=kgMax);
+  if(montoMin) filtered = filtered.filter(m=>m.total>=montoMin);
+  if(montoMax<Infinity) filtered = filtered.filter(m=>m.total<=montoMax);
+  if(ftDesde) filtered = filtered.filter(m=>m.fecha.split(' ')[0]>=ftDesde);
+  if(ftHasta) filtered = filtered.filter(m=>m.fecha.split(' ')[0]<=ftHasta);
+
+  const compras = filtered.filter(m=>m.tipo==='Compra').length;
+  const ventas = filtered.filter(m=>m.tipo==='Venta').length;
+  const kg = filtered.reduce((s,m)=>s+m.kg,0);
+
+  document.getElementById('hist-kpi-compras').textContent = compras;
+  document.getElementById('hist-kpi-ventas').textContent = ventas;
+  document.getElementById('hist-kpi-registros').textContent = filtered.length;
+  document.getElementById('hist-kpi-kg').textContent = kg.toLocaleString();
+  document.getElementById('hist-count-badge').textContent = filtered.length+' registros';
+
+  renderPaginated(filtered, 'hist-tbody', 'hist-pager-info', 'hist-pager', function(m){
+    const tipoClass = m.tipo==='Compra'?'mov-compra':'mov-venta';
+    const tipoIcon = m.tipo==='Compra'?'arrow-down-circle':'arrow-up-circle';
+    return '<tr><td class="text-muted" style="font-size:.78rem;white-space:nowrap">'+m.fecha+'</td><td><span class="mov-tipo '+tipoClass+'"><i class="bi bi-'+tipoIcon+'"></i> '+m.tipo+'</span></td><td class="fw-semibold" style="font-size:.82rem">'+m.mat+'</td><td style="font-size:.78rem">'+m.punto+'</td><td class="text-end" style="font-size:.82rem">'+m.kg+'</td><td class="text-end" style="font-size:.82rem">$'+m.unitario.toLocaleString()+'</td><td style="font-size:.82rem">$'+m.total.toLocaleString()+'</td><td style="font-size:.78rem">'+(m.centro||'-')+'</td></tr>';
+  }, histPage, histGoPage);
+}
+
+function limpiarFiltrosHistorial(){
+  ['hist-mat-filter','hist-cat-filter','hist-tipo-filter','hist-punto-filter'].forEach(id=>{$('#'+id).val('').trigger('change')});
+  ['hist-cantidad-min','hist-cantidad-max','hist-monto-min','hist-monto-max','hist-ft-desde','hist-ft-hasta'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  histPage = 1;
+  renderHistorial();
+}
+
+// ===== TAB 5: KPIs AGREGADOS =====
+function renderKPIs(){
+  const invs = inventario;
+  const totalStock = invs.reduce((s,inv)=>s+inv.stock,0);
+  const capTotal = invs.reduce((s,inv)=>s+inv.cap,0);
+  const valorTotal = Math.round(invs.reduce((s,inv)=>s+inv.stock*inv.venta,0));
+  const occProm = capTotal>0 ? Math.round(totalStock/capTotal*100) : 0;
+  const ptsCriticos = invs.filter(inv=>getInvEstado(inv).estado==='Crítico').length;
+  const matsUnicos = [...new Set(invs.map(inv=>inv.matId))].length;
+
+  document.getElementById('kpis-total-stock').textContent = totalStock.toLocaleString();
+  document.getElementById('kpis-cap-total').textContent = capTotal.toLocaleString();
+  document.getElementById('kpis-valor-total').textContent = '$'+valorTotal.toLocaleString();
+  document.getElementById('kpis-ocupacion-prom').textContent = occProm+'%';
+  document.getElementById('kpis-pts-criticos').textContent = ptsCriticos;
+  document.getElementById('kpis-mat-unicos').textContent = matsUnicos;
+
+  // Charts
+  if(typeof Chart!=='undefined'){
+    destroyChart('kpisTopStock');destroyChart('kpisTopValor');destroyChart('kpisSalud');destroyChart('kpisFlujoNeto');destroyChart('kpisClasif');destroyChart('kpisClasifPorPunto');
+
+    // Top 10 stock
+    const matStock = {};
+    invs.forEach(inv=>{matStock[inv.matId] = (matStock[inv.matId]||0)+inv.stock});
+    const topStock = Object.entries(matStock).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    charts.kpisTopStock = new Chart(document.getElementById('chartKPIsTopStock'),{type:'bar',data:{labels:topStock.map(([id])=>getMatById(parseInt(id)).nombre.substring(0,12)),datasets:[{label:'Stock (kg)',data:topStock.map(([,v])=>v),backgroundColor:'#198754',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+
+    // Top 10 valor
+    const matValor = {};
+    invs.forEach(inv=>{matValor[inv.matId] = (matValor[inv.matId]||0)+inv.stock*inv.venta});
+    const topValor = Object.entries(matValor).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    charts.kpisTopValor = new Chart(document.getElementById('chartKPIsTopValor'),{type:'bar',data:{labels:topValor.map(([id])=>getMatById(parseInt(id)).nombre.substring(0,12)),datasets:[{label:'Valor ($)',data:topValor.map(([,v])=>Math.round(v)),backgroundColor:'#ffc107',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'$ COP'}}}}});
+
+    // Salud
+    const salud = {OK:0,Alerta:0,'Crítico':0};
+    invs.forEach(inv=>{salud[getInvEstado(inv).estado]++});
+    charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'doughnut',data:{labels:Object.keys(salud),datasets:[{data:Object.values(salud),backgroundColor:['#198754','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+    // Flujo neto
+    const flujoLabels = ['Ene','Feb','Mar','Abr','May','Jun'];
+    const flujoCompras = flujoLabels.map(()=>Math.round(historialMov.filter(m=>m.tipo==='Compra').reduce((s,m)=>s+m.kg,0)/6));
+    const flujoVentas = flujoLabels.map(()=>Math.round(historialMov.filter(m=>m.tipo==='Venta').reduce((s,m)=>s+m.kg,0)/6));
+    charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:flujoLabels,datasets:[{label:'Compras',data:flujoCompras,backgroundColor:'#198754',borderRadius:4},{label:'Ventas',data:flujoVentas,backgroundColor:'#dc3545',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+
+    // Distribución de clasificaciones (doughnut)
+    const clasCount = {};clasificaciones.forEach(c=>{clasCount[c.nombre]=0});
+    invs.forEach(inv=>{const m=getMatById(inv.matId);if(m.clasificacion)clasCount[m.clasificacion]=(clasCount[m.clasificacion]||0)+1;});
+    const clasLabels = Object.keys(clasCount).filter(k=>clasCount[k]>0);
+    const clasVals = clasLabels.map(k=>clasCount[k]);
+    const clasBg = clasLabels.map(k=>k==='ESTANDAR'?'#198754':k==='MANEJO_ESPECIAL'?'#ffc107':k==='PELIGROSO'?'#fd7e14':'#212529');
+    charts.kpisClasif = new Chart(document.getElementById('chartKPIsClasif'),{type:'doughnut',data:{labels:clasLabels,datasets:[{data:clasVals,backgroundColor:clasBg}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+    // Clasificaciones por punto ECA (stacked bar, top 10 por movimiento)
+    const clasLevels = clasificaciones.map(c=>c.nombre);
+    const clasColorsMap = {'ESTANDAR':'#198754','MANEJO_ESPECIAL':'#ffc107','PELIGROSO':'#fd7e14','HAZMAT':'#212529'};
+    const puntosRank = puntos.map(p=>{
+      const total = inventario.filter(inv=>inv.puntoId===p.id).length;
+      return {punto:p, total};
+    }).sort((a,b)=>b.total-a.total).slice(0,10);
+    const ptLabels = puntosRank.map(r=>r.punto.nombre.substring(0,16));
+    const datasetsClasPunto = clasLevels.map(clas=>({
+      label:clas,data:puntosRank.map(r=>inventario.filter(inv=>inv.puntoId===r.punto.id&&getMatById(inv.matId).clasificacion===clas).length),
+      backgroundColor:clasColorsMap[clas]||'#6c757d',borderRadius:0
+    })).filter(ds=>ds.data.some(v=>v>0));
+    charts.kpisClasifPorPunto = new Chart(document.getElementById('chartKPIsClasifPorPunto'),{type:'bar',data:{labels:ptLabels,datasets:datasetsClasPunto},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'# materiales'}},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+  }
+
+  // Puntos distribution
+  document.getElementById('kpis-pts-list').innerHTML = puntos.map(p=>{
+    const ptInvs = invs.filter(inv=>inv.puntoId===p.id);
+    const stock = ptInvs.reduce((s,inv)=>s+inv.stock,0);
+    const cap = ptInvs.reduce((s,inv)=>s+inv.cap,0);
+    const pct = cap>0 ? Math.round(stock/cap*100) : 0;
+    const color = pct>=90?'#dc3545':pct>=70?'#ffc107':'#198754';
+    return '<div class="d-flex align-items-center gap-2 mb-2 p-2 rounded" style="background:#f8f9fa"><span class="fw-semibold" style="font-size:.78rem;flex:1">'+p.nombre.substring(0,20)+'</span><span style="font-size:.75rem;color:#6c757d">'+stock+'/'+cap+'</span><span class="badge" style="font-size:.65rem;background:'+color+';color:#fff">'+pct+'%</span></div>';
+  }).join('');
+
+  // Resumen table
+  const resumenData = [...new Set(invs.map(inv=>inv.matId))].map(matId=>{
+    const matInvs = invs.filter(inv=>inv.matId===matId);
+    const mat = getMatById(matId);
+    const totalS = matInvs.reduce((s,inv)=>s+inv.stock,0);
+    const totalC = matInvs.reduce((s,inv)=>s+inv.cap,0);
+    const occ = totalC>0?Math.round(totalS/totalC*100):0;
+    const pts = matInvs.length;
+    const compraProm = Math.round(matInvs.reduce((s,inv)=>s+inv.compra,0)/pts);
+    const ventaProm = Math.round(matInvs.reduce((s,inv)=>s+inv.venta,0)/pts);
+    const margen = ventaProm-compraProm;
+    const volCompra = Math.round(matInvs.reduce((s,inv)=>s+inv.stock*0.3,0));
+    const volVenta = Math.round(matInvs.reduce((s,inv)=>s+inv.stock*0.15,0));
+    const saludPts = {OK:0,Alerta:0,'Crítico':0};
+    matInvs.forEach(inv=>{saludPts[getInvEstado(inv).estado]++});
+    const peorEstado = saludPts['Crítico']>0?'Crítico':saludPts['Alerta']>0?'Alerta':'OK';
+    return {mat,totalS,occ,pts,compraProm,ventaProm,margen,volCompra,volVenta,peorEstado,saludPts};
+  }).sort((a,b)=>b.totalS-a.totalS);
+
+  document.getElementById('kpis-resumen-tbody').innerHTML = resumenData.map((r,i)=>{
+    const estCls = r.peorEstado==='Crítico'?'salud-critico':r.peorEstado==='Alerta'?'salud-alerta':'salud-ok';
+    const clasBadge = r.mat.clasificacion==='ESTANDAR'?'bg-success':r.mat.clasificacion==='MANEJO_ESPECIAL'?'bg-warning text-dark':r.mat.clasificacion==='PELIGROSO'?'bg-danger':'bg-dark';
+    return '<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+r.mat.nombre+'</td><td><span class="badge '+clasBadge+'" style="font-size:.68rem">'+r.mat.clasificacion+'</span></td><td style="font-size:.82rem">'+r.totalS.toLocaleString()+'</td><td style="font-size:.82rem">'+r.occ+'%</td><td style="font-size:.82rem">'+r.pts+'</td><td style="font-size:.82rem">$'+r.compraProm.toLocaleString()+'</td><td style="font-size:.82rem">$'+r.ventaProm.toLocaleString()+'</td><td class="fw-semibold '+(r.margen>=0?'text-success':'text-danger')+'" style="font-size:.82rem">$'+r.margen.toLocaleString()+'</td><td style="font-size:.82rem">'+r.volCompra.toLocaleString()+'</td><td style="font-size:.82rem">'+r.volVenta.toLocaleString()+'</td><td><span class="salud-badge-sm '+estCls+'">'+r.peorEstado+'</span></td></tr>';
+  }).join('');
+}
+
+// ===== MODALES: CRUD MATERIALES Y CATEGORÍAS =====
+function poblarSelectsModales(){
+  const cats = [...new Set(materiales.map(m=>m.categoria))].sort();
+  ['nm-categoria','em-categoria'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(sel && sel.options.length<=1){
+      sel.innerHTML = '<option value="">Seleccionar categoría...</option>';
+      cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
+    }
+  });
+}
+
+function crearMaterial(){
+  const nombre = document.getElementById('nm-nombre').value.trim();
+  const desc = document.getElementById('nm-descripcion').value.trim();
+  const cat = document.getElementById('nm-categoria').value;
+  const clas = document.getElementById('nm-clasificacion').value;
+  const estado = document.getElementById('nm-estado').value;
+  if(!nombre||!cat||!clas){alert('Completa nombre, categoría y clasificación.');return;}
+  const newId = Math.max(...materiales.map(m=>m.id),0)+1;
+  materiales.push({id:newId,nombre,descripcion:desc,categoria:cat,clasificacion:clas,estado,imagen:''});
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoMaterial'));
+  if(modal)modal.hide();
+  document.getElementById('nm-nombre').value='';document.getElementById('nm-descripcion').value='';
+  document.getElementById('nm-categoria').value='';document.getElementById('nm-clasificacion').value='';
+  renderCatalogo();
+}
+
+function abrirEditarMaterial(matId){
+  const m = getMatById(matId); if(!m)return;
+  poblarSelectsModales();
+  document.getElementById('em-id').value = m.id;
+  document.getElementById('em-nombre').value = m.nombre;
+  document.getElementById('em-descripcion').value = m.descripcion||'';
+  document.getElementById('em-categoria').value = m.categoria;
+  document.getElementById('em-clasificacion').value = m.clasificacion;
+  document.getElementById('em-estado').value = m.estado;
+  new bootstrap.Modal(document.getElementById('modalEditarMaterial')).show();
+}
+
+function guardarEdicionMaterial(){
+  const id = parseInt(document.getElementById('em-id').value);
+  const m = getMatById(id); if(!m)return;
+  m.nombre = document.getElementById('em-nombre').value.trim();
+  m.descripcion = document.getElementById('em-descripcion').value.trim();
+  m.categoria = document.getElementById('em-categoria').value;
+  m.clasificacion = document.getElementById('em-clasificacion').value;
+  m.estado = document.getElementById('em-estado').value;
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarMaterial'));
+  if(modal)modal.hide();
+  renderCatalogo();
+}
+
+function crearCategoria(){
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  const desc = document.getElementById('nc-descripcion').value.trim();
+  if(!nombre){alert('Ingresa el nombre de la categoría.');return;}
+  if(materiales.some(m=>m.categoria===nombre)){alert('Ya existe una categoría con ese nombre.');return;}
+  const newMatId = Math.max(...materiales.map(m=>m.id),0)+1;
+  materiales.push({id:newMatId,nombre:'Nuevo Material',descripcion:'',categoria:nombre,clasificacion:'ESTANDAR',estado:'Activo',imagen:''});
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaCategoria'));
+  if(modal)modal.hide();
+  document.getElementById('nc-nombre').value='';document.getElementById('nc-descripcion').value='';
+  renderCatalogo();renderGestionCategorias();
+  alert('Categoría "'+nombre+'" creada. Se agregó un material de ejemplo.');
+}
+
+// ===== GESTION: CATEGORIAS Y CLASIFICACIONES =====
+
+function getCategoriasList(){
+  const map = {};
+  materiales.forEach(m=>{
+    if(!m.categoria)return;
+    if(!map[m.categoria]) map[m.categoria] = {nombre:m.categoria,descripcion:'',count:0};
+    map[m.categoria].count++;
+  });
+  return Object.values(map).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+}
+
+let gcatPage = 1;
+function gcatGoPage(p){ gcatPage = p; renderGestionCategorias(); }
+function renderGestionCategorias(){
+  const tbody = document.getElementById('gcat-tbody');
+  if(!tbody) return;
+  const cats = getCategoriasList();
+  const badge = document.getElementById('gcat-count'); if(badge) badge.textContent = cats.length+' categorías';
+  renderPaginated(cats, 'gcat-tbody', 'gcat-pager-info', 'gcat-pager', function(c){
+    const estado = materiales.filter(m=>m.categoria===c.nombre&&m.estado==='Activo').length>0?'ACTIVO':'INACTIVO';
+    const estBadge = estado==='ACTIVO'?'<span class="badge bg-success">Activo</span>':'<span class="badge bg-secondary">Inactivo</span>';
+    return '<tr><td class="fw-semibold" style="font-size:.85rem">'+c.nombre+'</td><td style="font-size:.78rem;color:#6c757d">'+(c.descripcion||'-')+'</td><td class="text-center"><span class="badge bg-light text-dark">'+c.count+'</span></td><td>'+estBadge+'</td><td class="text-center"><div class="d-flex gap-1 justify-content-center"><button class="btn btn-outline-primary btn-sm" onclick="abrirEditarCategoria(\''+c.nombre+'\')" title="Editar"><i class="bi bi-pencil"></i></button></div></td></tr>';
+  }, gcatPage, gcatGoPage);
+}
+
+let gclasPage = 1;
+function gclasGoPage(p){ gclasPage = p; renderGestionClasificaciones(); }
+function renderGestionClasificaciones(){
+  const tbody = document.getElementById('gclas-tbody');
+  if(!tbody) return;
+  const badge = document.getElementById('gclas-count'); if(badge) badge.textContent = clasificaciones.length+' clasificaciones';
+  const clasColors = {'ESTANDAR':'bg-success','MANEJO_ESPECIAL':'bg-warning text-dark','PELIGROSO':'bg-danger','HAZMAT':'bg-dark'};
+  renderPaginated(clasificaciones, 'gclas-tbody', 'gclas-pager-info', 'gclas-pager', function(c){
+    const count = materiales.filter(m=>m.clasificacion===c.nombre).length;
+    const badgeCls = clasColors[c.nombre]||'bg-secondary';
+    return '<tr><td><span class="badge '+badgeCls+'" style="font-size:.75rem">'+c.nombre+'</span></td><td style="font-size:.78rem;color:#6c757d">'+(c.descripcion||'-')+'</td><td class="text-center"><span class="badge bg-light text-dark">'+count+'</span></td><td class="text-center"><div class="d-flex gap-1 justify-content-center"><button class="btn btn-outline-primary btn-sm" onclick="abrirEditarClasificacion('+c.id+')" title="Editar"><i class="bi bi-pencil"></i></button></div></td></tr>';
+  }, gclasPage, gclasGoPage);
+}
+
+// Editar Categoría
+function abrirEditarCategoria(nombre){
+  const c = getCategoriasList().find(x=>x.nombre===nombre); if(!c)return;
+  document.getElementById('ec-id').value = c.nombre;
+  document.getElementById('ec-nombre').value = c.nombre;
+  document.getElementById('ec-descripcion').value = c.descripcion||'';
+  const activa = materiales.some(m=>m.categoria===c.nombre&&m.estado==='Activo');
+  document.getElementById('ec-estado').value = activa?'ACTIVO':'INACTIVO';
+  new bootstrap.Modal(document.getElementById('modalEditarCategoria')).show();
+}
+
+function guardarEdicionCategoria(){
+  const oldName = document.getElementById('ec-id').value;
+  const newName = document.getElementById('ec-nombre').value.trim();
+  const desc = document.getElementById('ec-descripcion').value.trim();
+  const estado = document.getElementById('ec-estado').value;
+  if(!newName){alert('Ingresa el nombre de la categoría.');return;}
+  if(newName!==oldName && materiales.some(m=>m.categoria===newName)){alert('Ya existe una categoría con ese nombre.');return;}
+  materiales.forEach(m=>{if(m.categoria===oldName){m.categoria=newName;m.estado=estado;}});
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarCategoria'));
+  if(modal)modal.hide();
+  renderCatalogo();renderGestionCategorias();
+}
+
+// Crear Clasificación
+function crearClasificacion(){
+  const nombre = document.getElementById('ncl-nombre').value.trim().toUpperCase();
+  const desc = document.getElementById('ncl-descripcion').value.trim();
+  if(!nombre||!desc){alert('Completa nombre y descripción.');return;}
+  if(clasificaciones.some(c=>c.nombre===nombre)){alert('Ya existe una clasificación con ese nombre.');return;}
+  const newId = Math.max(...clasificaciones.map(c=>c.id),0)+1;
+  clasificaciones.push({id:newId,nombre,descripcion:desc});
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaClasificacion'));
+  if(modal)modal.hide();
+  document.getElementById('ncl-nombre').value='';document.getElementById('ncl-descripcion').value='';
+  poblarClasificacionSelects();renderGestionClasificaciones();renderCatalogo();
+}
+
+// Editar Clasificación
+function abrirEditarClasificacion(id){
+  const c = clasificaciones.find(x=>x.id===id); if(!c)return;
+  document.getElementById('ecl-id').value = c.id;
+  document.getElementById('ecl-nombre').value = c.nombre;
+  document.getElementById('ecl-descripcion').value = c.descripcion||'';
+  new bootstrap.Modal(document.getElementById('modalEditarClasificacion')).show();
+}
+
+function guardarEdicionClasificacion(){
+  const id = parseInt(document.getElementById('ecl-id').value);
+  const c = clasificaciones.find(x=>x.id===id); if(!c)return;
+  const newName = document.getElementById('ecl-nombre').value.trim().toUpperCase();
+  const desc = document.getElementById('ecl-descripcion').value.trim();
+  if(!newName||!desc){alert('Completa nombre y descripción.');return;}
+  if(newName!==c.nombre && clasificaciones.some(x=>x.nombre===newName)){alert('Ya existe una clasificación con ese nombre.');return;}
+  if(newName!==c.nombre){materiales.forEach(m=>{if(m.clasificacion===c.nombre)m.clasificacion=newName;});}
+  c.nombre = newName;c.descripcion = desc;
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarClasificacion'));
+  if(modal)modal.hide();
+  poblarClasificacionSelects();renderGestionClasificaciones();renderCatalogo();
+}
+
+// Dinamizar selects de clasificación
+function poblarClasificacionSelects(){
+  document.querySelectorAll('.clasificacion-sel').forEach(sel=>{
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Seleccionar...</option>';
+    if(sel.id==='cat-filtro-clasificacion') sel.innerHTML = '<option value="">Todas las clasificaciones</option>';
+    clasificaciones.forEach(c=>{const o=document.createElement('option');o.value=c.nombre;o.textContent=c.nombre;sel.appendChild(o)});
+    if(current) sel.value = current;
+  });
+}
+
+// Exportación — simula descarga con filtros activos
+function exportarTabla(tab){
+  let data = [], tipo = 'CSV', label = '';
+  const f = {buscar: '', cat: '', clas: '', est: '', tipoMov: '', desde: '', hasta: ''};
+  if(tab==='cat'){
+    data = [...materiales];
+    f.buscar = document.getElementById('cat-search')?.value||'';
+    f.cat = $('#cat-filtro-categoria').val()||'';
+    f.clas = $('#cat-filtro-clasificacion').val()||'';
+    f.est = $('#cat-filtro-estado').val()||'';
+    label = 'materiales';
+  } else if(tab==='hist'){
+    data = [...historialMov];
+    f.cat = $('#hist-cat-filter').val()||'';
+    f.tipoMov = $('#hist-tipo-filter').val()||'';
+    f.desde = document.getElementById('hist-ft-desde')?.value||'';
+    f.hasta = document.getElementById('hist-ft-hasta')?.value||'';
+    label = 'historial_movimientos';
+  } else if(tab==='gcat'){
+    data = getCategoriasList();
+    label = 'categorias_material';
+  } else if(tab==='gclas'){
+    data = clasificaciones;
+    label = 'clasificaciones_material';
+  }
+  const filtros = Object.entries(f).filter(([,v])=>v).map(([k,v])=>k+':'+v).join(', ');
+  alert('Exportación '+(filtros?'(filtros: '+filtros+') ':'')+tipo+' de '+data.length+' registros como '+label+'.csv / .pdf\n\nEn producción esto generaría el archivo real con los filtros aplicados.');
+}
+
+// ===== BOOT =====
+$(function(){
+  $('select.form-select').not('.clasificacion-sel').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:5});
+  $('select.clasificacion-sel').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:-1});
+});
+poblarSelectsModales();
+poblarClasificacionSelects();
+renderCatalogo();
+// Pre-populate gestion tables while invisible
+renderGestionCategorias();
+renderGestionClasificaciones();
+</script>
+</body>
+</html>
