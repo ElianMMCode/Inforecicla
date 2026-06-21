@@ -190,6 +190,7 @@
       <div class="card shadow-sm border-0">
         <div class="card-header bg-success text-white"><i class="bi bi-shield me-1"></i> Estado</div>
         <div class="card-body">
+          <label for="id-estado" class="form-label fw-semibold">Estado</label>
           <select name="estado" id="id-estado" class="form-select" required>
             {% for val, label in estados %}
               <option value="{{ val }}"

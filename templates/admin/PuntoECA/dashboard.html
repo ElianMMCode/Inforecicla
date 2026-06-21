@@ -4,7 +4,6 @@
 {% block body_class %}bg-light{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
 <link rel="stylesheet" href="{% static 'css/dashboard-eca.css' %}">
 {% endblock %}
 
@@ -166,7 +165,7 @@
         <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosRanking()"><i class="bi bi-eraser"></i></button>
       </div>
     </div>
-    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light" id="ranking-thead"></thead><tbody id="ranking-tbody"></tbody></table></div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light" id="ranking-thead"><tr><th></th></tr></thead><tbody id="ranking-tbody"></tbody></table></div>
     <div class="px-4 py-2 border-top bg-white d-flex justify-content-between align-items-center flex-wrap" id="ranking-pagination"></div>
   </div>
 </div>
@@ -317,7 +316,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
 {{ puntos_dashboard|json_script:"puntos-data" }}
 {{ historial|json_script:"historial-data" }}
