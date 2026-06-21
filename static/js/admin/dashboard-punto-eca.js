@@ -308,8 +308,10 @@ function renderResumen(){
 
 /* ===== LISTADO - RANKING ===== */
 let rankingSortCol='mov',rankingSortDir=-1;
+let rankingPage=1,rankingPerPage=20;
 function sortRanking(col){
   if(rankingSortCol===col)rankingSortDir*=-1;else{rankingSortCol=col;rankingSortDir=-1;}
+  rankingPage=1;
   renderRanking();
 }
 function limpiarFiltrosRanking(){
@@ -319,9 +321,11 @@ function limpiarFiltrosRanking(){
   document.getElementById('rank-flt-salud').value='';
   document.getElementById('rank-flt-ocup-min').value='';
   document.getElementById('rank-flt-ocup-max').value='';
+  rankingPage=1;
   renderRanking();
 }
-function renderRanking(){
+function renderRanking(resetPage){
+  if(resetPage!==false)rankingPage=1;
   let pts=puntos.slice();
   const col=rankingSortCol,dir=rankingSortDir;
 
@@ -387,10 +391,17 @@ function renderRanking(){
   const totalCols=headers.length+2;
   document.getElementById('ranking-thead').innerHTML='<tr><th style="width:40px">#</th>'+headers.map(h=>'<th style="cursor:pointer;white-space:nowrap" onclick="sortRanking(\''+h.col+'\')">'+h.l+(h.col===col?(dir===1?' <i class="bi bi-sort-up"></i>':' <i class="bi bi-sort-down"></i>'):'')+'</th>').join('')+'<th class="text-center">Accion</th></tr>';
 
-  document.getElementById('ranking-tbody').innerHTML=sorted.map((p,i)=>{
+  /* Paginacion */
+  const totalRegistros=sorted.length;
+  const totalPaginas=Math.ceil(totalRegistros/rankingPerPage);
+  if(rankingPage>totalPaginas)rankingPage=totalPaginas||1;
+  const inicio=(rankingPage-1)*rankingPerPage;
+  const pagina=sorted.slice(inicio,inicio+rankingPerPage);
+
+  document.getElementById('ranking-tbody').innerHTML=pagina.map((p,i)=>{
     const pctOcu=p.ocupacion;
     const barColor=pctOcu<30?'#dc3545':pctOcu<50?'#ffc107':'#198754';
-    return'<tr style="cursor:pointer" onclick="openDetalle('+p.id+')"><td class="fw-bold text-muted">'+(i+1)+'</td>'+
+    return'<tr style="cursor:pointer" onclick="openDetalle('+p.id+')"><td class="fw-bold text-muted">'+(inicio+i+1)+'</td>'+
       '<td class="fw-semibold text-success" style="font-size:.82rem">'+p.nombre+'</td>'+
       '<td style="font-size:.78rem" class="text-muted">'+p.localidad+'</td>'+
       '<td style="font-size:.78rem">'+p.gestor+'</td>'+
@@ -408,7 +419,29 @@ function renderRanking(){
       '<td class="text-center"><button class="btn btn-sm btn-outline-success btn-detalle" onclick="event.stopPropagation();openDetalle('+p.id+')"><i class="bi bi-eye"></i></button></td></tr>';
   }).join('')||'<tr><td colspan="'+totalCols+'" class="text-center text-muted py-3">Sin puntos con los filtros actuales.</td></tr>';
 
-  document.getElementById('ranking-count-badge').textContent=sorted.length+' registros';
+  document.getElementById('ranking-count-badge').textContent=totalRegistros+' registros';
+
+  /* Controles paginacion */
+  let pagHtml='';
+  if(totalPaginas>1){
+    pagHtml+='<div class="d-flex align-items-center gap-1 flex-wrap">';
+    pagHtml+='<span class="text-muted small me-2">Pag '+rankingPage+' de '+totalPaginas+'</span>';
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage=1;renderRanking(false)" '
+    + (rankingPage<=1?'disabled':'')+'><i class="bi bi-chevron-double-left"></i></button>';
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage--;renderRanking(false)" '
+    + (rankingPage<=1?'disabled':'')+'><i class="bi bi-chevron-left"></i></button>';
+    const startP=Math.max(1,rankingPage-2);const endP=Math.min(totalPaginas,rankingPage+2);
+    for(let pp=startP;pp<=endP;pp++){
+      pagHtml+='<button class="btn btn-sm '+(pp===rankingPage?'btn-success':'btn-outline-secondary')
+        +'" onclick="rankingPage='+pp+';renderRanking(false)">'+pp+'</button>';
+    }
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage++;renderRanking(false)" '
+    + (rankingPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-right"></i></button>';
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="rankingPage='+totalPaginas+';renderRanking(false)" '
+    + (rankingPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-double-right"></i></button>';
+    pagHtml+='</div>';
+  }
+  document.getElementById('ranking-pagination').innerHTML=pagHtml;
 }
 
 /* ===== LISTADO - ESTADOS ===== */
@@ -678,7 +711,9 @@ function renderFlujoDetalleMat(){
 }
 
 /* ===== LISTADO - MENSAJES ===== */
-function renderMensajesListado(){
+let msgsPage=1,msgsPerPage=20;
+function renderMensajesListado(resetPage){
+  if(resetPage!==false)msgsPage=1;
   const convs=conversaciones.slice();
   const totalConvs=convs.length;
   const totalMsgs=convs.reduce((s,c)=>s+(c.msgs||0),0);
@@ -697,8 +732,29 @@ function renderMensajesListado(){
     }
   }
 
-  document.getElementById('msgs-tbody').innerHTML=convs.map((c,i)=>'<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+c.punto+'</td><td style="font-size:.78rem">'+c.ciudadano+'</td><td style="font-size:.78rem;color:#6c757d">'+c.fecha+'</td><td class="text-center">'+c.msgs+'</td><td style="font-size:.78rem;max-width:200px" class="text-truncate">'+c.ultimo+'</td></tr>').join('')||'<tr><td colspan="6" class="text-center text-muted py-3">Sin conversaciones.</td></tr>';
-  document.getElementById('msgs-count-badge').textContent=convs.length+' conversaciones';
+  const totalPaginas=Math.ceil(totalConvs/msgsPerPage);
+  if(msgsPage>totalPaginas)msgsPage=totalPaginas||1;
+  const inicio=(msgsPage-1)*msgsPerPage;
+  const pagina=convs.slice(inicio,inicio+msgsPerPage);
+
+  document.getElementById('msgs-tbody').innerHTML=pagina.map((c,i)=>'<tr><td class="fw-bold text-muted">'+(inicio+i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+c.punto+'</td><td style="font-size:.78rem">'+c.ciudadano+'</td><td style="font-size:.78rem;color:#6c757d">'+c.fecha+'</td><td class="text-center">'+c.msgs+'</td><td style="font-size:.78rem;max-width:200px" class="text-truncate">'+c.ultimo+'</td></tr>').join('')||'<tr><td colspan="6" class="text-center text-muted py-3">Sin conversaciones.</td></tr>';
+  document.getElementById('msgs-count-badge').textContent=totalConvs+' conversaciones';
+
+  let pagHtml='';
+  if(totalPaginas>1){
+    pagHtml+='<div class="d-flex align-items-center gap-1 flex-wrap">';
+    pagHtml+='<span class="text-muted small me-2">Pag '+msgsPage+' de '+totalPaginas+'</span>';
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage=1;renderMensajesListado(false)" '+(msgsPage<=1?'disabled':'')+'><i class="bi bi-chevron-double-left"></i></button>';
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage--;renderMensajesListado(false)" '+(msgsPage<=1?'disabled':'')+'><i class="bi bi-chevron-left"></i></button>';
+    const startP=Math.max(1,msgsPage-2);const endP=Math.min(totalPaginas,msgsPage+2);
+    for(let pp=startP;pp<=endP;pp++){
+      pagHtml+='<button class="btn btn-sm '+(pp===msgsPage?'btn-success':'btn-outline-secondary')+'" onclick="msgsPage='+pp+';renderMensajesListado(false)">'+pp+'</button>';
+    }
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage++;renderMensajesListado(false)" '+(msgsPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-right"></i></button>';
+    pagHtml+='<button class="btn btn-sm btn-outline-secondary" onclick="msgsPage='+totalPaginas+';renderMensajesListado(false)" '+(msgsPage>=totalPaginas?'disabled':'')+'><i class="bi bi-chevron-double-right"></i></button>';
+    pagHtml+='</div>';
+  }
+  document.getElementById('msgs-pagination').innerHTML=pagHtml;
 }
 
 /* ===== DETALLE - TABS ===== */
