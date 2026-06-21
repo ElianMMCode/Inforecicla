@@ -489,7 +489,7 @@ function renderEstados(){
   }
 
   if(typeof Chart!=='undefined'){
-    destroyChart('estDist');destroyChart('estLoc');destroyChart('estGestor');
+    destroyChart('estDist');destroyChart('estLoc');
     const distCanvas=document.getElementById('chartEstDist');
     if(distCanvas){
       charts.estDist=new Chart(distCanvas,{type:'doughnut',data:{labels:['Critico','Alerta','OK'],datasets:[{data:[critPts,alertPts,okPts],backgroundColor:['#dc3545','#ffc107','#198754']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
@@ -501,12 +501,6 @@ function renderEstados(){
       charts.estLoc=new Chart(locCanvas,{type:'bar',data:{labels:locEntries.map(e=>e[0]),datasets:[{label:'Puntos',data:locEntries.map(e=>e[1]),backgroundColor:locEntries.map((_,i)=>['#198754','#0dcaf0','#0d6efd','#ffc107','#fd7e14','#6f42c1','#20c997'][i%7]),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'puntos'}}}}});
     }
 
-    const gestorData={};pts.forEach(p=>{gestorData[p.gestor]=(gestorData[p.gestor]||0)+1});
-    const gEntries=Object.entries(gestorData).sort((a,b)=>b[1]-a[1]);
-    const gestorCanvas=document.getElementById('chartEstGestor');
-    if(gestorCanvas){
-      charts.estGestor=new Chart(gestorCanvas,{type:'bar',data:{labels:gEntries.map(e=>e[0].substring(0,12)),datasets:[{data:gEntries.map(e=>e[1]),backgroundColor:gEntries.map((_,i)=>['#198754','#0dcaf0','#0d6efd','#ffc107','#fd7e14','#6f42c1','#20c997','#dc3545','#6610f2','#e83e8c'][i%10]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'puntos'}}}}});
-    }
   }
 
   function alertGroup(title,items,color,icon){
@@ -521,9 +515,8 @@ function renderEstados(){
   document.getElementById('estados-alertas').innerHTML=
     alertGroup('Inventarios Criticos',criticos,'danger','x-circle-fill')+
     alertGroup('Inventarios en Alerta',alerta,'warning','exclamation-triangle-fill')+
-    alertGroup('Inventarios OK',ok,'success','check-circle-fill')+
     alertGroup('Puntos Inactivos',inactivos,'secondary','dash-circle');
-  if(!criticos.length&&!alerta.length&&!ok.length&&!inactivos.length)
+  if(!criticos.length&&!alerta.length&&!inactivos.length)
     document.getElementById('estados-alertas').innerHTML='<div class="col-12 text-center py-5 text-muted">No hay puntos con los filtros actuales.</div>';
 }
 
