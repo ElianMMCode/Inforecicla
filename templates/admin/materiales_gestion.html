@@ -281,7 +281,16 @@
     <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Stock Total por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifStock"></canvas></div></div></div>
     <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-info me-1"></i>Materiales por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifMatCount"></canvas></div></div></div>
   </div>
-  <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción (advertencia de manejo)</th><th>Materiales</th><th>Stock Total</th><th>Puntos</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gclas-tbody"></tbody></table></div><div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gclas-pager-info"></small><nav><ul class="pagination pagination-sm mb-0" id="gclas-pager"></ul></nav></div></div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-3 py-2">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i>Listado</h6>
+        <input type="text" class="form-control form-control-sm" style="width:180px" id="gclas-search" placeholder="Buscar..." oninput="renderGestionClasificaciones()">
+        <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar" onclick="document.getElementById('gclas-search').value='';renderGestionClasificaciones()"><i class="bi bi-eraser"></i></button>
+      </div>
+    </div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción (advertencia de manejo)</th><th>Materiales</th><th>Stock Total</th><th>Puntos</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gclas-tbody"></tbody></table></div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gclas-pager-info"></small><nav><ul class="pagination pagination-sm mb-0" id="gclas-pager"></ul></nav></div></div>
 </div>
 
 {% endblock %}
@@ -791,7 +800,9 @@
   }
   function renderGestionCategorias(){
     const tbody = document.getElementById('gcat-tbody');if(!tbody)return;
-    const cats = getCategoriasList();
+    var cats = getCategoriasList();
+    var q = (document.getElementById('gcat-search')?.value||'').toLowerCase();
+    if(q) cats = cats.filter(function(c){return c.nombre.toLowerCase().indexOf(q)!==-1});
     document.getElementById('gcat-count').textContent = cats.length+' categorías';
 
     // Category charts (first time only)
@@ -830,6 +841,9 @@
   function gclasGoPage(p){ gclasPage = p; renderGestionClasificaciones(); }
   function renderGestionClasificaciones(){
     const tbody = document.getElementById('gclas-tbody');if(!tbody)return;
+    var clasList = clasificaciones;
+    var q = (document.getElementById('gclas-search')?.value||'').toLowerCase();
+    if(q) clasList = clasList.filter(function(c){return (c.nombre+' '+c.descripcion).toLowerCase().indexOf(q)!==-1});
     document.getElementById('gclas-count').textContent = clasificaciones.length+' clasificaciones';
 
     // Classification charts (first time only)
@@ -853,7 +867,7 @@
     }
 
     const clasColors = {'ESTANDAR':'bg-success','MANEJO_ESPECIAL':'bg-warning text-dark','PELIGROSO':'bg-danger','HAZMAT':'bg-dark'};
-    renderPaginated(clasificaciones, 'gclas-tbody', 'gclas-pager-info', 'gclas-pager', function(c){
+    renderPaginated(clasList, 'gclas-tbody', 'gclas-pager-info', 'gclas-pager', function(c){
       const count = materiales.filter(m=>m.clasificacion===c.nombre).length;
       var invs = inventario.filter(function(inv){var m=getMatById(inv.matId);return m.clasificacion===c.nombre});
       var stockTotal = Math.round(invs.reduce(function(s,inv){return s+inv.stock},0));
