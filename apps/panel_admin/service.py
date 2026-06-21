@@ -1184,16 +1184,15 @@ class AdminPuntoECAService:
         """Retorna lista de usuarios con metadatos para filtros y referencias."""
         usuarios = []
         try:
-            users = list(
-                Usuario.objects.prefetch_related("punto_eca")
-                .all()
-                .order_by("-date_joined")
-            )
+            users = list(Usuario.objects.select_related("punto_eca", "localidad").all().order_by("-date_joined"))
         except Exception:
             return usuarios
 
         for u in users:
-            puntos_asignados = u.punto_eca.count() if hasattr(u, "punto_eca") else 0
+            try:
+                puntos_asignados = 1 if u.punto_eca is not None else 0
+            except Exception:
+                puntos_asignados = 0
             usuarios.append({
                 "id": str(u.id),
                 "username": f"{u.nombres} {u.apellidos}",
