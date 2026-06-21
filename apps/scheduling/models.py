@@ -37,7 +37,6 @@ class Evento(CreacionModificacionModel):
             ("MENSUAL", "Mensual"),
         ],
         blank=True,
-        null=True,
     )
     fecha_fin_repeticion = models.DateTimeField(null=True, blank=True)
     es_evento_generado = models.BooleanField(default=False)
@@ -78,7 +77,7 @@ class EventoInstancia(CreacionModificacionModel):
     numero_repeticion = models.IntegerField(null=True, blank=True)
     es_completado = models.BooleanField(default=False)
     fecha_completado = models.DateTimeField(null=True, blank=True)
-    observaciones = models.TextField(blank=True, null=True)
+    observaciones = models.TextField(blank=True)
 
     def marcar_completada(self):
         self.es_completado = True
