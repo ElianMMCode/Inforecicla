@@ -247,19 +247,6 @@ class Material(DescripcionModel):
         help_text="Categoría a la que pertenece el material",
     )
 
-    # Campo deprecado — se mantiene en BD por compatibilidad.
-    # Reemplazado por `clasificacion`.
-    tipo = models.ForeignKey(
-        "inventory.TipoMaterial",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        db_constraint=True,
-        related_name="materiales_deprecados",
-        verbose_name="Tipo del material (deprecado)",
-        help_text="Campo deprecado. Usar clasificacion en su lugar.",
-    )
-
     class Meta(DescripcionModel.Meta):
         verbose_name = "Material"
         verbose_name_plural = "Materiales"

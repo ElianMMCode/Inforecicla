@@ -1,0 +1,131 @@
+{% load static %}
+
+{% if alertas_puntos.total_criticos or alertas_puntos.total_alerta or puntos_sin_gestor.count or gestores_sin_punto.count or materiales_inactivos.count or publicaciones_pendientes.count %}
+<div class="row g-3 mb-4 alertas-stagger">
+    {% if alertas_puntos.total_criticos %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="text-decoration-none">
+            <div class="alert-action-card border-danger">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </span>
+                    <span class="fw-bold text-danger small">Inventario Crítico</span>
+                </div>
+                <div class="alert-value text-danger">{{ alertas_puntos.total_criticos }}</div>
+                <div class="alert-label">materiales en estado crítico</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Revisar Puntos ECA</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if alertas_puntos.total_alerta %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="text-decoration-none">
+            <div class="alert-action-card border-warning">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                    </span>
+                    <span class="fw-bold text-warning small">Nivel de Alerta</span>
+                </div>
+                <div class="alert-value text-warning">{{ alertas_puntos.total_alerta }}</div>
+                <div class="alert-label">materiales con alerta activa</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Ver estados</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if puntos_sin_gestor.count %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="text-decoration-none">
+            <div class="alert-action-card border-danger">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-person-x-fill"></i>
+                    </span>
+                    <span class="fw-bold text-danger small">Sin Gestor</span>
+                </div>
+                <div class="alert-value text-danger">{{ puntos_sin_gestor.count }}</div>
+                <div class="alert-label">puntos ECA sin gestor asignado</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Asignar gestores</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if gestores_sin_punto.count %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:listar_usuarios' %}" class="text-decoration-none">
+            <div class="alert-action-card border-warning">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-person-dash-fill"></i>
+                    </span>
+                    <span class="fw-bold text-warning small">Gestores sin Punto</span>
+                </div>
+                <div class="alert-value text-warning">{{ gestores_sin_punto.count }}</div>
+                <div class="alert-label">gestores sin punto ECA asociado</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Ver usuarios</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if materiales_inactivos.count %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:gestion_materiales' %}" class="text-decoration-none">
+            <div class="alert-action-card border-info">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-box-seam"></i>
+                    </span>
+                    <span class="fw-bold text-info small">Materiales Inactivos</span>
+                </div>
+                <div class="alert-value text-info">{{ materiales_inactivos.count }}</div>
+                <div class="alert-label">materiales no activos en el catálogo</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Gestionar materiales</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if materiales_sin_clasificacion.count %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:gestion_materiales' %}" class="text-decoration-none">
+            <div class="alert-action-card border-warning">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-shield-exclamation"></i>
+                    </span>
+                    <span class="fw-bold text-warning small">Sin Clasificación</span>
+                </div>
+                <div class="alert-value text-warning">{{ materiales_sin_clasificacion.count }}</div>
+                <div class="alert-label">materiales sin clasificación de manejo</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Asignar clasificación</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if publicaciones_pendientes.count %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="text-decoration-none">
+            <div class="alert-action-card border-info">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="alert-icon bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-newspaper"></i>
+                    </span>
+                    <span class="fw-bold text-info small">Pendientes</span>
+                </div>
+                <div class="alert-value text-info">{{ publicaciones_pendientes.count }}</div>
+                <div class="alert-label">publicaciones no activas</div>
+                <div class="alert-cta"><i class="bi bi-arrow-right-circle me-1"></i>Revisar publicaciones</div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

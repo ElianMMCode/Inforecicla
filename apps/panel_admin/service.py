@@ -166,7 +166,9 @@ class AdminDashboardService:
             resumen["total_puntos_eca"] = PuntoECA.objects.count()
             resumen["total_materiales"] = Material.objects.count()
             resumen["total_categorias_materiales"] = CategoriaMaterial.objects.count()
-            resumen["total_tipos_material"] = TipoMaterial.objects.count()
+            resumen["total_tipos_material"] = Material.objects.exclude(
+                clasificacion=""
+            ).values("clasificacion").distinct().count()
             resumen["total_ciudadanos"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.CIUDADANO).count()
             resumen["total_gestores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.GESTOR_ECA).count()
             resumen["total_administradores"] = Usuario.objects.filter(tipo_usuario=cons.TipoUsuario.ADMIN).count()
@@ -380,6 +382,98 @@ class AdminDashboardService:
             return [{"estado": i["estado"], "count": i["count"]} for i in qs]
         except Exception:
             return []
+
+    @staticmethod
+    def obtener_alertas_puntos_eca():
+        resultado = {
+            "total_criticos": 0,
+            "total_alerta": 0,
+            "total_ok": 0,
+            "criticos": [],
+        }
+        try:
+            invs = list(Inventario.objects.select_related("punto_eca", "material").all())
+        except Exception:
+            return resultado
+        criticos = [i for i in invs if i.alerta == cons.Alerta.CRITICO]
+        alertas = [i for i in invs if i.alerta == cons.Alerta.ALERTA]
+        oks = [i for i in invs if i.alerta == cons.Alerta.OK]
+        resultado["total_criticos"] = len(criticos)
+        resultado["total_alerta"] = len(alertas)
+        resultado["total_ok"] = len(oks)
+        puntos_criticos = {}
+        for inv in criticos:
+            pid = inv.punto_eca_id
+            if pid not in puntos_criticos:
+                puntos_criticos[pid] = {
+                    "punto_id": pid,
+                    "nombre": inv.punto_eca.nombre if inv.punto_eca else "Sin nombre",
+                    "alerta": inv.alerta,
+                    "ocupacion": float(inv.ocupacion_actual or 0),
+                }
+        resultado["criticos"] = list(puntos_criticos.values())[:5]
+        return resultado
+
+    @staticmethod
+    def obtener_puntos_sin_gestor():
+        try:
+            puntos = PuntoECA.objects.filter(gestor_eca__isnull=True).only("id", "nombre", "direccion")
+            return {
+                "count": puntos.count(),
+                "puntos": [{"id": p.id, "nombre": p.nombre, "direccion": p.direccion} for p in puntos[:5]],
+            }
+        except Exception:
+            return {"count": 0, "puntos": []}
+
+    @staticmethod
+    def obtener_gestores_sin_punto():
+        try:
+            gestores = Usuario.objects.filter(
+                tipo_usuario=cons.TipoUsuario.GESTOR_ECA, punto_eca__isnull=True
+            ).only("id", "nombres", "apellidos")
+            return {
+                "count": gestores.count(),
+                "gestores": [{"id": g.id, "nombres": g.nombres, "apellidos": g.apellidos} for g in gestores[:5]],
+            }
+        except Exception:
+            return {"count": 0, "gestores": []}
+
+    @staticmethod
+    def obtener_materiales_inactivos():
+        try:
+            materiales = Material.objects.exclude(estado=cons.Estado.ACTIVO).only("id", "nombre", "estado")
+            return {
+                "count": materiales.count(),
+                "materiales": [{"id": m.id, "nombre": m.nombre, "estado": m.estado} for m in materiales[:5]],
+            }
+        except Exception:
+            return {"count": 0, "materiales": []}
+
+    @staticmethod
+    def obtener_materiales_sin_clasificacion():
+        try:
+            from django.db.models import Q
+            materiales = Material.objects.filter(
+                Q(clasificacion__isnull=True) | Q(clasificacion="")
+            ).only("id", "nombre")
+            return {
+                "count": materiales.count(),
+                "materiales": [{"id": m.id, "nombre": m.nombre} for m in materiales[:5]],
+            }
+        except Exception:
+            return {"count": 0, "materiales": []}
+
+    @staticmethod
+    def obtener_publicaciones_pendientes():
+        try:
+            from apps.publicaciones.models import Publicacion
+            publicaciones = Publicacion.objects.exclude(estado=cons.Estado.ACTIVO).only("id", "titulo", "estado")
+            return {
+                "count": publicaciones.count(),
+                "publicaciones": [{"id": p.id, "titulo": p.titulo, "estado": p.estado} for p in publicaciones[:5]],
+            }
+        except Exception:
+            return {"count": 0, "publicaciones": []}
 
 
 class AdminCatalogService:

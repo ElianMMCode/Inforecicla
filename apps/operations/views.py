@@ -443,7 +443,7 @@ def _aplicar_filtros_inventario(queryset, filtros):
     )
     queryset = _aplicar_filtro_si_valor(
         queryset, filtros["tipo"],
-        {"inventario__material__tipo__nombre__iexact": filtros["tipo"]},
+        {"inventario__material__clasificacion__iexact": filtros["tipo"]},
     )
     return queryset
 

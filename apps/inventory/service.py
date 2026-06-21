@@ -174,7 +174,7 @@ class InventoryService:
                 material__categoria__nombre__unaccent__icontains=categoria
             )
         if tipo:
-            queryset = queryset.filter(material__tipo__nombre__iexact=tipo)
+            queryset = queryset.filter(material__clasificacion__iexact=tipo)
         if unidad:
             queryset = queryset.filter(unidad_medida=unidad)
         return queryset
@@ -379,7 +379,7 @@ class InventoryService:
             return {
                 "nmbMaterial": inventario_item.material.nombre,
                 "nmbCategoria": inventario_item.material.categoria.nombre,
-                "nmbTipo": inventario_item.material.tipo.nombre,
+                "nmbTipo": inventario_item.material.clasificacion,
                 "dscMaterial": inventario_item.material.descripcion,
                 "stockActual": inventario_item.stock_actual,
                 "capacidadMaxima": inventario_item.capacidad_maxima,

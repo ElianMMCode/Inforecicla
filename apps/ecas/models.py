@@ -220,6 +220,7 @@ class Localidad(models.Model):
     descripcion = models.CharField(
         max_length=100,
         blank=True,
+        default="",
     )
 
     # Relaciones

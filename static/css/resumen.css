@@ -153,6 +153,86 @@
     color: var(--resumen-muted);
 }
 
+/* ============================================
+   Tarjetas de Alerta Proactiva (Dashboard)
+   ============================================ */
+.alert-action-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 14px;
+    box-shadow: var(--resumen-shadow-sm);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    overflow: hidden;
+    position: relative;
+    padding: 0.9rem 1rem;
+    height: 100%;
+    border: 1px solid var(--resumen-border-soft);
+}
+
+.alert-action-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 14px 0 0 14px;
+}
+
+.alert-action-card.border-danger::before  { background: var(--resumen-danger); }
+.alert-action-card.border-warning::before { background: var(--resumen-warning); }
+.alert-action-card.border-info::before    { background: var(--resumen-info); }
+
+.alert-action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--resumen-shadow-md);
+}
+
+.alert-action-card .alert-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.alert-action-card .alert-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.alert-action-card .alert-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--resumen-muted);
+    margin-bottom: 0.35rem;
+}
+
+.alert-action-card .alert-cta {
+    font-size: 0.72rem;
+    font-weight: 600;
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+.alert-action-card:hover .alert-cta {
+    opacity: 1;
+}
+
+.alertas-stagger .alert-action-card {
+    animation: resumenFadeIn 0.35s ease both;
+}
+
+.alertas-stagger .col-12:nth-child(1) .alert-action-card { animation-delay: 0.05s; }
+.alertas-stagger .col-12:nth-child(2) .alert-action-card { animation-delay: 0.10s; }
+.alertas-stagger .col-12:nth-child(3) .alert-action-card { animation-delay: 0.15s; }
+.alertas-stagger .col-12:nth-child(4) .alert-action-card { animation-delay: 0.20s; }
+.alertas-stagger .col-12:nth-child(5) .alert-action-card { animation-delay: 0.25s; }
+.alertas-stagger .col-12:nth-child(6) .alert-action-card { animation-delay: 0.30s; }
+
 .kpi-trend {
     display: inline-flex;
     align-items: center;

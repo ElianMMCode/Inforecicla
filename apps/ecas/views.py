@@ -545,7 +545,7 @@ def _serializar_venta(v):
         "materialId": str(v.inventario.material.id),
         "nombreMaterial": v.inventario.material.nombre,
         "nombreCategoria": getattr(v.inventario.material.categoria, "nombre", ""),
-        "nombreTipo": getattr(v.inventario.material.tipo, "nombre", ""),
+        "nombreTipo": getattr(v.inventario.material, "clasificacion", ""),
         "cantidad": float(v.cantidad),
         "fechaVenta": v.fecha_venta.isoformat(),
         "precioVenta": float(v.precio_venta or 0),
