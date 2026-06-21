@@ -882,7 +882,7 @@ function limpiarFiltrosFlujoDetalleMat(){_clearInput('flu-det-search-input');_cl
 
 /* ===== BOOT ===== */
 populatePanelFilters();
-if(typeof $!=='undefined'){$('.js-select2').select2({theme:'bootstrap-5',width:'auto',allowClear:true,placeholder:function(){return $(this).find('option:first').text()||'Selecciona...';}});}
+if(typeof $!=='undefined'){$('.js-select2').select2({theme:'bootstrap-5',width:'auto',placeholder:function(){return $(this).find('option:first').text()||'Selecciona...';}});}
 renderKPIs();
 renderResumen();
 renderRanking();
