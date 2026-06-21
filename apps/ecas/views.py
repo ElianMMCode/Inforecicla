@@ -340,7 +340,7 @@ def _build_inventario_context(punto, deep_link=None, ovtab=""):
             "costo_total_inventario": float,
             "materiales_criticos": [...],
             "categoria_inventario": [...],
-            "tipo_inventario": [...],
+            "clasificacion_inventario": [...],
 
             # === Movimientos (historial y stock chart) ===
             "centros": [...],
@@ -357,7 +357,7 @@ def _build_inventario_context(punto, deep_link=None, ovtab=""):
 
     materiales_inventario = list(
         Inventario.objects.filter(punto_eca=punto)
-        .select_related("material__categoria", "material__tipo")
+        .select_related("material__categoria")
         .order_by("-fecha_modificacion")
     )
     kpis = _calcular_kpis_inventario(materiales_inventario)
@@ -368,10 +368,9 @@ def _build_inventario_context(punto, deep_link=None, ovtab=""):
         .values_list("material__categoria__nombre", flat=True)
         .distinct()
     )
-    tipo_inventario = (
+    clasificacion_inventario = (
         Inventario.objects.filter(punto_eca=punto)
-        .select_related("material__tipo")
-        .values_list("material__tipo__nombre", flat=True)
+        .values_list("material__clasificacion", flat=True)
         .distinct()
     )
 
@@ -414,7 +413,7 @@ def _build_inventario_context(punto, deep_link=None, ovtab=""):
         "materiales_inventario": materiales_inventario,
         **kpis,
         "categoria_inventario": categoria_inventario,
-        "tipo_inventario": tipo_inventario,
+        "clasificacion_inventario": clasificacion_inventario,
         "centros": centros,
         "historial_compras": historial_compras,
         "historial_ventas": historial_ventas,
@@ -529,7 +528,7 @@ def _serializar_compra(c):
         "materialId": str(c.inventario.material.id),
         "nombreMaterial": c.inventario.material.nombre,
         "nombreCategoria": getattr(c.inventario.material.categoria, "nombre", ""),
-        "nombreTipo": getattr(c.inventario.material.tipo, "nombre", ""),
+        "nombreClasificacion": getattr(c.inventario.material, "clasificacion", ""),
         "cantidad": float(c.cantidad),
         "fechaCompra": c.fecha_compra.isoformat(),
         "precioCompra": float(c.precio_compra or 0),
@@ -572,7 +571,7 @@ def _serializar_inventario_para_json(inv):
         "materialId": str(inv.material.id),
         "nombre": inv.material.nombre,
         "categoria": getattr(inv.material.categoria, "nombre", ""),
-        "tipo": getattr(inv.material.tipo, "nombre", ""),
+        "clasificacion": inv.material.clasificacion,
         "unidad": inv.unidad_medida,
         "stockActual": float(inv.stock_actual or 0),
         "capacidadMaxima": float(inv.capacidad_maxima or 0),
