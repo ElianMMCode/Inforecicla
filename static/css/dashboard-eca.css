@@ -1,0 +1,70 @@
+/* Dashboard Puntos ECA — estilos extraidos del mockup */
+
+:root{--green:#145c3a}
+.kpi-card-eca{background:linear-gradient(135deg,#fff,#f8f9fa);border:1px solid #e9ecef;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .25s,box-shadow .25s;overflow:hidden;position:relative;height:100%}
+.kpi-card-eca::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;border-radius:14px 0 0 14px}
+.kpi-card-eca.kpi-success::before{background:#198754}.kpi-card-eca.kpi-info::before{background:#0dcaf0}
+.kpi-card-eca.kpi-warning::before{background:#ffc107}.kpi-card-eca.kpi-primary::before{background:#0d6efd}
+.kpi-card-eca.kpi-danger::before{background:#dc3545}.kpi-card-eca.kpi-dark::before{background:#212529}
+.kpi-card-eca:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.kpi-card-eca .kpi-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+.kpi-card-eca .kpi-value{font-size:1.6rem;font-weight:700;line-height:1.1}
+.kpi-card-eca .kpi-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;opacity:.7}
+.salud-badge-sm{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.72rem;font-weight:600}
+.salud-ok{background:#d1e7dd;color:#0f5132}.salud-alerta{background:#fff3cd;color:#664d03}.salud-critico{background:#f8d7da;color:#842029}
+.inv-summary{font-size:.78rem;color:#6c757d}.inv-summary strong{color:#212529}
+.chart-card{border:0;box-shadow:0 2px 8px rgba(0,0,0,.06);border-radius:12px}
+.chart-card .card-header{background:#fff;border-bottom:1px solid #e9ecef}
+.btn-detalle{font-size:.75rem;padding:2px 8px}
+.table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:#6c757d}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in-up{animation:fadeInUp .4s ease-out both}
+.fade-in-up:nth-child(1){animation-delay:.05s}.fade-in-up:nth-child(2){animation-delay:.1s}
+.fade-in-up:nth-child(3){animation-delay:.15s}.fade-in-up:nth-child(4){animation-delay:.2s}
+.fade-in-up:nth-child(5){animation-delay:.25s}.fade-in-up:nth-child(6){animation-delay:.3s}
+.fade-in-up:nth-child(7){animation-delay:.35s}.fade-in-up:nth-child(8){animation-delay:.4s}
+.detalle-header{background:linear-gradient(135deg,#145c3a,#1a7a4a);color:#fff;border-radius:0 0 20px 20px;margin:-1.5rem -1.5rem 0;padding:1.5rem 2rem}
+.detalle-header h2{font-size:1.5rem;font-weight:700;margin:0}
+.detalle-header .breadcrumb-item+.breadcrumb-item::before{color:rgba(255,255,255,.5)}
+.detalle-header .breadcrumb-item a{color:rgba(255,255,255,.8)}.detalle-header .breadcrumb-item a:hover{color:#fff}
+.detalle-header .breadcrumb{margin-bottom:.5rem;font-size:.8rem}
+.tab-nav{border-bottom:2px solid #e9ecef;gap:0;flex-wrap:wrap}
+.tab-nav .nav-link{border:none;color:#6c757d;font-weight:600;font-size:.82rem;padding:.6rem 1rem;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap}
+.tab-nav .nav-link:hover{color:#145c3a;border-bottom-color:#dee2e6}
+.tab-nav .nav-link.active{color:var(--green);border-bottom-color:#198754;background:transparent}
+.kpi-mini{background:#fff;border:1px solid #e9ecef;border-radius:12px;padding:1rem;text-align:center}
+.kpi-mini .kpi-val{font-size:1.4rem;font-weight:700}
+.kpi-mini .kpi-lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.3px;color:#6c757d;font-weight:600}
+.inv-card{border:1px solid #e9ecef;border-radius:10px;padding:.8rem;transition:box-shadow .2s;cursor:pointer}
+.inv-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#198754}
+.inv-card.selected{border-color:#198754;box-shadow:0 0 0 2px rgba(25,135,84,.2)}
+.stock-bar{height:6px;border-radius:3px;background:#e9ecef;overflow:hidden;margin-top:4px}
+.stock-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.mov-tipo{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:600}
+.mov-compra{background:#d1e7dd;color:#0f5132}.mov-venta{background:#f8d7da;color:#842029}
+.event-item{border-left:3px solid #0d6efd;padding:.6rem .8rem;margin-bottom:.5rem;background:#f8f9fa;border-radius:0 8px 8px 0}
+.event-completado{border-left-color:#198754;background:#f0fdf4}
+.event-pendiente{border-left-color:#ffc107;background:#fffdf0}
+.nav-pills .nav-link{border-radius:8px;font-size:.82rem;font-weight:600}
+.nav-pills .nav-link.active{background:var(--green)}
+.rank-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-radius:8px;transition:background .2s}
+.rank-item:hover{background:#f8f9fa}
+.rank-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;flex-shrink:0}
+.rank-1{background:#ffc107}.rank-2{background:#adb5bd}.rank-3{background:#cd7f32}
+.rank-bar{height:4px;border-radius:2px;background:#e9ecef;flex-grow:1;overflow:hidden}
+.rank-bar-fill{height:100%;border-radius:2px;background:var(--green)}
+.readonly-badge{font-size:.65rem;padding:2px 6px;border-radius:4px;background:#e9ecef;color:#6c757d;font-weight:600}
+.alerta-card{border:0;border-radius:12px;overflow:hidden}
+.alerta-card .card-body{padding:.75rem 1rem}
+.efi-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700}
+.efi-optimo{background:#d1e7dd;color:#0f5132}.efi-alto{background:#fff3cd;color:#664d03}.efi-bajo{background:#e9ecef;color:#6c757d}
+.price-tag{border-radius:6px;padding:2px 8px;font-size:.7rem;font-weight:700}
+.price-best{background:#d1e7dd;color:#0f5132}.price-worst{background:#f8d7da;color:#842029}
+#mapa-eca{height:480px;border-radius:12px;border:1px solid #e9ecef}
+#estados-map{height:480px;border-radius:12px}
+.alerta-group-title{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem}
+.alerta-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-radius:8px;transition:background .2s}
+.alerta-item:hover{background:#f8f9fa}
+.alerta-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.flujo-sub-tab{display:none}
+.flujo-sub-tab.active{display:block}
