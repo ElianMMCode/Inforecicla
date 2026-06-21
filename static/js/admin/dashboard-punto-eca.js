@@ -337,6 +337,53 @@ function sortRanking(col){
   rankingPage=1;
   renderRanking();
 }
+function limpiarFiltrosResumen(){
+  document.getElementById('res-search-input').value='';
+  document.getElementById('res-loc-filter').value='';
+  document.getElementById('res-estado-filter').value='';
+  document.getElementById('res-mat-filter').value='';
+  document.getElementById('res-orden').value='mov';
+  if(typeof $!=='undefined'){
+    $('#res-loc-filter,#res-estado-filter,#res-mat-filter').val('').trigger('change');
+  }
+  renderResumen();
+}
+function limpiarFiltrosEstados(){
+  document.getElementById('est-search-input').value='';
+  document.getElementById('est-loc-filter').value='';
+  document.getElementById('est-estado-filter').value='';
+  document.getElementById('est-salud-filter').value='';
+  if(typeof $!=='undefined'){
+    $('#est-loc-filter,#est-estado-filter,#est-salud-filter').val('').trigger('change');
+  }
+  renderEstados();
+}
+function limpiarFiltrosFlujoVolumen(){
+  document.getElementById('flu-search-input').value='';
+  document.getElementById('flu-loc-filter').value='';
+  document.getElementById('flu-mat-filter').value='';
+  if(typeof $!=='undefined'){
+    $('#flu-loc-filter,#flu-mat-filter').val('').trigger('change');
+  }
+  renderFlujoVolumen();
+}
+function limpiarFiltrosFlujoGanancias(){
+  document.getElementById('flu-gan-search-input').value='';
+  document.getElementById('flu-gan-loc-filter').value='';
+  if(typeof $!=='undefined'){
+    $('#flu-gan-loc-filter').val('').trigger('change');
+  }
+  renderFlujoGanancias();
+}
+function limpiarFiltrosFlujoDetalleMat(){
+  document.getElementById('flu-det-search-input').value='';
+  document.getElementById('flu-det-loc-filter').value='';
+  document.getElementById('flu-det-mat-filter').value='';
+  if(typeof $!=='undefined'){
+    $('#flu-det-loc-filter,#flu-det-mat-filter').val('').trigger('change');
+  }
+  renderFlujoDetalleMat();
+}
 function limpiarFiltrosRanking(){
   document.getElementById('rank-flt-nombre').value='';
   document.getElementById('rank-flt-localidad').value='';
@@ -756,9 +803,24 @@ function switchTab(tab,el){
   else if(tab==='mensajes')renderMensajes();
 }
 
+function limpiarFiltrosInventario(){
+  document.getElementById('inv-cat-filter').value='';
+  document.getElementById('inv-estado-filter').value='';
+  document.getElementById('inv-orden').value='nombre';
+  renderInventario();
+}
 function renderInventario(){
   if(!currentPuntoId)return;
-  const items=invData.filter(x=>x.puntoId===currentPuntoId);
+  let items=invData.filter(x=>x.puntoId===currentPuntoId);
+  const catF=document.getElementById('inv-cat-filter')?.value||'';
+  const estF=document.getElementById('inv-estado-filter')?.value||'';
+  const orden=document.getElementById('inv-orden')?.value||'nombre';
+  if(catF)items=items.filter(x=>x.cat===catF);
+  if(estF)items=items.filter(x=>x.estado===estF);
+  if(orden==='stock')items.sort((a,b)=>b.stock-a.stock);
+  else if(orden==='capacidad')items.sort((a,b)=>b.cap-a.cap);
+  else if(orden==='margen')items.sort((a,b)=>(b.venta-b.compra)-(a.venta-a.compra));
+  else items.sort((a,b)=>a.mat.localeCompare(b.mat));
   const totalStock=items.reduce((s,x)=>s+x.stock,0);
   const totalCap=items.reduce((s,x)=>s+x.cap,0);
   const capProm=items.length?Math.round(totalCap/items.length):0;
@@ -794,9 +856,24 @@ function renderInventario(){
   }).join('')||'<div class="col-12 text-center text-muted py-3">Sin inventario para este punto.</div>';
 }
 
+function limpiarFiltrosHistorialDetalle(){
+  document.getElementById('hist-material-filter').value='';
+  document.getElementById('hist-tipo-filter').value='';
+  document.getElementById('hist-ft-ini').value='';
+  document.getElementById('hist-ft-fin').value='';
+  renderHistorial();
+}
 function renderHistorial(){
   if(!currentPuntoId)return;
-  const movs=historial.filter(h=>h.puntoId===currentPuntoId);
+  let movs=historial.filter(h=>h.puntoId===currentPuntoId);
+  const matF=document.getElementById('hist-material-filter')?.value||'';
+  const tipoF=document.getElementById('hist-tipo-filter')?.value||'';
+  const ftIni=document.getElementById('hist-ft-ini')?.value||'';
+  const ftFin=document.getElementById('hist-ft-fin')?.value||'';
+  if(matF)movs=movs.filter(m=>m.mat===matF);
+  if(tipoF)movs=movs.filter(m=>m.tipo===tipoF);
+  if(ftIni)movs=movs.filter(m=>m.fecha.split(' ')[0]>=ftIni);
+  if(ftFin)movs=movs.filter(m=>m.fecha.split(' ')[0]<=ftFin);
   document.getElementById('hist-compras').textContent=movs.filter(m=>m.tipo==='Compra').length;
   document.getElementById('hist-ventas').textContent=movs.filter(m=>m.tipo==='Venta').length;
   document.getElementById('hist-total').textContent=movs.length;
@@ -855,9 +932,22 @@ function renderFlujoPrecios(){
   renderFlujo();
 }
 
+function limpiarFiltrosCalendario(){
+  document.getElementById('cal-estado-filter').value='';
+  document.getElementById('cal-ft-ini').value='';
+  document.getElementById('cal-ft-fin').value='';
+  renderCalendario();
+}
 function renderCalendario(){
   if(!currentPuntoId)return;
-  const evs=eventos.filter(e=>e.puntoId===currentPuntoId);
+  let evs=eventos.filter(e=>e.puntoId===currentPuntoId);
+  const estF=document.getElementById('cal-estado-filter')?.value||'';
+  const ftIni=document.getElementById('cal-ft-ini')?.value||'';
+  const ftFin=document.getElementById('cal-ft-fin')?.value||'';
+  if(estF==='Completado')evs=evs.filter(e=>e.es_completado);
+  else if(estF==='Pendiente')evs=evs.filter(e=>!e.es_completado);
+  if(ftIni)evs=evs.filter(e=>e.fecha>=ftIni);
+  if(ftFin)evs=evs.filter(e=>e.fecha<=ftFin);
   document.getElementById('cal-completados').textContent=evs.filter(e=>e.es_completado).length;
   document.getElementById('cal-pendientes').textContent=evs.filter(e=>!e.es_completado).length;
   const ahora=new Date();
@@ -869,9 +959,21 @@ function renderCalendario(){
   ).join('')||'<div class="text-center text-muted py-3">Sin eventos para este punto.</div>';
 }
 
+function limpiarFiltrosMensajesDetalle(){
+  document.getElementById('msg-search').value='';
+  document.getElementById('msg-ft-ini').value='';
+  document.getElementById('msg-ft-fin').value='';
+  renderMensajes();
+}
 function renderMensajes(){
   if(!currentPuntoId)return;
-  const convs=conversaciones.filter(c=>c.puntoId===currentPuntoId);
+  let convs=conversaciones.filter(c=>c.puntoId===currentPuntoId);
+  const q=(document.getElementById('msg-search')?.value||'').toLowerCase();
+  const ftIni=document.getElementById('msg-ft-ini')?.value||'';
+  const ftFin=document.getElementById('msg-ft-fin')?.value||'';
+  if(q)convs=convs.filter(c=>c.ciudadano.toLowerCase().includes(q));
+  if(ftIni)convs=convs.filter(c=>c.fecha.split(' ')[0]>=ftIni);
+  if(ftFin)convs=convs.filter(c=>c.fecha.split(' ')[0]<=ftFin);
   document.getElementById('msg-total').textContent=convs.length;
   document.getElementById('msg-total-msgs').textContent=convs.reduce((s,c)=>s+(c.msgs||0),0);
   document.getElementById('msg-no-leidos').textContent=convs.length;

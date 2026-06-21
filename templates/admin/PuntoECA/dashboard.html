@@ -224,6 +224,7 @@
           <select aria-label="inv estado filter" class="form-select form-select-sm" style="width:auto" id="inv-estado-filter"><option value="">Todos</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
           <select aria-label="inv orden" class="form-select form-select-sm" style="width:auto" id="inv-orden"><option value="nombre">Orden: Nombre</option><option value="stock">Orden: % Ocupacion</option><option value="capacidad">Orden: Capacidad</option><option value="margen">Orden: Margen</option></select>
           <button class="btn btn-sm btn-outline-success" onclick="renderInventario()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosInventario()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Consulta exclusiva</span>
       </div>
@@ -250,6 +251,7 @@
           <span class="text-muted small">a</span>
           <input type="date" class="form-control form-control-sm" style="width:auto" id="hist-ft-fin" aria-label="hist ft fin">
           <button class="btn btn-sm btn-outline-success" onclick="renderHistorial()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosHistorialDetalle()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Solo lectura</span>
       </div>
@@ -283,6 +285,7 @@
           <select aria-label="cal estado filter" class="form-select form-select-sm" style="width:auto" id="cal-estado-filter"><option value="">Todos los estados</option><option>Completado</option><option>Pendiente</option></select>
           <input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-ini" aria-label="cal ft ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-fin" aria-label="cal ft fin">
           <button class="btn btn-sm btn-outline-success" onclick="renderCalendario()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosCalendario()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Gestionado por el gestor del punto -- solo consulta</span>
       </div>
@@ -300,6 +303,7 @@
           <input type="text" class="form-control form-control-sm" style="width:auto" id="msg-search" placeholder="Buscar ciudadano..." aria-label="msg search">
           <input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-ini" aria-label="msg ft ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-fin" aria-label="msg ft fin">
           <button class="btn btn-sm btn-outline-success" onclick="renderMensajes()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosMensajesDetalle()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
         </div>
         <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Gestionado por el gestor del punto -- solo consulta</span>
       </div>
