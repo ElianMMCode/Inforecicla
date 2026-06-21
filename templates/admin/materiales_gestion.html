@@ -33,9 +33,6 @@
   .stock-bar-fill{height:100%;border-radius:3px;transition:width .4s}
   .inv-card{border:1px solid #e9ecef;border-radius:10px;padding:.8rem;transition:box-shadow .2s;cursor:pointer}
   .inv-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#198754}
-  .mat-select-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;border:2px solid #dee2e6;background:#fff;transition:all .15s}
-  .mat-select-chip.selected{border-color:#198754;background:#d1e7dd;color:#0f5132}
-  .mat-select-chip:hover{border-color:#adb5bd}
   .nav-subtabs .nav-link{color:#6c757d;font-weight:500;font-size:.85rem;padding:.35rem .9rem}
   .nav-subtabs .nav-link.active{color:#0f5132;font-weight:600;background-color:#e8f5ed;border-color:#198754 #198754 #fff}
   .table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:#6c757d}
@@ -181,7 +178,7 @@
     <div class="card-header bg-info-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-info small"><i class="bi bi-sliders me-2"></i>Filtros</h6></div>
     <div class="card-body">
       <div class="row g-3 align-items-end">
-        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Materiales</label><div id="flujo-mat-chips" class="d-flex flex-wrap gap-1"></div><div class="d-flex gap-2 mt-2"><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(5)">Top 5</button><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(10)">Top 10</button><button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoSelectTop(0)">Ninguno</button></div></div>
+        <div class="col-md-5"><label class="form-label fw-semibold small text-muted">Materiales</label><select class="form-select form-select-sm" id="flujo-mat-select" multiple="multiple" onchange="renderFlujo()"></select><div class="d-flex gap-2 mt-2"><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(5)">Top 5</button><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(10)">Top 10</button><button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoSelectTop(0)">Ninguno</button></div></div>
         <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Desde</label><input type="date" class="form-control form-control-sm" id="flujo-ft-desde" value="2026-01-01" onchange="renderFlujo()"></div>
         <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Hasta</label><input type="date" class="form-control form-control-sm" id="flujo-ft-hasta" value="2026-12-31" onchange="renderFlujo()"></div>
         <div class="col-md-2"><label class="form-label fw-semibold small text-muted">Granularidad</label><select class="form-select form-select-sm" id="flujo-gran" onchange="renderFlujo()"><option value="dia">Día</option><option value="semana">Semana</option><option value="mes" selected>Mes</option></select></div>
@@ -189,16 +186,20 @@
       </div>
     </div>
   </div>
+  <div id="flujo-kpis-pane">
   <div class="row g-3 mb-3" id="flujo-kpis">
     <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="flujo-stock-actual">--</div><div class="kpi-lbl">Stock Actual Total</div></div></div>
     <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="flujo-compras-periodo">--</div><div class="kpi-lbl">Compras (kg)</div></div></div>
     <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="flujo-ventas-periodo">--</div><div class="kpi-lbl">Ventas (kg)</div></div></div>
     <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="flujo-utilidad-periodo">--</div><div class="kpi-lbl">Utilidad Estimada</div></div></div>
   </div>
-  <div class="card chart-card mb-3"><div class="card-body" style="height:380px"><canvas id="chartFlujo"></canvas></div></div>
+  </div>
+  <div id="flujo-charts-pane">
+  <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small" id="flujo-main-chart-title"><i class="bi bi-graph-up text-info me-1"></i>Stock por Material</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujo"></canvas></div></div>
   <div class="row g-3 mb-3">
-    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto (Compras vs Ventas)</h6></div><div class="card-body" style="height:260px"><canvas id="chartKPIsFlujoNeto"></canvas></div></div></div>
-    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:240px;width:100%"><canvas id="chartKPIsSalud"></canvas></div></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small" id="flujo-subchart-left-title"><i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto (Compras vs Ventas)</h6></div><div class="card-body" style="height:260px"><canvas id="chartKPIsFlujoNeto"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small" id="flujo-subchart-right-title"><i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:240px;width:100%"><canvas id="chartKPIsSalud"></canvas></div></div></div></div>
+  </div>
   </div>
   <div id="flujo-detalle-pane" style="display:none">
     <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash me-1"></i>Ganancia ($) por Material × Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoDetalle"></canvas></div></div>
@@ -627,112 +628,160 @@
   }
 
   // ===== TAB 3: FLUJO DE MATERIALES =====
-  let flujoSelectedMats = [];
   let flujoSubMode = 'stock';
 
-  function renderFlujoChips(){
-    const container = document.getElementById('flujo-mat-chips');
+  function initFlujoSelect(){
+    var select = $('#flujo-mat-select');
+    select.empty();
     // Ordenar por stock total (mayor primero)
-    const uniqueMats = [...new Set(inventario.map(inv=>inv.matId))]
+    var uniqueMats = [...new Set(inventario.map(function(inv){return inv.matId}))]
       .map(function(id){var m=getMatById(id);if(!m.id)return null;
         var total = inventario.filter(function(inv){return String(inv.matId)===String(m.id)}).reduce(function(s,inv){return s+inv.stock},0);
         return {m:m, total:total};
       }).filter(Boolean).sort(function(a,b){return b.total-a.total});
-    if(flujoSelectedMats.length===0) flujoSelectedMats = uniqueMats.slice(0,5).map(function(x){return String(x.m.id)});
-    var selCount = flujoSelectedMats.length;
-    var html = '<div class="small text-muted mb-1">'+selCount+' de '+uniqueMats.length+' seleccionados | <a href="#" onclick="event.preventDefault();flujoSelectTop(5)">Top 5</a> · <a href="#" onclick="event.preventDefault();flujoSelectTop(10)">Top 10</a></div>';
-    html += uniqueMats.map(function(x){
-      var m = x.m;
-      var sel = flujoSelectedMats.includes(String(m.id));
-      return '<span class="mat-select-chip'+(sel?' selected':'')+'" onclick="flujoSelectMat(\''+m.id+'\',this)" title="'+escapeHTML(m.nombre||'?')+' ('+Math.round(x.total)+' kg)">'+escapeHTML((m.nombre||'?').substring(0,18))+'</span>';
-    }).join('');
-    container.innerHTML = html;
+    uniqueMats.forEach(function(x){
+      select.append(new Option((x.m.nombre||'?').substring(0,30)+' ('+Math.round(x.total)+' kg)', String(x.m.id), false, false));
+    });
+    select.select2({theme:'bootstrap-5',width:'100%',placeholder:'Selecciona materiales...',closeOnSelect:false});
+    // Seleccionar Top 5 por defecto
+    var top5 = uniqueMats.slice(0,5).map(function(x){return String(x.m.id)});
+    select.val(top5).trigger('change');
   }
+
   function flujoSelectTop(n){
+    var select = $('#flujo-mat-select');
+    // Reconstruir lista ordenada por stock
     var uniqueMats = [...new Set(inventario.map(function(inv){return inv.matId}))]
       .map(function(id){var m=getMatById(id);if(!m.id)return null;
         var total = inventario.filter(function(inv){return String(inv.matId)===String(m.id)}).reduce(function(s,inv){return s+inv.stock},0);
         return {id:String(m.id), total:total};
       }).filter(Boolean).sort(function(a,b){return b.total-a.total});
-    flujoSelectedMats = uniqueMats.slice(0,n).map(function(x){return x.id});
-    renderFlujoChips();renderFlujo();
+    if(n===0){select.val([]).trigger('change');return;}
+    var ids = uniqueMats.slice(0,n).map(function(x){return x.id});
+    select.val(ids).trigger('change');
   }
-  function flujoSelectMat(matId,el){
-    const sid = String(matId);
-    if(flujoSelectedMats.includes(sid)){flujoSelectedMats = flujoSelectedMats.filter(function(id){return id!==sid});el.classList.remove('selected');}
-    else {flujoSelectedMats.push(sid);el.classList.add('selected');}
-    renderFlujo();
-  }
-  function flujoToggleAll(on){
-    flujoSelectedMats = on ? [...new Set(inventario.map(function(inv){return String(inv.matId)}))]: [];
-    renderFlujoChips();renderFlujo();
-  }
+
   function switchFlujoSub(mode,el){
     flujoSubMode = mode;
-    document.querySelectorAll('#flujo-subtabs .nav-link').forEach(a=>a.classList.remove('active'));
+    document.querySelectorAll('#flujo-subtabs .nav-link').forEach(function(a){a.classList.remove('active')});
     el.classList.add('active');
+    // Toggle visibilidad de paneles
     document.getElementById('flujo-detalle-pane').style.display = (mode==='detalle')?'block':'none';
+    document.getElementById('flujo-kpis-pane').style.display = (mode==='detalle')?'none':'';
+    document.getElementById('flujo-charts-pane').style.display = (mode==='detalle')?'none':'';
     renderFlujo();
   }
+
   function renderFlujo(){
     if(typeof Chart==='undefined') return;
-    if(document.getElementById('flujo-mat-chips').children.length===0) renderFlujoChips();
-    const gran = document.getElementById('flujo-gran')?.value||'mes';
-    const labels = gran==='dia'?['Jun 1','Jun 5','Jun 10','Jun 15','Jun 20']:gran==='semana'?['Sem 1','Sem 2','Sem 3','Sem 4']:['Ene','Feb','Mar','Abr','May','Jun'];
-    const selMats = flujoSelectedMats.map(id=>getMatById(id)).filter(Boolean);
-    if(selMats.length===0){document.getElementById('flujo-stock-actual').textContent='--';return;}
-    const invItems = inventario.filter(inv=>flujoSelectedMats.includes(String(inv.matId)));
-    const stockActualTotal = invItems.reduce((s,inv)=>s+inv.stock,0);
-    const comprasPeriodo = Math.round(invItems.reduce((s,inv)=>s+inv.stock*0.3,0));
-    const ventasPeriodo = Math.round(invItems.reduce((s,inv)=>s+inv.stock*0.15,0));
-    const utilidadPeriodo = Math.round(invItems.reduce((s,inv)=>s+(inv.stock*0.15*(inv.venta-inv.compra)),0));
-    document.getElementById('flujo-stock-actual').textContent = stockActualTotal.toLocaleString()+' kg';
-    document.getElementById('flujo-compras-periodo').textContent = comprasPeriodo.toLocaleString();
-    document.getElementById('flujo-ventas-periodo').textContent = ventasPeriodo.toLocaleString();
-    document.getElementById('flujo-utilidad-periodo').textContent = '$'+utilidadPeriodo.toLocaleString();
+    var select = $('#flujo-mat-select');
+    if(!select.data('select2')){initFlujoSelect();return;}
+    var selIds = select.val()||[];
+    var selMats = selIds.map(function(id){return getMatById(id)}).filter(function(m){return m.id});
+    var invItems = inventario.filter(function(inv){return selIds.includes(String(inv.matId))});
 
-    destroyChart('flujo');
-    const colors = ['#198754','#0d6efd','#dc3545','#ffc107','#0dcaf0','#6f42c1','#fd7e14','#20c997'];
-    const datasets = selMats.map((mat,mi)=>{
-      const items = inventario.filter(inv=>String(inv.matId)===String(mat.id));
-      const base = items.reduce((s,inv)=>s+inv.stock,0);
-      return {label:(mat.nombre||'?').substring(0,14),data:labels.map((_,i)=>Math.round(base*(0.7+i*0.05))),borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
-    });
-    charts.flujo = new Chart(document.getElementById('chartFlujo'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});
+    // KPIs
+    var stockActualTotal = invItems.reduce(function(s,inv){return s+inv.stock},0);
+    var comprasPeriodo = Math.round(invItems.reduce(function(s,inv){return s+inv.stock*0.3},0));
+    var ventasPeriodo = Math.round(invItems.reduce(function(s,inv){return s+inv.stock*0.15},0));
+    var utilidadPeriodo = Math.round(invItems.reduce(function(s,inv){return s+(inv.stock*0.15*(inv.venta-inv.compra))},0));
+    document.getElementById('flujo-stock-actual').textContent = selMats.length ? stockActualTotal.toLocaleString()+' kg' : '--';
+    document.getElementById('flujo-compras-periodo').textContent = selMats.length ? comprasPeriodo.toLocaleString() : '--';
+    document.getElementById('flujo-ventas-periodo').textContent = selMats.length ? ventasPeriodo.toLocaleString() : '--';
+    document.getElementById('flujo-utilidad-periodo').textContent = selMats.length ? '$'+utilidadPeriodo.toLocaleString() : '--';
 
-    // Flujo Neto + Salud charts (first time only)
-    if(!charts._flujoExtraInit && document.getElementById('chartKPIsFlujoNeto')){
-      charts._flujoExtraInit = true;
-      var flujoLabels = ['Ene','Feb','Mar','Abr','May','Jun'];
-      var flujoCompras = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Compra'}).reduce(function(s,m){return s+m.kg},0)/6)});
-      var flujoVentas = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Venta'}).reduce(function(s,m){return s+m.kg},0)/6)});
-      charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:flujoLabels,datasets:[{label:'Compras',data:flujoCompras,backgroundColor:'#198754',borderRadius:4},{label:'Ventas',data:flujoVentas,backgroundColor:'#dc3545',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
-
-      var salud = {OK:0,Alerta:0,'Crítico':0};
-      inventario.forEach(function(inv){salud[getInvEstado(inv).estado]++});
-      if(document.getElementById('chartKPIsSalud')){
-        charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'doughnut',data:{labels:Object.keys(salud),datasets:[{data:Object.values(salud),backgroundColor:['#198754','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
-      }
-    }
+    var colors = ['#198754','#0d6efd','#dc3545','#ffc107','#0dcaf0','#6f42c1','#fd7e14','#20c997'];
+    var gran = document.getElementById('flujo-gran')?.value||'mes';
+    var labels = gran==='dia'?['Jun 1','Jun 5','Jun 10','Jun 15','Jun 20']:gran==='semana'?['Sem 1','Sem 2','Sem 3','Sem 4']:['Ene','Feb','Mar','Abr','May','Jun'];
 
     if(flujoSubMode==='detalle'){
+      // ---- DETALLE (ya existía) ----
+      destroyChart('flujo');
       destroyChart('flujoDetalle');
-      const ptLabels = puntos.slice(0,8).map(p=>(p.nombre||'').substring(0,14));
-      const detDatasets = selMats.slice(0,5).map((mat,mi)=>({label:mat.nombre||'?',data:ptLabels.map(pn=>{
-        const p = puntos.find(pt=>(pt.nombre||'').startsWith(pn));
-        if(!p) return 0;
-        const inv = inventario.find(i=>String(i.matId)===String(mat.id)&&String(i.puntoId)===String(p.id));
-        return inv ? Math.round(inv.stock*(inv.venta-inv.compra)) : 0;
-      }),backgroundColor:colors[mi%colors.length],borderRadius:0}));
+      var ptLabels = puntos.slice(0,8).map(function(p){return (p.nombre||'').substring(0,14)});
+      var detDatasets = selMats.slice(0,5).map(function(mat,mi){
+        return {label:mat.nombre||'?',data:ptLabels.map(function(pn){
+          var p = puntos.find(function(pt){return (pt.nombre||'').startsWith(pn)});
+          if(!p) return 0;
+          var inv = inventario.find(function(i){return String(i.matId)===String(mat.id)&&String(i.puntoId)===String(p.id)});
+          return inv ? Math.round(inv.stock*(inv.venta-inv.compra)) : 0;
+        }),backgroundColor:colors[mi%colors.length],borderRadius:0};
+      });
       charts.flujoDetalle = new Chart(document.getElementById('chartFlujoDetalle'),{type:'bar',data:{labels:ptLabels,datasets:detDatasets},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:'$ COP'}}},plugins:{legend:{position:'bottom'}}}});
-      const ranking = selMats.map(mat=>{
-        const invs = inventario.filter(inv=>String(inv.matId)===String(mat.id));
-        const ganancia = Math.round(invs.reduce((s,inv)=>s+inv.stock*(inv.venta-inv.compra),0));
-        const volumen = invs.reduce((s,inv)=>s+inv.stock,0);
-        const margenProm = invs.length ? Math.round(invs.reduce((s,inv)=>s+((inv.venta-inv.compra)/inv.compra)*100,0)/invs.length) : 0;
-        return {mat,ganancia,volumen,margenProm,pts:invs.length};
-      }).filter(r=>r.ganancia>0).sort((a,b)=>b.ganancia-a.ganancia);
-      document.getElementById('flujo-rank-tbody').innerHTML = ranking.map((r,i)=>'<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold">'+escapeHTML(r.mat.nombre||'?')+'</td><td class="fw-bold text-success">$'+r.ganancia.toLocaleString()+'</td><td>'+r.volumen.toLocaleString()+' kg</td><td>'+r.margenProm+'%</td><td>'+r.pts+'</td></tr>').join('');
+      // Ranking
+      var ranking = selMats.map(function(mat){
+        var invs = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+        var ganancia = Math.round(invs.reduce(function(s,inv){return s+inv.stock*(inv.venta-inv.compra)},0));
+        var volumen = invs.reduce(function(s,inv){return s+inv.stock},0);
+        var margenProm = invs.length ? Math.round(invs.reduce(function(s,inv){return s+((inv.venta-inv.compra)/inv.compra)*100},0)/invs.length) : 0;
+        return {mat:mat,ganancia:ganancia,volumen:volumen,margenProm:margenProm,pts:invs.length};
+      }).filter(function(r){return r.ganancia>0}).sort(function(a,b){return b.ganancia-a.ganancia});
+      document.getElementById('flujo-rank-tbody').innerHTML = ranking.map(function(r,i){return '<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold">'+escapeHTML(r.mat.nombre||'?')+'</td><td class="fw-bold text-success">$'+r.ganancia.toLocaleString()+'</td><td>'+r.volumen.toLocaleString()+' kg</td><td>'+r.margenProm+'%</td><td>'+r.pts+'</td></tr>'}).join('');
+      return;
+    }
+
+    // ---- STOCK / GANANCIAS ----
+    destroyChart('flujo');
+    // Update subchart headers
+    if(flujoSubMode==='ganancias'){
+      document.getElementById('flujo-main-chart-title').innerHTML = '<i class="bi bi-cash-stack text-success me-1"></i>Ganancias ($) por Material';
+      document.getElementById('flujo-subchart-left-title').innerHTML = '<i class="bi bi-bar-chart text-primary me-1"></i>Compras vs Ventas ($)';
+      document.getElementById('flujo-subchart-right-title').innerHTML = '<i class="bi bi-pie-chart text-warning me-1"></i>Ganancia por Material';
+    } else {
+      document.getElementById('flujo-main-chart-title').innerHTML = '<i class="bi bi-graph-up text-info me-1"></i>Stock por Material';
+      document.getElementById('flujo-subchart-left-title').innerHTML = '<i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto (Compras vs Ventas)';
+      document.getElementById('flujo-subchart-right-title').innerHTML = '<i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario';
+    }
+    var datasets;
+    var yAxisLabel;
+    if(flujoSubMode==='ganancias'){
+      yAxisLabel = '$ COP';
+      datasets = selMats.map(function(mat,mi){
+        var items = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+        var base = items.reduce(function(s,inv){return s+inv.stock*(inv.venta-inv.compra)},0);
+        return {label:(mat.nombre||'?').substring(0,14),data:labels.map(function(_,i){return Math.round(base*(0.5+i*0.1))}),borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
+      });
+    } else {
+      yAxisLabel = 'kg';
+      datasets = selMats.map(function(mat,mi){
+        var items = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+        var base = items.reduce(function(s,inv){return s+inv.stock},0);
+        return {label:(mat.nombre||'?').substring(0,14),data:labels.map(function(_,i){return Math.round(base*(0.7+i*0.05))}),borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
+      });
+    }
+    charts.flujo = new Chart(document.getElementById('chartFlujo'),{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:yAxisLabel}}}}});
+
+    // Secondary charts - re-render on mode change
+    if(charts._flujoExtraMode !== flujoSubMode){
+      destroyChart('kpisFlujoNeto');
+      destroyChart('kpisSalud');
+      if(flujoSubMode==='stock' && document.getElementById('chartKPIsFlujoNeto')){
+        var flujoLabels = ['Ene','Feb','Mar','Abr','May','Jun'];
+        var flujoCompras = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Compra'}).reduce(function(s,m){return s+m.kg},0)/6)});
+        var flujoVentas = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Venta'}).reduce(function(s,m){return s+m.kg},0)/6)});
+        charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:flujoLabels,datasets:[{label:'Compras',data:flujoCompras,backgroundColor:'#198754',borderRadius:4},{label:'Ventas',data:flujoVentas,backgroundColor:'#dc3545',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+
+        var salud = {OK:0,Alerta:0,'Crítico':0};
+        inventario.forEach(function(inv){salud[getInvEstado(inv).estado]++});
+        if(document.getElementById('chartKPIsSalud')){
+          charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'doughnut',data:{labels:Object.keys(salud),datasets:[{data:Object.values(salud),backgroundColor:['#198754','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        }
+      } else if(flujoSubMode==='ganancias' && document.getElementById('chartKPIsFlujoNeto')){
+        var comprasTot = historialMov.filter(function(m){return m.tipo==='Compra'}).reduce(function(s,m){return s+m.total},0);
+        var ventasTot = historialMov.filter(function(m){return m.tipo==='Venta'}).reduce(function(s,m){return s+m.total},0);
+        var profit = ventasTot - comprasTot;
+        charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:['Compras','Ventas','Ganancia'],datasets:[{label:'$ COP',data:[Math.round(comprasTot/1000),Math.round(ventasTot/1000),Math.round(profit/1000)],backgroundColor:['#0d6efd','#dc3545','#198754'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Miles $'}}}}});
+
+        var matGan = selMats.slice(0,6).map(function(mat){
+          var items = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+          var val = Math.round(items.reduce(function(s,inv){return s+inv.stock*(inv.venta-inv.compra)},0)/1000);
+          return {label:(mat.nombre||'?').substring(0,12),value:val};
+        }).filter(function(x){return x.value>0});
+        if(matGan.length&&document.getElementById('chartKPIsSalud')){
+          charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'pie',data:{labels:matGan.map(function(x){return x.label}),datasets:[{data:matGan.map(function(x){return x.value}),backgroundColor:colors.slice(0,matGan.length)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        }
+      }
+      charts._flujoExtraMode = flujoSubMode;
     }
   }
 
@@ -1019,6 +1068,7 @@
       $('#cat-filtro-categoria,#cat-filtro-estado,#hist-mat-filter,#hist-cat-filter,#hist-tipo-filter,#hist-punto-filter').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:5});
       $('#cat-filtro-clasificacion').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:-1});
       $('#inv-mat-selector').select2({theme:'bootstrap-5',width:'100%',placeholder:'-- Selecciona un material --'});
+      initFlujoSelect();
     } catch(e) {}
   });
   updateGlobalKPIs();
@@ -1034,8 +1084,6 @@
   window.renderHistorial = renderHistorial;
   window.renderGestionCategorias = renderGestionCategorias;
   window.renderGestionClasificaciones = renderGestionClasificaciones;
-  window.flujoSelectMat = flujoSelectMat;
-  window.flujoToggleAll = flujoToggleAll;
   window.flujoSelectTop = flujoSelectTop;
   window.switchFlujoSub = switchFlujoSub;
   window.limpiarFiltrosHistorial = limpiarFiltrosHistorial;
