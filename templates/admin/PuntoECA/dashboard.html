@@ -183,7 +183,7 @@
       </div>
       <div class="text-end d-flex flex-column align-items-end gap-2">
         <span id="detalle-salud"></span>
-        <div class="d-flex gap-2"><button class="btn btn-light btn-sm fw-semibold" onclick="openEditModal()"><i class="bi bi-pencil-square me-1"></i>Editar punto</button></div>
+        <div class="d-flex gap-2"><a class="btn btn-light btn-sm fw-semibold" id="detalle-edit-link" href="#"><i class="bi bi-pencil-square me-1"></i>Editar punto</a></div>
       </div>
     </div>
   </div>
@@ -314,75 +314,6 @@
   </div>
 </div>
 
-{% endblock %}
-
-{% block extra_modals %}
-<!-- Modal Editar Punto -->
-<div class="modal fade" id="editPuntoModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
-      <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Editar Punto ECA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body p-4">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Nombre <span class="text-danger">*</span></label>
-            <input type="text" class="form-control form-control-sm" id="edit-nombre" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Direccion</label>
-            <input type="text" class="form-control form-control-sm" id="edit-direccion">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Email</label>
-            <input type="email" class="form-control form-control-sm" id="edit-email">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Celular</label>
-            <input type="text" class="form-control form-control-sm" id="edit-celular" pattern="3[0-9]{9}" maxlength="10">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Telefono Punto</label>
-            <input type="text" class="form-control form-control-sm" id="edit-telefono_punto" pattern="60[0-9]{8}" maxlength="10" placeholder="60XXXXXXXX">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Sitio Web</label>
-            <input type="url" class="form-control form-control-sm" id="edit-sitio_web">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Horario Atencion</label>
-            <input type="text" class="form-control form-control-sm" id="edit-horario_atencion">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Localidad</label>
-            <select class="form-select form-select-sm js-select2" id="edit-localidad_id" data-select2-parent="#editPuntoModal">
-              {% for loc in localidades %}<option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>{% endfor %}
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Estado</label>
-            <select class="form-select form-select-sm" id="edit-estado">
-              {% for val, label in estados %}<option value="{{ val }}">{{ label|title }}</option>{% endfor %}
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Latitud</label>
-            <input type="number" step="any" class="form-control form-control-sm" id="edit-latitud">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold small text-muted">Longitud</label>
-            <input type="number" step="any" class="form-control form-control-sm" id="edit-longitud">
-          </div>
-          <div class="col-12">
-            <label class="form-label fw-semibold small text-muted">Descripcion</label>
-            <textarea class="form-control form-control-sm" id="edit-descripcion" rows="2"></textarea>
-          </div>
-        </div>
-        <div class="alert alert-info py-2 small mb-0 mt-3"><i class="bi bi-info-circle me-1"></i>Los datos de inventario, historial y operaciones no se modifican desde aqui.</div>
-      </div>
-      <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionPunto()" id="edit-btn-guardar"><i class="bi bi-check-lg me-1"></i>Guardar cambios</button></div>
-    </div>
-  </div>
-</div>
 {% endblock %}
 
 {% block extra_scripts %}
