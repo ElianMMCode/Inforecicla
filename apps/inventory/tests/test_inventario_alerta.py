@@ -12,7 +12,6 @@ from apps.inventory.models import (
     CategoriaMaterial,
     Inventario,
     Material,
-    TipoMaterial,
 )
 from apps.users.models import Usuario
 
@@ -47,11 +46,8 @@ def _crear_punto_y_material():
     cat, _ = CategoriaMaterial.objects.get_or_create(
         nombre=f"C{uuid.uuid4().hex[:4]}"
     )
-    tip, _ = TipoMaterial.objects.get_or_create(
-        nombre=f"T{uuid.uuid4().hex[:4]}"
-    )
     mat = Material.objects.create(
-        nombre=f"M{uuid.uuid4().hex[:4]}", categoria=cat, tipo=tip
+        nombre=f"M{uuid.uuid4().hex[:4]}", categoria=cat, clasificacion="ESTANDAR"
     )
     return p, mat
 
