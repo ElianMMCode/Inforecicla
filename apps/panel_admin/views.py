@@ -16,7 +16,7 @@ from django.db.models import Q
 from apps.users.models import Usuario
 from apps.ecas.models import Localidad, PuntoECA
 from apps.inventory.models import CategoriaMaterial, Material, TipoMaterial
-from apps.panel_admin.service import AdminCatalogService, AdminDashboardService
+from apps.panel_admin.service import AdminCatalogService, AdminDashboardService, AdminPuntoECAService
 from config import constants as cons
 
 
@@ -1411,6 +1411,23 @@ def listar_puntos_eca_admin(request):
         "dist_estado_punto": AdminDashboardService.obtener_distribucion_puntos_eca_por_estado(),
         "dist_gestor_punto": AdminDashboardService.obtener_distribucion_puntos_eca_con_gestor(),
     })
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
+def puntos_eca_dashboard(request):
+    contexto = {
+        "puntos_dashboard": AdminPuntoECAService.obtener_puntos_dashboard(),
+        "historial": AdminPuntoECAService.obtener_historial(),
+        "eventos": AdminPuntoECAService.obtener_eventos(),
+        "conversaciones": AdminPuntoECAService.obtener_conversaciones(),
+        "usuarios": AdminPuntoECAService.obtener_usuarios_admin(),
+        "kpis": AdminPuntoECAService.obtener_kpis(),
+        "localidades": Localidad.objects.all().order_by("nombre"),
+    }
+    return render(request, "admin/PuntoECA/dashboard.html", contexto)
 
 
 @require_GET

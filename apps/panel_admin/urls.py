@@ -28,6 +28,7 @@ urlpatterns = [
     path('puntos-eca/exportar/pdf/', views.exportar_puntos_eca_pdf, name='exportar_puntos_eca_pdf'),
     path('puntos-eca/exportar/excel/', views.exportar_puntos_eca_excel, name='exportar_puntos_eca_excel'),
     path('puntos-eca/<uuid:punto_id>/editar/', views.editar_punto_eca_admin, name='editar_punto_eca_admin'),
+    path('puntos-eca/dashboard/', views.puntos_eca_dashboard, name='puntos_eca_dashboard'),
 
     # Materiales
     path('materiales/', views.listar_materiales_admin, name='listar_materiales_admin'),
