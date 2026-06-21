@@ -3,951 +3,1180 @@
 {% block page_title %}Gestión de Materiales - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
 
+{% block extra_head %}
+<style>
+  .kpi-card-mat{background:linear-gradient(135deg,#fff,#f8f9fa);border:1px solid #e9ecef;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .25s,box-shadow .25s;overflow:hidden;position:relative;height:100%;cursor:pointer}
+  button.kpi-card-mat{display:block;width:100%;border:none;text-align:left;font:inherit}
+  .kpi-card-mat::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;border-radius:14px 0 0 14px}
+  .kpi-card-mat.kpi-success::before{background:#198754}.kpi-card-mat.kpi-info::before{background:#0dcaf0}
+  .kpi-card-mat.kpi-warning::before{background:#ffc107}.kpi-card-mat.kpi-primary::before{background:#0d6efd}
+  .kpi-card-mat.kpi-danger::before{background:#dc3545}.kpi-card-mat.kpi-dark::before{background:#212529}
+  .kpi-card-mat:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+  .kpi-card-mat .kpi-value{font-size:1.6rem;font-weight:700;line-height:1.1}
+  .kpi-card-mat .kpi-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600;opacity:.7}
+  .kpi-mini{background:#fff;border:1px solid #e9ecef;border-radius:12px;padding:.65rem .5rem;text-align:center}
+  .kpi-mini .kpi-val{font-size:1.3rem;font-weight:700}
+  .kpi-mini .kpi-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.2px;color:#6c757d;font-weight:600;line-height:1.2}
+  .chart-card{border:0;box-shadow:0 2px 8px rgba(0,0,0,.06);border-radius:12px}
+  .chart-card .card-header{background:#fff;border-bottom:1px solid #e9ecef}
+  .tab-nav-mat{border-bottom:2px solid #e9ecef;gap:0;flex-wrap:wrap}
+  .tab-nav-mat .nav-link{border:none;color:#6c757d;font-weight:600;font-size:.82rem;padding:.6rem 1rem;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap}
+  .tab-nav-mat .nav-link:hover{color:#145c3a;border-bottom-color:#dee2e6}
+  .tab-nav-mat .nav-link.active{color:#145c3a;border-bottom-color:#198754;background:transparent}
+  .mat-tab-pane{display:none}
+  .mat-tab-pane.show.active{display:block}
+  .salud-ok{background:#d1e7dd;color:#0f5132}.salud-alerta{background:#fff3cd;color:#664d03}.salud-critico{background:#f8d7da;color:#842029}
+  .salud-badge-sm{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.72rem;font-weight:600}
+  .mov-tipo{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:600}
+  .mov-compra{background:#d1e7dd;color:#0f5132}.mov-venta{background:#f8d7da;color:#842029}
+  .inv-summary{font-size:.78rem;color:#6c757d}.inv-summary strong{color:#212529}
+  .stock-bar{height:6px;border-radius:3px;background:#e9ecef;overflow:hidden;margin-top:4px}
+  .stock-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+  .inv-card{border:1px solid #e9ecef;border-radius:10px;padding:.8rem;transition:box-shadow .2s;cursor:pointer}
+  .inv-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#198754}
+  .nav-subtabs .nav-link{color:#6c757d;font-weight:500;font-size:.85rem;padding:.35rem .9rem}
+  .nav-subtabs .nav-link.active{color:#0f5132;font-weight:600;background-color:#e8f5ed;border-color:#198754 #198754 #fff}
+  .table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:#6c757d}
+  .pager-info{font-size:.72rem;color:#6c757d}
+  .pagination-sm .page-link{font-size:.75rem;padding:.25rem .55rem}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in-up{animation:fadeInUp .4s ease-out both}
+</style>
+{% endblock %}
 
 {% block content %}
 
-  {% if messages %}
-  <div class="mb-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+{% if messages %}
+<script>
+  (function(){
+    var _msgs = [{% for m in messages %}{"tags":"{{ m.tags }}","text":"{{ m|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(function(){
+        _msgs.forEach(function(m){
+          Swal.fire({icon:['success','error','warning','info'].includes(m.tags)?m.tags:'info',title:m.text,toast:true,position:'top-end',showConfirmButton:false,timer:4000,timerProgressBar:true});
+        });
+      }, 350);
+    });
+  })();
+</script>
+{% endif %}
+
+<!-- HEADER -->
+<div class="mb-3 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-boxes me-2"></i>Gestión de Materiales</h1>
+    <p class="text-muted mb-0">Administra materiales reciclables, inventarios, flujos y movimientos desde un solo lugar.</p>
   </div>
-  {% endif %}
+  <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoMaterial"><i class="bi bi-plus-circle me-1"></i> Nuevo Material</button>
+    <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria"><i class="bi bi-folder-plus me-1"></i> Nueva Categoría</button>
+    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaClasificacion"><i class="bi bi-shield-plus me-1"></i> Nueva Clasificación</button>
+  </div>
+</div>
 
-  <!-- Header -->
-  <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-box-seam me-2"></i>Gestión de Materiales</h1>
-      <p class="text-muted mb-0">Administra materiales reciclables, sus tipos y categorías desde un solo lugar.</p>
-    </div>
-    <div id="btn-group-materiales" class="d-flex flex-wrap gap-2 {% if tab != 'tipos' and tab != 'categorias' %}d-flex{% else %}d-none{% endif %}">
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearMaterial">
-        <i class="bi bi-plus-circle me-1"></i> Nuevo Material
-      </button>
-    </div>
-    <div id="btn-group-categorias" class="d-flex flex-wrap gap-2 {% if tab == 'categorias' %}d-flex{% else %}d-none{% endif %}">
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">
-        <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
-      </button>
-    </div>
-    <div id="btn-group-tipos" class="d-flex flex-wrap gap-2 {% if tab == 'tipos' %}d-flex{% else %}d-none{% endif %}">
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipo">
-        <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
-      </button>
-    </div>
+<!-- KPIs GLOBALES -->
+<div class="row g-3 mb-4" id="mat-global-kpis">
+  <div class="col-6 col-md-3"><button type="button" class="kpi-card-mat kpi-success p-3" aria-label="Ir al catalogo" onclick="kpiGo('catalogo')" title="Ir al catálogo"><div class="kpi-label">Total Materiales</div><div class="kpi-value text-success" id="kpi-total-mat">--</div><div class="inv-summary mt-1">en catálogo</div></button></div>
+  <div class="col-6 col-md-3"><button type="button" class="kpi-card-mat kpi-info p-3" aria-label="Ir al inventario" onclick="kpiGo('inventario')" title="Ir a inventario"><div class="kpi-label">Total Inventarios</div><div class="kpi-value text-info" id="kpi-total-inv">--</div><div class="inv-summary mt-1">en puntos ECA</div></button></div>
+  <div class="col-6 col-md-3"><button type="button" class="kpi-card-mat kpi-warning p-3" aria-label="Ir al historial" onclick="kpiGo('historial')" title="Ir al historial"><div class="kpi-label">Movimientos</div><div class="kpi-value text-warning" id="kpi-total-mov">--</div><div class="inv-summary mt-1">compras + ventas</div></button></div>
+  <div class="col-6 col-md-3"><button type="button" class="kpi-card-mat kpi-danger p-3" aria-label="Ir a flujo de materiales" onclick="kpiGo('flujo')" title="Ir a flujo (salud inventario)"><div class="kpi-label">Pts. Críticos</div><div class="kpi-value text-danger" id="kpi-total-crit">--</div><div class="inv-summary mt-1">inventario en estado crítico</div></button></div>
+</div>
+
+<!-- TABS -->
+<ul class="nav tab-nav-mat mb-3" id="materiales-tabs">
+  <li class="nav-item"><button class="nav-link active" onclick="switchMatTab('catalogo',this)"><i class="bi bi-collection me-1"></i>Catálogo</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('inventario',this)"><i class="bi bi-diagram-3 me-1"></i>Inventario por Material</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('flujo',this)"><i class="bi bi-graph-up me-1"></i>Flujo de Materiales</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('historial',this)"><i class="bi bi-clock-history me-1"></i>Historial Global</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('categorias',this)"><i class="bi bi-folder me-1"></i>Categorías</button></li>
+  <li class="nav-item"><button class="nav-link" onclick="switchMatTab('clasificaciones',this)"><i class="bi bi-shield-check me-1"></i>Clasificaciones</button></li>
+</ul>
+
+<!-- ===== TAB 1: CATÁLOGO ===== -->
+<div class="mat-tab-pane show active" id="mat-pane-catalogo">
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Por Categoría</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:280px;width:100%"><canvas id="chartCatCategoria" style="max-height:260px"></canvas></div></div></div></div>
+    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-shield-check text-info me-1"></i>Por Clasificación</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:280px;width:100%"><canvas id="chartCatClasificacion" style="max-height:260px"></canvas></div></div></div></div>
+    <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:200px;width:100%"><canvas id="chartCatEstado" style="max-height:260px"></canvas></div></div></div></div>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Top 10 Materiales por Stock Total</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopStock"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash-stack text-warning me-1"></i>Top 10 Materiales por Valor</h6></div><div class="card-body" style="height:320px"><canvas id="chartKPIsTopValor"></canvas></div></div></div>
   </div>
 
-  {% include "admin/Materiales/tabs_materiales.html" with active_tab=tab|default:"materiales" %}
-
-  <div class="tab-content" id="materialesTabsContent">
-
-    <!-- ===== TAB MATERIALES ===== -->
-    <div class="tab-pane fade {% if tab == 'materiales' or not tab %}show active{% endif %}"
-         id="pane-materiales" role="tabpanel">
-
-      <!-- Charts Materiales -->
-      <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Por Categoría</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatCategoria" style="max-height:150px;"></canvas>
-            </div>
-          </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-3 py-2">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i> Listado</h6>
+        <button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('cat','excel')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        <button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('cat','pdf')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        <div class="d-flex flex-wrap align-items-center gap-1 flex-grow-1">
+          <input type="text" class="form-control form-control-sm" style="width:160px" id="cat-search" placeholder="Buscar..." aria-label="Buscar material" oninput="renderCatalogo()">
+          <select class="form-select form-select-sm" style="width:150px" id="cat-filtro-categoria" aria-label="Filtrar por categoria" onchange="renderCatalogo()"><option value="">Todas las categorías</option></select>
+          <select class="form-select form-select-sm clasificacion-sel" style="width:170px" id="cat-filtro-clasificacion" aria-label="Filtrar por clasificacion" onchange="renderCatalogo()"><option value="">Todas las clasificaciones</option></select>
+          <select class="form-select form-select-sm" style="width:130px" id="cat-filtro-estado" aria-label="Filtrar por estado" onchange="renderCatalogo()"><option value="">Todos los estados</option><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select>
+          <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar filtros" onclick="catPage=1;document.getElementById('cat-search').value='';['cat-filtro-categoria','cat-filtro-clasificacion','cat-filtro-estado'].forEach(id=>{$('#'+id).val('').trigger('change')});renderCatalogo()"><i class="bi bi-eraser"></i></button>
         </div>
-        <div class="col-12 col-lg-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-recycle text-info me-1"></i>Por Tipo</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatTipo" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6>
-            </div>
-            <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:160px;width:100%;"><canvas id="chartMatEstado"></canvas></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm mb-3 border-0">
-        <div class="card-header bg-success-subtle border-0 px-4 py-3">
-          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
-        </div>
-        <div class="card-body">
-          <div class="row g-3 align-items-end" id="materiales-filter-form">
-            <div class="col-md-4">
-              <label for="materiales-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
-              <input type="text" name="q_mat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_mat }}" id="materiales-search-input">
-            </div>
-            <div class="col-md-3">
-              <label for="mat-filter-categoria" class="form-label fw-semibold text-muted mb-1">Categoría</label>
-              <select class="form-select js-select2" id="mat-filter-categoria">
-                <option value="">Todas las categorías</option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label for="mat-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
-              <select class="form-select js-select2" id="mat-filter-tipo">
-                <option value="">Todos los tipos</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-success flex-grow-1" id="materiales-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
-                <button type="button" class="btn btn-outline-secondary" id="mat-filter-limpiar"><i class="bi bi-eraser"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center gap-2">
-            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
-            <a href="{% url 'panel_admin:exportar_materiales_excel' %}"
-               class="btn btn-sm btn-outline-success fw-semibold export-link"
-               title="Exportar Excel"
-               data-export-base="{% url 'panel_admin:exportar_materiales_excel' %}"
-               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,tipo:mat-filter-tipo">
-              <i class="bi bi-file-earmark-excel me-1"></i> Excel
-            </a>
-            <a href="{% url 'panel_admin:exportar_materiales_pdf' %}"
-               class="btn btn-sm btn-outline-danger fw-semibold export-link"
-               title="Exportar PDF"
-               data-export-base="{% url 'panel_admin:exportar_materiales_pdf' %}"
-               data-export-filters="q:materiales-search-input,categoria:mat-filter-categoria,tipo:mat-filter-tipo">
-              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-            </a>
-          </div>
-          <span class="badge bg-secondary rounded-pill" id="materiales-count-badge">{{ materiales|length }} registros</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="fw-bold small">Nombre</th>
-                <th class="fw-bold small">Descripción</th>
-                <th class="fw-bold small">Categoría</th>
-                <th class="fw-bold small">Tipo</th>
-                <th class="fw-bold small">Estado</th>
-                <th class="fw-bold small text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="border-top" id="materiales-tbody"></tbody>
-          </table>
-        </div>
-        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
-          <ul class="pagination pagination-sm mb-0" id="materiales-pager"></ul>
-        </nav>
+        <span class="badge bg-secondary rounded-pill" id="cat-count-badge">--</span>
       </div>
     </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Nombre</th><th>Descripción</th><th>Categoría</th><th>Clasificación</th><th>Estado</th><th>Puntos</th><th>Acción</th></tr></thead>
+        <tbody class="border-top" id="cat-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
+      <small class="pager-info" id="cat-pager-info"></small>
+      <nav aria-label="Navegación de páginas del catálogo"><ul class="pagination pagination-sm mb-0" id="cat-pager"></ul></nav>
+    </div>
+  </div>
+</div>
 
-    <!-- ===== TAB CATEGORÍAS ===== -->
-    <div class="tab-pane fade {% if tab == 'categorias' %}show active{% endif %}"
-         id="pane-categorias" role="tabpanel">
-
-      <!-- Charts Categorías -->
-      <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Categorías por Estado</h6>
-            </div>
-            <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:200px;width:100%;"><canvas id="chartCatEstado"></canvas></div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-info me-1"></i>Materiales por Categoría</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatPorCategoria" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm mb-3 border-0">
-        <div class="card-header bg-success-subtle border-0 px-4 py-3">
-          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
-        </div>
-        <div class="card-body">
-          <div class="row g-3 align-items-end" id="categorias-filter-form">
-            <div class="col-md-4">
-              <label for="categorias-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
-              <input type="text" name="q_cat" class="form-control" placeholder="Nombre o descripción..." value="{{ q_cat }}" id="categorias-search-input">
-            </div>
-            <div class="col-md-3">
-              <label for="cat-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
-              <select class="form-select js-select2" id="cat-filter-tipo">
-                <option value="">Todos los tipos</option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label for="cat-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
-              <select class="form-select js-select2" id="cat-filter-estado">
-                <option value="">Todos</option>
-                <option value="ACTIVO">Activo</option>
-                <option value="INACTIVO">Inactivo</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-success flex-grow-1" id="categorias-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
-                <button type="button" class="btn btn-outline-secondary" id="cat-filter-limpiar"><i class="bi bi-eraser"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center gap-2">
-            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
-            <a href="{% url 'panel_admin:exportar_categorias_material_excel' %}"
-               class="btn btn-sm btn-outline-success fw-semibold export-link"
-               title="Exportar Excel"
-               data-export-base="{% url 'panel_admin:exportar_categorias_material_excel' %}"
-               data-export-filters="q:categorias-search-input,estado:cat-filter-estado,tipo:cat-filter-tipo">
-              <i class="bi bi-file-earmark-excel me-1"></i> Excel
-            </a>
-            <a href="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
-               class="btn btn-sm btn-outline-danger fw-semibold export-link"
-               title="Exportar PDF"
-               data-export-base="{% url 'panel_admin:exportar_categorias_material_pdf' %}"
-               data-export-filters="q:categorias-search-input,estado:cat-filter-estado,tipo:cat-filter-tipo">
-              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-            </a>
-          </div>
-          <span class="badge bg-secondary rounded-pill" id="categorias-count-badge">{{ categorias|length }} registros</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="fw-bold small">Nombre</th>
-                <th class="fw-bold small">Descripción</th>
-                <th class="fw-bold small">Tipo</th>
-                <th class="fw-bold small">Estado</th>
-                <th class="fw-bold small text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="border-top" id="categorias-tbody"></tbody>
-          </table>
-        </div>
-        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
-          <ul class="pagination pagination-sm mb-0" id="categorias-pager"></ul>
-        </nav>
+<!-- ===== TAB 2: INVENTARIO POR MATERIAL ===== -->
+<div class="mat-tab-pane" id="mat-pane-inventario">
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-info-subtle border-0 px-4 py-2">
+      <h6 class="mb-0 fw-bold text-info small"><i class="bi bi-search me-2"></i>Selecciona un material para ver su inventario en todos los puntos</h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5"><label class="form-label fw-semibold small text-muted" for="inv-mat-selector">Material</label><select class="form-select" id="inv-mat-selector" aria-label="Seleccionar material para inventario" onchange="renderInventarioPorMaterial()"><option value="">-- Selecciona un material --</option></select></div>
+        <div class="col-md-3"><label class="form-label fw-semibold small text-muted" for="inv-mat-estado-filter">Filtrar por estado</label><select class="form-select form-select-sm" id="inv-mat-estado-filter" aria-label="Filtrar inventario por estado" onchange="renderInventarioPorMaterial()"><option value="">Todos</option><option value="OK">OK</option><option value="Alerta">Alerta</option><option value="Crítico">Crítico</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="inv-mat-orden">Ordenar por</label><select class="form-select form-select-sm" id="inv-mat-orden" aria-label="Ordenar resultados del inventario" onchange="renderInventarioPorMaterial()"><option value="stock-desc">Mayor Stock</option><option value="stock-asc">Menor Stock</option><option value="punto-asc">Punto A-Z</option></select></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-outline-secondary w-100" onclick="document.getElementById('inv-mat-estado-filter').value='';document.getElementById('inv-mat-orden').value='stock-desc';renderInventarioPorMaterial()" title="Limpiar filtros"><i class="bi bi-eraser me-1"></i>Limpiar</button></div>
       </div>
     </div>
-
-    <!-- ===== TAB TIPOS ===== -->
-    <div class="tab-pane fade {% if tab == 'tipos' %}show active{% endif %}"
-         id="pane-tipos" role="tabpanel">
-
-      <!-- Charts Tipos -->
-      <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Tipos por Estado</h6>
-            </div>
-            <div class="card-body d-flex align-items-center justify-content-center py-2">
-              <div style="max-width:200px;width:100%;"><canvas id="chartTipoEstado"></canvas></div>
-            </div>
-          </div>
+  </div>
+  <div class="row g-3 mb-3" id="inv-mat-kpis" style="display:none"></div>
+  <div class="card border-start border-5 border-success shadow-sm mb-3" id="inv-mat-header" style="display:none">
+    <div class="card-body py-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <span class="fw-bold text-success" style="font-size:1.2rem" id="inv-mat-nombre-selec">--</span>
+          <span class="badge bg-info" id="inv-mat-cat-selec">--</span>
+          <span class="badge bg-warning text-dark" id="inv-mat-clas-selec">--</span>
         </div>
-        <div class="col-12 col-lg-6">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-2">
-              <h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-warning me-1"></i>Materiales por Tipo</h6>
-            </div>
-            <div class="card-body py-2">
-              <canvas id="chartMatPorTipo" style="max-height:150px;"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm mb-3 border-0">
-        <div class="card-header bg-success-subtle border-0 px-4 py-3">
-          <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
-        </div>
-        <div class="card-body">
-          <div class="row g-3 align-items-end" id="tipos-filter-form">
-            <div class="col-md-6">
-              <label for="tipos-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
-              <input type="text" name="q_tipo" class="form-control" placeholder="Nombre o descripción..." value="{{ q_tipo }}" id="tipos-search-input">
-            </div>
-            <div class="col-md-3">
-              <label for="tipo-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
-              <select class="form-select js-select2" id="tipo-filter-estado">
-                <option value="">Todos</option>
-                <option value="ACTIVO">Activo</option>
-                <option value="INACTIVO">Inactivo</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-success flex-grow-1" id="tipos-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
-                <button type="button" class="btn btn-outline-secondary" id="tipo-filter-limpiar"><i class="bi bi-eraser"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center gap-2">
-            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
-            <a href="{% url 'panel_admin:exportar_tipos_material_excel' %}"
-               class="btn btn-sm btn-outline-success fw-semibold export-link"
-               title="Exportar Excel"
-               data-export-base="{% url 'panel_admin:exportar_tipos_material_excel' %}"
-               data-export-filters="q:tipos-search-input,estado:tipo-filter-estado">
-              <i class="bi bi-file-earmark-excel me-1"></i> Excel
-            </a>
-            <a href="{% url 'panel_admin:exportar_tipos_material_pdf' %}"
-               class="btn btn-sm btn-outline-danger fw-semibold export-link"
-               title="Exportar PDF"
-               data-export-base="{% url 'panel_admin:exportar_tipos_material_pdf' %}"
-               data-export-filters="q:tipos-search-input,estado:tipo-filter-estado">
-              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-            </a>
-          </div>
-          <span class="badge bg-secondary rounded-pill" id="tipos-count-badge">{{ tipos|length }} registros</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="fw-bold small">Nombre</th>
-                <th class="fw-bold small">Descripción</th>
-                <th class="fw-bold small">Estado</th>
-                <th class="fw-bold small text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="border-top" id="tipos-tbody"></tbody>
-          </table>
-        </div>
-        <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
-          <ul class="pagination pagination-sm mb-0" id="tipos-pager"></ul>
-        </nav>
+        <div class="d-flex gap-2"><span class="badge bg-secondary" id="inv-mat-puntos">0 puntos</span></div>
       </div>
     </div>
+  </div>
+  <div class="row g-3 mb-3" id="inv-mat-cards"></div>
+  <div id="inv-mat-placeholder">
+    <div class="alert alert-info text-center py-2 mb-3">
+      <i class="bi bi-hand-index me-2"></i>Selecciona un material para ver en qué puntos ECA está disponible.
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-lg-8"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Top 10 Materiales con Mayor Stock</h6></div><div class="card-body" style="height:320px"><canvas id="chartInvTopStock"></canvas></div></div></div>
+      <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-diagram-3 text-info me-1"></i>Materiales por Categoría</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:220px;width:100%"><canvas id="chartInvPorCat"></canvas></div></div></div></div>
+    </div>
+  </div>
+</div>
 
-  </div><!-- /tab-content -->
+<!-- ===== TAB 3: FLUJO DE MATERIALES ===== -->
+<div class="mat-tab-pane" id="mat-pane-flujo">
+  <ul class="nav nav-subtabs mb-3" id="flujo-subtabs">
+    <li class="nav-item"><button class="nav-link active" onclick="switchFlujoSub('stock',this)"><i class="bi bi-box-seam me-1"></i>Stock</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchFlujoSub('ganancias',this)"><i class="bi bi-cash-stack me-1"></i>Ganancias</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchFlujoSub('detalle',this)"><i class="bi bi-bar-chart me-1"></i>Detalle por Material</button></li>
+  </ul>
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-info-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-info small"><i class="bi bi-sliders me-2"></i>Filtros</h6></div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5"><label class="form-label fw-semibold small text-muted" for="flujo-mat-select">Materiales</label><select class="form-select form-select-sm" id="flujo-mat-select" aria-label="Seleccionar materiales para el flujo" multiple="multiple" onchange="renderFlujo()"></select><div class="d-flex gap-2 mt-2"><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(5)">Top 5</button><button class="btn btn-sm btn-outline-info" type="button" onclick="flujoSelectTop(10)">Top 10</button><button class="btn btn-sm btn-outline-secondary" type="button" onclick="flujoSelectTop(0)">Ninguno</button></div></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="flujo-ft-desde">Desde</label><input type="date" class="form-control form-control-sm" id="flujo-ft-desde" aria-label="Fecha desde para flujo de materiales" value="2026-01-01" onchange="renderFlujo()"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="flujo-ft-hasta">Hasta</label><input type="date" class="form-control form-control-sm" id="flujo-ft-hasta" aria-label="Fecha hasta para flujo de materiales" value="2026-12-31" onchange="renderFlujo()"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="flujo-gran">Granularidad</label><select class="form-select form-select-sm" id="flujo-gran" aria-label="Granularidad del flujo de materiales" onchange="renderFlujo()"><option value="dia">Día</option><option value="semana">Semana</option><option value="mes" selected>Mes</option></select></div>
+        <div class="col-md-1"><button class="btn btn-sm btn-outline-secondary" onclick="flujoSelectTop(5);document.getElementById('flujo-ft-desde').value='2026-01-01';document.getElementById('flujo-ft-hasta').value='2026-12-31';document.getElementById('flujo-gran').value='mes';renderFlujo()" title="Restaurar valores"><i class="bi bi-arrow-counterclockwise"></i></button></div>
+      </div>
+    </div>
+  </div>
+  <div id="flujo-kpis-pane">
+  <div class="row g-3 mb-3" id="flujo-kpis">
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="flujo-stock-actual">--</div><div class="kpi-lbl">Stock Actual Total</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="flujo-compras-periodo">--</div><div class="kpi-lbl">Compras (kg)</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="flujo-ventas-periodo">--</div><div class="kpi-lbl">Ventas (kg)</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="flujo-utilidad-periodo">--</div><div class="kpi-lbl">Utilidad Estimada</div></div></div>
+  </div>
+  </div>
+  <div id="flujo-charts-pane">
+  <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small" id="flujo-main-chart-title"><i class="bi bi-graph-up text-info me-1"></i>Stock por Material</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujo"></canvas></div></div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small" id="flujo-subchart-left-title"><i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto (Compras vs Ventas)</h6></div><div class="card-body" style="height:260px"><canvas id="chartKPIsFlujoNeto"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small" id="flujo-subchart-right-title"><i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:240px;width:100%"><canvas id="chartKPIsSalud"></canvas></div></div></div></div>
+  </div>
+  </div>
+  <div id="flujo-detalle-pane" style="display:none">
+    <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash me-1"></i>Ganancia ($) por Material × Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoDetalle"></canvas></div></div>
+    <div class="card shadow-sm border-0"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark small"><i class="bi bi-trophy me-1"></i>Ranking de Materiales</h6></div><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Material</th><th>Ganancia Total</th><th>Volumen</th><th>Margen Prom.</th><th>Puntos</th></tr></thead><tbody id="flujo-rank-tbody"></tbody></table></div></div>
+  </div>
+</div>
 
-{{ materiales_json|json_script:"materiales-data" }}
-{{ tipos_json|json_script:"tipos-data" }}
-{{ categorias_json|json_script:"categorias-data" }}
-{{ dist_categoria_mat|json_script:"dist-categoria-mat-data" }}
-{{ dist_tipo_mat|json_script:"dist-tipo-mat-data" }}
-{{ dist_estado_mat|json_script:"dist-estado-mat-data" }}
-{{ dist_estado_cat|json_script:"dist-estado-cat-data" }}
-{{ dist_estado_tipo|json_script:"dist-estado-tipo-data" }}
+<!-- ===== TAB 4: HISTORIAL GLOBAL ===== -->
+<div class="mat-tab-pane" id="mat-pane-historial">
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-success-subtle border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-success small"><i class="bi bi-funnel me-2"></i>Filtros</h6></div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-mat-filter">Material</label><select class="form-select form-select-sm" id="hist-mat-filter" aria-label="Filtrar historial por material"><option value="">Todos</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-cat-filter">Categoría</label><select class="form-select form-select-sm" id="hist-cat-filter" aria-label="Filtrar historial por categoría"><option value="">Todas</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-tipo-filter">Tipo mov.</label><select class="form-select form-select-sm" id="hist-tipo-filter" aria-label="Filtrar historial por tipo de movimiento"><option value="">Todos</option><option value="Compra">Compra</option><option value="Venta">Venta</option></select></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-ft-desde">Desde</label><input type="date" class="form-control form-control-sm" id="hist-ft-desde" aria-label="Fecha desde para historial global"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-ft-hasta">Hasta</label><input type="date" class="form-control form-control-sm" id="hist-ft-hasta" aria-label="Fecha hasta para historial global"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-punto-filter">Punto ECA</label><select class="form-select form-select-sm" id="hist-punto-filter" aria-label="Filtrar historial por punto ECA"><option value="">Todos</option></select></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-cantidad-min">Cantidad mín.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-min" aria-label="Cantidad mínima del historial" placeholder="0"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-cantidad-max">Cantidad máx.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-cantidad-max" aria-label="Cantidad máxima del historial"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-monto-min">Monto mín.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-min" aria-label="Monto mínimo del historial" placeholder="0"></div>
+        <div class="col-md-2"><label class="form-label fw-semibold small text-muted" for="hist-monto-max">Monto máx.</label><input type="number" min="0" step="0.01" class="form-control form-control-sm" id="hist-monto-max" aria-label="Monto máximo del historial"></div>
+        <div class="col-md-2 d-flex align-items-end gap-1">
+          <button class="btn btn-success btn-sm fw-semibold flex-grow-1" onclick="renderHistorial()"><i class="bi bi-search me-1"></i>Filtrar</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="limpiarFiltrosHistorial()"><i class="bi bi-arrow-counterclockwise"></i></button>
+        </div>
+        <div class="col-md-2 d-flex align-items-end gap-1">
+          <button class="btn btn-sm btn-outline-success" onclick="exportarTabla('hist','excel')"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="exportarTabla('hist','pdf')"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="hist-kpi-compras">--</div><div class="kpi-lbl">Total Compras</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="hist-kpi-ventas">--</div><div class="kpi-lbl">Total Ventas</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="hist-kpi-registros">--</div><div class="kpi-lbl">Registros</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="hist-kpi-kg">--</div><div class="kpi-lbl">Unidades Movidas</div></div></div>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-4 py-2 d-flex justify-content-between align-items-center"><h6 class="mb-0 fw-bold text-dark small">Todos los movimientos</h6><span class="badge bg-secondary rounded-pill" id="hist-count-badge">--</span></div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo</th><th>Material</th><th>Punto ECA</th><th class="text-end">Cantidad</th><th class="text-end">$ Unit.</th><th>Total</th><th>Centro</th></tr></thead><tbody class="border-top" id="hist-tbody"></tbody></table></div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="hist-pager-info"></small><nav aria-label="Navegación de páginas del historial"><ul class="pagination pagination-sm mb-0" id="hist-pager"></ul></nav></div>
+  </div>
+</div>
+
+<!-- ===== TAB 5: CATEGORÍAS ===== -->
+<div class="mat-tab-pane" id="mat-pane-categorias">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div><h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-folder me-2"></i>Categorías de Materiales</h2><p class="text-muted small mb-0">Administra las categorías que agrupan los materiales reciclables.</p></div>
+    <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gcat-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gcat','excel')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gcat','pdf')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria"><i class="bi bi-plus-circle me-1"></i> Nueva Categoría</button></div>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Stock Total por Categoría</h6></div><div class="card-body" style="height:280px"><canvas id="chartCatStockPorCat"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Puntos ECA por Categoría</h6></div><div class="card-body" style="height:280px"><canvas id="chartCatPuntosPorCat"></canvas></div></div></div>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-3 py-2">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i>Listado</h6>
+        <input type="text" class="form-control form-control-sm" style="width:180px" id="gcat-search" aria-label="Buscar categorías" placeholder="Buscar..." oninput="renderGestionCategorias()">
+        <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar" onclick="document.getElementById('gcat-search').value='';renderGestionCategorias()"><i class="bi bi-eraser"></i></button>
+      </div>
+    </div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción</th><th>Materiales</th><th>Stock Total</th><th>Valor</th><th>Puntos</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gcat-tbody"></tbody></table></div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gcat-pager-info"></small><nav aria-label="Navegación de páginas de categorías"><ul class="pagination pagination-sm mb-0" id="gcat-pager"></ul></nav></div></div>
+</div>
+
+<!-- ===== TAB 6: CLASIFICACIONES ===== -->
+<div class="mat-tab-pane" id="mat-pane-clasificaciones">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div><h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-shield-check me-2"></i>Clasificaciones de Manejo</h2><p class="text-muted small mb-0">Define los niveles de riesgo y advertencias de manipulación para los materiales.</p></div>
+    <div class="d-flex gap-2"><span class="badge bg-secondary rounded-pill fs-6" id="gclas-count">--</span><button class="btn btn-sm btn-outline-success" title="Exportar Excel" onclick="exportarTabla('gclas','excel')"><i class="bi bi-file-earmark-excel"></i></button><button class="btn btn-sm btn-outline-danger" title="Exportar PDF" onclick="exportarTabla('gclas','pdf')"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaClasificacion"><i class="bi bi-plus-circle me-1"></i> Nueva Clasificación</button></div>
+  </div>
+  <div class="alert alert-info small py-2 mb-3"><i class="bi bi-info-circle me-1"></i>Las clasificaciones definen el nivel de riesgo y las advertencias de manipulación para cada material.</div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Stock Total por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifStock"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Puntos ECA por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifPuntosPorCat"></canvas></div></div></div>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-3 py-2">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i>Listado</h6>
+        <input type="text" class="form-control form-control-sm" style="width:180px" id="gclas-search" aria-label="Buscar clasificaciones" placeholder="Buscar..." oninput="renderGestionClasificaciones()">
+        <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar" onclick="document.getElementById('gclas-search').value='';renderGestionClasificaciones()"><i class="bi bi-eraser"></i></button>
+      </div>
+    </div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción (advertencia de manejo)</th><th>Materiales</th><th>Stock Total</th><th>Puntos</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gclas-tbody"></tbody></table></div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gclas-pager-info"></small><nav aria-label="Navegación de páginas de clasificaciones"><ul class="pagination pagination-sm mb-0" id="gclas-pager"></ul></nav></div></div>
+</div>
 
 {% endblock %}
 
 {% block extra_modals %}
-<!-- ===== MODAL CREAR MATERIAL ===== -->
-<div class="modal fade" id="modalCrearMaterial" tabindex="-1" aria-labelledby="labelCrearMaterial" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelCrearMaterial"><i class="bi bi-plus-circle me-2"></i>Nuevo Material</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
+<!-- ===== MODALES ===== -->
+{# Nuevo Material #}
+<div class="modal fade" id="modalNuevoMaterial" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Nuevo Material</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body p-4">
       <form method="POST" action="{% url 'panel_admin:crear_material_admin' %}" novalidate id="formCrearMaterial" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-12">
-              <label for="formCrearMaterial_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="formCrearMaterial_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Botella PET, Papel Blanco, Cartón..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir letras (máx. 30).</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo.</div>
-            </div>
-            <div class="col-12">
-              <label for="formCrearMaterial_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-              <textarea id="formCrearMaterial_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Características, usos y especificaciones del material..."></textarea>
-              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los ciudadanos a identificar el material.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="formCrearMaterial_categoria_id" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(requerida)</small></label>
-              <select id="formCrearMaterial_categoria_id" name="categoria_id" class="form-select" required>
-                <option value="">Seleccionar categoría...</option>
-                {% for cat in todas_categorias %}
-                <option value="{{ cat.id }}">{{ cat.nombre }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona una categoría.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i>El tipo se asigna automáticamente desde la categoría seleccionada.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="formCrearMaterial_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="formCrearMaterial_estado" name="estado" class="form-select" required>
-                {% for val, label in estados %}
-                <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un estado válido.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del material (Activo/Inactivo/Suspendido/Bloqueado).</div>
-            </div>
-            <div class="col-md-6">
-              <label for="formCrearMaterial_imagen" class="form-label fw-semibold">Imagen <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="formCrearMaterial_imagen" type="file" name="imagen" class="form-control" accept="image/*">
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; formatos JPG, PNG, GIF, WEBP &middot; máximo 5 MB.</div>
-            </div>
-          </div>
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="nm-nombre">Nombre <span class="text-danger">*</span></label><input type="text" id="nm-nombre" name="nombre" class="form-control form-control-sm" placeholder="Ej: Botella PET, Cartón..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="invalid-feedback">Mínimo 3 caracteres, incluir letras (máx. 30).</div></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="nm-descripcion">Descripción</label><textarea id="nm-descripcion" name="descripcion" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Características y usos del material..."></textarea></div>
+          <div class="col-md-6"><label class="form-label fw-semibold small text-muted" for="nm-categoria">Categoría <span class="text-danger">*</span></label><select id="nm-categoria" name="categoria_id" class="form-select form-select-sm" required><option value="">Seleccionar categoría...</option>{% for cat in todas_categorias %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}</select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold small text-muted" for="nm-clasificacion">Clasificación <span class="text-danger">*</span></label><select id="nm-clasificacion" name="clasificacion" class="form-select form-select-sm" required><option value="">Seleccionar...</option><option value="ESTANDAR">ESTANDAR</option><option value="MANEJO_ESPECIAL">MANEJO ESPECIAL</option><option value="PELIGROSO">PELIGROSO</option><option value="HAZMAT">HAZMAT</option></select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold small text-muted" for="nm-estado">Estado <span class="text-danger">*</span></label><select id="nm-estado" name="estado" class="form-select form-select-sm" required>{% for val, label in estados %}<option value="{{ val }}" {% if val == 'ACTIVO' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+          <div class="col-md-6"><label class="form-label fw-semibold small text-muted" for="nm-imagen">Imagen</label><input type="file" name="imagen" id="nm-imagen" class="form-control form-control-sm" accept="image/*"></div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Guardar Material</button>
-        </div>
+        <div class="modal-footer border-0 px-0 pb-0 pt-3"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-success btn-sm fw-semibold"><i class="bi bi-check-lg me-1"></i>Guardar Material</button></div>
       </form>
     </div>
-  </div>
-</div>
-    <!-- ===== MODAL CREAR TIPO ===== -->
-<div class="modal fade" id="modalCrearTipo" tabindex="-1" aria-labelledby="labelCrearTipo" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelCrearTipo"><i class="bi bi-plus-circle me-2"></i>Nuevo Tipo de Material</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" action="{% url 'panel_admin:crear_tipo_material' %}" novalidate id="formCrearTipo">
-        {% csrf_token %}
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label for="formCrearTipo_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="formCrearTipo_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: PET, Cartón, Aluminio..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de tipos.</div>
-            </div>
-            <div class="col-12">
-              <label for="formCrearTipo_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-              <textarea id="formCrearTipo_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Describe brevemente el tipo de material..."></textarea>
-              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los gestores y ciudadanos a entender el tipo.</div>
-            </div>
-            <div class="col-12">
-              <label for="formCrearTipo_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="formCrearTipo_estado" name="estado" class="form-select" required>
-                {% for val, label in estados %}
-                <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un estado válido.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del tipo en el catálogo.</div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Guardar Tipo</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  </div></div>
 </div>
 
-<!-- ===== MODAL CREAR CATEGORÍA ===== -->
-<div class="modal fade" id="modalCrearCategoria" tabindex="-1" aria-labelledby="labelCrearCategoria" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelCrearCategoria"><i class="bi bi-plus-circle me-2"></i>Nueva Categoría de Material</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+{# Nueva Categoría #}
+<div class="modal fade" id="modalNuevaCategoria" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-folder-plus me-2"></i>Nueva Categoría de Material</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <form method="POST" action="{% url 'panel_admin:crear_categoria_material' %}" novalidate id="formCrearCategoria">
+      {% csrf_token %}
+      <div class="modal-body p-4">
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncat-nombre">Nombre <span class="text-danger">*</span></label><input type="text" name="nombre" id="ncat-nombre" class="form-control form-control-sm" placeholder="Ej: Plásticos, Metales..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
+        <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncat-descripcion">Descripción</label><textarea name="descripcion" id="ncat-descripcion" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Describe brevemente la categoría..."></textarea></div>
       </div>
-      <form method="POST" action="{% url 'panel_admin:crear_categoria_material' %}" novalidate id="formCrearCategoria">
-        {% csrf_token %}
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label for="formCrearCategoria_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="formCrearCategoria_nombre" type="text" name="nombre" class="form-control" placeholder="Ej: Plásticos, Metales, Papel y Cartón..." required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de categorías.</div>
-            </div>
-            <div class="col-12">
-              <label for="formCrearCategoria_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-              <textarea id="formCrearCategoria_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Describe brevemente la categoría..."></textarea>
-              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a clasificar mejor los materiales.</div>
-            </div>
-            <div class="col-12">
-              <label for="formCrearCategoria_tipo_id" class="form-label fw-semibold">Tipo de material <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="formCrearCategoria_tipo_id" name="tipo_id" class="form-select" required>
-                <option value="">Seleccionar tipo...</option>
-                {% for t in todos_tipos %}
-                <option value="{{ t.id }}">{{ t.nombre }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un tipo de material.</div>
-            </div>
-            <div class="col-12">
-              <label for="formCrearCategoria_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="formCrearCategoria_estado" name="estado" class="form-select" required>
-                {% for val, label in estados %}
-                <option value="{{ val }}" {% if val == "ACTIVO" %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un estado válido.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad de la categoría en el catálogo.</div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Guardar Categoría</button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-success btn-sm fw-semibold"><i class="bi bi-check-lg me-1"></i>Guardar Categoría</button></div>
+    </form>
+  </div></div>
 </div>
 
-<!-- ===== MODAL EDITAR MATERIAL ===== -->
-<div class="modal fade" id="modalEditarMaterial" tabindex="-1" aria-labelledby="labelEditarMaterial" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelEditarMaterial"><i class="bi bi-pencil me-2"></i>Editar Material</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" novalidate id="formEditarMaterial" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label for="em_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="em_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-              <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir letras (máx. 30).</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo.</div>
-            </div>
-            <div class="col-12">
-              <label for="em_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-              <textarea id="em_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
-              <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los ciudadanos a identificar el material.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="em_categoria" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(requerida)</small></label>
-              <select id="em_categoria" name="categoria_id" class="form-select" required>
-                <option value="">Seleccionar categoría...</option>
-                {% for cat in todas_categorias %}
-                <option value="{{ cat.id }}">{{ cat.nombre }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona una categoría.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i>El tipo se asigna automáticamente desde la categoría.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="em_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="em_estado" name="estado" class="form-select" required>
-                {% for val, label in estados %}
-                <option value="{{ val }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un estado.</div>
-              <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del material (Activo/Inactivo/Suspendido/Bloqueado).</div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
-        </div>
-      </form>
+{# Nueva Clasificación (solo mockup JS, no persiste en BD) #}
+<div class="modal fade" id="modalNuevaClasificacion" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-shield-plus me-2"></i>Nueva Clasificación</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body p-4">
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncl-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ncl-nombre" placeholder="Ej: BIOLÓGICO, RADIACTIVO..." required minlength="3" maxlength="30"><div class="form-text">Obligatorio · máximo 30 caracteres · único</div></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ncl-descripcion">Descripción (advertencia) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ncl-descripcion" rows="3" maxlength="500" placeholder="Instrucciones de manejo, riesgos, EPP requerido..."></textarea></div>
     </div>
-  </div>
+    <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="crearClasificacion()"><i class="bi bi-check-lg me-1"></i>Guardar Clasificación</button></div>
+  </div></div>
 </div>
 
-<!-- ===== MODAL EDITAR TIPO ===== -->
-<div class="modal fade" id="modalEditarTipo" tabindex="-1" aria-labelledby="labelEditarTipo" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelEditarTipo"><i class="bi bi-pencil me-2"></i>Editar Tipo de Material</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" novalidate id="formEditarTipo">
-        {% csrf_token %}
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="et_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="et_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-            <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
-            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de tipos.</div>
-          </div>
-          <div class="mb-3">
-            <label for="et_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-            <textarea id="et_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
-            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
-            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a los gestores y ciudadanos a entender el tipo.</div>
-          </div>
-          <div class="mb-3">
-            <label for="et_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <select id="et_estado" name="estado" class="form-select" required>
-              {% for val, label in estados %}
-              <option value="{{ val }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-            <div class="invalid-feedback">Selecciona un estado.</div>
-            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad del tipo en el catálogo.</div>
-          </div>
+{# Editar Material #}
+<div class="modal fade" id="modalEditarMaterial" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Material</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body p-4">
+      <form id="formEditarMaterial" novalidate>
+        {% csrf_token %}<input type="hidden" id="em-id">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="em-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="em-nombre" required minlength="3" maxlength="30"></div>
+          <div class="col-12"><label class="form-label fw-semibold small text-muted" for="em-descripcion">Descripción</label><textarea class="form-control form-control-sm" id="em-descripcion" rows="2" maxlength="500"></textarea></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted" for="em-categoria">Categoría <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="em-categoria"></select></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted" for="em-clasificacion">Clasificación <span class="text-danger">*</span></label><select class="form-select form-select-sm" id="em-clasificacion"><option value="ESTANDAR">ESTANDAR</option><option value="MANEJO_ESPECIAL">MANEJO ESPECIAL</option><option value="PELIGROSO">PELIGROSO</option><option value="HAZMAT">HAZMAT</option></select></div>
+          <div class="col-md-4"><label class="form-label fw-semibold small text-muted" for="em-estado">Estado</label><select class="form-select form-select-sm" id="em-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
-        </div>
+        <div class="modal-footer border-0 px-0 pb-0 pt-3"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionMaterial()"><i class="bi bi-save me-1"></i>Guardar Cambios</button></div>
       </form>
     </div>
-  </div>
+  </div></div>
 </div>
 
-<!-- ===== MODAL EDITAR CATEGORÍA ===== -->
-<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-labelledby="labelEditarCategoria" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelEditarCategoria"><i class="bi bi-pencil me-2"></i>Editar Categoría de Material</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" novalidate id="formEditarCategoria">
-        {% csrf_token %}
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="ec_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="ec_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
-            <div class="invalid-feedback">Debe contener al menos 3 caracteres e incluir una letra (máx. 30).</div>
-            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; máximo 30 caracteres &middot; debe ser único en el catálogo de categorías.</div>
-          </div>
-          <div class="mb-3">
-            <label for="ec_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
-            <textarea id="ec_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
-            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
-            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo opcional</strong> &middot; máximo 500 caracteres &middot; ayuda a clasificar mejor los materiales.</div>
-          </div>
-          <div class="mb-3">
-            <label for="ec_tipo_id" class="form-label fw-semibold">Tipo de material <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <select id="ec_tipo_id" name="tipo_id" class="form-select" required>
-              <option value="">Seleccionar tipo...</option>
-              {% for t in todos_tipos %}
-              <option value="{{ t.id }}">{{ t.nombre }}</option>
-              {% endfor %}
-            </select>
-            <div class="invalid-feedback">Selecciona un tipo de material.</div>
-          </div>
-          <div class="mb-3">
-            <label for="ec_estado" class="form-label fw-semibold">Estado <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <select id="ec_estado" name="estado" class="form-select" required>
-              {% for val, label in estados %}
-              <option value="{{ val }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-            <div class="invalid-feedback">Selecciona un estado.</div>
-            <div class="form-text"><i class="bi bi-info-circle me-1"></i><strong>Campo obligatorio</strong> &middot; define la visibilidad de la categoría en el catálogo.</div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
-        </div>
-      </form>
+{# Editar Categoría #}
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Categoría</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body p-4"><input type="hidden" id="ec-id">
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ec-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ec-nombre" required minlength="3" maxlength="30"></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ec-descripcion">Descripción</label><textarea class="form-control form-control-sm" id="ec-descripcion" rows="2" maxlength="500"></textarea></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ec-estado">Estado</label><select class="form-select form-select-sm" id="ec-estado"><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></div>
     </div>
-  </div>
+    <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionCategoria()"><i class="bi bi-save me-1"></i>Guardar Cambios</button></div>
+  </div></div>
 </div>
-    {% endblock %}
 
-    {% block extra_scripts %}
-    <script>
-    AdminCharts.initAll([
-      { type: 'barH', canvas: 'chartMatCategoria', dataId: 'dist-categoria-mat-data', labelKey: 'categoria', color: AdminCharts.C.warning },
-      { type: 'barH', canvas: 'chartMatTipo', dataId: 'dist-tipo-mat-data', labelKey: 'tipo', color: AdminCharts.C.info },
-      { type: 'doughnut', canvas: 'chartMatEstado', dataId: 'dist-estado-mat-data', labelKey: 'estado' },
-      { type: 'doughnut', canvas: 'chartTipoEstado', dataId: 'dist-estado-tipo-data', labelKey: 'estado' },
-      { type: 'doughnut', canvas: 'chartCatEstado', dataId: 'dist-estado-cat-data', labelKey: 'estado' },
-      { type: 'barH', canvas: 'chartMatPorCategoria', dataId: 'dist-categoria-mat-data', labelKey: 'categoria', color: AdminCharts.C.info },
-      { type: 'barH', canvas: 'chartMatPorTipo', dataId: 'dist-tipo-mat-data', labelKey: 'tipo', color: AdminCharts.C.warning },
-    ]);
-    </script>
-    <script>
-    function estadoBadge(row) {
-      if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
-      return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+{# Editar Clasificación #}
+<div class="modal fade" id="modalEditarClasificacion" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
+    <div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Clasificación</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body p-4"><input type="hidden" id="ecl-id">
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ecl-nombre">Nombre <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm" id="ecl-nombre" required minlength="3" maxlength="30"></div>
+      <div class="mb-3"><label class="form-label fw-semibold small text-muted" for="ecl-descripcion">Descripción (advertencia) <span class="text-danger">*</span></label><textarea class="form-control form-control-sm" id="ecl-descripcion" rows="3" maxlength="500"></textarea></div>
+    </div>
+    <div class="modal-footer border-0 pt-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success btn-sm fw-semibold" onclick="guardarEdicionClasificacion()"><i class="bi bi-save me-1"></i>Guardar Cambios</button></div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{# Base template already loads: jQuery, Chart.js, Select2, Bootstrap JS #}
+{# We only add the unique JS for this page #}
+{{ materiales_json|json_script:"materiales-data" }}
+{{ categorias_json|json_script:"categorias-data" }}
+{{ inventario_json|json_script:"inventario-data" }}
+{{ puntos_json|json_script:"puntos-data" }}
+{{ historial_json|json_script:"historial-data" }}
+{{ dist_categoria_mat|json_script:"dist-categoria-mat-data" }}
+{{ dist_clasificacion_mat|json_script:"dist-clasificacion-mat-data" }}
+{{ dist_estado_mat|json_script:"dist-estado-mat-data" }}
+
+<script>
+(function(){
+  // ===== DATA FROM SERVER =====
+  function safeParse(id, fallback){
+    try {
+      var el = document.getElementById(id);
+      if(!el){ console.warn('Missing json_script:', id); return fallback; }
+      return JSON.parse(el.textContent);
+    } catch(e) {
+      console.error('JSON parse error for', id, e);
+      return fallback;
+    }
+  }
+  var materiales = safeParse('materiales-data', []);
+  var categoriasServer = safeParse('categorias-data', []);
+  var inventario = safeParse('inventario-data', []);
+  var puntos = safeParse('puntos-data', []);
+  var historialMov = safeParse('historial-data', []);
+  var PAGE_SIZE = 20;
+
+  // Fixed classifications
+  const clasificaciones = [
+    {id:1,nombre:'ESTANDAR',descripcion:'Manipulación normal. Material reciclable convencional sin riesgos especiales.'},
+    {id:2,nombre:'MANEJO_ESPECIAL',descripcion:'Requiere cuidados específicos durante la manipulación. Vidrio frágil, cartón contaminado, multicapas.'},
+    {id:3,nombre:'PELIGROSO',descripcion:'Riesgo químico o eléctrico. Pilas, baterías, aceites usados, RAEE. Requiere EPP y manejo autorizado.'},
+    {id:4,nombre:'HAZMAT',descripcion:'Residuo peligroso regulado. Transporte con manifiesto, disposición certificada. Solo gestores autorizados.'}
+  ];
+
+  // ===== HELPERS =====
+  const charts = {};
+  function destroyChart(id){if(charts[id]){charts[id].destroy();charts[id]=null;}}
+  function getMatById(id){
+    const sid = String(id);
+    return materiales.find(m=>String(m.id)===sid)||{};
+  }
+  function getPuntoById(id){
+    const sid = String(id);
+    return puntos.find(p=>String(p.id)===sid)||{};
+  }
+  function getInvEstado(inv){
+    const pct = inv.cap > 0 ? inv.stock / inv.cap * 100 : 0;
+    if(pct >= 90) return {estado:'Crítico',cls:'salud-critico',color:'#dc3545'};
+    if(pct >= 70) return {estado:'Alerta',cls:'salud-alerta',color:'#ffc107'};
+    return {estado:'OK',cls:'salud-ok',color:'#198754'};
+  }
+
+  // Pagination helper
+  function renderPaginated(data, tbodyId, infoId, pagerId, rowFn, page, onPageChange){
+    if(!page) page = 1;
+    const total = data.length;
+    const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+    if(page > totalPages) page = totalPages;
+    const start = (page-1)*PAGE_SIZE;
+    const slice = data.slice(start, start+PAGE_SIZE);
+    document.getElementById(tbodyId).innerHTML = slice.map(rowFn).join('')||'<tr><td colspan="99" class="text-center py-3 text-muted">Sin resultados.</td></tr>';
+    if(infoId){
+      const el = document.getElementById(infoId);
+      if(el) el.textContent = total ? `Mostrando ${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total}` : '0 registros';
+    }
+    if(pagerId){
+      const pager = document.getElementById(pagerId);
+      if(pager && totalPages > 1){
+        let html = '';
+        for(let p=1; p<=totalPages; p++){
+          html += `<li class="page-item${p===page?' active':''}"><a class="page-link" href="#" onclick="event.preventDefault();(${onPageChange.toString()})(${p})">${p}</a></li>`;
+        }
+        pager.innerHTML = html;
+      } else if(pager) { pager.innerHTML = ''; }
+    }
+    return page;
+  }
+
+  // ===== TAB NAVIGATION =====
+  function switchMatTab(tab,el){
+    document.querySelectorAll('#materiales-tabs .nav-link').forEach(a=>a.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.mat-tab-pane').forEach(p=>{p.classList.remove('show','active');p.style.display='none'});
+    document.getElementById('mat-pane-'+tab).classList.add('show','active');
+    document.getElementById('mat-pane-'+tab).style.display='block';
+    if(tab==='catalogo') renderCatalogo();
+    if(tab==='inventario') renderInventarioPorMaterial();
+    if(tab==='flujo') renderFlujo();
+    if(tab==='historial') renderHistorial();
+    if(tab==='categorias') renderGestionCategorias();
+    if(tab==='clasificaciones') renderGestionClasificaciones();
+  }
+
+  // ===== TAB 1: CATÁLOGO =====
+  let catPage = 1;
+  function catGoPage(p){ catPage = p; renderCatalogo(); }
+  function renderCatalogo(){
+    const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
+    const catF = document.getElementById('cat-filtro-categoria')?.value||'';
+    const clasF = document.getElementById('cat-filtro-clasificacion')?.value||'';
+    const estF = document.getElementById('cat-filtro-estado')?.value||'';
+    if(q || catF || clasF || estF) catPage = 1;
+    let filtered = [...materiales];
+    if(q) filtered = filtered.filter(m=>(m.nombre+' '+(m.descripcion||'')+' '+(m.categoria_nombre||'')+' '+(m.clasificacion||'')).toLowerCase().includes(q));
+    if(catF) filtered = filtered.filter(m=>m.categoria_nombre===catF);
+    if(clasF) filtered = filtered.filter(m=>m.clasificacion===clasF);
+    if(estF) filtered = filtered.filter(m=>m.estado===estF);
+
+    if(!charts._catalogoInit){
+      if(typeof Chart!=='undefined'){
+        const cats={};materiales.forEach(m=>{cats[m.categoria_nombre||'-']=(cats[m.categoria_nombre||'-']||0)+1});
+        charts.catCategoria=new Chart(document.getElementById('chartCatCategoria'),{type:'doughnut',data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:['#198754','#0dcaf0','#ffc107','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        const clas={};materiales.forEach(m=>{clas[m.clasificacion||'Sin clas.']=(clas[m.clasificacion||'Sin clas.']||0)+1});
+        charts.catClasificacion=new Chart(document.getElementById('chartCatClasificacion'),{type:'doughnut',data:{labels:Object.keys(clas),datasets:[{data:Object.values(clas),backgroundColor:['#198754','#ffc107','#fd7e14','#212529','#adb5bd']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        const ests={};materiales.forEach(m=>{ests[m.estado||'?']=(ests[m.estado||'?']||0)+1});
+        charts.catEstado=new Chart(document.getElementById('chartCatEstado'),{type:'doughnut',data:{labels:Object.keys(ests),datasets:[{data:Object.values(ests),backgroundColor:['#198754','#adb5bd','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+      }
+      // Top 10 Stock + Top 10 Valor (moved from old KPIs tab)
+      var matStock={};inventario.forEach(function(inv){var k=String(inv.matId);matStock[k]=(matStock[k]||0)+inv.stock});
+      var topStock=Object.entries(matStock).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
+      if(document.getElementById('chartKPIsTopStock')){
+        charts.catTopStock=new Chart(document.getElementById('chartKPIsTopStock'),{type:'bar',data:{labels:topStock.map(function(e){return (getMatById(e[0]).nombre||'').substring(0,12)}),datasets:[{label:'Stock (kg)',data:topStock.map(function(e){return e[1]}),backgroundColor:'#198754',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+      }
+      var matValor={};inventario.forEach(function(inv){var k=String(inv.matId);matValor[k]=(matValor[k]||0)+inv.stock*inv.venta});
+      var topValor=Object.entries(matValor).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
+      if(document.getElementById('chartKPIsTopValor')){
+        charts.catTopValor=new Chart(document.getElementById('chartKPIsTopValor'),{type:'bar',data:{labels:topValor.map(function(e){return (getMatById(e[0]).nombre||'').substring(0,12)}),datasets:[{label:'Valor ($)',data:topValor.map(function(e){return Math.round(e[1])}),backgroundColor:'#ffc107',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'\$ COP'}}}}});
+      }
+      charts._catalogoInit = true;
     }
 
-    function accionBtnMaterial(row) {
-      return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-material" title="Editar"' +
-        ' data-id="' + row.id + '"' +
-        ' data-nombre="' + escapeAttr(row.nombre) + '"' +
-        ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
-        ' data-categoria_id="' + escapeAttr(row.categoria_id) + '"' +
-        ' data-tipo_id="' + escapeAttr(row.tipo_id) + '"' +
-        ' data-estado="' + escapeAttr(row.estado) + '"' +
-        ' data-action="' + escapeAttr(row.action_url) + '">' +
-        '<i class="bi bi-pencil"></i></button>';
-    }
+    document.getElementById('cat-count-badge').textContent = filtered.length+' materiales';
+    renderPaginated(filtered, 'cat-tbody', 'cat-pager-info', 'cat-pager', function(m){
+      const nPuntos = inventario.filter(inv=>String(inv.matId)===String(m.id)).length;
+      const estadoBadge = m.estado==='ACTIVO'?'<span class="badge bg-success">Activo</span>':'<span class="badge bg-secondary">'+escapeHTML(m.estado||'?')+'</span>';
+      const clasBadge = m.clasificacion==='ESTANDAR'?'bg-success':m.clasificacion==='MANEJO_ESPECIAL'?'bg-warning text-dark':m.clasificacion==='PELIGROSO'?'bg-danger':'bg-dark';
+      return '<tr><td class="fw-semibold" style="font-size:.85rem">'+escapeHTML(m.nombre)+'</td><td style="font-size:.78rem;color:#6c757d;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHTML(m.descripcion||'-')+'</td><td><span class="badge bg-info">'+escapeHTML(m.categoria_nombre||'-')+'</span></td><td><span class="badge '+clasBadge+'">'+escapeHTML(m.clasificacion||'-')+'</span></td><td>'+estadoBadge+'</td><td class="text-center"><span class="badge bg-light text-dark">'+nPuntos+' pts</span></td><td><div class="d-flex gap-1 justify-content-center"><button class="btn btn-outline-success btn-sm" onclick="switchMatTab(\'inventario\',document.querySelectorAll(\'#materiales-tabs .nav-link\')[1]);document.getElementById(\'inv-mat-selector\').value=\''+m.id+'\';renderInventarioPorMaterial()" title="Ver inventario"><i class="bi bi-eye"></i></button><button class="btn btn-outline-primary btn-sm" onclick="abrirEditarMaterial(\''+m.id+'\')" title="Editar"><i class="bi bi-pencil"></i></button></div></td></tr>';
+    }, catPage, catGoPage);
 
-    function accionBtnTipo(row) {
-      return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-tipo" title="Editar"' +
-        ' data-id="' + row.id + '"' +
-        ' data-nombre="' + escapeAttr(row.nombre) + '"' +
-        ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
-        ' data-estado="' + escapeAttr(row.estado) + '"' +
-        ' data-action="' + escapeAttr(row.action_url) + '">' +
-        '<i class="bi bi-pencil"></i></button>';
+    if(!charts._catalogoSelectsInit){
+      const catOpts = [...new Set(materiales.map(m=>m.categoria_nombre).filter(Boolean))].sort();
+      const catSel = document.getElementById('cat-filtro-categoria');
+      if(catSel && catSel.options.length<=1){catOpts.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o)});}
+      const clasSel = document.getElementById('cat-filtro-clasificacion');
+      if(clasSel && clasSel.options.length<=1){
+        ['ESTANDAR','MANEJO_ESPECIAL','PELIGROSO','HAZMAT'].forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;clasSel.appendChild(o)});
+      }
+      const invSel = document.getElementById('inv-mat-selector');
+      if(invSel && invSel.options.length<=1){materiales.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.nombre+' ('+(m.categoria_nombre||'?')+')';invSel.appendChild(o)});}
+      const histMatSel = document.getElementById('hist-mat-filter');
+      if(histMatSel && histMatSel.options.length<=1){materiales.forEach(m=>{const o=document.createElement('option');o.value=m.nombre;o.textContent=m.nombre;histMatSel.appendChild(o)});}
+      const histCatSel = document.getElementById('hist-cat-filter');
+      if(histCatSel && histCatSel.options.length<=1){catOpts.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;histCatSel.appendChild(o)});}
+      const histPtoSel = document.getElementById('hist-punto-filter');
+      if(histPtoSel && histPtoSel.options.length<=1){puntos.forEach(p=>{const o=document.createElement('option');o.value=p.nombre;o.textContent=p.nombre;histPtoSel.appendChild(o)});}
+      charts._catalogoSelectsInit = true;
     }
+  }
 
-    function accionBtnCategoria(row) {
-      return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-mat" title="Editar"' +
-        ' data-id="' + row.id + '"' +
-        ' data-nombre="' + escapeAttr(row.nombre) + '"' +
-        ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
-        ' data-estado="' + escapeAttr(row.estado) + '"' +
-        ' data-action="' + escapeAttr(row.action_url) + '">' +
-        '<i class="bi bi-pencil"></i></button>';
+  // Update global KPIs
+  function updateGlobalKPIs(){
+    document.getElementById('kpi-total-mat').textContent = materiales.length;
+    document.getElementById('kpi-total-inv').textContent = inventario.length;
+    document.getElementById('kpi-total-mov').textContent = historialMov.length;
+    const crit = inventario.filter(inv=>getInvEstado(inv).estado==='Crítico').length;
+    document.getElementById('kpi-total-crit').textContent = crit;
+  }
+  function kpiGo(tab){
+    const btn = document.querySelector('#materiales-tabs .nav-link[onclick*="'+tab+'"]');
+    if(btn) switchMatTab(tab, btn);
+  }
+
+  // ===== TAB 2: INVENTARIO POR MATERIAL =====
+  function renderInventarioPorMaterial(){
+    const matId = document.getElementById('inv-mat-selector').value;
+    const estF = document.getElementById('inv-mat-estado-filter')?.value||'';
+    const orden = document.getElementById('inv-mat-orden')?.value||'stock-desc';
+    if(!matId){
+      document.getElementById('inv-mat-kpis').style.display='none';
+      document.getElementById('inv-mat-header').style.display='none';
+      document.getElementById('inv-mat-cards').innerHTML='';
+      document.getElementById('inv-mat-placeholder').style.display='block';
+      // Render top charts on first load
+      if(!charts._invPlaceholderInit && typeof Chart!=='undefined'){
+        charts._invPlaceholderInit = true;
+        var matStock = {};inventario.forEach(function(inv){var k=String(inv.matId);matStock[k]=(matStock[k]||0)+inv.stock});
+        var ranking = Object.entries(matStock).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
+        if(document.getElementById('chartInvTopStock')){
+          charts.invTopStock = new Chart(document.getElementById('chartInvTopStock'),{type:'bar',data:{labels:ranking.map(function(e){return (getMatById(e[0]).nombre||'?').substring(0,16)}),datasets:[{label:'Stock (kg)',data:ranking.map(function(e){return e[1]}),backgroundColor:ranking.map(function(e,i){return ['#198754','#0dcaf0','#ffc107','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2'][i];}),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+        }
+        if(document.getElementById('chartInvPorCat')){
+          var catStock = {};
+          inventario.forEach(function(inv){var m=getMatById(inv.matId);var cat = m.categoria_nombre||'Sin cat.';catStock[cat]=(catStock[cat]||0)+inv.stock});
+          charts.invPorCat = new Chart(document.getElementById('chartInvPorCat'),{type:'doughnut',data:{labels:Object.keys(catStock),datasets:[{data:Object.values(catStock),backgroundColor:['#198754','#0dcaf0','#ffc107','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        }
+      }
+      return;
     }
+    document.getElementById('inv-mat-placeholder').style.display='none';
+    const mat = getMatById(matId);
+    let invs = inventario.filter(inv=>String(inv.matId)===String(matId));
+    if(estF) invs = invs.filter(inv=>getInvEstado(inv).estado===estF);
+    if(orden==='stock-desc') invs.sort((a,b)=>b.stock-a.stock);
+    else if(orden==='stock-asc') invs.sort((a,b)=>a.stock-b.stock);
+    else if(orden==='punto-asc') invs.sort((a,b)=>(getPuntoById(a.puntoId).nombre||'').localeCompare(getPuntoById(b.puntoId).nombre||''));
 
-    function reinitEditModales() {
-      setupEditModal('.btn-editar-material', 'modalEditarMaterial', {
-        nombre: 'em_nombre', descripcion: 'em_descripcion',
-        categoria_id: 'em_categoria', estado: 'em_estado'
+    const totalStock = invs.reduce((s,inv)=>s+inv.stock,0);
+    const capTotal = invs.reduce((s,inv)=>s+inv.cap,0);
+    const valorTotal = invs.reduce((s,inv)=>s+(inv.stock*inv.venta),0);
+    const ptsCriticos = invs.filter(inv=>getInvEstado(inv).estado==='Crítico').length;
+    const occProm = capTotal>0 ? Math.round(totalStock/capTotal*100) : 0;
+    document.getElementById('inv-mat-kpis').style.display='flex';
+    document.getElementById('inv-mat-kpis').innerHTML = 
+      '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success">'+totalStock.toLocaleString()+'</div><div class="kpi-lbl">Stock Total</div></div></div>'+
+      '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary">'+occProm+'%</div><div class="kpi-lbl">Ocupación Prom.</div></div></div>'+
+      '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning">$'+Math.round(valorTotal).toLocaleString()+'</div><div class="kpi-lbl">Valor Total</div></div></div>'+
+      '<div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger">'+ptsCriticos+'</div><div class="kpi-lbl">Puntos Críticos</div></div></div>';
+
+    document.getElementById('inv-mat-header').style.display='block';
+    document.getElementById('inv-mat-nombre-selec').textContent = mat.nombre||'?';
+    document.getElementById('inv-mat-cat-selec').textContent = mat.categoria_nombre||'?';
+    document.getElementById('inv-mat-clas-selec').textContent = mat.clasificacion||'?';
+    document.getElementById('inv-mat-puntos').textContent = invs.length+' puntos ECA';
+
+    document.getElementById('inv-mat-cards').innerHTML = invs.map(inv=>{
+      const p = getPuntoById(inv.puntoId);
+      const est = getInvEstado(inv);
+      const pct = inv.cap>0 ? Math.round(inv.stock/inv.cap*100) : 0;
+      const margen = inv.venta - inv.compra;
+      return '<div class="col-12 col-md-6 col-lg-4 fade-in-up"><div class="inv-card card shadow-sm h-100" style="cursor:pointer" onclick="window.location.href=\'/panel_admin/puntos-eca/#punto='+inv.puntoId+'&tab=inventario\'" title="Ver detalle del punto en dashboard"><div class="card-body"><div class="d-flex justify-content-between align-items-start mb-2"><div><h6 class="fw-bold mb-0" style="font-size:.9rem">'+escapeHTML(p.nombre||'?')+'</h6><div class="inv-summary">'+escapeHTML(p.localidad||'')+' &middot; '+escapeHTML(p.gestor||'')+'</div></div><span class="salud-badge-sm '+est.cls+'">'+est.estado+'</span></div><div class="mb-2"><div class="d-flex justify-content-between mb-1"><span class="inv-summary">Stock: <strong>'+inv.stock+' '+escapeHTML(inv.unidad||'KG')+'</strong></span><span class="inv-summary">'+pct+'%</span></div><div class="stock-bar"><div class="stock-bar-fill" style="width:'+pct+'%;background:'+est.color+'"></div></div><div class="d-flex justify-content-between mt-1"><span class="inv-summary">Cap: '+inv.cap+' '+escapeHTML(inv.unidad||'KG')+'</span><span class="inv-summary"><strong>Margen: $'+margen.toLocaleString()+'/'+escapeHTML(inv.unidad||'KG')+'</strong></span></div></div><div class="d-flex justify-content-between border-top pt-2" style="font-size:.75rem"><div class="text-muted">Compra: <strong>$'+inv.compra.toLocaleString()+'</strong></div><div class="text-muted">Venta: <strong>$'+inv.venta.toLocaleString()+'</strong></div></div></div></div></div>';
+    }).join('')||'<div class="col-12"><div class="alert alert-warning text-center py-3">No hay inventario para este material con los filtros actuales.</div></div>';
+  }
+
+  // ===== TAB 3: FLUJO DE MATERIALES =====
+  let flujoSubMode = 'stock';
+
+  function initFlujoSelect(){
+    var select = $('#flujo-mat-select');
+    select.empty();
+    // Ordenar por stock total (mayor primero)
+    var uniqueMats = [...new Set(inventario.map(function(inv){return inv.matId}))]
+      .map(function(id){var m=getMatById(id);if(!m.id)return null;
+        var total = inventario.filter(function(inv){return String(inv.matId)===String(m.id)}).reduce(function(s,inv){return s+inv.stock},0);
+        return {m:m, total:total};
+      }).filter(Boolean).sort(function(a,b){return b.total-a.total});
+    uniqueMats.forEach(function(x){
+      select.append(new Option((x.m.nombre||'?').substring(0,30)+' ('+Math.round(x.total)+' kg)', String(x.m.id), false, false));
+    });
+    select.select2({theme:'bootstrap-5',width:'100%',placeholder:'Selecciona materiales...',closeOnSelect:false});
+    // Seleccionar Top 5 por defecto
+    var top5 = uniqueMats.slice(0,5).map(function(x){return String(x.m.id)});
+    select.val(top5).trigger('change');
+  }
+
+  function flujoSelectTop(n){
+    var select = $('#flujo-mat-select');
+    // Reconstruir lista ordenada por stock
+    var uniqueMats = [...new Set(inventario.map(function(inv){return inv.matId}))]
+      .map(function(id){var m=getMatById(id);if(!m.id)return null;
+        var total = inventario.filter(function(inv){return String(inv.matId)===String(m.id)}).reduce(function(s,inv){return s+inv.stock},0);
+        return {id:String(m.id), total:total};
+      }).filter(Boolean).sort(function(a,b){return b.total-a.total});
+    if(n===0){select.val([]).trigger('change');return;}
+    var ids = uniqueMats.slice(0,n).map(function(x){return x.id});
+    select.val(ids).trigger('change');
+  }
+
+  function switchFlujoSub(mode,el){
+    flujoSubMode = mode;
+    document.querySelectorAll('#flujo-subtabs .nav-link').forEach(function(a){a.classList.remove('active')});
+    el.classList.add('active');
+    // Toggle visibilidad de paneles
+    document.getElementById('flujo-detalle-pane').style.display = (mode==='detalle')?'block':'none';
+    document.getElementById('flujo-kpis-pane').style.display = (mode==='detalle')?'none':'';
+    document.getElementById('flujo-charts-pane').style.display = (mode==='detalle')?'none':'';
+    renderFlujo();
+  }
+
+  function renderFlujo(){
+    if(typeof Chart==='undefined') return;
+    var select = $('#flujo-mat-select');
+    if(!select.data('select2')){initFlujoSelect();return;}
+    var selIds = select.val()||[];
+    var selMats = selIds.map(function(id){return getMatById(id)}).filter(function(m){return m.id});
+    var invItems = inventario.filter(function(inv){return selIds.includes(String(inv.matId))});
+
+    // KPIs
+    var stockActualTotal = invItems.reduce(function(s,inv){return s+inv.stock},0);
+    var comprasPeriodo = Math.round(invItems.reduce(function(s,inv){return s+inv.stock*0.3},0));
+    var ventasPeriodo = Math.round(invItems.reduce(function(s,inv){return s+inv.stock*0.15},0));
+    var utilidadPeriodo = Math.round(invItems.reduce(function(s,inv){return s+(inv.stock*0.15*(inv.venta-inv.compra))},0));
+    document.getElementById('flujo-stock-actual').textContent = selMats.length ? stockActualTotal.toLocaleString()+' kg' : '--';
+    document.getElementById('flujo-compras-periodo').textContent = selMats.length ? comprasPeriodo.toLocaleString() : '--';
+    document.getElementById('flujo-ventas-periodo').textContent = selMats.length ? ventasPeriodo.toLocaleString() : '--';
+    document.getElementById('flujo-utilidad-periodo').textContent = selMats.length ? '$'+utilidadPeriodo.toLocaleString() : '--';
+
+    var colors = ['#198754','#0d6efd','#dc3545','#ffc107','#0dcaf0','#6f42c1','#fd7e14','#20c997'];
+    var gran = document.getElementById('flujo-gran')?.value||'mes';
+    var labels = gran==='dia'?['Jun 1','Jun 5','Jun 10','Jun 15','Jun 20']:gran==='semana'?['Sem 1','Sem 2','Sem 3','Sem 4']:['Ene','Feb','Mar','Abr','May','Jun'];
+
+    if(flujoSubMode==='detalle'){
+      // ---- DETALLE (ya existía) ----
+      destroyChart('flujo');
+      destroyChart('flujoDetalle');
+      var ptLabels = puntos.slice(0,8).map(function(p){return (p.nombre||'').substring(0,14)});
+      var detDatasets = selMats.slice(0,5).map(function(mat,mi){
+        return {label:mat.nombre||'?',data:ptLabels.map(function(pn){
+          var p = puntos.find(function(pt){return (pt.nombre||'').startsWith(pn)});
+          if(!p) return 0;
+          var inv = inventario.find(function(i){return String(i.matId)===String(mat.id)&&String(i.puntoId)===String(p.id)});
+          return inv ? Math.round(inv.stock*(inv.venta-inv.compra)) : 0;
+        }),backgroundColor:colors[mi%colors.length],borderRadius:0};
       });
-      setupEditModal('.btn-editar-tipo', 'modalEditarTipo', {
-        nombre: 'et_nombre', descripcion: 'et_descripcion', estado: 'et_estado'
-      });
-      setupEditModal('.btn-editar-cat-mat', 'modalEditarCategoria', {
-        nombre: 'ec_nombre', descripcion: 'ec_descripcion', tipo_id: 'ec_tipo_id', estado: 'ec_estado'
-      });
+      charts.flujoDetalle = new Chart(document.getElementById('chartFlujoDetalle'),{type:'bar',data:{labels:ptLabels,datasets:detDatasets},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,title:{display:true,text:'$ COP'}}},plugins:{legend:{position:'bottom'}}}});
+      // Ranking
+      var ranking = selMats.map(function(mat){
+        var invs = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+        var ganancia = Math.round(invs.reduce(function(s,inv){return s+inv.stock*(inv.venta-inv.compra)},0));
+        var volumen = invs.reduce(function(s,inv){return s+inv.stock},0);
+        var margenProm = invs.length ? Math.round(invs.reduce(function(s,inv){return s+((inv.venta-inv.compra)/inv.compra)*100},0)/invs.length) : 0;
+        return {mat:mat,ganancia:ganancia,volumen:volumen,margenProm:margenProm,pts:invs.length};
+      }).filter(function(r){return r.ganancia>0}).sort(function(a,b){return b.ganancia-a.ganancia});
+      document.getElementById('flujo-rank-tbody').innerHTML = ranking.map(function(r,i){return '<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold">'+escapeHTML(r.mat.nombre||'?')+'</td><td class="fw-bold text-success">$'+r.ganancia.toLocaleString()+'</td><td>'+r.volumen.toLocaleString()+' kg</td><td>'+r.margenProm+'%</td><td>'+r.pts+'</td></tr>'}).join('');
+      return;
     }
 
-    var tab = '{{ tab|escapejs }}' || 'materiales';
-
-    function initTablaMateriales() {
-      var table = new AdminTable({
-        containerId: 'materiales-tbody',
-        data: readJSONData('materiales-data'),
-        pageSize: 10,
-        countBadgeId: 'materiales-count-badge',
-        pagerId: 'materiales-pager',
-        rowIdPrefix: 'mat-',
-        filterFns: [
-          function(row, q) { return (row.nombre + ' ' + row.descripcion + ' ' + row.categoria_nombre + ' ' + row.tipo_nombre).toLowerCase().indexOf(q) !== -1; }
-        ],
-        defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
-        onAfterRender: reinitEditModales,
-        columns: [
-          { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
-          { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
-          { render: function(r) { return escapeHTML(r.categoria_nombre); } },
-          { render: function(r) { return escapeHTML(r.tipo_nombre); } },
-          { render: estadoBadge },
-          { className: 'text-center', render: accionBtnMaterial }
-        ]
+    // ---- STOCK / GANANCIAS ----
+    destroyChart('flujo');
+    // Update subchart headers
+    if(flujoSubMode==='ganancias'){
+      document.getElementById('flujo-main-chart-title').innerHTML = '<i class="bi bi-cash-stack text-success me-1"></i>Ganancias ($) por Material';
+      document.getElementById('flujo-subchart-left-title').innerHTML = '<i class="bi bi-bar-chart text-primary me-1"></i>Compras vs Ventas ($)';
+      document.getElementById('flujo-subchart-right-title').innerHTML = '<i class="bi bi-pie-chart text-warning me-1"></i>Ganancia por Material';
+    } else {
+      document.getElementById('flujo-main-chart-title').innerHTML = '<i class="bi bi-graph-up text-info me-1"></i>Stock por Material';
+      document.getElementById('flujo-subchart-left-title').innerHTML = '<i class="bi bi-arrow-left-right text-info me-1"></i>Flujo Neto (Compras vs Ventas)';
+      document.getElementById('flujo-subchart-right-title').innerHTML = '<i class="bi bi-heart-pulse text-danger me-1"></i>Salud del Inventario';
+    }
+    var datasets;
+    var yAxisLabel;
+    if(flujoSubMode==='ganancias'){
+      yAxisLabel = '$ COP';
+      datasets = selMats.map(function(mat,mi){
+        var items = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+        var base = items.reduce(function(s,inv){return s+inv.stock*(inv.venta-inv.compra)},0);
+        return {label:(mat.nombre||'?').substring(0,14),data:labels.map(function(_,i){return Math.round(base*(0.5+i*0.1))}),borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
       });
-      {% if q_mat %}
-      table.setFilters('{{ q_mat|escapejs }}', {});
-      {% endif %}
-      var data = table.data;
-      var cats = [...new Set(data.map(function(m) { return m.categoria_nombre; }))].sort();
-      var catSel = document.getElementById('mat-filter-categoria');
-      if (catSel) {
-        cats.forEach(function(c) {
-          if (!c || c === '-') return;
-          var opt = document.createElement('option');
-          opt.value = c; opt.textContent = c;
-          catSel.appendChild(opt);
+    } else {
+      yAxisLabel = 'kg';
+      datasets = selMats.map(function(mat,mi){
+        var items = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+        var base = items.reduce(function(s,inv){return s+inv.stock},0);
+        return {label:(mat.nombre||'?').substring(0,14),data:labels.map(function(_,i){return Math.round(base*(0.7+i*0.05))}),borderColor:colors[mi%colors.length],backgroundColor:colors[mi%colors.length]+'20',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:colors[mi%colors.length]};
+      });
+    }
+    charts.flujo = new Chart(document.getElementById('chartFlujo'),{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:yAxisLabel}}}}});
+
+    // Secondary charts - re-render on mode change
+    if(charts._flujoExtraMode !== flujoSubMode){
+      destroyChart('kpisFlujoNeto');
+      destroyChart('kpisSalud');
+      if(flujoSubMode==='stock' && document.getElementById('chartKPIsFlujoNeto')){
+        var flujoLabels = ['Ene','Feb','Mar','Abr','May','Jun'];
+        var flujoCompras = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Compra'}).reduce(function(s,m){return s+m.kg},0)/6)});
+        var flujoVentas = flujoLabels.map(function(){return Math.round(historialMov.filter(function(m){return m.tipo==='Venta'}).reduce(function(s,m){return s+m.kg},0)/6)});
+        charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:flujoLabels,datasets:[{label:'Compras',data:flujoCompras,backgroundColor:'#198754',borderRadius:4},{label:'Ventas',data:flujoVentas,backgroundColor:'#dc3545',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+
+        var salud = {OK:0,Alerta:0,'Crítico':0};
+        inventario.forEach(function(inv){salud[getInvEstado(inv).estado]++});
+        if(document.getElementById('chartKPIsSalud')){
+          charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'doughnut',data:{labels:Object.keys(salud),datasets:[{data:Object.values(salud),backgroundColor:['#198754','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        }
+      } else if(flujoSubMode==='ganancias' && document.getElementById('chartKPIsFlujoNeto')){
+        var comprasTot = historialMov.filter(function(m){return m.tipo==='Compra'}).reduce(function(s,m){return s+m.total},0);
+        var ventasTot = historialMov.filter(function(m){return m.tipo==='Venta'}).reduce(function(s,m){return s+m.total},0);
+        var profit = ventasTot - comprasTot;
+        charts.kpisFlujoNeto = new Chart(document.getElementById('chartKPIsFlujoNeto'),{type:'bar',data:{labels:['Compras','Ventas','Ganancia'],datasets:[{label:'$ COP',data:[Math.round(comprasTot/1000),Math.round(ventasTot/1000),Math.round(profit/1000)],backgroundColor:['#0d6efd','#dc3545','#198754'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Miles $'}}}}});
+
+        var matGan = selMats.slice(0,6).map(function(mat){
+          var items = inventario.filter(function(inv){return String(inv.matId)===String(mat.id)});
+          var val = Math.round(items.reduce(function(s,inv){return s+inv.stock*(inv.venta-inv.compra)},0)/1000);
+          return {label:(mat.nombre||'?').substring(0,12),value:val};
+        }).filter(function(x){return x.value>0});
+        if(matGan.length&&document.getElementById('chartKPIsSalud')){
+          charts.kpisSalud = new Chart(document.getElementById('chartKPIsSalud'),{type:'pie',data:{labels:matGan.map(function(x){return x.label}),datasets:[{data:matGan.map(function(x){return x.value}),backgroundColor:colors.slice(0,matGan.length)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        }
+      }
+      charts._flujoExtraMode = flujoSubMode;
+    }
+  }
+
+  // ===== TAB 4: HISTORIAL GLOBAL =====
+  let histPage = 1;
+  function histGoPage(p){ histPage = p; renderHistorial(); }
+  function renderHistorial(){
+    const matF = document.getElementById('hist-mat-filter')?.value||'';
+    const catF = document.getElementById('hist-cat-filter')?.value||'';
+    const tipoF = document.getElementById('hist-tipo-filter')?.value||'';
+    const ptoF = document.getElementById('hist-punto-filter')?.value||'';
+    const kgMin = parseFloat(document.getElementById('hist-cantidad-min')?.value)||0;
+    const kgMax = parseFloat(document.getElementById('hist-cantidad-max')?.value)||Infinity;
+    const montoMin = parseFloat(document.getElementById('hist-monto-min')?.value)||0;
+    const montoMax = parseFloat(document.getElementById('hist-monto-max')?.value)||Infinity;
+    const ftDesde = document.getElementById('hist-ft-desde')?.value||'';
+    const ftHasta = document.getElementById('hist-ft-hasta')?.value||'';
+    histPage = 1;
+    let filtered = [...historialMov];
+    if(matF) filtered = filtered.filter(m=>m.mat===matF);
+    if(catF) filtered = filtered.filter(m=>{const mat=materiales.find(x=>x.nombre===m.mat);return mat&&mat.categoria_nombre===catF;});
+    if(tipoF) filtered = filtered.filter(m=>m.tipo===tipoF);
+    if(ptoF) filtered = filtered.filter(m=>m.punto===ptoF);
+    if(kgMin) filtered = filtered.filter(m=>m.kg>=kgMin);
+    if(kgMax<Infinity) filtered = filtered.filter(m=>m.kg<=kgMax);
+    if(montoMin) filtered = filtered.filter(m=>m.total>=montoMin);
+    if(montoMax<Infinity) filtered = filtered.filter(m=>m.total<=montoMax);
+    if(ftDesde) filtered = filtered.filter(m=>m.fecha.split(' ')[0]>=ftDesde);
+    if(ftHasta) filtered = filtered.filter(m=>m.fecha.split(' ')[0]<=ftHasta);
+
+    document.getElementById('hist-kpi-compras').textContent = filtered.filter(m=>m.tipo==='Compra').length;
+    document.getElementById('hist-kpi-ventas').textContent = filtered.filter(m=>m.tipo==='Venta').length;
+    document.getElementById('hist-kpi-registros').textContent = filtered.length;
+    document.getElementById('hist-kpi-kg').textContent = filtered.reduce((s,m)=>s+m.kg,0).toLocaleString();
+    document.getElementById('hist-count-badge').textContent = filtered.length+' registros';
+
+    renderPaginated(filtered, 'hist-tbody', 'hist-pager-info', 'hist-pager', function(m){
+      const tipoClass = m.tipo==='Compra'?'mov-compra':'mov-venta';
+      const tipoIcon = m.tipo==='Compra'?'arrow-down-circle':'arrow-up-circle';
+      return '<tr><td class="text-muted" style="font-size:.78rem;white-space:nowrap">'+escapeHTML(m.fecha)+'</td><td><span class="mov-tipo '+tipoClass+'"><i class="bi bi-'+tipoIcon+'"></i> '+escapeHTML(m.tipo)+'</span></td><td class="fw-semibold" style="font-size:.82rem">'+escapeHTML(m.mat)+'</td><td style="font-size:.78rem">'+escapeHTML(m.punto)+'</td><td class="text-end" style="font-size:.82rem">'+m.kg+'</td><td class="text-end" style="font-size:.82rem">$'+m.unitario.toLocaleString()+'</td><td style="font-size:.82rem">$'+m.total.toLocaleString()+'</td><td style="font-size:.78rem">'+escapeHTML(m.centro||'-')+'</td></tr>';
+    }, histPage, histGoPage);
+  }
+  function limpiarFiltrosHistorial(){
+    ['hist-mat-filter','hist-cat-filter','hist-tipo-filter','hist-punto-filter'].forEach(id=>{$('#'+id).val('').trigger('change')});
+    ['hist-cantidad-min','hist-cantidad-max','hist-monto-min','hist-monto-max','hist-ft-desde','hist-ft-hasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    histPage = 1;renderHistorial();
+  }
+
+  // ===== TAB 5: CATEGORÍAS =====
+  let gcatPage = 1;
+  function gcatGoPage(p){ gcatPage = p; renderGestionCategorias(); }
+  function getCategoriasList(){
+    const map = {};
+    materiales.forEach(m=>{
+      const cat = m.categoria_nombre;
+      if(!cat)return;
+      if(!map[cat]) map[cat] = {nombre:cat,descripcion:getCatDesc(cat),count:0};
+      map[cat].count++;
+    });
+    return Object.values(map).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  }
+  function getCatDesc(cat){
+    const c = categoriasServer.find(x=>x.nombre===cat);
+    return c ? (c.descripcion||'') : '';
+  }
+  function renderGestionCategorias(){
+    const tbody = document.getElementById('gcat-tbody');if(!tbody)return;
+    var cats = getCategoriasList();
+    var q = (document.getElementById('gcat-search')?.value||'').toLowerCase();
+    if(q) cats = cats.filter(function(c){return c.nombre.toLowerCase().indexOf(q)!==-1});
+    document.getElementById('gcat-count').textContent = cats.length+' categorías';
+
+    // Category charts (first time only)
+    if(!charts._catChartsInit && typeof Chart!=='undefined'){
+      charts._catChartsInit = true;
+      var catNames = cats.map(function(c){return c.nombre});
+      // Stock per category
+      var catStockTotal = cats.map(function(c){
+        return Math.round(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.categoria_nombre===c.nombre}).reduce(function(s,inv){return s+inv.stock},0));
+      });
+      if(document.getElementById('chartCatStockPorCat')){
+        charts.catStockPorCat = new Chart(document.getElementById('chartCatStockPorCat'),{type:'bar',data:{labels:catNames,datasets:[{label:'Stock (kg)',data:catStockTotal,backgroundColor:['#198754','#0dcaf0','#ffc107','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2'].slice(0,catNames.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+      }
+      // Puntos per category
+      var catPuntos = cats.map(function(c){
+        return [...new Set(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.categoria_nombre===c.nombre}).map(function(inv){return String(inv.puntoId)}))].length;
+      });
+      // Puntos per category from inventory
+      var catPuntos = cats.map(function(c){
+        return [...new Set(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.categoria_nombre===c.nombre}).map(function(inv){return String(inv.puntoId)}))].length;
+      });
+      var maxPts = Math.max.apply(null, catPuntos.concat([1]));
+      if(document.getElementById('chartCatPuntosPorCat')){
+        charts.catPuntosPorCat = new Chart(document.getElementById('chartCatPuntosPorCat'),{type:'bar',data:{labels:catNames,datasets:[{label:'Puntos ECA',data:catPuntos,backgroundColor:['#ffc107','#198754','#0dcaf0','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2'].slice(0,catNames.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,suggestedMax:maxPts+1,title:{display:true,text:'puntos'},ticks:{stepSize:maxPts>10?undefined:1}}}}});
+      }
+    }
+
+    renderPaginated(cats, 'gcat-tbody', 'gcat-pager-info', 'gcat-pager', function(c){
+      var invs = inventario.filter(function(inv){var m=getMatById(inv.matId);return m.categoria_nombre===c.nombre});
+      var stockTotal = Math.round(invs.reduce(function(s,inv){return s+inv.stock},0));
+      var valorTotal = Math.round(invs.reduce(function(s,inv){return s+inv.stock*inv.venta},0));
+      var puntosUnicos = [...new Set(invs.map(function(inv){return String(inv.puntoId)}))].length;
+      var estado = materiales.filter(function(m){return m.categoria_nombre===c.nombre&&m.estado==='ACTIVO'}).length>0?'ACTIVO':'INACTIVO';
+      var estBadge = estado==='ACTIVO'?'<span class="badge bg-success">Activo</span>':'<span class="badge bg-secondary">Inactivo</span>';
+      return '<tr><td class="fw-semibold" style="font-size:.85rem">'+escapeHTML(c.nombre)+'</td><td style="font-size:.78rem;color:#6c757d">'+escapeHTML(c.descripcion||'-')+'</td><td class="text-center"><span class="badge bg-light text-dark">'+c.count+'</span></td><td class="text-end" style="font-size:.82rem">'+stockTotal.toLocaleString()+'</td><td class="text-end" style="font-size:.82rem">$'+valorTotal.toLocaleString()+'</td><td class="text-center"><span class="badge bg-light text-dark">'+puntosUnicos+'</span></td><td>'+estBadge+'</td><td class="text-center"><div class="d-flex gap-1 justify-content-center"><button class="btn btn-outline-primary btn-sm" onclick="abrirEditarCategoria(\''+c.nombre+'\')" title="Editar"><i class="bi bi-pencil"></i></button></div></td></tr>';
+    }, gcatPage, gcatGoPage);
+  }
+
+  // ===== TAB 6: CLASIFICACIONES =====
+  let gclasPage = 1;
+  function gclasGoPage(p){ gclasPage = p; renderGestionClasificaciones(); }
+  function renderGestionClasificaciones(){
+    const tbody = document.getElementById('gclas-tbody');if(!tbody)return;
+    var clasList = clasificaciones;
+    var q = (document.getElementById('gclas-search')?.value||'').toLowerCase();
+    if(q) clasList = clasList.filter(function(c){return (c.nombre+' '+c.descripcion).toLowerCase().indexOf(q)!==-1});
+    document.getElementById('gclas-count').textContent = clasificaciones.length+' clasificaciones';
+
+    // Classification charts (first time only)
+    if(!charts._clasifChartsInit && typeof Chart!=='undefined'){
+      charts._clasifChartsInit = true;
+      // Stock per classification
+      var clasLevels = clasificaciones.map(function(c){return c.nombre});
+      var clasStock = clasificaciones.map(function(c){
+        return Math.round(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.clasificacion===c.nombre}).reduce(function(s,inv){return s+inv.stock},0));
+      });
+      if(document.getElementById('chartClasifStock')){
+        charts.clasifStock = new Chart(document.getElementById('chartClasifStock'),{type:'bar',data:{labels:clasLevels,datasets:[{label:'Stock (kg)',data:clasStock,backgroundColor:['#198754','#ffc107','#fd7e14','#212529'].slice(0,clasLevels.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
+      }
+      // Puntos ECA por clasificación
+      if(document.getElementById('chartClasifPuntosPorCat')){
+        var clasPuntos = clasificaciones.map(function(c){
+          return [...new Set(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.clasificacion===c.nombre}).map(function(inv){return String(inv.puntoId)}))].length;
         });
+        var maxClasPts = Math.max.apply(null, clasPuntos.concat([1]));
+        charts.clasifPuntosPorCat = new Chart(document.getElementById('chartClasifPuntosPorCat'),{type:'bar',data:{labels:clasLevels,datasets:[{label:'Puntos ECA',data:clasPuntos,backgroundColor:['#198754','#ffc107','#fd7e14','#212529'].slice(0,clasLevels.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,suggestedMax:maxClasPts+1,title:{display:true,text:'puntos'},ticks:{stepSize:maxClasPts>10?undefined:1}}}}});
       }
-      var tipos = [...new Set(data.map(function(m) { return m.tipo_nombre; }))].sort();
-      var tipSel = document.getElementById('mat-filter-tipo');
-      if (tipSel) {
-        tipos.forEach(function(t) {
-          if (!t || t === '-') return;
-          var opt = document.createElement('option');
-          opt.value = t; opt.textContent = t;
-          tipSel.appendChild(opt);
-        });
-      }
-      $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
-      function aplicarFiltros() {
-        var q = document.getElementById('materiales-search-input')?.value || '';
-        table.setSearch(q);
-        var cat = $('#mat-filter-categoria').val() || '';
-        if (cat) table.setExtraFilter('categoria_nombre', cat);
-        else table.removeExtraFilter('categoria_nombre');
-        var tip = $('#mat-filter-tipo').val() || '';
-        if (tip) table.setExtraFilter('tipo_nombre', tip);
-        else table.removeExtraFilter('tipo_nombre');
-      }
-      function limpiarFiltros() {
-        document.getElementById('materiales-search-input').value = '';
-        $('#mat-filter-categoria').val('').trigger('change');
-        $('#mat-filter-tipo').val('').trigger('change');
-        table.setFilters('', {});
-      }
-      document.getElementById('materiales-search-btn').addEventListener('click', aplicarFiltros);
-      document.getElementById('mat-filter-limpiar').addEventListener('click', limpiarFiltros);
-      $('#mat-filter-categoria, #mat-filter-tipo').on('change', aplicarFiltros);
-      document.getElementById('materiales-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
-      return table;
     }
 
-    function initTablaTipos() {
-      var table = new AdminTable({
-        containerId: 'tipos-tbody',
-        data: readJSONData('tipos-data'),
-        pageSize: 10,
-        countBadgeId: 'tipos-count-badge',
-        pagerId: 'tipos-pager',
-        rowIdPrefix: 'tipo-',
-        filterFns: [
-          function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
-        ],
-        defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
-        onAfterRender: reinitEditModales,
-        columns: [
-          { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
-          { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
-          { render: estadoBadge },
-          { className: 'text-center', render: accionBtnTipo }
-        ]
-      });
-      {% if q_tipo %}
-      table.setFilters('{{ q_tipo|escapejs }}', {});
-      {% endif %}
-      function aplicarFiltros() {
-        var q = document.getElementById('tipos-search-input')?.value || '';
-        table.setSearch(q);
-        var est = $('#tipo-filter-estado').val() || '';
-        if (est) table.setExtraFilter('estado', est);
-        else table.removeExtraFilter('estado');
-      }
-      function limpiarFiltros() {
-        document.getElementById('tipos-search-input').value = '';
-        $('#tipo-filter-estado').val('').trigger('change');
-        table.setFilters('', {});
-      }
-      document.getElementById('tipos-search-btn').addEventListener('click', aplicarFiltros);
-      document.getElementById('tipo-filter-limpiar').addEventListener('click', limpiarFiltros);
-      $('#tipo-filter-estado').on('change', aplicarFiltros);
-      document.getElementById('tipos-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
-      return table;
+    const clasColors = {'ESTANDAR':'bg-success','MANEJO_ESPECIAL':'bg-warning text-dark','PELIGROSO':'bg-danger','HAZMAT':'bg-dark'};
+    renderPaginated(clasList, 'gclas-tbody', 'gclas-pager-info', 'gclas-pager', function(c){
+      const count = materiales.filter(m=>m.clasificacion===c.nombre).length;
+      var invs = inventario.filter(function(inv){var m=getMatById(inv.matId);return m.clasificacion===c.nombre});
+      var stockTotal = Math.round(invs.reduce(function(s,inv){return s+inv.stock},0));
+      var puntosUnicos = [...new Set(invs.map(function(inv){return String(inv.puntoId)}))].length;
+      const badgeCls = clasColors[c.nombre]||'bg-secondary';
+      return '<tr><td><span class="badge '+badgeCls+'" style="font-size:.75rem">'+c.nombre+'</span></td><td style="font-size:.78rem;color:#6c757d">'+escapeHTML(c.descripcion||'-')+'</td><td class="text-center"><span class="badge bg-light text-dark">'+count+'</span></td><td class="text-end" style="font-size:.82rem">'+stockTotal.toLocaleString()+'</td><td class="text-center"><span class="badge bg-light text-dark">'+puntosUnicos+'</span></td><td class="text-center"><div class="d-flex gap-1 justify-content-center"><button class="btn btn-outline-primary btn-sm" onclick="abrirEditarClasificacion('+c.id+')" title="Editar"><i class="bi bi-pencil"></i></button></div></td></tr>';
+    }, gclasPage, gclasGoPage);
+  }
+
+  // ===== EXPORT =====
+  function descargarCSV(data, columnas, nombreArchivo){
+    var csv = columnas.join(',') + '\n';
+    data.forEach(function(row){
+      csv += columnas.map(function(col){var v=row[col]||'';return '"'+String(v).replace(/"/g,'""')+'"';}).join(',') + '\n';
+    });
+    var blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');a.href=url;a.download=nombreArchivo+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+  function exportarTabla(tab, formato){
+    if(tab==='cat'){
+      var params = new URLSearchParams();
+      var q = document.getElementById('cat-search')?.value||'';
+      if(q) params.set('q',q);
+      var cat = document.getElementById('cat-filtro-categoria')?.value||'';
+      if(cat) params.set('categoria',cat);
+      var clas = document.getElementById('cat-filtro-clasificacion')?.value||'';
+      if(clas) params.set('clasificacion',clas);
+      var url = '/panel_admin/materiales/exportar/'+(formato==='pdf'?'pdf':'excel')+'/';
+      window.location = url + (params.toString()?'?'+params.toString():'');
+    } else if(tab==='gcat'){
+      var params = new URLSearchParams();
+      var url = '/panel_admin/categorias-materiales/exportar/'+(formato==='pdf'?'pdf':'excel')+'/';
+      window.location = url;
+    } else if(tab==='hist'){
+      // Apply current filters
+      var matF = document.getElementById('hist-mat-filter')?.value||'';
+      var catF = document.getElementById('hist-cat-filter')?.value||'';
+      var tipoF = document.getElementById('hist-tipo-filter')?.value||'';
+      var ptoF = document.getElementById('hist-punto-filter')?.value||'';
+      var ftDesde = document.getElementById('hist-ft-desde')?.value||'';
+      var ftHasta = document.getElementById('hist-ft-hasta')?.value||'';
+      var kgMin = parseFloat(document.getElementById('hist-cantidad-min')?.value)||0;
+      var kgMax = parseFloat(document.getElementById('hist-cantidad-max')?.value)||Infinity;
+      var montoMin = parseFloat(document.getElementById('hist-monto-min')?.value)||0;
+      var montoMax = parseFloat(document.getElementById('hist-monto-max')?.value)||Infinity;
+      var filtered = [...historialMov];
+      if(matF) filtered = filtered.filter(function(m){return m.mat===matF});
+      if(catF) filtered = filtered.filter(function(m){var mat=materiales.find(function(x){return x.nombre===m.mat});return mat&&mat.categoria_nombre===catF});
+      if(tipoF) filtered = filtered.filter(function(m){return m.tipo===tipoF});
+      if(ptoF) filtered = filtered.filter(function(m){return m.punto===ptoF});
+      if(kgMin) filtered = filtered.filter(function(m){return m.kg>=kgMin});
+      if(kgMax<Infinity) filtered = filtered.filter(function(m){return m.kg<=kgMax});
+      if(montoMin) filtered = filtered.filter(function(m){return m.total>=montoMin});
+      if(montoMax<Infinity) filtered = filtered.filter(function(m){return m.total<=montoMax});
+      if(ftDesde) filtered = filtered.filter(function(m){return m.fecha.split(' ')[0]>=ftDesde});
+      if(ftHasta) filtered = filtered.filter(function(m){return m.fecha.split(' ')[0]<=ftHasta});
+      descargarCSV(filtered, ['fecha','tipo','mat','punto','kg','unitario','total','centro'], 'historial_movimientos');
+    } else if(tab==='gclas'){
+      descargarCSV(clasificaciones, ['nombre','descripcion'], 'clasificaciones_material');
     }
+  }
 
-    function initTablaCategorias() {
-      var catData = readJSONData('categorias-data');
-      var table = new AdminTable({
-        containerId: 'categorias-tbody',
-        data: catData,
-        pageSize: 10,
-        countBadgeId: 'categorias-count-badge',
-        pagerId: 'categorias-pager',
-        rowIdPrefix: 'cat-',
-        filterFns: [
-          function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
-        ],
-        defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
-        onAfterRender: function() {
-          reinitEditModales();
-          populateTipoFilter();
-        },
-        columns: [
-          { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
-          { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
-          { render: function(r) { return '<span class="badge bg-info text-dark">' + escapeHTML(r.tipo_nombre) + '</span>'; } },
-          { render: estadoBadge },
-          { className: 'text-center', render: accionBtnCategoria }
-        ]
-      });
-      {% if q_cat %}
-      table.setFilters('{{ q_cat|escapejs }}', {});
-      {% endif %}
-      function populateTipoFilter() {
-        var tipos = [...new Set(catData.map(function(c) { return c.tipo_nombre; }))].sort();
-        var sel = document.getElementById('cat-filter-tipo');
-        if (!sel) return;
-        tipos.forEach(function(t) {
-          if (!t || t === '-') return;
-          var opt = document.createElement('option');
-          opt.value = t; opt.textContent = t;
-          sel.appendChild(opt);
-        });
-      }
-      $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
-      function aplicarFiltros() {
-        var q = document.getElementById('categorias-search-input')?.value || '';
-        table.setSearch(q);
-        var tip = $('#cat-filter-tipo').val() || '';
-        if (tip) table.setExtraFilter('tipo_nombre', tip);
-        else table.removeExtraFilter('tipo_nombre');
-        var est = $('#cat-filter-estado').val() || '';
-        if (est) table.setExtraFilter('estado', est);
-        else table.removeExtraFilter('estado');
-      }
-      function limpiarFiltros() {
-        document.getElementById('categorias-search-input').value = '';
-        $('#cat-filter-tipo').val('').trigger('change');
-        $('#cat-filter-estado').val('').trigger('change');
-        table.setFilters('', {});
-      }
-      document.getElementById('categorias-search-btn').addEventListener('click', aplicarFiltros);
-      document.getElementById('cat-filter-limpiar').addEventListener('click', limpiarFiltros);
-      $('#cat-filter-tipo, #cat-filter-estado').on('change', aplicarFiltros);
-      document.getElementById('categorias-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
-      return table;
+  // ===== MODAL CRUD =====
+  function abrirEditarMaterial(matId){
+    const m = getMatById(matId); if(!m.id)return;
+    // Populate category select
+    var catSel = document.getElementById('em-categoria');
+    if(catSel && catSel.options.length <= 1){
+      var catOpts = [...new Set(materiales.map(function(x){return x.categoria_nombre}).filter(Boolean))].sort();
+      catSel.innerHTML = '<option value="">Seleccionar categoría...</option>';
+      catOpts.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o)});
     }
-
-    if (tab === 'tipos') { initTablaTipos(); }
-    else if (tab === 'categorias') { initTablaCategorias(); }
-    else { initTablaMateriales(); }
-
-    var materialesGestionUrl = '/panel_admin/materiales/gestion/';
-    initModalFormAjax('formCrearMaterial', materialesGestionUrl + '?tab=materiales');
-    initModalFormAjax('formCrearTipo', materialesGestionUrl + '?tab=tipos');
-    initModalFormAjax('formCrearCategoria', materialesGestionUrl + '?tab=categorias');
-
-    initModalFormAjax('formEditarMaterial', globalThis.location.href);
-    initModalFormAjax('formEditarTipo', globalThis.location.href);
-    initModalFormAjax('formEditarCategoria', globalThis.location.href);
-
-    function initSelect2Modales() {
-      $('#modalCrearMaterial').on('shown.bs.modal', function() {
-        $('#formCrearMaterial_categoria_id').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalCrearMaterial') });
-      });
-      $('#modalCrearCategoria').on('shown.bs.modal', function() {
-        $('#formCrearCategoria_tipo_id').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalCrearCategoria') });
-      });
-      $('#modalEditarMaterial').on('shown.bs.modal', function() {
-        $('#em_categoria').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalEditarMaterial') });
-      });
-      $('#modalEditarCategoria').on('shown.bs.modal', function() {
-        $('#ec_tipo_id').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalEditarCategoria') });
-      });
+    document.getElementById('em-id').value = m.id;
+    document.getElementById('em-nombre').value = m.nombre||'';
+    document.getElementById('em-descripcion').value = m.descripcion||'';
+    document.getElementById('em-categoria').value = m.categoria_nombre||'';
+    document.getElementById('em-clasificacion').value = m.clasificacion||'';
+    document.getElementById('em-estado').value = m.estado||'ACTIVO';
+    new bootstrap.Modal(document.getElementById('modalEditarMaterial')).show();
+  }
+  function guardarEdicionMaterial(){
+    const id = document.getElementById('em-id').value;
+    const m = getMatById(id); if(!m.id)return;
+    const nombre = document.getElementById('em-nombre').value.trim();
+    const categoria = document.getElementById('em-categoria').value;
+    const clasificacion = document.getElementById('em-clasificacion').value;
+    const errores = [];
+    if(!nombre || nombre.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(nombre.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(!categoria) errores.push('Categoría: selecciona una categoría.');
+    if(!clasificacion) errores.push('Clasificación: selecciona una clasificación.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
     }
-    initSelect2Modales();
-    </script>
-    {% endblock %}
+    m.nombre = nombre;
+    m.descripcion = document.getElementById('em-descripcion').value.trim();
+    m.categoria_nombre = categoria;
+    m.clasificacion = clasificacion;
+    m.estado = document.getElementById('em-estado').value;
+    bootstrap.Modal.getInstance(document.getElementById('modalEditarMaterial')).hide();
+    Swal.fire({icon:'success',title:'Material actualizado',text:'Los cambios en "'+escapeHTML(nombre)+'" se guardaron correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
+    renderCatalogo();
+    renderInventarioPorMaterial();
+    renderGestionCategorias();
+    renderGestionClasificaciones();
+  }
+  function crearClasificacion(){
+    const nombre = document.getElementById('ncl-nombre').value.trim().toUpperCase();
+    const desc = document.getElementById('ncl-descripcion').value.trim();
+    const errores = [];
+    if(!nombre||nombre.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(nombre.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(!desc) errores.push('Descripción: es obligatoria.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
+    }
+    if(clasificaciones.some(function(c){return c.nombre===nombre})){
+      Swal.fire({icon:'warning',title:'Nombre duplicado',text:'Ya existe una clasificación llamada "'+escapeHTML(nombre)+'".',confirmButtonColor:'#198754'});
+      return;
+    }
+    const maxId = clasificaciones.reduce(function(m,c){return c.id>m?c.id:m},0);
+    clasificaciones.push({id:maxId+1,nombre:nombre,descripcion:desc});
+    bootstrap.Modal.getInstance(document.getElementById('modalNuevaClasificacion')).hide();
+    document.getElementById('ncl-nombre').value='';document.getElementById('ncl-descripcion').value='';
+    Swal.fire({icon:'success',title:'Clasificación creada',text:'"'+escapeHTML(nombre)+'" se agregó correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
+    renderGestionClasificaciones();renderCatalogo();
+  }
+  function abrirEditarClasificacion(id){
+    const c = clasificaciones.find(x=>x.id===id);if(!c)return;
+    document.getElementById('ecl-id').value=c.id;document.getElementById('ecl-nombre').value=c.nombre;
+    document.getElementById('ecl-descripcion').value=c.descripcion||'';
+    new bootstrap.Modal(document.getElementById('modalEditarClasificacion')).show();
+  }
+  function guardarEdicionClasificacion(){
+    const id=parseInt(document.getElementById('ecl-id').value);
+    const c=clasificaciones.find(function(x){return x.id===id});if(!c)return;
+    const nombre=document.getElementById('ecl-nombre').value.trim().toUpperCase();
+    const desc=document.getElementById('ecl-descripcion').value.trim();
+    const errores = [];
+    if(!nombre||nombre.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(nombre.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(!desc) errores.push('Descripción: es obligatoria.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
+    }
+    c.nombre=nombre;c.descripcion=desc;
+    bootstrap.Modal.getInstance(document.getElementById('modalEditarClasificacion')).hide();
+    Swal.fire({icon:'success',title:'Clasificación actualizada',text:'Los cambios en "'+escapeHTML(nombre)+'" se guardaron correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
+    renderGestionClasificaciones();renderCatalogo();
+  }
+  function abrirEditarCategoria(nombre){
+    const c = getCategoriasList().find(x=>x.nombre===nombre);if(!c)return;
+    document.getElementById('ec-id').value=c.nombre;document.getElementById('ec-nombre').value=c.nombre;
+    document.getElementById('ec-descripcion').value=c.descripcion||'';
+    document.getElementById('ec-estado').value=materiales.some(m=>m.categoria_nombre===c.nombre&&m.estado==='ACTIVO')?'ACTIVO':'INACTIVO';
+    new bootstrap.Modal(document.getElementById('modalEditarCategoria')).show();
+  }
+  function guardarEdicionCategoria(){
+    const oldName=document.getElementById('ec-id').value;
+    const newName=document.getElementById('ec-nombre').value.trim();
+    const desc=document.getElementById('ec-descripcion').value.trim();
+    const estado=document.getElementById('ec-estado').value;
+    const errores = [];
+    if(!newName||newName.length<3) errores.push('Nombre: mínimo 3 caracteres.');
+    else if(newName.length>30) errores.push('Nombre: máximo 30 caracteres.');
+    if(errores.length){
+      Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+      return;
+    }
+    materiales.forEach(function(m){if(m.categoria_nombre===oldName){m.categoria_nombre=newName;m.estado=estado;}});
+    bootstrap.Modal.getInstance(document.getElementById('modalEditarCategoria')).hide();
+    Swal.fire({icon:'success',title:'Categoría actualizada',text:'Los cambios en "'+escapeHTML(newName)+'" se guardaron correctamente.',toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true});
+    renderCatalogo();renderGestionCategorias();
+  }
+
+  function escapeHTML(str){if(!str)return'';const d=document.createElement('div');d.textContent=str;return d.innerHTML;}
+
+  // ===== FORM SUBMIT HANDLERS (Swal validation + confirmation) =====
+  function bindFormSwal(formId, camposReq, formLabel){
+    var form = document.getElementById(formId); if(!form)return;
+    form.addEventListener('submit', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var errores = [];
+      camposReq.forEach(function(cfg){
+        var el = document.getElementById(cfg.id);
+        var val = (el ? (el.value||'').trim() : '');
+        if(!val) errores.push(cfg.label+': es obligatorio.');
+        else if(cfg.min && val.length<cfg.min) errores.push(cfg.label+': mínimo '+cfg.min+' caracteres.');
+        else if(cfg.max && val.length>cfg.max) errores.push(cfg.label+': máximo '+cfg.max+' caracteres.');
+      });
+      if(errores.length){
+        Swal.fire({icon:'error',title:'Campos incompletos',html:'<div class="text-start">'+errores.map(function(e){return'<div>&bull; '+escapeHTML(e)+'</div>'}).join('')+'</div>',confirmButtonColor:'#198754'});
+        return;
+      }
+      Swal.fire({icon:'question',title:'¿Guardar '+formLabel+'?',text:'Revisa los datos antes de continuar.',showCancelButton:true,confirmButtonText:'Sí, guardar',cancelButtonText:'Cancelar',confirmButtonColor:'#198754',cancelButtonColor:'#6c757d'}).then(function(r){
+        if(r.isConfirmed) form.submit();
+      });
+    });
+  }
+
+  // ===== BOOT =====
+  $(function(){
+    // Initialize Select2 on filter selects (base template may not cover these)
+    try {
+      $('#cat-filtro-categoria,#cat-filtro-estado,#hist-mat-filter,#hist-cat-filter,#hist-tipo-filter,#hist-punto-filter').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:5});
+      $('#cat-filtro-clasificacion').select2({theme:'bootstrap-5',width:'auto',minimumResultsForSearch:-1});
+      $('#inv-mat-selector').select2({theme:'bootstrap-5',width:'100%',placeholder:'-- Selecciona un material --'});
+      initFlujoSelect();
+      bindFormSwal('formCrearMaterial', [{id:'nm-nombre',label:'Nombre',min:3,max:30},{id:'nm-categoria',label:'Categoría'},{id:'nm-clasificacion',label:'Clasificación'}], 'Material');
+      bindFormSwal('formCrearCategoria', [{id:'ncat-nombre',label:'Nombre',min:3,max:30}], 'Categoría');
+    } catch(e) {}
+  });
+  updateGlobalKPIs();
+  renderCatalogo();
+  renderGestionCategorias();
+  renderGestionClasificaciones();
+
+  // Export functions needed by inline onclick handlers
+  window.switchMatTab = switchMatTab;
+  window.renderCatalogo = renderCatalogo;
+  window.renderInventarioPorMaterial = renderInventarioPorMaterial;
+  window.renderFlujo = renderFlujo;
+  window.renderHistorial = renderHistorial;
+  window.renderGestionCategorias = renderGestionCategorias;
+  window.renderGestionClasificaciones = renderGestionClasificaciones;
+  window.flujoSelectTop = flujoSelectTop;
+  window.switchFlujoSub = switchFlujoSub;
+  window.limpiarFiltrosHistorial = limpiarFiltrosHistorial;
+  window.exportarTabla = exportarTabla;
+  window.abrirEditarMaterial = abrirEditarMaterial;
+  window.guardarEdicionMaterial = guardarEdicionMaterial;
+  window.crearClasificacion = crearClasificacion;
+  window.abrirEditarClasificacion = abrirEditarClasificacion;
+  window.guardarEdicionClasificacion = guardarEdicionClasificacion;
+  window.abrirEditarCategoria = abrirEditarCategoria;
+  window.guardarEdicionCategoria = guardarEdicionCategoria;
+  window.kpiGo = kpiGo;
+  window.catGoPage = catGoPage;
+  console.log('Materiales dashboard: ready');
+})();
+</script>
+{% endblock %}

@@ -630,7 +630,7 @@ class MapaInteractivo {
                         </small>
                     </td>
                     <td>
-                        <small class="badge bg-light text-dark">${this.escaparHTML(material.tipoMaterial)}</small>
+                        <small class="badge bg-light text-dark">${this.escaparHTML(material.clasificacion)}</small>
                     </td>
                     <td class="text-end">
                         <div class="d-flex align-items-center justify-content-end gap-2">

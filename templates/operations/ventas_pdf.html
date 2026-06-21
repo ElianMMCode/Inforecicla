@@ -36,7 +36,7 @@
                             <td>{{ venta.fecha_venta|date:'d/m/Y H:i' }}</td>
                             <td>{{ venta.inventario.material.nombre }}</td>
                             <td>{{ venta.inventario.material.categoria }}</td>
-                            <td>{{ venta.inventario.material.tipo }}</td>
+                            <td>{{ venta.inventario.material.clasificacion }}</td>
                             <td>{{ venta.cantidad|floatformat:2 }}</td>
                             <td>${{ venta.precio_venta|floatformat:2 }}</td>
                             <td class="total">

@@ -111,6 +111,13 @@ class Calificacion(models.TextChoices):
     DISLIKE = "DISLIKE", _("Dislike")
 
 
+class ClasificacionMaterial(models.TextChoices):
+    ESTANDAR = "ESTANDAR", _("Estándar")
+    MANEJO_ESPECIAL = "MANEJO_ESPECIAL", _("Manejo Especial")
+    PELIGROSO = "PELIGROSO", _("Peligroso")
+    HAZMAT = "HAZMAT", _("HAZMAT")
+
+
 class Visibilidad(models.TextChoices):
     GLOBAL = "GLOBAL", _("Global")
     ECA = "ECA", _("ECA")

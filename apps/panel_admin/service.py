@@ -335,13 +335,13 @@ class AdminDashboardService:
         return [{"label": "Con gestor", "count": con}, {"label": "Sin gestor", "count": sin}]
 
     @staticmethod
-    def obtener_distribucion_materiales_por_tipo():
-        materiales = Material.objects.select_related("tipo").all()
+    def obtener_distribucion_materiales_por_clasificacion():
+        materiales = Material.objects.all()
         dist = {}
         for m in materiales:
-            nombre = m.tipo.nombre if m.tipo else "Sin tipo"
+            nombre = m.clasificacion or "Sin clasificación"
             dist[nombre] = dist.get(nombre, 0) + 1
-        return [{"tipo": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
+        return [{"clasificacion": k, "count": v} for k, v in sorted(dist.items(), key=lambda x: -x[1])]
 
     @staticmethod
     def obtener_distribucion_materiales_por_estado():
@@ -455,12 +455,8 @@ class AdminCatalogService:
             return error
         if CategoriaMaterial.objects.filter(nombre__iexact=campos["nombre"]).exists():
             return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
-        tipo_id = (data.get("tipo_id") or "").strip()
-        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else None
-        if not tipo:
-            return {"ok": False, "errors": {"tipo_id": "Debe seleccionar un tipo de material."}, "message": "Debe seleccionar un tipo de material."}
         try:
-            obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"], tipo=tipo)
+            obj = CategoriaMaterial(nombre=campos["nombre"], descripcion=campos["descripcion"], estado=campos["estado"])
             obj.full_clean()
             obj.save()
             return {"ok": True, "message": "Categoria de material creada correctamente."}
@@ -489,9 +485,14 @@ class AdminCatalogService:
         if not categoria:
             errores["categoria_id"] = "Debe seleccionar una categoría."
 
-        tipo = categoria.tipo if categoria else None
+        clasificacion = (data.get("clasificacion") or "").strip().upper()
+        clasificacion_valida = clasificacion in {value for value, _ in cons.ClasificacionMaterial.choices}
+        if not clasificacion:
+            errores["clasificacion"] = "Debe seleccionar una clasificación."
+        elif not clasificacion_valida:
+            errores["clasificacion"] = "Clasificación inválida."
 
-        return nombre, descripcion, estado, categoria, tipo, errores
+        return nombre, descripcion, estado, categoria, clasificacion, errores
 
     @staticmethod
     def _resolver_categoria_material(categoria_id):
@@ -514,7 +515,7 @@ class AdminCatalogService:
     @staticmethod
     @transaction.atomic
     def crear_material(data, files=None):
-        nombre, descripcion, estado, categoria, tipo, errores = AdminCatalogService._validar_material_data(data)
+        nombre, descripcion, estado, categoria, clasificacion, errores = AdminCatalogService._validar_material_data(data)
 
         if errores:
             msg = next(iter(errores.values()))
@@ -522,9 +523,8 @@ class AdminCatalogService:
 
         try:
             categoria = AdminCatalogService._resolver_categoria_material(data.get("categoria_id"))
-            tipo = categoria.tipo if categoria else AdminCatalogService._resolver_tipo_material(data.get("tipo_id"))
             obj = Material(nombre=nombre, descripcion=descripcion, estado=estado,
-                           categoria=categoria, tipo=tipo)
+                           categoria=categoria, clasificacion=clasificacion)
             if files and "imagen" in files:
                 obj.imagen = files["imagen"]
             obj.full_clean()
@@ -717,15 +717,10 @@ class AdminCatalogService:
         if CategoriaMaterial.objects.filter(nombre__iexact=nombre).exclude(id=categoria_id).exists():
             return {"ok": False, "errors": {"nombre": CATEGORIA_DUPLICADA_MSG}, "message": CATEGORIA_DUPLICADA_MSG}
 
-        tipo_id = (data.get("tipo_id") or "").strip()
-        tipo = TipoMaterial.objects.filter(id=tipo_id).first() if tipo_id else categoria.tipo
-        if tipo_id and not tipo:
-            return {"ok": False, "errors": {"tipo_id": TIPO_MATERIAL_INVALIDO_MSG}, "message": TIPO_MATERIAL_INVALIDO_MSG}
         try:
             categoria.nombre = nombre
             categoria.descripcion = descripcion
             categoria.estado = estado
-            categoria.tipo = tipo
             categoria.full_clean()
             categoria.save()
             return {"ok": True, "message": "Categoria de material actualizada correctamente."}
@@ -739,7 +734,7 @@ class AdminCatalogService:
         if not material:
             return {"ok": False, "errors": {"_general": "Material no encontrado."}, "message": "Material no encontrado."}
 
-        _, _, _, categoria, tipo, errores = AdminCatalogService._validar_material_data(data, default_estado="")
+        _, _, _, categoria, clasificacion, errores = AdminCatalogService._validar_material_data(data, default_estado="")
         if errores:
             msg = next(iter(errores.values()))
             return {"ok": False, "message": msg, "errors": errores}
@@ -749,7 +744,7 @@ class AdminCatalogService:
             material.descripcion = (data.get("descripcion") or "").strip()
             material.estado = (data.get("estado") or "").strip().upper()
             material.categoria = categoria
-            material.tipo = categoria.tipo if categoria else tipo
+            material.clasificacion = clasificacion
 
             if files and "imagen" in files:
                 material.imagen = files["imagen"]

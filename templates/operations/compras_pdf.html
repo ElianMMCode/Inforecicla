@@ -35,7 +35,7 @@
                 <td>{{ compra.fecha_compra|date:'d/m/Y H:i' }}</td>
                 <td>{{ compra.inventario.material.nombre }}</td>
                 <td>{{ compra.inventario.material.categoria }}</td>
-                <td>{{ compra.inventario.material.tipo }}</td>
+                <td>{{ compra.inventario.material.clasificacion }}</td>
                 <td>{{ compra.cantidad|floatformat:2 }}</td>
                 <td>${{ compra.precio_compra|floatformat:2 }}</td>
                 <td class="total">

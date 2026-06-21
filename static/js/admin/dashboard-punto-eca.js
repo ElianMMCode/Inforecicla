@@ -931,4 +931,26 @@ function populatePanelFilters(){
   // Historial materials
   const histMat=document.getElementById('hist-material-filter');
   if(histMat)mats.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;histMat.appendChild(o)});
+
+  // Deep link support: #punto=ID&tab=inventario
+  (function(){
+    const h = location.hash;
+    if(h){
+      const params = new URLSearchParams(h.substring(1));
+      const pid = params.get('punto');
+      const tab = params.get('tab');
+      if(pid){
+        const p = puntos.find(function(x){return x.id==pid||x._id==pid});
+        if(p){
+          setTimeout(function(){
+            openDetalle(p.id);
+            if(tab){
+              const btn = document.querySelector('#detalle-tabs .nav-link[onclick*="'+tab+'"]');
+              if(btn) switchTab(tab, btn);
+            }
+          }, 400);
+        }
+      }
+    }
+  })();
 }

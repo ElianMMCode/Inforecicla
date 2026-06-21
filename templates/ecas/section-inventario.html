@@ -262,7 +262,7 @@ globalThis.getCSRFToken = function () {
                                     <label class="form-label small fw-semibold text-muted mb-1" for="inv-filter-tipo">Tipo</label>
                                     <select class="form-select border-2 border-success" id="inv-filter-tipo">
                                         <option value="">Todos</option>
-                                        {% for t in tipo_inventario %}<option value="{{ t|slugify }}">{{ t }}</option>{% endfor %}
+                                        {% for t in clasificacion_inventario %}<option value="{{ t|slugify }}">{{ t }}</option>{% endfor %}
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -309,7 +309,7 @@ globalThis.getCSRFToken = function () {
                                  data-inv-id="{{ inv.id }}"
                                  data-nombre="{{ inv.material.nombre|lower }}"
                                  data-categoria="{{ inv.material.categoria.nombre|default_if_none:''|slugify }}"
-                                 data-tipo="{{ inv.material.tipo.nombre|default_if_none:''|slugify }}"
+                                 data-tipo="{{ inv.material.clasificacion|default_if_none:''|slugify }}"
                                  data-estado="{% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}critico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}alerta{% else %}ok{% endif %}"
                                  data-ocupacion="{{ inv.ocupacion_actual|floatformat:0 }}">
                                 <button type="button" class="card h-100 shadow-sm border-0 position-relative inv-tarjeta text-start w-100">
@@ -324,7 +324,7 @@ globalThis.getCSRFToken = function () {
                                                 {% else %}bg-success-subtle text-success-emphasis{% endif %}">
                                         <div>
                                             <h5 class="card-title mb-0 fw-bold">{{ inv.material.nombre }}</h5>
-                                            <small class="opacity-75">{{ inv.material.tipo.nombre|default:'—' }}</small>
+                                            <small class="opacity-75">{{ inv.material.clasificacion|default:'—' }}</small>
                                         </div>
                                         <span class="badge {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}bg-danger{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}bg-warning text-dark{% else %}bg-success{% endif %}">
                                             {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}Crítico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}Alerta{% else %}OK{% endif %}
@@ -558,7 +558,7 @@ globalThis.getCSRFToken = function () {
                                     <label class="form-label fw-semibold small" for="inv-hfiltro-tipo-material">Tipo material</label>
                                     <select class="form-select form-select-sm" id="inv-hfiltro-tipo-material">
                                         <option value="">-- Todos --</option>
-                                        {% for tip in tipo_inventario %}
+                                        {% for tip in clasificacion_inventario %}
                                             <option value="{{ tip }}">{{ tip }}</option>
                                         {% endfor %}
                                     </select>
@@ -1278,7 +1278,7 @@ globalThis.getCSRFToken = function () {
                             <label class="form-label fw-semibold small" for="inv-ws-hfiltro-tipo-material">Tipo material</label>
                             <select class="form-select form-select-sm inv-ws-hfiltro" id="inv-ws-hfiltro-tipo-material">
                                 <option value="">-- Todos --</option>
-                                {% for tip in tipo_inventario %}
+                                {% for tip in clasificacion_inventario %}
                                     <option value="{{ tip }}">{{ tip }}</option>
                                 {% endfor %}
                             </select>
