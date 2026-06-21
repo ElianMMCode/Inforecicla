@@ -324,7 +324,19 @@ globalThis.getCSRFToken = function () {
                                                 {% else %}bg-success-subtle text-success-emphasis{% endif %}">
                                         <div>
                                             <h5 class="card-title mb-0 fw-bold">{{ inv.material.nombre }}</h5>
-                                            <small class="opacity-75">{{ inv.material.clasificacion|default:'—' }}</small>
+                                            {% with cls=inv.material.clasificacion %}
+                                            <span class="clasificacion-tooltip d-inline-flex align-items-center gap-1 small opacity-75"
+                                                  data-bs-toggle="tooltip" data-bs-placement="top"
+                                                  title="{% for k,v in desc_clasificaciones.items %}{% if k == cls %}{{ v }}{% endif %}{% endfor %}"
+                                                  style="cursor:help;">
+                                                {% if cls == 'ESTANDAR' %}<i class="bi bi-check-circle-fill text-success"></i>
+                                                {% elif cls == 'MANEJO_ESPECIAL' %}<i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                                {% elif cls == 'PELIGROSO' %}<i class="bi bi-shield-exclamation-fill text-danger"></i>
+                                                {% elif cls == 'HAZMAT' %}<i class="bi bi-radiation text-dark"></i>
+                                                {% else %}<i class="bi bi-question-circle-fill text-secondary"></i>{% endif %}
+                                                {{ cls|default:'—' }}
+                                            </span>
+                                            {% endwith %}
                                         </div>
                                         <span class="badge {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}bg-danger{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}bg-warning text-dark{% else %}bg-success{% endif %}">
                                             {% if inv.ocupacion_actual|add:0 >= inv.umbral_critico %}Crítico{% elif inv.ocupacion_actual|add:0 >= inv.umbral_alerta %}Alerta{% else %}OK{% endif %}
@@ -435,6 +447,25 @@ globalThis.getCSRFToken = function () {
                                     <div class="col-12">
                                         <label for="inv-crear-material-nombre" class="form-label fw-semibold">Material Seleccionado</label>
                                         <input type="text" class="form-control" id="inv-crear-material-nombre" readonly style="background-color: #f5f5f5">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold text-muted small">Categoría</label>
+                                        <input type="text" class="form-control form-control-sm" id="inv-crear-material-categoria" readonly style="background-color: #f5f5f5">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold text-muted small">Clasificación</label>
+                                        <div class="form-control form-control-sm d-flex align-items-center gap-2" id="inv-crear-material-clasificacion-display" readonly style="background-color: #f5f5f5; height:auto; min-height:38px;">
+                                            <span id="inv-crear-material-clasificacion-icono"></span>
+                                            <span id="inv-crear-material-clasificacion-nombre"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold text-muted small">Descripción Clasificación</label>
+                                        <input type="text" class="form-control form-control-sm" id="inv-crear-material-clasificacion-desc" readonly style="background-color: #f5f5f5; font-size:0.8rem;">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold text-muted small">Descripción del Material</label>
+                                        <textarea class="form-control form-control-sm" id="inv-crear-material-descripcion" rows="2" readonly style="background-color: #f5f5f5; resize:none;"></textarea>
                                     </div>
                                 </div>
                                 <hr class="my-4">

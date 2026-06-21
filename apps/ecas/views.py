@@ -414,6 +414,7 @@ def _build_inventario_context(punto, deep_link=None, ovtab=""):
         **kpis,
         "categoria_inventario": categoria_inventario,
         "clasificacion_inventario": clasificacion_inventario,
+        "desc_clasificaciones": cons.DESCRIPCIONES_CLASIFICACION,
         "centros": centros,
         "historial_compras": historial_compras,
         "historial_ventas": historial_ventas,

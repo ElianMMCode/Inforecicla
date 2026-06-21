@@ -526,6 +526,26 @@
         bootstrap.Modal.getInstance(document.getElementById("inv-modal-picker"))?.hide();
         document.getElementById("inv-crear-material-id").value = item.materialId;
         document.getElementById("inv-crear-material-nombre").value = item.nmbMaterial || "";
+        document.getElementById("inv-crear-material-categoria").value = item.nmbCategoria || "";
+        document.getElementById("inv-crear-material-descripcion").value = item.dscMaterial || "";
+
+        const clasificacion = item.nmbClasificacion || "";
+        const descClasif = item.descripcionClasificacion || "";
+        const iconEl = document.getElementById("inv-crear-material-clasificacion-icono");
+        const nombreEl = document.getElementById("inv-crear-material-clasificacion-nombre");
+        const descEl = document.getElementById("inv-crear-material-clasificacion-desc");
+        if (iconEl) {
+            const iconMap = {
+                'ESTANDAR': '<i class="bi bi-check-circle-fill text-success"></i>',
+                'MANEJO_ESPECIAL': '<i class="bi bi-exclamation-triangle-fill text-warning"></i>',
+                'PELIGROSO': '<i class="bi bi-shield-exclamation-fill text-danger"></i>',
+                'HAZMAT': '<i class="bi bi-radiation text-dark"></i>'
+            };
+            iconEl.innerHTML = iconMap[clasificacion] || '<i class="bi bi-question-circle-fill text-secondary"></i>';
+        }
+        if (nombreEl) nombreEl.textContent = clasificacion || "—";
+        if (descEl) descEl.value = descClasif;
+
         const sel = document.getElementById("inv-crear-unidad-medida");
         if (sel && item.unidad) sel.value = item.unidad;
         document.getElementById("inv-tab-buscar-placeholder").style.display = "none";
@@ -538,10 +558,16 @@
     }
 
     function limpiarSeleccionCrear() {
-        ["inv-crear-material-id", "inv-crear-material-nombre", "inv-crear-stock-inicial",
-         "inv-crear-capacidad-maxima", "inv-crear-unidad-medida", "inv-crear-precio-compra",
-         "inv-crear-precio-venta", "inv-crear-umbral-alerta", "inv-crear-umbral-critico"]
+        ["inv-crear-material-id", "inv-crear-material-nombre", "inv-crear-material-categoria",
+         "inv-crear-material-descripcion", "inv-crear-material-clasificacion-desc",
+         "inv-crear-stock-inicial", "inv-crear-capacidad-maxima", "inv-crear-unidad-medida",
+         "inv-crear-precio-compra", "inv-crear-precio-venta", "inv-crear-umbral-alerta",
+         "inv-crear-umbral-critico"]
             .forEach((id) => { const el = document.getElementById(id); if (el) { el.value = ""; el.classList.remove("is-invalid"); } });
+        const iconEl = document.getElementById("inv-crear-material-clasificacion-icono");
+        if (iconEl) iconEl.innerHTML = "";
+        const nombreEl = document.getElementById("inv-crear-material-clasificacion-nombre");
+        if (nombreEl) nombreEl.textContent = "";
         document.getElementById("inv-crear-mensaje-estado").style.display = "none";
         document.getElementById("inv-tab-buscar-form-container").style.display = "none";
         document.getElementById("inv-tab-buscar-placeholder").style.display = "block";
