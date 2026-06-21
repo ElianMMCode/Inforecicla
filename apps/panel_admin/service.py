@@ -1323,6 +1323,23 @@ class AdminPuntoECAService:
             return []
 
     @staticmethod
+    @staticmethod
+    def _inventario_item_to_dict(inv, compras_kgs, ventas_kgs, ultimo):
+        return {
+            "puntoId": str(inv.punto_eca_id) if inv.punto_eca_id else "",
+            "mat": inv.material.nombre if inv.material else "-",
+            "stock": float(inv.stock_actual or 0),
+            "cap": float(inv.capacidad_maxima or 0),
+            "compra": float(inv.precio_compra or 0),
+            "venta": float(inv.precio_venta or 0),
+            "cat": inv.material.categoria.nombre if inv.material and inv.material.categoria else "-",
+            "estado": inv.alerta or "OK",
+            "ultimoMov": ultimo.strftime("%Y-%m-%d") if ultimo else "",
+            "comprasKg": float(compras_kgs or 0),
+            "ventasKg": float(ventas_kgs or 0),
+        }
+
+    @staticmethod
     def obtener_inventario_desglosado():
         """Retorna inventario desagregado por punto y material (equivalente al
         invData del mockup)."""
@@ -1343,33 +1360,20 @@ class AdminPuntoECAService:
         inicio_90d = ahora - datetime.timedelta(days=90)
 
         for inv in invs:
-            compras_qs = CompraInventario.objects.filter(
-                inventario=inv, fecha_compra__gte=inicio_90d
-            ).aggregate(kgs=Sum("cantidad"))
-            ventas_qs = VentaInventario.objects.filter(
-                inventario=inv, fecha_venta__gte=inicio_90d
-            ).aggregate(kgs=Sum("cantidad"))
+            compras_kgs = (
+                CompraInventario.objects.filter(inventario=inv, fecha_compra__gte=inicio_90d)
+                .aggregate(kgs=Sum("cantidad"))["kgs"]
+            )
+            ventas_kgs = (
+                VentaInventario.objects.filter(inventario=inv, fecha_venta__gte=inicio_90d)
+                .aggregate(kgs=Sum("cantidad"))["kgs"]
+            )
             ultimo = (
                 CompraInventario.objects.filter(inventario=inv)
-                .order_by("-fecha_compra")
-                .values_list("fecha_compra", flat=True)
-                .first()
+                .order_by("-fecha_compra").values_list("fecha_compra", flat=True).first()
                 or VentaInventario.objects.filter(inventario=inv)
-                .order_by("-fecha_venta")
-                .values_list("fecha_venta", flat=True)
-                .first()
+                .order_by("-fecha_venta").values_list("fecha_venta", flat=True).first()
             )
-            items.append({
-                "puntoId": str(inv.punto_eca_id) if inv.punto_eca_id else "",
-                "mat": inv.material.nombre if inv.material else "-",
-                "stock": float(inv.stock_actual or 0),
-                "cap": float(inv.capacidad_maxima or 0),
-                "compra": float(inv.precio_compra or 0),
-                "venta": float(inv.precio_venta or 0),
-                "cat": inv.material.categoria.nombre if inv.material and inv.material.categoria else "-",
-                "estado": inv.alerta or "OK",
-                "ultimoMov": ultimo.strftime("%Y-%m-%d") if ultimo else "",
-                "comprasKg": float(compras_qs["kgs"] or 0),
-                "ventasKg": float(ventas_qs["kgs"] or 0),
-            })
+            items.append(AdminPuntoECAService._inventario_item_to_dict(
+                inv, compras_kgs, ventas_kgs, ultimo))
         return items
