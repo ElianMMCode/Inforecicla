@@ -380,6 +380,7 @@
 {{ conversaciones|json_script:"conversaciones-data" }}
 {{ usuarios|json_script:"usuarios-data" }}
 {{ kpis|json_script:"kpis-data" }}
+{{ inv_data|json_script:"inv-data" }}
 
 <script src="{% static 'js/admin/dashboard-punto-eca.js' %}"></script>
 {% endblock %}

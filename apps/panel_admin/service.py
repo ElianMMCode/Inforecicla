@@ -1322,3 +1322,55 @@ class AdminPuntoECAService:
             return [{"material": k, "cantidad": float(v)} for k, v in sorted(mats.items(), key=lambda x: -x[1])[:5]]
         except Exception:
             return []
+
+    @staticmethod
+    def obtener_inventario_desglosado():
+        """Retorna inventario desagregado por punto y material (equivalente al
+        invData del mockup)."""
+        from apps.inventory.models import Material
+        from apps.operations.models import CompraInventario, VentaInventario
+        from django.db.models import Sum
+
+        items = []
+        try:
+            invs = list(
+                Inventario.objects.select_related("material", "punto_eca", "material__categoria")
+                .all()
+            )
+        except Exception:
+            return items
+
+        ahora = timezone.now()
+        inicio_90d = ahora - datetime.timedelta(days=90)
+
+        for inv in invs:
+            compras_qs = CompraInventario.objects.filter(
+                inventario=inv, fecha_compra__gte=inicio_90d
+            ).aggregate(kgs=Sum("cantidad"))
+            ventas_qs = VentaInventario.objects.filter(
+                inventario=inv, fecha_venta__gte=inicio_90d
+            ).aggregate(kgs=Sum("cantidad"))
+            ultimo = (
+                CompraInventario.objects.filter(inventario=inv)
+                .order_by("-fecha_compra")
+                .values_list("fecha_compra", flat=True)
+                .first()
+                or VentaInventario.objects.filter(inventario=inv)
+                .order_by("-fecha_venta")
+                .values_list("fecha_venta", flat=True)
+                .first()
+            )
+            items.append({
+                "puntoId": str(inv.punto_eca_id) if inv.punto_eca_id else "",
+                "mat": inv.material.nombre if inv.material else "-",
+                "stock": float(inv.stock_actual or 0),
+                "cap": float(inv.capacidad_maxima or 0),
+                "compra": float(inv.precio_compra or 0),
+                "venta": float(inv.precio_venta or 0),
+                "cat": inv.material.categoria.nombre if inv.material and inv.material.categoria else "-",
+                "estado": inv.alerta or "OK",
+                "ultimoMov": ultimo.strftime("%Y-%m-%d") if ultimo else "",
+                "comprasKg": float(compras_qs["kgs"] or 0),
+                "ventasKg": float(ventas_qs["kgs"] or 0),
+            })
+        return items

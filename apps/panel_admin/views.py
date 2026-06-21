@@ -1425,6 +1425,7 @@ def puntos_eca_dashboard(request):
         "conversaciones": AdminPuntoECAService.obtener_conversaciones(),
         "usuarios": AdminPuntoECAService.obtener_usuarios_admin(),
         "kpis": AdminPuntoECAService.obtener_kpis(),
+        "inv_data": AdminPuntoECAService.obtener_inventario_desglosado(),
         "localidades": Localidad.objects.all().order_by("nombre"),
     }
     return render(request, "admin/PuntoECA/dashboard.html", contexto)
