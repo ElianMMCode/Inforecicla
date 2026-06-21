@@ -142,6 +142,24 @@
         globalThis.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    function _actualizarBannerClasificacion(cls, descCls) {
+        const banner = document.getElementById("inv-ws-clasificacion-alerta");
+        const icono = document.getElementById("inv-ws-clasificacion-alerta-icono");
+        const titulo = document.getElementById("inv-ws-clasificacion-alerta-titulo");
+        const desc = document.getElementById("inv-ws-clasificacion-alerta-desc");
+        if (!banner || !icono || !titulo || !desc) return;
+        const cfg = {
+            PELIGROSO: { cls: "alert alert-danger d-flex mb-3", icon: "bi bi-shield-exclamation fs-2 flex-shrink-0 text-danger", title: "⚠ Material Peligroso — Requiere manejo autorizado", fallback: "Riesgo químico o eléctrico. Requiere EPP y manejo autorizado." },
+            HAZMAT:    { cls: "alert alert-dark d-flex mb-3", icon: "bi bi-radiation fs-2 flex-shrink-0", title: "☢ Residuo Peligroso HAZMAT — Solo gestores autorizados", fallback: "Residuo peligroso regulado. Transporte con manifiesto, disposición certificada." }
+        };
+        const c = cfg[cls];
+        if (!c) { banner.className = "alert d-none mb-3"; return; }
+        banner.className = c.cls;
+        icono.className = c.icon;
+        titulo.textContent = c.title;
+        desc.textContent = descCls || c.fallback;
+    }
+
     function poblarWorkspace(inv) {
         const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? "—"; };
         const nombre = inv.nombre;
@@ -192,25 +210,7 @@
         }
 
         // Banner de alerta para clasificaciones de riesgo
-        const alertaBanner = document.getElementById("inv-ws-clasificacion-alerta");
-        const alertaIcono = document.getElementById("inv-ws-clasificacion-alerta-icono");
-        const alertaTitulo = document.getElementById("inv-ws-clasificacion-alerta-titulo");
-        const alertaDesc = document.getElementById("inv-ws-clasificacion-alerta-desc");
-        if (alertaBanner && alertaIcono && alertaTitulo && alertaDesc) {
-            if (cls === 'PELIGROSO') {
-                alertaBanner.className = "alert alert-danger d-flex mb-3";
-                alertaIcono.className = "bi bi-shield-exclamation fs-2 flex-shrink-0 text-danger";
-                alertaTitulo.textContent = "⚠ Material Peligroso — Requiere manejo autorizado";
-                alertaDesc.textContent = descCls || "Riesgo químico o eléctrico. Requiere EPP y manejo autorizado.";
-            } else if (cls === 'HAZMAT') {
-                alertaBanner.className = "alert alert-dark d-flex mb-3";
-                alertaIcono.className = "bi bi-radiation fs-2 flex-shrink-0";
-                alertaTitulo.textContent = "☢ Residuo Peligroso HAZMAT — Solo gestores autorizados";
-                alertaDesc.textContent = descCls || "Residuo peligroso regulado. Transporte con manifiesto, disposición certificada.";
-            } else {
-                alertaBanner.className = "alert d-none mb-3";
-            }
-        }
+        _actualizarBannerClasificacion(cls, descCls);
         setText("inv-ws-datos-cap", `${formatQty(inv.capacidadMaxima, inv.unidad)}`);
         setText("inv-ws-datos-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-datos-unidad", inv.unidad);
@@ -2897,6 +2897,6 @@
     }
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-        new bootstrap.Tooltip(el);
+        void new bootstrap.Tooltip(el);
     });
 })();

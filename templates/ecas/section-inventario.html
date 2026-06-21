@@ -390,7 +390,7 @@ globalThis.getCSRFToken = function () {
                     <script>
                     document.addEventListener('DOMContentLoaded', function () {
                         document.querySelectorAll('.clasificacion-tooltip').forEach(function (el) {
-                            new bootstrap.Tooltip(el);
+                            void new bootstrap.Tooltip(el);
                         });
                     });
                     </script>
@@ -449,22 +449,22 @@ globalThis.getCSRFToken = function () {
                                         <input type="text" class="form-control" id="inv-crear-material-nombre" readonly style="background-color: #f5f5f5">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold text-muted small">Categoría</label>
+                                        <label for="inv-crear-material-categoria" class="form-label fw-semibold text-muted small">Categoría</label>
                                         <input type="text" class="form-control form-control-sm" id="inv-crear-material-categoria" readonly style="background-color: #f5f5f5">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold text-muted small">Clasificación</label>
+                                        <label for="inv-crear-material-clasificacion-display" class="form-label fw-semibold text-muted small">Clasificación</label>
                                         <div class="form-control form-control-sm d-flex align-items-center gap-2" id="inv-crear-material-clasificacion-display" readonly style="background-color: #f5f5f5; height:auto; min-height:38px;">
                                             <span id="inv-crear-material-clasificacion-icono"></span>
                                             <span id="inv-crear-material-clasificacion-nombre"></span>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label fw-semibold text-muted small">Descripción Clasificación</label>
+                                        <label for="inv-crear-material-clasificacion-desc" class="form-label fw-semibold text-muted small">Descripción Clasificación</label>
                                         <input type="text" class="form-control form-control-sm" id="inv-crear-material-clasificacion-desc" readonly style="background-color: #f5f5f5; font-size:0.8rem;">
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label fw-semibold text-muted small">Descripción del Material</label>
+                                        <label for="inv-crear-material-descripcion" class="form-label fw-semibold text-muted small">Descripción del Material</label>
                                         <textarea class="form-control form-control-sm" id="inv-crear-material-descripcion" rows="2" readonly style="background-color: #f5f5f5; resize:none;"></textarea>
                                     </div>
                                 </div>
@@ -968,7 +968,7 @@ globalThis.getCSRFToken = function () {
                 <div class="d-flex align-items-start gap-3">
                     <i id="inv-ws-clasificacion-alerta-icono" class="bi fs-2 flex-shrink-0"></i>
                     <div>
-                        <h6 id="inv-ws-clasificacion-alerta-titulo" class="alert-heading fw-bold mb-1"></h6>
+                        <h6 id="inv-ws-clasificacion-alerta-titulo" class="alert-heading fw-bold mb-1"><span class="visually-hidden">Alerta de clasificación</span></h6>
                         <p id="inv-ws-clasificacion-alerta-desc" class="mb-0 small"></p>
                     </div>
                 </div>
