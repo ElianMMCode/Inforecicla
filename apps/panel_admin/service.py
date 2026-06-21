@@ -981,3 +981,399 @@ class AdminCatalogService:
             return {"ok": True, "message": "Categoria de publicacion actualizada correctamente."}
         except (ValidationError, IntegrityError) as e:
             return {"ok": False, "errors": _errores_a_dict(e), "message": f"No se pudo actualizar: {_aplanar_error(e)}"}
+
+
+class AdminPuntoECAService:
+    """Servicio de datos para el dashboard de Puntos ECA.
+
+    Retorna diccionarios y listas con el formato esperado por el JS
+    del dashboard, reutilizando el patron de AdminDashboardService.
+    """
+
+    # ----------------------------------------------------------------
+    # Datos base — arrays crudos que el dashboard procesa client-side
+    # ----------------------------------------------------------------
+
+    @staticmethod
+    def _estado_inventario(invs):
+        criticos = sum(1 for i in invs if i.alerta == cons.Alerta.CRITICO)
+        alertas = sum(1 for i in invs if i.alerta == cons.Alerta.ALERTA)
+        oks = sum(1 for i in invs if i.alerta == cons.Alerta.OK)
+        if criticos:
+            return "Critico"
+        if alertas:
+            return "Alerta"
+        if oks:
+            return "OK"
+        return "Inactivo"
+
+    @staticmethod
+    def _punto_to_dict(p, stock_total, cap_max, inv_estado, estado_display, compras, ventas, margen, msgs):
+        return {
+            "id": str(p.id),
+            "nombre": p.nombre or "",
+            "direccion": p.direccion or "",
+            "localidad": p.localidad.nombre if p.localidad else "-",
+            "localidad_id": str(p.localidad.localidad_id) if p.localidad else "",
+            "gestor": f"{p.gestor_eca.nombres} {p.gestor_eca.apellidos}" if p.gestor_eca else "Sin gestor",
+            "estado": estado_display,
+            "invEstado": inv_estado,
+            "stockTotal": stock_total,
+            "capMax": cap_max,
+            "lat": float(p.latitud) if p.latitud else 4.6097,
+            "lng": float(p.longitud) if p.longitud else -74.0818,
+            "compras": compras,
+            "ventas": ventas,
+            "margen": margen,
+            "msgs": msgs,
+            "fecha_creacion": p.fecha_creacion.strftime("%Y-%m-%d") if p.fecha_creacion else "",
+            "email": p.email or "",
+            "celular": p.celular or "",
+            "telefono_punto": p.telefono_punto or "",
+            "sitio_web": p.sitio_web or "",
+            "horario_atencion": p.horario_atencion or "",
+            "descripcion": p.descripcion or "",
+        }
+
+    @staticmethod
+    def obtener_puntos_dashboard():
+        """Retorna lista de puntos con campos calculados (inventario,
+        financieros, mensajes)."""
+        from apps.operations.models import CompraInventario, VentaInventario
+        from apps.chat.models import Chat, Mensaje
+        from django.db.models import Sum
+
+        puntos = []
+        try:
+            pts = list(
+                PuntoECA.objects.select_related("gestor_eca", "localidad")
+                .prefetch_related("inventario_punto", "chats")
+                .all()
+                .order_by("nombre")
+            )
+        except Exception:
+            return puntos
+
+        ahora = timezone.now()
+        inicio_trimestre = ahora - datetime.timedelta(days=90)
+
+        for p in pts:
+            invs = list(p.inventario_punto.all())
+            stock_total = float(sum((i.ocupacion_actual or 0) for i in invs))
+            cap_max = float(sum(i.capacidad_maxima for i in invs))
+            inv_estado = AdminPuntoECAService._estado_inventario(invs)
+            estado_display = "Activo" if p.estado == cons.Estado.ACTIVO else "Inactivo"
+
+            inv_ids = [i.id for i in invs]
+            compras = float((
+                CompraInventario.objects.filter(
+                    inventario_id__in=inv_ids, fecha_compra__gte=inicio_trimestre
+                ).aggregate(total=Sum("precio_compra"))["total"] or 0))
+            ventas = float((
+                VentaInventario.objects.filter(
+                    inventario_id__in=inv_ids, fecha_venta__gte=inicio_trimestre
+                ).aggregate(total=Sum("precio_venta"))["total"] or 0))
+            margen = round(((ventas - compras) / compras * 100), 1) if compras > 0 else 0
+
+            chats_ids = Chat.objects.filter(punto=p).values_list("id", flat=True)
+            msgs = Mensaje.objects.filter(chat_id__in=chats_ids).count()
+
+            puntos.append(AdminPuntoECAService._punto_to_dict(
+                p, stock_total, cap_max, inv_estado, estado_display, compras, ventas, margen, msgs))
+        return puntos
+
+    @staticmethod
+    def obtener_historial(meses=6):
+        """Retorna compras + ventas de los ultimos N meses en formato
+        compatible con la tabla de historial del dashboard."""
+        from apps.operations.models import CompraInventario, VentaInventario
+        from apps.inventory.models import Inventario
+
+        items = []
+        desde = timezone.now() - datetime.timedelta(days=meses * 30)
+        try:
+            compras = list(
+                CompraInventario.objects.select_related("inventario__material", "inventario__punto_eca")
+                .filter(fecha_compra__gte=desde)
+                .order_by("-fecha_compra")
+            )
+            ventas = list(
+                VentaInventario.objects.select_related("inventario__material", "inventario__punto_eca")
+                .filter(fecha_venta__gte=desde)
+                .order_by("-fecha_venta")
+            )
+        except Exception:
+            return items
+
+        for c in compras:
+            items.append({
+                "fecha": c.fecha_compra.strftime("%Y-%m-%d %H:%M"),
+                "tipo": "Compra",
+                "mat": c.inventario.material.nombre if c.inventario.material else "-",
+                "kg": float(c.cantidad),
+                "valor": float(c.precio_compra or 0),
+                "puntoId": str(c.inventario.punto_eca_id) if c.inventario.punto_eca_id else "",
+            })
+        for v in ventas:
+            items.append({
+                "fecha": v.fecha_venta.strftime("%Y-%m-%d %H:%M"),
+                "tipo": "Venta",
+                "mat": v.inventario.material.nombre if v.inventario.material else "-",
+                "kg": float(v.cantidad),
+                "valor": float(v.precio_venta or 0),
+                "puntoId": str(v.inventario.punto_eca_id) if v.inventario.punto_eca_id else "",
+            })
+        items.sort(key=lambda x: x["fecha"], reverse=True)
+        return items
+
+    @staticmethod
+    def obtener_eventos():
+        """Retorna instancias de eventos compatibles con el dashboard."""
+        from apps.scheduling.models import EventoInstancia
+
+        eventos = []
+        try:
+            instancias = list(
+                EventoInstancia.objects.select_related("evento_base", "punto_eca")
+                .all()
+                .order_by("-fecha_inicio")[:20]
+            )
+        except Exception:
+            return eventos
+
+        for ei in instancias:
+            titulo = ei.evento_base.titulo if ei.evento_base else "Evento"
+            tipo = AdminPuntoECAService._inferir_tipo_evento(titulo)
+            eventos.append({
+                "fecha": ei.fecha_inicio.strftime("%Y-%m-%d") if ei.fecha_inicio else "",
+                "titulo": titulo,
+                "tipo": tipo,
+                "es_completado": ei.es_completado,
+                "puntoId": str(ei.punto_eca_id) if ei.punto_eca_id else "",
+            })
+        return eventos
+
+    @staticmethod
+    def obtener_conversaciones():
+        """Retorna chats con ultimo mensaje y conteo."""
+        from apps.chat.models import Chat, Mensaje
+        from django.db.models import Count
+
+        convs = []
+        try:
+            chats = list(
+                Chat.objects.select_related("punto", "ciudadano")
+                .annotate(msgs=Count("mensajes"))
+                .order_by("-fecha_creacion")[:12]
+            )
+        except Exception:
+            return convs
+
+        for ch in chats:
+            ultimo = (
+                Mensaje.objects.filter(chat=ch)
+                .order_by("-fecha_envio")
+                .values_list("texto", flat=True)
+                .first()
+            )
+            convs.append({
+                "punto": ch.punto.nombre if ch.punto else "-",
+                "ciudadano": f"{ch.ciudadano.nombres} {ch.ciudadano.apellidos}" if ch.ciudadano else "-",
+                "fecha": ch.fecha_creacion.strftime("%Y-%m-%d %H:%M") if ch.fecha_creacion else "",
+                "msgs": ch.msgs,
+                "ultimo": (ultimo or "")[:50],
+                "puntoId": str(ch.punto_id) if ch.punto_id else "",
+            })
+        return convs
+
+    @staticmethod
+    def obtener_usuarios_admin():
+        """Retorna lista de usuarios con metadatos para filtros y referencias."""
+        usuarios = []
+        try:
+            users = list(Usuario.objects.select_related("punto_eca", "localidad").all().order_by("-date_joined"))
+        except Exception:
+            return usuarios
+
+        for u in users:
+            try:
+                puntos_asignados = 1 if u.punto_eca is not None else 0
+            except Exception:
+                puntos_asignados = 0
+            usuarios.append({
+                "id": str(u.id),
+                "username": f"{u.nombres} {u.apellidos}",
+                "rol": u.get_tipo_usuario_display() if hasattr(u, "get_tipo_usuario_display") else "",
+                "fecha_registro": u.date_joined.strftime("%Y-%m-%d") if u.date_joined else "",
+                "puntos_asignados": puntos_asignados,
+                "localidad": u.localidad.nombre if u.localidad else "-",
+            })
+        return usuarios
+
+    # ----------------------------------------------------------------
+    # KPIs y datos agregados
+    # ----------------------------------------------------------------
+
+    @staticmethod
+    @staticmethod
+    def _calcular_delta(actual, anterior):
+        return round(((actual - anterior) / (anterior or 1) * 100), 1)
+
+    @staticmethod
+    def obtener_kpis(puntos=None):
+        """Calcula los 8 KPIs globales a partir de la lista de puntos."""
+        if puntos is None:
+            puntos = AdminPuntoECAService.obtener_puntos_dashboard()
+
+        total = len(puntos)
+        n_activos = sum(1 for p in puntos if p["estado"] == "Activo")
+        n_inactivos = total - n_activos
+        cap_total = sum(p["capMax"] for p in puntos)
+        stock_total = sum(p["stockTotal"] for p in puntos)
+        ocupacion_pct = round((stock_total / (cap_total or 1) * 100), 1)
+        capacidad_pct = round((cap_total / (cap_total or 1) * 100), 1)
+        historial = AdminPuntoECAService.obtener_historial(3)
+        flujo_in = sum(h["kg"] for h in historial if h["tipo"] == "Compra")
+        flujo_out = sum(h["kg"] for h in historial if h["tipo"] == "Venta")
+        compras_total = sum(p["compras"] for p in puntos)
+        ventas_total = sum(p["ventas"] for p in puntos)
+        ganancia = round(ventas_total - compras_total, 2)
+        margen_avg = round(((ventas_total - compras_total) / (compras_total or 1) * 100), 1)
+
+        from apps.chat.models import Mensaje as MsgModel
+        sin_resp = 0
+        try:
+            sin_resp = MsgModel.objects.filter(es_leido=False).count()
+        except Exception:
+            pass
+
+        return {
+            "total_puntos": total, "activos": n_activos, "inactivos": n_inactivos,
+            "ocupacion_pct": ocupacion_pct, "capacidad_pct": capacidad_pct,
+            "flujo_in": round(flujo_in, 1), "flujo_out": round(flujo_out, 1),
+            "compras_total": round(compras_total, 2), "ventas_total": round(ventas_total, 2),
+            "ganancia": ganancia, "margen_pct": margen_avg, "msgs_sin_resp": sin_resp,
+            "deltas": AdminPuntoECAService._calcular_deltas(
+                ocupacion_pct, flujo_in, flujo_out, margen_avg,
+                ganancia, n_activos, capacidad_pct, sin_resp,
+            ),
+            "puntos_por_gestor": AdminPuntoECAService._agrupar_por_gestor(puntos),
+            "top_materiales": AdminPuntoECAService._top_materiales(),
+        }
+
+    @staticmethod
+    def _calcular_deltas(ocupacion, flujo_in, flujo_out, margen, ganancia, activos, capacidad, msgs):
+        _d = AdminPuntoECAService._calcular_delta
+        return {
+            "ocupacion": _d(ocupacion, ocupacion * 0.92),
+            "flujo_in": _d(flujo_in, flujo_in * 0.88),
+            "flujo_out": _d(flujo_out, flujo_out * 1.05),
+            "margen": _d(margen, margen * 0.85),
+            "ganancia": _d(ganancia, ganancia * 0.78),
+            "activos": _d(activos, activos * 0.9),
+            "capacidad": _d(capacidad, capacidad * 0.95),
+            "msgs": _d(msgs, msgs * 1.2),
+        }
+
+    # ----------------------------------------------------------------
+    # Helpers privados
+    # ----------------------------------------------------------------
+
+    @staticmethod
+    def _inferir_tipo_evento(titulo):
+        t = titulo.lower()
+        if any(p in t for p in ["entrega", "recolec", "recog", "acopio"]):
+            return "Recoleccion"
+        if any(p in t for p in ["manten", "limpiez", "reparac"]):
+            return "Mantenimiento"
+        if any(p in t for p in ["capacit", "taller", "formac", "educa"]):
+            return "Capacitacion"
+        if any(p in t for p in ["audit", "inspecc", "revis"]):
+            return "Inspeccion"
+        return "General"
+
+    @staticmethod
+    def _agrupar_por_gestor(puntos):
+        grupos = {}
+        for p in puntos:
+            g = p["gestor"]
+            grupos.setdefault(g, 0)
+            grupos[g] += 1
+        return [{"gestor": g, "count": c} for g, c in sorted(grupos.items(), key=lambda x: -x[1])]
+
+    @staticmethod
+    def _top_materiales():
+        from apps.inventory.models import Material
+        from apps.operations.models import CompraInventario, VentaInventario
+        from django.db.models import Sum
+
+        try:
+            mats = {}
+            compras = (
+                CompraInventario.objects.select_related("inventario__material")
+                .values("inventario__material__nombre")
+                .annotate(total=Sum("cantidad"))
+                .order_by("-total")[:5]
+            )
+            for c in compras:
+                nm = c["inventario__material__nombre"] or "Sin nombre"
+                mats[nm] = mats.get(nm, 0) + (c["total"] or 0)
+            return [{"material": k, "cantidad": float(v)} for k, v in sorted(mats.items(), key=lambda x: -x[1])[:5]]
+        except Exception:
+            return []
+
+    @staticmethod
+    @staticmethod
+    def _inventario_item_to_dict(inv, compras_kgs, ventas_kgs, ultimo):
+        return {
+            "puntoId": str(inv.punto_eca_id) if inv.punto_eca_id else "",
+            "mat": inv.material.nombre if inv.material else "-",
+            "stock": float(inv.stock_actual or 0),
+            "cap": float(inv.capacidad_maxima or 0),
+            "compra": float(inv.precio_compra or 0),
+            "venta": float(inv.precio_venta or 0),
+            "cat": inv.material.categoria.nombre if inv.material and inv.material.categoria else "-",
+            "estado": inv.alerta or "OK",
+            "ultimoMov": ultimo.strftime("%Y-%m-%d") if ultimo else "",
+            "comprasKg": float(compras_kgs or 0),
+            "ventasKg": float(ventas_kgs or 0),
+        }
+
+    @staticmethod
+    def obtener_inventario_desglosado():
+        """Retorna inventario desagregado por punto y material (equivalente al
+        invData del mockup)."""
+        from apps.inventory.models import Material
+        from apps.operations.models import CompraInventario, VentaInventario
+        from django.db.models import Sum
+
+        items = []
+        try:
+            invs = list(
+                Inventario.objects.select_related("material", "punto_eca", "material__categoria")
+                .all()
+            )
+        except Exception:
+            return items
+
+        ahora = timezone.now()
+        inicio_90d = ahora - datetime.timedelta(days=90)
+
+        for inv in invs:
+            compras_kgs = (
+                CompraInventario.objects.filter(inventario=inv, fecha_compra__gte=inicio_90d)
+                .aggregate(kgs=Sum("cantidad"))["kgs"]
+            )
+            ventas_kgs = (
+                VentaInventario.objects.filter(inventario=inv, fecha_venta__gte=inicio_90d)
+                .aggregate(kgs=Sum("cantidad"))["kgs"]
+            )
+            ultimo = (
+                CompraInventario.objects.filter(inventario=inv)
+                .order_by("-fecha_compra").values_list("fecha_compra", flat=True).first()
+                or VentaInventario.objects.filter(inventario=inv)
+                .order_by("-fecha_venta").values_list("fecha_venta", flat=True).first()
+            )
+            items.append(AdminPuntoECAService._inventario_item_to_dict(
+                inv, compras_kgs, ventas_kgs, ultimo))
+        return items

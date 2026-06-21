@@ -16,7 +16,7 @@ from django.db.models import Q
 from apps.users.models import Usuario
 from apps.ecas.models import Localidad, PuntoECA
 from apps.inventory.models import CategoriaMaterial, Material, TipoMaterial
-from apps.panel_admin.service import AdminCatalogService, AdminDashboardService
+from apps.panel_admin.service import AdminCatalogService, AdminDashboardService, AdminPuntoECAService
 from config import constants as cons
 
 
@@ -36,8 +36,9 @@ RECURSO_NO_ENCONTRADO_MSG = "Recurso no encontrado."
 CELULAR_ERROR = "El celular debe iniciar con 3 y tener 10 dígitos."
 USUARIO_DOCUMENTO_DUPLICADO_MSG = "Ya existe un usuario con ese número de documento."
 USUARIO_ACTUALIZADO_OK_MSG = "Usuario actualizado correctamente."
+GESTOR_CONTRASENA_REQUERIDA_MSG = "Debe asignar una contrasena al nuevo gestor."
 CORREGIR_CAMPOS_MSG = "Corrige los campos señalados."
-LISTAR_PUNTOS_ECA_URL = "panel_admin:listar_puntos_eca_admin"
+LISTAR_PUNTOS_ECA_URL = "panel_admin:dashboard_puntos_eca"
 LISTAR_CATEGORIAS_PUBLICACION_URL = "panel_admin:listar_categorias_publicacion_admin"
 LISTAR_TIPOS_PUBLICACION_URL = "panel_admin:listar_tipos_publicacion_admin"
 
@@ -1417,6 +1418,25 @@ def listar_puntos_eca_admin(request):
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
+def puntos_eca_dashboard(request):
+    contexto = {
+        "puntos_dashboard": AdminPuntoECAService.obtener_puntos_dashboard(),
+        "historial": AdminPuntoECAService.obtener_historial(),
+        "eventos": AdminPuntoECAService.obtener_eventos(),
+        "conversaciones": AdminPuntoECAService.obtener_conversaciones(),
+        "usuarios": AdminPuntoECAService.obtener_usuarios_admin(),
+        "kpis": AdminPuntoECAService.obtener_kpis(),
+        "inv_data": AdminPuntoECAService.obtener_inventario_desglosado(),
+        "localidades": Localidad.objects.all().order_by("nombre"),
+        "estados": cons.Estado.choices,
+    }
+    return render(request, "admin/PuntoECA/dashboard.html", contexto)
+
+
+@require_GET
+@login_required(login_url="/login/")
+@user_passes_test(es_administrador, login_url="/inicio/")
+@require_http_methods(["GET", "HEAD"])
 def exportar_materiales_pdf(request):
     from django.template.loader import render_to_string
     from weasyprint import HTML
@@ -1854,6 +1874,82 @@ def ver_publicacion_admin(request, publicacion_id):
     )
 
 
+def _actualizar_gestor_eca(punto, request):
+    data = {k: (request.POST.get(k) or "").strip() for k in (
+        "nombres", "apellidos", "email_gestor", "tipoDocumento",
+        "numeroDocumento", "celular", "password",
+    )}
+    nombres, apellidos, email, tipo_doc, num_doc, celular, password = (
+        data["nombres"], data["apellidos"], data["email_gestor"],
+        data["tipoDocumento"], data["numeroDocumento"], data["celular"], data["password"],
+    )
+    if not (nombres or apellidos or email):
+        return None
+
+    gestor = punto.gestor_eca
+    if gestor:
+        gestor.nombres = nombres or gestor.nombres
+        gestor.apellidos = apellidos or gestor.apellidos
+        gestor.tipo_documento = tipo_doc or gestor.tipo_documento
+        gestor.numero_documento = num_doc or gestor.numero_documento
+        gestor.celular = celular or gestor.celular
+        gestor.save()
+        return None
+
+    if not password:
+        return GESTOR_CONTRASENA_REQUERIDA_MSG
+
+    gestor = Usuario(
+        nombres=nombres, apellidos=apellidos,
+        email=email or f"gestor_{punto.id}@eca.com",
+        numero_documento=num_doc or f"GESTORECA_{punto.id}",
+        tipo_documento=tipo_doc or cons.TipoDocumento.CC,
+        tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
+        celular=celular,
+    )
+    gestor.set_password(password)
+    gestor.save()
+    punto.gestor_eca = gestor
+    punto.save(update_fields=["gestor_eca"])
+    return None
+
+
+def _procesar_edicion_punto(punto, punto_id, request, is_ajax):
+    resultado = None
+    error_gestor = None
+    try:
+        with transaction.atomic():
+            error_gestor = _actualizar_gestor_eca(punto, request)
+            if not error_gestor:
+                resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
+    except (IntegrityError, ValidationError) as e:
+        error_gestor = f"Error al actualizar: {e}"
+
+    if error_gestor:
+        punto.refresh_from_db()
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": error_gestor})
+        messages.error(request, error_gestor)
+        return render(
+            request, "admin/PuntoECA/editPuntoECA.html",
+            {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
+             "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
+             "form_data": request.POST, "errores": [error_gestor]},
+        )
+
+    if resultado is None:
+        return None
+
+    if is_ajax:
+        return JsonResponse(resultado)
+    if resultado["ok"]:
+        messages.success(request, resultado["message"])
+        return redirect(LISTAR_PUNTOS_ECA_URL)
+    messages.error(request, resultado["message"])
+    punto.refresh_from_db()
+    return None
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "POST"])
@@ -1867,14 +1963,9 @@ def editar_punto_eca_admin(request, punto_id):
         return redirect(LISTAR_PUNTOS_ECA_URL)
 
     if request.method == "POST":
-        resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
-        if is_ajax:
-            return JsonResponse(resultado)
-        if resultado["ok"]:
-            messages.success(request, resultado["message"])
-            return redirect(LISTAR_PUNTOS_ECA_URL)
-        messages.error(request, resultado["message"])
-        punto.refresh_from_db()
+        respuesta = _procesar_edicion_punto(punto, punto_id, request, is_ajax)
+        if respuesta is not None:
+            return respuesta
 
     return render(
         request,
@@ -1883,6 +1974,7 @@ def editar_punto_eca_admin(request, punto_id):
             "punto": punto,
             "localidades": Localidad.objects.all().order_by("nombre"),
             "estados": cons.Estado.choices,
+            "tipos_documento": cons.TipoDocumento.choices,
         },
     )
 

@@ -583,3 +583,40 @@ class AdminViewsTestCase(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("coinciden" in str(message) for message in messages))
 
+    def test_dashboard_puntos_eca_access_admin(self):
+        """Admin users can access the puntos ECA dashboard."""
+        self.client.login(email="admin@example.com", password=self.admin_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin/PuntoECA/dashboard.html")
+
+    def test_dashboard_puntos_eca_context_keys(self):
+        """Dashboard view passes expected context keys."""
+        self.client.login(email="admin@example.com", password=self.admin_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        context = response.context
+        for key in (
+            "puntos_dashboard", "historial", "eventos", "conversaciones",
+            "usuarios", "kpis", "inv_data", "localidades",
+        ):
+            self.assertIn(key, context)
+
+    def test_dashboard_puntos_eca_access_denied_regular(self):
+        """Regular users cannot access the dashboard."""
+        self.client.login(email="user@example.com", password=self.regular_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        self.assertRedirects(response, "/inicio/?next=%2Fpanel_admin%2Fpuntos-eca%2F")
+
+    def test_dashboard_puntos_eca_access_denied_anonymous(self):
+        """Anonymous users cannot access the dashboard."""
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        self.assertRedirects(response, "/login/?next=%2Fpanel_admin%2Fpuntos-eca%2F")
+
+    def test_dashboard_json_script_tags_present(self):
+        """Dashboard template includes json_script tags for JS data."""
+        self.client.login(email="admin@example.com", password=self.admin_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        content = response.content.decode()
+        for script_id in ("puntos-data", "historial-data", "eventos-data", "conversaciones-data", "usuarios-data", "kpis-data", "inv-data"):
+            self.assertIn(f'id="{script_id}"', content)
+
