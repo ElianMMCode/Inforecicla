@@ -1143,6 +1143,7 @@
       initFlujoSelect();
       bindFormSwal('formCrearMaterial', [{id:'nm-nombre',label:'Nombre',min:3,max:30},{id:'nm-categoria',label:'Categoría'},{id:'nm-clasificacion',label:'Clasificación'}], 'Material');
       bindFormSwal('formCrearCategoria', [{id:'ncat-nombre',label:'Nombre',min:3,max:30}], 'Categoría');
+    } catch(e) {}
   });
   updateGlobalKPIs();
   renderCatalogo();
