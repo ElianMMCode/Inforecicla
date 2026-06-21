@@ -319,8 +319,8 @@ function _renderPagination(page, total, setPageFn, containerId){
   let cls,h='<div class="d-flex align-items-center gap-1 flex-wrap"><span class="text-muted small me-2">Pag '+page+' de '+total+'</span>';
   h+='<button class="btn btn-sm btn-outline-secondary" onclick="'+setPageFn+'(1)"'+(page<=1?' disabled':'')+'><i class="bi bi-chevron-double-left"></i></button>';
   h+='<button class="btn btn-sm btn-outline-secondary" onclick="'+setPageFn+'('+(page-1)+')"'+(page<=1?' disabled':'')+'><i class="bi bi-chevron-left"></i></button>';
-  var s=Math.max(1,page-2),e=Math.min(total,page+2);
-  for(var p=s;p<=e;p++){
+  let s=Math.max(1,page-2),e=Math.min(total,page+2);
+  for(let p=s;p<=e;p++){
     cls=p===page?'btn-success':'btn-outline-secondary';
     h+='<button class="btn btn-sm '+cls+'" onclick="'+setPageFn+'('+p+')">'+p+'</button>';
   }
@@ -691,17 +691,22 @@ function renderFlujoDetalleMat(){
 
   document.getElementById('flujo-det-tabla').innerHTML='<table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Material</th><th>Ganancia Total</th><th>Volumen Total</th><th>Margen Prom</th></tr></thead><tbody>'+
     matRanking.map((m,i)=>{
-      let totalCompras=0,totalVentas=0;
-      filteredMaterials.forEach(mat=>{
-        pts.forEach(p=>{
-          const items=invData.filter(x=>x.puntoId===p.id&&x.mat===mat);
-          totalCompras+=items.reduce((s,x)=>s+(x.comprasKg||0)*x.compra,0);
-          totalVentas+=items.reduce((s,x)=>s+(x.ventasKg||0)*x.venta,0);
-        });
-      });
-      const margenProm=totalCompras?Math.round(((totalVentas-totalCompras)/totalCompras)*100):0;
+      var totals=_calcMatTotals(filteredMaterials,pts);
+      const margenProm=totals.compras?Math.round(((totals.ventas-totals.compras)/totals.compras)*100):0;
       return'<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+m.mat+'</td><td class="fw-bold '+(m.ganancia>=0?'text-success':'text-danger')+'" style="font-size:.82rem">$'+m.ganancia.toLocaleString()+'</td><td style="font-size:.82rem">'+m.volumen.toLocaleString()+' u</td><td style="font-size:.82rem">'+margenProm+'%</td></tr>';
     }).join('')+'</tbody></table>';
+}
+function _calcMatTotals(mats,pts){
+  var compras=0,ventas=0;
+  mats.forEach(function(mat){
+    pts.forEach(function(p){
+      invData.filter(function(x){return x.puntoId===p.id&&x.mat===mat;}).forEach(function(x){
+        compras+=(x.comprasKg||0)*x.compra;
+        ventas+=(x.ventasKg||0)*x.venta;
+      });
+    });
+  });
+  return {compras:compras,ventas:ventas};
 }
 
 /* ===== LISTADO - MENSAJES ===== */
