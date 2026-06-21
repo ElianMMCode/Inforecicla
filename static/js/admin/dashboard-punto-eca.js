@@ -874,6 +874,8 @@ function guardarEdicionPunto(){
 /* ===== BOOT ===== */
 populatePanelFilters();
 renderKPIs();
+renderResumen();
+renderRanking();
 
 /* === populate filters === */
 function populatePanelFilters(){
