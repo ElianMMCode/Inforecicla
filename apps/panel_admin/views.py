@@ -1874,7 +1874,7 @@ def ver_publicacion_admin(request, publicacion_id):
     )
 
 
-def _actualizar_gestor_eca(punto, request, is_ajax):
+def _actualizar_gestor_eca(punto, request):
     gestor_nombres = (request.POST.get("nombres") or "").strip()
     gestor_apellidos = (request.POST.get("apellidos") or "").strip()
     gestor_email = (request.POST.get("email_gestor") or "").strip()
@@ -1888,16 +1888,11 @@ def _actualizar_gestor_eca(punto, request, is_ajax):
     password = (request.POST.get("password") or "").strip()
 
     if gestor:
-        if gestor_nombres:
-            gestor.nombres = gestor_nombres
-        if gestor_apellidos:
-            gestor.apellidos = gestor_apellidos
-        if gestor_tipo_doc:
-            gestor.tipo_documento = gestor_tipo_doc
-        if gestor_num_doc:
-            gestor.numero_documento = gestor_num_doc
-        if gestor_celular:
-            gestor.celular = gestor_celular
+        gestor.nombres = gestor_nombres or gestor.nombres
+        gestor.apellidos = gestor_apellidos or gestor.apellidos
+        gestor.tipo_documento = gestor_tipo_doc or gestor.tipo_documento
+        gestor.numero_documento = gestor_num_doc or gestor.numero_documento
+        gestor.celular = gestor_celular or gestor.celular
         gestor.save()
         return None
 
@@ -1919,6 +1914,39 @@ def _actualizar_gestor_eca(punto, request, is_ajax):
     return None
 
 
+def _procesar_edicion_punto(punto, punto_id, request, is_ajax):
+    try:
+        with transaction.atomic():
+            error_gestor = _actualizar_gestor_eca(punto, request)
+            if error_gestor:
+                if is_ajax:
+                    return JsonResponse({"ok": False, "message": error_gestor})
+                messages.error(request, error_gestor)
+                return render(
+                    request, "admin/PuntoECA/editPuntoECA.html",
+                    {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
+                     "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
+                     "form_data": request.POST, "errores": [error_gestor]},
+                )
+            resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
+
+        if is_ajax:
+            return JsonResponse(resultado)
+        if resultado["ok"]:
+            messages.success(request, resultado["message"])
+            return redirect(LISTAR_PUNTOS_ECA_URL)
+        messages.error(request, resultado["message"])
+        punto.refresh_from_db()
+        return None
+    except (IntegrityError, ValidationError) as e:
+        error_msg = f"Error al actualizar: {e}"
+        if is_ajax:
+            return JsonResponse({"ok": False, "message": error_msg})
+        messages.error(request, error_msg)
+        punto.refresh_from_db()
+        return None
+
+
 @login_required(login_url="/login/")
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "POST"])
@@ -1932,34 +1960,9 @@ def editar_punto_eca_admin(request, punto_id):
         return redirect(LISTAR_PUNTOS_ECA_URL)
 
     if request.method == "POST":
-        try:
-            with transaction.atomic():
-                error_gestor = _actualizar_gestor_eca(punto, request, is_ajax)
-                if error_gestor:
-                    if is_ajax:
-                        return JsonResponse({"ok": False, "message": error_gestor})
-                    messages.error(request, error_gestor)
-                    return render(
-                        request, "admin/PuntoECA/editPuntoECA.html",
-                        {"punto": punto, "localidades": Localidad.objects.all().order_by("nombre"),
-                         "estados": cons.Estado.choices, "tipos_documento": cons.TipoDocumento.choices,
-                         "form_data": request.POST, "errores": [error_gestor]},
-                    )
-                resultado = AdminCatalogService.actualizar_punto_eca(punto_id, request.POST)
-
-            if is_ajax:
-                return JsonResponse(resultado)
-            if resultado["ok"]:
-                messages.success(request, resultado["message"])
-                return redirect(LISTAR_PUNTOS_ECA_URL)
-            messages.error(request, resultado["message"])
-            punto.refresh_from_db()
-        except (IntegrityError, ValidationError) as e:
-            error_msg = f"Error al actualizar: {e}"
-            if is_ajax:
-                return JsonResponse({"ok": False, "message": error_msg})
-            messages.error(request, error_msg)
-            punto.refresh_from_db()
+        respuesta = _procesar_edicion_punto(punto, punto_id, request, is_ajax)
+        if respuesta is not None:
+            return respuesta
 
     return render(
         request,
