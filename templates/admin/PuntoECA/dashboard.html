@@ -21,9 +21,6 @@
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a href="{% url 'panel_admin:crear_punto_eca_admin' %}" class="btn btn-success"><i class="bi bi-plus-circle me-1"></i> Nuevo Punto ECA</a>
-      <button class="btn btn-outline-warning btn-sm" onclick="goToTab('estados')" title="Ver alertas"><i class="bi bi-exclamation-triangle me-1"></i>Alertas</button>
-      <button class="btn btn-outline-primary btn-sm" onclick="goToTab('mensajes')" title="Mensajes pendientes"><i class="bi bi-chat-dots me-1"></i>Mensajes</button>
-      <button class="btn btn-outline-secondary btn-sm" title="Exportar reporte"><i class="bi bi-download me-1"></i>Exportar</button>
     </div>
   </div>
 
@@ -74,21 +71,6 @@
       </div>
       <div class="col-12 col-lg-5">
         <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-info me-1"></i>Materiales Principales por Punto</h6></div><div class="card-body p-0" style="height:320px;overflow-y:auto" id="res-mat-table"></div></div>
-      </div>
-    </div>
-
-    <div class="row g-3 mb-3">
-      <div class="col-12 col-lg-5">
-        <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-geo-alt text-info me-1"></i>Puntos por Localidad</h6></div><div class="card-body" style="height:250px"><canvas id="chartPanelLoc"></canvas></div></div>
-      </div>
-      <div class="col-12 col-lg-7">
-        <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-heart-pulse text-warning me-1"></i>Salud General Inventario</h6></div>
-          <div class="card-body"><div class="row g-3 align-items-start">
-            <div class="col-12 col-md-4 d-flex align-items-center justify-content-center"><div style="max-width:160px;width:100%"><canvas id="chartPanelSalud"></canvas></div></div>
-            <div class="col-12 col-md-4" id="res-criticos-list"></div>
-            <div class="col-12 col-md-4" id="res-alertas-list"></div>
-          </div></div>
-        </div>
       </div>
     </div>
 

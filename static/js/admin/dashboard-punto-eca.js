@@ -230,7 +230,7 @@ function renderResumen(){
   if(typeof Chart==='undefined'){
     document.getElementById('chartPanelTop').parentElement.innerHTML='<div class="p-4 text-center text-muted"><i class="bi bi-info-circle me-1"></i>Graficas no disponibles — requiere Chart.js CDN</div>';
   } else {
-    destroyChart('panelTop');destroyChart('panelLoc');destroyChart('panelSalud');
+    destroyChart('panelTop');
 
   /* Chart #1 — Top 10 */
   const top10=[...pts].sort((a,b)=>{
@@ -260,35 +260,6 @@ function renderResumen(){
       '<td style="font-size:.75rem">'+(masComprado?masComprado.mat:'-')+'</td></tr>';
   }).join('');
   document.getElementById('res-mat-table').innerHTML='<table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Punto</th><th>Mas Vendido</th><th>Mas Comprado</th></tr></thead><tbody>'+matTableHtml+'</tbody></table>';
-
-  /* Chart #2 — Puntos por Localidad */
-  const locs={};pts.forEach(p=>{locs[p.localidad]=(locs[p.localidad]||0)+1});
-  const lEntries=Object.entries(locs).sort((a,b)=>b[1]-a[1]);
-  charts.panelLoc=new Chart(document.getElementById('chartPanelLoc'),{type:'bar',data:{labels:lEntries.map(e=>e[0]),datasets:[{data:lEntries.map(e=>e[1]),backgroundColor:['#198754','#0dcaf0','#0d6efd','#ffc107','#fd7e14','#6f42c1','#20c997','#dc3545'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'puntos'}}}}});
-
-  /* Chart #3 — Salud General */
-  const ok=pts.filter(p=>p.invEstado==='OK').length;
-  const alert=pts.filter(p=>p.invEstado==='Alerta').length;
-  const crit=pts.filter(p=>p.invEstado==='Critico').length;
-  charts.panelSalud=new Chart(document.getElementById('chartPanelSalud'),{type:'doughnut',data:{labels:['OK','Alerta','Critico'],datasets:[{data:[ok,alert,crit],backgroundColor:['#198754','#ffc107','#dc3545']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
-
-  /* Criticos list */
-  const criticos=invData.filter(x=>x.estado==='Critico').sort((a,b)=>(b.ultimoMov||'').localeCompare(a.ultimoMov||'')).slice(0,5);
-  document.getElementById('res-criticos-list').innerHTML='<div class="fw-bold text-danger mb-1" style="font-size:.78rem"><i class="bi bi-exclamation-circle me-1"></i>Criticos</div>'+
-    criticos.map(x=>{
-      const p=puntos.find(pt=>pt.id===x.puntoId);
-      const pct=pctOcupacion(x);
-      return'<div class="d-flex align-items-start gap-2 mb-2 p-2 rounded" style="background:#fff5f5;font-size:.72rem"><div class="flex-grow-1"><div class="fw-semibold">'+(p?p.nombre.substring(0,18):'')+'</div><div class="text-muted">'+x.mat+' — '+pct+'%</div><div class="text-muted">Mov: '+x.ultimoMov+'</div></div></div>';
-    }).join('')||'<div class="text-muted small p-2">Sin criticos</div>';
-
-  /* Alertas list */
-  const alertas=invData.filter(x=>x.estado==='Alerta').sort((a,b)=>(b.ultimoMov||'').localeCompare(a.ultimoMov||'')).slice(0,5);
-  document.getElementById('res-alertas-list').innerHTML='<div class="fw-bold text-warning mb-1" style="font-size:.78rem"><i class="bi bi-exclamation-triangle me-1"></i>Alertas</div>'+
-    alertas.map(x=>{
-      const p=puntos.find(pt=>pt.id===x.puntoId);
-      const pct=pctOcupacion(x);
-      return'<div class="d-flex align-items-start gap-2 mb-2 p-2 rounded" style="background:#fffdf0;font-size:.72rem"><div class="flex-grow-1"><div class="fw-semibold">'+(p?p.nombre.substring(0,18):'')+'</div><div class="text-muted">'+x.mat+' — '+pct+'%</div><div class="text-muted">Mov: '+x.ultimoMov+'</div></div></div>';
-    }).join('')||'<div class="text-muted small p-2">Sin alertas</div>';
   }
 
   /* Capacidad General */
