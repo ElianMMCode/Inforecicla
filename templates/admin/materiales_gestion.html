@@ -258,7 +258,16 @@
     <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Stock Total por Categoría</h6></div><div class="card-body" style="height:280px"><canvas id="chartCatStockPorCat"></canvas></div></div></div>
     <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Puntos ECA por Categoría</h6></div><div class="card-body" style="height:280px"><canvas id="chartCatPuntosPorCat"></canvas></div></div></div>
   </div>
-  <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción</th><th>Materiales</th><th>Stock Total</th><th>Valor</th><th>Puntos</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gcat-tbody"></tbody></table></div><div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gcat-pager-info"></small><nav><ul class="pagination pagination-sm mb-0" id="gcat-pager"></ul></nav></div></div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-3 py-2">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-dark small me-2"><i class="bi bi-table me-1"></i>Listado</h6>
+        <input type="text" class="form-control form-control-sm" style="width:180px" id="gcat-search" placeholder="Buscar..." oninput="renderGestionCategorias()">
+        <button class="btn btn-sm btn-outline-secondary ms-1" title="Limpiar" onclick="document.getElementById('gcat-search').value='';renderGestionCategorias()"><i class="bi bi-eraser"></i></button>
+      </div>
+    </div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción</th><th>Materiales</th><th>Stock Total</th><th>Valor</th><th>Puntos</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gcat-tbody"></tbody></table></div>
+    <div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gcat-pager-info"></small><nav><ul class="pagination pagination-sm mb-0" id="gcat-pager"></ul></nav></div></div>
 </div>
 
 <!-- ===== TAB 6: CLASIFICACIONES ===== -->
@@ -270,7 +279,7 @@
   <div class="alert alert-info small py-2 mb-3"><i class="bi bi-info-circle me-1"></i>Las clasificaciones definen el nivel de riesgo y las advertencias de manipulación para cada material.</div>
   <div class="row g-3 mb-3">
     <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Stock Total por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifStock"></canvas></div></div></div>
-    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-building text-warning me-1"></i>Top 10 Puntos por Movimiento</h6></div><div class="card-body" style="height:280px"><canvas id="chartKPIsClasifPorPunto"></canvas></div></div></div>
+    <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-info me-1"></i>Materiales por Clasificación</h6></div><div class="card-body" style="height:280px"><canvas id="chartClasifMatCount"></canvas></div></div></div>
   </div>
   <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Nombre</th><th>Descripción (advertencia de manejo)</th><th>Materiales</th><th>Stock Total</th><th>Puntos</th><th class="text-center">Acciones</th></tr></thead><tbody class="border-top" id="gclas-tbody"></tbody></table></div><div class="card-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center"><small class="pager-info" id="gclas-pager-info"></small><nav><ul class="pagination pagination-sm mb-0" id="gclas-pager"></ul></nav></div></div>
 </div>
@@ -801,7 +810,7 @@
         return [...new Set(inventario.filter(function(inv){var m=getMatById(inv.matId);return m.categoria_nombre===c.nombre}).map(function(inv){return String(inv.puntoId)}))].length;
       });
       if(document.getElementById('chartCatPuntosPorCat')){
-        charts.catPuntosPorCat = new Chart(document.getElementById('chartCatPuntosPorCat'),{type:'bar',data:{labels:catNames,datasets:[{label:'Puntos ECA',data:catPuntos,backgroundColor:['#ffc107','#198754','#0dcaf0','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2'].slice(0,catNames.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'# puntos'}}}}});
+        charts.catPuntosPorCat = new Chart(document.getElementById('chartCatPuntosPorCat'),{type:'bar',data:{labels:catNames,datasets:[{label:'Puntos ECA',data:catPuntos,backgroundColor:['#ffc107','#198754','#0dcaf0','#0d6efd','#dc3545','#6f42c1','#fd7e14','#20c997','#e83e8c','#6610f2'].slice(0,catNames.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'puntos'},ticks:{stepSize:1}}}}});
       }
     }
 
@@ -834,13 +843,12 @@
       if(document.getElementById('chartClasifStock')){
         charts.clasifStock = new Chart(document.getElementById('chartClasifStock'),{type:'bar',data:{labels:clasLevels,datasets:[{label:'Stock (kg)',data:clasStock,backgroundColor:['#198754','#ffc107','#fd7e14','#212529'].slice(0,clasLevels.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'kg'}}}}});
       }
-      // Top 10 puntos
-      if(document.getElementById('chartKPIsClasifPorPunto')){
-        var clasColorsMap = {'ESTANDAR':'#198754','MANEJO_ESPECIAL':'#ffc107','PELIGROSO':'#fd7e14','HAZMAT':'#212529'};
-        var puntosRank = puntos.map(function(p){var total = inventario.filter(function(inv){return String(inv.puntoId)===String(p.id)}).length;return {punto:p, total:total}}).sort(function(a,b){return b.total-a.total}).slice(0,10);
-        var ptLabels = puntosRank.map(function(r){return (r.punto.nombre||'').substring(0,16)});
-        var datasetsClasPunto = clasLevels.map(function(clas){return {label:clas,data:puntosRank.map(function(r){return inventario.filter(function(inv){return String(inv.puntoId)===String(r.punto.id)&&getMatById(inv.matId).clasificacion===clas}).length}),backgroundColor:clasColorsMap[clas]||'#6c757d',borderRadius:0}}).filter(function(ds){return ds.data.some(function(v){return v>0})});
-        charts.kpisClasifPorPunto = new Chart(document.getElementById('chartKPIsClasifPorPunto'),{type:'bar',data:{labels:ptLabels,datasets:datasetsClasPunto},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'# materiales'}},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+      // Materiales por clasificación
+      if(document.getElementById('chartClasifMatCount')){
+        var clasMatCount = clasificaciones.map(function(c){
+          return materiales.filter(function(m){return m.clasificacion===c.nombre}).length;
+        });
+        charts.clasifMatCount = new Chart(document.getElementById('chartClasifMatCount'),{type:'bar',data:{labels:clasLevels,datasets:[{label:'# Materiales',data:clasMatCount,backgroundColor:['#198754','#ffc107','#fd7e14','#212529'].slice(0,clasLevels.length),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,title:{display:true,text:'materiales'},ticks:{stepSize:1}}}}});
       }
     }
 
