@@ -1,0 +1,95 @@
+@startuml calendario
+title CU-12: Gestionar Calendario Operativo
+
+actor "Gestor ECA" as Gestor
+participant "Navegador\n(FullCalendar JS)" as JS
+participant "_build_calendario_context\n(scheduling/views.py)" as BuildCtx
+participant "crear_evento_venta\n(scheduling/views.py)" as CrearEvt
+participant "editar_evento_venta\n(scheduling/views.py)" as EditarEvt
+participant "eliminar_evento_venta\n(scheduling/views.py)" as ElimEvt
+participant "_sincronizar_instancias_repeticion\n(scheduling/views.py)" as SyncInst
+participant "Evento Model\n(scheduling/models.py)" as EventoModel
+participant "EventoInstancia Model\n(scheduling/models.py)" as InstModel
+participant "CompraInventario Model" as CompModel
+participant "VentaInventario Model" as VentModel
+database "PostgreSQL" as DB
+
+== Cargar Calendario ==
+
+Gestor -> Browser: Navegar a /punto-eca/calendario/
+Browser -> BuildCtx: GET /punto-eca/calendario/
+BuildCtx -> DB: SELECT Inventario WHERE punto_eca=punto\n→ materiales_inventario
+BuildCtx -> DB: SELECT CentroAcopio\nWHERE visibilidad=GLOBAL OR\n(puntos_eca=punto AND visibilidad=ECA)
+BuildCtx -> DB: SELECT VentaInventario WHERE inventario.punto_eca=punto\n→ ventas como eventos type=venta
+BuildCtx -> DB: SELECT CompraInventario WHERE inventario.punto_eca=punto\n→ compras como eventos type=compra
+BuildCtx -> DB: SELECT Evento WHERE punto_eca=punto\n→ eventos propios type=evento
+BuildCtx -> DB: SELECT EventoInstancia WHERE punto_eca=punto\n→ instancias repetidas type=evento_repetido
+
+BuildCtx -> BuildCtx: Serializar cada evento:\n- Venta: {id:"venta-UUID", type:"venta",\n  title:"material - cantidad kg",\n  start:fecha_venta, backgroundColor:"#28a745"\n  nombreMaterial, precioUnitario, nombreCentroAcopio}\n- Compra: {id:"compra-UUID", type:"compra",\n  title:"material - cantidad kg",\n  start:fecha_compra, backgroundColor:"#dc3545"}\n- Evento: {id:"evento-UUID", type:"evento",\n  title:titulo, start/end, backgroundColor:color}\n- Instancia: {id:"evinst-UUID",\n  type:"evento_repetido",\n  numeroRepeticion: N}
+
+BuildCtx --> JS: Render calendario con todos los eventos
+JS -> JS: FullCalendar renderiza eventos por día
+
+== EXT-36: Bloquear Fechas Pasadas ==
+
+note right of CrearEvt
+  Validación server-side:\nfecha_inicio_dt >= ahora
+  Si es pasada, retornar 400:
+  "No se pueden crear eventos en fechas pasadas"
+end note
+
+== CU-12.2: Programar Nuevo Evento ==
+
+Gestor -> Browser: Click en día del calendario
+JS -> CrearEvt: POST /punto-eca/calendario/evento/nuevo/\n{titulo, descripcion, materialId, centroAcopioId,\nfechaInicio, horaInicio, horaFin, color,\ntipoRepeticion, fechaFinRepeticion, observaciones}
+CrearEvt -> CrearEvt: Validar:\n- titulo obligatorio (max 100 chars)\n- materialId y fechas obligatorios\n- fecha_fin > fecha_inicio
+CrearEvt -> DB: SELECT PuntoECA WHERE gestor_eca=user
+CrearEvt -> EventoModel: Evento.objects.create(material, centro_acopio,\npunto_eca, usuario, titulo, descripcion,\nfecha_inicio, fecha_fin, color,\ntipo_repeticion, fecha_fin_repeticion)
+
+== Generar Instancias de Repetición ==
+
+CrearEvt -> SyncInst: _sincronizar_instancias_repeticion()
+SyncInst -> SyncInst: Determinar delta según tipo_repeticion:
+note right
+  NINGUNA → 1 instancia
+  DIARIA → +1 día
+  SEMANAL → +7 días
+  QUINCENAL → +14 días
+  MENSUAL → +1 mes (dateutil)
+end note
+SyncInst -> SyncInst: Obtener fecha fin de repetición\n(fecha_fin_repeticion o +365 días)
+loop Desde fecha_inicio hasta fecha_fin_repeticion
+    SyncInst -> DB: INSERT EventoInstancia\n(evento_base, punto_eca, usuario,\nfecha_inicio, fecha_fin,\nnumero_repeticion=N, observaciones)
+end
+SyncInst --> CrearEvt: OK
+CrearEvt --> JS: {success: true, eventoId: UUID}
+
+== CU-12.3: Modificar Evento ==
+
+Gestor -> Browser: Editar evento existente
+JS -> EditarEvt: POST /punto-eca/calendario/evento/editar/\n{eventoId, titulo, materialId, ...\ntipoRepeticion, fechaFinRepeticion}
+EditarEvt -> DB: SELECT evento por ID
+EditarEvt -> EditarEvt: _aplicar_campos_evento()\nActualizar todos los campos del evento
+EditarEvt -> DB: UPDATE ecas_evento
+EditarEvt -> SyncInst: _recrear_instancias_evento()
+SyncInst -> DB: DELETE EventoInstancia\nWHERE evento_base=evento (borrar existentes)
+SyncInst -> SyncInst: Regenerar instancias con nuevos datos
+EditarEvt --> JS: {success: true}
+
+== CU-12.4: Eliminar Evento ==
+
+Gestor -> Browser: Eliminar evento
+JS -> ElimEvt: POST /punto-eca/calendario/evento/eliminar/\n{eventoId, deleteMode: "serie"|"instancia"}
+
+alt deleteMode == "instancia"
+    ElimEvt -> DB: SELECT EventoInstancia WHERE id=uuid
+    ElimEvt -> DB: DELETE instancia específica
+    ElimEvt --> JS: {deleted: "instancia"}
+else deleteMode == "serie"
+    ElimEvt -> DB: SELECT evento base
+    ElimEvt -> DB: DELETE EventoInstancia\nWHERE evento_base=evento
+    ElimEvt -> DB: DELETE ecas_evento
+    ElimEvt --> JS: {deleted: "serie"}
+end
+
+@enduml

@@ -1,0 +1,122 @@
+@startuml publicaciones_admin
+title CU-14: Gestionar Publicaciones (Admin)
+
+actor "Administrador" as Admin
+participant "Navegador" as Browser
+participant "panel_admin/views.py" as AdminView
+participant "PublicacionService\n(publicaciones/service.py)" as PubService
+participant "AdminCatalogService\n(panel_admin/service.py)" as CatalogService
+participant "Publicacion Model" as PubModel
+participant "CategoriaPublicacion Model" as CatModel
+participant "upload_validators.py\n(core)" as Validators
+database "PostgreSQL" as DB
+participant "Media Storage" as Storage
+
+== CU-14.1: Listar Publicaciones ==
+
+Admin -> Browser: Navegar a /panel_admin/publicaciones/
+Browser -> AdminView: GET /panel_admin/publicaciones/
+AdminView -> AdminView: Aplicar filtros (búsqueda, estado, categoría)
+AdminView -> DB: SELECT publicaciones + filtros
+DB --> AdminView: QuerySet
+AdminView --> Browser: Render listPublicacion.html
+
+== CU-14.2: Crear Publicación ==
+
+Admin -> Browser: Ir a crear publicación
+Browser -> AdminView: GET /panel_admin/publicaciones/crear/
+AdminView -> DB: SELECT categorías
+AdminView --> Browser: Render createPublicacion.html
+
+Admin -> Browser: Completar formulario (título, contenido, resumen, categoría, multimedia)
+Browser -> AdminView: POST /panel_admin/publicaciones/crear/
+AdminView -> AdminView: Verificar si es AJAX (X-Requested-With)
+
+alt Es AJAX
+    AdminView -> CatalogService: crear_publicacion(data, files)
+else Es formulario tradicional
+    AdminView -> CatalogService: crear_publicacion(data, files)
+end
+
+CatalogService -> PubModel: Validar campos obligatorios
+note right
+  - Título no vacío
+  - Contenido no vacío
+  - Categoría válida
+end note
+
+CatalogService -> PubModel: Publicacion.objects.create(...)
+
+== CU-14.3: Adjuntar Multimedia ==
+
+loop Para cada imagen subida
+    CatalogService -> Validators: validar_archivo_subida(archivo)
+    note right
+      - MIME type permitido: imagen/*
+      - Tamaño máximo: 5 MB
+      - Validado en core/upload_validators.py
+    end note
+    alt Archivo inválido
+        Validators --> CatalogService: Error
+        CatalogService --> AdminView: Error EXT-27
+    else Archivo válido
+        Validators --> CatalogService: OK
+        CatalogService -> Storage: Guardar archivo
+        CatalogService -> DB: INSERT ImagenPublicacion
+    end
+end
+
+loop Para cada video (archivo o URL)
+    alt Es archivo de video
+        CatalogService -> Validators: validar_archivo_subida(video)
+        note right: MIME type: video/*\nTamaño: 5 MB
+    else Es URL de video
+        CatalogService -> CatalogService: Validar URL formato
+    end
+end
+
+CatalogService -> DB: INSERT INTO publicaciones_publicacion
+DB --> CatalogService: OK
+CatalogService --> AdminView: {ok: True, message: "Creada correctamente"}
+AdminView --> Browser: Redirect a lista + mensaje éxito
+
+== CU-14.4: Editar Publicación ==
+
+Admin -> Browser: Editar publicación existente
+Browser -> AdminView: GET /panel_admin/publicaciones/editar/<id>/
+AdminView -> DB: SELECT publicacion por ID
+AdminView --> Browser: Render editPublicacion.html con datos actuales
+
+Admin -> Browser: Modificar campos + multimedia
+Browser -> AdminView: POST /panel_admin/publicaciones/editar/<id>/
+AdminView -> CatalogService: actualizar_publicacion(id, data, files)
+CatalogService -> DB: UPDATE publicaciones_publicacion
+CatalogService -> DB: INSERT/UPDATE/DELETE imágenes según formulario
+CatalogService --> AdminView: {ok: True}
+AdminView --> Browser: Redirect a lista + mensaje éxito
+
+== EXT-26: Bloquear contenido vacío ==
+
+note right of CatalogService
+  EXT-26: Si contenido está vacío,
+  rechazar con error "El contenido
+  de la publicación no puede estar vacío"
+end note
+
+== CU-14.5: Ocultar/Eliminar Publicación ==
+
+Admin -> Browser: Ocultar publicación (soft delete)
+Browser -> AdminView: POST /panel_admin/publicaciones/ocultar/<id>/
+AdminView -> DB: UPDATE publicacion SET estado=INACTIVO
+note right
+  Soft delete: preserva comentarios
+  de ciudadanos (integridad referencial)
+end note
+AdminView --> Browser: Redirect + "Publicación ocultada"
+
+Admin -> Browser: Eliminar permanentemente
+Browser -> AdminView: POST /panel_admin/publicaciones/eliminar/<id>/
+AdminView -> DB: DELETE publicacion + comentarios asociados
+AdminView --> Browser: Redirect + "Publicación eliminada"
+
+@enduml

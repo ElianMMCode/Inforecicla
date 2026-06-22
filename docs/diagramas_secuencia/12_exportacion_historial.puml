@@ -1,0 +1,84 @@
+@startuml exportacion_historial
+title CU-10: Exportar Historial de Operaciones
+
+actor "Gestor ECA" as Gestor
+participant "Navegador" as Browser
+participant "exportar_compras_excel\n(operations/views.py)" as ExpExcel
+participant "exportar_historial_pdf\n(operations/views.py)" as ExpPDF
+participant "_aplicar_filtros_export\n(operations/views.py)" as Filtros
+participant "CompraInventario Model" as CompModel
+participant "VentaInventario Model" as VentModel
+participant "openpyxl" as Excel
+participant "weasyprint" as PDF
+database "PostgreSQL" as DB
+
+== Seleccionar Rango de Fechas ==
+
+Gestor -> Browser: Ir a sección inventario
+Browser -> Browser: Abrir panel de exportación
+Browser -> Browser: Seleccionar fechas + filtros\n(material, categoría, clasificación,\ncentro de acopio, cantidades, montos)
+
+== Exportar a Excel ==
+
+Gestor -> Browser: Descargar Excel
+Browser -> ExpExcel: GET /punto-eca/movimientos/exportar-compras-excel/?\npunto_eca_id=X&fecha_desde=...&fecha_hasta=...&\nmaterial=...&categoria=...
+
+ExpExcel -> Filtros: _aplicar_filtros_export()
+Filtros -> Filtros: _extraer_filtros_export()\nLeer todos los parámetros del request
+Filtros -> DB: SELECT CompraInventario\nWHERE inventario.punto_eca=punto
+Filtros -> Filtros: _aplicar_filtros_inventario()\nFiltrar por material, categoría, clasificación
+Filtros -> Filtros: _aplicar_filtros_fecha()\nFiltrar fecha_desde <= fecha_compra <= fecha_hasta
+Filtros -> Filtros: _aplicar_filtros_cantidad()\nFiltrar cantidad_min <= cantidad <= cantidad_max
+Filtros -> Filtros: _aplicar_filtros_monto()\nAnnotate monto_total = cantidad * precio\nFiltrar monto_min <= monto <= monto_max
+Filtros --> ExpExcel: QuerySet filtrado de compras
+
+ExpExcel -> DB: SELECT VentaInventario\nWHERE inventario.punto_eca=punto
+ExpExcel -> Filtros: Aplicar mismos filtros\n+a filtro centro_acopio
+Filtros --> ExpExcel: QuerySet filtrado de ventas
+
+ExpExcel -> ExpExcel: Normalizar datos:\n- tipo_movimiento (Compra/Venta)\n- material, categoría, clasificación\n- fecha, cantidad, precio_unitario, total\n- centro_acopio, observaciones
+ExpExcel -> ExpExcel: Ordenar por fecha descendente
+
+ExpExcel -> Excel: Crear Workbook + Worksheet
+ExpExcel -> Excel: Escribir headers con estilo\n(fondo verde, texto blanco, negrita)
+loop Para cada registro
+    ExpExcel -> Excel: Escribir fila
+end
+ExpExcel -> Excel: Auto-ajustar ancho columnas\n(ancho_máx = min(len + 4, 40))
+ExpExcel -> Excel: Guardar en BytesIO buffer
+
+ExpExcel -> ExpExcel: Generar filename:\n{tipo}_{material_safe}_{YYYY-MM-DD_HHMM}.xlsx
+note right: _sanitize_filename_component()\nquita acentos, reemplaza espacios
+
+ExpExcel --> Browser: HttpResponse(buffer.read(),\nContent-Type: application/vnd.openxmlformats...,\nContent-Disposition: attachment)
+
+== Exportar a PDF ==
+
+Gestor -> Browser: Descargar PDF
+Browser -> ExpPDF: GET /punto-eca/movimientos/exportar-historial-pdf/
+ExpPDF -> DB: SELECT compras + ventas filtradas
+ExpPDF -> ExpPDF: Compilar historial (mismo flujo que Excel)
+ExpPDF -> ExpPDF: render_to_string(\n"operations/historial_pdf.html", context)
+ExpPDF -> PDF: HTML(string=html).write_pdf()
+ExpPDF --> Browser: HttpResponse(pdf,\nContent-Type: application/pdf,\nContent-Disposition: attachment)
+
+== EXT-21: Sin Resultados ==
+
+note right of ExpExcel
+  Si la consulta filtrada devuelve
+  0 resultados:
+  - Excel: Genera archivo con solo headers
+  - PDF: Genera reporte vacío con mensaje
+    "No se encontraron registros"
+end note
+
+== EXT-22: Archivos Grandes ==
+
+note right of ExpExcel
+  Para >10,000 registros,
+  el procesamiento puede tardar.
+  Actualmente se genera en memoria
+  (no background processing).
+end note
+
+@enduml

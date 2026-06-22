@@ -1,0 +1,97 @@
+@startuml notificaciones_dashboard_admin
+title Notificaciones en Tiempo Real + Dashboard Admin
+
+actor "Administrador" as Admin
+actor "Gestor ECA" as Gestor
+participant "Navegador\n(JavaScript)" as JS
+participant "NotificacionConsumer\n(core/consumers.py)" as NotifWS
+participant "enviar_notificacion_realtime\n(core/notificaciones.py)" as SendNotif
+participant "chat/signals.py\n(notificar_mensaje)" as ChatSignal
+participant "ecas/views.py\n(_check_upcoming_event_notifications)" as EventNotif
+participant "panel_admin/views.py\n(Dashboard)" as AdminDash
+participant "AdminDashboardService\n(panel_admin/service.py)" as DashSvc
+database "PostgreSQL\n(Notificacion, Mensaje,\nEventoInstancia)" as DB
+participant "Django Channels\n(Redis)" as Channels
+
+== WebSocket: Conexión de Notificaciones ==
+
+Gestor -> JS: Abrir panel ECA (o Admin)
+JS -> NotifWS: ws://host/ws/notificaciones/
+NotifWS -> NotifWS: Verificar usuario autenticado
+alt No autenticado
+    NotifWS -> JS: WebSocket close()
+else Autenticado
+    NotifWS -> Channels: group_add("notificaciones_{user_id}",\nchannel_name)
+    NotifWS -> JS: WebSocket accept()
+end
+
+== Signal: Nuevo Mensaje de Chat ==
+
+note over ChatSignal, Channels
+  Disparado por post_save en Mensaje
+  (apps/chat/signals.py)
+end note
+
+DB -> ChatSignal: Mensaje.objects.create() → post_save
+ChatSignal -> ChatSignal: notificar_mensaje(sender, instance, created)
+ChatSignal -> DB: SELECT Chat del mensaje
+alt Ciudadano envió → notificar al gestor
+    ChatSignal -> DB: SELECT gestor del punto
+    ChatSignal -> DB: INSERT Notificacion(usuario=gestor,\ntipo=mensaje, mensaje=instance)
+    ChatSignal -> SendNotif: enviar_notificacion_realtime(\ngestor_id, {id, tipo:"mensaje",\ntitulo:"Nuevo mensaje de [nombre]: [texto]",\nfecha, url})
+else Gestor envió → notificar al ciudadano
+    ChatSignal -> DB: INSERT Notificacion(usuario=ciudadano,\ntipo=mensaje, mensaje=instance)
+    ChatSignal -> SendNotif: enviar_notificacion_realtime(\nciudadano_id, {id, tipo:"mensaje",\ntitulo:"Nuevo mensaje de [punto]: [texto]",\nfecha, url})
+end
+
+SendNotif -> Channels: group_send("notificaciones_{user_id}",\n{type: "notificacion_nueva", data: payload})
+Channels -> NotifWS: notificacion_nueva event
+NotifWS -> JS: WS send(json notificación)
+JS -> JS: Mostrar badge/bell de notificación
+
+== Eventos Próximos ( cada carga de página) ==
+
+Gestor -> JS: Navegar a /punto-eca/resumen/
+JS -> EventNotif: GET /punto-eca/<seccion>/
+EventNotif -> DB: SELECT EventoInstancia\nWHERE punto_eca=punto\nAND fecha_inicio >= ahora\nAND fecha_inicio <= ahora+24h\nAND es_completado=False
+DB --> EventNotif: próximos eventos (24h)
+
+loop Para cada evento próximo sin notificación
+    EventNotif -> DB: SELECT Notificacion\nWHERE usuario=user\nAND evento_instancia=instancia\n(Notificacion.objects.get_or_create)
+    alt Notificación fue recién creada
+        EventNotif -> SendNotif: enviar_notificacion_realtime(\nuser_id, {tipo:"evento",\ntitulo:"Evento próximo: [titulo]",\nfecha, url})
+    end
+end
+
+== Dashboard Admin (KPIs) ==
+
+Admin -> JS: Navegar a /panel_admin/
+JS -> AdminDash: GET /panel_admin/
+AdminDash -> AdminDash: @login_required + @user_passes_test(es_administrador)
+AdminDash -> DashSvc: obtener_resumen_general()
+
+DashSvc -> DB: SELECT COUNT FROM users_usuario\nWHERE is_active=True
+DashSvc -> DB: SELECT COUNT FROM ecas_puntoeca
+DashSvc -> DB: SELECT COUNT FROM inventory_inventario
+DashSvc -> DB: SELECT COUNT FROM inventory_material
+DashSvc -> DB: SELECT COUNT FROM inventory_categoriamaterial
+DashSvc -> DB: SELECT COUNT(SUM stock) FROM inventario
+DashSvc -> DB: SELECT COUNT(SUM cantidad) FROM comprainventario
+DashSvc -> DB: SELECT COUNT(SUM cantidad) FROM ventainventario
+DashSvc -> DB: SELECT COUNT FROM publicaciones_publicacion
+DashSvc -> DB: SELECT COUNT FROM users_usuario
+DB --> DashSvc: estadísticas
+
+DashSvc -> DashSvc: Compilar KPIs:\n- total_usuarios, total_puntos_eca\n- total_materiales, total_categorias\n- total_inventario (kg)\n- total_entradas, total_salidas\n- total_publicaciones\n- distribuciones y tendencias
+
+DashSvc --> AdminDash: resumen_general
+AdminDash --> JS: Render dashboard admin
+
+== WebSocket: Desconexión ==
+
+note over NotifWS
+  En disconnect():
+  group_discard("notificaciones_{user_id}", channel_name)
+end note
+
+@enduml

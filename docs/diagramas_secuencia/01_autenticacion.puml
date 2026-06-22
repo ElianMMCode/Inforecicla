@@ -1,0 +1,82 @@
+@startuml autenticacion
+title CU-00: Iniciar Sesión y Gestión de Sesión
+
+actor "Usuario" as User
+participant "Navegador" as Browser
+participant "LoginView\n(users/views.py)" as Login
+participant "Usuario Model\n(users/models.py)" as UserModel
+participant "TokenValidacion\n(users/models.py)" as Token
+participant "Email Service\n(users/utils.py)" as EmailService
+participant "Django Sessions" as Session
+participant "config/urls.py\nRedirect" as Redirect
+
+== CU-00.1: Validar Credenciales ==
+
+User -> Browser: Navegar a /login/
+Browser -> Login: GET /login/
+Login --> Browser: Renderizar formulario login
+User -> Browser: Ingresar email + contraseña
+
+Browser -> Login: POST /login/ (email, password)
+Login -> Login: Normalizar email (lower, strip)
+Login -> UserModel: authenticate(email, password)
+alt Credenciales válidas
+    UserModel --> Login: Usuario autenticado
+    Login -> Session: create_session(user)
+    Login -> Login: Obtener tipo_usuario del usuario
+    Login -> Login: Redirigir según rol
+    alt Es CIUDADANO
+        Login --> Browser: Redirect /perfil/
+    else Es GESTOR_ECA
+        Login --> Browser: Redirect /punto-eca/
+    else Es ADMIN
+        Login --> Browser: Redirect /panel_admin/
+    end
+else Credenciales inválidas
+    UserModel --> Login: None
+    Login --> Browser: Redirect /login/ + error message
+end
+
+== EXT-43: Recuperar Contraseña ==
+
+User -> Browser: Olvidé mi contraseña
+Browser -> Login: GET /login/recuperar/enviar/
+Login --> Browser: Formulario ingresar email
+User -> Browser: Ingresar email
+
+Browser -> Login: POST /login/recuperar/enviar/
+Login -> UserModel: buscar usuario por email
+Login -> Token: generar_token(email, tipo="recuperacion")
+note right: Token 8 caracteres\nexpira en TOKEN_EXPIRATION_MINUTES\nmax 5 intentos
+Token --> Login: Token generado
+Login -> EmailService: enviar_correo_recuperacion(email, token)
+EmailService --> Login: Email enviado
+Login --> Browser: Redirect /login/recuperar/validar/ + mensaje
+
+User -> Browser: Ingresar código de verificación
+Browser -> Login: POST /login/recuperar/validar/
+Login -> Token: validar_token(email, token)
+Token -> Token: Verificar expiración\n+ incrementar intentos
+alt Token válido
+    Token --> Login: Token válido
+    Login --> Browser: Redirect /login/recuperar/cambiar/
+else Token inválido o expirado
+    Token --> Login: Token inválido
+    Login --> Browser: Error + reintentar
+end
+
+User -> Browser: Ingresar nueva contraseña
+Browser -> Login: POST /login/recuperar/cambiar/ (password, confirm)
+Login -> Login: Validar coincidencia de contraseñas
+Login -> UserModel: set_password(new_password)
+Login -> Token: marcar_como_validado()
+Login --> Browser: Redirect /login/ + "Contraseña actualizada"
+
+== CU-00.3: Cerrar Sesión ==
+
+User -> Browser: Cerrar sesión
+Browser -> Login: GET /logout/
+Login -> Session: flush()
+Login --> Browser: Redirect /login/
+
+@enduml

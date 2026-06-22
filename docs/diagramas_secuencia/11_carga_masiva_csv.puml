@@ -1,0 +1,107 @@
+@startuml carga_masiva_csv
+title CU-08: Importar Transacciones Masivas (CSV)
+
+actor "Gestor ECA" as Gestor
+participant "Navegador" as Browser
+participant "bulk_import_compras\n(operations/views.py)" as BulkCompras
+participant "bulk_import_ventas\n(operations/views.py)" as BulkVentas
+participant "_procesar_fila_bulk_import\n(operations/views.py)" as ProcesarFila
+participant "_buscar_o_crear_material\n(operations/views.py)" as BuscarMaterial
+participant "CompraInventarioService\n(operations/service.py)" as CompSvc
+participant "VentaInventarioService\n(operations/service.py)" as VentSvc
+participant "Inventario Model" as InvModel
+participant "Material Model" as MatModel
+database "PostgreSQL" as DB
+
+== Descargar Plantilla CSV ==
+
+Gestor -> Browser: Solicitar plantilla
+Browser -> BulkCompras: GET /punto-eca/movimientos/plantilla/?tipo=compra
+BulkCompras -> BulkCompras: Seleccionar headers:\nnombreMaterial, cantidad,\nprecioCompra, fechaCompra, observaciones
+BulkCompras -> BulkCompras: Agregar 2 filas de ejemplo
+BulkCompras --> Browser: HttpResponse(CSV,\nContent-Type: text/csv;\nContent-Disposition: attachment)
+Browser -> Browser: Descargar plantilla_compra_ejemplo.csv
+
+== Subir CSV de Compras ==
+
+Gestor -> Browser: Seleccionar archivo CSV
+Browser -> BulkCompras: POST /punto-eca/movimientos/compras/bulk_import/\n.FILES[file]=archivo.csv
+
+BulkCompras -> BulkCompras: Validar:\n- method == POST\n- file existe\n- name.endswith(".csv")
+alt No es CSV
+    BulkCompras --> Browser: Error "El archivo debe ser CSV"
+end
+
+BulkCompras -> BulkCompras: archivo_contenido.read().decode("utf-8")
+alt Error de codificación
+    BulkCompras --> Browser: Error "Verifique que sea UTF-8"
+end
+
+BulkCompras -> BulkCompras: csv.DictReader(contenido)
+BulkCompras -> BulkCompras: Verificar headers:\nheaders_esperados.issubset(headers_csv)
+alt Faltan columnas
+    BulkCompras --> Browser: Error "Faltan columnas: [lista]"
+end
+
+BulkCompras -> DB: SELECT PuntoECA WHERE gestor_eca=user
+
+== Procesamiento Fila por Fila ==
+
+loop Para cada fila del CSV (desde fila 2)
+    BulkCompras -> ProcesarFila: _procesar_fila_bulk_import()
+
+    ProcesarFila -> ProcesarFila: Extraer: nombreMaterial, cantidad,\nprecioCompra, fechaCompra, observaciones
+    ProcesarFila -> ProcesarFila: Validar campos requeridos
+    alt Campo faltante
+        ProcesarFila --> BulkCompras: ValueError("nombreMaterial es requerido")
+    end
+
+    ProcesarFila -> BuscarMaterial: _buscar_o_crear_material_inventario()
+
+    BuscarMaterial -> DB: SELECT inventario WHERE punto_eca=punto
+    BuscarMaterial -> BuscarMaterial: Normalizar nombre\n(quitar acentos, lowercase)
+    BuscarMaterial -> BuscarMaterial: Buscar por keywords en nombre
+    alt Inventario encontrado
+        BuscarMaterial -> DB: SELECT inventario existente
+    else No encontrado, buscar en catálogo
+        BuscarMaterial -> DB: SELECT material WHERE nombre
+        alt Material existe en catálogo
+            BuscarMaterial -> DB: CREATE inventario\n(capacidad_maxima=100000,\nunidad_medida=KG,\numbral_alerta=80, umbral_critico=90)
+            note right: Auto-crea inventario con\nvalores por defecto
+        else Material no existe
+            BuscarMaterial --> ProcesarFila: Error "No se pudo obtener/crear inventario"
+        end
+    end
+    BuscarMaterial --> ProcesarFila: (inventario, material_creado)
+
+    ProcesarFila -> CompSvc: Crear mock_request con data
+    CompSvc -> DB: INSERT CompraInventario
+    CompSvc -> DB: UPDATE Inventario SET stock += cantidad
+    CompSvc --> ProcesarFila: {success: true}
+
+    ProcesarFila --> BulkCompras: {fila: N, status: "success",\nmensaje: "Compra registrada"\n[, material_creado]}
+end
+
+== Generar Reporte de Resultados ==
+
+BulkCompras -> BulkCompras: Compilar resultados:\n- total_filas\n- exitosas\n- con_errores\n- detalles[] por fila
+
+BulkCompras --> Browser: JsonResponse({
+  status: "success",
+  mensaje: "Procesamiento completado. X exitosas, Y con errores",
+  resumen: {total_filas, exitosas, con_errores},
+  detalles: [
+    {fila: 2, status: "success", mensaje: "..."},
+    {fila: 5, status: "error", mensaje: "Material 'X' no encontrado", datos: {...}}
+  ]
+})
+
+== Subir CSV de Ventas ==
+
+Gestor -> Browser: Subir CSV de ventas
+Browser -> BulkVentas: POST /punto-eca/movimientos/ventas/bulk_import/
+note right
+  Mismo flujo que compras pero con:\n- precioVenta en vez de precioCompra\n- fechaVenta en vez de fechaCompra\n- Valida stock_actual >= cantidad\n  (EXT-09: stock insuficiente)
+end note
+
+@enduml

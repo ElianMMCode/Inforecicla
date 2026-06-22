@@ -1,0 +1,82 @@
+@startuml panel_eca_centros
+title Panel ECA: Sección Centros de Acopio
+
+actor "Gestor ECA" as Gestor
+participant "Navegador" as Browser
+participant "render_seccion(centros)\n(ecas/views.py)" as RenderView
+participant "_build_centros_context\n(ecas/views.py)" as BuildCtx
+participant "crear_centro\n(ecas/views.py)" as Crear
+participant "actualizar_centro\n(ecas/views.py)" as Actualizar
+participant "CentroAcopio Model" as CentroModel
+participant "Localidad Model" as LocalModel
+database "PostgreSQL" as DB
+
+== Cargar Sección Centros ==
+
+Gestor -> Browser: Navegar a /punto-eca/centros/
+Browser -> RenderView: GET /punto-eca/centros/
+RenderView -> DB: SELECT PuntoECA WHERE gestor_eca=user
+RenderView -> BuildCtx: _build_centros_context(punto)
+
+BuildCtx -> DB: SELECT CentroAcopio\nWHERE visibilidad=GLOBAL
+BuildCtx -> DB: SELECT CentroAcopio\nWHERE puntos_eca=punto\nAND visibilidad=ECA
+DB --> BuildCtx: centros globales + locales
+
+BuildCtx -> BuildCtx: Serializar cada centro:\n{ id, nombre, tipo, get_tipo_centro_display,\nlocalidad{id, nombre}, celular, email,\nnombre_contacto, nota }
+BuildCtx -> DB: SELECT ALL Localidad\n→ localidades_catalogo
+BuildCtx -> DB: SELECT ALL TipoCentroAcopio\n→ tipos_catalogo
+BuildCtx --> RenderView: {punto, centros_globales,\ncentros_locales,\nlocalidades_catalogo, tipos_catalogo}
+
+RenderView --> Browser: Render puntoECA-layout.html\ncon section-centros.html
+note right
+  - Centros GLOBALES: visibles a todos,\nno editables por gestor
+  - Centros ECA (locales): editables,\nespecíficos de este punto
+end note
+
+== Registrar Nuevo Centro ECA ==
+
+Gestor -> Browser: Ir a registrar centro
+Browser -> Crear: GET /punto-eca/centros/registrar/
+Crear --> Browser: Render registrar_centro.html
+
+Gestor -> Browser: Completar formulario
+Browser -> Crear: POST /punto-eca/centros/crear/
+Crear -> Crear: Extraer campos:\nnombre, tipo_centro, celular,\nemail, nombre_contacto, nota, localidad_id
+Crear -> DB: INSERT INTO ecas_centroacopio\n(nombre, tipo_centro, celular, email,\nnombre_contacto, nota, visibilidad=ECA)
+
+alt Se especificó localidad
+    Crear -> DB: SELECT Localidad WHERE localidad_id=<id>
+    Crear -> DB: UPDATE centro SET localidad=<localidad>
+end
+
+Crear -> DB: centro.puntos_eca.add(punto)
+Crear --> Browser: Redirect /punto-eca/centros/\n+ "Centro registrado"
+
+== AJAX: Registrar Centro ==
+
+Gestor -> Browser: Registrar via AJAX
+Browser -> Crear: POST /punto-eca/centros/crear/\n(X-Requested-With: XMLHttpRequest)
+Crear -> DB: INSERT centro + asociar
+Crear --> Browser: JsonResponse({status: "ok",\ncentro: {serializado},\nmensaje: "Centro registrado correctamente"})
+
+== Editar Centro ECA ==
+
+Gestor -> Browser: Editar centro existente
+Browser -> Actualizar: GET /punto-eca/centros/editar/<id>/
+Actualizar -> DB: SELECT CentroAcopio\nWHERE id=<id> AND visibilidad=ECA\nAND puntos_eca=punto
+Actualizar --> Browser: Render formulario con datos actuales
+
+Gestor -> Browser: Modificar campos
+Browser -> Actualizar: POST /punto-eca/centros/actualizar/<id>/
+Actualizar -> Actualizar: Actualizar campos:\nnombre, tipo_centro, celular, email,\nnombre_contacto, nota, localidad
+Actualizar -> DB: UPDATE ecas_centroacopio
+Actualizar --> Browser: Redirect /punto-eca/centros/\n+ "Centro editado"
+
+== Eliminar Centro ECA ==
+
+Gestor -> Browser: Eliminar centro
+Browser -> Actualizar: POST /punto-eca/centros/eliminar/<id>
+Actualizar -> DB: DELETE ecas_centroacopio\nWHERE id=<id> AND visibilidad=ECA
+Actualizar --> Browser: Redirect + "Centro eliminado"
+
+@enduml

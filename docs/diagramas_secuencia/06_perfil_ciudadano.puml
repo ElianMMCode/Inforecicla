@@ -1,0 +1,96 @@
+@startuml perfil_ciudadano
+title CU-03/Perfil: Gestión de Perfil Ciudadano
+
+actor "Ciudadano" as User
+participant "Navegador" as Browser
+participant "perfil_ciudadano\n(users/views.py)" as PerfilView
+participant "actualizar_datos_ciudadano\n(users/views.py)" as UpdateView
+participant "UserService\n(core/service.py)" as UserService
+participant "Usuario Model" as UserModel
+participant "TokenValidacion Model" as Token
+database "PostgreSQL" as DB
+
+== CU-03.1: Ver Perfil (Tab Datos) ==
+
+User -> Browser: Navegar a /perfil/
+Browser -> PerfilView: GET /perfil/?tab=datos
+PerfilView -> UserModel: SELECT usuario actual
+PerfilView -> DB: SELECT localidades
+PerfilView --> Browser: Render perfil_ciudadano.html
+note right
+  Template renderiza tabs:
+  - datos (default)
+  - comentarios
+  - mensajes (chat)
+  - guardados
+end note
+
+== CU-03.2: Ver Comentarios del Usuario ==
+
+User -> Browser: Cambiar a tab "comentarios"
+Browser -> PerfilView: GET /perfil/comentarios/
+PerfilView -> DB: SELECT FROM publicaciones_comentario\nWHERE usuario=user\nORDER BY -fecha_creacion
+DB --> PerfilView: QuerySet
+PerfilView --> Browser: Render tab comentarios
+
+== CU-03.3: Ver Mensajes del Usuario ==
+
+User -> Browser: Cambiar a tab "mensajes"
+Browser -> PerfilView: GET /perfil/mensajes/
+PerfilView -> DB: SELECT FROM chat_chat\nWHERE ciudadano=user
+DB --> PerfilView: QuerySet de chats
+PerfilView --> Browser: Render tab mensajes
+
+== CU-03.4: Ver Guardados ==
+
+User -> Browser: Cambiar a tab "guardados"
+Browser -> PerfilView: GET /perfil/guardados/
+PerfilView -> DB: SELECT publicaciones guardadas\nFROM publicaciones_guardados\nWHERE usuario=user
+DB --> PerfilView: QuerySet
+PerfilView --> Browser: Render tab guardados
+
+== CU-03.5: Actualizar Datos del Perfil ==
+
+User -> Browser: Modificar nombre, apellidos, celular, etc.
+Browser -> UpdateView: POST /perfil/actualizar/
+
+UpdateView -> UpdateView: Extraer datos del POST
+UpdateView -> UserService: editar_perfil(request, user_id)
+
+UserService -> UserService: Validar campos obligatorios
+UserService -> UserService: Sanitizar entradas\n(django.utils.html.escape)
+
+UserService -> DB: SELECT usuario por ID
+UserService -> DB: UPDATE usuario SET nombres, apellidos, celular,\nciudad, localidad, biografia, foto_perfil...
+DB --> UserService: OK
+
+UserService --> UpdateView: {usuario: updated, errores: null}
+UpdateView --> Browser: Redirect /perfil/ + "Datos actualizados"
+
+alt Hay errores de validación
+    UserService --> UpdateView: {errores: {campo: [error]}}
+    UpdateView --> Browser: Redirect /perfil/ + mensajes de error
+end
+
+== CU-03.6: Cambiar Contraseña ==
+
+User -> Browser: Ir a cambiar contraseña
+Browser -> UpdateView: POST /perfil/cambiar-contrasena/
+UpdateView -> UpdateView: Validar contraseña actual + nueva + confirmación
+UpdateView -> UserModel: check_password(actual)
+alt Contraseña actual correcta
+    UserModel --> UpdateView: True
+    UpdateView -> UserModel: set_password(nueva)
+    UpdateView --> Browser: Redirect /perfil/ + "Contraseña cambiada"
+else Contraseña actual incorrecta
+    UserModel --> UpdateView: False
+    UpdateView --> Browser: Error "Contraseña actual incorrecta"
+end
+
+== AJAX: Verificar Duplicidad de Documento ==
+
+Browser -> UpdateView: GET /perfil/check-documento/?numero=XXX
+UpdateView -> DB: SELECT COUNT(*) FROM users_usuario\nWHERE numero_documento=XXX AND id!=user.id
+UpdateView --> Browser: JsonResponse({disponible: true/false})
+
+@enduml
