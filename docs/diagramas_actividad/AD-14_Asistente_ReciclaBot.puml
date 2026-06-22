@@ -13,7 +13,7 @@ start
 
 partition "== ENVIO DE PREGUNTA ==" {
   :POST /punto-eca/asistente/asistente/;
-  :Envia campo "pregunta" (texto);
+  :Envia campo pregunta (texto);
 
   |Sistema (Django)|
   :asistente_api_view();
@@ -21,13 +21,13 @@ partition "== ENVIO DE PREGUNTA ==" {
   :Valida que pregunta no este vacia;
 
   if (Pregunta vacia?) then (si)
-    :Error 400: "El campo pregunta es obligatorio";
+    :Error 400 campo obligatorio;
     stop
   endif
 
   :Obtiene PuntoECA del gestor logueado;
   if (No tiene PuntoECA?) then (si)
-    :Error 403: "No tienes un Punto ECA asociado";
+    :Error 403 sin Punto ECA asociado;
     stop
   endif
 }
@@ -36,35 +36,27 @@ partition "== GENERAR CONTEXTO DEL PUNTO ECA ==" {
   |Sistema (Django)|
   :AsistenteECAService.consultar(punto, pregunta);
 
-  :generar_contexto_eca() construye contexto:
-  1. Datos del punto (nombre, direccion, horario);
-  2. Responsable (nombre, email, celular);
-  3. KPIs de inventario (stock total, capacidad, %);
-  4. Inventario detallado (por material):
-     - stock/capacidad, unidad, precios, estado;
-  5. Operaciones del mes (entradas/salidas);
-  6. Ultimos movimientos (3 entradas + 3 salidas);
-  7. Proximos eventos (proximos 5 del calendario);
-  8. Centros de acopio (propios + globales);
-
-  |Base de Datos|
-  :Consultas:
-  - Inventario.filter(punto_eca=X)
-  - CompraInventario.filter(...).aggregate(Sum)
-  - VentaInventario.filter(...).aggregate(Sum)
-  - EventoInstancia.filter(punto_eca=X).proximos;
-
-  |Sistema (Django)|
-  :Ensambla prompt con:
-  - system_prompt: instrucciones restrictivas
-  - contexto_eca: toda la informacion
-  - pregunta del usuario;
+  :generar_contexto_eca() construye contexto completo;
 
   note right
-    El contexto permite al LLM
-    responder con datos reales
-    del punto ECA del gestor
+    Contexto incluye:
+    1. Datos del punto
+    2. Responsable
+    3. KPIs de inventario
+    4. Inventario detallado por material
+    5. Operaciones del mes
+    6. Ultimos movimientos
+    7. Proximos eventos
+    8. Centros de acopio
   end note
+
+  |Base de Datos|
+  :Consultas Inventario, CompraInventario,
+  VentaInventario, EventoInstancia;
+
+  |Sistema (Django)|
+  :Ensambla prompt con system_prompt
+  + contexto_eca + pregunta del usuario;
 }
 
 partition "== CONSULTA A LLM ==" {
@@ -87,20 +79,12 @@ partition "== RESPUESTA AL GESTOR ==" {
   :Escapa respuesta con django.utils.html.escape();
   :Previene inyeccion XSS en la respuesta;
 
-  :Formatea HTML:
-  - Mensaje del usuario (burbuja usuario)
-  - Respuesta del asistente (burbuja AI con icono robot);
+  :Formatea HTML con burbuja usuario y burbuja AI;
 
   |Gestor ECA|
-  :Visualiza conversacion:
-  - Su pregunta (con avatar usuario)
-  - Respuesta del asistente (con icono robot);
-
-  :Respuesta incluye:
-  - KPIs actualizados del inventario
-  - Recomendaciones contextualizadas
-  - Analisis de operaciones
-  - Informacion de eventos proximos;
+  :Visualiza conversacion;
+  :Respuesta incluye KPIs, recomendaciones,
+  analisis de operaciones y eventos proximos;
 }
 
 note right
