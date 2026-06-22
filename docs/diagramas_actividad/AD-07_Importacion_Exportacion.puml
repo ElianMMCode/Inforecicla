@@ -25,26 +25,24 @@ partition "== IMPORTACION MASIVA CSV (COMPRAS) ==" {
   if (Formato valido?) then (si)
     :Itera sobre cada fila del CSV;
 
-    fork
-      :Para cada fila:
-      1. Busca material por nombre/keywords;
-      2. Obtiene inventario del punto ECA;
-      3. Valida fecha (no futura, mes actual);
-      4. Valida cantidad > 0;
+    :Para cada fila:
+    1. Busca material por nombre/keywords
+    2. Obtiene inventario del punto ECA
+    3. Valida fecha (no futura, mes actual)
+    4. Valida cantidad > 0;
 
-      if (Material encontrado en catalogo?) then (si)
-        :Crea CompraInventario;
-        :Actualiza stock del inventario;
-        :Registra fila procesada con exito;
-      else (no)
-        :Registra fila OMETIDA: "Material no encontrado";
-      endif
-    fork again
-      :Maneja errores por fila:
-      - Stock insuficiente: omite fila
-      - Datos invalidos: omite fila
-      - Guarda motivo del error;
-    end fork
+    if (Material encontrado en catalogo?) then (si)
+      :Crea CompraInventario;
+      :Actualiza stock del inventario;
+      :Registra fila procesada con exito;
+    else (no)
+      :Registra fila omitida: "Material no encontrado";
+    endif
+
+    :Verifica errores por fila:
+    - Stock insuficiente: omite fila
+    - Datos invalidos: omite fila
+    - Guarda motivo del error;
 
     |Base de Datos|
     :Commit de transacciones exitosas;
