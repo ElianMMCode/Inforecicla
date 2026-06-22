@@ -6,9 +6,11 @@
   {% include "admin/partials/_pdf_styles.html" %}
   <style>
     .resumen-grid { width: 100%; border-collapse: collapse; border: 1px solid #c8e6c9; }
-    .resumen-grid td { padding: 6px 9px; font-size: 8.5px; border-right: 1px solid #c8e6c9; vertical-align: top; }
-    .resumen-grid td:last-child { border-right: none; }
-    .resumen-grid .lbl { color: #1a5c2a; font-weight: bold; display: block; margin-bottom: 2px; }
+    .resumen-grid thead th { padding: 5px 9px 3px 9px; font-size: 7.5px; color: #1a5c2a; font-weight: bold; text-align: left; background: #f0f9f4; border-right: 1px solid #c8e6c9; border-bottom: 1px solid #a5d6a7; }
+    .resumen-grid thead th:last-child { border-right: none; }
+    .resumen-grid tbody td, .resumen-grid tbody th { padding: 6px 9px; font-size: 8.5px; border-right: 1px solid #c8e6c9; vertical-align: top; }
+    .resumen-grid tbody td:last-child, .resumen-grid tbody th:last-child { border-right: none; }
+    .resumen-grid tbody th { color: #1a5c2a; font-weight: bold; text-align: left; background: transparent; }
     .resumen-grid .val { font-size: 11px; font-weight: bold; color: #1a1a1a; }
     .val-pos { color: #145a32; }
     .val-neg { color: #922b21; }
@@ -31,29 +33,30 @@
 
   <div class="section-header">Resumen Financiero</div>
   <table class="resumen-grid">
-    <tr>
-      <td>
-        <span class="lbl">Total de movimientos</span>
-        <span class="val">{{ total_registros }}</span>
-      </td>
-      <td>
-        <span class="lbl">Total compras</span>
-        <span class="val val-neg">${{ total_compras|floatformat:2 }}</span>
-      </td>
-      <td>
-        <span class="lbl">Total ventas</span>
-        <span class="val val-pos">${{ total_ventas|floatformat:2 }}</span>
-      </td>
-      <td>
-        <span class="lbl">Balance (ventas − compras)</span>
-        <span class="val {% if balance >= 0 %}val-pos{% else %}val-neg{% endif %}">
-          ${{ balance|floatformat:2 }}
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <td colspan="4"><span class="lbl">Punto ECA</span><span style="font-size:9px;">{{ eca_nombre }}</span></td>
-    </tr>
+    <thead>
+      <tr>
+        <th scope="col">Total de movimientos</th>
+        <th scope="col">Total compras</th>
+        <th scope="col">Total ventas</th>
+        <th scope="col">Balance (ventas − compras)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="val">{{ total_registros }}</span></td>
+        <td><span class="val val-neg">${{ total_compras|floatformat:2 }}</span></td>
+        <td><span class="val val-pos">${{ total_ventas|floatformat:2 }}</span></td>
+        <td>
+          <span class="val {% if balance >= 0 %}val-pos{% else %}val-neg{% endif %}">
+            ${{ balance|floatformat:2 }}
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Punto ECA</th>
+        <td colspan="3" style="font-size:9px;">{{ eca_nombre }}</td>
+      </tr>
+    </tbody>
   </table>
 
   <div class="section-header">Historial de Movimientos</div>

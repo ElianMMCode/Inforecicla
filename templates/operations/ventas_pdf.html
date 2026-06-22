@@ -6,9 +6,10 @@
   {% include "admin/partials/_pdf_styles.html" %}
   <style>
     .resumen-grid { width: 100%; border-collapse: collapse; border: 1px solid #c8e6c9; }
-    .resumen-grid td { padding: 6px 9px; font-size: 8.5px; border-right: 1px solid #c8e6c9; vertical-align: top; }
-    .resumen-grid td:last-child { border-right: none; }
-    .resumen-grid .lbl { color: #1a5c2a; font-weight: bold; display: block; margin-bottom: 2px; }
+    .resumen-grid thead th { padding: 5px 9px 3px 9px; font-size: 7.5px; color: #1a5c2a; font-weight: bold; text-align: left; background: #f0f9f4; border-right: 1px solid #c8e6c9; border-bottom: 1px solid #a5d6a7; }
+    .resumen-grid thead th:last-child { border-right: none; }
+    .resumen-grid tbody td { padding: 6px 9px; font-size: 8.5px; border-right: 1px solid #c8e6c9; vertical-align: top; }
+    .resumen-grid tbody td:last-child { border-right: none; }
     .resumen-grid .val { font-size: 12px; font-weight: bold; color: #1a1a1a; }
     .tfoot-total td { background: #e8f5e9; font-weight: bold; font-size: 9px; border-top: 2px solid #1a5c2a; }
   </style>
@@ -18,11 +19,20 @@
 
   <div class="section-header">Resumen Financiero</div>
   <table class="resumen-grid">
-    <tr>
-      <td><span class="lbl">Total de registros</span><span class="val">{{ total_registros }}</span></td>
-      <td><span class="lbl">Monto total vendido</span><span class="val">${{ total_monto|floatformat:2 }}</span></td>
-      <td><span class="lbl">Punto ECA</span><span class="val">{{ eca_nombre }}</span></td>
-    </tr>
+    <thead>
+      <tr>
+        <th scope="col">Total de registros</th>
+        <th scope="col">Monto total vendido</th>
+        <th scope="col">Punto ECA</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="val">{{ total_registros }}</span></td>
+        <td><span class="val">${{ total_monto|floatformat:2 }}</span></td>
+        <td><span class="val">{{ eca_nombre }}</span></td>
+      </tr>
+    </tbody>
   </table>
 
   <div class="section-header">Listado de Ventas</div>
