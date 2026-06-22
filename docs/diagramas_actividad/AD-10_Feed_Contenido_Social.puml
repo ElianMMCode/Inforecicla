@@ -1,0 +1,183 @@
+@startuml
+title **AD-10: Feed de Publicaciones y Contenido Social**
+
+|#LightBlue|Ciudadano|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Ciudadano|
+start
+
+partition "== EXPLORAR FEED ==" {
+  :Accede a /publicaciones/;
+
+  |Sistema (Django)|
+  :panel_publicaciones();
+  :Lista publicaciones paginadas;
+  :Ordena por fecha de creacion;
+
+  |Base de Datos|
+  :SELECT Publicacion con:
+  - usuario (autor)
+  - categoria
+  - conteo de imagenes
+  - conteo de comentarios
+  - conteo de reacciones;
+
+  |Ciudadano|
+  :Visualiza tarjetas de publicaciones con:
+  - Titulo y resumen (max 500 chars)
+  - Imagen thumbnail
+  - Autor
+  - Fecha
+  - Conteo de likes;
+}
+
+partition "== VER DETALLE PUBLICACION ==" {
+  :Click en publicacion;
+
+  |Sistema (Django)|
+  :publicacion(publicacion_id);
+
+  |Base de Datos|
+  :SELECT Publicacion completa;
+  :SELECT ImagenPublicacion asociadas;
+  :SELECT Comentarios con usuario;
+  :SELECT Reaccion del usuario actual;
+  :SELECT Guardado del usuario actual;
+
+  |Ciudadano|
+  :Visualiza:
+  - Titulo, contenido completo
+  - Multimedia (imagenes, video, URL)
+  - Autor y fecha
+  - Lista de comentarios
+  - Botones de like/dislike
+  - Boton guardar;
+
+  if (Reaccion ya existe?) then (si)
+    :Muestra estado actual (Like/Dislike activo);
+  endif
+}
+
+partition "== VOTAR PUBLICACION (LIKE/DISLIKE) ==" {
+  :POST /publicaciones/<id>/votar/;
+  :Envia: tipo (Like o Dislike);
+
+  |Sistema (Django)|
+  :votar_publicacion();
+  :Busca Reaccion existente del usuario;
+
+  |Base de Datos|
+  :SELECT Reaccion WHERE usuario=X AND publicacion=Y;
+
+  |Sistema (Django)|
+  if (Ya existe reaccion?) then (si)
+    if (Mismo valor?) then (si)
+      :Toggle: elimina la reaccion;
+      |Base de Datos|
+      :DELETE Reaccion;
+    else (valor diferente)
+      :Cambia Like <-> Dislike;
+      |Base de Datos|
+      :UPDATE Reaccion.valor;
+    endif
+  else (no existe)
+    :Crea nueva reaccion;
+    |Base de Datos|
+    :INSERT Reaccion (valor, usuario, publicacion);
+  endif
+
+  |Sistema (Django)|
+  :Cuenta likes y dislikes actualizados;
+  :Retorna nuevo estado;
+
+  |Ciudadano|
+  :Actualiza botones (toggle visual);
+}
+
+partition "== AGREGAR COMENTARIO ==" {
+  :POST /publicaciones/<id>/comentar/;
+  :Envia: texto del comentario;
+
+  |Sistema (Django)|
+  :agregar_comentario();
+
+  :Valida que texto no este vacio;
+  if (Texto vacio?) then (si)
+    :Error: "El comentario no puede estar vacio";
+    stop
+  endif
+
+  :Valida longitud <= 500 caracteres;
+  if (Excede 500?) then (si)
+    :Error: "El comentario no puede superar 500 caracteres";
+    stop
+  endif
+
+  :Escapa HTML con django.utils.html.escape();
+  :Previene inyeccion XSS;
+
+  |Base de Datos|
+  :INSERT Comentario (texto, usuario, publicacion, tipo);
+
+  |Ciudadano|
+  :Actualiza lista de comentarios;
+}
+
+partition "== EDITAR/ELIMINAR COMENTARIO ==" {
+  if (Edita comentario?) then (si)
+    :PATCH /publicaciones/comentario/<id>/editar/;
+    :Actualiza texto (con escape XSS);
+    |Base de Datos|
+    :UPDATE Comentario;
+  elseif (Elimina comentario?) then (si)
+    :DELETE /publicaciones/comentario/<id>/eliminar/;
+    |Base de Datos|
+    :DELETE Comentario;
+  endif
+}
+
+partition "== GUARDAR/DESGUARDAR ==" {
+  :POST /publicaciones/<id>/guardar/;
+
+  |Sistema (Django)|
+  :toggle_guardado();
+  :Busca Guardado existente;
+
+  |Base de Datos|
+  :SELECT Guardado WHERE usuario=X AND publicacion=Y;
+
+  |Sistema (Django)|
+  if (Ya guardado?) then (si)
+    :Elimina guardado;
+    |Base de Datos|
+    :DELETE Guardado;
+  else (no)
+    :Crea guardado;
+    |Base de Datos|
+    :INSERT Guardado (constraint unique_usuario_publicacion_guardado);
+  endif
+}
+
+partition "== GESTIONAR NOTIFICACIONES ==" {
+  |Ciudadano|
+  if (Click notificacion?) then (si)
+    :GET /publicaciones/notificacion/<id>/abrir/;
+
+    |Sistema (Django)|
+    :abrir_notificacion();
+    :Determina tipo de notificacion:
+    - publicacion -> redirige al detalle
+    - mensaje -> redirige al chat
+    - inventario -> redirige a inventario
+    - evento -> redirige al calendario;
+
+    :Marca notificacion como leida;
+    :Redirige a la URL correspondiente;
+  endif
+}
+
+stop
+
+@enduml

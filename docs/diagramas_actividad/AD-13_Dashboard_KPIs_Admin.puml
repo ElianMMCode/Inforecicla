@@ -1,0 +1,94 @@
+@startuml
+title **AD-13: Dashboard KPIs y Administrador**
+
+|#LightGreen|Administrador|
+|#LightYellow|Sistema (Django)|
+
+|Administrador|
+start
+
+partition "== PANEL DE ADMINISTRACION ==" {
+  :Accede a /panel_admin/;
+
+  |Sistema (Django)|
+  :admin(request);
+  :Carga AdminDashboardService;
+
+  :Calcula metricas generales:
+  - Total de usuarios activos
+  - Total de Puntos ECA registrados
+  - Total de publicaciones
+  - Total de materiales en sistema
+  - Tendencia de crecimiento (7 dias)
+  - Distribucion por tipo de usuario;
+
+  |Administrador|
+  :Visualiza dashboard con:
+  - KPIs principales
+  - Graficos de tendencia
+  - Alertas activas;
+}
+
+partition "== METRICAS POR MODULO ==" {
+  if (Metrica?) then (Puntos ECA)
+    :GET /panel_admin/puntos-eca/;
+
+    |Sistema (Django)|
+    :puntos_eca_dashboard();
+    :Calcula:
+    - Total Puntos ECA activos/inactivos
+    - Distribucion por localidad
+    - Puntos con mayor inventario
+    - Puntos con alertas criticas;
+
+  elseif (Materiales) then (si)
+    :GET /panel_admin/materiales/;
+
+    |Sistema (Django)|
+    :listar_materiales_admin();
+    :Calcula:
+    - Total materiales
+    - Distribucion por categoria/tipo
+    - Materiales con mayor demanda;
+
+  elseif (Usuarios) then (si)
+    :GET /panel_admin/usuarios/;
+
+    |Sistema (Django)|
+    :listar_usuarios();
+    :Calcula:
+    - Usuarios por tipo (ADM/CIU/GECA)
+    - Usuarios activos/inactivos
+    - Tendencia de registros;
+  endif
+}
+
+partition "== FILTROS TEMPORALES ==" {
+  |Administrador|
+  :Aplica filtro de rango temporal;
+
+  |Sistema (Django)|
+  :Filtra metricas por rango seleccionado;
+  :Recalcula KPIs para el periodo;
+
+  note right
+    Si no hay filtros activos,
+    usa cache para prevenir
+    bloqueo de BD
+  end note
+}
+
+partition "== EXPORTACIONES ==" {
+  if (Exportar?) then (PDF)
+    :Genera PDF con metricas y graficos;
+  elseif (Excel) then (si)
+    :Genera Excel con django-import-export;
+  endif
+
+  |Administrador|
+  :Descarga archivo;
+}
+
+stop
+
+@enduml

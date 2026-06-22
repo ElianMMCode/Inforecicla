@@ -1,0 +1,128 @@
+@startuml
+title **AD-09: Mapa Interactivo y Exploracion**
+
+|#LightBlue|Ciudadano|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+|#LightCoral|API ArcGIS|
+
+|Ciudadano|
+start
+:Accede a /mapa/;
+
+|Sistema (Django)|
+:render_mapa();
+:Renderiza template con Leaflet.js;
+
+partition "== SOLICITAR GEOLOCALIZACION ==" {
+  :El navegador solicita permiso de geolocalizacion;
+
+  if (Permiso concedido?) then (si)
+    :Obtiene latitud/longitud del usuario;
+  else (denegado)
+    :Centra mapa en Bogota (default);
+  endif
+}
+
+partition "== CARGAR PUNTOS ECA ==" {
+  |Sistema (Django)|
+  :GET /mapa/api/puntos-eca;
+  :api_puntos_eca();
+
+  |Base de Datos|
+  :SELECT PuntoECA WHERE es_visible_en_mapa=True;
+
+  |Sistema (Django)|
+  :Retorna JSON con:
+  - id, nombre, direccion, ciudad
+  - latitud, longitud
+  - localidad, horario;
+
+  :GET /mapa/api/materiales;
+  :api_materiales();
+
+  |Base de Datos|
+  :SELECT Material con conteo de puntos
+  WHERE es_visible_en_mapa=True;
+
+  |Sistema (Django)|
+  :Retorna JSON con:
+  - materialId, nombre, conteo de puntos;
+
+  :Renderiza marcadores en mapa;
+}
+
+partition "== CONSULTAR DETALLE PUNTO ECA ==" {
+  |Ciudadano|
+  :Click en marcador del mapa;
+
+  |Sistema (Django)|
+  :GET /mapa/api/puntos-eca/detalle/<punto_id>;
+  :api_puntos_eca_detalle();
+
+  |Base de Datos|
+  :SELECT PuntoECA + Inventario + Material;
+
+  |Sistema (Django)|
+  :Retorna JSON con:
+  - Datos base: nombre, direccion, horario
+  - Estado: abierto/cerrado (basado en horario)
+  - Inventario: materiales, precios,
+    porcentaje de ocupacion
+  - Contacto: telefono, email, celular;
+
+  |Ciudadano|
+  :Visualiza popup/modal con detalle del ECA;
+}
+
+partition "== FILTRO POR MATERIAL ==" {
+  |Ciudadano|
+  :Selecciona material del filtro;
+
+  |Sistema (Django)|
+  :GET /mapa/api/puntos-eca/por-material/<material_id>;
+  :api_puntos_eca_por_material();
+
+  |Base de Datos|
+  :SELECT PuntoECA con inventario
+  para ese material;
+
+  |Sistema (Django)|
+  :Filtra puntos visibles en el mapa;
+  :Actualiza marcadores mostrados;
+}
+
+partition "== INTEGRACION ARCGIS ==" {
+  |Sistema (Django)|
+  :GET /mapa/api/arcgis/puntos/;
+  :api_arcgis_puntos();
+
+  :Consum API publica de ArcGIS;
+
+  |API ArcGIS|
+  :Retorna puntos en formato Mercator;
+
+  |Sistema (Django)|
+  :Convierte coordenadas Mercator -> WGS84;
+  :Proyecta: x/20037508.34*180,
+  (y/20037508.34)*180;
+  :Normaliza: lat = atan(exp(pi*y/180)) * 360/pi - 90;
+
+  :Agrega puntos ArcGIS al mapa;
+}
+
+note right of Sistema
+  **APIs del mapa:**
+  - /api/puntos-eca: todos los visibles
+  - /api/materiales: con conteo
+  - /api/puntos-eca/detalle/<id>: extendido
+  - /api/puntos-eca/por-material/<id>: filtro
+  - /api/arcgis/puntos/: integracion externa
+
+  **Sin autenticacion requerida:**
+  Las APIs del mapa son publicas
+end note
+
+stop
+
+@enduml

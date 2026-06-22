@@ -1,0 +1,145 @@
+@startuml
+title **AD-04: Gestion de Puntos ECA y Centros de Acopio**
+
+|#LightBlue|Administrador|
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Administrador|
+start
+
+partition "== ADMIN: CRUD PUNTOS ECA ==" {
+  :Accede a /panel_admin/puntos-eca/;
+  :Accede a /panel_admin/puntos-eca/listado/;
+
+  |Sistema (Django)|
+  :listar_puntos_eca_admin();
+  :Lista todos los PuntoECA con filtros;
+
+  if (Accion?) then (Crear)
+    :POST /panel_admin/puntos-eca/crear/;
+    :Formulario: nombre, descripcion, direccion,
+    ciudad, telefono, email, celular,
+    sitio_web, horario, latitud, longitud,
+    logo, foto;
+
+    |Sistema (Django)|
+    :Valida capacidad (no negativa, > 0);
+    :Valida coordenadas;
+    :Valida telefono punto (formato 60 + 8 digitos);
+    :Valida imagenes: logo <= 2MB, foto <= 5MB;
+    :Extensiones: jpg, jpeg, png, webp;
+
+    |Base de Datos|
+    :Crea PuntoECA con los datos;
+
+  elseif (Editar) then (si)
+    :POST /panel_admin/puntos-eca/<id>/editar/;
+    :Carga formulario con datos existentes;
+
+    |Sistema (Django)|
+    :Valida nuevos valores;
+    :Actualiza PuntoECA;
+
+  elseif (Dashboard) then (si)
+    :GET /panel_admin/puntos-eca/;
+
+    |Sistema (Django)|
+    :puntos_eca_dashboard();
+    :Muestra KPIs y metricas de ECAs;
+
+  elseif (Exportar PDF) then (si)
+    :GET /panel_admin/puntos-eca/exportar/pdf/;
+
+  elseif (Exportar Excel) then (si)
+    :GET /panel_admin/puntos-eca/exportar/excel/;
+  endif
+}
+
+partition "== GESTOR: EDITAR MI PUNTO ECA ==" {
+  |Gestor ECA|
+  :Accede a /punto-eca/perfil/;
+
+  if (Editar punto?) then (si)
+    :POST /punto-eca/editar-punto/<id>/guardar/;
+
+    |Sistema (Django)|
+    :PuntoService.editar_punto();
+    :Valida imagenes con validate_image_upload();
+    :Actualiza campos del PuntoECA;
+
+    |Base de Datos|
+    :UPDATE PuntoECA;
+
+  elseif (Toggle visibilidad mapa) then (si)
+    :POST /punto-eca/pref/toggle-visible/;
+
+    |Sistema (Django)|
+    :Solo acepta POST (@require_POST);
+    :Invierte es_visible_en_mapa;
+
+    |Base de Datos|
+    :UPDATE PuntoECA.es_visible_en_mapa;
+
+  endif
+}
+
+partition "== GESTOR: CENTROS DE ACOPIO ==" {
+  |Gestor ECA|
+  :Accede a /punto-eca/centros/;
+
+  |Sistema (Django)|
+  :render_seccion("centros");
+  :Lista centros globales y asociados;
+
+  if (Accion?) then (Registrar Centro)
+    :POST /punto-eca/centros/registrar-centro/guardar/;
+    :Formulario: nombre, tipo_centro,
+    descripcion, nota, nombre_contacto,
+    ciudad, localidad, direccion,
+    email, celular, sitio_web, horario;
+
+    |Sistema (Django)|
+    :Crea CentroAcopio (visibilidad=ECA);
+    :Asocia al PuntoECA del gestor;
+
+    |Base de Datos|
+    :INSERT CentroAcopio;
+    :INSERT relacion M2M puntos_eca;
+
+  elseif (Editar Centro) then (si)
+    :POST /punto-eca/centros/editar-centro/<id>/guardar/;
+
+    |Sistema (Django)|
+    :actualizar_centro();
+    :Valida y actualiza campos;
+
+    |Base de Datos|
+    :UPDATE CentroAcopio;
+
+  elseif (Eliminar Centro) then (si)
+    :DELETE /punto-eca/centros/eliminar-centro/<id>/;
+
+    |Sistema (Django)|
+    :Verifica visibilidad == ECA;
+    :Solo centros con visibilidad ECA pueden eliminarse;
+
+    |Base de Datos|
+    :DELETE CentroAcopio;
+
+  endif
+}
+
+note right of Base de Datos
+  **Proteccion de integridad:**
+  - Soft-delete para Puntos ECA con
+    inventario o historial activo
+  - Centros con visibilidad GLOBAL
+    no se eliminan desde ECA
+  - relacion M2P permite flexibilidad
+end note
+
+stop
+
+@enduml

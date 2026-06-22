@@ -1,0 +1,188 @@
+@startuml
+title **AD-12: Chat Interno en Tiempo Real**
+
+|#LightBlue|Ciudadano|
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Ciudadano|
+start
+
+partition "== CREAR CHAT ==" {
+  :POST /mensajes/;
+  :Envia: punto_id (UUID del PuntoECA);
+
+  |Sistema (Django)|
+  :ChatListCreateView.perform_create();
+  :Verifica que usuario este autenticado;
+
+  |Base de Datos|
+  :Verifica constraint unique_chat_punto_ciudadano;
+  if (Chat ya existe para esta pareja?) then (si)
+    :Retorna chat existente;
+  else (no)
+    :Crea Chat con ciudadano=usuario, punto=PuntoECA;
+    :INSERT Chat;
+  endif
+}
+
+partition "== ESTABLECER WEBSOCKET ==" {
+  |Ciudadano / Gestor ECA|
+  :Conecta a ws/chat/<chat_id>/;
+
+  |Sistema (Django)|
+  :ChatConsumer.connect();
+  :Verifica que usuario este autenticado;
+  :Verifica chat_id;
+
+  if (Autenticado?) then (si)
+    :Se une al grupo chat_{chat_id};
+    :Acepta conexion WebSocket;
+  else (no)
+    :Cierra conexion;
+    stop
+  endif
+}
+
+partition "== CARGAR HISTORIAL ==" {
+  |Ciudadano / Gestor ECA|
+  :GET /mensajes/<chat_id>/mensajes/;
+
+  |Sistema (Django)|
+  :MensajeListCreateView();
+  :Lista todos los mensajes del chat;
+
+  |Base de Datos|
+  :SELECT Mensaje WHERE chat_id=X
+  ORDER BY fecha_envio ASC;
+
+  |Ciudadano / Gestor ECA|
+  :Muestra historial de mensajes;
+}
+
+partition "== ENVIAR MENSAJE ==" {
+  |Ciudadano / Gestor ECA|
+  :Escribe mensaje en el input;
+  :Presiona enviar;
+
+  |Sistema (Django)|
+  :ChatConsumer.receive(text_data);
+  :Parsea JSON del payload;
+
+  if (Mensaje vacio?) then (si)
+    :Error: "message-required";
+    :Responde con error al emisor;
+    stop
+  endif
+
+  :Persiste mensaje en BD;
+  :save_message(chat_id, user, message);
+
+  |Base de Datos|
+  :INSERT Mensaje (chat, remitente, texto);
+
+  |Sistema (Django)|
+  :Broadcast al grupo chat_{chat_id};
+  :envia chat_message a todos los miembros;
+
+  :Signal post_save Mensaje;
+  :notificar_mensaje();
+
+  if (Remitente es ciudadano?) then (si)
+    :Notifica al gestor del PuntoECA;
+  else (gestor notifica al ciudadano)
+    :Notifica al ciudadano del chat;
+  endif
+
+  |Base de Datos|
+  :Crea Notificacion para el destinatario;
+
+  |Sistema (Django)|
+  :enviar_notificacion_realtime(destinatario, data);
+  :Notificacion via WebSocket notificaciones;
+}
+
+partition "== INDICADOR DE TYPING ==" {
+  |Ciudadano / Gestor ECA|
+  :Presiona una tecla mientras escribe;
+
+  |Sistema (Django)|
+  :ChatConsumer.receive();
+  :Detecta tipo == "typing";
+  :_handle_typing();
+
+  :Broadcast typing al grupo;
+  :chat_typing con user_id y user_name;
+
+  |Ciudadano / Gestor ECA|
+  :Muestra "Escribiendo..." al otro usuario;
+}
+
+partition "== EDITAR MENSAJE ==" {
+  |Ciudadano / Gestor ECA|
+  :PATCH /mensajes/<chat_id>/mensajes/<id>/editar/;
+  :Envia nuevo texto;
+
+  |Sistema (Django)|
+  :MensajeUpdateView();
+  :Verifica que remitente == usuario actual;
+  if (Es el autor?) then (si)
+    :Valida texto no vacio;
+    :Actualiza texto y marca es_editado=True;
+
+    |Base de Datos|
+    :UPDATE Mensaje;
+  else (no)
+    :PermissionDenied: "Solo puedes editar tus propios mensajes";
+  endif
+}
+
+partition "== MARCAR LEIDOS ==" {
+  |Ciudadano / Gestor ECA|
+  :POST /mensajes/<chat_id>/leer/;
+
+  |Sistema (Django)|
+  :MarcarLeidosView();
+  :Actualiza es_leido=True para mensajes
+  donde remitente != usuario actual;
+
+  |Base de Datos|
+  :UPDATE Mensaje SET es_leido=True
+  WHERE chat_id=X AND remitente != user
+  AND es_leido=False;
+
+  |Sistema (Django)|
+  :Retorna {ok: True, count: N};
+}
+
+partition "== LISTAR CHATS (DASHBOARD GESTOR) ==" {
+  |Gestor ECA|
+  :Accede a /punto-eca/mensajes/;
+
+  |Sistema (Django)|
+  :PuntoChatListView();
+  :Obtiene PuntoECA del gestor;
+
+  |Base de Datos|
+  :SELECT Chat WHERE punto_eca=X
+  ORDER BY -fecha_creacion;
+
+  |Gestor ECA|
+  :Muestra lista de conversaciones;
+}
+
+note right of Sistema
+  **Arquitectura hibrida:**
+  - REST (DRF): CRUD chats/mensajes,
+    marcar leidos, editar mensaje
+  - WebSocket (Django Channels):
+    broadcast mensajes en tiempo real
+    + indicadores de typing
+  - Signal post_save Mensaje:
+    crea notificacion + WebSocket
+end note
+
+stop
+
+@enduml

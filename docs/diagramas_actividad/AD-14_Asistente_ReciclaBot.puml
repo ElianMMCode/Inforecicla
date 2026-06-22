@@ -1,0 +1,123 @@
+@startuml
+title **AD-14: Asistente IA (ReciclaBot)**
+
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+|#LightCoral|Groq API (Llama 3.1)|
+
+|Gestor ECA|
+start
+:En dashboard del punto ECA (/punto-eca/resumen/);
+:Accede al asistente IA;
+
+partition "== ENVIO DE PREGUNTA ==" {
+  :POST /punto-eca/asistente/asistente/;
+  :Envia campo "pregunta" (texto);
+
+  |Sistema (Django)|
+  :asistente_api_view();
+  :Verifica que usuario este autenticado;
+  :Valida que pregunta no este vacia;
+
+  if (Pregunta vacia?) then (si)
+    :Error 400: "El campo pregunta es obligatorio";
+    stop
+  endif
+
+  :Obtiene PuntoECA del gestor logueado;
+  if (No tiene PuntoECA?) then (si)
+    :Error 403: "No tienes un Punto ECA asociado";
+    stop
+  endif
+}
+
+partition "== GENERAR CONTEXTO DEL PUNTO ECA ==" {
+  |Sistema (Django)|
+  :AsistenteECAService.consultar(punto, pregunta);
+
+  :generar_contexto_eca() construye contexto:
+  1. Datos del punto (nombre, direccion, horario);
+  2. Responsable (nombre, email, celular);
+  3. KPIs de inventario (stock total, capacidad, %);
+  4. Inventario detallado (por material):
+     - stock/capacidad, unidad, precios, estado;
+  5. Operaciones del mes (entradas/salidas);
+  6. Ultimos movimientos (3 entradas + 3 salidas);
+  7. Proximos eventos (proximos 5 del calendario);
+  8. Centros de acopio (propios + globales);
+
+  |Base de Datos|
+  :Consultas:
+  - Inventario.filter(punto_eca=X)
+  - CompraInventario.filter(...).aggregate(Sum)
+  - VentaInventario.filter(...).aggregate(Sum)
+  - EventoInstancia.filter(punto_eca=X).proximos;
+
+  |Sistema (Django)|
+  :Ensambla prompt con:
+  - system_prompt: instrucciones restrictivas
+  - contexto_eca: toda la informacion
+  - pregunta del usuario;
+
+  note right
+    El contexto permite al LLM
+    responder con datos reales
+    del punto ECA del gestor
+  end note
+}
+
+partition "== CONSULTA A LLM ==" {
+  |Sistema (Django)|
+  :Envia consulta a Groq API;
+  :Modelo: llama-3.1-8b-instant;
+  :Incluye: system_prompt + contexto + pregunta;
+
+  |Groq API (Llama 3.1)|
+  :Procesa la consulta;
+  :Genera respuesta basada en el contexto;
+  :Retorna respuesta;
+
+  |Sistema (Django)|
+  :Recibe respuesta del LLM;
+}
+
+partition "== RESPUESTA AL GESTOR ==" {
+  |Sistema (Django)|
+  :Escapa respuesta con django.utils.html.escape();
+  :Previene inyeccion XSS en la respuesta;
+
+  :Formatea HTML:
+  - Mensaje del usuario (burbuja usuario)
+  - Respuesta del asistente (burbuja AI con icono robot);
+
+  |Gestor ECA|
+  :Visualiza conversacion:
+  - Su pregunta (con avatar usuario)
+  - Respuesta del asistente (con icono robot);
+
+  :Respuesta incluye:
+  - KPIs actualizados del inventario
+  - Recomendaciones contextualizadas
+  - Analisis de operaciones
+  - Informacion de eventos proximos;
+}
+
+note right of Groq API (Llama 3.1)
+  **Datos al LLM:**
+  - KPIs del inventario (total, capacidad, %)
+  - Detalle por material (stock, precios, estado)
+  - Operaciones del mes (entradas/salidas)
+  - Ultimos 5 movimientos
+  - Proximos 5 eventos
+  - Centros de acopio asociados
+
+  **Seguridad:**
+  - Pregunta y respuesta escapadas (XSS)
+  - Solo gestores autenticados
+  - Solo su propio punto ECA
+end note
+
+stop
+
+@enduml

@@ -1,0 +1,173 @@
+@startuml
+title **AD-03: Gestion de Usuarios y Perfiles**
+
+|#LightBlue|Ciudadano|
+|#LightCyan|Gestor ECA|
+|#LightGreen|Administrador|
+|#LightYellow|Base de Datos|
+
+|Ciudadano|
+start
+
+partition "== PERFIL CIUDADANO ==" {
+  :Accede a /perfil/;
+
+  |Sistema (Django)|
+  :perfil_ciudadano(request);
+  :Renderiza users/perfil.html con tabs:
+  - Datos personales
+  - Comentarios
+  - Chat
+  - Guardados
+  - ECAs favoritas;
+
+  if (Perfil incompleto?) then (si)
+    :Muestra modal "Completar perfil";
+    :Muestra campos pendientes:
+    - documento
+    - localidad
+    - fecha_nacimiento;
+  endif
+
+  |Ciudadano|
+  if (Accion del usuario?) then (Editar datos)
+    :POST /perfil/actualizar/;
+
+    |Sistema (Django)|
+    :validar_actualizar_datos_ciudadano();
+    :Valida: nombres (>=3, solo letras, max 30);
+    :Valida: apellidos (>=3, solo letras, max 40);
+    :Valida: celular (regex ^3\\d{9}$);
+    :Valida: ciudad (solo letras, max 15);
+    :Valida: fecha nacimiento (>= 5 anios, no futura);
+
+    |Base de Datos|
+    :Resuelve Localidad por ID;
+    :UPDATE Usuario (select_for_update);
+
+    |Sistema (Django)|
+    if (Es AJAX?) then (si)
+      :Responde JSON {ok: True};
+    else (no)
+      :Muestra messages.success;
+      :Redirige a /perfil/;
+    endif
+
+  elseif (Completar perfil) then (si)
+    :POST /perfil/completar/;
+
+    |Sistema (Django)|
+    :Valida campos pendientes;
+    :Guarda tipo_documento, numero_documento,
+    localidad, fecha_nacimiento;
+
+    |Base de Datos|
+    :UPDATE Usuario con campos nuevos;
+
+  elseif (Cambiar contrasena) then (si)
+    :POST /perfil/cambiar-contrasena/;
+
+    |Sistema (Django)|
+    :cambiar_contrasena_ciudadano();
+    :Valida contrasena actual (check_password);
+    if (Actual correcta?) then (si)
+      :Valida nueva: >= 8 chars, 1 Mayus,
+      1 minus, 1 digito, 1 simbolo (@$!%*?&_);
+      if (Nueva == Confirmacion?) then (si)
+        :set_password(nueva);
+        :update_session_auth_hash();
+        :Mensaje exito;
+      endif
+    endif
+
+  elseif (Ver comentarios) then (si)
+    :GET /perfil/comentarios/;
+  elseif (Ver chat) then (si)
+    :GET /perfil/mensajes/;
+  elseif (Ver guardados) then (si)
+    :GET /perfil/guardados/;
+  endif
+}
+
+partition "== PERFIL GESTOR ECA ==" {
+  |Gestor ECA|
+  :Accede a /punto-eca/perfil/;
+
+  |Sistema (Django)|
+  :render_seccion("perfil");
+  :Obtiene PuntoECA del gestor;
+  :Muestra tabs: Perfil, Configuracion;
+
+  if (Accion?) then (Editar perfil gestor)
+    :POST /punto-eca/editar-perfil/<id>/guardar/;
+
+    |Sistema (Django)|
+    :UserService.editar_perfil();
+    :select_for_update() para evitar race conditions;
+    :Actualiza: nombres, apellidos, email,
+    celular, biografia, fecha_nacimiento,
+    localidad, tipo/numero documento;
+
+    |Base de Datos|
+    :UPDATE Usuario;
+
+  elseif (Editar punto ECA) then (si)
+    :POST /punto-eca/editar-punto/<id>/guardar/;
+
+    |Sistema (Django)|
+    :PuntoService.editar_punto();
+    :Valida imagenes logo/foto (validate_image_upload);
+    :Actualiza: nombre, descripcion, direccion,
+    telefono, sitio_web, horario, coordenadas,
+    logo_imagen_punto, foto_imagen_punto;
+
+    |Base de Datos|
+    :UPDATE PuntoECA;
+
+  elseif (Toggle visibilidad mapa) then (si)
+    :POST /punto-eca/pref/toggle-visible/;
+
+    |Sistema (Django)|
+    :Invierte es_visible_en_mapa;
+
+    |Base de Datos|
+    :UPDATE PuntoECA.es_visible_en_mapa;
+
+  endif
+}
+
+partition "== ADMIN: CRUD USUARIOS ==" {
+  |Administrador|
+  :Accede a /panel_admin/usuarios/;
+
+  |Sistema (Django)|
+  :listar_usuarios();
+  :Lista usuarios con filtros;
+
+  if (Accion?) then (Crear)
+    :POST /panel_admin/usuarios/crear/;
+    :Crea Usuario con tipo y datos asignados;
+  elseif (Editar)
+    :POST /panel_admin/usuarios/<id>/editar/;
+    :Actualiza campos del Usuario;
+  elseif (Exportar PDF)
+    :GET /panel_admin/usuarios/exportar/pdf/;
+    :Genera PDF con django-import-export;
+  elseif (Exportar Excel)
+    :GET /panel_admin/usuarios/exportar/excel/;
+    :Genera Excel con django-import-export;
+  elseif (Importar CSV)
+    :POST /panel_admin/usuarios/importar/csv/;
+    :Procesa CSV y crea/actualiza usuarios;
+  endif
+}
+
+partition "== ADMIN: PERFIL PROPIO ==" {
+  |Administrador|
+  :POST /panel_admin/perfil/actualizar/;
+  :POST /panel_admin/perfil/cambiar-contrasena/;
+}
+
+stop
+
+@enduml

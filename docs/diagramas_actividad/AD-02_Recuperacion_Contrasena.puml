@@ -1,0 +1,123 @@
+@startuml
+title **AD-02: Recuperacion de Contrasena**
+
+|#LightBlue|Usuario|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos (PostgreSQL)|
+|#LightPink|Email|
+
+|Usuario|
+start
+:En login, click "Olvidi la contrasena";
+
+partition "== PASO 1: ENVIAR EMAIL ==" {
+  :Ingresa email y envia\n(action=buscar);
+
+  |Sistema (Django)|
+  :POST /recuperar-contrasena/;
+  :Funcion _handle_recuperar_enviar();
+  :Busca Usuario por email;
+
+  |Base de Datos (PostgreSQL)|
+  :SELECT Usuario WHERE email=?;
+
+  |Sistema (Django)|
+  if (Usuario existe?) then (si)
+    :Crea TokenValidacion:
+    - email: proporcionado
+    - tipo: recuperacion
+    - usuario: encontrado
+    - es_activo: True;
+    :Desactiva tokens previos (tipo=recuperacion);
+
+    |Base de Datos (PostgreSQL)|
+    :INSERT TokenValidacion;
+    :UPDATE tokens previos (es_activo=False);
+
+    |Email|
+    :Envia email con codigo de recuperacion;
+
+    |Sistema (Django)|
+    :Almacena recovery_user_id en sesion;
+    :Muestra paso: "Ingresa codigo de verificacion";
+    stop
+
+  else (no)
+    :Error: "No existe una cuenta registrada con ese correo";
+    stop
+  endif
+}
+
+partition "== PASO 2: VALIDAR CODIGO ==" {
+  |Usuario|
+  :Ingresa codigo de 6 digitos\n(action=validar);
+
+  |Sistema (Django)|
+  :POST /recuperar-contrasena/ (action=validar);
+  :Funcion _handle_recuperar_validar();
+  :Llama verificar_token(email, codigo, "recuperacion");
+
+  :Busca TokenValidacion:
+  - email = proporcionado
+  - tipo = recuperacion
+  - es_activo = True;
+
+  if (Token encontrado?) then (si)
+    :Verifica fecha_expiracion;
+
+    if (No esta expirado?) then (si)
+      :Marca token: fecha_validacion=now, es_activo=False;
+      :Almacena en sesion:
+      - recovery_email_validated
+      - recovery_token_id;
+      :Muestra paso: "Ingresa nueva contrasena";
+      stop
+
+    else (expirado)
+      :Error: "Codigo expirado, solicita uno nuevo";
+      stop
+    endif
+  else (no)
+    :Error: "Codigo de verificacion invalido";
+    stop
+  endif
+}
+
+partition "== PASO 3: CAMBIAR CONTRASENA ==" {
+  |Usuario|
+  :Ingresa nueva contrasena y confirmacion\n(action=reset);
+
+  |Sistema (Django)|
+  :POST /recuperar-contrasena/ (action=reset);
+  :Funcion _handle_recuperar_cambiar();
+
+  :Valida que recovery_token_id existe en sesion;
+  :Valida longitud >= 8 caracteres;
+  if (Contrasenas coinciden?) then (si)
+
+    |Base de Datos (PostgreSQL)|
+    :UPDATE Usuario.password;
+    :Limpia sesion: recovery_user_id,
+    recovery_email_validated, recovery_token_id;
+
+    |Sistema (Django)|
+    :Messages.success: "Contrasena restablecida";
+    :Redirige a /login/;
+    stop
+
+  else (no)
+    :Error: "Las contrasenas no coinciden";
+    stop
+  endif
+}
+
+note right of Sistema
+  **Seguridad:**
+  - Token expira segun TOKEN_EXPIRATION_MINUTES
+  - MAX_TOKEN_ATTEMPTS limita intentos fallidos
+  - Sesion protege con CSRF
+  - Flujo legacy: si recovery_user_id existe
+    en sesion, permite reset sin validacion de token
+end note
+
+@enduml

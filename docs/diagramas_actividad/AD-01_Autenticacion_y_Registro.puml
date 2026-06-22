@@ -1,0 +1,223 @@
+@startuml
+title **AD-01: Autenticacion y Registro de Cuentas**
+
+|#LightBlue|Ciudadano / Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos (PostgreSQL)|
+|#LightPink|Email|
+
+|Ciudadano / Gestor ECA|
+start
+
+partition "== FLUJO: INICIO DE SESION ==" {
+  :Accede a /login/;
+
+  |Sistema (Django)|
+  :Renderiza LoginView (GET);\nPlantilla users/login.html;
+
+  |Ciudadano / Gestor ECA|
+  :Completa campo email (username_field)\ny campo password;
+  :Envia POST con action=login;
+
+  |Sistema (Django)|
+  :Busca is_active=False con el email ingresado;
+
+  if (Usuario inactivo existe?) then (si)
+    :Crea TokenValidacion (tipo=verificacion);
+    :Desactiva tokens previos de verificacion;
+
+    |Email|
+    :Envia email con enlace de activacion;
+
+    |Sistema (Django)|
+    :Muestra mensaje: "Reenviamos enlace de activacion";
+    :Redirige con ?show_activation_resend=1;
+    detach
+
+  else (no, o usuario activo)
+    :Llama authenticate(email, password);
+    :Consulta UsuarioManager en BD;
+
+    if (Credenciales validas?) then (si)
+      :Inicia sesion con login(request, user);
+
+      |Sistema (Django)|
+      :Determina tipo_usuario del usuario;
+
+      if (Tipo de usuario?) then (Admin - ADM)
+        :Redirige a /panel_admin/;
+      elseif (Gestor ECA - GECA) then (si)
+        :Redirige a /punto-eca/;
+      else (Ciudadano - CIU)
+        if (Perfil incompleto?\n[fecha_nacimiento o localidad vacios]) then (si)
+          :Redirige a /perfil/?skip_modal=1;
+        else (no)
+          :Redirige a /perfil/;
+        endif
+      endif
+      stop
+
+    else (no)
+      :Retorna 200 con errores en contexto;\nMensaje: "Credenciales invalidas";
+      :No redirige, re-renderiza login.html con errores;
+      stop
+    endif
+  endif
+}
+
+partition "== FLUJO: REGISTRO CUENTA ==" {
+  |Ciudadano / Gestor ECA|
+  if (Tipo de registro?) then (Gestor ECA)
+    :Accede a /registro/eca/;
+    :Completa formulario:
+    - Nombre institucion / Apellidos contacto
+    - Email, Celular (inicia con 3, 10 digitos)
+    - Tipo/Numero documento
+    - Password + confirmacion (>= 8 chars)
+    - Acepta terminos y condiciones
+    - [Opcional paso 2] Datos Punto ECA
+    - [Opcional paso 2] Ubicacion en mapa;
+  else (Ciudadano)
+    :Accede a /registro/ciudadano/;
+    :Completa formulario:
+    - Nombres / Apellidos (>= 3 chars, solo letras)
+    - Email, Celular (inicia con 3, 10 digitos)
+    - Tipo/Numero documento
+    - Ciudad, Localidad
+    - Fecha nacimiento
+    - Password + confirmacion (>= 8 chars)
+    - Acepta terminos y condiciones;
+  endif
+
+  |Sistema (Django)|
+  :Ejecuta render_registro_eca() o render_registro_ciudadano();
+  :Valida campos obligatorios;
+
+  |Base de Datos (PostgreSQL)|
+  :Verifica unicidad email;
+  :Verifica unicidad numero_documento;
+
+  |Sistema (Django)|
+  if (Email duplicado?) then (si)
+    :Error: "Ya existe un usuario con ese correo";
+    :Retorna formulario con error;
+    stop
+  endif
+  if (Numero documento duplicado?) then (si)
+    :Error: "Ya existe un usuario con ese numero de documento";
+    :Retorna formulario con error;
+    stop
+  endif
+
+  if (Password validas y coinciden?) then (si)
+    :Inicia transaccion atombica (transaction.atomic());
+
+    |Base de Datos (PostgreSQL)|
+    :Guarda Usuario (is_active=False);
+
+    if (Es Gestor ECA?) then (si)
+      :Crea PuntoECA asociado al gestor;
+    endif
+
+    |Sistema (Django)|
+    :Crea TokenValidacion (tipo=verificacion);
+    :Desactiva tokens previos;
+
+    |Email|
+    :Envia email de verificacion con token;
+
+    |Sistema (Django)|
+    :Cierra transaccion;
+    :Muestra exito: "Se envio codigo de verificacion";
+    :Redirige a /login/?show_activation_resend=1;
+    stop
+
+  else (no)
+    :Retorna formulario con errores de validacion;
+    stop
+  endif
+}
+
+partition "== FLUJO: ACTIVACION CUENTA ==" {
+  |Ciudadano / Gestor ECA|
+  :Recibe email con enlace de activacion;
+  :Hace GET /login/?action=activar&email=X&token=Y;
+
+  |Sistema (Django)|
+  :Busca TokenValidacion por email + token (tipo=verificacion);
+
+  if (Token valido y no expirado?) then (si)
+    :Marca token como validado (fecha_validacion=now);
+    :Marca Usuario.is_active = True;
+
+    |Base de Datos (PostgreSQL)|
+    :Guarda usuario y token;
+
+    |Sistema (Django)|
+    :Inicia sesion automaticamente;
+    :Redirige segun tipo_usuario;
+    stop
+  else (no)
+    :Error: "Enlace de activacion no valido";
+    :Sugiere solicitar uno nuevo;
+    stop
+  endif
+}
+
+partition "== FLUJO: RECUPERACION CONTRASENA ==" {
+  |Ciudadano / Gestor ECA|
+  :Click "Olvid\u00e9 mi contrase\u00f1a";
+  :Ingresa email (action=buscar);
+
+  |Sistema (Django)|
+  :POST /recuperar-contrasena/ (action=buscar);
+  :Busca Usuario por email;
+
+  if (Usuario existe?) then (si)
+    :Almacena recovery_user_id en sesion;
+    :Crea TokenValidacion (tipo=recuperacion);
+
+    |Email|
+    :Envia email con codigo de recuperacion;
+
+    |Sistema (Django)|
+    :Muestra paso: ingresa codigo;
+  else (no)
+    :Error: "No existe cuenta con ese correo";
+    stop
+  endif
+
+  |Ciudadano / Gestor ECA|
+  :Ingresa codigo (action=validar);
+
+  |Sistema (Django)|
+  if (Token valido?) then (si)
+    :Almacena recovery_token_id en sesion;
+    :Muestra paso: nueva contrasena;
+  else (no)
+    :Error: "Codigo invalido o expirado";
+    stop
+  endif
+
+  |Ciudadano / Gestor ECA|
+  :Ingresa nueva contrasena + confirmacion (action=reset);
+
+  |Sistema (Django)|
+  :Valida >= 8 caracteres;
+  if (Contrase\u00f1as coinciden?) then (si)
+
+    |Base de Datos (PostgreSQL)|
+    :Actualiza password (set_password);
+    :Limpia recovery_user_id de sesion;
+
+    |Sistema (Django)|
+    :Muestra exito: "Contrasena restablecida";
+    :Redirige a /login/;
+    stop
+  else (no)
+    :Error: "Las contrasenas no coinciden";
+    stop
+  endif
+}
+
+@enduml
