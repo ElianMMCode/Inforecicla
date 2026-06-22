@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
@@ -122,11 +122,18 @@ def abrir_notificacion(request, notificacion_id):
 
 
 @login_required
+@require_POST
 def eliminar_notificacion(request, notificacion_id):
-    if request.method == "POST":
-        from .models import Notificacion
-        notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
-        notificacion.delete()
+    from .models import Notificacion
+    notificacion = get_object_or_404(Notificacion, pk=notificacion_id, usuario=request.user)
+    evento_id = notificacion.evento_instancia_id
+    notificacion.delete()
+    if evento_id:
+        if '_notif_evento_eliminadas' not in request.session:
+            request.session['_notif_evento_eliminadas'] = []
+        if str(evento_id) not in request.session['_notif_evento_eliminadas']:
+            request.session['_notif_evento_eliminadas'].append(str(evento_id))
+            request.session.modified = True
     from config.constants import TipoUsuario
     if request.user.tipo_usuario == TipoUsuario.GESTOR_ECA:
         return redirect("/punto-eca/")
