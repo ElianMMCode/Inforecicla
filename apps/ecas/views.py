@@ -164,11 +164,11 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
     else:
         context = _build_default_context(punto, seccion)
 
-    _add_notificacion_context(punto, request.user, context)
+    _add_notificacion_context(punto, request.user, context, request=request)
     return render(request, "ecas/puntoECA-layout.html", context)
 
 
-def _check_upcoming_event_notifications(punto, usuario):
+def _check_upcoming_event_notifications(punto, usuario, eliminadas=None):
     """Crea notificaciones para eventos que ocurren en las próximas 24 horas si aún no existen."""
     from apps.scheduling.models import EventoInstancia
     from apps.publicaciones.models import Notificacion
@@ -177,6 +177,7 @@ def _check_upcoming_event_notifications(punto, usuario):
 
     ahora = timezone.now()
     limite = ahora + timedelta(hours=24)
+    eliminadas = eliminadas or []
 
     proximos = EventoInstancia.objects.filter(
         punto_eca=punto,
@@ -186,6 +187,8 @@ def _check_upcoming_event_notifications(punto, usuario):
     ).select_related("evento_base")
 
     for instancia in proximos:
+        if str(instancia.pk) in eliminadas:
+            continue
         notif, created = Notificacion.objects.get_or_create(
             usuario=usuario,
             evento_instancia=instancia,
@@ -201,10 +204,11 @@ def _check_upcoming_event_notifications(punto, usuario):
             })
 
 
-def _add_notificacion_context(punto, usuario, context):
+def _add_notificacion_context(punto, usuario, context, request=None):
     from apps.publicaciones.models import Notificacion
 
-    _check_upcoming_event_notifications(punto, usuario)
+    eliminadas = request.session.get('_notif_evento_eliminadas', []) if request else []
+    _check_upcoming_event_notifications(punto, usuario, eliminadas=eliminadas)
     context["mis_notificaciones"] = (
         Notificacion.objects.filter(usuario=usuario)
         .select_related(
