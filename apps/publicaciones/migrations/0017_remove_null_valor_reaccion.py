@@ -2,8 +2,8 @@ from django.db import migrations, models
 
 
 def convert_null_to_empty(apps, schema_editor):
-    Reaccion = apps.get_model("publicaciones", "Reaccion")
-    Reaccion.objects.filter(valor__isnull=True).update(valor="")
+    reaccion = apps.get_model("publicaciones", "Reaccion")
+    reaccion.objects.filter(valor__isnull=True).update(valor="")
 
 
 class Migration(migrations.Migration):
