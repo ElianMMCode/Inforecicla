@@ -29,7 +29,7 @@
         <th>Nombre</th>
         <th>Descripción</th>
         <th>Categoría</th>
-        <th>Tipo</th>
+        <th>Clasificación</th>
         <th>Estado</th>
       </tr>
     </thead>
@@ -40,7 +40,7 @@
         <td><strong>{{ m.nombre }}</strong></td>
         <td>{{ m.descripcion|default:"-"|truncatechars:50 }}</td>
         <td>{{ m.categoria.nombre|default:"-" }}</td>
-        <td>{{ m.tipo.nombre|default:"-" }}</td>
+        <td>{{ m.clasificacion|default:"-" }}</td>
         <td>
           {% if m.estado == "ACTIVO" %}
             <span class="badge badge-activo">Activo</span>

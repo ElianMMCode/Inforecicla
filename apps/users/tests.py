@@ -149,7 +149,7 @@ class ValidarCredencialesTests(TestCase):
             numero_documento="7654321",
         )
         usuario.numero_documento = None
-        usuario.tipo_documento = None
+        usuario.tipo_documento = ""
         usuario.fecha_nacimiento = None
         usuario.localidad = None
         usuario.save(update_fields=["numero_documento", "tipo_documento", "fecha_nacimiento", "localidad"])
@@ -219,7 +219,7 @@ class ValidarCredencialesTests(TestCase):
         usuario.refresh_from_db()
         token_obj.refresh_from_db()
         self.assertTrue(usuario.is_active)
-        self.assertFalse(token_obj.activo)
+        self.assertFalse(token_obj.es_activo)
         self.assertIsNotNone(token_obj.fecha_validacion)
         # Ensure session contains authenticated user
         session = self.client.session
@@ -286,7 +286,7 @@ class RolRedireccionTests(TestCase):
             _LOGIN,
             {"email": "ciudadano@test.com", "password": _PASSWORD_VALIDA},
         )
-        self.assertRedirects(response, _PERFIL, fetch_redirect_response=False)
+        self.assertRedirects(response, _PERFIL_SKIP_MODAL, fetch_redirect_response=False)
 
     def test_tc_cu002_02_gestor_eca_redirige_a_punto_eca(self):
         """TC-CU00.2-02: tipo_usuario=GECA es redirigido a /punto-eca/ tras login."""
@@ -670,7 +670,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="María",
             apellidos="López",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )
@@ -693,7 +693,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="Carlos",
             apellidos="Rojas",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )
@@ -711,7 +711,7 @@ class RegistroCiudadanoTests(TestCase):
         usuario.refresh_from_db()
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(usuario.numero_documento)
-        self.assertIsNone(usuario.tipo_documento)
+        self.assertEqual(usuario.tipo_documento, "")
         self.assertIsNone(usuario.fecha_nacimiento)
         self.assertEqual(usuario.localidad_id, localidad.localidad_id)
         self.assertFalse(response.context["perfil_pendientes"]["localidad"])
@@ -727,7 +727,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="Laura",
             apellidos="Torres",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )
@@ -767,7 +767,7 @@ class RegistroCiudadanoTests(TestCase):
             nombres="Pedro",
             apellidos="Vega",
             numero_documento=None,
-            tipo_documento=None,
+            tipo_documento="",
             fecha_nacimiento=None,
             localidad=None,
         )

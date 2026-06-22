@@ -13,27 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import environ
 from pathlib import Path
 
-import sys
-import os
 from django.contrib.messages import constants as message_constants
 
-# Opción A: Usar una variable de entorno (.env)
-# Si en Windows no configuran USE_REDIS=True, usará la memoria.
-USE_REDIS = os.environ.get("USE_REDIS", "False") == "True"
-
-if USE_REDIS or sys.platform != "win32":
-    # Entorno Omarchy Linux / Producción / Windows con Docker: Usar Redis
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [("127.0.0.1", 6379)],
-            },
-        },
-    }
-else:
-    # Entorno Windows puro (Desarrollo local sin Redis)
-    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -47,10 +28,34 @@ environ.Env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DEBUG", default=False)
+
+_allowed_extra = env("ALLOWED_HOST_EXTRA", default="")
+ALLOWED_HOSTS = ['inforecicla.app', 'www.inforecicla.app', '127.0.0.1', 'localhost']
+if _allowed_extra:
+    ALLOWED_HOSTS.append(_allowed_extra)
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://inforecicla.app',
+    'https://www.inforecicla.app'
+]
+
+# Forzar a que las cookies de sesión y CSRF solo viajen por canales seguros (HTTPS)
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
 
 GROQ_API_KEY = env("GROQ_API_KEY")
 SITE_URL = env("SITE_URL", default="http://127.0.0.1:8000")
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # Apunta al Redis local del servidor
+        },
+    },
+}
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 EMAIL_BACKEND = env(
@@ -122,7 +127,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "config.asgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
@@ -180,7 +185,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = env("STATIC_ROOT", default=str(BASE_DIR / "staticfiles"))
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

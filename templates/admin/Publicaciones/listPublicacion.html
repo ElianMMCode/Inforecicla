@@ -1,8 +1,8 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Publicaciones - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="publicaciones" %}{% endblock %}
+
 {% block content %}
 
 <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -21,73 +21,131 @@
 <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
 {% else %}
 
-<div class="card border-success mb-4 shadow-sm">
-  <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
-  <div class="card-body bg-light">
-    <form method="get" class="row g-2">
-      <div class="col-md-10">
-        <label for="q_search" class="visually-hidden">Buscar publicaciones</label>
-        <input id="q_search" type="text" name="q" class="form-control" placeholder="Título, contenido o autor..." value="{{ search_query }}" aria-label="Buscar publicaciones">
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6>
       </div>
-      <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:180px;width:100%;"><canvas id="chartPubEstado"></canvas></div>
       </div>
-    </form>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-warning me-1"></i>Por Categoría</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:180px;width:100%;"><canvas id="chartPubCategoria"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-star-fill text-primary me-1"></i>Destacadas</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:180px;width:100%;"><canvas id="chartPubDestacadas"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-primary me-1"></i>Tendencia de Publicaciones (30 días)</h6>
+      </div>
+      <div class="card-body py-2">
+        <canvas id="chartPubTendencia" style="max-height:140px;"></canvas>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="card border-success shadow-sm">
-  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-table me-1"></i> Listado</span>
-    <span class="badge bg-light text-success">{{ publicaciones|length }} resultados</span>
+<div class="card shadow-sm mb-4 border-0">
+  <div class="card-header bg-success-subtle border-0 px-4 py-3">
+    <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
   </div>
-  <div class="table-responsive">
-    <table class="table table-hover mb-0 align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Título</th>
-          <th>Autor</th>
-          <th>Categoría</th>
-          <th>Estado</th>
-          <th>Fecha</th>
-          <th class="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for pub in publicaciones %}
-        <tr>
-          <td><strong>{{ pub.titulo|truncatechars:50 }}</strong></td>
-          <td>{{ pub.usuario.nombres }} {{ pub.usuario.apellidos }}</td>
-          <td>{{ pub.categoria.tipo|default:"-" }}</td>
-          <td>
-            {% if pub.estado == "ACTIVO" %}
-              <span class="badge bg-success">Activo</span>
-            {% else %}
-              <span class="badge bg-secondary">{{ pub.estado }}</span>
-            {% endif %}
-          </td>
-          <td>{{ pub.fecha_creacion|date:"d/m/Y" }}</td>
-          <td class="text-center">
-            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-publicacion"
-                    title="Editar"
-                    data-id="{{ pub.id }}"
-                    data-titulo="{{ pub.titulo|default:'' }}"
-                    data-contenido="{{ pub.contenido|default:'' }}"
-                    data-categoria_id="{{ pub.categoria.id|default:'' }}"
-                    data-estado="{{ pub.estado|default:'ACTIVO' }}"
-                    data-action="{% url 'panel_admin:editar_publicacion_admin' publicacion_id=pub.id %}">
-              <i class="bi bi-pencil"></i>
-            </button>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron publicaciones.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="card-body">
+    <div class="row g-3 align-items-end" id="publicaciones-filter-form">
+      <div class="col-md-4">
+        <label for="q_search" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+        <input id="q_search" type="text" name="q" class="form-control" placeholder="Título o autor..." value="{{ search_query }}">
+      </div>
+      <div class="col-md-3">
+        <label for="pub-filter-categoria" class="form-label fw-semibold text-muted mb-1">Categoría</label>
+        <select class="form-select js-select2" id="pub-filter-categoria">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="pub-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select js-select2" id="pub-filter-estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success flex-grow-1" id="publicaciones-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+          <button type="button" class="btn btn-outline-secondary" id="pub-filter-limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+      <a href="{% url 'panel_admin:exportar_publicaciones_excel' %}"
+         class="btn btn-sm btn-outline-success fw-semibold export-link"
+         title="Exportar Excel"
+         data-export-base="{% url 'panel_admin:exportar_publicaciones_excel' %}"
+         data-export-filters="q:q_search">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_publicaciones_pdf' %}"
+         class="btn btn-sm btn-outline-danger fw-semibold export-link"
+         title="Exportar PDF"
+         data-export-base="{% url 'panel_admin:exportar_publicaciones_pdf' %}"
+         data-export-filters="q:q_search">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+    </div>
+    <span class="badge bg-secondary rounded-pill" id="publicaciones-count-badge">{{ publicaciones|length }} registros</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="fw-bold small">Título</th>
+          <th class="fw-bold small">Autor</th>
+          <th class="fw-bold small">Categoría</th>
+          <th class="fw-bold small">Estado</th>
+          <th class="fw-bold small">Fecha</th>
+          <th class="fw-bold small text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="border-top" id="publicaciones-tbody"></tbody>
+    </table>
+  </div>
+  <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+    <ul class="pagination pagination-sm mb-0" id="publicaciones-pager"></ul>
+  </nav>
+</div>
 {% endif %}
+
+{{ publicaciones_json|json_script:"publicaciones-data" }}
+{{ dist_estado_pub|json_script:"dist-estado-pub-data" }}
+{{ dist_categoria_pub|json_script:"dist-categoria-pub-data" }}
+{{ dist_destacadas|json_script:"dist-destacadas-data" }}
+{{ tendencia_publicaciones|json_script:"tendencia-publicaciones-data" }}
 
 {% endblock %}
 
@@ -111,6 +169,11 @@
               <div class="invalid-feedback">Debe contener al menos una letra (máx. 255 caracteres).</div>
             </div>
             <div class="col-12">
+              <label for="cp_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <textarea id="cp_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas..."></textarea>
+              <div class="invalid-feedback">El resumen es obligatorio.</div>
+            </div>
+            <div class="col-12">
               <label for="cp_contenido" class="form-label fw-semibold">Contenido <small class="text-muted fw-normal">(opcional)</small></label>
               <textarea id="cp_contenido" name="contenido" class="form-control" rows="5" data-letters-required placeholder="Escribe el contenido..."></textarea>
               <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
@@ -124,10 +187,16 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-2">
+                <input id="cp_destacado" type="checkbox" name="destacado" class="form-check-input" value="1">
+                <label for="cp_destacado" class="form-check-label fw-semibold">Destacado</label>
+              </div>
+            </div>
             <div class="col-12">
               <hr class="my-1">
               <p class="fw-semibold text-muted mb-0"><i class="bi bi-images me-1"></i>Contenido multimedia <span class="fw-normal">(opcional)</span></p>
-              <small class="text-muted">Puedes subir imágenes o un video.</small>
+              <small class="text-muted">Puedes subir imágenes, un video o enlazar una URL de YouTube/Vimeo.</small>
             </div>
             <div class="col-md-6">
               <label for="cp_imagenes" class="form-label fw-semibold">Imágenes <small class="text-muted fw-normal">(opcional)</small></label>
@@ -135,7 +204,11 @@
               <div class="form-text">Formatos: JPG, PNG, WEBP. Máximo 6 MB por imagen.</div>
             </div>
             <div class="col-md-6">
-              <label for="cp_video" class="form-label fw-semibold">Video <small class="text-muted fw-normal">(opcional)</small></label>
+              <label for="cp_video_url" class="form-label fw-semibold">URL del video <small class="text-muted fw-normal">(YouTube, Vimeo...)</small></label>
+              <input id="cp_video_url" type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+            <div class="col-md-6">
+              <label for="cp_video" class="form-label fw-semibold">Video <small class="text-muted fw-normal">(archivo)</small></label>
               <input id="cp_video" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
               <div class="form-text">Formatos: MP4, WEBM, OGG.</div>
             </div>
@@ -162,7 +235,7 @@
         <h5 class="modal-title" id="labelEditarPublicacion"><i class="bi bi-pencil me-2"></i>Editar Publicación</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form method="POST" novalidate id="formEditarPublicacion">
+      <form method="POST" novalidate id="formEditarPublicacion" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="modal-body">
           <div class="row g-3">
@@ -171,7 +244,12 @@
               <input id="ep_titulo" type="text" name="titulo" class="form-control" required maxlength="200" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
               <div class="invalid-feedback">Debe contener al menos una letra (máx. 200 caracteres).</div>
             </div>
-            <div class="col-md-6">
+            <div class="col-12">
+              <label for="ep_resumen" class="form-label fw-semibold">Resumen <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+              <textarea id="ep_resumen" name="resumen" class="form-control" rows="2" maxlength="500" required placeholder="Resumen corto para vistas previas..."></textarea>
+              <div class="invalid-feedback">El resumen es obligatorio.</div>
+            </div>
+            <div class="col-md-4">
               <label for="ep_categoria" class="form-label fw-semibold">Categoría <small class="text-muted fw-normal">(opcional)</small></label>
               <select id="ep_categoria" name="categoria_id" class="form-select">
                 <option value="">Sin categoría</option>
@@ -180,7 +258,7 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="ep_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
               <select id="ep_estado" name="estado" class="form-select">
                 {% for val, label in estados %}
@@ -188,10 +266,37 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch mt-2">
+                <input id="ep_destacado" type="checkbox" name="destacado" class="form-check-input" value="1">
+                <label for="ep_destacado" class="form-check-label fw-semibold">Destacado</label>
+              </div>
+            </div>
             <div class="col-12">
               <label for="ep_contenido" class="form-label fw-semibold">Contenido <small class="text-muted fw-normal">(opcional)</small></label>
               <textarea id="ep_contenido" name="contenido" class="form-control" rows="6" data-letters-required></textarea>
               <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+            </div>
+            <div class="col-12">
+              <hr class="my-1">
+              <p class="fw-semibold text-muted mb-0"><i class="bi bi-plus-circle me-1"></i>Multimedia <small class="fw-normal">(opcional)</small></p>
+              <small class="text-muted">Sube nuevas imágenes o un video. Para reemplazar multimedia existente, usa la página de edición completa.</small>
+            </div>
+            <div class="col-md-6">
+              <label for="ep_imagenes" class="form-label fw-semibold">Imágenes</label>
+              <input type="file" name="imagenes" id="ep_imagenes" class="form-control" accept="image/*" multiple>
+            </div>
+            <div class="col-md-6">
+              <label for="ep_video_url" class="form-label fw-semibold">URL del video</label>
+              <input id="ep_video_url" type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+            <div class="col-md-6">
+              <label for="ep_video" class="form-label fw-semibold">Video (archivo)</label>
+              <input id="ep_video" type="file" name="video" class="form-control" accept="video/mp4,video/webm,video/ogg">
+            </div>
+            <div class="col-md-6" id="ep_thumbnail_wrapper" style="display:none;">
+              <label for="ep_thumbnail" class="form-label fw-semibold">Miniatura del video</label>
+              <input id="ep_thumbnail" type="file" name="video_thumbnail" class="form-control" accept="image/*">
             </div>
           </div>
         </div>
@@ -207,9 +312,113 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+AdminCharts.initAll([
+  { type: 'doughnut', canvas: 'chartPubEstado', dataId: 'dist-estado-pub-data', labelKey: 'estado' },
+  { type: 'doughnut', canvas: 'chartPubCategoria', dataId: 'dist-categoria-pub-data', labelKey: 'categoria' },
+  { type: 'doughnut', canvas: 'chartPubDestacadas', dataId: 'dist-destacadas-data', colors: [AdminCharts.C.primary, AdminCharts.C.dark] },
+  { type: 'trendLine', canvas: 'chartPubTendencia', dataId: 'tendencia-publicaciones-data', colorKey: 'success' },
+]);
+</script>
 <script>
 (function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  function accionBtn(row) {
+    return '<a href="' + escapeAttr(row.view_url) + '" class="btn btn-outline-info btn-sm" title="Ver"><i class="bi bi-eye"></i></a>' +
+      '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-publicacion" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-titulo="' + escapeAttr(row.titulo) + '"' +
+      ' data-contenido="' + escapeAttr(row.contenido) + '"' +
+      ' data-resumen="' + escapeAttr(row.resumen) + '"' +
+      ' data-destacado="' + (row.destacado ? '1' : '') + '"' +
+      ' data-video_url="' + escapeAttr(row.video_url) + '"' +
+      ' data-categoria_id="' + escapeAttr(row.categoria_id) + '"' +
+      ' data-estado="' + escapeAttr(row.estado) + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
+      titulo: 'ep_titulo', contenido: 'ep_contenido',
+      resumen: 'ep_resumen', destacado: 'ep_destacado',
+      video_url: 'ep_video_url',
+      categoria_id: 'ep_categoria', estado: 'ep_estado'
+    });
+  }
+
+  var publicacionesTable = new AdminTable({
+    containerId: 'publicaciones-tbody',
+    data: readJSONData('publicaciones-data'),
+    pageSize: 10,
+    countBadgeId: 'publicaciones-count-badge',
+    pagerId: 'publicaciones-pager',
+    filterFns: [
+      function(row, q) { return (row.titulo + ' ' + row.autor).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.titulo.localeCompare(b.titulo); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.titulo) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.autor); } },
+      { render: function(r) { return escapeHTML(r.categoria); } },
+      { render: estadoBadge },
+      { render: function(r) { return escapeHTML(r.fecha_creacion); } },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  (function() {
+    var data = publicacionesTable.data;
+    // Populate categorias from data
+    var categorias = [...new Set(data.map(function(p) { return p.categoria; }))].sort();
+    var catSel = document.getElementById('pub-filter-categoria');
+    if (catSel) {
+      categorias.forEach(function(c) {
+        if (!c || c === '-') return;
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        catSel.appendChild(opt);
+      });
+    }
+
+    // Init Select2
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
+      var q = document.getElementById('q_search')?.value || '';
+      publicacionesTable.setSearch(q);
+
+      var cat = $('#pub-filter-categoria').val() || '';
+      if (cat) publicacionesTable.setExtraFilter('categoria', cat);
+      else publicacionesTable.removeExtraFilter('categoria');
+
+      var est = $('#pub-filter-estado').val() || '';
+      if (est) publicacionesTable.setExtraFilter('estado', est);
+      else publicacionesTable.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('q_search').value = '';
+      $('#pub-filter-categoria').val('').trigger('change');
+      $('#pub-filter-estado').val('').trigger('change');
+      publicacionesTable.setFilters('', {});
+    }
+
+    document.getElementById('publicaciones-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('pub-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#pub-filter-categoria, #pub-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('q_search').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    publicacionesTable.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
+
   var videoInput = document.getElementById('cp_video');
   if (videoInput) {
     videoInput.addEventListener('change', function() {
@@ -221,10 +430,13 @@
   initModalFormAjax('formCrearPublicacion', '{% url "panel_admin:listar_publicaciones_admin" %}');
   initModalFormAjax('formEditarPublicacion', globalThis.location.href);
 
-  setupEditModal('.btn-editar-publicacion', 'modalEditarPublicacion', {
-    titulo: 'ep_titulo', contenido: 'ep_contenido',
-    categoria_id: 'ep_categoria', estado: 'ep_estado'
-  });
+  var epVideoInput = document.getElementById('ep_video');
+  if (epVideoInput) {
+    epVideoInput.addEventListener('change', function() {
+      var wrapper = document.getElementById('ep_thumbnail_wrapper');
+      if (wrapper) wrapper.style.display = this.files && this.files.length > 0 ? 'block' : 'none';
+    });
+  }
 })();
 </script>
 {% include "admin/_messages_swal.html" %}

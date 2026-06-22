@@ -11,7 +11,6 @@ from apps.inventory.models import (
     CategoriaMaterial,
     Inventario,
     Material,
-    TipoMaterial,
 )
 from apps.operations.models import CompraInventario, VentaInventario
 
@@ -42,7 +41,6 @@ class TestExportHistorialFiltrosAvanzados(TestCase):
             localidad_id=uuid.uuid4(), nombre="Bogotá"
         )
         cls.categoria_metal = CategoriaMaterial.objects.create(nombre="Metales")
-        cls.tipo_alum = TipoMaterial.objects.create(nombre="Aluminio")
         cls.centro_a = CentroAcopio.objects.create(
             nombre="Centro A",
             tipo_centro="PUBLICO",
@@ -80,7 +78,7 @@ class TestExportHistorialFiltrosAvanzados(TestCase):
         self.mat = Material.objects.create(
             nombre="Lata Test",
             categoria=self.categoria_metal,
-            tipo=self.tipo_alum,
+            clasificacion="ESTANDAR",
         )
         self.inv = Inventario.objects.create(
             punto_eca=self.punto,
@@ -209,7 +207,7 @@ class TestExportHistorialFiltrosAvanzados(TestCase):
         response = self._exportar_excel(
             material="Lata Test",
             categoria="Metales",
-            tipo="Aluminio",
+            tipo="ESTANDAR",
             fecha_desde="2024-06-01",
             fecha_hasta="2024-06-30",
             cantidad_min=10,
@@ -249,9 +247,8 @@ class TestExportFilename(TestCase):
             gestor_eca=cls.user,
         )
         cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
-        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
         cls.mat = Material.objects.create(
-            nombre="Lata Test", categoria=cls.categoria, tipo=cls.tipo
+            nombre="Lata Test", categoria=cls.categoria, clasificacion="ESTANDAR"
         )
         cls.inv = Inventario.objects.create(
             punto_eca=cls.punto,
@@ -350,7 +347,6 @@ class TestEditarMovimiento(TestCase):
             localidad_id=uuid.uuid4(), nombre="Bogotá"
         )
         cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
-        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
         cls.centro = CentroAcopio.objects.create(
             nombre="Centro Edit",
             tipo_centro="PUBLICO",
@@ -371,7 +367,7 @@ class TestEditarMovimiento(TestCase):
             gestor_eca=cls.user,
         )
         cls.mat = Material.objects.create(
-            nombre="Lata Edit", categoria=cls.categoria, tipo=cls.tipo
+            nombre="Lata Edit", categoria=cls.categoria, clasificacion="ESTANDAR"
         )
         cls.inv = Inventario.objects.create(
             punto_eca=cls.punto,
@@ -504,7 +500,6 @@ class TestFlujoEndToEndCompraInventario(TestCase):
             localidad_id=uuid.uuid4(), nombre="Bogotá"
         )
         cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
-        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
         cls.user = _crear_gestor("e2e-compra@example.com")
         cls.punto = PuntoECA.objects.create(
             nombre="Punto E2E",
@@ -516,7 +511,7 @@ class TestFlujoEndToEndCompraInventario(TestCase):
             gestor_eca=cls.user,
         )
         cls.mat = Material.objects.create(
-            nombre="Lata E2E", categoria=cls.categoria, tipo=cls.tipo
+            nombre="Lata E2E", categoria=cls.categoria, clasificacion="ESTANDAR"
         )
         cls.inv = Inventario.objects.create(
             punto_eca=cls.punto,
@@ -741,7 +736,6 @@ class TestBulkImportEndpoint(TestCase):
             localidad_id=uuid.uuid4(), nombre="Bogotá"
         )
         cls.categoria = CategoriaMaterial.objects.create(nombre="Metales")
-        cls.tipo = TipoMaterial.objects.create(nombre="Aluminio")
         cls.user = _crear_gestor("bulk-test@example.com")
         cls.punto = PuntoECA.objects.create(
             nombre="Punto Bulk",
@@ -753,7 +747,7 @@ class TestBulkImportEndpoint(TestCase):
             gestor_eca=cls.user,
         )
         cls.mat = Material.objects.create(
-            nombre="Lata Bulk", categoria=cls.categoria, tipo=cls.tipo
+            nombre="Lata Bulk", categoria=cls.categoria, clasificacion="ESTANDAR"
         )
         cls.inv = Inventario.objects.create(
             punto_eca=cls.punto,
@@ -864,9 +858,8 @@ class TestBulkImportEndpoint(TestCase):
         registra la compra."""
         # Crear un material en el catálogo global que NO está en este punto
         cat2 = CategoriaMaterial.objects.create(nombre="Plásticos")
-        tipo2 = TipoMaterial.objects.create(nombre="PET")
         mat_nuevo = Material.objects.create(
-            nombre="Material Catalogo Nuevo", categoria=cat2, tipo=tipo2
+            nombre="Material Catalogo Nuevo", categoria=cat2, clasificacion="ESTANDAR"
         )
         self.assertFalse(
             Inventario.objects.filter(punto_eca=self.punto, material=mat_nuevo).exists()
@@ -974,10 +967,9 @@ class TestBulkImportEndpoint(TestCase):
                     continue
                 nombres.add(nombre)
         cat = CategoriaMaterial.objects.first() or CategoriaMaterial.objects.create(nombre="Default")
-        tipo = TipoMaterial.objects.first() or TipoMaterial.objects.create(nombre="Default")
         for nombre in nombres:
             if not Material.objects.filter(nombre=nombre).exists():
-                Material.objects.create(nombre=nombre, categoria=cat, tipo=tipo)
+                Material.objects.create(nombre=nombre, categoria=cat, clasificacion="ESTANDAR")
 
     # --- Endpoint descargar_plantilla_bulk ---
 

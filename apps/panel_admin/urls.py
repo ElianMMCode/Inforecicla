@@ -17,10 +17,14 @@ urlpatterns = [
     # Publicaciones
     path('publicaciones/', views.listar_publicaciones_admin, name='listar_publicaciones_admin'),
     path('publicaciones/crear/', views.crear_publicacion_admin, name='crear_publicacion_admin'),
+    path('publicaciones/exportar/pdf/', views.exportar_publicaciones_pdf, name='exportar_publicaciones_pdf'),
+    path('publicaciones/exportar/excel/', views.exportar_publicaciones_excel, name='exportar_publicaciones_excel'),
+    path('publicaciones/<uuid:publicacion_id>/', views.ver_publicacion_admin, name='ver_publicacion_admin'),
     path('publicaciones/<uuid:publicacion_id>/editar/', views.editar_publicacion_admin, name='editar_publicacion_admin'),
 
     # Puntos ECA
-    path('puntos-eca/', views.listar_puntos_eca_admin, name='listar_puntos_eca_admin'),
+    path('puntos-eca/', views.puntos_eca_dashboard, name='dashboard_puntos_eca'),
+    path('puntos-eca/listado/', views.listar_puntos_eca_admin, name='listar_puntos_eca_admin'),
     path('puntos-eca/crear/', views.crear_punto_eca_admin, name='crear_punto_eca_admin'),
     path('puntos-eca/exportar/pdf/', views.exportar_puntos_eca_pdf, name='exportar_puntos_eca_pdf'),
     path('puntos-eca/exportar/excel/', views.exportar_puntos_eca_excel, name='exportar_puntos_eca_excel'),
@@ -48,12 +52,12 @@ urlpatterns = [
     path('categorias-publicaciones/crear/', views.crear_categoria_publicacion, name='crear_categoria_publicacion'),
     path('categorias-publicaciones/<uuid:categoria_id>/editar/', views.editar_categoria_publicacion_admin, name='editar_categoria_publicacion_admin'),
 
-    # Tipos de materiales
-    path('tipos-materiales/', views.listar_tipos_material_admin, name='listar_tipos_material_admin'),
-    path('tipos-materiales/exportar/pdf/', views.exportar_tipos_material_pdf, name='exportar_tipos_material_pdf'),
-    path('tipos-materiales/exportar/excel/', views.exportar_tipos_material_excel, name='exportar_tipos_material_excel'),
-    path('tipos-materiales/crear/', views.crear_tipo_material, name='crear_tipo_material'),
-    path('tipos-materiales/<uuid:tipo_id>/editar/', views.editar_tipo_material_admin, name='editar_tipo_material_admin'),
+    # Tipos de publicaciones
+    path('tipos-publicaciones/', views.listar_tipos_publicacion_admin, name='listar_tipos_publicacion_admin'),
+    path('tipos-publicaciones/exportar/pdf/', views.exportar_tipos_publicacion_pdf, name='exportar_tipos_publicacion_pdf'),
+    path('tipos-publicaciones/exportar/excel/', views.exportar_tipos_publicacion_excel, name='exportar_tipos_publicacion_excel'),
+    path('tipos-publicaciones/crear/', views.crear_tipo_publicacion, name='crear_tipo_publicacion'),
+    path('tipos-publicaciones/<uuid:tipo_id>/editar/', views.editar_tipo_publicacion_admin, name='editar_tipo_publicacion_admin'),
 
     # Perfil del administrador
     path('perfil/', views.perfil_admin, name='perfil_admin'),

@@ -22,7 +22,7 @@ def notificar_mensaje(sender, instance, created, **kwargs):
         nombre_ciudadano = chat.ciudadano.get_full_name() or chat.ciudadano.email
         notif = Notificacion.objects.create(usuario=gestor, mensaje=instance)
         enviar_notificacion_realtime(gestor.pk, {
-            "id": notif.pk,
+            "id": str(notif.pk),
             "tipo": "mensaje",
             "titulo": f"Nuevo mensaje de {nombre_ciudadano}: {instance.texto[:60]}",
             "fecha": notif.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
@@ -32,7 +32,7 @@ def notificar_mensaje(sender, instance, created, **kwargs):
         # Gestor → notificar al ciudadano
         notif = Notificacion.objects.create(usuario=chat.ciudadano, mensaje=instance)
         enviar_notificacion_realtime(chat.ciudadano_id, {
-            "id": notif.pk,
+            "id": str(notif.pk),
             "tipo": "mensaje",
             "titulo": f"Nuevo mensaje de {chat.punto.nombre}: {instance.texto[:60]}",
             "fecha": notif.fecha_creacion.strftime("%d/%m/%Y %H:%M"),

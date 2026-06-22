@@ -10,7 +10,7 @@ class UsuarioFactory(factory.django.DjangoModelFactory):
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     nombres = factory.Faker("first_name")
-    apellidos = factory.Faker("last_name")
+    apellidos = factory.Sequence(lambda n: f"Apellido{n}")
     tipo_documento = "CC"
     numero_documento = factory.Sequence(lambda n: f"123456{n}")
     fecha_nacimiento = "1990-01-01"
@@ -52,7 +52,7 @@ class ChatFactory(factory.django.DjangoModelFactory):
 
     punto = factory.SubFactory(PuntoECAFactory)
     ciudadano = factory.SubFactory(UsuarioFactory)
-    created_at = factory.Faker("date_time_this_year")
+    fecha_creacion = factory.Faker("date_time_this_year")
 
     @classmethod
     def con_gestor(cls):
@@ -66,7 +66,7 @@ class MensajeFactory(factory.django.DjangoModelFactory):
     chat = factory.SubFactory(ChatFactory)
     remitente = factory.SubFactory(UsuarioFactory)
     texto = factory.Faker("sentence")
-    enviado_en = factory.Faker("date_time_this_year")
-    leido = False
-    editado = False
+    fecha_envio = factory.Faker("date_time_this_year")
+    es_leido = False
+    es_editado = False
 

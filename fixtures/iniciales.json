@@ -429,182 +429,6 @@
     }
   },
   {
-    "model": "inventory.tipomaterial",
-    "pk": "3270b511-d285-47d1-b068-86dcd33e57e8",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-04-06T03:15:57.511Z",
-      "fecha_modificacion": "2026-04-06T03:15:57.511Z",
-      "nombre": "prueba tipo",
-      "descripcion": "prueba"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "9643d8d3-03fd-485d-b082-df5bdba6fa0c",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Plástico PET",
-      "descripcion": "Plástico tipo PET de botellas y envases."
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "ae3830fc-0a4f-4d38-95f5-1c1f1e177cc8",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-05-17T16:20:37.966Z",
-      "fecha_modificacion": "2026-05-17T16:20:37.966Z",
-      "nombre": "carton test",
-      "descripcion": "asdfasdf"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "beb38f89-7d3e-44a6-a11d-b369b304f62d",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-05-17T16:20:51.765Z",
-      "fecha_modificacion": "2026-05-17T16:20:51.765Z",
-      "nombre": "test carton",
-      "descripcion": "asdf"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "d5a3bf03-402c-460c-b569-311217c1ab8e",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Aluminio",
-      "descripcion": "Latas y otros residuos de aluminio limpios."
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "d81329db-24fe-4821-b1be-1854766c6cc0",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Papel Blanco",
-      "descripcion": "Papel blanco de oficina o cuadernos sin grapas."
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f9763c5a-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Plástico",
-      "descripcion": "Material polimérico reciclable usado en envases, empaques y objetos de uso común"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f9773e0a-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Papel y Cartón",
-      "descripcion": "Materiales fibrosos de origen vegetal reciclables, usados en empaques y escritura"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f9781a33-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "INACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-05-17T16:25:18.346Z",
-      "nombre": "Vidrio",
-      "descripcion": "Material inorgánico reciclable presente en botellas y frascos"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f979766e-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Metales",
-      "descripcion": "Materiales metálicos reciclables como aluminio, acero y otros férricos"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f97adc17-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Textiles",
-      "descripcion": "Materiales de fibras naturales o sintéticas reciclables y reutilizables"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f97c035e-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Madera",
-      "descripcion": "Material lignocelulósico reciclable y reutilizable en muebles y embalajes"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f97cfc41-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Tetra Pak",
-      "descripcion": "Envases multicapa compuestos de cartón, aluminio y plástico reciclables"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f97e0dab-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "RAEE",
-      "descripcion": "Residuos de aparatos eléctricos y electrónicos reciclables en puntos autorizados"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f97f4b5d-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Orgánicos",
-      "descripcion": "Residuos biodegradables de origen vegetal o animal aptos para compostaje"
-    }
-  },
-  {
-    "model": "inventory.tipomaterial",
-    "pk": "f9807198-97ed-11f0-a638-c4cbe12e39be",
-    "fields": {
-      "estado": "ACTIVO",
-      "fecha_creacion": "2026-03-01T12:00:00Z",
-      "fecha_modificacion": "2026-03-01T12:00:00Z",
-      "nombre": "Especiales",
-      "descripcion": "Residuos de manejo especial como llantas y aceites usados"
-    }
-  },
-  {
     "model": "inventory.material",
     "pk": "0199750c-af0e-70ef-b951-c581b4fe7d96",
     "fields": {
@@ -615,7 +439,7 @@
       "descripcion": "Cartón mojado con contenido de paja",
       "imagen_url": "",
       "categoria": "f95c182a-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -629,7 +453,7 @@
       "descripcion": "Latas de bebidas y alimentos, limpias y aplastadas.",
       "imagen_url": "",
       "categoria": "d3ab111a-4860-4438-b72c-3f793b5ff6c4",
-      "tipo": "d5a3bf03-402c-460c-b569-311217c1ab8e"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -643,7 +467,7 @@
       "descripcion": "asdf",
       "imagen_url": "",
       "categoria": "f9738c79-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "d5a3bf03-402c-460c-b569-311217c1ab8e"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -657,7 +481,7 @@
       "descripcion": "Botellas y envases PET transparentes, enjuagados y sin tapa.",
       "imagen_url": "",
       "categoria": "0bf0c497-64bd-4e9d-8e61-d97477bbaf01",
-      "tipo": "9643d8d3-03fd-485d-b082-df5bdba6fa0c"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -671,7 +495,7 @@
       "descripcion": "Hojas y resmas de papel blanco, sin clips ni anillos metálicos.",
       "imagen_url": "",
       "categoria": "afd61604-1bb0-4382-96e8-71cb6acfd572",
-      "tipo": "d81329db-24fe-4821-b1be-1854766c6cc0"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -685,7 +509,7 @@
       "descripcion": "asdf",
       "imagen_url": "",
       "categoria": "f9738c79-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "d5a3bf03-402c-460c-b569-311217c1ab8e"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -699,7 +523,7 @@
       "descripcion": "Botella PET clara, enjuagada y sin etiqueta",
       "imagen_url": "",
       "categoria": "f84d371e-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -713,7 +537,7 @@
       "descripcion": "Botella PET verde, limpia y seca",
       "imagen_url": "",
       "categoria": "f84d371e-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -727,7 +551,7 @@
       "descripcion": "Envase PEAD/HDPE de limpieza, sin residuos",
       "imagen_url": "",
       "categoria": "f9558dd5-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -741,7 +565,7 @@
       "descripcion": "Garrafa de PEAD (aceite, agua), enjuagada",
       "imagen_url": "",
       "categoria": "f9558dd5-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -755,7 +579,7 @@
       "descripcion": "Bolsa plástica flexible limpia (PEBD/LDPE)",
       "imagen_url": "",
       "categoria": "f9580b3b-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -769,7 +593,7 @@
       "descripcion": "Plástico film estirable limpio",
       "imagen_url": "",
       "categoria": "f9580b3b-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -783,7 +607,7 @@
       "descripcion": "Tapa de envase de polipropileno",
       "imagen_url": "",
       "categoria": "f9592284-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -797,7 +621,7 @@
       "descripcion": "Envase de PP (yogur, salsas), limpio",
       "imagen_url": "",
       "categoria": "f9592284-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -811,7 +635,7 @@
       "descripcion": "Bandejas o vasos de PS limpio (según gestor)",
       "imagen_url": "",
       "categoria": "f95a0f6a-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -825,7 +649,7 @@
       "descripcion": "Retales de PVC limpios (sin contaminantes)",
       "imagen_url": "",
       "categoria": "f956eeb1-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9763c5a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -839,7 +663,7 @@
       "descripcion": "Cajas plegadas, limpias y secas",
       "imagen_url": "",
       "categoria": "f95c182a-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -853,7 +677,7 @@
       "descripcion": "Empaques de cartón delgado, sin grasa",
       "imagen_url": "",
       "categoria": "f95da2f4-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -867,7 +691,7 @@
       "descripcion": "Papel periódico limpio y seco",
       "imagen_url": "",
       "categoria": "f95ed27b-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -881,7 +705,7 @@
       "descripcion": "Hojas blancas (sin clips, sin espiral)",
       "imagen_url": "",
       "categoria": "f95fb892-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -895,7 +719,7 @@
       "descripcion": "Revistas, catálogos (sin plastificar excesivo)",
       "imagen_url": "",
       "categoria": "f960a77b-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9773e0a-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -909,7 +733,7 @@
       "descripcion": "Frascos/botellas claras, sin tapa, limpios",
       "imagen_url": "",
       "categoria": "f961bf79-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9781a33-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "MANEJO_ESPECIAL"
     }
   },
   {
@@ -923,7 +747,7 @@
       "descripcion": "Envases color ámbar, limpios",
       "imagen_url": "",
       "categoria": "f962a2e6-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9781a33-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "MANEJO_ESPECIAL"
     }
   },
   {
@@ -937,7 +761,7 @@
       "descripcion": "Botellas/ frascos verdes, limpios",
       "imagen_url": "",
       "categoria": "f96444cd-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9781a33-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "MANEJO_ESPECIAL"
     }
   },
   {
@@ -951,7 +775,7 @@
       "descripcion": "Latas de bebidas aplastadas y limpias",
       "imagen_url": "",
       "categoria": "f965ddd7-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f979766e-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -965,7 +789,7 @@
       "descripcion": "Conservas, alimentos; limpias",
       "imagen_url": "",
       "categoria": "f966bbeb-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f979766e-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -979,7 +803,7 @@
       "descripcion": "Recortes y piezas ferrosas",
       "imagen_url": "",
       "categoria": "f967a7ed-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f979766e-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -993,7 +817,7 @@
       "descripcion": "Cajas de leche/jugos, enjuagadas y plegadas",
       "imagen_url": "",
       "categoria": "f96d0928-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97cfc41-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1007,7 +831,7 @@
       "descripcion": "Textil de algodón reutilizable o reciclable",
       "imagen_url": "",
       "categoria": "f9688235-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97adc17-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1021,7 +845,7 @@
       "descripcion": "Textil sintético para valorización",
       "imagen_url": "",
       "categoria": "f9697461-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97adc17-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1035,7 +859,7 @@
       "descripcion": "Algodón/poliéster u otras mezclas",
       "imagen_url": "",
       "categoria": "f96a5212-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97adc17-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1049,7 +873,7 @@
       "descripcion": "Pallets en buen estado para reuso/reciclaje",
       "imagen_url": "",
       "categoria": "f96b3c02-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97c035e-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1063,7 +887,7 @@
       "descripcion": "Retales de aglomerado o MDF",
       "imagen_url": "",
       "categoria": "f96c3c45-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97c035e-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1077,7 +901,7 @@
       "descripcion": "Teléfonos para disposición en puntos RAEE",
       "imagen_url": "",
       "categoria": "f96e14db-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "PELIGROSO"
     }
   },
   {
@@ -1091,7 +915,7 @@
       "descripcion": "Periféricos y accesorios electrónicos",
       "imagen_url": "",
       "categoria": "f9701a17-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "PELIGROSO"
     }
   },
   {
@@ -1105,7 +929,7 @@
       "descripcion": "Cables, cargadores y adaptadores",
       "imagen_url": "",
       "categoria": "f9701a17-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "PELIGROSO"
     }
   },
   {
@@ -1119,7 +943,7 @@
       "descripcion": "Computadores portátiles fuera de uso",
       "imagen_url": "",
       "categoria": "f96f35ac-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "PELIGROSO"
     }
   },
   {
@@ -1133,7 +957,7 @@
       "descripcion": "Pilas para puntos posconsumo autorizados",
       "imagen_url": "",
       "categoria": "f9711af7-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97e0dab-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "PELIGROSO"
     }
   },
   {
@@ -1147,7 +971,7 @@
       "descripcion": "Retornable (consultar política del gestor)",
       "imagen_url": "",
       "categoria": "f961bf79-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9781a33-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "MANEJO_ESPECIAL"
     }
   },
   {
@@ -1161,7 +985,7 @@
       "descripcion": "Almacenado en botella plástica cerrada",
       "imagen_url": "",
       "categoria": "f9738c79-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9807198-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1175,7 +999,7 @@
       "descripcion": "Llantas enteras para programas de recolección",
       "imagen_url": "",
       "categoria": "f9751f8a-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f9807198-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   },
   {
@@ -1189,7 +1013,7 @@
       "descripcion": "Restos de comida/jardín para compostaje",
       "imagen_url": "",
       "categoria": "f972aad0-97ed-11f0-a638-c4cbe12e39be",
-      "tipo": "f97f4b5d-97ed-11f0-a638-c4cbe12e39be"
+      "clasificacion": "ESTANDAR"
     }
   }
 ]

@@ -1,0 +1,335 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block page_title %}Dashboard Puntos ECA - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/dashboard-eca.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" integrity="sha384-b8ANgTJvdlAnWM5YGMpKn7Kodm+1k7NYNG9zdjTCcZcKatzYHwZ0RLdWarbJJVzU" crossorigin="anonymous">
+{% endblock %}
+
+{% block content %}
+
+<!-- ===== VISTA LISTADO ===== -->
+<div id="vista-listado">
+
+  <!-- Header -->
+  <div class="mb-3 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-geo-alt-fill me-2"></i>Puntos ECA</h1>
+      <p class="text-muted mb-0">Administra las estaciones de clasificacion y aprovechamiento.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'panel_admin:crear_punto_eca_admin' %}" class="btn btn-success"><i class="bi bi-plus-circle me-1"></i> Nuevo Punto ECA</a>
+    </div>
+  </div>
+
+  <!-- KPIs globales -->
+  <div class="row g-3 mb-4" id="panel-kpis"></div>
+
+  <!-- Tabs -->
+  <ul class="nav tab-nav mb-0" id="listado-tabs">
+    <li class="nav-item"><button class="nav-link active" onclick="switchListadoTab('resumen',this);return false"><i class="bi bi-speedometer2 me-1"></i>Resumen</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchListadoTab('estados',this);return false"><i class="bi bi-geo-alt me-1"></i>Estados Inventarios</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchListadoTab('flujos',this);return false"><i class="bi bi-arrow-left-right me-1"></i>Flujos</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchListadoTab('mensajes',this);return false"><i class="bi bi-chat-dots me-1"></i>Mensajes</button></li>
+  </ul>
+
+  <!-- TAB RESUMEN -->
+  <div id="tab-listado-resumen">
+    <div class="d-flex gap-2 align-items-center flex-wrap mt-3 mb-3">
+      <input type="text" class="form-control form-control-sm" style="width:160px" id="res-search-input" placeholder="Buscar..." oninput="renderResumen()" aria-label="res search input">
+      <select aria-label="res loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="res-loc-filter" onchange="renderResumen()"><option value="">Todas las localidades</option></select>
+      <select aria-label="res estado filter" class="form-select form-select-sm js-select2" style="width:auto" id="res-estado-filter" onchange="renderResumen()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
+      <select aria-label="res mat filter" class="form-select form-select-sm js-select2" style="width:auto" id="res-mat-filter" onchange="renderResumen()"><option value="">Todos los materiales</option></select>
+      <select aria-label="res orden" class="form-select form-select-sm" style="width:auto" id="res-orden" onchange="renderResumen()"><option value="mov">Orden: Movimiento</option><option value="ventas">Orden: Flujo In</option><option value="compras">Orden: Flujo Out</option><option value="margen">Orden: Margen</option></select>
+      <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosResumen()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-lg-7">
+        <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-success me-1"></i>Top 10 Puntos por Movimiento</h6></div><div class="card-body" style="height:320px"><canvas id="chartPanelTop"></canvas></div></div>
+      </div>
+      <div class="col-12 col-lg-5">
+        <div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-box-seam text-info me-1"></i>Materiales Principales por Punto</h6></div><div class="card-body p-0" style="height:320px;overflow-y:auto" id="res-mat-table"></div></div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-boxes text-info me-1"></i>Capacidad General del Sistema</h6></div><div class="card-body d-flex align-items-center justify-content-center" id="res-capacidad-general" style="height:200px"></div></div></div>
+      <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Top 3 Materiales Mas Transados</h6></div><div class="card-body d-flex align-items-center justify-content-center"><div style="max-width:180px;width:100%"><canvas id="chartResTopMat"></canvas></div></div></div></div>
+      <div class="col-12 col-lg-4"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-clock-history text-warning me-1"></i>Ultimos Puntos Creados</h6></div><div class="card-body p-0" style="height:200px;overflow-y:auto" id="res-ultimos-puntos"></div></div></div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12 col-lg-7"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-primary me-1"></i>Actividad Temporal (Transacciones x Mes)</h6></div><div class="card-body" style="height:250px"><canvas id="chartResActividadTemporal"></canvas></div></div></div>
+      <div class="col-12 col-lg-5"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-lightning-charge text-warning me-1"></i>Actividad Reciente</h6></div><div class="card-body p-0" style="height:250px;overflow-y:auto" id="res-feed-actividad"></div></div></div>
+    </div>
+  </div>
+
+  <!-- TAB ESTADOS -->
+  <div id="tab-listado-estados" style="display:none">
+    <div class="d-flex gap-2 align-items-center flex-wrap mt-3 mb-3">
+      <input type="text" class="form-control form-control-sm" style="width:160px" id="est-search-input" placeholder="Buscar..." oninput="renderEstados()" aria-label="est search input">
+      <select aria-label="est loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="est-loc-filter" onchange="renderEstados()"><option value="">Todas las localidades</option></select>
+      <select aria-label="est estado filter" class="form-select form-select-sm js-select2" style="width:auto" id="est-estado-filter" onchange="renderEstados()"><option value="">Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
+      <select aria-label="est salud filter" class="form-select form-select-sm js-select2" style="width:auto" id="est-salud-filter" onchange="renderEstados()"><option value="">Toda salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+      <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosEstados()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+    </div>
+    <div class="row g-3 mb-3" id="estados-stats"></div>
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-header bg-light border-0 px-4 py-2 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-map me-1"></i> Mapa de Puntos ECA</h6>
+        <div class="d-flex gap-2 align-items-center">
+          <span class="badge bg-success-subtle text-success" style="font-size:.65rem"><i class="bi bi-circle-fill me-1"></i>OK</span>
+          <span class="badge bg-warning-subtle text-warning" style="font-size:.65rem"><i class="bi bi-circle-fill me-1"></i>Alerta</span>
+          <span class="badge bg-danger-subtle text-danger" style="font-size:.65rem"><i class="bi bi-circle-fill me-1"></i>Critico</span>
+          <span class="badge bg-secondary-subtle text-secondary" style="font-size:.65rem"><i class="bi bi-circle-fill me-1"></i>Inactivo</span>
+        </div>
+      </div>
+      <div class="card-body p-2"><div id="estados-map" style="height:380px"></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-danger me-1"></i>Distribucion por Estado</h6></div><div class="card-body d-flex align-items-center justify-content-center" style="height:180px"><div style="max-width:180px;width:100%"><canvas id="chartEstDist"></canvas></div></div></div></div>
+      <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-warning me-1"></i>Puntos por Localidad</h6></div><div class="card-body" style="height:180px"><canvas id="chartEstLoc"></canvas></div></div></div>
+    </div>
+    <div class="row g-3" id="estados-alertas"></div>
+  </div>
+
+  <!-- TAB FLUJOS -->
+  <div id="tab-listado-flujos" style="display:none">
+    <ul class="nav nav-pills mb-3 mt-3" id="flujos-lst-subtabs">
+      <li class="nav-item"><button class="nav-link active" onclick="switchFlujoListado('volumen',this);return false"><i class="bi bi-arrow-left-right me-1"></i>Volumen</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="switchFlujoListado('ganancias',this);return false"><i class="bi bi-cash-stack me-1"></i>Ganancias</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="switchFlujoListado('detalle_mat',this);return false"><i class="bi bi-box-seam me-1"></i>Detalle por Material</button></li>
+    </ul>
+
+    <div id="flujo-sub-volumen">
+      <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
+        <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-search-input" placeholder="Buscar..." oninput="renderFlujoVolumen()" aria-label="flu search input">
+        <select aria-label="flu loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-loc-filter" onchange="renderFlujoVolumen()"><option value="">Todas las localidades</option></select>
+        <select aria-label="flu mat filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-mat-filter" onchange="renderFlujoVolumen()"><option value="">Todos los materiales</option></select>
+        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoVolumen()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+      </div>
+      <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-arrow-left-right me-1"></i> Flujo de Compras y Ventas por Punto (items)</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoGeneral"></canvas></div></div>
+      <div class="row g-3 mb-3" id="flujos-stats"></div>
+    </div>
+
+    <div id="flujo-sub-ganancias" style="display:none">
+      <div class="d-flex gap-2 align-items-center flex-wrap mb-3"><input type="text" class="form-control form-control-sm" style="width:160px" id="flu-gan-search-input" placeholder="Buscar..." oninput="renderFlujoGanancias()" aria-label="flu gan search input"><select aria-label="flu gan loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-gan-loc-filter" onchange="renderFlujoGanancias()"><option value="">Todas las localidades</option></select><button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoGanancias()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button></div>
+      <div class="row g-3 mb-3" id="flujo-gan-stats"></div>
+      <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-cash-stack me-1"></i> Compras vs Ventas ($ COP) por Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoGanancias"></canvas></div></div>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash-stack text-warning me-1"></i>Top 5 + Bottom 5 Puntos por Margen %</h6></div><div class="card-body" style="height:280px"><canvas id="chartFlujoMargenRank"></canvas></div></div></div>
+        <div class="col-12 col-lg-6"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-star text-success me-1"></i>Material Mas Rentable por Punto</h6></div><div class="card-body p-0" style="height:280px;overflow-y:auto" id="flujo-gan-tabla-mat"></div></div></div>
+      </div>
+    </div>
+
+    <div id="flujo-sub-detalle_mat" style="display:none">
+      <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
+        <input type="text" class="form-control form-control-sm" style="width:160px" id="flu-det-search-input" placeholder="Buscar..." oninput="renderFlujoDetalleMat()" aria-label="flu det search input">
+        <select aria-label="flu det loc filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-loc-filter" onchange="renderFlujoDetalleMat()"><option value="">Todas las localidades</option></select>
+        <select aria-label="flu det mat filter" class="form-select form-select-sm js-select2" style="width:auto" id="flu-det-mat-filter" onchange="renderFlujoDetalleMat()"><option value="">Todos los materiales</option></select>
+        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="limpiarFiltrosFlujoDetalleMat()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+      </div>
+      <div class="row g-3 mb-3" id="flujo-det-stats"></div>
+      <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-diagram-3 me-1"></i> Ventas en $ COP por Material y Punto</h6></div><div class="card-body" style="height:350px"><canvas id="chartFlujoDetalleMat"></canvas></div></div>
+      <div class="card shadow-sm border-0"><div class="card-header bg-light border-0 px-4 py-2"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-trophy me-1"></i> Ranking de Materiales por Ganancia</h6></div><div class="table-responsive" id="flujo-det-tabla"></div></div>
+    </div>
+  </div>
+
+  <!-- TAB MENSAJES -->
+  <div id="tab-listado-mensajes" style="display:none">
+    <div class="row g-3 mb-3 mt-3" id="msgs-stats"></div>
+    <div class="row g-3 mb-3"><div class="col-12"><div class="card chart-card h-100"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-chat-dots text-primary me-1"></i>Top 10 Puntos con Mas Mensajes</h6></div><div class="card-body" style="height:280px"><canvas id="chartMsgsTopChats"></canvas></div></div></div></div>
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-light border-0 px-4 py-2 d-flex justify-content-between align-items-center"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-chat-left-text me-1"></i> Detalle de Conversaciones</h6><span class="badge bg-secondary rounded-pill" id="msgs-count-badge">0 conversaciones</span></div>
+      <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Punto</th><th>Ciudadano</th><th>Fecha</th><th>Msgs</th><th>Ultimo Mensaje</th></tr></thead><tbody id="msgs-tbody"></tbody></table></div>
+      <div class="px-4 py-2 border-top bg-white d-flex justify-content-between align-items-center flex-wrap" id="msgs-pagination"></div>
+    </div>
+  </div>
+
+  <!-- TABLA GENERAL -->
+  <div class="card shadow-sm border-0 mb-4 mt-4">
+    <div class="card-header bg-success-subtle border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2"><h6 class="mb-0 fw-bold text-success"><i class="bi bi-table me-1"></i> Listado Completo de Puntos ECA</h6><button class="btn btn-sm btn-outline-success fw-semibold"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button><button class="btn btn-sm btn-outline-danger fw-semibold"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button></div><span class="badge bg-secondary rounded-pill" id="ranking-count-badge">0 registros</span>
+    </div>
+    <div class="px-4 py-3 border-bottom bg-light" id="ranking-filters-row">
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <input type="text" class="form-control form-control-sm" style="width:160px" id="rank-flt-nombre" placeholder="Buscar punto..." oninput="renderRanking()" aria-label="rank flt nombre">
+        <select aria-label="rank flt localidad" class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-localidad" onchange="renderRanking()"><option value="">Localidad</option></select>
+        <select aria-label="rank flt estado" class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-estado" onchange="renderRanking()"><option value="">Estado</option><option>Activo</option><option>Inactivo</option></select>
+        <select aria-label="rank flt salud" class="form-select form-select-sm js-select2" style="width:auto" id="rank-flt-salud" onchange="renderRanking()"><option value="">Salud</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+        <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-min" placeholder="Ocup min%" min="0" max="100" oninput="renderRanking()" aria-label="rank flt ocup min">
+        <span class="text-muted small">-</span>
+        <input type="number" class="form-control form-control-sm" style="width:80px" id="rank-flt-ocup-max" placeholder="Ocup max%" min="0" max="100" oninput="renderRanking()" aria-label="rank flt ocup max">
+        <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosRanking()"><i class="bi bi-eraser"></i></button>
+      </div>
+    </div>
+    <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light" id="ranking-thead"><tr><th></th></tr></thead><tbody id="ranking-tbody"></tbody></table></div>
+    <div class="px-4 py-2 border-top bg-white d-flex justify-content-between align-items-center flex-wrap" id="ranking-pagination"></div>
+  </div>
+</div>
+
+<!-- ===== VISTA DETALLE ===== -->
+<div id="vista-detalle" style="display:none">
+  <div class="detalle-header mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <nav><ol class="breadcrumb mb-2"><li class="breadcrumb-item"><button class="btn btn-link p-0 border-0 breadcrumb-item" onclick="volverListado();return false">Puntos ECA</button></li><li class="breadcrumb-item active text-white" id="detalle-breadcrumb-name">--</li></ol></nav>
+        <h2 id="detalle-nombre">--</h2>
+        <p class="mb-1 opacity-75 small" id="detalle-direccion">--</p>
+        <div class="d-flex flex-wrap gap-2 mt-2" id="detalle-badges"></div>
+      </div>
+      <div class="text-end d-flex flex-column align-items-end gap-2">
+        <span id="detalle-salud"></span>
+        <div class="d-flex gap-2"><a class="btn btn-light btn-sm fw-semibold" id="detalle-edit-link" href="#"Enter")this.click()"><i class="bi bi-pencil-square me-1"></i>Editar punto</a></div>
+      </div>
+    </div>
+  </div>
+  <ul class="nav tab-nav mb-0" id="detalle-tabs">
+    <li class="nav-item"><button class="nav-link active" onclick="switchTab('resumen',this);return false"><i class="bi bi-speedometer2 me-1"></i>Resumen</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('inventario',this);return false"><i class="bi bi-box-seam me-1"></i>Inventario</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('historial',this);return false"><i class="bi bi-clock-history me-1"></i>Historial</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('flujo',this);return false"><i class="bi bi-graph-up me-1"></i>Flujo</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('calendario',this);return false"><i class="bi bi-calendar3 me-1"></i>Calendario</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="switchTab('mensajes',this);return false"><i class="bi bi-chat-dots me-1"></i>Mensajes</button></li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-resumen">
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="kpi-stock-total">--</div><div class="kpi-lbl">% Ocupacion</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="kpi-materiales">--</div><div class="kpi-lbl">Materiales</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-info" id="kpi-movimientos">--</div><div class="kpi-lbl">Movimientos (30d)</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="kpi-salud-pct">--</div><div class="kpi-lbl">Flujo Total</div></div></div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-8">
+          <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-success me-1"></i>Tendencia 7 dias</h6></div><div class="card-body" style="height:200px"><canvas id="chartResumenTendencia"></canvas></div></div>
+          <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-clock-history text-primary me-1"></i>Ultimos Movimientos</h6></div><div class="card-body p-0" id="resumen-movimientos"></div></div>
+          <div class="card chart-card"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-hourglass-split text-danger me-1"></i>Materiales Sin Movimiento (30d+)</h6></div><div class="card-body p-0" id="resumen-sin-mov"></div></div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-info-circle text-info me-1"></i>Informacion</h6></div><div class="card-body" id="resumen-info"></div></div>
+          <div class="card chart-card mb-3"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-star-fill text-warning me-1"></i>Top 3 Materiales</h6></div><div class="card-body p-0" id="resumen-top3"></div></div>
+          <div class="card chart-card"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-calendar-event text-success me-1"></i>Proximos Eventos</h6></div><div class="card-body p-0" id="resumen-eventos"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-inventario">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <select aria-label="inv cat filter" class="form-select form-select-sm" style="width:auto" id="inv-cat-filter"><option value="">Todas</option></select>
+          <select aria-label="inv estado filter" class="form-select form-select-sm" style="width:auto" id="inv-estado-filter"><option value="">Todos</option><option>OK</option><option>Alerta</option><option>Critico</option></select>
+          <select aria-label="inv orden" class="form-select form-select-sm" style="width:auto" id="inv-orden"><option value="nombre">Orden: Nombre</option><option value="stock">Orden: % Ocupacion</option><option value="capacidad">Orden: Capacidad</option><option value="margen">Orden: Margen</option></select>
+          <button class="btn btn-sm btn-outline-success" onclick="renderInventario()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosInventario()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+        </div>
+        <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Consulta exclusiva</span>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="inv-total-stock">--</div><div class="kpi-lbl">% Ocupacion</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="inv-total-materiales">--</div><div class="kpi-lbl">Materiales</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="inv-capacidad-prom">--</div><div class="kpi-lbl">Cap. Prom.</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="inv-bajo-stock">--</div><div class="kpi-lbl">Bajo Stock</div></div></div>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-4"><div class="card chart-card"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Categoria</h6></div><div class="card-body d-flex justify-content-center"><div style="max-width:200px;width:100%"><canvas id="chartInvCategorias"></canvas></div></div></div></div>
+        <div class="col-12 col-lg-4"><div class="card chart-card"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-bar-chart text-primary me-1"></i>% Ocupacion</h6></div><div class="card-body" style="height:200px"><canvas id="chartInvStock"></canvas></div></div></div>
+        <div class="col-12 col-lg-4"><div class="card chart-card"><div class="card-header py-2"><h6 class="mb-0 fw-bold small"><i class="bi bi-cash text-warning me-1"></i>Margen x Material</h6></div><div class="card-body" style="height:200px"><canvas id="chartInvMargen"></canvas></div></div></div>
+      </div>
+      <div class="row g-3" id="inv-cards"></div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-historial">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <select aria-label="hist material filter" class="form-select form-select-sm" style="width:auto" id="hist-material-filter"><option value="">Todos</option></select>
+          <select aria-label="hist tipo filter" class="form-select form-select-sm" style="width:auto" id="hist-tipo-filter"><option value="">Todos los tipos</option><option>Compra</option><option>Venta</option></select>
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="hist-ft-ini" aria-label="hist ft ini">
+          <span class="text-muted small">a</span>
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="hist-ft-fin" aria-label="hist ft fin">
+          <button class="btn btn-sm btn-outline-success" onclick="renderHistorial()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosHistorialDetalle()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+        </div>
+        <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Solo lectura</span>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="hist-compras">--</div><div class="kpi-lbl">Compras (30d)</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="hist-ventas">--</div><div class="kpi-lbl">Ventas (30d)</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="hist-total">--</div><div class="kpi-lbl">Total registros</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="hist-kg">--</div><div class="kpi-lbl">Unidades Movidas</div></div></div>
+      </div>
+      <div class="card chart-card"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo</th><th>Material</th><th>Cantidad</th><th>Precio Unit.</th><th>Valor</th><th>Margen</th><th>Notas</th></tr></thead><tbody id="hist-tbody"></tbody></table></div></div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-flujo">
+      <ul class="nav nav-pills mb-3" id="flujo-subtabs">
+        <li class="nav-item"><button class="nav-link active" onclick="switchFlujo('stock',this);return false"><i class="bi bi-box-seam me-1"></i>Stock</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchFlujo('ganancias',this);return false"><i class="bi bi-cash-stack me-1"></i>Ganancias</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchFlujo('precios',this);return false"><i class="bi bi-tag me-1"></i>Precios</button></li>
+      </ul>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="flujo-actual">--</div><div class="kpi-lbl">% Ocupacion</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="flujo-compras">--</div><div class="kpi-lbl">Compras Periodo</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-danger" id="flujo-ventas-k">--</div><div class="kpi-lbl">Ventas Periodo</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="flujo-utilidad">--</div><div class="kpi-lbl">Utilidad</div></div></div>
+      </div>
+      <div class="card chart-card"><div class="card-body" style="height:300px"><canvas id="chartFlujo"></canvas></div></div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-calendario">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex gap-2 align-items-center">
+          <select aria-label="cal estado filter" class="form-select form-select-sm" style="width:auto" id="cal-estado-filter"><option value="">Todos los estados</option><option>Completado</option><option>Pendiente</option></select>
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-ini" aria-label="cal ft ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="cal-ft-fin" aria-label="cal ft fin">
+          <button class="btn btn-sm btn-outline-success" onclick="renderCalendario()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosCalendario()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+        </div>
+        <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Gestionado por el gestor del punto -- solo consulta</span>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-success" id="cal-completados">--</div><div class="kpi-lbl">Completados</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-warning" id="cal-pendientes">--</div><div class="kpi-lbl">Pendientes</div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-mini"><div class="kpi-val text-primary" id="cal-proximos">--</div><div class="kpi-lbl">Proximos 7d</div></div></div>
+      </div>
+      <div id="cal-eventos"></div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-mensajes">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex gap-2 align-items-center">
+          <input type="text" class="form-control form-control-sm" style="width:auto" id="msg-search" placeholder="Buscar ciudadano..." aria-label="msg search">
+          <input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-ini" aria-label="msg ft ini"><span class="text-muted small">a</span><input type="date" class="form-control form-control-sm" style="width:auto" id="msg-ft-fin" aria-label="msg ft fin">
+          <button class="btn btn-sm btn-outline-success" onclick="renderMensajes()"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="limpiarFiltrosMensajesDetalle()" title="Limpiar filtros"><i class="bi bi-eraser"></i></button>
+        </div>
+        <span class="readonly-badge"><i class="bi bi-eye me-1"></i>Gestionado por el gestor del punto -- solo consulta</span>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4"><div class="kpi-mini"><div class="kpi-val text-primary" id="msg-total">--</div><div class="kpi-lbl">Total Convers.</div></div></div>
+        <div class="col-6 col-md-4"><div class="kpi-mini"><div class="kpi-val text-info" id="msg-total-msgs">--</div><div class="kpi-lbl">Total Mensajes</div></div></div>
+        <div class="col-6 col-md-4"><div class="kpi-mini"><div class="kpi-val text-danger" id="msg-no-leidos">--</div><div class="kpi-lbl">Mensajes No Leidos</div></div></div>
+      </div>
+      <div class="card chart-card" id="msg-list"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+
+{{ puntos_dashboard|json_script:"puntos-data" }}
+{{ historial|json_script:"historial-data" }}
+{{ eventos|json_script:"eventos-data" }}
+{{ conversaciones|json_script:"conversaciones-data" }}
+{{ usuarios|json_script:"usuarios-data" }}
+{{ kpis|json_script:"kpis-data" }}
+{{ inv_data|json_script:"inv-data" }}
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js" integrity="sha384-u5N8qJeJOO2iqNjIKTdl6KeKsEikMAmCUBPc6sC6uGpgL34aPJ4VgNhuhumedpEk" crossorigin="anonymous"></script>
+<script src="{% static 'js/admin/dashboard-punto-eca.js' %}"></script>
+{% endblock %}

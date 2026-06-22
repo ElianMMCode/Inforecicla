@@ -32,15 +32,17 @@ def asistente_api_view(request):
         '<div class="chat-msg-avatar chat-msg-avatar-user">👤</div>'
         '<div class="chat-msg-bubble">'
         + escape(pregunta) +
+        '</div>'
         '<div class="chat-msg-time"></div>'
-        '</div></div>'
+        '</div>'
     )
     ai_msg = (
         '<div class="chat-msg-ai">'
         '<div class="chat-msg-avatar chat-msg-avatar-ai">🤖</div>'
         '<div class="chat-msg-bubble">'
         + escape(respuesta) +
+        '</div>'
         '<div class="chat-msg-time"></div>'
-        '</div></div>'
+        '</div>'
     )
     return HttpResponse(user_msg + ai_msg)

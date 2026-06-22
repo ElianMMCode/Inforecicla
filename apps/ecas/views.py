@@ -36,9 +36,9 @@ def toggle_visible(request):
     """
     punto = buscar_puntos_eca(request)
     # Normalizar valor de checkbox
-    visible = request.POST.get("visible_en_mapa") in ("on", "1", "true", "True")
-    punto.visible_en_mapa = visible
-    punto.save(update_fields=["visible_en_mapa", "fecha_modificacion"])
+    visible = request.POST.get("es_visible_en_mapa") in ("on", "1", "true", "True")
+    punto.es_visible_en_mapa = visible
+    punto.save(update_fields=["es_visible_en_mapa", "fecha_modificacion"])
     messages.success(request, "Preferencias actualizadas correctamente.")
     return redirect(reverse(CONSTANTE_RENDER, kwargs={"seccion": "perfil"}) + "?tab=configuracion")
 
@@ -153,7 +153,8 @@ def render_seccion(request, seccion="resumen", perfil_tab="punto"):
             if deep_inv and deep_tab
             else None
         )
-        context = _build_inventario_context(punto, deep_link=deep_link)
+        ovtab = request.GET.get("ovtab", "")
+        context = _build_inventario_context(punto, deep_link=deep_link, ovtab=ovtab)
     elif seccion == "centros":
         context = _build_centros_context(punto)
     elif seccion == "calendario":
@@ -188,11 +189,11 @@ def _check_upcoming_event_notifications(punto, usuario):
         notif, created = Notificacion.objects.get_or_create(
             usuario=usuario,
             evento_instancia=instancia,
-            defaults={"leido": False},
+            defaults={"es_leido": False},
         )
         if created:
             enviar_notificacion_realtime(usuario.pk, {
-                "id": notif.pk,
+                "id": str(notif.pk),
                 "tipo": "evento",
                 "titulo": f"Evento próximo: {instancia.evento_base.titulo} — {instancia.fecha_inicio.strftime('%d/%m/%Y %H:%M')}",
                 "fecha": notif.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
@@ -214,7 +215,7 @@ def _add_notificacion_context(punto, usuario, context):
         .order_by("-fecha_creacion")[:20]
     )
     context["notificaciones_no_leidas"] = Notificacion.objects.filter(
-        usuario=usuario, leido=False
+        usuario=usuario, es_leido=False
     ).count()
 
 
@@ -302,7 +303,7 @@ def _build_centros_context(punto):
     }
 
 
-def _build_inventario_context(punto, deep_link=None):
+def _build_inventario_context(punto, deep_link=None, ovtab=""):
     """
     Construye el contexto unificado para la nueva sección /inventario/.
 
@@ -339,7 +340,7 @@ def _build_inventario_context(punto, deep_link=None):
             "costo_total_inventario": float,
             "materiales_criticos": [...],
             "categoria_inventario": [...],
-            "tipo_inventario": [...],
+            "clasificacion_inventario": [...],
 
             # === Movimientos (historial y stock chart) ===
             "centros": [...],
@@ -356,7 +357,7 @@ def _build_inventario_context(punto, deep_link=None):
 
     materiales_inventario = list(
         Inventario.objects.filter(punto_eca=punto)
-        .select_related("material__categoria", "material__tipo")
+        .select_related("material__categoria")
         .order_by("-fecha_modificacion")
     )
     kpis = _calcular_kpis_inventario(materiales_inventario)
@@ -367,10 +368,9 @@ def _build_inventario_context(punto, deep_link=None):
         .values_list("material__categoria__nombre", flat=True)
         .distinct()
     )
-    tipo_inventario = (
+    clasificacion_inventario = (
         Inventario.objects.filter(punto_eca=punto)
-        .select_related("material__tipo")
-        .values_list("material__tipo__nombre", flat=True)
+        .values_list("material__clasificacion", flat=True)
         .distinct()
     )
 
@@ -413,13 +413,15 @@ def _build_inventario_context(punto, deep_link=None):
         "materiales_inventario": materiales_inventario,
         **kpis,
         "categoria_inventario": categoria_inventario,
-        "tipo_inventario": tipo_inventario,
+        "clasificacion_inventario": clasificacion_inventario,
+        "desc_clasificaciones": cons.DESCRIPCIONES_CLASIFICACION,
         "centros": centros,
         "historial_compras": historial_compras,
         "historial_ventas": historial_ventas,
         "inv_data_json": inv_data,
         "now": timezone.now(),
         "deep_link": deep_link,
+        "ovtab": ovtab,
     }
 
 
@@ -527,7 +529,7 @@ def _serializar_compra(c):
         "materialId": str(c.inventario.material.id),
         "nombreMaterial": c.inventario.material.nombre,
         "nombreCategoria": getattr(c.inventario.material.categoria, "nombre", ""),
-        "nombreTipo": getattr(c.inventario.material.tipo, "nombre", ""),
+        "nombreClasificacion": getattr(c.inventario.material, "clasificacion", ""),
         "cantidad": float(c.cantidad),
         "fechaCompra": c.fecha_compra.isoformat(),
         "precioCompra": float(c.precio_compra or 0),
@@ -538,13 +540,16 @@ def _serializar_compra(c):
 def _serializar_venta(v):
     """Convierte una VentaInventario al dict que consume el template y el JS."""
     tiene_centro = getattr(v, "centro_acopio", None) is not None
+    clasificacion = getattr(v.inventario.material, "clasificacion", "")
+    from config.constants import DESCRIPCIONES_CLASIFICACION
     return {
         "ventaId": str(v.id),
         "inventarioId": str(v.inventario.id),
         "materialId": str(v.inventario.material.id),
         "nombreMaterial": v.inventario.material.nombre,
         "nombreCategoria": getattr(v.inventario.material.categoria, "nombre", ""),
-        "nombreTipo": getattr(v.inventario.material.tipo, "nombre", ""),
+        "nombreClasificacion": clasificacion,
+        "descripcionClasificacion": DESCRIPCIONES_CLASIFICACION.get(clasificacion, ""),
         "cantidad": float(v.cantidad),
         "fechaVenta": v.fecha_venta.isoformat(),
         "precioVenta": float(v.precio_venta or 0),
@@ -564,13 +569,17 @@ def _consolidar_centros(centros_globales, centros_locales):
 
 def _serializar_inventario_para_json(inv):
     """Convierte un Inventario al dict que va al JSON del template."""
+    from config.constants import DESCRIPCIONES_CLASIFICACION
     fecha_mod = getattr(inv, "fecha_modificacion", None)
+    clasificacion = inv.material.clasificacion or ""
     return {
         "inventarioId": str(inv.id),
         "materialId": str(inv.material.id),
         "nombre": inv.material.nombre,
         "categoria": getattr(inv.material.categoria, "nombre", ""),
-        "tipo": getattr(inv.material.tipo, "nombre", ""),
+        "clasificacion": clasificacion,
+        "descripcionClasificacion": DESCRIPCIONES_CLASIFICACION.get(clasificacion, ""),
+        "descripcion": inv.material.descripcion or "",
         "unidad": inv.unidad_medida,
         "stockActual": float(inv.stock_actual or 0),
         "capacidadMaxima": float(inv.capacidad_maxima or 0),

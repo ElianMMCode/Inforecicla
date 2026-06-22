@@ -506,29 +506,27 @@ class MapaInteractivo {
       const imgsContainer = document.getElementById("detalleImagenes");
       const logoImg = document.getElementById("detalleLogo");
       const fotoImg = document.getElementById("detalleFoto");
+      const defaultLogoUrl = globalThis.MAPA_DEFAULT_LOGO_URL || "/static/img/logo.png";
+      const defaultFotoUrl = globalThis.MAPA_DEFAULT_FOTO_URL || "/static/img/eca-default.png";
 
       const esPuntoPlataforma = (puntoId && !String(puntoId).startsWith("arcgis_")) || detalles?.source === "eca";
 
-      const hasLogo = esPuntoPlataforma && this._tieneImagenReal(detalles.logoUrl);
-      const hasFoto = esPuntoPlataforma && this._tieneImagenReal(detalles.fotoUrl);
+      const logoUrl = detalles.logoUrl?.toString().trim() || defaultLogoUrl;
+      const fotoUrl = detalles.fotoUrl?.toString().trim() || defaultFotoUrl;
 
-      if (hasLogo) {
-        logoImg.src = detalles.logoUrl;
+      if (esPuntoPlataforma) {
+        logoImg.src = logoUrl;
         logoImg.style.display = "inline-block";
+        fotoImg.src = fotoUrl;
+        fotoImg.style.display = "block";
+        imgsContainer.style.display = "block";
       } else {
         logoImg.src = "";
         logoImg.style.display = "none";
-      }
-
-      if (hasFoto) {
-        fotoImg.src = detalles.fotoUrl;
-        fotoImg.style.display = "block";
-      } else {
         fotoImg.src = "";
         fotoImg.style.display = "none";
+        imgsContainer.style.display = "none";
       }
-
-      imgsContainer.style.display = hasLogo || hasFoto ? "block" : "none";
     } catch (e) {
       console.warn("No se pudieron renderizar las imágenes del detalle:", e);
     }
@@ -570,77 +568,7 @@ class MapaInteractivo {
     }
   }
 
-  /**
-   * Determina si una URL apunta a una imagen real y no al placeholder del sistema.
-   */
-  _tieneImagenReal(url) {
-    if (!url) {
-      return false;
-    }
 
-    const valor = String(url).trim();
-    if (!valor) {
-      return false;
-    }
-
-    if (this._esImagenSistemaPorDefecto(valor)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Detecta las imágenes genéricas usadas como placeholder en el sistema.
-   */
-  _esImagenSistemaPorDefecto(url) {
-    const rutasSistema = [
-      "/static/img/logo.png",
-      "/static/img/eca-default.png",
-      "/images/eca-default.png",
-    ];
-
-    const normalizado = this._normalizarRutaImagen(url);
-    if (!normalizado) {
-      return false;
-    }
-
-    const origen = globalThis.location?.origin ? this._quitarSlashFinal(globalThis.location.origin) : "";
-
-    return rutasSistema.some((ruta) => {
-      const rutaNormalizada = this._quitarSlashFinal(ruta);
-      return normalizado.endsWith(rutaNormalizada) || (origen && normalizado === `${origen}${rutaNormalizada}`);
-    });
-  }
-
-  /**
-   * Normaliza una URL o ruta eliminando query/hash y slash final.
-   */
-  _normalizarRutaImagen(url) {
-    if (!url) {
-      return "";
-    }
-
-    const valor = String(url).trim();
-    if (!valor) {
-      return "";
-    }
-
-    const sinQuery = valor.split("?")[0];
-    const sinHash = sinQuery.split("#")[0];
-    return this._quitarSlashFinal(sinHash);
-  }
-
-  /**
-   * Elimina uno o más slash finales sin usar regex.
-   */
-  _quitarSlashFinal(valor) {
-    let resultado = String(valor || "");
-    while (resultado.endsWith("/")) {
-      resultado = resultado.slice(0, -1);
-    }
-    return resultado;
-  }
 
   /**
    * Helper: muestra/oculta y configura el botón "Enviar mensaje"
@@ -702,7 +630,7 @@ class MapaInteractivo {
                         </small>
                     </td>
                     <td>
-                        <small class="badge bg-light text-dark">${this.escaparHTML(material.tipoMaterial)}</small>
+                        <small class="badge bg-light text-dark">${this.escaparHTML(material.clasificacion)}</small>
                     </td>
                     <td class="text-end">
                         <div class="d-flex align-items-center justify-content-end gap-2">

@@ -1,85 +1,97 @@
 {% load static %}
-<div class="container-fluid px-0">
-<div class="row g-0">
-<aside class="d-none d-md-flex col-md-2 position-fixed top-0 start-0 vh-100 bg-success text-white p-3 flex-column z-3 shadow-sm">
-  <a class="d-flex align-items-center gap-2 text-white mb-3 text-decoration-none" href="{% url 'panel_admin:panel_admin' %}">
-    <img src="{% static 'img/logo.png' %}" alt="Logo" width="40" height="40" class="rounded bg-white p-1">
-    <div class="lh-sm">
-      <div class="fw-semibold">InfoRecicla</div>
-      <small class="text-white-50">Administración</small>
+<div class="sidebar-menu sidebar-fixed">
+    <div class="mb-3" style="margin-bottom: 1.5rem !important; padding-left:12px; padding-right:12px;">
+        <a href="{% url 'panel_admin:panel_admin' %}" class="d-flex flex-column align-items-center justify-content-center text-decoration-none" style="width:100%;">
+            <img src="{% static 'img/logo.png' %}" alt="Logo InfoRecicla" class="rounded mb-2" width="56" height="56">
+            <span class="fw-bold fs-4 text-white" style="letter-spacing:.5px;">InfoRecicla</span>
+        </a>
     </div>
-  </a>
+    <ul class="nav nav-pills flex-column" style="gap: 2px !important; margin-top: 0 !important;">
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center text-white {% if request.resolver_match.url_name == 'panel_admin' %}active{% endif %}" href="{% url 'panel_admin:panel_admin' %}">
+                <i class="bi bi-speedometer2 me-2"></i> Inicio
+            </a>
+        </li>
 
-  <hr class="border-white opacity-25 my-2">
+        <li class="nav-item dropdown sidebar-dropdown">
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/usuarios' in request.path %}active{% endif %} sidebar-dropdown-toggle"
+               href="{% url 'panel_admin:listar_usuarios' %}">
+                <i class="bi bi-people-fill me-2"></i>Usuarios
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'listar_usuarios' %}active{% endif %}" href="{% url 'panel_admin:listar_usuarios' %}">Listar Usuarios</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_usuario_admin' %}active{% endif %}" href="{% url 'panel_admin:crear_usuario_admin' %}">Crear Usuario</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_usuarios_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_usuarios_excel' %}"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:importar_usuarios_csv' %}"><i class="bi bi-file-earmark-arrow-up me-1"></i>Importar CSV</a></li>
+            </ul>
+        </li>
 
-  <div class="text-center mb-3">
-    <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:64px;height:64px;">
-      <i class="bi bi-person-fill fs-2 text-white"></i>
-    </div>
-    <div class="fw-semibold small">{{ user.get_short_name }}</div>
-    <div class="text-white-50" style="font-size:.75rem;">{{ user.get_full_name }}</div>
-    <span class="badge bg-danger mt-1">
-      <i class="bi bi-shield-fill me-1"></i>Administrador
-    </span>
-  </div>
+        <li class="nav-item dropdown sidebar-dropdown">
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/publicaciones' in request.path or '/panel_admin/categorias-publicaciones' in request.path or '/panel_admin/tipos-publicaciones' in request.path %}active{% endif %} sidebar-dropdown-toggle"
+               href="{% url 'panel_admin:listar_publicaciones_admin' %}">
+                <i class="bi bi-newspaper me-2"></i>Publicaciones
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'listar_publicaciones_admin' %}active{% endif %}" href="{% url 'panel_admin:listar_publicaciones_admin' %}">Listar Publicaciones</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_publicacion_admin' %}active{% endif %}" href="{% url 'panel_admin:crear_publicacion_admin' %}">Crear Publicación</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-publicaciones' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}">Categorías de Publicaciones</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/tipos-publicaciones' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_tipos_publicacion_admin' %}">Tipos de Publicación</a></li>
+            </ul>
+        </li>
 
-  <hr class="border-white opacity-25 my-2">
-  <nav class="w-100 flex-grow-1" role="navigation">
-    <ul class="nav nav-pills flex-column gap-1 w-100 m-0 p-0 list-unstyled">
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:panel_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'inicio' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-speedometer2"></i> Inicio
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_usuarios' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'usuarios' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-people-fill"></i> Usuarios
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'publicaciones' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-newspaper"></i> Publicaciones
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'categorias_publicacion' or active == 'cat_publicaciones' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-folder-fill"></i> Categorías de publicaciones
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'materiales' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-box-seam"></i> Materiales
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'tipos' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-tags-fill"></i> Tipos de materiales
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'categorias' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-archive-fill"></i> Categorías de materiales
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="nav-link d-flex align-items-center gap-2 rounded px-3 py-2 text-white {% if active == 'ecas' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-          <i class="bi bi-geo-alt-fill"></i> Puntos ECA
-        </a>
-      </li>
+        <li class="nav-item dropdown sidebar-dropdown">
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/materiales' in request.path or '/panel_admin/clasificaciones-materiales' in request.path or '/panel_admin/categorias-materiales' in request.path %}active{% endif %} sidebar-dropdown-toggle"
+               href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales">
+                <i class="bi bi-box-seam me-2"></i>Materiales
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.GET.tab == 'materiales' or not request.GET.tab %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales"><i class="bi bi-box-seam me-1"></i>Materiales</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-materiales' in request.path or request.GET.tab == 'categorias' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias"><i class="bi bi-tags-fill me-1"></i>Categorías de Materiales</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/clasificaciones-materiales' in request.path or request.GET.tab == 'clasificaciones' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones"><i class="bi bi-recycle me-1"></i>Clasificaciones</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar Materiales PDF</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_excel' %}"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Materiales Excel</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item dropdown sidebar-dropdown">
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/puntos-eca' in request.path %}active{% endif %} sidebar-dropdown-toggle"
+               href="{% url 'panel_admin:dashboard_puntos_eca' %}">
+                <i class="bi bi-geo-alt-fill me-2"></i>Puntos ECA
+                <i class="bi bi-chevron-down ms-auto small"></i>
+            </a>
+            <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'dashboard_puntos_eca' %}active{% endif %}" href="{% url 'panel_admin:dashboard_puntos_eca' %}">Dashboard</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_punto_eca_admin' %}active{% endif %}" href="{% url 'panel_admin:crear_punto_eca_admin' %}">Crear Punto ECA</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_puntos_eca_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_puntos_eca_excel' %}"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/perfil' in request.path %}active{% endif %}" href="{% url 'panel_admin:perfil_admin' %}">
+                <i class="bi bi-person-circle me-2"></i> Mi Perfil
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center text-white" href="/inicio/">
+                <i class="bi bi-house-door me-2"></i> Página principal
+            </a>
+        </li>
+        <li class="nav-item">
+            <form method="POST" action="{% url 'logout' %}" style="margin:0;padding:0;">
+                {% csrf_token %}
+                <button type="submit" class="nav-link d-flex align-items-center text-white bg-transparent border-0 w-100" style="text-align:left;">
+                    <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+                </button>
+            </form>
+        </li>
     </ul>
-  </nav>
-  <div class="border-top border-white border-opacity-25 pt-3 mt-2">
-    <a href="{% url 'panel_admin:perfil_admin' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2 {% if active == 'perfil' %}bg-white bg-opacity-25 fw-semibold{% endif %}">
-      <i class="bi bi-person-circle"></i> Mi Perfil
-    </a>
-    <a href="/inicio/" class="btn btn-outline-light btn-sm w-100 mt-2">
-      <i class="bi bi-house-door me-1"></i> Página principal
-    </a>
-    <form method="POST" action="/logout/" class="mt-1">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-sm btn-outline-light w-100">
-        <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
-      </button>
-    </form>
-  </div>
-</aside>
+</div>

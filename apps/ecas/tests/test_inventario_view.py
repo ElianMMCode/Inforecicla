@@ -23,7 +23,6 @@ from apps.inventory.models import (
     CategoriaMaterial,
     Inventario,
     Material,
-    TipoMaterial,
 )
 from apps.users.models import Usuario
 from config import constants as cons
@@ -127,13 +126,10 @@ class TestSeccionInventario(TestCase):
         cls.categoria = CategoriaMaterial.objects.create(
             nombre="Plásticos",
         )
-        cls.tipo = TipoMaterial.objects.create(
-            nombre="PET",
-        )
         cls.material = Material.objects.create(
             nombre="Botella PET",
             categoria=cls.categoria,
-            tipo=cls.tipo,
+            clasificacion="ESTANDAR",
         )
 
     def setUp(self):
@@ -211,7 +207,7 @@ class TestSeccionInventario(TestCase):
         item = data["materiales_inventario"][0]
         self.assertEqual(item["nombre"], "Botella PET")
         self.assertEqual(item["categoria"], "Plásticos")
-        self.assertEqual(item["tipo"], "PET")
+        self.assertEqual(item["clasificacion"], "ESTANDAR")
         self.assertEqual(item["unidad"], "KG")
         self.assertEqual(item["stockActual"], 50.0)
         self.assertEqual(item["estado"], "ok")  # 50% ocupación < 70% umbral_alerta → ok (aún no alcanza alerta)
@@ -243,10 +239,10 @@ class TestSeccionInventario(TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.content.decode("utf-8")
         for field in [
-            "formEntradaMaterialTipo", "formEntradaMaterialCategoria", "formEntradaMaterialUnidad",
+            "formEntradaMaterialClasificacion", "formEntradaMaterialCategoria", "formEntradaMaterialUnidad",
             "formEntradaStockActual", "formEntradaCapacidadMaxima",
             "formEntradaTotalCompra", "formEntradaStockResultante",
-            "formSalidaMaterialTipo", "formSalidaMaterialCategoria", "formSalidaMaterialUnidad",
+            "formSalidaMaterialClasificacion", "formSalidaMaterialCategoria", "formSalidaMaterialUnidad",
             "formSalidaStockActual", "formSalidaCapacidadMaxima",
             "formSalidaTotalVenta", "formSalidaStockRestante",
         ]:
@@ -408,9 +404,9 @@ class TestSeccionInventario(TestCase):
         # Los 17 <select> de la sección deben estar presentes en el HTML.
         selects_esperados = [
             # Filtros landing cards (4)
-            "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion",
+            "inv-filter-categoria", "inv-filter-clasificacion", "inv-filter-estado", "inv-filter-ocupacion",
             # Filtros historial general (5)
-            "inv-hfiltro-material", "inv-hfiltro-categoria", "inv-hfiltro-tipo-material",
+            "inv-hfiltro-material", "inv-hfiltro-categoria", "inv-hfiltro-clasificacion",
             "inv-hfiltro-tipo", "inv-hfiltro-centro",
             # Filtros chart flujo (2 sub-tabs: Stock + Ganancias)
             "inv-flujo-stock-granularidad", "inv-flujo-gan-granularidad",
@@ -457,23 +453,20 @@ class TestInventarioEstados(TestCase):
         cls.categoria = CategoriaMaterial.objects.create(
             nombre="Metales",
         )
-        cls.tipo = TipoMaterial.objects.create(
-            nombre="Aluminio",
-        )
         cls.mat_ok = Material.objects.create(
             nombre="Lata OK",
             categoria=cls.categoria,
-            tipo=cls.tipo,
+            clasificacion="ESTANDAR",
         )
         cls.mat_alerta = Material.objects.create(
             nombre="Lata Alerta",
             categoria=cls.categoria,
-            tipo=cls.tipo,
+            clasificacion="ESTANDAR",
         )
         cls.mat_critico = Material.objects.create(
             nombre="Lata Crítico",
             categoria=cls.categoria,
-            tipo=cls.tipo,
+            clasificacion="ESTANDAR",
         )
 
     def setUp(self):
@@ -538,9 +531,8 @@ class TestHistorialWorkspace(TestCase):
             nombre="Chapinero",
         )
         cls.categoria = CategoriaMaterial.objects.create(nombre="Plásticos")
-        cls.tipo = TipoMaterial.objects.create(nombre="PET")
         cls.material = Material.objects.create(
-            nombre="Botella PET", categoria=cls.categoria, tipo=cls.tipo,
+            nombre="Botella PET", categoria=cls.categoria, clasificacion="ESTANDAR",
         )
 
     def setUp(self):
@@ -572,7 +564,7 @@ class TestHistorialWorkspace(TestCase):
         content = response.content.decode("utf-8")
         ids_filtros = [
             "inv-ws-hfiltro-categoria",
-            "inv-ws-hfiltro-tipo-material",
+            "inv-ws-hfiltro-clasificacion",
             "inv-ws-hfiltro-tipo",
             "inv-ws-hfiltro-desde",
             "inv-ws-hfiltro-hasta",
@@ -660,13 +652,13 @@ class TestHistorialWorkspace(TestCase):
         cuando el usuario elige 'Venta' (en landing o workspace)."""
         js = _leer_inventario_js()
         # La línea exacta de apply() del historial NO debe incluir
-        # 'inv-hfiltro-tipo' (sin el sufijo '-material').
+        # 'inv-hfiltro-tipo' (sin el sufijo '-material' / '-clasificacion').
         match = re.search(r'apply\("(#inv-hfiltro-[^"]+)"\)', js)
         self.assertIsNotNone(match, "no se encontró la línea apply() del historial")
         historial_selector = match.group(1)
         self.assertIn("inv-hfiltro-centro", historial_selector)
         self.assertIn("inv-hfiltro-categoria", historial_selector)
-        self.assertIn("inv-hfiltro-tipo-material", historial_selector)
+        self.assertIn("inv-hfiltro-clasificacion", historial_selector)
         # Buscar 'inv-hfiltro-tipo' SIN el sufijo '-material'
         self.assertNotRegex(historial_selector, r'inv-hfiltro-tipo(?!-)')
         # Pero el listener de change SÍ debe estar bindeado
@@ -747,13 +739,10 @@ class TestFlujoRefactor(TestCase):
         cls.categoria = CategoriaMaterial.objects.create(
             nombre="Plásticos",
         )
-        cls.tipo = TipoMaterial.objects.create(
-            nombre="PET",
-        )
         cls.material = Material.objects.create(
             nombre="Botella PET",
             categoria=cls.categoria,
-            tipo=cls.tipo,
+            clasificacion="ESTANDAR",
         )
 
     def setUp(self):
@@ -1051,7 +1040,7 @@ class TestPoblarInfoMaterialAutorrellenaPrecios(TestCase):
         self.assertIn("currentMaterial", block,
                       "poblarInfoMaterial debe consultar `currentMaterial`")
         # Debe setear los 5 readonly via setVal
-        for field in ["MaterialTipo", "MaterialCategoria", "MaterialUnidad",
+        for field in ["MaterialClasificacion", "MaterialCategoria", "MaterialUnidad",
                       "StockActual", "CapacidadMaxima"]:
             self.assertIn(field, block,
                           f"poblarInfoMaterial debe setear readonly `{field}`")
@@ -1306,7 +1295,7 @@ class TestDeepLinkViewYTemplate(TestCase):
 
     def setUp(self):
         from apps.ecas.models import PuntoECA
-        from apps.inventory.models import CategoriaMaterial, TipoMaterial, Material, Inventario
+        from apps.inventory.models import CategoriaMaterial, Material, Inventario
         from decimal import Decimal
 
         self.user = _crear_usuario_gestor("gestor-deeplink@x.com")
@@ -1319,11 +1308,8 @@ class TestDeepLinkViewYTemplate(TestCase):
         cat, _ = CategoriaMaterial.objects.get_or_create(
             nombre="Plástico DeepLink", defaults={"descripcion": "cat"}
         )
-        tipo, _ = TipoMaterial.objects.get_or_create(
-            nombre="Reciclable", defaults={"descripcion": "tipo"}
-        )
         self.material = Material.objects.create(
-            nombre="PET", categoria=cat, tipo=tipo,
+            nombre="PET", categoria=cat, clasificacion="ESTANDAR",
         )
         self.inv = Inventario.objects.create(
             material=self.material, punto_eca=self.punto,

@@ -74,3 +74,7 @@ handler500 = error_500
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# En producción también se exponen los archivos subidos para que las imágenes
+# almacenadas en MEDIA_ROOT sean accesibles desde sus URLs.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

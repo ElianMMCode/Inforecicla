@@ -12,4 +12,4 @@ def establecer_relacion_gestor_eca(sender, instance, created, **kwargs):
     Signal que se ejecuta después de guardar un PuntoECA.
     Si el gestor_eca está definido, establece la relación bidireccional.
     """
-    return
+    pass

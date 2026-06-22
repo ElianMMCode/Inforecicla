@@ -40,7 +40,7 @@ def notificar_alerta_inventario(sender, instance, created, **kwargs):
     nivel = "crítico" if new_alerta == Alerta.CRITICO else "alerta"
     notif = Notificacion.objects.create(usuario=gestor, inventario=instance)
     enviar_notificacion_realtime(gestor.pk, {
-        "id": notif.pk,
+        "id": str(notif.pk),
         "tipo": "inventario",
         "titulo": f"Stock en {nivel}: {instance.material.nombre} ({instance.ocupacion_actual}% ocupado)",
         "fecha": notif.fecha_creacion.strftime("%d/%m/%Y %H:%M"),

@@ -1,0 +1,55 @@
+{% load static %}
+<script>
+(function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  var table = new AdminTable({
+    containerId: '{{ id_prefix }}-tbody',
+    data: readJSONData('{{ id_prefix }}-data'),
+    pageSize: 10,
+    countBadgeId: '{{ id_prefix }}-count-badge',
+    pagerId: '{{ id_prefix }}-pager',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+      { render: estadoBadge },
+      { className: 'text-center', render: function(r) { return '<a href="' + escapeAttr(r.action_url) + '" class="btn btn-outline-success btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>'; } }
+    ]
+  });
+
+  (function() {
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
+      var q = document.getElementById('{{ id_prefix }}-search-input')?.value || '';
+      table.setSearch(q);
+
+      var est = $('#{{ id_prefix }}-filter-estado').val() || '';
+      if (est) table.setExtraFilter('estado', est);
+      else table.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('{{ id_prefix }}-search-input').value = '';
+      $('#{{ id_prefix }}-filter-estado').val('').trigger('change');
+      table.setFilters('', {});
+    }
+
+    document.getElementById('{{ id_prefix }}-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('{{ id_prefix }}-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#{{ id_prefix }}-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('{{ id_prefix }}-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    table.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
+})();
+</script>

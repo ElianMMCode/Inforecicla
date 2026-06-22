@@ -135,7 +135,7 @@
                                     </div>
                                     {% if mis_notificaciones %}
                                         {% for notificacion in mis_notificaciones %}
-                                        <div class="dropdown-item d-flex gap-2 align-items-start py-2 px-3 border-bottom {% if not notificacion.leido %}bg-warning-subtle{% endif %}"
+                                        <div class="dropdown-item d-flex gap-2 align-items-start py-2 px-3 border-bottom {% if not notificacion.es_leido %}bg-warning-subtle{% endif %}"
                                              style="white-space:normal;">
                                             <a href="{% url 'publicacion:abrir_notificacion' notificacion.id %}"
                                                class="d-flex gap-2 align-items-start flex-grow-1 text-decoration-none text-reset">
@@ -147,7 +147,7 @@
                                                     {% endif %}
                                                 </span>
                                                 <span class="flex-grow-1">
-                                                    <span class="d-block small {% if not notificacion.leido %}fw-semibold{% endif %} text-dark">
+                                                    <span class="d-block small {% if not notificacion.es_leido %}fw-semibold{% endif %} text-dark">
                                                         {% if notificacion.mensaje %}
                                                             Nuevo mensaje de {{ notificacion.mensaje.chat.punto.nombre }}: {{ notificacion.mensaje.texto|truncatechars:60 }}
                                                         {% else %}
@@ -158,7 +158,7 @@
                                                         <i class="bi bi-clock me-1"></i>{{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}
                                                     </span>
                                                 </span>
-                                                {% if not notificacion.leido %}
+                                                {% if not notificacion.es_leido %}
                                                 <span class="badge rounded-pill bg-success align-self-center" style="font-size:.55rem;">Nueva</span>
                                                 {% endif %}
                                             </a>
@@ -673,6 +673,7 @@
                                 <div class="p-3 border-top bg-white">
                                     <form id="chat-form" class="d-flex flex-column gap-1">
                                         <div class="d-flex align-items-end gap-2">
+                                            <label for="chat-input" class="visually-hidden">Escribe tu mensaje</label>
                                             <textarea id="chat-input" class="form-control chat-textarea"
                                                       placeholder="Escribe tu mensaje..." maxlength="500" rows="1"
                                                       style="border-radius: 16px; border-color: #d0ead8;"></textarea>
@@ -776,7 +777,7 @@
                 </div>
                 <div class="flex-grow-1 overflow-hidden">
                     <div class="fw-semibold small text-truncate">${chat.punto_nombre || ('Punto #' + chat.punto)}</div>
-                    <div class="text-muted" style="font-size:.7rem;">${chat.created_at ? (new Date(chat.created_at)).toLocaleDateString('es-ES') : ''}</div>
+                    <div class="text-muted" style="font-size:.7rem;">${chat.fecha_creacion ? (new Date(chat.fecha_creacion)).toLocaleDateString('es-ES') : ''}</div>
                 </div>
                 ${chat.no_leidos ? '<span class="chat-unread-badge" data-chat-id="' + chat.id + '">' + formatBadgeCount(chat.no_leidos) + '</span>' : ''}
             </div>
@@ -990,7 +991,7 @@
                 anadirMensajeRealtime({
                     texto: data.message,
                     remitente: data.user_id,
-                    enviado_en: new Date().toISOString()
+                    fecha_envio: new Date().toISOString()
                 });
             }
         };
@@ -1065,7 +1066,7 @@
         const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
         const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
         const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
-        const fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toISOString() : '';
+        const fecha = mensaje.fecha_envio ? new Date(mensaje.fecha_envio).toISOString() : '';
 
         const allWrappers = chatMensajes.querySelectorAll('.msg-wrapper');
         const lastWrapper = allWrappers.length ? allWrappers[allWrappers.length - 1] : null;
@@ -1084,7 +1085,7 @@
             var lastBubble = lastWrapper.querySelector('.chat-bubble');
             if (lastBubble) {
                 var lastRmt = lastBubble.dataset.remitente;
-                var lastTs = lastBubble.dataset.enviadoEn;
+                var lastTs = lastBubble.dataset.fechaEnvio;
                 if (lastRmt === remitenteStr && getMinutesDiff(lastTs, fecha) < 2) {
                     isGrouped = true;
                 }
@@ -1096,7 +1097,7 @@
         wrapper.dataset.dateKey = thisDateKey;
         wrapper.innerHTML = `
             <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}"
-                 data-remitente="${remitenteStr}" data-enviado-en="${fecha}">
+                 data-remitente="${remitenteStr}" data-fecha-envio="${fecha}">
                 <div class="mensaje-texto">${mensaje.texto}</div>
                 <div class="chat-meta d-flex align-items-center gap-2 mt-1">
                     <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
@@ -1115,15 +1116,15 @@
         const bubbleClass = esCiudadano ? 'bubble-ciudadano' : 'bubble-punto';
         const justify = esCiudadano ? 'justify-content-end' : 'justify-content-start';
         const nombreLabel = esCiudadano ? 'Tú' : 'Punto ECA';
-        const fecha = mensaje.enviado_en ? formatRelativeTime(mensaje.enviado_en) : '';
-        const editadoBadge = mensaje.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+        const fecha = mensaje.fecha_envio ? formatRelativeTime(mensaje.fecha_envio) : '';
+        const editadoBadge = mensaje.es_editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
 
-        var thisDateKey = getDateKey(mensaje.enviado_en);
+        var thisDateKey = getDateKey(mensaje.fecha_envio);
         const wrapper = document.createElement('div');
         wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
         wrapper.dataset.dateKey = thisDateKey;
         wrapper.innerHTML = `
-            <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${mensaje.id}" data-remitente="${mensaje.remitente || ''}" data-enviado-en="${mensaje.enviado_en || ''}">
+            <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${mensaje.id}" data-remitente="${mensaje.remitente || ''}" data-fecha-envio="${mensaje.fecha_envio || ''}">
                 <div class="mensaje-texto">${mensaje.texto}</div>
                 <div class="chat-meta d-flex align-items-center gap-2 mt-1">
                     <span class="fw-semibold msg-meta-name">${nombreLabel}</span>
@@ -1170,11 +1171,11 @@
         chatMensajes.innerHTML = '';
         var lastDateKey = null;
         mensajes.forEach(function(m, i) {
-            var thisDateKey = getDateKey(m.enviado_en);
+            var thisDateKey = getDateKey(m.fecha_envio);
             if (lastDateKey && thisDateKey && lastDateKey !== thisDateKey) {
                 var sep = document.createElement('div');
                 sep.className = 'date-separator';
-                sep.textContent = formatDateLabel(m.enviado_en);
+                sep.textContent = formatDateLabel(m.fecha_envio);
                 chatMensajes.appendChild(sep);
             }
             lastDateKey = thisDateKey;
@@ -1182,7 +1183,7 @@
             var isGrouped = false;
             if (i > 0) {
                 var prev = mensajes[i - 1];
-                if (String(prev.remitente) === String(m.remitente) && getMinutesDiff(prev.enviado_en, m.enviado_en) < 2) {
+                if (String(prev.remitente) === String(m.remitente) && getMinutesDiff(prev.fecha_envio, m.fecha_envio) < 2) {
                     isGrouped = true;
                 }
             }

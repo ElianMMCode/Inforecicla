@@ -392,12 +392,12 @@
                         {% else %}
                             <li class="nav-item dropdown">
                                 <a class="btn btn-light text-success fw-semibold px-3 dropdown-toggle"
-                                   href="/login"
+                                   href="{% url 'login' %}"
                                    data-bs-toggle="dropdown"
                                    aria-expanded="false">Acceder</a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="/login">Iniciar sesión</a>
+                                        <a class="dropdown-item" href="{% url 'login' %}">Iniciar sesión</a>
                                     </li>
                                     <li>
                                         <hr class="dropdown-divider" />
@@ -578,12 +578,12 @@
                                         <p class="mb-2">
                                             <strong><i class="fas fa-phone text-success"></i> Teléfono:</strong>
                                             <br>
-                                            <a id="detalleTelefono" href="#" class="text-decoration-none"></a>
+                                            <a id="detalleTelefono" href="#" class="text-decoration-none" aria-label="Telefono"></a>
                                         </p>
                                         <p class="mb-2">
                                             <strong><i class="fas fa-envelope text-success"></i> Email:</strong>
                                             <br>
-                                            <a id="detalleEmail" href="#" class="text-decoration-none text-break"></a>
+                                            <a id="detalleEmail" href="#" class="text-decoration-none text-break" aria-label="Email"></a>
                                         </p>
                                         <p class="mb-0">
                                             <strong><i class="fas fa-clock text-success"></i> Horario:</strong>
@@ -640,6 +640,10 @@
         <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
         <!-- Select2 JS -->
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3" crossorigin="anonymous"></script>
+                <script>
+                    globalThis.MAPA_DEFAULT_LOGO_URL = "{% static 'img/logo.png' %}";
+                    globalThis.MAPA_DEFAULT_FOTO_URL = "{% static 'img/eca-default.png' %}";
+                </script>
         <!-- JavaScript personalizado del mapa -->
         <script src="/static/js/Mapa/mapa-interactivo.js"></script>
     </body>

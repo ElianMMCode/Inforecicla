@@ -5,6 +5,8 @@ import uuid
 from django.conf import settings
 from django.db import migrations, models
 
+_TIPO_CHOICES = [('Punto Eca', 'Punto Eca'), ('Noticia', 'Noticia'), ('Evento', 'Evento'), ('Educativo', 'Educacion')]
+
 
 class Migration(migrations.Migration):
 
@@ -17,12 +19,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='categoriapublicacion',
             name='tipo',
-            field=models.CharField(choices=[('Punto Eca', 'Punto Eca'), ('Noticia', 'Noticia'), ('Evento', 'Evento'), ('Educativo', 'Educacion')], default='Noticia', max_length=30),
+            field=models.CharField(choices=_TIPO_CHOICES, default='Noticia', max_length=30),
         ),
         migrations.AlterField(
             model_name='comentario',
             name='tipo',
-            field=models.CharField(choices=[('Punto Eca', 'Punto Eca'), ('Noticia', 'Noticia'), ('Evento', 'Evento'), ('Educativo', 'Educacion')], default='Noticia', max_length=30),
+            field=models.CharField(choices=_TIPO_CHOICES, default='Noticia', max_length=30),
         ),
         migrations.CreateModel(
             name='Guardados',
@@ -31,7 +33,7 @@ class Migration(migrations.Migration):
                 ('estado', models.CharField(choices=[('ACTIVO', 'Activo'), ('INACTIVO', 'Inactivo'), ('SUSPENDIDO', 'Suspendido'), ('BLOQUEADO', 'BLOQUEADO')], default='ACTIVO', max_length=15)),
                 ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
                 ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('tipo', models.CharField(blank=True, choices=[('Punto Eca', 'Punto Eca'), ('Noticia', 'Noticia'), ('Evento', 'Evento'), ('Educativo', 'Educacion')], max_length=15, null=True)),
+                ('tipo', models.CharField(blank=True, choices=_TIPO_CHOICES, max_length=15, null=True)),
                 ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='guardados', to=settings.AUTH_USER_MODEL)),
             ],
             options={

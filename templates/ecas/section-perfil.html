@@ -107,7 +107,7 @@
                     <div class="row g-3 text-center mb-4 pb-3 border-bottom">
                         <div class="col-md-6">
                             <div class="position-relative d-inline-block">
-                                <img id="previewLogoPunto" alt="Logo del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow bg-white" style="max-height: 150px; object-fit: contain" src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" data-original-src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" />
+                                <img id="previewLogoPunto" alt="Logo del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow bg-white" style="max-height: 150px; object-fit: contain" src="{% if punto.logo_imagen_punto %}{{ punto.logo_imagen_punto.url }}{% elif punto.logo_url_punto %}{{ punto.logo_url_punto }}{% else %}{% static 'img/logo.png' %}{% endif %}" data-fallback="{% static 'img/logo.png' %}" />
                                 <button type="button" class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0" aria-label="Cambiar logo del punto" onclick="document.getElementById('inputLogoPunto').click()">
                                     <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
                                 </button>
@@ -115,12 +115,13 @@
                             <div class="mt-3">
                                 <p class="text-muted small mb-1">Haz clic en la cámara para cambiar el logo</p>
                                 <small class="text-muted d-block">Máximo 2 MB. JPG, PNG o WEBP.</small>
+                                <label for="inputLogoPunto" class="visually-hidden">Seleccionar logo del punto</label>
                                 <input type="file" id="inputLogoPunto" name="logoPunto" form="formPunto" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none" />
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="position-relative d-inline-block">
-                                <img id="previewFotoPunto" alt="Foto del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow" style="max-height: 150px; object-fit: cover" src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" data-original-src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" />
+                                <img id="previewFotoPunto" alt="Foto del punto" class="img-fluid rounded-3 img-thumbnail border-3 border-info shadow" style="max-height: 150px; object-fit: cover" src="{% if punto.foto_imagen_punto %}{{ punto.foto_imagen_punto.url }}{% elif punto.foto_url_punto %}{{ punto.foto_url_punto }}{% else %}{% static 'img/eca-default.png' %}{% endif %}" data-fallback="{% static 'img/eca-default.png' %}" />
                                 <button type="button" class="position-absolute bottom-0 end-0 bg-info rounded-circle p-2 border-0" aria-label="Cambiar foto del punto" onclick="document.getElementById('inputFotoPunto').click()">
                                     <i class="bi bi-camera text-white" style="font-size: 1rem"></i>
                                 </button>
@@ -128,6 +129,7 @@
                             <div class="mt-3">
                                 <p class="text-muted small mb-1">Haz clic en la cámara para cambiar la foto</p>
                                 <small class="text-muted d-block">Máximo 5 MB. JPG, PNG o WEBP.</small>
+                                <label for="inputFotoPunto" class="visually-hidden">Seleccionar foto del punto</label>
                                 <input type="file" id="inputFotoPunto" name="fotoPunto" form="formPunto" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none" />
                             </div>
                         </div>
@@ -326,7 +328,7 @@
                                     <div class="mb-3">
                                         <p class="form-label mb-2">Visibilidad en el mapa</p>
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" id="cfgMapa" name="visible_en_mapa" type="checkbox" {% if punto.visible_en_mapa %}checked{% endif %}>
+                                            <input class="form-check-input" id="cfgMapa" name="es_visible_en_mapa" type="checkbox" {% if punto.es_visible_en_mapa %}checked{% endif %}>
                                             <label class="form-check-label" for="cfgMapa">
                                                 Mostrar punto ECA en el mapa público
                                             </label>
@@ -410,9 +412,19 @@
         });
     }
 
+    function setupImageFallback(img) {
+        if (!img || !img.dataset.fallback) return;
+        img.addEventListener('error', function handler() {
+            img.removeEventListener('error', handler);
+            img.src = img.dataset.fallback;
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         setupImagePreview('inputLogoPunto', 'previewLogoPunto');
         setupImagePreview('inputFotoPunto', 'previewFotoPunto');
+        setupImageFallback(document.getElementById('previewLogoPunto'));
+        setupImageFallback(document.getElementById('previewFotoPunto'));
 
         var tabLinks = document.querySelectorAll('#perfilTabs .nav-link');
 

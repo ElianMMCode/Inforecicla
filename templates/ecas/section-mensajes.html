@@ -62,6 +62,7 @@
           <form id="chat-form-eca" class="d-flex flex-column gap-1">
             {% csrf_token %}
             <div class="d-flex align-items-end gap-2">
+              <label for="chat-input-eca" class="visually-hidden">Escribe tu respuesta</label>
               <textarea id="chat-input-eca" class="form-control chat-textarea"
                         placeholder="Escribe tu respuesta..." maxlength="500" rows="1"
                         style="border-radius: 16px; border-color: #d0ead8;"></textarea>
@@ -204,7 +205,7 @@
             </div>
             <div class="flex-grow-1 overflow-hidden">
               <div class="fw-semibold small text-truncate">${chat.ciudadano_nombre || 'Ciudadano'}</div>
-              <div class="text-muted" style="font-size:.7rem;">${chat.created_at ? new Date(chat.created_at).toLocaleDateString('es-ES') : ''}</div>
+              <div class="text-muted" style="font-size:.7rem;">${chat.fecha_creacion ? new Date(chat.fecha_creacion).toLocaleDateString('es-ES') : ''}</div>
             </div>
             ${chat.no_leidos ? '<span class="chat-unread-badge" data-chat-id="' + chat.id + '">' + formatBadgeCount(chat.no_leidos) + '</span>' : ''}
           </div>
@@ -299,7 +300,7 @@
           anadirMensajeRealtimeEca({
             texto: data.message,
             remitente: data.user_id,
-            enviado_en: new Date().toISOString()
+            fecha_envio: new Date().toISOString()
           });
         }
       } catch (e) { console.debug(e); }
@@ -375,7 +376,7 @@
       var lastBubble = lastWrapper.querySelector('.chat-bubble');
       if (lastBubble) {
         var lastRmt = lastBubble.dataset.remitente;
-        var lastTs = lastBubble.dataset.enviadoEn;
+        var lastTs = lastBubble.dataset.fechaEnvio;
         if (lastRmt === remitenteStr && getMinutesDiff(lastTs, fecha) < 2) {
           isGrouped = true;
         }
@@ -390,7 +391,7 @@
     wrapper.dataset.dateKey = opts.thisDateKey;
     wrapper.innerHTML = `
       <div class="chat-bubble ${opts.bubbleClass} msg-animate${opts.isGrouped ? ' msg-group-continue' : ''}"
-           data-remitente="${opts.remitenteStr}" data-enviado-en="${opts.fecha}">
+           data-remitente="${opts.remitenteStr}" data-fecha-envio="${opts.fecha}">
         <div class="mensaje-texto">${opts.texto}</div>
         <div class="chat-meta d-flex align-items-center gap-2 mt-1">
           <span class="fw-semibold msg-meta-name">${opts.nombreLabel}</span>
@@ -408,7 +409,7 @@
     var bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
     var justify = esGestor ? 'justify-content-end' : 'justify-content-start';
     var nombreLabel = esGestor ? 'Tú' : (currentCiudadanoNombre || 'Ciudadano');
-    var fecha = mensaje.enviado_en ? new Date(mensaje.enviado_en).toISOString() : '';
+    var fecha = mensaje.fecha_envio ? new Date(mensaje.fecha_envio).toISOString() : '';
     var result = _checkDateAndGrouping(panel, remitenteStr, fecha);
     _appendBubble({ panel: panel, bubbleClass: bubbleClass, justify: justify, nombreLabel: nombreLabel, remitenteStr: remitenteStr, fecha: fecha, texto: mensaje.texto, isGrouped: result.isGrouped, thisDateKey: result.thisDateKey });
     panel.scrollTop = panel.scrollHeight;
@@ -419,14 +420,14 @@
     var bubbleClass = esGestor ? 'bubble-punto' : 'bubble-ciudadano';
     var justify = esGestor ? 'justify-content-end' : 'justify-content-start';
     var nombreLabel = esGestor ? 'Tú' : (msg.remitente_nombre || currentCiudadanoNombre || 'Ciudadano');
-    var timestamp = msg.enviado_en ? formatRelativeTime(msg.enviado_en) : '';
-    var editadoBadge = msg.editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
+    var timestamp = msg.fecha_envio ? formatRelativeTime(msg.fecha_envio) : '';
+    var editadoBadge = msg.es_editado ? '<span class="text-muted ms-1" style="font-size:.65rem;">(editado)</span>' : '';
 
-    var thisDateKey = getDateKey(msg.enviado_en);
+    var thisDateKey = getDateKey(msg.fecha_envio);
     if (lastDateKeyResult.last && thisDateKey && lastDateKeyResult.last !== thisDateKey) {
       var sep = document.createElement('div');
       sep.className = 'date-separator';
-      sep.textContent = formatDateLabel(msg.enviado_en);
+      sep.textContent = formatDateLabel(msg.fecha_envio);
       panel.appendChild(sep);
     }
     lastDateKeyResult.last = thisDateKey;
@@ -434,7 +435,7 @@
     var isGrouped = false;
     if (i > 0) {
       var prev = mensajes[i - 1];
-      if (String(prev.remitente) === String(msg.remitente) && getMinutesDiff(prev.enviado_en, msg.enviado_en) < 2) {
+      if (String(prev.remitente) === String(msg.remitente) && getMinutesDiff(prev.fecha_envio, msg.fecha_envio) < 2) {
         isGrouped = true;
       }
     }
@@ -442,7 +443,7 @@
     wrapper.className = 'd-flex ' + justify + ' mb-0 msg-wrapper';
     wrapper.dataset.dateKey = thisDateKey;
     wrapper.innerHTML = `
-      <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${msg.id}" data-remitente="${msg.remitente || ''}" data-enviado-en="${msg.enviado_en || ''}">
+      <div class="chat-bubble ${bubbleClass} msg-animate${isGrouped ? ' msg-group-continue' : ''}" data-msg-id="${msg.id}" data-remitente="${msg.remitente || ''}" data-fecha-envio="${msg.fecha_envio || ''}">
         <div class="mensaje-texto">${msg.texto}</div>
         <div class="chat-meta d-flex align-items-center gap-2 mt-1">
           <span class="fw-semibold msg-meta-name">${nombreLabel}</span>

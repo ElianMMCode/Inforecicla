@@ -1,0 +1,269 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block page_title %}Tipos de Publicación - InfoRecicla Admin{% endblock %}
+{% block body_class %}bg-light{% endblock %}
+
+{% block content %}
+
+<div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-tags-fill me-2"></i>Tipos de Publicación</h1>
+    <p class="text-muted mb-0">Administra los tipos de publicación del sistema.</p>
+  </div>
+  <div>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearTipoPublicacion">
+      <i class="bi bi-plus-circle me-1"></i> Nuevo Tipo
+    </button>
+  </div>
+</div>
+
+{% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'tipos_publicacion' %}
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:200px;width:100%;"><canvas id="chartTipoPubEstado"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3 border-0">
+  <div class="card-header bg-success-subtle border-0 px-4 py-3">
+    <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 align-items-end" id="tipo-pub-filter-form">
+      <div class="col-md-6">
+        <label for="tipo-pub-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+        <input type="text" class="form-control" placeholder="Nombre o descripción..." value="{{ search_query }}" id="tipo-pub-search-input">
+      </div>
+      <div class="col-md-3">
+        <label for="tipo-pub-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select js-select2" id="tipo-pub-filter-estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success flex-grow-1" id="tipo-pub-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+          <button type="button" class="btn btn-outline-secondary" id="tipo-pub-filter-limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+      <a href="{% url 'panel_admin:exportar_tipos_publicacion_excel' %}"
+         class="btn btn-sm btn-outline-success fw-semibold export-link"
+         title="Exportar Excel"
+         data-export-base="{% url 'panel_admin:exportar_tipos_publicacion_excel' %}"
+         data-export-filters="q:tipo-pub-search-input,estado:tipo-pub-filter-estado">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_tipos_publicacion_pdf' %}"
+         class="btn btn-sm btn-outline-danger fw-semibold export-link"
+         title="Exportar PDF"
+         data-export-base="{% url 'panel_admin:exportar_tipos_publicacion_pdf' %}"
+         data-export-filters="q:tipo-pub-search-input,estado:tipo-pub-filter-estado">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+    </div>
+    <span class="badge bg-secondary rounded-pill" id="tipo-pub-count-badge">{{ tipos|length }} registros</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="fw-bold small">Nombre</th>
+          <th class="fw-bold small">Descripción</th>
+          <th class="fw-bold small">Estado</th>
+          <th class="fw-bold small text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="border-top" id="tipo-pub-tbody"></tbody>
+    </table>
+  </div>
+  <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+    <ul class="pagination pagination-sm mb-0" id="tipo-pub-pager"></ul>
+  </nav>
+</div>
+
+{{ tipos_json|json_script:"tipo-pub-data" }}
+{{ dist_estado_tipo_pub|json_script:"dist-estado-tipo-pub-data" }}
+
+{% endblock %}
+
+{% block extra_modals %}
+
+<!-- MODAL CREAR -->
+<div class="modal fade" id="modalCrearTipoPublicacion" tabindex="-1" aria-labelledby="labelCrearTipoPub" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelCrearTipoPub"><i class="bi bi-plus-circle me-2"></i>Nuevo Tipo de Publicación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{% url 'panel_admin:crear_tipo_publicacion' %}" novalidate id="formCrearTipoPub">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="ctp_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+            <input id="ctp_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Noticia, Evento...">
+            <div class="invalid-feedback">Debe contener al menos una letra (máx. 30 caracteres).</div>
+          </div>
+          <div class="mb-3">
+            <label for="ctp_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+            <textarea id="ctp_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required placeholder="Describe el tipo de publicación..."></textarea>
+            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+          </div>
+          <div class="mb-3">
+            <label for="ctp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
+            <select id="ctp_estado" name="estado" class="form-select">
+              {% for val, label in estados %}
+              <option value="{{ val }}" {% if val == 'ACTIVO' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Crear Tipo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal fade" id="modalEditarTipoPublicacion" tabindex="-1" aria-labelledby="labelEditarTipoPub" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="labelEditarTipoPub"><i class="bi bi-pencil me-2"></i>Editar Tipo de Publicación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" novalidate id="formEditarTipoPub">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="etp_nombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+            <input id="etp_nombre" type="text" name="nombre" class="form-control" required minlength="3" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
+            <div class="invalid-feedback">Debe contener al menos una letra (máx. 30 caracteres).</div>
+          </div>
+          <div class="mb-3">
+            <label for="etp_descripcion" class="form-label fw-semibold">Descripción <small class="text-muted fw-normal">(opcional)</small></label>
+            <textarea id="etp_descripcion" name="descripcion" class="form-control" rows="3" maxlength="500" data-letters-required></textarea>
+            <div class="invalid-feedback">Debe contener al menos una letra si se ingresa texto.</div>
+          </div>
+          <div class="mb-3">
+            <label for="etp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
+            <select id="etp_estado" name="estado" class="form-select">
+              {% for val, label in estados %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+AdminCharts.initAll([
+  { type: 'doughnut', canvas: 'chartTipoPubEstado', dataId: 'dist-estado-tipo-pub-data', labelKey: 'estado' },
+]);
+</script>
+<script>
+(function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  function accionBtn(row) {
+    return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-tipo-pub" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+      ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+      ' data-estado="' + escapeAttr(row.estado) + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    setupEditModal('.btn-editar-tipo-pub', 'modalEditarTipoPublicacion', {
+      nombre: 'etp_nombre', descripcion: 'etp_descripcion', estado: 'etp_estado'
+    });
+  }
+
+  var tipoPubTable = new AdminTable({
+    containerId: 'tipo-pub-tbody',
+    data: readJSONData('tipo-pub-data'),
+    pageSize: 10,
+    countBadgeId: 'tipo-pub-count-badge',
+    pagerId: 'tipo-pub-pager',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<span class="fw-semibold">' + escapeHTML(r.nombre) + '</span>'; } },
+      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+      { render: estadoBadge },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+  function aplicarFiltros() {
+    var q = document.getElementById('tipo-pub-search-input')?.value || '';
+    tipoPubTable.setSearch(q);
+    var est = $('#tipo-pub-filter-estado').val() || '';
+    if (est) tipoPubTable.setExtraFilter('estado', est);
+    else tipoPubTable.removeExtraFilter('estado');
+  }
+
+  function limpiarFiltros() {
+    document.getElementById('tipo-pub-search-input').value = '';
+    $('#tipo-pub-filter-estado').val('').trigger('change');
+    tipoPubTable.setFilters('', {});
+  }
+
+  document.getElementById('tipo-pub-search-btn').addEventListener('click', aplicarFiltros);
+  document.getElementById('tipo-pub-filter-limpiar').addEventListener('click', limpiarFiltros);
+  $('#tipo-pub-filter-estado').on('change', aplicarFiltros);
+  document.getElementById('tipo-pub-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+  {% if search_query %}
+  tipoPubTable.setFilters('{{ search_query|escapejs }}', {});
+  {% endif %}
+
+  initModalFormAjax('formCrearTipoPub', '{% url "panel_admin:listar_tipos_publicacion_admin" %}');
+  initModalFormAjax('formEditarTipoPub', globalThis.location.href);
+})();
+</script>
+{% include "admin/_messages_swal.html" %}
+{% endblock %}

@@ -2,7 +2,7 @@
 {% load static %}
 {% block page_title %}Puntos ECA - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="ecas" %}{% endblock %}
+
 {% block content %}
 
 <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -10,114 +10,115 @@
     <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-geo-alt-fill me-2"></i>Puntos ECA</h1>
     <p class="text-muted mb-0">Administra las estaciones de clasificación y aprovechamiento.</p>
   </div>
-  <div class="d-flex flex-wrap gap-2">
-    <a href="{% url 'panel_admin:exportar_puntos_eca_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-      <i class="bi bi-file-earmark-excel me-1"></i> Excel
-    </a>
-    <a href="{% url 'panel_admin:exportar_puntos_eca_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-      <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-    </a>
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearPuntoECA">
-      <i class="bi bi-plus-circle me-1"></i> Nuevo Punto ECA
-    </button>
+  <div>
+      <a href="{% url 'panel_admin:crear_punto_eca_admin' %}" class="btn btn-success">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Punto ECA
+      </a>
   </div>
 </div>
 
-<div class="card border-success mb-4 shadow-sm">
-  <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Puntos ECA por Estado</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:200px;width:100%;"><canvas id="chartPuntoEstado"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-person-check text-info me-1"></i>Asignación de Gestor</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:200px;width:100%;"><canvas id="chartPuntoGestor"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4 border-0">
+    <div class="card-header bg-success-subtle border-0 px-4 py-3">
+      <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+  </div>
   <div class="card-body">
-    <form method="get" class="row g-2">
-      <div class="col-md-10">
-        <input type="text" name="q" class="form-control" placeholder="Nombre, dirección o localidad..." value="{{ search_query }}">
+    <div class="row g-3 align-items-end" id="puntos-filter-form">
+      <div class="col-md-4">
+        <label for="puntos-search-input" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+        <input type="text" name="q" class="form-control" placeholder="Nombre, dirección o localidad..." value="{{ search_query }}" id="puntos-search-input">
       </div>
-      <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+      <div class="col-md-3">
+        <label for="punto-filter-localidad" class="form-label fw-semibold text-muted mb-1">Localidad</label>
+        <select class="form-select js-select2" id="punto-filter-localidad">
+          <option value="">Todas las localidades</option>
+        </select>
       </div>
-    </form>
+      <div class="col-md-2">
+        <label for="punto-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select js-select2" id="punto-filter-estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success flex-grow-1" id="puntos-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+          <button type="button" class="btn btn-outline-secondary" id="punto-filter-limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="card shadow-sm border-0">
-  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-table me-1"></i> Listado</span>
-    <span class="badge bg-light text-success">{{ puntos|length }} resultados</span>
+  <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+      <a href="{% url 'panel_admin:exportar_puntos_eca_excel' %}"
+         class="btn btn-sm btn-outline-success fw-semibold export-link"
+         title="Exportar Excel"
+         data-export-base="{% url 'panel_admin:exportar_puntos_eca_excel' %}"
+         data-export-filters="q:puntos-search-input,localidad:punto-filter-localidad,estado:punto-filter-estado">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_puntos_eca_pdf' %}"
+         class="btn btn-sm btn-outline-danger fw-semibold export-link"
+         title="Exportar PDF"
+         data-export-base="{% url 'panel_admin:exportar_puntos_eca_pdf' %}"
+         data-export-filters="q:puntos-search-input,localidad:punto-filter-localidad,estado:punto-filter-estado">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+    </div>
+    <span class="badge bg-secondary rounded-pill" id="puntos-count-badge">{{ puntos|length }} registros</span>
   </div>
   <div class="table-responsive">
-    <table class="table table-hover mb-0 align-middle">
+    <table class="table table-sm table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th>Nombre</th>
-          <th>Dirección</th>
-          <th>Localidad</th>
-          <th>Gestor</th>
-          <th>Estado</th>
-          <th class="text-center">Acciones</th>
+          <th class="fw-bold small">Nombre</th>
+          <th class="fw-bold small">Dirección</th>
+          <th class="fw-bold small">Localidad</th>
+          <th class="fw-bold small">Gestor</th>
+          <th class="fw-bold small">Estado</th>
+          <th class="fw-bold small text-center">Acciones</th>
         </tr>
       </thead>
-      <tbody>
-        {% for punto in puntos %}
-        <tr data-id="{{ punto.id }}"
-            data-nombre="{{ punto.nombre|default:'' }}"
-            data-direccion="{{ punto.direccion|default:'' }}"
-            data-email="{{ punto.email|default:'' }}"
-            data-celular="{{ punto.celular|default:'' }}"
-            data-telefono_punto="{{ punto.telefono_punto|default:'' }}"
-            data-sitio_web="{{ punto.sitio_web|default:'' }}"
-            data-horario_atencion="{{ punto.horario_atencion|default:'' }}"
-            data-logo_url_punto="{{ punto.logo_url_punto|default:'' }}"
-            data-descripcion="{{ punto.descripcion|default:'' }}"
-            data-latitud="{{ punto.latitud|default:'' }}"
-            data-longitud="{{ punto.longitud|default:'' }}"
-            data-localidad_id="{{ punto.localidad.localidad_id|default:'' }}"
-            data-estado="{{ punto.estado|default:'ACTIVO' }}">
-          <td><strong>{{ punto.nombre }}</strong></td>
-          <td>{{ punto.direccion|default:"-" }}</td>
-          <td>{{ punto.localidad.nombre|default:"-" }}</td>
-          <td>
-            {% if punto.gestor_eca %}
-              {{ punto.gestor_eca.nombres }} {{ punto.gestor_eca.apellidos }}
-            {% else %}
-              <span class="text-muted">Sin gestor</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if punto.estado == "ACTIVO" %}
-              <span class="badge bg-success">Activo</span>
-            {% elif punto.estado == "INACTIVO" %}
-              <span class="badge bg-secondary">Inactivo</span>
-            {% else %}
-              <span class="badge bg-warning text-dark">{{ punto.estado }}</span>
-            {% endif %}
-          </td>
-          <td class="text-center">
-            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-punto"
-                    title="Editar"
-                    data-id="{{ punto.id }}"
-                    data-nombre="{{ punto.nombre|default:'' }}"
-                    data-direccion="{{ punto.direccion|default:'' }}"
-                    data-email="{{ punto.email|default:'' }}"
-                    data-celular="{{ punto.celular|default:'' }}"
-                    data-telefono_punto="{{ punto.telefono_punto|default:'' }}"
-                    data-sitio_web="{{ punto.sitio_web|default:'' }}"
-                    data-horario_atencion="{{ punto.horario_atencion|default:'' }}"
-                    data-logo_url_punto="{{ punto.logo_url_punto|default:'' }}"
-                    data-descripcion="{{ punto.descripcion|default:'' }}"
-                    data-latitud="{{ punto.latitud|default:'' }}"
-                    data-longitud="{{ punto.longitud|default:'' }}"
-                    data-localidad_id="{{ punto.localidad.localidad_id|default:'' }}"
-                    data-estado="{{ punto.estado|default:'ACTIVO' }}"
-                    data-action="{% url 'panel_admin:editar_punto_eca_admin' punto_id=punto.id %}">
-              <i class="bi bi-pencil"></i>
-            </button>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron puntos ECA.</td></tr>
-        {% endfor %}
-      </tbody>
+      <tbody class="border-top" id="puntos-tbody"></tbody>
     </table>
   </div>
+  <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+    <ul class="pagination pagination-sm mb-0" id="puntos-pager"></ul>
+  </nav>
 </div>
+
+{{ puntos_json|json_script:"puntos-data" }}
+{{ dist_estado_punto|json_script:"dist-estado-punto-data" }}
+{{ dist_gestor_punto|json_script:"dist-gestor-punto-data" }}
 
 {% endblock %}
 
@@ -385,9 +386,125 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+AdminCharts.initAll([
+  { type: 'doughnut', canvas: 'chartPuntoEstado', dataId: 'dist-estado-punto-data', labelKey: 'estado' },
+  { type: 'doughnut', canvas: 'chartPuntoGestor', dataId: 'dist-gestor-punto-data', colors: [AdminCharts.C.success, AdminCharts.C.danger] },
+]);
+</script>
 <script>
 (function() {
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    if (row.estado === 'INACTIVO') return '<span class="badge bg-secondary">Inactivo</span>';
+    return '<span class="badge bg-warning text-dark">' + escapeHTML(row.estado) + '</span>';
+  }
+
+  function gestorDisplay(row) {
+    return row.gestor && row.gestor !== 'Sin gestor'
+      ? escapeHTML(row.gestor)
+      : '<span class="text-muted">Sin gestor</span>';
+  }
+
+  function accionBtn(row) {
+    return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-punto" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+      ' data-direccion="' + escapeAttr(row.direccion) + '"' +
+      ' data-email="' + escapeAttr(row.email) + '"' +
+      ' data-celular="' + escapeAttr(row.celular) + '"' +
+      ' data-telefono_punto="' + escapeAttr(row.telefono_punto) + '"' +
+      ' data-sitio_web="' + escapeAttr(row.sitio_web) + '"' +
+      ' data-horario_atencion="' + escapeAttr(row.horario_atencion) + '"' +
+      ' data-logo_url_punto="' + escapeAttr(row.logo_url_punto) + '"' +
+      ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+      ' data-latitud="' + escapeAttr(row.latitud) + '"' +
+      ' data-longitud="' + escapeAttr(row.longitud) + '"' +
+      ' data-localidad_id="' + escapeAttr(row.localidad_id) + '"' +
+      ' data-estado="' + escapeAttr(row.estado) + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    setupEditModal('.btn-editar-punto', 'modalEditarPuntoECA', {
+      nombre: 'edit_eca_nombre', direccion: 'edit_eca_direccion',
+      email: 'edit_eca_email', celular: 'edit_eca_celular',
+      telefono_punto: 'edit_eca_telefono', sitio_web: 'edit_eca_sitio_web',
+      horario_atencion: 'edit_eca_horario', logo_url_punto: 'edit_eca_logo',
+      descripcion: 'edit_eca_descripcion', latitud: 'edit_eca_latitud',
+      longitud: 'edit_eca_longitud', localidad_id: 'edit_eca_localidad',
+      estado: 'edit_eca_estado'
+    });
+  }
+
+  var puntosTable = new AdminTable({
+    containerId: 'puntos-tbody',
+    data: readJSONData('puntos-data'),
+    pageSize: 10,
+    countBadgeId: 'puntos-count-badge',
+    pagerId: 'puntos-pager',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.direccion + ' ' + row.localidad).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombre) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.direccion || '-'); } },
+      { render: function(r) { return escapeHTML(r.localidad); } },
+      { render: gestorDisplay },
+      { render: estadoBadge },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  (function() {
+    var data = puntosTable.data;
+    // Populate localidad select from data
+    var localidades = [...new Set(data.map(function(p) { return p.localidad; }))].sort();
+    var locSel = document.getElementById('punto-filter-localidad');
+    if (locSel) {
+      localidades.forEach(function(l) {
+        if (!l || l === '-') return;
+        var opt = document.createElement('option');
+        opt.value = l; opt.textContent = l;
+        locSel.appendChild(opt);
+      });
+    }
+
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
+      var q = document.getElementById('puntos-search-input')?.value || '';
+      puntosTable.setSearch(q);
+
+      var loc = $('#punto-filter-localidad').val() || '';
+      if (loc) puntosTable.setExtraFilter('localidad', loc);
+      else puntosTable.removeExtraFilter('localidad');
+
+      var est = $('#punto-filter-estado').val() || '';
+      if (est) puntosTable.setExtraFilter('estado', est);
+      else puntosTable.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('puntos-search-input').value = '';
+      $('#punto-filter-localidad').val('').trigger('change');
+      $('#punto-filter-estado').val('').trigger('change');
+      puntosTable.setFilters('', {});
+    }
+
+    document.getElementById('puntos-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('punto-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#punto-filter-localidad, #punto-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('puntos-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    puntosTable.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
+
   function validarPasswordsECA(form) {
     var p1 = document.getElementById('crear_eca_password');
     var p2 = document.getElementById('crear_eca_password2');
@@ -402,16 +519,6 @@
 
   initModalFormAjax('formCrearPuntoECA', '{% url "panel_admin:listar_puntos_eca_admin" %}', validarPasswordsECA);
   initModalFormAjax('formEditarPuntoECA', globalThis.location.href);
-
-  setupEditModal('.btn-editar-punto', 'modalEditarPuntoECA', {
-    nombre: 'edit_eca_nombre', direccion: 'edit_eca_direccion',
-    email: 'edit_eca_email', celular: 'edit_eca_celular',
-    telefono_punto: 'edit_eca_telefono', sitio_web: 'edit_eca_sitio_web',
-    horario_atencion: 'edit_eca_horario', logo_url_punto: 'edit_eca_logo',
-    descripcion: 'edit_eca_descripcion', latitud: 'edit_eca_latitud',
-    longitud: 'edit_eca_longitud', localidad_id: 'edit_eca_localidad',
-    estado: 'edit_eca_estado'
-  });
 
   function initTogglePassword() {
     document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {
@@ -428,6 +535,16 @@
     });
   }
   initTogglePassword();
+
+  function initSelect2Modals() {
+    $('#modalCrearPuntoECA').on('shown.bs.modal', function() {
+      $('#crear_eca_localidad').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalCrearPuntoECA') });
+    });
+    $('#modalEditarPuntoECA').on('shown.bs.modal', function() {
+      $('#edit_eca_localidad').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalEditarPuntoECA') });
+    });
+  }
+  initSelect2Modals();
 
   function _initLeafletMapaCrear() {
     var latInp = document.getElementById('crear_eca_latitud');

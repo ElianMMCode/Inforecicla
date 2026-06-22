@@ -412,7 +412,7 @@ def _extraer_filtros_export(request):
     return {
         "material": _obtener_filtro_export(request, "material"),
         "categoria": _obtener_filtro_export(request, "categoria"),
-        "tipo": _obtener_filtro_export(request, "tipo"),
+        "clasificacion": _obtener_filtro_export(request, "clasificacion"),
         "centro_acopio": _obtener_filtro_export(request, "centro_acopio"),
         "tipo_movimiento": _obtener_filtro_export(request, "tipo_movimiento").lower(),
         "fecha_desde": parse_date(_obtener_filtro_export(request, "fecha_desde")),
@@ -432,7 +432,7 @@ def _aplicar_filtro_si_valor(queryset, valor, filter_kwargs):
 
 
 def _aplicar_filtros_inventario(queryset, filtros):
-    """Aplica filtros de material/categoría/tipo al queryset."""
+    """Aplica filtros de material/categoría/clasificación al queryset."""
     queryset = _aplicar_filtro_si_valor(
         queryset, filtros["material"],
         {"inventario__material__nombre__iexact": filtros["material"]},
@@ -442,8 +442,8 @@ def _aplicar_filtros_inventario(queryset, filtros):
         {"inventario__material__categoria__nombre__iexact": filtros["categoria"]},
     )
     queryset = _aplicar_filtro_si_valor(
-        queryset, filtros["tipo"],
-        {"inventario__material__tipo__nombre__iexact": filtros["tipo"]},
+        queryset, filtros["clasificacion"],
+        {"inventario__material__clasificacion__iexact": filtros["clasificacion"]},
     )
     return queryset
 

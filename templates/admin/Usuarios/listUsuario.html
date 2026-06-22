@@ -1,8 +1,8 @@
-{% extends "admin/base.html" %}
+﻿{% extends "admin/base.html" %}
 {% load static %}
 {% block page_title %}Usuarios - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="usuarios" %}{% endblock %}
+
 {% block content %}
 <div>
   <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -11,60 +11,72 @@
       <p class="text-muted mb-0">Administra usuarios, roles y datos del sistema.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-      <a href="{% url 'panel_admin:exportar_usuarios_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-        <i class="bi bi-file-earmark-excel me-1"></i> Excel
-      </a>
-      <a href="{% url 'panel_admin:exportar_usuarios_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-      </a>
       <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalImportCSV" title="Importar CSV">
         <i class="bi bi-upload me-1"></i> Importar CSV
       </button>
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+      <a href="{% url 'panel_admin:crear_usuario_admin' %}" class="btn btn-success">
         <i class="bi bi-person-plus me-1"></i> Nuevo Usuario
-      </button>
+      </a>
     </div>
   </div>
 
-  <!-- Modal Importar CSV -->
-  <div class="modal fade" id="modalImportCSV" tabindex="-1" aria-labelledby="modalImportCSVLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title" id="modalImportCSVLabel"><i class="bi bi-upload me-2"></i>Importar usuarios desde CSV</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  <!-- Charts -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom py-2">
+          <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Usuarios por Rol</h6>
         </div>
-        <form method="post" enctype="multipart/form-data" action="{% url 'panel_admin:importar_usuarios_csv' %}">
-          {% csrf_token %}
-          <div class="modal-body">
-            <p class="text-muted small mb-3">El archivo CSV debe tener las siguientes columnas:</p>
-            <div class="bg-light border rounded p-2 mb-3">
-              <code class="small">nombres, apellidos, email, celular, password, tipo_usuario*, tipo_documento*, numero_documento*, ciudad*</code>
-            </div>
-            <p class="small text-muted mb-3">* Opcionales. Valores válidos para <strong>tipo_usuario</strong>: <code>ADM</code>, <code>CIU</code>, <code>GECA</code>. Para <strong>tipo_documento</strong>: <code>CC</code>, <code>TI</code>, <code>CE</code>, <code>PA</code>, <code>NIT</code>.</p>
-            <div class="mb-3">
-              <label for="import_archivo_csv" class="form-label fw-semibold">Archivo CSV <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="import_archivo_csv" type="file" name="archivo_csv" class="form-control" accept=".csv" required>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success"><i class="bi bi-upload me-1"></i> Importar</button>
-          </div>
-        </form>
+        <div class="card-body d-flex align-items-center justify-content-center py-2">
+          <div style="max-width:180px;width:100%;"><canvas id="chartUsuRol"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom py-2">
+          <h6 class="mb-0 fw-bold small"><i class="bi bi-activity text-info me-1"></i>Activos vs Inactivos</h6>
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center py-2">
+          <div style="max-width:180px;width:100%;"><canvas id="chartUsuActivos"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom py-2">
+          <h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-primary me-1"></i>Registros (30 días)</h6>
+        </div>
+        <div class="card-body py-2">
+          <canvas id="chartUsuTendencia" style="max-height:140px;"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-2">
+          <h6 class="mb-0 fw-bold small"><i class="bi bi-geo-alt text-info me-1"></i>Usuarios por Localidad</h6>
+        </div>
+        <div class="card-body py-2">
+          <canvas id="chartUsuLocalidad" style="max-height:160px;"></canvas>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="card border-success mb-4 shadow-sm">
-    <div class="card-header bg-success text-white"><i class="bi bi-funnel"></i> Filtros</div>
-    <div class="card-body bg-light">
-      <form method="get" class="row g-3">
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-header bg-success-subtle border-0 px-4 py-3">
+      <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+    </div>
+    <div class="card-body">
+      <form id="usuarios-filter-form" class="row g-3 align-items-end">
         <div class="col-md-4">
-          <input type="text" name="q" class="form-control" placeholder="Nombre, apellido o email..." value="{{ search_query }}">
+          <label for="usuarios-filter-q" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+          <input type="text" name="q" class="form-control" placeholder="Nombre, apellido o email..." value="{{ search_query }}" id="usuarios-filter-q">
         </div>
         <div class="col-md-3">
-          <select name="tipo" class="form-select">
+          <label for="usuarios-filter-tipo" class="form-label fw-semibold text-muted mb-1">Rol</label>
+          <select name="tipo" class="form-select js-select2" id="usuarios-filter-tipo">
             <option value="">Todos los roles</option>
             <option value="ADM" {% if search_tipo == "ADM" %}selected{% endif %}>Administrador</option>
             <option value="CIU" {% if search_tipo == "CIU" %}selected{% endif %}>Ciudadano</option>
@@ -72,190 +84,101 @@
           </select>
         </div>
         <div class="col-md-3">
-          <select name="estado" class="form-select">
+          <label for="usuarios-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+          <select name="estado" class="form-select js-select2" id="usuarios-filter-estado">
             <option value="">Todos los estados</option>
             <option value="activo" {% if search_estado == "activo" %}selected{% endif %}>Activo</option>
             <option value="inactivo" {% if search_estado == "inactivo" %}selected{% endif %}>Inactivo</option>
           </select>
         </div>
-        <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Filtrar</button>
+        <div class="col-md-2">
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success flex-grow-1" id="usuarios-search-btn"><i class="bi bi-search"></i> Filtrar</button>
+            <button type="button" class="btn btn-outline-secondary" id="usuarios-filter-limpiar"><i class="bi bi-eraser"></i></button>
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <div class="card border-success shadow-sm">
-    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-      <span><i class="bi bi-table"></i> Directorio de Usuarios</span>
-      <span class="badge bg-light text-success">Total: {{ usuarios|length }}</span>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Directorio de Usuarios</h6>
+        <a href="{% url 'panel_admin:exportar_usuarios_excel' %}"
+           class="btn btn-sm btn-outline-success fw-semibold export-link"
+           title="Exportar Excel"
+           data-export-base="{% url 'panel_admin:exportar_usuarios_excel' %}"
+           data-export-filters="q:usuarios-filter-q,tipo:usuarios-filter-tipo,estado:usuarios-filter-estado">
+          <i class="bi bi-file-earmark-excel me-1"></i> Excel
+        </a>
+        <a href="{% url 'panel_admin:exportar_usuarios_pdf' %}"
+           class="btn btn-sm btn-outline-danger fw-semibold export-link"
+           title="Exportar PDF"
+           data-export-base="{% url 'panel_admin:exportar_usuarios_pdf' %}"
+           data-export-filters="q:usuarios-filter-q,tipo:usuarios-filter-tipo,estado:usuarios-filter-estado">
+          <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+        </a>
+      </div>
+      <span class="badge bg-secondary rounded-pill" id="usuarios-count-badge">{{ usuarios|length }} registros</span>
     </div>
     <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle">
+      <table class="table table-sm table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Celular</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th class="text-center">Acciones</th>
+            <th class="fw-bold small">Nombre</th>
+            <th class="fw-bold small">Email</th>
+            <th class="fw-bold small">Celular</th>
+            <th class="fw-bold small">Rol</th>
+            <th class="fw-bold small">Estado</th>
+            <th class="fw-bold small text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          {% for usuario in usuarios %}
-          <tr>
-            <td><strong>{{ usuario.nombres }} {{ usuario.apellidos }}</strong></td>
-            <td>{{ usuario.email }}</td>
-            <td>{{ usuario.celular|default:"-" }}</td>
-            <td>
-              {% if usuario.tipo_usuario == "ADM" %}
-                <span class="badge bg-dark">Administrador</span>
-              {% elif usuario.tipo_usuario == "GECA" %}
-                <span class="badge bg-info text-dark">Gestor ECA</span>
-              {% else %}
-                <span class="badge bg-success">Ciudadano</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if usuario.is_active %}
-                <span class="badge bg-success">Activo</span>
-              {% else %}
-                <span class="badge bg-secondary">Inactivo</span>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              <button type="button" class="btn btn-outline-primary btn-sm btn-editar-usuario"
-                      title="Editar"
-                      data-id="{{ usuario.id }}"
-                      data-nombres="{{ usuario.nombres|default:'' }}"
-                      data-apellidos="{{ usuario.apellidos|default:'' }}"
-                      data-email="{{ usuario.email|default:'' }}"
-                      data-celular="{{ usuario.celular|default:'' }}"
-                      data-ciudad="{{ usuario.ciudad|default:'Bogotá' }}"
-                      data-localidad_id="{{ usuario.localidad.localidad_id|default:'' }}"
-                      data-tipo_documento="{{ usuario.tipo_documento|default:'' }}"
-                      data-numero_documento="{{ usuario.numero_documento|default:'' }}"
-                      data-tipo_usuario="{{ usuario.tipo_usuario|default:'' }}"
-                      data-is_active="{% if usuario.is_active %}activo{% else %}inactivo{% endif %}"
-                      data-fecha_nacimiento="{{ usuario.fecha_nacimiento|date:'Y-m-d'|default:'' }}"
-                      data-action="{% url 'panel_admin:editar_usuario_admin' usuario_id=usuario.id %}">
-                <i class="bi bi-pencil"></i>
-              </button>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron usuarios.</td></tr>
-          {% endfor %}
-        </tbody>
+        <tbody class="border-top" id="usuarios-table-body">
+          </tbody>
       </table>
     </div>
+    <div class="card-footer bg-light border-top px-4 py-3 d-flex justify-content-between align-items-center">
+      <small class="text-muted" id="usuarios-footer-count">—</small>
+      <nav aria-label="Paginación usuarios">
+        <ul class="pagination pagination-sm mb-0" id="usuarios-pager"></ul>
+      </nav>
+    </div>
   </div>
+
+{{ usuarios_json|json_script:"usuarios-data" }}
+{{ dist_roles|json_script:"dist-roles-data" }}
+{{ dist_activos|json_script:"dist-activos-data" }}
+{{ dist_usuarios_localidad|json_script:"dist-localidad-data" }}
+{{ tendencia_usuarios|json_script:"tendencia-usuarios-data" }}
+
 {% endblock %}
 
 {% block extra_modals %}
-
-<!-- ===== MODAL CREAR USUARIO ===== -->
-<div class="modal fade" id="modalCrearUsuario" tabindex="-1" aria-labelledby="labelCrearUsuario" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+<!-- ===== MODAL IMPORTAR CSV ===== -->
+<div class="modal fade" id="modalImportCSV" tabindex="-1" aria-labelledby="modalImportCSVLabel" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="labelCrearUsuario"><i class="bi bi-person-plus me-2"></i>Nuevo Usuario</h5>
+        <h5 class="modal-title" id="modalImportCSVLabel"><i class="bi bi-upload me-2"></i>Importar usuarios desde CSV</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form method="POST" action="{% url 'panel_admin:crear_usuario_admin' %}" novalidate id="formCrearUsuario">
+      <form method="post" enctype="multipart/form-data" action="{% url 'panel_admin:importar_usuarios_csv' %}">
         {% csrf_token %}
         <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="cu_nombres" class="form-label fw-semibold">Nombres <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_nombres" type="text" name="nombres" class="form-control" required minlength="3" maxlength="30" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Nombres" autocomplete="given-name">
-              <div class="invalid-feedback">Ingresa entre 3 y 30 caracteres usando solo letras.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_apellidos" class="form-label fw-semibold">Apellidos <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_apellidos" type="text" name="apellidos" class="form-control" required minlength="3" maxlength="40" pattern="^[A-Za-zÁÉÍÓÚáéíóúüÜñÑ\s\-']+$" placeholder="Apellidos" autocomplete="family-name">
-              <div class="invalid-feedback">Ingresa entre 3 y 40 caracteres usando solo letras.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_email" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_email" type="text" name="email" class="form-control" required maxlength="254" inputmode="email" placeholder="usuario@ejemplo.com">
-              <div class="invalid-feedback">Ingresa un correo con un solo @ y dominio válido.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_celular" class="form-label fw-semibold">Celular <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_celular" type="tel" name="celular" class="form-control" required pattern="^3[0-9]{9}$" maxlength="10" inputmode="numeric" placeholder="3001234567">
-              <div class="invalid-feedback">Debe iniciar con 3 y tener exactamente 10 dígitos.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_tipo_documento" class="form-label fw-semibold">Tipo de Documento <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="cu_tipo_documento" name="tipoDocumento" class="form-select" required>
-                <option value="">Seleccionar...</option>
-                {% for val, label in tipos_documento %}
-                  <option value="{{ val }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un tipo de documento.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_numero_documento" class="form-label fw-semibold">Número de Documento <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_numero_documento" type="text" name="numeroDocumento" class="form-control" required minlength="6" maxlength="20" inputmode="numeric" placeholder="1234567890">
-              <div class="invalid-feedback">Ingresa entre 6 y 20 dígitos.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_ciudad" class="form-label fw-semibold">Ciudad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <input id="cu_ciudad" type="text" name="ciudad" class="form-control" value="Bogotá" readonly aria-readonly="true">
-              <div class="form-text">La ciudad está fija en Bogotá para este sistema.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_localidad" class="form-label fw-semibold">Localidad <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="cu_localidad" name="localidad" class="form-select" required>
-                <option value="">Seleccionar localidad...</option>
-                {% for loc in localidades %}
-                  <option value="{{ loc.localidad_id }}">{{ loc.nombre }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona una localidad.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_tipo_usuario" class="form-label fw-semibold">Tipo de Usuario <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <select id="cu_tipo_usuario" name="tipo_usuario" class="form-select" required>
-                {% for val, label in tipos_usuario %}
-                  <option value="{{ val }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="invalid-feedback">Selecciona un tipo de usuario.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_fecha_nacimiento" class="form-label fw-semibold">Fecha de Nacimiento <small class="text-muted fw-normal">(opcional)</small></label>
-              <input id="cu_fecha_nacimiento" type="text" name="fechaNacimiento" class="form-control" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2}" maxlength="10" placeholder="DD-MM-AAAA">
-              <div class="invalid-feedback">Formato DD-MM-AAAA o AAAA-MM-DD. Debes ser mayor de 18 años.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_password" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <div class="input-group">
-                <input id="cu_password" type="password" name="password" class="form-control" required minlength="8" placeholder="Mínimo 8 caracteres">
-                <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#cu_password">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-              <div class="invalid-feedback">La contraseña debe tener al menos 8 caracteres.</div>
-            </div>
-            <div class="col-md-6">
-              <label for="cu_password2" class="form-label fw-semibold">Confirmar Contraseña <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-              <div class="input-group">
-                <input id="cu_password2" type="password" name="passwordConfirm" class="form-control" required minlength="8" placeholder="Repite la contraseña">
-                <button class="btn btn-outline-secondary toggle-password-btn" type="button" tabindex="-1" data-target="#cu_password2">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-              <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
-            </div>
+          <p class="text-muted small mb-3">El archivo CSV debe tener las siguientes columnas:</p>
+          <div class="bg-light border rounded p-2 mb-3">
+            <code class="small">nombres, apellidos, email, celular, password, tipo_usuario*, tipo_documento*, numero_documento*, ciudad*</code>
+          </div>
+          <p class="small text-muted mb-3">* Opcionales. Valores válidos para <strong>tipo_usuario</strong>: <code>ADM</code>, <code>CIU</code>, <code>GECA</code>. Para <strong>tipo_documento</strong>: <code>CC</code>, <code>TI</code>, <code>CE</code>, <code>PA</code>, <code>NIT</code>.</p>
+          <div class="mb-3">
+            <label for="import_archivo_csv" class="form-label fw-semibold">Archivo CSV <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
+            <input id="import_archivo_csv" type="file" name="archivo_csv" class="form-control" accept=".csv" required>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success"><i class="bi bi-person-check me-1"></i> Crear Usuario</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-upload me-1"></i> Importar</button>
         </div>
       </form>
     </div>
@@ -351,27 +274,129 @@
     </div>
   </div>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
 <script src="{% static 'js/admin/usuario-form-comun.js' %}"></script>
 <script>
+AdminCharts.initAll([
+  { type: 'doughnut', canvas: 'chartUsuRol', dataId: 'dist-roles-data', labelKey: 'display', colors: [AdminCharts.C.warning, AdminCharts.C.success, AdminCharts.C.danger] },
+  { type: 'doughnut', canvas: 'chartUsuActivos', dataId: 'dist-activos-data', colors: [AdminCharts.C.success, AdminCharts.C.dark] },
+  { type: 'trendLine', canvas: 'chartUsuTendencia', dataId: 'tendencia-usuarios-data', colorKey: 'primary' },
+  { type: 'barH', canvas: 'chartUsuLocalidad', dataId: 'dist-localidad-data', labelKey: 'localidad' },
+]);
+</script>
+<script>
 (function() {
-  function validarCrearUsuario(form) {
-    var pass = document.getElementById('cu_password');
-    var pass2 = document.getElementById('cu_password2');
-    if (pass && pass2 && pass.value !== pass2.value) {
-      Swal.fire({ icon: 'error', title: 'Las contraseñas no coinciden', confirmButtonColor: '#198754' });
-      pass.classList.add('is-invalid');
-      pass2.classList.add('is-invalid');
-      return false;
-    }
-    return true;
+  var usuariosData = readJSONData('usuarios-data');
+
+  function rolBadge(row) {
+    var badgeClass = row.tipo_usuario === 'ADM' ? 'bg-dark' : (row.tipo_usuario === 'GECA' ? 'bg-info text-dark' : 'bg-success');
+    return '<span class="badge ' + badgeClass + '">' + escapeHTML(row.get_tipo_usuario_display) + '</span>';
   }
 
-  initModalFormAjax('formCrearUsuario', '{% url "panel_admin:listar_usuarios" %}', validarCrearUsuario);
+  function estadoBadge(row) {
+    var cls = row.is_active ? 'bg-success' : 'bg-secondary';
+    var label = row.is_active ? 'Activo' : 'Inactivo';
+    return '<span class="badge ' + cls + '">' + label + '</span>';
+  }
+
+  function accionBtn(row) {
+    return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-usuario" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-nombres="' + escapeAttr(row.nombres) + '"' +
+      ' data-apellidos="' + escapeAttr(row.apellidos) + '"' +
+      ' data-email="' + escapeAttr(row.email) + '"' +
+      ' data-celular="' + escapeAttr(row.celular || '') + '"' +
+      ' data-ciudad="' + escapeAttr(row.ciudad || 'Bogot\u00E1') + '"' +
+      ' data-localidad_id="' + escapeAttr(row.localidad_id || '') + '"' +
+      ' data-tipo_documento="' + escapeAttr(row.tipo_documento || '') + '"' +
+      ' data-numero_documento="' + escapeAttr(row.numero_documento || '') + '"' +
+      ' data-tipo_usuario="' + escapeAttr(row.tipo_usuario) + '"' +
+      ' data-is_active="' + (row.is_active ? 'activo' : 'inactivo') + '"' +
+      ' data-fecha_nacimiento="' + escapeAttr(row.fecha_nacimiento || '') + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    if (typeof setupEditModal !== 'function') return;
+    setupEditModal('.btn-editar-usuario', 'modalEditarUsuario', {
+      nombres: 'eu_nombres', apellidos: 'eu_apellidos',
+      email: 'eu_email', celular: 'eu_celular',
+      ciudad: 'eu_ciudad', localidad_id: 'eu_localidad',
+      tipo_documento: 'eu_tipo_documento', numero_documento: 'eu_numero_documento',
+      tipo_usuario: 'eu_tipo_usuario', is_active: 'eu_estado',
+      fecha_nacimiento: 'eu_fecha_nacimiento'
+    });
+  }
+
+  var usuariosTable = new AdminTable({
+    data: usuariosData,
+    pageSize: 10,
+    tableBodyId: 'usuarios-table-body',
+    pagerId: 'usuarios-pager',
+    footerInfoId: 'usuarios-footer-count',
+    countBadgeId: 'usuarios-count-badge',
+    filterFormId: 'usuarios-filter-form',
+    filterFns: [
+      function(row, q) { return (row.nombres + ' ' + row.apellidos + ' ' + row.email).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return (a.nombres + ' ' + a.apellidos).localeCompare(b.nombres + ' ' + b.apellidos); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<strong>' + escapeHTML(r.nombres + ' ' + r.apellidos) + '</strong>'; } },
+      { render: function(r) { return escapeHTML(r.email); } },
+      { render: function(r) { return escapeHTML(r.celular || '-'); } },
+      { render: rolBadge },
+      { render: estadoBadge },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  {% if search_query or search_tipo or search_estado %}
+  (function() {
+    var extraFilts = {};
+    {% if search_tipo %}extraFilts.tipo_usuario = '{{ search_tipo|escapejs }}';{% endif %}
+    {% if search_estado %}extraFilts.is_active = {% if search_estado == 'activo' %}true{% else %}false{% endif %};{% endif %}
+    usuariosTable.setFilters('{{ search_query|escapejs }}', extraFilts);
+  })();
+  {% endif %}
+
+  // Init Select2 on filter selects
+  $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+  // Bind extra filter selects
+  var tipoSelect = document.getElementById('usuarios-filter-tipo');
+  var estadoSelect = document.getElementById('usuarios-filter-estado');
+  var searchBtn = document.getElementById('usuarios-search-btn');
+  var limpiarBtn = document.getElementById('usuarios-filter-limpiar');
+
+  function applyFilts() {
+    var q = document.querySelector('#usuarios-filter-form input[name="q"]')?.value || '';
+    usuariosTable.setSearch(q);
+
+    var tipo = $(tipoSelect).val() || '';
+    if (tipo) usuariosTable.setExtraFilter('tipo_usuario', tipo);
+    else usuariosTable.removeExtraFilter('tipo_usuario');
+
+    var est = $(estadoSelect).val() || '';
+    if (est) usuariosTable.setExtraFilter('is_active', est === 'activo');
+    else usuariosTable.removeExtraFilter('is_active');
+  }
+
+  function limpiarFilts() {
+    document.querySelector('#usuarios-filter-form input[name="q"]').value = '';
+    $(tipoSelect).val('').trigger('change');
+    $(estadoSelect).val('').trigger('change');
+    usuariosTable.setFilters('', {});
+  }
+
+  $(tipoSelect).on('change', applyFilts);
+  $(estadoSelect).on('change', applyFilts);
+  if (searchBtn) searchBtn.addEventListener('click', applyFilts);
+  if (limpiarBtn) limpiarBtn.addEventListener('click', limpiarFilts);
+
   initModalFormAjax('formEditarUsuario', globalThis.location.href);
 
   function _initFechaNacimientoModal(id) {
@@ -397,14 +422,7 @@
     }
   });
 
-  setupEditModal('.btn-editar-usuario', 'modalEditarUsuario', {
-    nombres: 'eu_nombres', apellidos: 'eu_apellidos',
-    email: 'eu_email', celular: 'eu_celular',
-    ciudad: 'eu_ciudad', localidad_id: 'eu_localidad',
-    tipo_documento: 'eu_tipo_documento', numero_documento: 'eu_numero_documento',
-    tipo_usuario: 'eu_tipo_usuario', is_active: 'eu_estado',
-    fecha_nacimiento: 'eu_fecha_nacimiento'
-  });
+  reinitEditModal();
 
   function initTogglePassword() {
     document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {
@@ -421,6 +439,13 @@
     });
   }
   initTogglePassword();
+
+  function initSelect2Modals() {
+    $('#modalEditarUsuario').on('shown.bs.modal', function() {
+      $('#eu_localidad').select2({ theme: 'bootstrap-5', dropdownParent: $('#modalEditarUsuario') });
+    });
+  }
+  initSelect2Modals();
 })();
 </script>
 {% include "admin/_messages_swal.html" %}

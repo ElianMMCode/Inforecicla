@@ -89,8 +89,8 @@ class MensajeUpdateView(generics.UpdateAPIView):
         nuevo_texto = self.request.data.get('texto', '').strip()
         if not nuevo_texto:
             raise drf_serializers.ValidationError({"texto": "El mensaje no puede estar vacío."})
-        # Marca el mensaje como editado (flag editado=True).
-        serializer.save(texto=nuevo_texto, editado=True)
+        # Marca el mensaje como editado (flag es_editado=True).
+        serializer.save(texto=nuevo_texto, es_editado=True)
 
 
 class PuntoChatListView(generics.ListAPIView):
@@ -122,6 +122,6 @@ class MarcarLeidosView(generics.GenericAPIView):
     def post(self, request, chat_id):
         count = Mensaje.objects.filter(
             chat_id=chat_id,
-            leido=False
-        ).exclude(remitente=request.user).update(leido=True)
+            es_leido=False
+        ).exclude(remitente=request.user).update(es_leido=True)
         return Response({"ok": True, "count": count})

@@ -352,7 +352,8 @@
                             <div class="activation-inline" style="width:100%; margin-top:.5rem" data-activation-email="{{ email|default:'' }}">
                                 <p class="activation-hint">Tu cuenta no está activada. Reenviamos un enlace a <strong>{{ email }}</strong>. Si tienes el código, introdúcelo aquí:</p>
                                 <div id="activationInlineForm" class="d-flex gap-2 align-items-center">
-                                    <input type="text" name="token" id="activationInlineCode" class="form-control" placeholder="Código de verificación" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
+                                    <label for="activationInlineCode" class="visually-hidden">Codigo de verificacion</label>
+                                <input type="text" name="token" id="activationInlineCode" class="form-control" placeholder="Codigo de verificacion" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
                                     <button type="button" id="activationInlineSubmit" class="btn btn-login">Validar cuenta</button>
                                 </div>
                                 <button type="button" class="btn btn-link p-0 inline-action-btn" id="resendActivationButton">Reenviar enlace de activación</button>
@@ -362,11 +363,11 @@
                 </form>
                 <div class="divider">O registrarse</div>
                 <div class="register-links">
-                    <a href="/registro/ciudadano" class="btn-login btn-ghost">
+                    <a href="/registro/ciudadano/" class="btn-login btn-ghost">
                         <i class="bi bi-person-plus btn-icon" aria-hidden="true"></i>
                         Registrarse como Ciudadano
                     </a>
-                    <a href="/registro/eca" class="btn-login btn-ghost">
+                    <a href="/registro/eca/" class="btn-login btn-ghost">
                         <i class="bi bi-geo-alt-fill btn-icon" aria-hidden="true"></i>
                         Registrar Punto ECA
                     </a>

@@ -1,4 +1,4 @@
-// Helpers compartidos entre crear_usuario.js y editar_usuario.js.
+﻿// Helpers compartidos entre crear_usuario.js y editar_usuario.js.
 // Se cargan como script clasico (sin type=module) y exponen funciones globales
 // para compatibilidad con el HTML que ya invoca `mostrarErroresSwal`,
 // `confirmarEnvioSwal`, etc.
@@ -132,8 +132,9 @@ function actualizarEstadoCampo(campo) {
     }
     const valido = campo.checkValidity();
     const tieneValor = String(campo.value || "").trim() !== "";
+    const formEnviado = campo.form?.classList.contains("was-validated") ?? false;
     campo.classList.toggle("is-valid", valido && tieneValor);
-    campo.classList.toggle("is-invalid", !valido && (tieneValor || campo.required));
+    campo.classList.toggle("is-invalid", !valido && (tieneValor || (campo.required && formEnviado)));
 }
 
 function escaparHtml(texto) {

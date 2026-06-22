@@ -142,6 +142,24 @@
         globalThis.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    function _actualizarBannerClasificacion(cls, descCls) {
+        const banner = document.getElementById("inv-ws-clasificacion-alerta");
+        const icono = document.getElementById("inv-ws-clasificacion-alerta-icono");
+        const titulo = document.getElementById("inv-ws-clasificacion-alerta-titulo");
+        const desc = document.getElementById("inv-ws-clasificacion-alerta-desc");
+        if (!banner || !icono || !titulo || !desc) return;
+        const cfg = {
+            PELIGROSO: { cls: "alert alert-danger d-flex mb-3", icon: "bi bi-shield-exclamation fs-2 flex-shrink-0 text-danger", title: "⚠ Material Peligroso — Requiere manejo autorizado", fallback: "Riesgo químico o eléctrico. Requiere EPP y manejo autorizado." },
+            HAZMAT:    { cls: "alert alert-dark d-flex mb-3", icon: "bi bi-radiation fs-2 flex-shrink-0", title: "☢ Residuo Peligroso HAZMAT — Solo gestores autorizados", fallback: "Residuo peligroso regulado. Transporte con manifiesto, disposición certificada." }
+        };
+        const c = cfg[cls];
+        if (!c) { banner.className = "alert d-none mb-3"; return; }
+        banner.className = c.cls;
+        icono.className = c.icon;
+        titulo.textContent = c.title;
+        desc.textContent = descCls || c.fallback;
+    }
+
     function poblarWorkspace(inv) {
         const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? "—"; };
         const nombre = inv.nombre;
@@ -151,7 +169,7 @@
         const ocupacionNum = Number(inv.ocupacion);
         setText("inv-ws-nombre", nombre);
         setText("inv-ws-categoria", inv.categoria);
-        setText("inv-ws-tipo", inv.tipo);
+        setText("inv-ws-clasificacion", inv.clasificacion);
         setText("inv-ws-ultact", "—");
         setText("inv-ws-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-pcompra", Number(inv.precioCompra).toLocaleString("es-CO"));
@@ -172,7 +190,27 @@
         setText("inv-ws-datos-nombre", nombre);
         setText("inv-ws-datos-material", nombre);
         setText("inv-ws-datos-categoria", inv.categoria);
-        setText("inv-ws-datos-tipo", inv.tipo);
+        setText("inv-ws-datos-descripcion", inv.descripcion || "—");
+        setText("inv-ws-datos-clasif-desc", inv.descripcionClasificacion || "—");
+
+        // Clasificación con icono y badge en Hoja Técnica
+        const cls = inv.clasificacion || "";
+        const descCls = inv.descripcionClasificacion || "";
+        const clsConfig = {
+            'ESTANDAR':      { icon: 'bi-check-circle-fill',       color: 'text-success',  badge: 'bg-success',  label: 'Estándar' },
+            'MANEJO_ESPECIAL':{ icon: 'bi-exclamation-triangle-fill', color: 'text-warning', badge: 'bg-warning text-dark', label: 'Manejo Especial' },
+            'PELIGROSO':     { icon: 'bi-shield-exclamation-fill',  color: 'text-danger',   badge: 'bg-danger',   label: 'Peligroso' },
+            'HAZMAT':        { icon: 'bi-radiation',               color: 'text-dark',     badge: 'bg-dark',     label: 'HAZMAT' }
+        };
+        const clsInfo = clsConfig[cls] || { icon: 'bi-question-circle-fill', color: 'text-secondary', badge: 'bg-secondary', label: cls || '—' };
+
+        const clasifBadge = document.getElementById("inv-ws-datos-clasif-badge");
+        if (clasifBadge) {
+            clasifBadge.innerHTML = `<i class="bi ${clsInfo.icon} ${clsInfo.color}"></i> <span class="badge ${clsInfo.badge}">${escapeHtml(clsInfo.label)}</span>`;
+        }
+
+        // Banner de alerta para clasificaciones de riesgo
+        _actualizarBannerClasificacion(cls, descCls);
         setText("inv-ws-datos-cap", `${formatQty(inv.capacidadMaxima, inv.unidad)}`);
         setText("inv-ws-datos-stock", `${formatQty(inv.stockActual, inv.unidad)} (${ocupacionNum.toFixed(0)}%)`);
         setText("inv-ws-datos-unidad", inv.unidad);
@@ -292,10 +330,23 @@
     // ============================================================
     // FILTROS DE CARDS EN LANDING
     // ============================================================
+    function _filtrarPorEstado(estado) {
+        const el = document.getElementById("inv-filter-estado");
+        if (!el) return;
+        el.value = estado;
+        if (globalThis.jQuery) {
+            globalThis.jQuery("#inv-filter-estado").val(estado).trigger("change");
+        } else {
+            aplicarFiltrosCards();
+        }
+        activarOvTab("ovtab-inventario");
+        const pane = document.getElementById("ovtab-inventario");
+        if (pane) pane.scrollIntoView({ behavior: "smooth" });
+    }
     function aplicarFiltrosCards() {
         const nombre = (document.getElementById("inv-filter-nombre")?.value || "").toLowerCase().trim();
         const cat = document.getElementById("inv-filter-categoria")?.value || "";
-        const tipo = document.getElementById("inv-filter-tipo")?.value || "";
+        const tipo = document.getElementById("inv-filter-clasificacion")?.value || "";
         const estado = document.getElementById("inv-filter-estado")?.value || "";
         const ocupacionSel = document.getElementById("inv-filter-ocupacion")?.value || "";
 
@@ -305,7 +356,7 @@
         document.querySelectorAll(".inv-tarjeta-material").forEach((card) => {
             const matchNombre = !nombre || (card.dataset.nombre || "").includes(nombre);
             const matchCat = !cat || card.dataset.categoria === cat;
-            const matchTipo = !tipo || card.dataset.tipo === tipo;
+            const matchTipo = !tipo || card.dataset.clasificacion === tipo;
             const matchEstado = !estado || card.dataset.estado === estado;
             let matchOcup = true;
             if (ocupacionSel) {
@@ -327,7 +378,7 @@
     }
 
     function limpiarFiltrosCards() {
-        ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
+            ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-clasificacion", "inv-filter-estado", "inv-filter-ocupacion"]
             .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ""; });
         aplicarFiltrosCards();
     }
@@ -472,7 +523,7 @@
         if (!lista) return;
 
         const filtrados = pickerCatalogo.filter((m) => {
-            const matchQ = !q || (m.nmbMaterial || "").toLowerCase().includes(q) || (m.dscMaterial || "").toLowerCase().includes(q) || (m.nmbTipo || "").toLowerCase().includes(q);
+            const matchQ = !q || (m.nmbMaterial || "").toLowerCase().includes(q) || (m.dscMaterial || "").toLowerCase().includes(q) || (m.nmbClasificacion || "").toLowerCase().includes(q);
             const matchC = !cat || m.nmbCategoria === cat;
             const matchF = filtro === "todos" || (filtro === "en-inventario" && m.enInventario) || (filtro === "disponibles" && !m.enInventario);
             return matchQ && matchC && matchF;
@@ -495,7 +546,7 @@
                 <div class="flex-grow-1 text-start">
                     <div class="fw-semibold">${escapeHtml(m.nmbMaterial)}</div>
                     <small class="text-muted d-block mb-1">${escapeHtml(m.dscMaterial || "")}</small>
-                    <span class="badge bg-primary me-1">${escapeHtml(m.nmbTipo || "")}</span>
+                    <span class="badge bg-primary me-1">${escapeHtml(m.nmbClasificacion || "")}</span>
                     <span class="badge bg-secondary">${escapeHtml(m.nmbCategoria || "")}</span>
                     <span class="badge bg-light text-dark ms-1">${escapeHtml(m.unidad || "")}</span>
                     ${estado}
@@ -511,6 +562,26 @@
         bootstrap.Modal.getInstance(document.getElementById("inv-modal-picker"))?.hide();
         document.getElementById("inv-crear-material-id").value = item.materialId;
         document.getElementById("inv-crear-material-nombre").value = item.nmbMaterial || "";
+        document.getElementById("inv-crear-material-categoria").value = item.nmbCategoria || "";
+        document.getElementById("inv-crear-material-descripcion").value = item.dscMaterial || "";
+
+        const clasificacion = item.nmbClasificacion || "";
+        const descClasif = item.descripcionClasificacion || "";
+        const iconEl = document.getElementById("inv-crear-material-clasificacion-icono");
+        const nombreEl = document.getElementById("inv-crear-material-clasificacion-nombre");
+        const descEl = document.getElementById("inv-crear-material-clasificacion-desc");
+        if (iconEl) {
+            const iconMap = {
+                'ESTANDAR': '<i class="bi bi-check-circle-fill text-success"></i>',
+                'MANEJO_ESPECIAL': '<i class="bi bi-exclamation-triangle-fill text-warning"></i>',
+                'PELIGROSO': '<i class="bi bi-shield-exclamation-fill text-danger"></i>',
+                'HAZMAT': '<i class="bi bi-radiation text-dark"></i>'
+            };
+            iconEl.innerHTML = iconMap[clasificacion] || '<i class="bi bi-question-circle-fill text-secondary"></i>';
+        }
+        if (nombreEl) nombreEl.textContent = clasificacion || "—";
+        if (descEl) descEl.value = descClasif;
+
         const sel = document.getElementById("inv-crear-unidad-medida");
         if (sel && item.unidad) sel.value = item.unidad;
         document.getElementById("inv-tab-buscar-placeholder").style.display = "none";
@@ -523,10 +594,16 @@
     }
 
     function limpiarSeleccionCrear() {
-        ["inv-crear-material-id", "inv-crear-material-nombre", "inv-crear-stock-inicial",
-         "inv-crear-capacidad-maxima", "inv-crear-unidad-medida", "inv-crear-precio-compra",
-         "inv-crear-precio-venta", "inv-crear-umbral-alerta", "inv-crear-umbral-critico"]
+        ["inv-crear-material-id", "inv-crear-material-nombre", "inv-crear-material-categoria",
+         "inv-crear-material-descripcion", "inv-crear-material-clasificacion-desc",
+         "inv-crear-stock-inicial", "inv-crear-capacidad-maxima", "inv-crear-unidad-medida",
+         "inv-crear-precio-compra", "inv-crear-precio-venta", "inv-crear-umbral-alerta",
+         "inv-crear-umbral-critico"]
             .forEach((id) => { const el = document.getElementById(id); if (el) { el.value = ""; el.classList.remove("is-invalid"); } });
+        const iconEl = document.getElementById("inv-crear-material-clasificacion-icono");
+        if (iconEl) iconEl.innerHTML = "";
+        const nombreEl = document.getElementById("inv-crear-material-clasificacion-nombre");
+        if (nombreEl) nombreEl.textContent = "";
         document.getElementById("inv-crear-mensaje-estado").style.display = "none";
         document.getElementById("inv-tab-buscar-form-container").style.display = "none";
         document.getElementById("inv-tab-buscar-placeholder").style.display = "block";
@@ -647,13 +724,13 @@
         };
 
         // 1) Filtros landing (cards)
-        apply("#inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion");
+        apply("#inv-filter-categoria, #inv-filter-clasificacion, #inv-filter-estado, #inv-filter-ocupacion");
 
         // 2) Filtros historial general (Select2 en todos MENOS tipo de
         // movimiento, que debe permanecer como <select> nativo para que el
         // listener de 'change' dispare confiablemente el toggle del centro
         // de acopio al elegir "Venta").
-        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-tipo-material, #inv-hfiltro-centro");
+        apply("#inv-hfiltro-material, #inv-hfiltro-categoria, #inv-hfiltro-clasificacion, #inv-hfiltro-centro");
 
         // 3) Filtro chart
         apply("#inv-flujo-granularidad");
@@ -726,15 +803,46 @@
         // que el handler quede en el sistema de eventos de jQuery.
         if (globalThis.jQuery) {
             const $filtrosLanding = globalThis.jQuery(
-                "#inv-filter-nombre, #inv-filter-categoria, #inv-filter-tipo, #inv-filter-estado, #inv-filter-ocupacion"
+                "#inv-filter-nombre, #inv-filter-categoria, #inv-filter-clasificacion, #inv-filter-estado, #inv-filter-ocupacion"
             );
             $filtrosLanding.on("input change", aplicarFiltrosCards);
         } else {
-            ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-tipo", "inv-filter-estado", "inv-filter-ocupacion"]
+        ["inv-filter-nombre", "inv-filter-categoria", "inv-filter-clasificacion", "inv-filter-estado", "inv-filter-ocupacion"]
                 .forEach((id) => document.getElementById(id)?.addEventListener("input", aplicarFiltrosCards));
         }
         document.getElementById("inv-filter-limpiar")?.addEventListener("click", limpiarFiltrosCards);
         document.getElementById("inv-filter-limpiar-vacio")?.addEventListener("click", limpiarFiltrosCards);
+
+        // Deep-link de filtro: ?estado=critico|alerta|ok
+        const urlEstado = new URLSearchParams(globalThis.location.search).get("estado");
+        if (urlEstado && ["ok", "alerta", "critico"].includes(urlEstado)) {
+            if (globalThis.jQuery) {
+                globalThis.jQuery("#inv-filter-estado").val(urlEstado).trigger("change");
+            } else {
+                const sel = document.getElementById("inv-filter-estado");
+                if (sel) { sel.value = urlEstado; aplicarFiltrosCards(); }
+            }
+        }
+
+        // KPI cards clickeables: navegan a la sección correspondiente
+        document.getElementById("kpi-fisico-card")?.addEventListener("click", () => {
+            activarOvTab("ovtab-inventario");
+            document.getElementById("ovtab-inventario")?.scrollIntoView({ behavior: "smooth" });
+        });
+        document.getElementById("kpi-valor-card")?.addEventListener("click", () => {
+            activarOvTab("ovtab-flujo");
+            document.getElementById("ovtab-flujo")?.scrollIntoView({ behavior: "smooth" });
+        });
+        // Badges de salud: filtran tarjetas por estado
+        ["kpi-salud-ok", "kpi-salud-alerta", "kpi-salud-critico"].forEach((id) => {
+            const badge = document.getElementById(id);
+            if (badge) {
+                badge.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    _filtrarPorEstado(badge.dataset.estado);
+                });
+            }
+        });
 
         // Cards → workspace (delegado en el grid, captura clicks en card o botón)
         const cardsGrid = document.getElementById("inv-cards-grid");
@@ -821,12 +929,6 @@
         renderHistorialGeneral();
         bindExtras();
         renderFlujoMaterialesList();
-        // Deep-link desde sidebar: ?ovtab=ovtab-xxx
-        const urlOvtab = new URLSearchParams(globalThis.location.search).get("ovtab");
-        if (urlOvtab) {
-            const valid = ["ovtab-inventario", "ovtab-buscar", "ovtab-bulk", "ovtab-historial", "ovtab-flujo"];
-            if (valid.includes(urlOvtab)) activarOvTab(urlOvtab);
-        }
         // Render charts tras primer paint (espera CSS)
         setTimeout(() => {
             if (document.getElementById("inv-stock-time-chart")) renderOvtabChart();
@@ -1024,7 +1126,7 @@
                     title: null,
                     html: renderComprobante("compra", {
                         materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formEntradaMaterialTipo")?.value || "—",
+                        materialTipo: document.getElementById("formEntradaMaterialClasificacion")?.value || "—",
                         materialCategoria: document.getElementById("formEntradaMaterialCategoria")?.value || "—",
                         unidad: document.getElementById("formEntradaMaterialUnidad")?.value || "",
                         cantidad: cant,
@@ -1090,7 +1192,7 @@
                     title: null,
                     html: renderComprobante("venta", {
                         materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formSalidaMaterialTipo")?.value || "—",
+                        materialTipo: document.getElementById("formSalidaMaterialClasificacion")?.value || "—",
                         materialCategoria: document.getElementById("formSalidaMaterialCategoria")?.value || "—",
                         unidad: document.getElementById("formSalidaMaterialUnidad")?.value || "",
                         cantidad: cant,
@@ -1122,45 +1224,56 @@
     // y total auto-calculado (cantidad × precio) en tiempo real.
     // Se invoca desde irWorkspace() y cada vez que se selecciona un material.
     // ============================================================
+    function _autorrellenarPrecio(prefix, inv) {
+        const esEntrada = prefix === "formEntrada";
+        const el = document.getElementById(esEntrada ? "formEntradaPrecio" : "formSalidaPrecio");
+        const precio = esEntrada ? inv.precioCompra : inv.precioVenta;
+        if (el && precio != null && !el.value) el.value = precio;
+    }
     function poblarInfoMaterial(prefix) {
         if (!currentMaterial) return;
         const inv = currentMaterial;
+        const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? ""; };
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
-        setVal(`${prefix}MaterialTipo`, inv.tipo);
+        const fmt = (v) => (v ?? 0).toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        const unidad = inv.unidad || "";
+        setVal(`${prefix}MaterialClasificacion`, inv.clasificacion);
         setVal(`${prefix}MaterialCategoria`, inv.categoria);
-        setVal(`${prefix}MaterialUnidad`, inv.unidad);
+        setVal(`${prefix}MaterialUnidad`, unidad);
         setVal(`${prefix}StockActual`, inv.stockActual);
         setVal(`${prefix}CapacidadMaxima`, inv.capacidadMaxima);
-        // Autorrellenar precio unitario desde el backend (el usuario puede
-        // sobrescribirlo). Es un buen default porque evita teclear el precio
-        // estándar del material y reduce errores.
-        if (prefix === "formEntrada") {
-            const precioEl = document.getElementById("formEntradaPrecio");
-            if (precioEl && inv.precioCompra != null && !precioEl.value) {
-                precioEl.value = inv.precioCompra;
-            }
-        } else if (prefix === "formSalida") {
-            const precioEl = document.getElementById("formSalidaPrecio");
-            if (precioEl && inv.precioVenta != null && !precioEl.value) {
-                precioEl.value = inv.precioVenta;
-            }
-        }
-        // Sugerir cantidad=0 como punto de partida, si el campo está vacío.
-        // El usuario lo sobrescribe; con 0 el Total queda vacío y el
-        // stock preview muestra el stock base (sin cambio). Obliga al
-        // usuario a tipear la cantidad real, evitando registrar valores
-        // случайные (ej. 1) que el usuario podría olvidar cambiar.
+
+        const stockBase = Number(inv.stockActual || 0);
+        const capacidad = Number(inv.capacidadMaxima || 0);
+
+        setText(`${prefix}StockActualLabel`, `${fmt(stockBase)} ${unidad}`);
+        setText(`${prefix}CapMaxLabel`, `${fmt(capacidad)} ${unidad}`);
+
         const cantEl = document.getElementById(`${prefix}Cantidad`);
-        if (cantEl && !cantEl.value) cantEl.value = 0;
-        // Recalcular total con el precio recién autorrellenado
+        if (cantEl) {
+            const esEntrada = prefix === "formEntrada";
+            const maxLogico = esEntrada ? capacidad : stockBase;
+            if (maxLogico > 0) cantEl.setAttribute("max", maxLogico);
+            else cantEl.removeAttribute("max");
+            cantEl.value = "";
+        }
+
+        _autorrellenarPrecio(prefix, inv);
+
         if (prefix === "formEntrada") actualizarTotalEntrada();
-        if (prefix === "formSalida") actualizarTotalVenta();
-        // Pintar el preview de stock resultante con el stock base del material
-        // (aunque el usuario todavía no haya tipeado cantidad, queremos ver
-        // el stock actual como punto de partida).
+        else actualizarTotalVenta();
         actualizarStockPreview(prefix);
     }
+    function _clampMax(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const maxVal = Number.parseFloat(el.getAttribute("max"));
+        if (Number.isNaN(maxVal)) return;
+        const val = Number.parseFloat(el.value || 0);
+        if (val > maxVal) el.value = maxVal;
+    }
     function actualizarTotalEntrada() {
+        _clampMax("formEntradaCantidad");
         const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
         const precio = Number(document.getElementById("formEntradaPrecio")?.value || 0);
         const total = cant * precio;
@@ -1169,6 +1282,7 @@
         actualizarStockPreviewEntrada();
     }
     function actualizarTotalVenta() {
+        _clampMax("formSalidaCantidad");
         const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
         const precio = Number(document.getElementById("formSalidaPrecio")?.value || 0);
         const total = cant * precio;
@@ -1177,47 +1291,101 @@
         actualizarStockPreviewSalida();
     }
     // Preview de stock resultante: muestra en tiempo real cuánto stock
-    // quedará tras aplicar este movimiento. Color verde si el resultado
-    // es válido; rojo si excede la capacidad máxima (compra) o resulta
-    // negativo (venta). Es solo referencia visual; el backend re-valida.
-    function actualizarStockPreviewEntrada() {
-        const stockEl = document.getElementById("formEntradaStockResultante");
-        const unidadEl = document.getElementById("formEntradaStockResultanteUnidad");
-        const capEl = document.getElementById("formEntradaStockResultanteCap");
-        if (!stockEl) return;
-        const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
-        const capacidad = Number(document.getElementById("formEntradaCapacidadMaxima")?.value || 0);
-        const cant = Number(document.getElementById("formEntradaCantidad")?.value || 0);
-        const unidad = document.getElementById("formEntradaMaterialUnidad")?.value || "";
-        const resultante = stockBase + cant;
-        stockEl.value = resultante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        if (unidadEl) unidadEl.textContent = unidad || "unidades";
-        if (capEl) capEl.textContent = capacidad > 0 ? `/ máx. ${capacidad.toLocaleString("es-CO", { maximumFractionDigits: 2 })}` : "";
-        if (capacidad > 0 && resultante > capacidad) {
-            stockEl.style.backgroundColor = "#f8d7da";
-            stockEl.style.color = "#58151c";
-        } else {
-            stockEl.style.backgroundColor = "#d1e7dd";
-            stockEl.style.color = "#0a3622";
+    // quedará tras aplicar este movimiento. Incluye barra de progreso,
+    // labels de capacidad y texto de disponibles. Color verde si el
+    // resultado es válido; amarillo si supera 70%; rojo si supera 90%
+    // o excede la capacidad máxima. Es solo referencia visual; el
+    // backend re-valida.
+
+    /** Determina la clase de color para la barra de progreso según el porcentaje. */
+    function _claseBarraStock(pct, sobreCapacidad) {
+        if (sobreCapacidad || pct >= 90) return "bg-danger";
+        if (pct >= 70) return "bg-warning";
+        return "bg-success";
+    }
+
+    /** Determina la clase de color para la barra de stock restante (venta). */
+    function _claseBarraRestante(pct, negativo) {
+        if (negativo || pct <= 10) return "bg-danger";
+        if (pct <= 30) return "bg-warning";
+        return "bg-success";
+    }
+
+    /** Caso capacidad > 0: calcula porcentaje, clase, disponibles y renderiza barra. */
+    function _renderStockBarActivo(bar, disponibles, stockEl, unidad, resultado, capacidad, esEntrada) {
+        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        const pct = esEntrada
+            ? Math.min((resultado / capacidad) * 100, 100)
+            : Math.max((resultado / capacidad) * 100, 0);
+        const clase = esEntrada
+            ? _claseBarraStock(pct, resultado > capacidad)
+            : _claseBarraRestante(pct, resultado < 0);
+        bar.style.width = Math.min(pct, 100) + "%";
+        bar.className = "progress-bar " + clase;
+        if (disponibles) {
+            const dispVal = esEntrada
+                ? Math.max(capacidad - resultado, 0)
+                : Math.max(resultado, 0);
+            disponibles.textContent = `${fmt(dispVal)} ${unidad}`;
         }
     }
-    function actualizarStockPreviewSalida() {
-        const stockEl = document.getElementById("formSalidaStockRestante");
-        const unidadEl = document.getElementById("formSalidaStockRestanteUnidad");
-        if (!stockEl) return;
-        const stockBase = Number(document.getElementById("formSalidaStockActual")?.value || 0);
-        const cant = Number(document.getElementById("formSalidaCantidad")?.value || 0);
-        const unidad = document.getElementById("formSalidaMaterialUnidad")?.value || "";
-        const restante = stockBase - cant;
-        stockEl.value = restante.toLocaleString("es-CO", { maximumFractionDigits: 2 });
-        if (unidadEl) unidadEl.textContent = unidad || "unidades";
-        if (restante < 0) {
-            stockEl.style.backgroundColor = "#f8d7da";
-            stockEl.style.color = "#58151c";
+
+    /** Actualiza estilos (fondo/color) del elemento de stock según si excede el límite. */
+    function _setStockElColor(stockEl, resultado, capacidad, esEntrada) {
+        const excede = esEntrada ? (capacidad > 0 && resultado > capacidad) : resultado < 0;
+        stockEl.style.backgroundColor = excede ? "#f8d7da" : "#d1e7dd";
+        stockEl.style.color = excede ? "#58151c" : "#0a3622";
+    }
+
+    /** Actualiza barra de progreso, disponibles y estilo del display de stock. */
+    function _renderStockBar(bar, disponibles, stockEl, unidad, opts) {
+        const { resultado, capacidad, esEntrada } = opts;
+        if (!bar || !stockEl) return;
+        if (capacidad > 0) {
+            _renderStockBarActivo(bar, disponibles, stockEl, unidad, resultado, capacidad, esEntrada);
         } else {
-            stockEl.style.backgroundColor = "#d1e7dd";
-            stockEl.style.color = "#0a3622";
+            bar.style.width = "0%";
+            bar.className = "progress-bar bg-success";
+            if (disponibles) disponibles.textContent = "—";
         }
+        _setStockElColor(stockEl, resultado, capacidad, esEntrada);
+    }
+
+    function actualizarStockPreviewEntrada() {
+        _actualizarStockPreview("formEntrada");
+    }
+
+    function actualizarStockPreviewSalida() {
+        _actualizarStockPreview("formSalida");
+    }
+
+    function _actualizarStockPreview(prefix) {
+        const esEntrada = prefix === "formEntrada";
+        const suffix = esEntrada ? "Resultante" : "Restante";
+        const stockEl = document.getElementById(`${prefix}Stock${suffix}`);
+        const unidadEl = document.getElementById(`${prefix}Stock${suffix}Unidad`);
+        if (!stockEl) return;
+        const stockBase = Number(document.getElementById(`${prefix}StockActual`)?.value || 0);
+        const capacidad = Number(document.getElementById(`${prefix}CapacidadMaxima`)?.value || 0);
+        const cant = Number(document.getElementById(`${prefix}Cantidad`)?.value || 0);
+        const unidad = document.getElementById(`${prefix}MaterialUnidad`)?.value || "";
+        const resultado = esEntrada ? stockBase + cant : stockBase - cant;
+
+        const fmt = (v) => v.toLocaleString("es-CO", { maximumFractionDigits: 2 });
+        stockEl.textContent = fmt(resultado);
+        if (unidadEl) unidadEl.textContent = unidad || "unidades";
+
+        const actualLabel = document.getElementById(`${prefix}StockActualLabel`);
+        const capMaxLabel = document.getElementById(`${prefix}CapMaxLabel`);
+        if (actualLabel) actualLabel.textContent = `${fmt(stockBase)} ${unidad}`;
+        if (capMaxLabel) capMaxLabel.textContent = `${fmt(capacidad)} ${unidad}`;
+
+        _renderStockBar(
+            document.getElementById(`${prefix}StockBar`),
+            document.getElementById(`${prefix}Disponibles`),
+            stockEl, unidad,
+            { resultado, capacidad, esEntrada }
+        );
     }
     function actualizarStockPreview(prefix) {
         if (prefix === "formEntrada") actualizarStockPreviewEntrada();
@@ -1504,7 +1672,7 @@
         const filtros = [
             ["material", materialNombre],
             ["categoria", _q("inv-hfiltro-categoria")?.value],
-            ["tipo", _q("inv-hfiltro-tipo-material")?.value],
+            ["tipo", _q("inv-hfiltro-clasificacion")?.value],
             ["tipo_movimiento", _q("inv-hfiltro-tipo")?.value],
             ["fecha_desde", _q("inv-hfiltro-desde")?.value],
             ["fecha_hasta", _q("inv-hfiltro-hasta")?.value],
@@ -1588,7 +1756,7 @@
         return {
             effectiveMaterialId,
             categoria: _q("inv-hfiltro-categoria")?.value || "",
-            tipoMaterial: _q("inv-hfiltro-tipo-material")?.value || "",
+            tipoMaterial: _q("inv-hfiltro-clasificacion")?.value || "",
             tipo: _q("inv-hfiltro-tipo")?.value || "",
             centro: _q("inv-hfiltro-centro")?.value || "",
             cantidadMin: Number.parseFloat(_q("inv-hfiltro-cantidad-min")?.value),
@@ -1800,7 +1968,7 @@
         [
             "inv-hfiltro-material",
             "inv-hfiltro-categoria",
-            "inv-hfiltro-tipo-material",
+            "inv-hfiltro-clasificacion",
             "inv-hfiltro-tipo",
             "inv-hfiltro-desde",
             "inv-hfiltro-hasta",
@@ -2711,6 +2879,16 @@
             console.warn("[inv] deep-link apunta a inventarioId inexistente:", dl.inv);
         }
     }
+    function _procesarOvtabDeferred() {
+        const params = new URLSearchParams(globalThis.location.search);
+        const hash = globalThis.location.hash.replace("#", "");
+        const target = params.get("ovtab") || hash;
+        if (!target) return;
+        const valid = ["ovtab-inventario", "ovtab-buscar", "ovtab-bulk", "ovtab-historial", "ovtab-flujo"];
+        if (valid.includes(target)) activarOvTab(target);
+    }
+    document.addEventListener("DOMContentLoaded", _procesarOvtabDeferred);
+    if (document.readyState !== "loading") _procesarOvtabDeferred();
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => { _initDeepLink(); bind(); });
     } else {

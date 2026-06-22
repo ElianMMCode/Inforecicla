@@ -2,7 +2,7 @@
 {% load static %}
 {% block page_title %}Categorías de Publicaciones - InfoRecicla Admin{% endblock %}
 {% block body_class %}bg-light{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="cat_publicaciones" %}{% endblock %}
+
 
 {% block content %}
 
@@ -11,13 +11,7 @@
     <h1 class="h2 fw-bold text-success mb-1"><i class="bi bi-folder-fill me-2"></i>Categorías de Publicaciones</h1>
     <p class="text-muted mb-0">Organiza las publicaciones por categorías.</p>
   </div>
-  <div class="d-flex flex-wrap gap-2">
-    <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}" class="btn btn-outline-success" title="Exportar Excel">
-      <i class="bi bi-file-earmark-excel me-1"></i> Excel
-    </a>
-    <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}" class="btn btn-outline-danger" title="Exportar PDF">
-      <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-    </a>
+  <div>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearCategoriaPublicacion">
       <i class="bi bi-plus-circle me-1"></i> Nueva Categoría
     </button>
@@ -30,69 +24,119 @@
 <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>El módulo de publicaciones no está habilitado.</div>
 {% else %}
 
-<div class="card border-success mb-4 shadow-sm">
-  <div class="card-header bg-success text-white"><i class="bi bi-funnel me-1"></i> Buscar</div>
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-tags-fill text-primary me-1"></i>Categorías por Tipo</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:200px;width:100%;"><canvas id="chartCatPubTipo"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-pie-chart text-success me-1"></i>Por Estado</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center py-2">
+        <div style="max-width:200px;width:100%;"><canvas id="chartCatPubEstado"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom py-2">
+        <h6 class="mb-0 fw-bold small"><i class="bi bi-graph-up text-primary me-1"></i>Tendencia de Publicaciones (30 días)</h6>
+      </div>
+      <div class="card-body py-2">
+        <canvas id="chartCatPubTendencia" style="max-height:140px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4 border-0">
+  <div class="card-header bg-success-subtle border-0 px-4 py-3">
+    <h6 class="mb-0 fw-bold text-success"><i class="bi bi-funnel me-2"></i>Filtros de búsqueda</h6>
+  </div>
   <div class="card-body">
-    <form method="get" class="row g-2">
-      <div class="col-md-10">
-        <input type="text" name="q" class="form-control" placeholder="Nombre, tipo o descripción..." value="{{ search_query }}">
+    <div class="row g-3 align-items-end" id="cat-pub-filter-form">
+      <div class="col-md-5">
+        <label class="visually-hidden" for="cat-pub-search-input">Buscar categoria</label>
+        <input type="text" class="form-control" placeholder="Nombre, tipo o descripcion..." value="{{ search_query }}" id="cat-pub-search-input">
       </div>
-      <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Buscar</button>
+      <div class="col-md-3">
+        <label for="cat-pub-filter-tipo" class="form-label fw-semibold text-muted mb-1">Tipo</label>
+        <select class="form-select js-select2" id="cat-pub-filter-tipo">
+          <option value="">Todos los tipos</option>
+        </select>
       </div>
-    </form>
+      <div class="col-md-2">
+        <label for="cat-pub-filter-estado" class="form-label fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select js-select2" id="cat-pub-filter-estado">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success flex-grow-1" id="cat-pub-search-btn"><i class="bi bi-search me-1"></i> Filtrar</button>
+          <button type="button" class="btn btn-outline-secondary" id="cat-pub-filter-limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="card shadow-sm border-0">
-  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-table me-1"></i> Listado</span>
-    <span class="badge bg-light text-success">{{ categorias|length }} resultados</span>
+  <div class="card-header bg-light border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-1"></i> Listado</h6>
+      <a href="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}"
+         class="btn btn-sm btn-outline-success fw-semibold export-link"
+         title="Exportar Excel"
+         data-export-base="{% url 'panel_admin:exportar_categorias_publicacion_excel' %}"
+         data-export-filters="q:cat-pub-search-input">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}"
+         class="btn btn-sm btn-outline-danger fw-semibold export-link"
+         title="Exportar PDF"
+         data-export-base="{% url 'panel_admin:exportar_categorias_publicacion_pdf' %}"
+         data-export-filters="q:cat-pub-search-input">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+    </div>
+    <span class="badge bg-secondary rounded-pill" id="cat-pub-count-badge">{{ categorias|length }} registros</span>
   </div>
   <div class="table-responsive">
-    <table class="table table-hover mb-0 align-middle">
+    <table class="table table-sm table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th>Nombre</th>
-          <th>Tipo</th>
-          <th>Descripción</th>
-          <th>Estado</th>
-          <th class="text-center">Acciones</th>
+          <th class="fw-bold small">Nombre</th>
+          <th class="fw-bold small">Tipo</th>
+          <th class="fw-bold small">Descripción</th>
+          <th class="fw-bold small">Estado</th>
+          <th class="fw-bold small text-center">Acciones</th>
         </tr>
       </thead>
-      <tbody>
-        {% for cat in categorias %}
-        <tr>
-          <td class="fw-semibold">{{ cat.nombre|default:cat.tipo }}</td>
-          <td><span class="badge bg-primary">{{ cat.get_tipo_display }}</span></td>
-          <td>{{ cat.descripcion|truncatechars:60|default:"-" }}</td>
-          <td>
-            {% if cat.estado == "ACTIVO" %}
-              <span class="badge bg-success">Activo</span>
-            {% else %}
-              <span class="badge bg-secondary">{{ cat.estado }}</span>
-            {% endif %}
-          </td>
-          <td class="text-center">
-            <button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-pub"
-                    title="Editar"
-                    data-id="{{ cat.id }}"
-                    data-nombre="{{ cat.nombre|default:'' }}"
-                    data-descripcion="{{ cat.descripcion|default:'' }}"
-                    data-tipo="{{ cat.tipo|default:'' }}"
-                    data-estado="{{ cat.estado|default:'ACTIVO' }}"
-                    data-action="{% url 'panel_admin:editar_categoria_publicacion_admin' categoria_id=cat.id %}">
-              <i class="bi bi-pencil"></i>
-            </button>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-center text-muted py-4">No se encontraron categorías.</td></tr>
-        {% endfor %}
-      </tbody>
+      <tbody class="border-top" id="cat-pub-tbody"></tbody>
     </table>
   </div>
+  <nav aria-label="Paginación" class="d-flex justify-content-end p-3 border-top">
+    <ul class="pagination pagination-sm mb-0" id="cat-pub-pager"></ul>
+  </nav>
 </div>
+
+{{ categorias_json|json_script:"cat-pub-data" }}
+{{ dist_tipo_cat_pub|json_script:"dist-tipo-cat-pub-data" }}
+{{ dist_estado_cat_pub|json_script:"dist-estado-cat-pub-data" }}
+{{ tendencia_publicaciones|json_script:"tendencia-publicaciones-data" }}
+
 {% endif %}
 
 {% endblock %}
@@ -127,13 +171,8 @@
               {% for value, label in tipos_publicacion %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
-              <option value="__otro__">Otro tipo...</option>
             </select>
             <div class="invalid-feedback">Selecciona un tipo.</div>
-          </div>
-          <div class="mb-3" id="ccp_tipo_otro_wrapper" style="display:none;">
-            <label for="ccp_tipo_otro" class="form-label fw-semibold">Nuevo tipo de publicación <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="ccp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$" placeholder="Ej: Campaña, Boletín, Comunicado...">
           </div>
           <div class="mb-3">
             <label for="ccp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
@@ -180,13 +219,8 @@
               {% for value, label in tipos_publicacion %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
-              <option value="__otro__">Otro tipo...</option>
             </select>
             <div class="invalid-feedback">Selecciona un tipo.</div>
-          </div>
-          <div class="mb-3" id="ecp_tipo_otro_wrapper" style="display:none;">
-            <label for="ecp_tipo_otro" class="form-label fw-semibold">Nuevo tipo <span class="text-danger">*</span> <small class="text-muted fw-normal">(requerido)</small></label>
-            <input id="ecp_tipo_otro" type="text" name="tipo_otro" class="form-control" maxlength="30" pattern="^(?=.*[A-Za-zÁÉÍÓÚáéíóúñÑ]).+$">
           </div>
           <div class="mb-3">
             <label for="ecp_estado" class="form-label fw-semibold">Estado <small class="text-muted fw-normal">(opcional)</small></label>
@@ -209,52 +243,112 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/admin/panel-modal-forms.js' %}"></script>
+<script>
+AdminCharts.initAll([
+  { type: 'doughnut', canvas: 'chartCatPubTipo', dataId: 'dist-tipo-cat-pub-data', labelKey: 'tipo' },
+  { type: 'doughnut', canvas: 'chartCatPubEstado', dataId: 'dist-estado-cat-pub-data', labelKey: 'estado' },
+  { type: 'trendLine', canvas: 'chartCatPubTendencia', dataId: 'tendencia-publicaciones-data', colorKey: 'success' },
+]);
+</script>
 <script>
 (function() {
-  function initTipoOtro(selectId, wrapperId, inputId) {
-    var sel = document.getElementById(selectId);
-    var wrapper = document.getElementById(wrapperId);
-    var inp = document.getElementById(inputId);
-    if (!sel || !wrapper || !inp) return;
-    function toggle() {
-      var esOtro = sel.value === '__otro__';
-      wrapper.style.display = esOtro ? 'block' : 'none';
-      inp.required = esOtro;
-      if (!esOtro) inp.value = '';
-    }
-    sel.addEventListener('change', toggle);
-    return toggle;
+  function tipoBadge(row) {
+    return '<span class="badge bg-primary">' + escapeHTML(row.get_tipo_display) + '</span>';
   }
 
-  // Pre-populate tipo_otro on edit modal open
-  var editModal = document.getElementById('modalEditarCategoriaPublicacion');
-  var editSel = document.getElementById('ecp_tipo');
-  var editWrapper = document.getElementById('ecp_tipo_otro_wrapper');
-  var editInput = document.getElementById('ecp_tipo_otro');
+  function estadoBadge(row) {
+    if (row.estado === 'ACTIVO') return '<span class="badge bg-success">Activo</span>';
+    return '<span class="badge bg-secondary">' + escapeHTML(row.estado) + '</span>';
+  }
 
-  if (editModal && editSel) {
-    editModal.addEventListener('show.bs.modal', function() {
-      // The tipo was already set by setupEditModal; check if it's not a known value
-      var known = [{% for value, label in tipos_publicacion %}'{{ value }}',{% endfor %}];
-      if (editSel.value && known.indexOf(editSel.value) === -1 && editSel.value !== '__otro__') {
-        editInput.value = editSel.value;
-        editSel.value = '__otro__';
-      }
-      toggleEditTipo();
+  function accionBtn(row) {
+    return '<button type="button" class="btn btn-outline-primary btn-sm btn-editar-cat-pub" title="Editar"' +
+      ' data-id="' + row.id + '"' +
+      ' data-nombre="' + escapeAttr(row.nombre) + '"' +
+      ' data-descripcion="' + escapeAttr(row.descripcion) + '"' +
+      ' data-tipo="' + escapeAttr(row.tipo) + '"' +
+      ' data-estado="' + escapeAttr(row.estado) + '"' +
+      ' data-action="' + escapeAttr(row.action_url) + '">' +
+      '<i class="bi bi-pencil"></i></button>';
+  }
+
+  function reinitEditModal() {
+    setupEditModal('.btn-editar-cat-pub', 'modalEditarCategoriaPublicacion', {
+      nombre: 'ecp_nombre', descripcion: 'ecp_descripcion',
+      tipo: 'ecp_tipo', estado: 'ecp_estado'
     });
   }
-  var toggleEditTipo = initTipoOtro('ecp_tipo', 'ecp_tipo_otro_wrapper', 'ecp_tipo_otro');
 
-  initTipoOtro('ccp_tipo', 'ccp_tipo_otro_wrapper', 'ccp_tipo_otro');
+  var table = new AdminTable({
+    containerId: 'cat-pub-tbody',
+    data: readJSONData('cat-pub-data'),
+    pageSize: 10,
+    countBadgeId: 'cat-pub-count-badge',
+    pagerId: 'cat-pub-pager',
+    filterFns: [
+      function(row, q) { return (row.nombre + ' ' + row.tipo + ' ' + row.descripcion).toLowerCase().indexOf(q) !== -1; }
+    ],
+    defaultSort: function(a, b) { return a.nombre.localeCompare(b.nombre); },
+    onAfterRender: reinitEditModal,
+    columns: [
+      { render: function(r) { return '<span class="fw-semibold">' + escapeHTML(r.nombre) + '</span>'; } },
+      { render: tipoBadge },
+      { render: function(r) { return escapeHTML(r.descripcion || '-'); } },
+      { render: estadoBadge },
+      { className: 'text-center', render: accionBtn }
+    ]
+  });
+
+  (function() {
+    var data = table.data;
+    // Populate tipo select from data
+    var tipos = [...new Set(data.map(function(c) { return c.get_tipo_display; }))].sort();
+    var tipSel = document.getElementById('cat-pub-filter-tipo');
+    if (tipSel) {
+      tipos.forEach(function(t) {
+        if (!t) return;
+        var opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        tipSel.appendChild(opt);
+      });
+    }
+
+    $('.js-select2').select2({ theme: 'bootstrap-5', width: '100%', placeholder: function(){return $(this).find('option:first').text();} });
+
+    function aplicarFiltros() {
+      var q = document.getElementById('cat-pub-search-input')?.value || '';
+      table.setSearch(q);
+
+      var tip = $('#cat-pub-filter-tipo').val() || '';
+      if (tip) table.setExtraFilter('get_tipo_display', tip);
+      else table.removeExtraFilter('get_tipo_display');
+
+      var est = $('#cat-pub-filter-estado').val() || '';
+      if (est) table.setExtraFilter('estado', est);
+      else table.removeExtraFilter('estado');
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('cat-pub-search-input').value = '';
+      $('#cat-pub-filter-tipo').val('').trigger('change');
+      $('#cat-pub-filter-estado').val('').trigger('change');
+      table.setFilters('', {});
+    }
+
+    document.getElementById('cat-pub-search-btn').addEventListener('click', aplicarFiltros);
+    document.getElementById('cat-pub-filter-limpiar').addEventListener('click', limpiarFiltros);
+    $('#cat-pub-filter-tipo, #cat-pub-filter-estado').on('change', aplicarFiltros);
+    document.getElementById('cat-pub-search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); aplicarFiltros(); } });
+
+    {% if search_query %}
+    table.setFilters('{{ search_query|escapejs }}', {});
+    {% endif %}
+  })();
+
+  initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
 
   initModalFormAjax('formCrearCatPub', '{% url "panel_admin:listar_categorias_publicacion_admin" %}');
   initModalFormAjax('formEditarCatPub', window.location.href);
-
-  setupEditModal('.btn-editar-cat-pub', 'modalEditarCategoriaPublicacion', {
-    nombre: 'ecp_nombre', descripcion: 'ecp_descripcion',
-    tipo: 'ecp_tipo', estado: 'ecp_estado'
-  });
 })();
 </script>
 {% include "admin/_messages_swal.html" %}

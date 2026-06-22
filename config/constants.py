@@ -111,6 +111,21 @@ class Calificacion(models.TextChoices):
     DISLIKE = "DISLIKE", _("Dislike")
 
 
+class ClasificacionMaterial(models.TextChoices):
+    ESTANDAR = "ESTANDAR", _("Estándar")
+    MANEJO_ESPECIAL = "MANEJO_ESPECIAL", _("Manejo Especial")
+    PELIGROSO = "PELIGROSO", _("Peligroso")
+    HAZMAT = "HAZMAT", _("HAZMAT")
+
+
+DESCRIPCIONES_CLASIFICACION = {
+    ClasificacionMaterial.ESTANDAR: "Manipulación normal. Material reciclable convencional sin riesgos especiales.",
+    ClasificacionMaterial.MANEJO_ESPECIAL: "Requiere cuidados específicos durante la manipulación. Vidrio frágil, cartón contaminado, multicapas.",
+    ClasificacionMaterial.PELIGROSO: "Riesgo químico o eléctrico. Pilas, baterías, aceites usados, RAEE. Requiere EPP y manejo autorizado.",
+    ClasificacionMaterial.HAZMAT: "Residuo peligroso regulado. Transporte con manifiesto, disposición certificada. Solo gestores autorizados.",
+}
+
+
 class Visibilidad(models.TextChoices):
     GLOBAL = "GLOBAL", _("Global")
     ECA = "ECA", _("ECA")

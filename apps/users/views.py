@@ -80,9 +80,9 @@ def perfil_incompleto(user):
 
 def _get_perfil_pendientes(user):
     return {
-        "documento": not bool(getattr(user, "tipo_documento", None)) or not bool(getattr(user, "numero_documento", None)),
+        "documento": not bool(getattr(user, "tipo_documento", "")) or not bool(getattr(user, "numero_documento", None)),
         "numero_documento": not bool(getattr(user, "numero_documento", None)),
-        "tipo_documento": not bool(getattr(user, "tipo_documento", None)),
+        "tipo_documento": not bool(getattr(user, "tipo_documento", "")),
         "localidad": not bool(getattr(user, "localidad", None)),
         "fecha_nacimiento": not bool(getattr(user, "fecha_nacimiento", None)),
     }
@@ -99,7 +99,7 @@ def _obtener_token_recuperacion_valido(request, email):
         email=email,
         tipo="recuperacion",
         fecha_validacion__isnull=False,
-        activo=False,
+        es_activo=False,
     ).first()
     if token_obj is None:
         return None, "La validación de recuperación ya no es válida. Solicita un nuevo código."
@@ -627,7 +627,7 @@ def _collect_registro_eca_fields(data):
         "apellidos": data.get("apellidos", "").strip(),
         # gestor email (login)
         "email": data.get("email", "").strip().lower(),
-        "tipo_documento": data.get("tipoDocumento") or None,
+        "tipo_documento": data.get("tipoDocumento", "").strip(),
         "numero_documento": data.get("numeroDocumento", "").strip(),
         "celular": data.get("celular", "").strip(),
         # Punto fields: most moved to step 2 (optional). Keep placeholders here
@@ -871,7 +871,7 @@ def perfil_ciudadano(request, tab="datos"):
         .select_related("publicacion", "mensaje__chat__punto")
         .order_by("-fecha_creacion")[:20]
     )
-    notificaciones_no_leidas = notificaciones_disponibles.filter(leido=False).count()
+    notificaciones_no_leidas = notificaciones_disponibles.filter(es_leido=False).count()
     return render(
         request,
         "users/perfil_ciudadano.html",

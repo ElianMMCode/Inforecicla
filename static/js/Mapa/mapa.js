@@ -1,4 +1,4 @@
-const BOGOTA = [4.7110, -74.0721];
+const BOGOTA = [4.711, -74.0721];
 const map = L.map('map', { zoomControl: true }).setView(BOGOTA, 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap', maxZoom: 19
@@ -47,7 +47,7 @@ function renderLista(items) {
   lista.querySelectorAll('[data-id]').forEach(card => {
     card.addEventListener('click', () => {
       const id = String(card.dataset.id);
-      const p = window.__PUNTOS.find(x => String(x.id) === id);
+      const p = globalThis.__PUNTOS.find(x => String(x.id) === id);
       if (!p) return;
       if (p.lng != null && p.lat != null) {
         map.setView([p.lat, p.lng], 14, { animate: true });
@@ -58,46 +58,44 @@ function renderLista(items) {
   });
 }
 
-fetch('/puntos.geojson')
-  .then(r => r.json())
-  .then(geo => {
-    const puntos = geo.features.map(f => ({
-      id: String(f.properties.id),
-      nombre: f.properties.nombre,
-      direccion: f.properties.direccion,
-      localidad: f.properties.localidad,
-      correo: f.properties.correo,
-      telefono: f.properties.telefono,
-      web: f.properties.web,
-      img: f.properties.img,
-      horario: f.properties.horario,
-      categoria: f.properties.categoria,
-      lng: f.geometry.coordinates[0],
-      lat: f.geometry.coordinates[1],
-    }));
-    window.__PUNTOS = puntos;
+try {
+  const r = await fetch('/puntos.geojson');
+  const geo = await r.json();
+  const puntos = geo.features.map(f => ({
+    id: String(f.properties.id),
+    nombre: f.properties.nombre,
+    direccion: f.properties.direccion,
+    localidad: f.properties.localidad,
+    correo: f.properties.correo,
+    telefono: f.properties.telefono,
+    web: f.properties.web,
+    img: f.properties.img,
+    horario: f.properties.horario,
+    categoria: f.properties.categoria,
+    lng: f.geometry.coordinates[0],
+    lat: f.geometry.coordinates[1],
+  }));
+  globalThis.__PUNTOS = puntos;
 
-    // Marcadores
-    puntos.forEach(p => {
-      const m = L.marker([p.lat, p.lng]).addTo(map);
-      m.bindPopup(`<strong>${p.nombre}</strong><br><small>${p.direccion || ''}</small>`);
-      m.on('click', () => abrirModal(p));
-      markers.set(String(p.id), m);
-    });
-
-    renderLista(puntos);
-  })
-  .catch(err => {
-    console.error('Error cargando /puntos.geojson', err);
-    renderLista([]);
+  puntos.forEach(p => {
+    const m = L.marker([p.lat, p.lng]).addTo(map);
+    m.bindPopup(`<strong>${p.nombre}</strong><br><small>${p.direccion || ''}</small>`);
+    m.on('click', () => abrirModal(p));
+    markers.set(String(p.id), m);
   });
+
+  renderLista(puntos);
+} catch (err) {
+  console.error('Error cargando /puntos.geojson', err);
+  renderLista([]);
+}
 
 // Filtro
 const filtro = document.getElementById('filtro');
 if (filtro) {
   filtro.addEventListener('input', e => {
     const q = (e.target.value || '').toLowerCase().trim();
-    const filtered = (window.__PUNTOS || []).filter(p =>
+    const filtered = (globalThis.__PUNTOS || []).filter(p =>
       (p.nombre || '').toLowerCase().includes(q) ||
       (p.localidad || '').toLowerCase().includes(q) ||
       (p.direccion || '').toLowerCase().includes(q)

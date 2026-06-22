@@ -1,7 +1,38 @@
 {% extends "admin/base.html" %}
+{% load static %}
 {% block page_title %}Panel de Administración - InfoRecicla{% endblock %}
 {% block body_class %}bg-light{% endblock %}
-{% block sidebar %}{% include "admin/partials/sidebar.html" with active="inicio" %}{% endblock %}
+
+{% block admin_header %}
+<header class="bg-white border-bottom shadow-sm sticky-top">
+    <div class="container-fluid py-3 px-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h2 class="h3 fw-bold text-dark mb-0">
+                        <i class="bi bi-speedometer2 text-success me-2"></i>Panel de Administración
+                    </h2>
+                    <span class="salud-badge salud-badge-ok">
+                        <i class="bi bi-check-circle-fill"></i> Activo
+                    </span>
+                </div>
+                <p class="text-muted small mb-0">
+                    Bienvenido, <strong>{{ request.user.get_short_name }}</strong>
+                    <span class="text-muted ms-2">— Gestiona todos los aspectos de InfoRecicla</span>
+                </p>
+            </div>
+            <div class="col-auto d-none d-md-flex align-items-center gap-3">
+                <span class="badge bg-danger px-3 py-2 rounded-pill">
+                    <i class="bi bi-shield-fill me-1"></i>Administrador
+                </span>
+                <span class="badge bg-light text-dark px-3 py-2 rounded-pill border">
+                    <i class="bi bi-envelope-fill me-1"></i>{{ request.user.email }}
+                </span>
+            </div>
+        </div>
+    </div>
+</header>
+{% endblock %}
 
 {% block content %}
 
@@ -16,203 +47,578 @@
     </div>
     {% endif %}
 
-    <div class="bg-light bg-opacity-75 rounded-3 p-4 p-md-5 shadow-sm mb-5 border-start border-5 border-success">
-        <div class="row">
-            <div class="col-lg-8">
-                <h1 class="display-5 fw-bold text-success mb-3">Panel de Administración</h1>
-                <p class="lead text-muted mb-0">Gestiona todos los aspectos de InfoRecicla desde un solo lugar.</p>
-            </div>
-            <div class="col-lg-4 d-flex align-items-center justify-content-end">
-                <span class="text-muted small">Bienvenido, <strong>{{ request.user.get_short_name }}</strong></span>
-            </div>
+    <!-- ===== ALERTAS PROACTIVAS ===== -->
+    {% include "admin/partials/alertas_proactivas.html" %}
+
+    <!-- ===== KPIs CLICKEABLES ===== -->
+    <div class="row g-3 mb-4 resumen-stagger">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <a href="{% url 'panel_admin:listar_usuarios' %}" class="text-decoration-none">
+                <div class="kpi-card kpi-success">
+                    <div class="d-flex align-items-center gap-3 p-3">
+                        <div class="kpi-icon-circle bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-value">{{ resumen_general.total_usuarios }}</div>
+                            <div class="kpi-label">Usuarios</div>
+                            <div class="kpi-sub">{{ resumen_general.total_usuarios_activos }} activos</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="text-decoration-none">
+                <div class="kpi-card kpi-info">
+                    <div class="d-flex align-items-center gap-3 p-3">
+                        <div class="kpi-icon-circle bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-value">{{ resumen_general.total_puntos_eca }}</div>
+                            <div class="kpi-label">Puntos ECA</div>
+                            <div class="kpi-sub">Estaciones activas</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <a href="{% url 'panel_admin:gestion_materiales' %}" class="text-decoration-none">
+                <div class="kpi-card kpi-warning">
+                    <div class="d-flex align-items-center gap-3 p-3">
+                        <div class="kpi-icon-circle bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-value">{{ resumen_general.total_materiales }}</div>
+                            <div class="kpi-label">Materiales</div>
+                            <div class="kpi-sub">{{ resumen_general.total_categorias_materiales }} categorías</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="text-decoration-none">
+                <div class="kpi-card kpi-primary">
+                    <div class="d-flex align-items-center gap-3 p-3">
+                        <div class="kpi-icon-circle bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-newspaper"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-value">{{ resumen_general.total_publicaciones }}</div>
+                            <div class="kpi-label">Publicaciones</div>
+                            <div class="kpi-sub">{{ resumen_general.total_publicaciones_activas }} activas</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="text-decoration-none">
+                <div class="kpi-card kpi-danger">
+                    <div class="d-flex align-items-center gap-3 p-3">
+                        <div class="kpi-icon-circle bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-tags-fill"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-value">{{ resumen_general.total_categorias_materiales }}</div>
+                            <div class="kpi-label">Cat. Materiales</div>
+                            <div class="kpi-sub">+{{ resumen_general.total_tipos_material }} clasificaciones</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="text-decoration-none">
+                <div class="kpi-card kpi-dark">
+                    <div class="d-flex align-items-center gap-3 p-3">
+                        <div class="kpi-icon-circle bg-dark bg-opacity-10 text-dark">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-value">{{ resumen_general.total_tipos_material }}</div>
+                            <div class="kpi-label">Clasificaciones</div>
+                            <div class="kpi-sub">Manejo de materiales</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 
-    <!-- Resumen con datos reales -->
-    <div class="row mb-5">
+    <!-- ===== Modulos del Sistema ===== -->
+    <div class="row g-3 mb-4">
         <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Resumen General del Sistema</h5>
+            <div class="card border-0 shadow-sm hover-lift">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-grid-3x3-gap text-success"></i>
+                        <h6 class="mb-0 fw-bold">Modulos del Sistema</h6>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border-end border-light-subtle">
-                                <div class="h3 text-success fw-bold mb-1">{{ resumen_general.total_usuarios }}</div>
-                                <small class="text-muted text-uppercase fw-semibold">Usuarios</small>
+                    <div class="row g-3 resumen-stagger">
+
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 hover-lift border-start border-3 border-success">
+                                <a href="{% url 'panel_admin:listar_usuarios' %}" class="text-decoration-none text-dark">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                                <i class="bi bi-people-fill text-white fs-5"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <h3 class="h6 mb-1 text-success fw-semibold">Usuarios</h3>
+                                                <p class="text-muted mb-0" style="font-size:0.72rem;">Administra usuarios, roles y permisos.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3">
+                                    <span class="badge bg-success-subtle text-success rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_usuarios_activos }} activos</span>
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-sm btn-outline-success" style="font-size:0.72rem;">Ver</a>
+                                        <a href="{% url 'panel_admin:crear_usuario_admin' %}" class="btn btn-sm btn-success" style="font-size:0.72rem;">+ Nuevo</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border-end border-light-subtle">
-                                <div class="h3 text-info fw-bold mb-1">{{ resumen_general.total_puntos_eca }}</div>
-                                <small class="text-muted text-uppercase fw-semibold">Puntos ECA</small>
+
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 hover-lift border-start border-3 border-info">
+                                <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="text-decoration-none text-dark">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-info rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                                <i class="bi bi-geo-alt-fill text-white fs-5"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <h3 class="h6 mb-1 text-info fw-semibold">Puntos ECA</h3>
+                                                <p class="text-muted mb-0" style="font-size:0.72rem;">Gestiona las estaciones de reciclaje.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3">
+                                    <span class="badge bg-info-subtle text-info rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_puntos_eca }} estaciones</span>
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="btn btn-sm btn-outline-info" style="font-size:0.72rem;">Ver</a>
+                                        <a href="{% url 'panel_admin:crear_punto_eca_admin' %}" class="btn btn-sm btn-info text-white" style="font-size:0.72rem;">+ Nuevo</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border-end border-light-subtle">
-                                <div class="h3 text-warning fw-bold mb-1">{{ resumen_general.total_materiales }}</div>
-                                <small class="text-muted text-uppercase fw-semibold">Materiales</small>
+
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 hover-lift border-start border-3 border-primary">
+                                <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="text-decoration-none text-dark">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                                <i class="bi bi-newspaper text-white fs-5"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <h3 class="h6 mb-1 text-primary fw-semibold">Publicaciones</h3>
+                                                <p class="text-muted mb-0" style="font-size:0.72rem;">Administra articulos y noticias.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3">
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_publicaciones_activas }} activas</span>
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;">Ver</a>
+                                        <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-sm btn-primary" style="font-size:0.72rem;">+ Nueva</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border-end border-light-subtle">
-                                <div class="h3 text-primary fw-bold mb-1">{{ resumen_general.total_publicaciones }}</div>
-                                <small class="text-muted text-uppercase fw-semibold">Publicaciones</small>
+
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 hover-lift border-start border-3 border-warning">
+                                <a href="{% url 'panel_admin:gestion_materiales' %}" class="text-decoration-none text-dark">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                                <i class="bi bi-box-seam text-white fs-5"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <h3 class="h6 mb-1 text-warning fw-semibold">Materiales</h3>
+                                                <p class="text-muted mb-0" style="font-size:0.72rem;">Gestiona el catalogo de materiales.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3">
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_materiales }} en catalogo</span>
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'panel_admin:gestion_materiales' %}" class="btn btn-sm btn-outline-warning" style="font-size:0.72rem;">Ver</a>
+                                        <a href="{% url 'panel_admin:gestion_materiales' %}" class="btn btn-sm btn-warning text-white" style="font-size:0.72rem;">+ Nuevo</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border-end border-light-subtle">
-                                <div class="h3 text-danger fw-bold mb-1">{{ resumen_general.total_categorias_materiales }}</div>
-                                <small class="text-muted text-uppercase fw-semibold">Cat. Materiales</small>
+
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 hover-lift border-start border-3 border-secondary">
+                                <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="text-decoration-none text-dark">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                                <i class="bi bi-shield-check text-white fs-5"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <h3 class="h6 mb-1 text-secondary fw-semibold">Clasificaciones</h3>
+                                                <p class="text-muted mb-0" style="font-size:0.72rem;">Manejo y riesgo de materiales.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3">
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_tipos_material }} clasificaciones</span>
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;">Ver</a>
+                                        <a href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones" class="btn btn-sm btn-secondary" style="font-size:0.72rem;">+ Nueva</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div>
-                                <div class="h3 text-secondary fw-bold mb-1">{{ resumen_general.total_tipos_material }}</div>
-                                <small class="text-muted text-uppercase fw-semibold">Tipos Material</small>
+
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 hover-lift border-start border-3 border-danger">
+                                <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="text-decoration-none text-dark">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                                <i class="bi bi-tags-fill text-white fs-5"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <h3 class="h6 mb-1 text-danger fw-semibold">Cat. Materiales</h3>
+                                                <p class="text-muted mb-0" style="font-size:0.72rem;">Organiza los materiales reciclables.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3">
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size:0.68rem;">{{ resumen_general.total_categorias_materiales }} categorias</span>
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="btn btn-sm btn-outline-danger" style="font-size:0.72rem;">Ver</a>
+                                        <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="btn btn-sm btn-danger" style="font-size:0.72rem;">+ Nueva</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Acciones rápidas -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm border-top border-3 border-success">
+    <!-- ===== Charts: Tendencia usuarios + Distribucion roles ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm hover-lift h-100">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-graph-up text-primary"></i>
+                            <h6 class="mb-0 fw-bold">Registro de Usuarios (últimos 30 días)</h6>
+                        </div>
+                        <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-arrow-right me-1"></i>Ver detalle
+                        </a>
+                    </div>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title text-success mb-3"><i class="bi bi-lightning-fill me-2"></i>Acciones Rápidas</h5>
-                    <div class="row g-2">
-                        <div class="col-md-3 col-6">
-                            <a href="{% url 'panel_admin:crear_publicacion_admin' %}" class="btn btn-outline-primary w-100 py-2">
-                                <i class="bi bi-pencil-fill me-1"></i> Nueva Publicación
-                            </a>
+                    <canvas id="chartTendenciaUsuarios" style="max-height:260px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm hover-lift h-100">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-pie-chart text-success"></i>
+                            <h6 class="mb-0 fw-bold">Usuarios por Rol</h6>
                         </div>
-                        <div class="col-md-3 col-6">
-                            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos" class="btn btn-outline-secondary w-100 py-2">
-                                <i class="bi bi-recycle me-1"></i> Nuevo Tipo Material
-                            </a>
+                        <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-arrow-right me-1"></i>Ver detalle
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="max-width:240px;width:100%;">
+                        <canvas id="chartRoles"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0 text-center">
+                    <span class="badge bg-success px-3 py-2 rounded-pill me-2">
+                        <i class="bi bi-check-circle me-1"></i>{{ resumen_general.total_usuarios_activos }} activos
+                    </span>
+                    <span class="badge bg-secondary px-3 py-2 rounded-pill">
+                        <i class="bi bi-dash-circle me-1"></i>{{ resumen_general.total_usuarios_inactivos }} inactivos
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Últimas publicaciones + Últimos usuarios ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm hover-lift h-100">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-clock-history text-primary"></i>
+                            <h6 class="mb-0 fw-bold">Últimas Publicaciones</h6>
                         </div>
-                        <div class="col-md-3 col-6">
-                            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="btn btn-outline-danger w-100 py-2">
-                                <i class="bi bi-tags-fill me-1"></i> Nueva Cat. Material
-                            </a>
+                        <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-arrow-right me-1"></i>Ver todas
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if resumen_general.ultimas_publicaciones %}
+                        {% for pub in resumen_general.ultimas_publicaciones %}
+                        <div class="timeline-movimiento {% cycle '' 'timeline-salida' %}">
+                            <div class="mov-header">
+                                <div class="mov-header-left">
+                                    <a href="{% url 'panel_admin:ver_publicacion_admin' pub.id %}" class="text-decoration-none text-dark fw-semibold">
+                                        <span class="mov-tipo text-{% if pub.estado == 'ACTIVO' %}success{% else %}secondary{% endif %}">{{ pub.estado }}</span>
+                                        <span class="mov-material">{{ pub.titulo|truncatechars:50 }}</span>
+                                    </a>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="mov-cantidad small text-muted" style="font-size:.72rem;">{{ pub.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                    <a href="{% url 'panel_admin:editar_publicacion_admin' pub.id %}" class="btn btn-sm btn-outline-secondary" title="Editar publicación" style="font-size:.65rem;padding:.15rem .5rem;">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="mov-meta">
+                                <i class="bi bi-person me-1"></i>{{ pub.usuario_nombre }}
+                                {% if pub.categoria %}
+                                <span class="ms-2 badge bg-light text-muted">{{ pub.categoria }}</span>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="col-md-3 col-6">
-                            <a href="{% url 'panel_admin:crear_categoria_publicacion' %}" class="btn btn-outline-warning w-100 py-2 text-dark">
-                                <i class="bi bi-folder-fill me-1"></i> Nueva Cat. Publicación
-                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted small">No hay publicaciones registradas.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm hover-lift h-100">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-plus text-success"></i>
+                            <h6 class="mb-0 fw-bold">Últimos Usuarios</h6>
                         </div>
+                        <a href="{% url 'panel_admin:listar_usuarios' %}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-arrow-right me-1"></i>Ver todos
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if resumen_general.ultimos_usuarios %}
+                        {% for usuario in resumen_general.ultimos_usuarios %}
+                        <a href="{% url 'panel_admin:listar_usuarios' %}" class="text-decoration-none text-dark">
+                            <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom">
+                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;font-size:.85rem;font-weight:700;">
+                                    {{ usuario.nombres|first }}
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold small text-truncate">{{ usuario.nombres }} {{ usuario.apellidos }}</div>
+                                    <div class="text-muted" style="font-size:.72rem;">{{ usuario.email|truncatechars:30 }}</div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <span class="badge {% if usuario.tipo_usuario == 'Administrador' %}bg-danger{% elif usuario.tipo_usuario == 'Gestor ECA' %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill" style="font-size:.65rem;">{{ usuario.tipo_usuario }}</span>
+                                    <div class="text-muted mt-1" style="font-size:.65rem;">{{ usuario.date_joined|date:"d/m/Y" }}</div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted small">No hay usuarios registrados.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Charts: Puntos ECA por localidad + Materiales por clasificacion ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm hover-lift h-100">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-geo-alt text-info"></i>
+                            <h6 class="mb-0 fw-bold">Puntos ECA por Localidad</h6>
+                        </div>
+                        <a href="{% url 'panel_admin:dashboard_puntos_eca' %}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-arrow-right me-1"></i>Ver detalle
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartPuntosECA" style="max-height:300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm hover-lift h-100">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-shield-check text-warning"></i>
+                            <h6 class="mb-0 fw-bold">Materiales por Clasificación</h6>
+                        </div>
+                        <a href="{% url 'panel_admin:gestion_materiales' %}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-arrow-right me-1"></i>Ver detalle
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div style="max-width:280px;width:100%;">
+                        <canvas id="chartMateriales"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Módulos -->
-    <h4 class="text-secondary mb-4 border-bottom pb-2">Módulos del Sistema</h4>
-    <div class="row g-4">
-        <div class="col-md-6 col-lg-4">
-            <a href="{% url 'panel_admin:listar_usuarios' %}" class="text-decoration-none text-dark">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center p-4">
-                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
-                            <i class="bi bi-people-fill text-white fs-3"></i>
-                        </div>
-                        <h3 class="h5 mb-2 text-success fw-semibold">Gestión de Usuarios</h3>
-                        <p class="text-muted mb-0 small">Administra usuarios, roles y permisos del sistema.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+{% endblock %}
 
-        <div class="col-md-6 col-lg-4">
-            <a href="{% url 'panel_admin:listar_puntos_eca_admin' %}" class="text-decoration-none text-dark">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center p-4">
-                        <div class="bg-info rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
-                            <i class="bi bi-geo-alt-fill text-white fs-3"></i>
-                        </div>
-                        <h3 class="h5 mb-2 text-info fw-semibold">Puntos ECA</h3>
-                        <p class="text-muted mb-0 small">Administra las estaciones de clasificación y aprovechamiento.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+{% block extra_scripts %}
+{{ tendencia_usuarios|json_script:"tendencia-usuarios-data" }}
+{{ dist_puntos_eca|json_script:"puntos-eca-data" }}
+{{ dist_materiales|json_script:"materiales-data" }}
+{{ dist_clasificacion_mat|json_script:"clasificacion-data" }}
+<script>
+(function() {
+    const COLORS = {
+        success: '#198754',
+        warning: '#ffc107',
+        danger: '#dc3545',
+        info: '#0dcaf0',
+        primary: '#0d6efd',
+        dark: '#212529',
+    };
 
-        <div class="col-md-6 col-lg-4">
-            <a href="{% url 'panel_admin:gestion_materiales' %}" class="text-decoration-none text-dark">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center p-4">
-                        <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
-                            <i class="bi bi-box-seam text-white fs-3"></i>
-                        </div>
-                        <h3 class="h5 mb-2 text-warning fw-semibold">Materiales</h3>
-                        <p class="text-muted mb-0 small">Gestiona los materiales reciclables del sistema.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+    // 1. Tendencia de usuarios (Line)
+    const datosTendencia = JSON.parse(document.getElementById('tendencia-usuarios-data').textContent);
+    if (datosTendencia.length) {
+        new Chart(document.getElementById('chartTendenciaUsuarios'), {
+            type: 'line',
+            data: {
+                labels: datosTendencia.map(d => d.date),
+                datasets: [{
+                    label: 'Usuarios',
+                    data: datosTendencia.map(d => d.count),
+                    borderColor: COLORS.primary,
+                    backgroundColor: 'rgba(13,110,253,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } }
+                }
+            }
+        });
+    }
 
-        <div class="col-md-6 col-lg-4">
-            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=tipos" class="text-decoration-none text-dark">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center p-4">
-                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
-                            <i class="bi bi-recycle text-white fs-3"></i>
-                        </div>
-                        <h3 class="h5 mb-2 text-secondary fw-semibold">Tipos de Material</h3>
-                        <p class="text-muted mb-0 small">Gestiona los tipos de materiales reciclables.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+    // 2. Usuarios por rol (Doughnut)
+    new Chart(document.getElementById('chartRoles'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Ciudadanos', 'Gestores ECA', 'Administradores'],
+            datasets: [{
+                data: [{{ resumen_general.total_ciudadanos }}, {{ resumen_general.total_gestores }}, {{ resumen_general.total_administradores }}],
+                backgroundColor: [COLORS.warning, COLORS.success, COLORS.danger],
+                borderColor: '#fff',
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { size: 12 } } }
+            }
+        }
+    });
 
-        <div class="col-md-6 col-lg-4">
-            <a href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias" class="text-decoration-none text-dark">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center p-4">
-                        <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
-                            <i class="bi bi-tags-fill text-white fs-3"></i>
-                        </div>
-                        <h3 class="h5 mb-2 text-danger fw-semibold">Categorías de Materiales</h3>
-                        <p class="text-muted mb-0 small">Gestiona las categorías de materiales.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+    // 3. Puntos ECA por localidad (Horizontal Bar)
+    const datosPuntos = JSON.parse(document.getElementById('puntos-eca-data').textContent);
+    if (datosPuntos.length) {
+        new Chart(document.getElementById('chartPuntosECA'), {
+            type: 'bar',
+            data: {
+                labels: datosPuntos.map(d => d.localidad),
+                datasets: [{
+                    label: 'Puntos ECA',
+                    data: datosPuntos.map(d => d.count),
+                    backgroundColor: COLORS.info,
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0 } },
+                    y: { ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+    }
 
-        <div class="col-md-6 col-lg-4">
-            <a href="{% url 'panel_admin:listar_publicaciones_admin' %}" class="text-decoration-none text-dark">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center p-4">
-                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
-                            <i class="bi bi-newspaper text-white fs-3"></i>
-                        </div>
-                        <h3 class="h5 mb-2 text-primary fw-semibold">Publicaciones</h3>
-                        <p class="text-muted mb-0 small">Gestiona las publicaciones y artículos del sistema.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+    // 4. Materiales por clasificacion (Doughnut)
+    const clasifColors = ['#198754','#ffc107','#dc3545','#212529'];
+    const datosClasif = JSON.parse(document.getElementById('clasificacion-data').textContent);
+    if (datosClasif.length) {
+        new Chart(document.getElementById('chartMateriales'), {
+            type: 'doughnut',
+            data: {
+                labels: datosClasif.map(d => d.clasificacion),
+                datasets: [{
+                    data: datosClasif.map(d => d.count),
+                    backgroundColor: clasifColors.slice(0, datosClasif.length),
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, font: { size: 11 } } }
+                }
+            }
+        });
+    }
+})();
+</script>
 
-        <div class="col-md-6 col-lg-4">
-            <a href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}" class="text-decoration-none text-dark">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center p-4">
-                        <div class="bg-primary bg-opacity-75 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width:64px;height:64px;">
-                            <i class="bi bi-folder-fill text-white fs-3"></i>
-                        </div>
-                        <h3 class="h5 mb-2 text-primary fw-semibold">Categorías de Publicaciones</h3>
-                        <p class="text-muted mb-0 small">Organiza las publicaciones por categorías.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-
-</main>
 {% endblock %}

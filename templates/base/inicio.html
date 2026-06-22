@@ -4,77 +4,128 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Inicio - InfoRecicla</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
-            crossorigin="anonymous" />
-    <style>
-      .hero-img { max-width: 420px; }
-      .animated-card { opacity: 0; transform: translateY(40px) scale(0.96); transition: all 0.7s cubic-bezier(.39,.575,.565,1.000); }
-      .animated-card.is-visible { opacity: 1; transform: translateY(0) scale(1); }
-      .animated-card.is-visible:hover, .animated-card.is-visible:focus-visible {
-        z-index: 2;
-        box-shadow: 0 0 24px 0 rgba(0,128,0,.20), 0 4px 24px 0 rgba(0,0,0,.18);
-        transform: translateY(-4px) scale(1.035);
-        transition: box-shadow 0.18s, transform 0.18s;
-      }
-    .badge-feature { background-color: #e5f4e1; color: #145c3a; font-weight: 600; margin-right: 0.5rem; }
-    .stat-num { font-size: 2.5rem; font-weight: bold; color: #0f3d27; }
-      .stat-label { color: #666; font-size: 1rem; }
-    </style>
+    <meta name="description" content="InfoRecicla: plataforma colaborativa que conecta ciudadanos con centros de recolección de materiales reciclables. Encuentra puntos ECA cerca de ti.">
+    <meta property="og:title" content="InfoRecicla - Plataforma Colaborativa para el Reciclaje">
+    <meta property="og:description" content="Conectamos ciudadanos con centros de recolección de materiales reciclables. Comparte, encuentra y aprende sobre reciclaje.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ SITE_URL|default:'' }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="{% static 'img/logo.png' %}" type="image/png">
+    <title>{% block title %}InfoRecicla - Plataforma Colaborativa para el Reciclaje{% endblock %}</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+        crossorigin="anonymous" />
+    <link rel="stylesheet" href="{% static 'css/Inicio/styleInicio.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+"
+        crossorigin="anonymous" />
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
     {% include "users/partials/navbar.html" with navbar_container_class="" %}
-    <main>
-        <!-- HERO SECTION -->
-        <section class="py-5 bg-light text-dark">
-            <div class="container">
-                <div class="row align-items-center g-4">
-                    <div class="col-lg-7">
-                        <h1 class="display-5 fw-bold">InfoRecicla: Plataforma Colaborativa para el Reciclaje</h1>
-                        <p class="lead mt-3 mb-4">Facilitamos la conexión entre ciudadanos y centros de recolección de materiales reciclables. Comparte experiencias, encuentra puntos de reciclaje cerca de ti y accede a información confiable para mejorar la gestión ambiental en tu ciudad.</p>
-                        <div class="d-flex gap-3">
-                            <a href="/mapa/" class="btn btn-success btn-lg">Explorar Mapa</a>
-                            <a href="/publicaciones/" class="btn btn-outline-success btn-lg">Ver Publicaciones</a>
-                        </div>
+
+    <main id="main-content">
+    {% block main_content %}
+        <!-- HERO SECTION - Full width carousel with fixed text overlay -->
+        <section class="hero-fullwidth">
+            <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel" data-bs-interval="5000">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3" aria-label="Slide 4"></button>
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="4" aria-label="Slide 5"></button>
+                </div>
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img src="{% static 'img/landing/bodega_con_empaques_de_reciclaje.jpg' %}" alt="Bodega con empaques de reciclaje" class="d-block w-100 hero-carousel-img" loading="lazy">
                     </div>
-                    <div class="col-lg-5 text-center">
-                        <img src="{% static 'img/ParejaReciclando.png' %}" alt="Personas reciclando" class="img-fluid hero-img">
+                    <div class="carousel-item">
+                        <img src="{% static 'img/landing/persona_separando_materiales.jpeg' %}" alt="Persona separando materiales" class="d-block w-100 hero-carousel-img" loading="lazy">
                     </div>
+                    <div class="carousel-item">
+                        <img src="{% static 'img/landing/recicladora_separando_materiales.jpg' %}" alt="Recicladora separando materiales" class="d-block w-100 hero-carousel-img" loading="lazy">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="{% static 'img/landing/persona_cargando_reciclaje.jpg' %}" alt="Persona cargando reciclaje" class="d-block w-100 hero-carousel-img" loading="lazy">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="{% static 'img/landing/bodega_reciclaje.jpg' %}" alt="Bodega de reciclaje" class="d-block w-100 hero-carousel-img" loading="lazy">
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+            </div>
+            <div class="hero-caption">
+                <h1 class="display-5 fw-bold">InfoRecicla: Plataforma Colaborativa para el Reciclaje</h1>
+                <p class="lead mt-3 mb-4">Facilitamos la conexión entre ciudadanos y centros de recolección de materiales reciclables. Comparte experiencias, encuentra puntos de reciclaje cerca de ti y accede a información confiable para mejorar la gestión ambiental en tu ciudad.</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/mapa/" class="btn btn-success btn-lg">Explorar Mapa</a>
+                    <a href="/publicaciones/" class="btn btn-outline-light btn-lg">Ver Publicaciones</a>
                 </div>
             </div>
         </section>
-        <!-- HOW IT WORKS SECTION -->
-        <section class="py-5">
+
+        <svg class="section-wave" viewBox="0 0 1440 40" preserveAspectRatio="none"><path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z"/></svg>
+
+        <!-- HOW IT WORKS - FLIP CARDS -->
+        <section class="py-5 fade-section">
             <div class="container">
                 <div class="row text-center g-4">
                     <div class="col-md-4">
-                        <div class="p-4 rounded bg-success  shadow-sm h-100">
-                            <img src="{% static 'img/mapaECA.png' %}" alt="Mapa ECA" class="mb-3" style="width: 120px; height: 120px; object-fit: contain;">
-                            <h3 class="h5 text-white">Busca puntos de recolección</h3>
-                            <p class="small mb-0 text-white-50">Encuentra estaciones ECA por ubicación, horarios y tipos de materiales aceptados.</p>
-                        </div>
+                        <a href="/mapa/" class="flip-card">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <div class="flip-card-icon-wrapper"><i class="bi bi-map"></i></div>
+                                    <h3 class="h5 text-white mt-3">Busca puntos de recolección</h3>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p>Encuentra estaciones ECA por ubicación, horarios y tipos de materiales aceptados.</p>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col-md-4">
-                        <div class="p-4 rounded bg-success  shadow-sm h-100">
-                            <img src="{% static 'img/publicaciones.png' %}" alt="Noticias sobre reciclaje" class="mb-3 card-img-berde" style="width: 120px; height: 120px; object-fit: contain;">
-                            <h3 class="h5 text-white">Noticias y novedades</h3>
-                            <p class="small mb-0 text-white-50">Accedé a noticias, eventos y novedades sobre reciclaje, publicadas y curadas por InfoRecicla para mantenerte siempre informado.</p>
-                        </div>
+                        <a href="/publicaciones/" class="flip-card">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <div class="flip-card-icon-wrapper"><i class="bi bi-newspaper"></i></div>
+                                    <h3 class="h5 text-white mt-3">Noticias y novedades</h3>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p>Accedé a noticias, eventos y novedades sobre reciclaje, publicadas y curadas por InfoRecicla para mantenerte siempre informado.</p>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="col-md-4">
-                        <div class="p-4 rounded bg-success  shadow-sm h-100">
-                            <img src="{% static 'img/eca-default.png' %}" alt="Gestión ECA" class="mb-3" style="width: 120px; height: 120px; object-fit: contain;">
-                            <h3 class="h5 text-white">Gestiona tu punto ECA</h3>
-                            <p class="small mb-0 text-white-50">Registra tu estación, actualiza inventario y comunica disponibilidad a los usuarios.</p>
-                        </div>
+                        <a href="/punto-eca/" class="flip-card">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <div class="flip-card-icon-wrapper"><i class="bi bi-building"></i></div>
+                                    <h3 class="h5 text-white mt-3">Gestiona tu punto ECA</h3>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p>Registra tu estación, actualiza inventario y comunica disponibilidad a los usuarios.</p>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
         </section>
+
         <!-- FEATURES SECTION -->
-        <section class="py-4 bg-success bg-opacity-10">
+        <section class="py-4 bg-success bg-opacity-10 fade-section">
             <div class="container text-center">
                 <span class="badge badge-feature">Datos actualizados</span>
                 <span class="badge badge-feature">Comunidad activa</span>
@@ -82,25 +133,29 @@
                 <span class="badge badge-feature">Acceso gratuito</span>
             </div>
         </section>
+
+        <svg class="section-wave" viewBox="0 0 1440 40" preserveAspectRatio="none"><path d="M0,20 C360,0 1080,40 1440,20 L1440,40 L0,40 Z"/></svg>
+
         <!-- STATISTICS SECTION -->
-        <section class="py-5">
+        <section class="py-5 fade-section">
             <div class="container">
                 <div class="row text-center justify-content-center gy-4">
                     <div class="col-md-4">
-                        <div class="stat-num">+120</div>
+                        <div class="stat-num">+{{ total_ecas|default:0 }}</div>
                         <div class="stat-label">Puntos ECA registrados</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="stat-num">+350</div>
+                        <div class="stat-num">+{{ total_publicaciones|default:0 }}</div>
                         <div class="stat-label">Publicaciones de la comunidad</div>
                     </div>
                     <div class="col-md-4">
-                        <div class="stat-num">+800</div>
+                        <div class="stat-num">+{{ total_usuarios|default:0 }}</div>
                         <div class="stat-label">Usuarios activos</div>
                     </div>
                 </div>
             </div>
         </section>
+
         <!-- TESTIMONIALS SECTION -->
         <section class="py-5 bg-light border-top">
             <div class="container">
@@ -125,105 +180,77 @@
                 </div>
             </div>
         </section>
+
+        <svg class="section-wave" viewBox="0 0 1440 40" preserveAspectRatio="none"><path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z"/></svg>
+
         <!-- CALL TO ACTION SECTION -->
-        <section class="py-5 bg-success text-white">
+        <section class="py-5 fade-section">
             <div class="container">
-                <div class="text-center">
-                    <h2 class="mb-3">¿Quieres formar parte de la comunidad?</h2>
-                    <p class="mb-4">Regístrate de forma gratuita y accede a funcionalidades pensadas para cada perfil.</p>
+                <div class="text-center mb-5">
+                    <h2 class="mb-3 text-success">¿Quieres formar parte de la comunidad?</h2>
+                    <p class="mb-0 text-body-secondary">Regístrate de forma gratuita y accede a funcionalidades pensadas para cada perfil.</p>
                 </div>
-                <div class="row g-4 justify-content-center">
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow animated-card">
-                            <div class="card-body">
-                                <h3 class="h5 text-success">Usuario ciudadano</h3>
-                                <style>
-                                  .ciudadano-benefit-marked {
-                                    border-left: 4px solid #218838;
-                                    background: #f6fcf4;
-                                    border-radius: 0 6px 6px 0;
-                                    padding-left: 1rem;
-                                    margin-bottom: 0.5rem;
-                                    display: flex;
-                                    align-items: center;
-                                    min-height: 42px;
-                                  }
-                                  .ciudadano-benefit-marked .bi {
-                                    margin-right: 0.6rem;
-                                    font-size: 1.25rem;
-                                    color: #198754;
-                                  }
-                                </style>
-                                <div class="benefits-list">
-                                  <div class="ciudadano-benefit-marked">
-                                    <i class="bi bi-people"></i>
-                                    <span>Participar en la comunidad a través de comentarios y valoraciones.</span>
-                                  </div>
-                                  <div class="ciudadano-benefit-marked">
-                                    <i class="bi bi-clock-history"></i>
-                                    <span>Consultar horarios, ubicación y tipos de materiales aceptados.</span>
-                                  </div>
-                                  <div class="ciudadano-benefit-marked">
-                                    <i class="bi bi-bell"></i>
-                                    <span>Recibir notificaciones relevantes sobre el reciclaje en tu zona.</span>
-                                  </div>
-                                </div>
-                                <a href="/registro/ciudadano/" class="btn btn-outline-success w-100">Registrarse como ciudadano</a>
-                            </div>
+
+                <!-- Ciudadano -->
+                <div class="row g-0 cta-row shadow mb-5">
+                    <div class="col-md-5 bg-success text-white cta-profile">
+                        <i class="bi bi-person-circle cta-profile-icon"></i>
+                        <div class="cta-profile-title mt-2">Usuario ciudadano</div>
+                        <a href="/registro/ciudadano/" class="btn btn-outline-light mt-3 cta-btn">Registrarse como ciudadano</a>
+                    </div>
+                    <div class="col-md-7 bg-white cta-benefits">
+                        <div class="benefit-item">
+                            <i class="bi bi-people"></i>
+                            <span>Participar en la comunidad a través de comentarios y valoraciones.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Consultar horarios, ubicación y tipos de materiales aceptados.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-bell"></i>
+                            <span>Recibir notificaciones relevantes sobre el reciclaje en tu zona.</span>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow animated-card">
-                            <div class="card-body">
-                                <h3 class="h5 text-success">Gestor de Punto ECA</h3>
-                                <style>
-                                  .eca-benefit-marked {
-                                    border-left: 4px solid #218838;
-                                    background: #f6fcf4;
-                                    border-radius: 0 6px 6px 0;
-                                    padding-left: 1rem;
-                                    margin-bottom: 0.5rem;
-                                    display: flex;
-                                    align-items: center;
-                                    min-height: 42px;
-                                  }
-                                  .eca-benefit-marked .bi {
-                                    margin-right: 0.6rem;
-                                    font-size: 1.25rem;
-                                    color: #198754;
-                                  }
-                                </style>
-                                <div class="benefits-list">
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Registrar y visibilizar tu estación ante la comunidad.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Actualizar el inventario y comunicar la disponibilidad de materiales en tiempo real.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Gestionar los horarios y la información de contacto del punto.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Responder consultas y dudas de los ciudadanos sobre tu estación.</span>
-                                  </div>
-                                  <div class="eca-benefit-marked">
-                                    <i class="bi bi-dot"></i>
-                                    <span>Acceder a estadísticas y reportes de la gestión de tu ECA.</span>
-                                  </div>
-                                </div>
-                                <a href="/registro/eca/" class="btn btn-outline-success w-100">Registrar Punto ECA</a>
-                            </div>
+                </div>
+
+                <!-- Gestor ECA (orden inverso) -->
+                <div class="row g-0 cta-row shadow">
+                    <div class="col-md-7 bg-white cta-benefits">
+                        <div class="benefit-item">
+                            <i class="bi bi-shop"></i>
+                            <span>Registrar y visibilizar tu estación ante la comunidad.</span>
                         </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-box-seam"></i>
+                            <span>Actualizar el inventario y comunicar la disponibilidad de materiales en tiempo real.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-clock"></i>
+                            <span>Gestionar los horarios y la información de contacto del punto.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-chat-dots"></i>
+                            <span>Responder consultas y dudas de los ciudadanos sobre tu estación.</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="bi bi-graph-up"></i>
+                            <span>Acceder a estadísticas y reportes de la gestión de tu ECA.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-5 bg-success text-white cta-profile">
+                        <i class="bi bi-shop cta-profile-icon"></i>
+                        <div class="cta-profile-title mt-2">Gestor de Punto ECA</div>
+                        <a href="/registro/eca/" class="btn btn-outline-light mt-3 cta-btn">Registrar Punto ECA</a>
                     </div>
                 </div>
             </div>
         </section>
+
+        <svg class="section-wave" viewBox="0 0 1440 40" preserveAspectRatio="none"><path d="M0,20 C360,0 1080,40 1440,20 L1440,40 L0,40 Z"/></svg>
+
         <!-- FAQ SECTION -->
-        <section class="py-4">
+        <section class="py-4 fade-section">
             <div class="container">
                 <div class="accordion" id="faqAccordion">
                     <div class="accordion-item">
@@ -259,25 +286,40 @@
                 </div>
             </div>
         </section>
+    {% endblock main_content %}
     </main>
-    <footer class="bg-success text-white py-4 mt-5">
-        <div class="container text-center">
-            <small>&copy; 2026 InfoRecicla - Proyecto colaborativo para la gestión de reciclaje.</small>
-            <div class="mt-2">
-                <a href="#" class="text-white me-3">Contacto</a>
-                <a href="#" class="text-white me-3">Términos y condiciones</a>
-                <a href="#" class="text-white">Política de privacidad</a>
+
+    <footer class="bg-success text-white py-5 mt-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <h5 class="fw-bold mb-2">InfoRecicla</h5>
+                    <p class="small text-white-50 mb-0">Plataforma colaborativa que conecta ciudadanos con centros de recolección de materiales reciclables.</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-semibold mb-2">Enlaces</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><a href="{% url 'core:terminos' %}" class="text-white text-decoration-none">Términos y condiciones</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-3 border-white border-opacity-25">
+            <div class="text-center small text-white-50">
+                &copy; {% now "Y" %} InfoRecicla — Proyecto colaborativo
             </div>
         </div>
     </footer>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-                integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
-                crossorigin="anonymous"></script>
+
+    <button id="backToTop" class="btn btn-success rounded-circle shadow" aria-label="Volver arriba" style="position:fixed;bottom:1.5rem;right:1.5rem;width:48px;height:48px;z-index:1040;display:none;align-items:center;justify-content:center;padding:0;">
+        <i class="bi bi-arrow-up fs-5"></i>
+    </button>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+        crossorigin="anonymous"></script>
     <script>
-      // Intersection Observer para animar tarjetas al entrar en la vista
       document.addEventListener('DOMContentLoaded', function() {
-        const animatedCards = document.querySelectorAll('.animated-card');
-                if ('IntersectionObserver' in globalThis) {
+        // Intersection Observer para animar secciones y testimonios
+        if ('IntersectionObserver' in globalThis) {
           const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
               if (entry.isIntersecting) {
@@ -285,10 +327,45 @@
                 observer.unobserve(entry.target);
               }
             });
-          }, { threshold: 0.2 });
-          animatedCards.forEach(card => observer.observe(card));
+          }, { threshold: 0.15 });
+          document.querySelectorAll('.animate-fadeIn, .fade-section').forEach(card => observer.observe(card));
         } else {
-          animatedCards.forEach(card => card.classList.add('is-visible'));
+          document.querySelectorAll('.animate-fadeIn, .fade-section').forEach(card => card.classList.add('is-visible'));
+        }
+
+        // Count-up animado en estadísticas
+        const statNums = document.querySelectorAll('.stat-num');
+        if ('IntersectionObserver' in globalThis && statNums.length) {
+          const countObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+              if (!entry.isIntersecting) return;
+              const el = entry.target;
+              obs.unobserve(el);
+              const raw = el.textContent.replace(/\D/g, '');
+              const target = Number.parseInt(raw, 10);
+              if (!target) return;
+              const suffix = el.textContent.includes('+') ? '+' : '';
+              let current = 0;
+              const step = Math.max(1, Math.floor(target / 40));
+              const timer = setInterval(() => {
+                current += step;
+                if (current >= target) { current = target; clearInterval(timer); }
+                el.textContent = suffix + current;
+              }, 25);
+            });
+          }, { threshold: 0.5 });
+          statNums.forEach(el => countObserver.observe(el));
+        }
+
+        // Back-to-top button
+        const backBtn = document.getElementById('backToTop');
+        if (backBtn) {
+          window.addEventListener('scroll', () => {
+            backBtn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+          }, { passive: true });
+          backBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
         }
       });
     </script>

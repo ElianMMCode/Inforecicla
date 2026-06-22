@@ -14,7 +14,7 @@ INVALID_JSON_BODY_ERROR = "Cuerpo de petición JSON inválido"
 def buscar_materiales_catalogo_view(request):
     """
     View para buscar materiales que NO están cargados en el inventario actual del punto ECA.
-    Permite filtrar por ID de punto, texto de búsqueda, categoría o tipo.
+    Permite filtrar por ID de punto, texto de búsqueda, categoría o clasificación.
     Llama a un método de servicio y retorna un JsonResponse con los resultados.
     - Devuelve error técnico en caso de excepción, útil para debugging del frontend.
     """
@@ -22,10 +22,10 @@ def buscar_materiales_catalogo_view(request):
         punto_id = request.GET.get("puntoId", "").strip()
         query = request.GET.get("texto", "").strip()
         categoria = request.GET.get("categoria", "").strip()
-        tipo = request.GET.get("tipo", "").strip()
+        clasificacion = request.GET.get("clasificacion", "").strip()
 
         resultados = InventoryService.buscar_materiales_fuera_inventario(
-            punto_id=punto_id, query=query, categoria=categoria, tipo=tipo
+            punto_id=punto_id, query=query, categoria=categoria, clasificacion=clasificacion
         )
         return JsonResponse(resultados, safe=False)
     except Exception as e:

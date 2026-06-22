@@ -99,7 +99,7 @@
                   <option value="">-- Seleccionar Material --</option>
                   {% for inv in materiales_inventario %}
                   <option value="{{ inv.material.id }}">
-                    {% if inv.material.tipo %}{{ inv.material.tipo }} — {% endif %}{{ inv.material.nombre }}
+                    {% if inv.material.clasificacion %}{{ inv.material.clasificacion }} — {% endif %}{{ inv.material.nombre }}
                   </option>
                   {% endfor %}
                 </select>

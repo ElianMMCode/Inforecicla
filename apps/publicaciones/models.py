@@ -1,9 +1,21 @@
+import uuid
 from django.db import models
 
 from apps.users.models import Usuario
 from config import constants
 from config.base_models import CreacionModificacionModel, DescripcionModel
 # Create your models here.
+
+
+##########################################################
+class TipoPublicacion(DescripcionModel):
+    class Meta(DescripcionModel.Meta):
+        verbose_name = "Tipo de publicación"
+        verbose_name_plural = "Tipos de publicación"
+        db_table = "pub_tipo_publicacion"
+
+    def __str__(self):
+        return self.nombre
 
 
 ##########################################################
@@ -16,10 +28,10 @@ class CategoriaPublicacion(DescripcionModel):
         blank=False,
     )
 
-    class Meta(CreacionModificacionModel.Meta):
-        verbose_name = "Categoria Publicacion"
-        verbose_name_plural = "Categorias de Publicaciones"
-        db_table = "categoria_publicacion"
+    class Meta(DescripcionModel.Meta):
+        verbose_name = "Categoría de publicación"
+        verbose_name_plural = "Categorías de publicación"
+        db_table = "pub_categoria_publicacion"
 
 
 ##########################################################
@@ -38,11 +50,32 @@ class Publicacion(CreacionModificacionModel):
 
     contenido = models.TextField()
 
+    resumen = models.TextField(
+        max_length=500,
+        blank=False,
+        default="",
+        verbose_name="Resumen",
+        help_text="Resumen corto para vistas previas (máx. 500 caracteres)",
+    )
+
+    es_destacado = models.BooleanField(
+        default=False,
+        verbose_name="Destacado",
+        help_text="Marcar para mostrar esta publicación en lugares destacados",
+    )
+
     video = models.FileField(
         upload_to='publicaciones/videos/',
         blank=True,
         null=True,
         verbose_name="Video",
+    )
+
+    video_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name="URL del video (YouTube, Vimeo...)",
+        help_text="Pega el enlace de un video de YouTube, Vimeo, etc.",
     )
 
     video_thumbnail = models.ImageField(
@@ -60,10 +93,11 @@ class Publicacion(CreacionModificacionModel):
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Publicacion"
         verbose_name_plural = "Publicaciones"
-        db_table = "publicacion"
+        db_table = "pub_publicacion"
 
 
 class ImagenPublicacion(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     publicacion = models.ForeignKey(
         Publicacion,
         on_delete=models.CASCADE,
@@ -73,7 +107,9 @@ class ImagenPublicacion(models.Model):
     descripcion = models.CharField(max_length=200, blank=True)
 
     class Meta:
-        db_table = 'imagen_publicacion'
+        verbose_name = "Imagen de publicación"
+        verbose_name_plural = "Imágenes de publicación"
+        db_table = "pub_imagen_publicacion"
 
 
 ##########################################################
@@ -103,14 +139,14 @@ class Comentario(CreacionModificacionModel):
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Comentario"
         verbose_name_plural = "Comentarios"
-        db_table = "comentario"
+        db_table = "pub_comentario"
 
 
 ######################################################################
 class Reaccion(CreacionModificacionModel):
     valor = models.CharField(
         max_length=30,
-        null=True,
+        blank=True,
         choices=constants.Votos,
     )
 
@@ -126,7 +162,7 @@ class Reaccion(CreacionModificacionModel):
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Reaccion"
         verbose_name_plural = "Reacciones"
-        db_table = "reacciones"
+        db_table = "pub_reaccion"
 
 
 ######################################################################
@@ -142,12 +178,18 @@ class Guardados(CreacionModificacionModel):
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Guardado"
         verbose_name_plural = "Guardados"
-        db_table = "tb_guardados"
-        unique_together = ['usuario', 'publicacion']
+        db_table = "pub_guardado"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["usuario", "publicacion"],
+                name="unique_usuario_publicacion_guardado",
+            )
+        ]
 
 
 ######################################################################
 class Notificacion(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     usuario = models.ForeignKey(
         Usuario, on_delete=models.CASCADE, related_name="notificaciones"
     )
@@ -172,12 +214,12 @@ class Notificacion(models.Model):
         null=True, blank=True,
     )
 
-    leido = models.BooleanField(default=False)
+    es_leido = models.BooleanField(default=False)
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Notificacion"
         verbose_name_plural = "Notificaciones"
-        db_table = "notificacion"
+        db_table = "pub_notificacion"
         ordering = ["-fecha_creacion"]

@@ -1,0 +1,91 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
+
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Django system checks
+        run: |
+          source venv/bin/activate
+          python manage.py check --settings=config.settings_ci
+
+      - name: Run tests
+        run: |
+          source venv/bin/activate
+          python manage.py test \
+            apps.chat apps.inventory apps.map \
+            apps.operations apps.scheduling \
+            apps.core apps.panel_admin apps.reciclabot \
+            --settings=config.settings_ci
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
+
+      - name: Transfer code to server via SCP
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          source: '.'
+          target: /home/ubuntu/inforecicla_prod/Inforecicla
+          strip_components: 0
+          excludes: |
+            .env
+            .git/
+            .gitignore
+            .github/
+            .vscode/
+            .idea/
+            venv/
+            media/
+            staticfiles/
+            __pycache__/
+            *.pyc
+            *.pyo
+            django_errors.log
+            debug_*.py
+
+      - name: Post-deploy — migrations, static, restart
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          script: |
+            set -e
+            cd /home/ubuntu/inforecicla_prod/Inforecicla
+            source venv/bin/activate
+            pip install -r requirements.txt
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
+            sudo systemctl reload nginx
+            sudo systemctl restart gunicorn
+            sudo systemctl restart daphne
+            echo "Deploy completed successfully."

@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from config.base_models import CreacionModificacionModel, DescripcionModel
-from config.constants import Alerta, UnidadMedida
+from config.constants import Alerta, UnidadMedida, ClasificacionMaterial
 
 
 class Inventario(CreacionModificacionModel):
@@ -124,6 +124,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         db_constraint=True,
+        related_name="inventarios",
         verbose_name="Material",
         help_text="Material asociado a este inventario",
     )
@@ -134,6 +135,7 @@ class Inventario(CreacionModificacionModel):
         null=False,
         blank=False,
         db_constraint=True,
+        related_name="inventario_punto",
         verbose_name="Punto ECA",
         help_text="Punto de Entrega de Cartón y Afines donde se encuentra el inventario",
     )
@@ -144,6 +146,7 @@ class Inventario(CreacionModificacionModel):
         null=True,
         blank=True,
         db_constraint=True,
+        related_name="inventarios",
         verbose_name="Centro de Acopio",
         help_text="Centro de Acopio asociado al inventario",
     )
@@ -151,7 +154,7 @@ class Inventario(CreacionModificacionModel):
     class Meta(CreacionModificacionModel.Meta):
         verbose_name = "Inventario"
         verbose_name_plural = "Inventarios"
-        db_table = "inventario"
+        db_table = "inv_inventario"
         # Se define combinación única para evitar que un mismo material tenga múltiples inventarios en el mismo Punto ECA
         constraints = [
             models.UniqueConstraint(
@@ -214,14 +217,24 @@ class Inventario(CreacionModificacionModel):
 
 class Material(DescripcionModel):
     """
-    Representa un tipo de material reciclable, vinculado a una categoría y un tipo específico.
+    Representa un tipo de material reciclable, vinculado a una categoría y una clasificación de manejo.
 
     Relaciones clave:
     - Relación 1 a N con Inventario: Un material puede estar presente en varios inventarios, pero en cada punto ECA existe solo un inventario por material.
     - Categoría (ForeignKey): Agrupa materiales según su función o naturaleza (por ejemplo, plásticos, metales).
-    - Tipo (ForeignKey): Subclasifica el material para análisis más detallados o reglas de negocio.
+    - Clasificación (CharField): Nivel de riesgo o manejo especial requerido (ESTANDAR, MANEJO_ESPECIAL, PELIGROSO, HAZMAT).
     """
     imagen_url = models.URLField("Foto material", max_length=200, blank=True)
+
+    clasificacion = models.CharField(
+        max_length=20,
+        choices=ClasificacionMaterial.choices,
+        default=ClasificacionMaterial.ESTANDAR,
+        null=False,
+        blank=False,
+        verbose_name="Clasificación de manejo",
+        help_text="Nivel de riesgo o manejo especial requerido para este material",
+    )
 
     categoria = models.ForeignKey(
         "inventory.CategoriaMaterial",
@@ -229,24 +242,15 @@ class Material(DescripcionModel):
         null=True,
         blank=False,
         db_constraint=True,
+        related_name="materiales",
         verbose_name="Categoría del material",
         help_text="Categoría a la que pertenece el material",
-    )
-
-    tipo = models.ForeignKey(
-        "inventory.TipoMaterial",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=False,
-        db_constraint=True,
-        verbose_name="Tipo del material",
-        help_text="Tipo al que pertenece el material",
     )
 
     class Meta(DescripcionModel.Meta):
         verbose_name = "Material"
         verbose_name_plural = "Materiales"
-        db_table = "material"
+        db_table = "inv_material"
 
     def __str__(self):
         return self.nombre
@@ -261,21 +265,7 @@ class CategoriaMaterial(DescripcionModel):
     class Meta(DescripcionModel.Meta):
         verbose_name = "Categoría de material"
         verbose_name_plural = "Categorías de material"
-        db_table = "categoria_material"
-
-    def __str__(self):
-        return self.nombre
-
-
-class TipoMaterial(DescripcionModel):
-    """
-    Especifica subtipos particulares para materiales reciclables permitiendo analizar, filtrar o definir reglas de negocio a un nivel más fino. Relación 1 a N con Material.
-    """
-
-    class Meta(DescripcionModel.Meta):
-        verbose_name = "Tipo de material"
-        verbose_name_plural = "Tipos de material"
-        db_table = "tipo_material"
+        db_table = "inv_categoria_material"
 
     def __str__(self):
         return self.nombre

@@ -4,7 +4,7 @@
 document.getElementById('year').textContent = new Date().getFullYear();
 
 // ====== Compartir (links rápidos) ======
-const url = encodeURIComponent(window.location.href);
+const url = encodeURIComponent(globalThis.location.href);
 const title = encodeURIComponent(document.getElementById('postTitle').textContent);
 document.getElementById('shareWhats').href = `https://wa.me/?text=${title}%20${url}`;
 document.getElementById('shareX').href = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;
@@ -33,8 +33,8 @@ setActive(likeBtn, prev === 'like');
 setActive(dislikeBtn, prev === 'dislike');
 
 likeBtn.addEventListener('click', () => {
-    let likes = parseInt(likeCount.textContent, 10);
-    let dislikes = parseInt(dislikeCount.textContent, 10);
+    let likes = Number.parseInt(likeCount.textContent, 10);
+    let dislikes = Number.parseInt(dislikeCount.textContent, 10);
     const current = sessionStorage.getItem(SS_KEY);
 
     if (current === 'like') { // quitar like
@@ -57,12 +57,16 @@ likeBtn.addEventListener('click', () => {
     likeCount.textContent = likes;
     dislikeCount.textContent = dislikes;
 
-    // TODO: POST /api/posts/{id}/vote {value: 1}
+    fetch(`/publicaciones/${POST_ID}/votar/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value },
+        body: 'value=1',
+    }).catch(function() {});
 });
 
 dislikeBtn.addEventListener('click', () => {
-    let likes = parseInt(likeCount.textContent, 10);
-    let dislikes = parseInt(dislikeCount.textContent, 10);
+    let likes = Number.parseInt(likeCount.textContent, 10);
+    let dislikes = Number.parseInt(dislikeCount.textContent, 10);
     const current = sessionStorage.getItem(SS_KEY);
 
     if (current === 'dislike') { // quitar dislike
@@ -85,7 +89,11 @@ dislikeBtn.addEventListener('click', () => {
     likeCount.textContent = likes;
     dislikeCount.textContent = dislikes;
 
-    // TODO: POST /api/posts/{id}/vote {value: -1}
+    fetch(`/publicaciones/${POST_ID}/votar/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value },
+        body: 'value=-1',
+    }).catch(function() {});
 });
 
 // ====== Comentarios (agregar en front; reemplazar por POST a tu API) ======
@@ -113,13 +121,35 @@ commentForm.addEventListener('submit', (e) => {
     card.querySelector('p').textContent = text;
     commentList.prepend(card);
     commentText.value = '';
-    commentCount.textContent = parseInt(commentCount.textContent, 10) + 1;
+    commentCount.textContent = Number.parseInt(commentCount.textContent, 10) + 1;
 
-    // TODO: POST /api/posts/{id}/comments {text}
-    // Si falla: revertir UI y mostrar alerta
+    fetch(`/api/posts/${POST_ID}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+    }).catch(() => {
+        card.remove();
+        commentCount.textContent = Number.parseInt(commentCount.textContent, 10) - 1;
+    });
 });
 
 // ====== (Opcional) Cargar contenido desde la BD al abrir ======
-// TODO: GET /api/posts/{id} -> {title, author, date, category, body, images[], videoUrl, documents[], links[]}
-// TODO: GET /api/posts/{id}/comments
-// TODO: GET /api/posts/{id}/related
+function _validarPostId(id) {
+    return /^[a-zA-Z0-9_-]+$/.test(id);
+}
+
+async function cargarContenidoDesdeBD() {
+    if (!POST_ID || !_validarPostId(POST_ID)) return;
+    try {
+        const resp = await fetch(`/api/posts/${encodeURIComponent(POST_ID)}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (typeof renderPostContent === 'function') {
+            renderPostContent(data);
+        }
+    } catch (err) {
+        console.error('Error al cargar contenido desde BD:', err);
+    }
+}
+// Llamar desde un <script type="module"> o mediante cargarContenidoDesdeBD().catch(console.error)
+

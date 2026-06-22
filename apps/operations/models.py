@@ -75,13 +75,13 @@ class CompraInventario(CreacionModificacionModel):
         help_text="Precio unitario de compra del material (opcional)",
     )
 
-    observaciones = models.TextField(max_length=500, blank=True, null=True)
+    observaciones = models.TextField(max_length=500, blank=True)
 
     def __str__(self):
         return f"Compra {self.cantidad} - {self.inventario.material.nombre} ({self.fecha_compra.strftime('%d/%m/%Y')})"
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "compra_inventario"
+        db_table = "ope_compra_inventario"
         verbose_name = "Compra de Inventario"
         verbose_name_plural = "Compras de Inventario"
         ordering = ["-fecha_compra"]  # Ordenar por fecha de compra más reciente primero
@@ -139,7 +139,7 @@ class VentaInventario(CreacionModificacionModel):
         help_text="Precio unitario de venta del material (opcional)",
     )
 
-    observaciones = models.TextField(max_length=500, blank=True, null=True)
+    observaciones = models.TextField(max_length=500, blank=True)
 
     centro_acopio = models.ForeignKey(
         "ecas.CentroAcopio",
@@ -156,7 +156,7 @@ class VentaInventario(CreacionModificacionModel):
         return f"Venta {self.cantidad} - {self.inventario.material.nombre} ({self.fecha_venta.strftime('%d/%m/%Y')})"
 
     class Meta(CreacionModificacionModel.Meta):
-        db_table = "venta_inventario"
+        db_table = "ope_venta_inventario"
         verbose_name = "Venta de Inventario"
         verbose_name_plural = "Ventas de Inventario"
         ordering = ["-fecha_venta"]  # Ordenar por fecha de venta más reciente primero

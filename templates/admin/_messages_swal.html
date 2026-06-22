@@ -1,30 +1,27 @@
-{% if messages %}
+﻿{% if messages %}
   {% for first_message in messages %}
     {% if forloop.first %}
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      if (typeof Swal === "undefined") {
-        return;
-      }
-
-      const mapaTitulos = {
-        success: "Operación exitosa",
-        error: "No se pudo completar la operación",
-        danger: "No se pudo completar la operación",
-        warning: "Atención",
-        info: "Información",
-        debug: "Información",
-      };
-      const tag = "{{ first_message.tags|default:'info'|escapejs }}";
-      const titulo = mapaTitulos[tag] || "Notificación";
-
-      Swal.fire({
-        icon: tag === "danger" ? "error" : tag,
-        title: titulo,
-        text: "{{ first_message|escapejs }}",
-        confirmButtonColor: "#198754",
-      });
-    });
+    if (typeof Swal !== "undefined") {
+      (function() {
+        var mapaTitulos = {
+          success: "Operación exitosa",
+          error: "No se pudo completar la operación",
+          danger: "No se pudo completar la operación",
+          warning: "Atención",
+          info: "Información",
+          debug: "Información",
+        };
+        var tag = "{{ first_message.tags|default:'info'|escapejs }}";
+        var titulo = mapaTitulos[tag] || "Notificación";
+        Swal.fire({
+          icon: tag === "danger" ? "error" : tag,
+          title: titulo,
+          text: "{{ first_message|escapejs }}",
+          confirmButtonColor: "#198754",
+        });
+      })();
+    }
   </script>
     {% endif %}
   {% endfor %}

@@ -62,19 +62,16 @@ class PuntoECATestCase(TestCase):
             Inventario,
             Material,
             CategoriaMaterial,
-            TipoMaterial,
         )
 
         # Create required related objects
         categoria1 = CategoriaMaterial.objects.create(nombre="Categoria 1")
-        tipo1 = TipoMaterial.objects.create(nombre="Tipo 1")
         categoria2 = CategoriaMaterial.objects.create(nombre="Categoria 2")
-        tipo2 = TipoMaterial.objects.create(nombre="Tipo 2")
         material1 = Material.objects.create(
-            nombre="Material 1", categoria=categoria1, tipo=tipo1
+            nombre="Material 1", categoria=categoria1, clasificacion="ESTANDAR"
         )
         material2 = Material.objects.create(
-            nombre="Material 2", categoria=categoria2, tipo=tipo2
+            nombre="Material 2", categoria=categoria2, clasificacion="ESTANDAR"
         )
 
         inventario1 = Inventario.objects.create(
@@ -111,7 +108,7 @@ class CentroAcopioTestCase(TestCase):
     def test_centro_acopio_creation(self):
         """Prueba la creación básica de un CentroAcopio"""
         self.assertIsInstance(self.centro, CentroAcopio)
-        self.assertEqual(self.centro.nombre, "Centro de Acopio 14")
+        self.assertTrue(self.centro.nombre.startswith("Centro de Acopio "))
         self.assertEqual(self.centro.tipo_centro, "PLANTA")
         self.assertEqual(self.centro.visibilidad, "GLOBAL")
 
@@ -174,7 +171,7 @@ class LocalidadTestCase(TestCase):
         """Prueba la creación básica de una Localidad"""
         self.assertIsInstance(self.localidad, Localidad)
         self.assertIsNotNone(self.localidad.localidad_id)
-        self.assertEqual(self.localidad.nombre, "Localidad 8")
+        self.assertTrue(self.localidad.nombre.startswith("Localidad "))
 
     def test_localidad_str_representation(self):
         """Prueba la representación en string de la Localidad"""

@@ -256,13 +256,13 @@ class AdminViewsTestCase(TestCase):
         self.assertTemplateUsed(response, "admin/Usuarios/createUsuario.html")
         # Check for error messages in Spanish (actual messages from the view)
         self.assertContains(response, "El nombre debe tener al menos 3 caracteres")
-        self.assertContains(response, "Los apellidos deben tener al menos 3 caracteres")
+        self.assertContains(response, "El apellido debe tener al menos 3 caracteres")
         self.assertContains(
             response, "El celular debe iniciar con 3 y tener 10 dígitos"
         )
         # Instead of checking for exact error message which might vary,
         # let's check that we have error messages in the alert
-        self.assertContains(response, "Por favor corrige los siguientes errores:")
+        self.assertContains(response, "Revisa los campos")
 
     def test_crear_usuario_admin_duplicate_email(self):
         """Test creating a user with duplicate email"""
@@ -458,13 +458,6 @@ class AdminViewsTestCase(TestCase):
             response, "admin/CategoriasMateriales/listCategoriaMaterial.html"
         )
 
-    def test_listar_tipos_material_admin_view(self):
-        """Test listar_tipos_material_admin view"""
-        self.client.login(email="admin@example.com", password=self.admin_password)
-        response = self.client.get(reverse("panel_admin:listar_tipos_material_admin"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "admin/TiposMateriales/listTipoMaterial.html")
-
     def test_perfil_admin_view(self):
         """Test perfil_admin view"""
         self.client.login(email="admin@example.com", password=self.admin_password)
@@ -582,4 +575,41 @@ class AdminViewsTestCase(TestCase):
         # Check error message
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("coinciden" in str(message) for message in messages))
+
+    def test_dashboard_puntos_eca_access_admin(self):
+        """Admin users can access the puntos ECA dashboard."""
+        self.client.login(email="admin@example.com", password=self.admin_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin/PuntoECA/dashboard.html")
+
+    def test_dashboard_puntos_eca_context_keys(self):
+        """Dashboard view passes expected context keys."""
+        self.client.login(email="admin@example.com", password=self.admin_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        context = response.context
+        for key in (
+            "puntos_dashboard", "historial", "eventos", "conversaciones",
+            "usuarios", "kpis", "inv_data", "localidades",
+        ):
+            self.assertIn(key, context)
+
+    def test_dashboard_puntos_eca_access_denied_regular(self):
+        """Regular users cannot access the dashboard."""
+        self.client.login(email="user@example.com", password=self.regular_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        self.assertRedirects(response, "/inicio/?next=%2Fpanel_admin%2Fpuntos-eca%2F")
+
+    def test_dashboard_puntos_eca_access_denied_anonymous(self):
+        """Anonymous users cannot access the dashboard."""
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        self.assertRedirects(response, "/login/?next=%2Fpanel_admin%2Fpuntos-eca%2F")
+
+    def test_dashboard_json_script_tags_present(self):
+        """Dashboard template includes json_script tags for JS data."""
+        self.client.login(email="admin@example.com", password=self.admin_password)
+        response = self.client.get(reverse("panel_admin:dashboard_puntos_eca"))
+        content = response.content.decode()
+        for script_id in ("puntos-data", "historial-data", "eventos-data", "conversaciones-data", "usuarios-data", "kpis-data", "inv-data"):
+            self.assertIn(f'id="{script_id}"', content)
 
