@@ -135,7 +135,7 @@ partition "== BORRAR OPERACION ==" {
   endif
 }
 
-note right of Sistema
+note right
   **Validacion de fechas:**
   - No permite fechas futuras
   - No permite fechas antes del

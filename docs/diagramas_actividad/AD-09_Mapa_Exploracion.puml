@@ -111,7 +111,7 @@ partition "== INTEGRACION ARCGIS ==" {
   :Agrega puntos ArcGIS al mapa;
 }
 
-note right of Sistema
+note right
   **APIs del mapa:**
   - /api/puntos-eca: todos los visibles
   - /api/materiales: con conteo

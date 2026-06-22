@@ -111,7 +111,7 @@ partition "== PASO 3: CAMBIAR CONTRASENA ==" {
   endif
 }
 
-note right of Sistema
+note right
   **Seguridad:**
   - Token expira segun TOKEN_EXPIRATION_MINUTES
   - MAX_TOKEN_ATTEMPTS limita intentos fallidos

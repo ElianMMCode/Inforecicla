@@ -114,7 +114,7 @@ partition "== EXPORTACION A EXCEL/PDF ==" {
   :Descarga archivo generado;
 }
 
-note right of Sistema
+note right
   **Bulk Import:**
   - NO crea materiales nuevos en catalogo
   - Si material no existe: omite fila

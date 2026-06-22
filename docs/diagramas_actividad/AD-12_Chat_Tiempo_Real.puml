@@ -172,7 +172,7 @@ partition "== LISTAR CHATS (DASHBOARD GESTOR) ==" {
   :Muestra lista de conversaciones;
 }
 
-note right of Sistema
+note right
   **Arquitectura hibrida:**
   - REST (DRF): CRUD chats/mensajes,
     marcar leidos, editar mensaje

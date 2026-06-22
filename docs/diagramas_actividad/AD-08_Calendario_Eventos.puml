@@ -131,7 +131,7 @@ partition "== ELIMINAR EVENTO ==" {
   endif
 }
 
-note right of Sistema
+note right
   **Fuentes del calendario:**
   - VentaInventario -> eventos verdes
   - CompraInventario -> eventos rojos
