@@ -90,8 +90,7 @@ partition "== REGISTRAR VENTA ==" {
 }
 
 partition "== EDITAR OPERACION ==" {
-  :POST /punto-eca/movimientos/editar-compra/<id>/
-  o /editar-venta/<id>/;
+  :POST editar-compra/editar-venta con ID;
 
   |Sistema (Django)|
   :Busca CompraInventario o VentaInventario;
@@ -114,8 +113,7 @@ partition "== EDITAR OPERACION ==" {
 }
 
 partition "== BORRAR OPERACION ==" {
-  :DELETE /punto-eca/movimientos/borrar-compra/<id>/
-  o /borrar-venta/<id>/;
+  :DELETE borrar-compra/borrar-venta con ID;
 
   |Sistema (Django)|
   :Solo acepta metodo DELETE (405 a otros);

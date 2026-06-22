@@ -86,15 +86,7 @@ end
 
 BulkCompras -> BulkCompras: Compilar resultados:\n- total_filas\n- exitosas\n- con_errores\n- detalles[] por fila
 
-BulkCompras --> Browser: JsonResponse({
-  status: "success",
-  mensaje: "Procesamiento completado. X exitosas, Y con errores",
-  resumen: {total_filas, exitosas, con_errores},
-  detalles: [
-    {fila: 2, status: "success", mensaje: "..."},
-    {fila: 5, status: "error", mensaje: "Material 'X' no encontrado", datos: {...}}
-  ]
-})
+BulkCompras --> Browser: JsonResponse(status, mensaje, resumen, detalles[])
 
 == Subir CSV de Ventas ==
 

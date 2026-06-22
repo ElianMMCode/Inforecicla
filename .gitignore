@@ -401,3 +401,6 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/django,python,sqlite,visualstudiocode,jetbrains
 staticfiles
 media/
+
+# Exported diagram images/PDFs (not for repo)
+docs/export/
