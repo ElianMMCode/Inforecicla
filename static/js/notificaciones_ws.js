@@ -72,3 +72,29 @@ function initNotificacionesWS(dropdownId, iconMap, defaultIcon = 'bi-bell-fill')
         }
     };
 }
+
+function initNotificacionEliminar(dropdownId) {
+    var menu = document.querySelector(`[aria-labelledby="${dropdownId}"]`);
+    if (!menu) return;
+    menu.addEventListener('click', function(e) {
+        var btn = e.target.closest('.notificacion-eliminar-btn');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        var form = btn.closest('.notificacion-eliminar-form');
+        Swal.fire({
+            title: '¿Eliminar esta notificación?',
+            text: 'Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+}

@@ -1,5 +1,3 @@
-import secrets
-import string
 from datetime import timedelta
 
 from django.test import TestCase
@@ -8,26 +6,12 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from apps.publicaciones.models import Notificacion
+from apps.users.tests import _generar_password
 from config import constants as cons
 
 Usuario = get_user_model()
 
 _URL_ELIMINAR = "publicacion:eliminar_notificacion"
-
-
-def _generar_password():
-    simbolos = "@$!%*?&"
-    alphabet = string.ascii_letters + string.digits + simbolos
-    while True:
-        pwd = "".join(secrets.choice(alphabet) for _ in range(16))
-        if (
-            any(c.isupper() for c in pwd)
-            and any(c.islower() for c in pwd)
-            and any(c.isdigit() for c in pwd)
-            and any(c in simbolos for c in pwd)
-        ):
-            return pwd
-
 
 _PWD_TEST = _generar_password()
 
