@@ -57,10 +57,9 @@ function initNotificacionesWS(dropdownId, iconMap, defaultIcon = 'bi-bell-fill')
                 </span>
                 <span class="badge rounded-pill bg-success align-self-center" style="font-size:.55rem;">Nueva</span>
             </a>
-            <form method="POST" action="${deleteUrl}" class="ms-1 flex-shrink-0"
-                  onsubmit="return confirm('¿Eliminar esta notificación?');">
+            <form method="POST" action="${deleteUrl}" class="ms-1 flex-shrink-0 notificacion-eliminar-form">
                 <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-                <button type="submit" class="btn btn-sm btn-link text-muted p-0" title="Eliminar notificación" aria-label="Eliminar notificación">
+                <button type="button" class="btn btn-sm btn-link text-muted p-0 notificacion-eliminar-btn" title="Eliminar notificación" aria-label="Eliminar notificación">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </form>`;

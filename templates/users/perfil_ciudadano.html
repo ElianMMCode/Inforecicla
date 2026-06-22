@@ -162,10 +162,9 @@
                                                 <span class="badge rounded-pill bg-success align-self-center" style="font-size:.55rem;">Nueva</span>
                                                 {% endif %}
                                             </a>
-                                            <form method="POST" action="{% url 'publicacion:eliminar_notificacion' notificacion.id %}" class="ms-1 flex-shrink-0"
-                                                  onsubmit="return confirm('¿Eliminar esta notificación?');">
+                                            <form method="POST" action="{% url 'publicacion:eliminar_notificacion' notificacion.id %}" class="ms-1 flex-shrink-0 notificacion-eliminar-form">
                                                 {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-link text-muted p-0 notificacion-eliminar-btn" title="Eliminar notificación" aria-label="Eliminar notificación">
+                                                <button type="button" class="btn btn-sm btn-link text-muted p-0 notificacion-eliminar-btn" title="Eliminar notificación" aria-label="Eliminar notificación">
                                                     <i class="bi bi-x-lg"></i>
                                                 </button>
                                             </form>
@@ -1453,6 +1452,32 @@
 <script src="{% static 'js/notificaciones_ws.js' %}"></script>
 <script>
 initNotificacionesWS('notificacionesDropdown', { mensaje: 'bi-chat-dots-fill' }, 'bi-file-earmark-text');
+</script>
+<script>
+var menuCiudadano = document.querySelector('[aria-labelledby="notificacionesDropdown"]');
+if (menuCiudadano) {
+  menuCiudadano.addEventListener('click', function(e) {
+    var btn = e.target.closest('.notificacion-eliminar-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var form = btn.closest('.notificacion-eliminar-form');
+    Swal.fire({
+      title: '¿Eliminar esta notificación?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then(function(result) {
+      if (result.isConfirmed) {
+        form.submit();
+      }
+    });
+  });
+}
 </script>
 </body>
 </html>
