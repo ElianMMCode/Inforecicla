@@ -1,10 +1,10 @@
 function getCookie(name) {
     if (!document.cookie) return '';
     const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith(name + '=')) {
-            return decodeURIComponent(cookie.substring(name.length + 1));
+    for (const cookie of cookies) {
+        const c = cookie.trim();
+        if (c.startsWith(name + '=')) {
+            return decodeURIComponent(c.substring(name.length + 1));
         }
     }
     return '';
