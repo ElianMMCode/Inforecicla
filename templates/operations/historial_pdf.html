@@ -1,52 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Historial General de Movimientos</title>
-    <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #999; padding: 0.35em 0.5em; text-align: left; }
-        th { background: #eee; }
-        .total { text-align: right; font-weight: bold; }
-        .tipo-compra { color: #b71c1c; }
-        .tipo-venta { color: #1b5e20; }
-    </style>
+  <meta charset="utf-8">
+  <title>{{ titulo_reporte }}</title>
+  {% include "admin/partials/_pdf_styles.html" %}
+  <style>
+    .resumen-grid { width: 100%; border-collapse: collapse; border: 1px solid #c8e6c9; }
+    .resumen-grid td { padding: 6px 9px; font-size: 8.5px; border-right: 1px solid #c8e6c9; vertical-align: top; }
+    .resumen-grid td:last-child { border-right: none; }
+    .resumen-grid .lbl { color: #1a5c2a; font-weight: bold; display: block; margin-bottom: 2px; }
+    .resumen-grid .val { font-size: 11px; font-weight: bold; color: #1a1a1a; }
+    .val-pos { color: #145a32; }
+    .val-neg { color: #922b21; }
+    .badge-compra  { background: #fce4e4; color: #7b1818; }
+    .badge-venta   { background: #d1f5e0; color: #145a32; }
+    .row-compra td { border-left: 3px solid #e57373; }
+    .row-venta  td { border-left: 3px solid #66bb6a; }
+    .tfoot-total td { background: #e8f5e9; font-weight: bold; font-size: 9px; border-top: 2px solid #1a5c2a; }
+  </style>
 </head>
 <body>
-<h2>Historial General de Movimientos</h2>
-<table>
+  {% include "admin/partials/_pdf_header.html" %}
+
+  {% if truncado %}
+  <div style="background:#fff3cd;border:1px solid #ffc107;padding:5px 9px;font-size:8px;color:#856404;margin-top:6px;">
+    <strong>Aviso:</strong> Se muestran los {{ total_registros }} movimientos más recientes de {{ registros_totales_bd }} totales.
+    Aplique filtros de fecha, material o tipo para acotar el rango y exportar un conjunto específico.
+  </div>
+  {% endif %}
+
+  <div class="section-header">Resumen Financiero</div>
+  <table class="resumen-grid">
+    <tr>
+      <td>
+        <span class="lbl">Total de movimientos</span>
+        <span class="val">{{ total_registros }}</span>
+      </td>
+      <td>
+        <span class="lbl">Total compras</span>
+        <span class="val val-neg">${{ total_compras|floatformat:2 }}</span>
+      </td>
+      <td>
+        <span class="lbl">Total ventas</span>
+        <span class="val val-pos">${{ total_ventas|floatformat:2 }}</span>
+      </td>
+      <td>
+        <span class="lbl">Balance (ventas − compras)</span>
+        <span class="val {% if balance >= 0 %}val-pos{% else %}val-neg{% endif %}">
+          ${{ balance|floatformat:2 }}
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="4"><span class="lbl">Punto ECA</span><span style="font-size:9px;">{{ eca_nombre }}</span></td>
+    </tr>
+  </table>
+
+  <div class="section-header">Historial de Movimientos</div>
+  <table class="data-table">
     <thead>
-        <tr>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Material</th>
-            <th>Categoría</th>
-            <th>Cantidad</th>
-            <th>Precio Unit.</th>
-            <th>Total</th>
-            <th>Centro Acopio</th>
-            <th>Observaciones</th>
-        </tr>
+      <tr>
+        <th>#</th>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Material</th>
+        <th>Categoría</th>
+        <th>Clasificación</th>
+        <th>Cantidad</th>
+        <th>Precio Unit.</th>
+        <th>Total</th>
+        <th>Centro Acopio</th>
+        <th>Observaciones</th>
+      </tr>
     </thead>
     <tbody>
-    {% for mov in historial %}
-    <tr>
+      {% for mov in historial %}
+      <tr class="{% if mov.tipo_movimiento == 'Compra' %}row-compra{% else %}row-venta{% endif %}">
+        <td>{{ forloop.counter }}</td>
         <td>{{ mov.fecha|date:"d/m/Y H:i" }}</td>
-        <td class="{% if mov.tipo == 'Compra' %}tipo-compra{% else %}tipo-venta{% endif %}">{{ mov.tipo }}</td>
-        <td>{{ mov.material }}</td>
+        <td>
+          {% if mov.tipo_movimiento == 'Compra' %}
+            <span class="badge badge-compra">Compra</span>
+          {% else %}
+            <span class="badge badge-venta">Venta</span>
+          {% endif %}
+        </td>
+        <td><strong>{{ mov.material }}</strong></td>
         <td>{{ mov.categoria }}</td>
+        <td>{{ mov.clasificacion }}</td>
         <td>{{ mov.cantidad|floatformat:2 }}</td>
         <td>${{ mov.precio_unitario|floatformat:2 }}</td>
-        <td class="total">${{ mov.total|floatformat:2 }}</td>
-        <td>{% if mov.tipo == 'Venta' %}{{ mov.centro_acopio }}{% else %}-{% endif %}</td>
-        <td>{{ mov.observaciones }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="9">Sin movimientos registrados.</td></tr>
-    {% endfor %}
+        <td><strong>${{ mov.total|floatformat:2 }}</strong></td>
+        <td>{% if mov.tipo_movimiento == 'Venta' %}{{ mov.centro_acopio|default:'-' }}{% else %}-{% endif %}</td>
+        <td>{{ mov.observaciones|default:'-' }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="11" style="text-align:center;color:#999;padding:10px;">Sin movimientos registrados.</td></tr>
+      {% endfor %}
     </tbody>
-</table>
+    {% if historial %}
+    <tfoot>
+      <tr class="tfoot-total">
+        <td colspan="8" style="text-align:right;">TOTAL COMPRAS</td>
+        <td>${{ total_compras|floatformat:2 }}</td>
+        <td colspan="2"></td>
+      </tr>
+      <tr class="tfoot-total">
+        <td colspan="8" style="text-align:right;">TOTAL VENTAS</td>
+        <td>${{ total_ventas|floatformat:2 }}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
 </body>
 </html>
-

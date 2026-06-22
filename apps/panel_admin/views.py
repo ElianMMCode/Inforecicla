@@ -49,6 +49,25 @@ def _crear_respuesta_descarga(contenido, content_type, filename):
     return response
 
 
+def _build_pdf_context(request):
+    import base64
+    from django.conf import settings
+
+    logo_path = settings.BASE_DIR / "static" / "img" / "logo.png"
+    try:
+        logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
+    except Exception:
+        logo_b64 = ""
+
+    user = request.user
+    if hasattr(user, "nombres") and user.nombres:
+        nombre = f"{user.nombres} {user.apellidos}".strip()
+    else:
+        nombre = user.get_full_name() or user.email or str(user)
+
+    return {"logo_b64": logo_b64, "usuario_generador": nombre}
+
+
 def _escribir_encabezados_excel(ws, headers):
     from openpyxl.styles import Alignment, Font, PatternFill
 
@@ -976,7 +995,23 @@ def exportar_usuarios_pdf(request):
     from weasyprint import HTML
 
     usuarios = _filtrar_usuarios_export(request, list(Usuario.objects.all().order_by("apellidos", "nombres")))
-    html = render_to_string("admin/Usuarios/usuarios_pdf.html", {"usuarios": usuarios})
+    q = request.GET.get("q", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    filtros = []
+    if q: filtros.append(f"Búsqueda: {q}")
+    if tipo: filtros.append(f"Tipo: {tipo}")
+    if estado: filtros.append(f"Estado: {estado}")
+    ctx = _build_pdf_context(request)
+    ctx.update({
+        "usuarios": usuarios,
+        "titulo_reporte": "Reporte de Usuarios",
+        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "tipo_reporte": "Usuarios",
+        "total_registros": len(usuarios),
+        "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
+    })
+    html = render_to_string("admin/Usuarios/usuarios_pdf.html", ctx)
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "usuarios.pdf")
 
@@ -1204,7 +1239,18 @@ def exportar_publicaciones_pdf(request):
         publicaciones = _filtrar_publicaciones_export(request, list(Publicacion.objects.select_related("usuario", "categoria").all().order_by("-fecha_creacion")))
     except Exception:
         publicaciones = []
-    html = render_to_string("admin/Publicaciones/publicaciones_pdf.html", {"publicaciones": publicaciones})
+    q = request.GET.get("q", "").strip()
+    filtros = [f"Búsqueda: {q}"] if q else []
+    ctx = _build_pdf_context(request)
+    ctx.update({
+        "publicaciones": publicaciones,
+        "titulo_reporte": "Reporte de Publicaciones",
+        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "tipo_reporte": "Publicaciones",
+        "total_registros": len(publicaciones),
+        "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
+    })
+    html = render_to_string("admin/Publicaciones/publicaciones_pdf.html", ctx)
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "publicaciones.pdf")
 
@@ -1302,7 +1348,23 @@ def exportar_puntos_eca_pdf(request):
     from weasyprint import HTML
 
     puntos = _filtrar_puntos_eca_export(request, list(PuntoECA.objects.select_related("gestor_eca", "localidad").all().order_by("nombre")))
-    html = render_to_string("admin/PuntoECA/puntos_eca_pdf.html", {"puntos": puntos})
+    q = request.GET.get("q", "").strip()
+    localidad = request.GET.get("localidad", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    filtros = []
+    if q: filtros.append(f"Búsqueda: {q}")
+    if localidad: filtros.append(f"Localidad: {localidad}")
+    if estado: filtros.append(f"Estado: {estado}")
+    ctx = _build_pdf_context(request)
+    ctx.update({
+        "puntos": puntos,
+        "titulo_reporte": "Reporte de Puntos ECA",
+        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "tipo_reporte": "Puntos ECA",
+        "total_registros": len(puntos),
+        "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
+    })
+    html = render_to_string("admin/PuntoECA/puntos_eca_pdf.html", ctx)
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "puntos_eca.pdf")
 
@@ -1435,7 +1497,23 @@ def exportar_materiales_pdf(request):
     from weasyprint import HTML
 
     materiales = _filtrar_materiales_export(request, list(Material.objects.select_related("categoria").all().order_by("nombre")))
-    html = render_to_string("admin/Materiales/materiales_pdf.html", {"materiales": materiales})
+    q = request.GET.get("q", "").strip()
+    categoria = request.GET.get("categoria", "").strip()
+    clasificacion = request.GET.get("clasificacion", "").strip()
+    filtros = []
+    if q: filtros.append(f"Búsqueda: {q}")
+    if categoria: filtros.append(f"Categoría: {categoria}")
+    if clasificacion: filtros.append(f"Clasificación: {clasificacion}")
+    ctx = _build_pdf_context(request)
+    ctx.update({
+        "materiales": materiales,
+        "titulo_reporte": "Reporte de Materiales Reciclables",
+        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "tipo_reporte": "Materiales",
+        "total_registros": len(materiales),
+        "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
+    })
+    html = render_to_string("admin/Materiales/materiales_pdf.html", ctx)
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "materiales.pdf")
 
@@ -1503,7 +1581,21 @@ def exportar_categorias_material_pdf(request):
     from weasyprint import HTML
 
     categorias = _filtrar_categorias_material_export(request, list(CategoriaMaterial.objects.all().order_by("nombre")))
-    html = render_to_string("admin/CategoriasMateriales/categorias_material_pdf.html", {"categorias": categorias})
+    q = request.GET.get("q", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    filtros = []
+    if q: filtros.append(f"Búsqueda: {q}")
+    if estado: filtros.append(f"Estado: {estado}")
+    ctx = _build_pdf_context(request)
+    ctx.update({
+        "categorias": categorias,
+        "titulo_reporte": "Reporte de Categorías de Materiales",
+        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "tipo_reporte": "Categorías de Materiales",
+        "total_registros": len(categorias),
+        "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
+    })
+    html = render_to_string("admin/CategoriasMateriales/categorias_material_pdf.html", ctx)
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_material.pdf")
 
@@ -1573,7 +1665,18 @@ def exportar_categorias_publicacion_pdf(request):
         categorias = _filtrar_categorias_publicacion_export(request, list(CategoriaPublicacion.objects.all().order_by("tipo")))
     except Exception:
         categorias = []
-    html = render_to_string("admin/CategoriasPublicaciones/categorias_publicacion_pdf.html", {"categorias": categorias})
+    q = request.GET.get("q", "").strip()
+    filtros = [f"Búsqueda: {q}"] if q else []
+    ctx = _build_pdf_context(request)
+    ctx.update({
+        "categorias": categorias,
+        "titulo_reporte": "Reporte de Categorías de Publicaciones",
+        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "tipo_reporte": "Categorías de Publicaciones",
+        "total_registros": len(categorias),
+        "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
+    })
+    html = render_to_string("admin/CategoriasPublicaciones/categorias_publicacion_pdf.html", ctx)
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "categorias_publicacion.pdf")
 
@@ -2162,7 +2265,21 @@ def exportar_tipos_publicacion_pdf(request):
         tipos = _filtrar_tipos_publicacion_export(request, list(TipoPublicacion.objects.all().order_by("nombre")))
     except Exception:
         tipos = []
-    html = render_to_string("admin/Publicaciones/tipos_publicacion_pdf.html", {"tipos": tipos})
+    q = request.GET.get("q", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    filtros = []
+    if q: filtros.append(f"Búsqueda: {q}")
+    if estado: filtros.append(f"Estado: {estado}")
+    ctx = _build_pdf_context(request)
+    ctx.update({
+        "tipos": tipos,
+        "titulo_reporte": "Reporte de Tipos de Publicación",
+        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "tipo_reporte": "Tipos de Publicación",
+        "total_registros": len(tipos),
+        "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
+    })
+    html = render_to_string("admin/Publicaciones/tipos_publicacion_pdf.html", ctx)
     pdf = HTML(string=html).write_pdf()
     return _crear_respuesta_descarga(pdf, PDF_MIME_TYPE, "tipos_publicacion.pdf")
 

@@ -1,66 +1,74 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <title>Reporte de Ventas</title>
-        <style>
-        body { font-family: Arial, sans-serif; color: #222; font-size: 13px; margin: 2em; }
-        h1 { color: #197c26; font-size: 1.6em; border-bottom: 2px solid #197c26; padding-bottom: 0.2em; margin-bottom: 1.2em; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1.2em; }
-        th, td { border: 1px solid #888; padding: 0.3em 0.5em; text-align: left; }
-        th { background: #eee; color: #197c26; border-bottom: 2px solid #197c26; }
-        .total { font-weight:bold; color:#b30000; }
-        .sub { color: #555; font-size: 0.95em; }
-        </style>
-    </head>
-    <body>
-        <h1>Reporte de Ventas de Materiales</h1>
-        {% if ventas and ventas|length > 0 %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Material</th>
-                        <th>Categoría</th>
-                        <th>Tipo</th>
-                        <th>Cantidad</th>
-                        <th>Precio Unitario</th>
-                        <th>Total</th>
-                        <th>Centro de Acopio</th>
-                        <th>Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for venta in ventas %}
-                        <tr>
-                            <td>{{ venta.fecha_venta|date:'d/m/Y H:i' }}</td>
-                            <td>{{ venta.inventario.material.nombre }}</td>
-                            <td>{{ venta.inventario.material.categoria }}</td>
-                            <td>{{ venta.inventario.material.clasificacion }}</td>
-                            <td>{{ venta.cantidad|floatformat:2 }}</td>
-                            <td>${{ venta.precio_venta|floatformat:2 }}</td>
-                            <td class="total">
-                                                            ${{ venta.total_venta|floatformat:2 }}
-                            </td>
-                            <td>{{ venta.centro_acopio.nombre }}</td>
-                            <td class="sub">{{ venta.observaciones|default:'-' }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="6" class="total" style="text-align:right;">TOTAL</td>
-                        <td class="total">
-                            ${{ total_ventas|floatformat:2 }}
-                        </td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-            <p class="sub">Total de ventas: {{ ventas|length }}</p>
-        {% else %}
-            <p>No hay registros de ventas.</p>
-        {% endif %}
-    </body>
+<head>
+  <meta charset="utf-8">
+  <title>{{ titulo_reporte }}</title>
+  {% include "admin/partials/_pdf_styles.html" %}
+  <style>
+    .resumen-grid { width: 100%; border-collapse: collapse; border: 1px solid #c8e6c9; }
+    .resumen-grid td { padding: 6px 9px; font-size: 8.5px; border-right: 1px solid #c8e6c9; vertical-align: top; }
+    .resumen-grid td:last-child { border-right: none; }
+    .resumen-grid .lbl { color: #1a5c2a; font-weight: bold; display: block; margin-bottom: 2px; }
+    .resumen-grid .val { font-size: 12px; font-weight: bold; color: #1a1a1a; }
+    .tfoot-total td { background: #e8f5e9; font-weight: bold; font-size: 9px; border-top: 2px solid #1a5c2a; }
+  </style>
+</head>
+<body>
+  {% include "admin/partials/_pdf_header.html" %}
+
+  <div class="section-header">Resumen Financiero</div>
+  <table class="resumen-grid">
+    <tr>
+      <td><span class="lbl">Total de registros</span><span class="val">{{ total_registros }}</span></td>
+      <td><span class="lbl">Monto total vendido</span><span class="val">${{ total_monto|floatformat:2 }}</span></td>
+      <td><span class="lbl">Punto ECA</span><span class="val">{{ eca_nombre }}</span></td>
+    </tr>
+  </table>
+
+  <div class="section-header">Listado de Ventas</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Fecha</th>
+        <th>Material</th>
+        <th>Categoría</th>
+        <th>Clasificación</th>
+        <th>Cantidad</th>
+        <th>Precio Unit.</th>
+        <th>Total</th>
+        <th>Centro Acopio</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for venta in ventas %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ venta.fecha_venta|date:'d/m/Y H:i' }}</td>
+        <td><strong>{{ venta.inventario.material.nombre }}</strong></td>
+        <td>{{ venta.inventario.material.categoria|default:'-' }}</td>
+        <td>{{ venta.inventario.material.clasificacion|default:'-' }}</td>
+        <td>{{ venta.cantidad|floatformat:2 }}</td>
+        <td>${{ venta.precio_venta|floatformat:2 }}</td>
+        <td><strong>${{ venta.total_venta|floatformat:2 }}</strong></td>
+        <td>{{ venta.centro_acopio.nombre|default:'-' }}</td>
+        <td>{{ venta.observaciones|default:'-' }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="10" style="text-align:center;color:#999;padding:10px;">Sin registros de ventas.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if ventas %}
+    <tfoot>
+      <tr class="tfoot-total">
+        <td colspan="7" style="text-align:right;">TOTAL VENTAS</td>
+        <td>${{ total_monto|floatformat:2 }}</td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</body>
 </html>

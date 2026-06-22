@@ -1,59 +1,71 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Reporte de Compras</title>
-    <style>
-        body { font-family: Arial, sans-serif; color: #222; font-size: 13px; margin: 2em; }
-        h1 { color: #b30000; font-size: 1.6em; border-bottom: 2px solid #b30000; padding-bottom: 0.2em; margin-bottom: 1.2em; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1.2em; }
-        th, td { border: 1px solid #888; padding: 0.3em 0.5em; text-align: left; }
-        th { background: #eee; color: #b30000; border-bottom: 2px solid #b30000; }
-        .total { font-weight:bold; color:#338033; }
-        .sub { color: #555; font-size: 0.95em; }
-    </style>
+  <meta charset="utf-8">
+  <title>{{ titulo_reporte }}</title>
+  {% include "admin/partials/_pdf_styles.html" %}
+  <style>
+    .resumen-grid { width: 100%; border-collapse: collapse; border: 1px solid #c8e6c9; }
+    .resumen-grid td { padding: 6px 9px; font-size: 8.5px; border-right: 1px solid #c8e6c9; vertical-align: top; }
+    .resumen-grid td:last-child { border-right: none; }
+    .resumen-grid .lbl { color: #1a5c2a; font-weight: bold; display: block; margin-bottom: 2px; }
+    .resumen-grid .val { font-size: 12px; font-weight: bold; color: #1a1a1a; }
+    .tfoot-total td { background: #e8f5e9; font-weight: bold; font-size: 9px; border-top: 2px solid #1a5c2a; }
+  </style>
 </head>
 <body>
-    <h1>Reporte de Compras de Materiales</h1>
-    {% if compras and compras|length > 0 %}
-    <table>
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Material</th>
-                <th>Categoría</th>
-                <th>Tipo</th>
-                <th>Cantidad</th>
-                <th>Precio Unitario</th>
-                <th>Total</th>
-                <th>Observaciones</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for compra in compras %}
-            <tr>
-                <td>{{ compra.fecha_compra|date:'d/m/Y H:i' }}</td>
-                <td>{{ compra.inventario.material.nombre }}</td>
-                <td>{{ compra.inventario.material.categoria }}</td>
-                <td>{{ compra.inventario.material.clasificacion }}</td>
-                <td>{{ compra.cantidad|floatformat:2 }}</td>
-                <td>${{ compra.precio_compra|floatformat:2 }}</td>
-                <td class="total">
-                  {% if compra.cantidad and compra.precio_compra %}
-                                      ${{ compra.total_compra|floatformat:2 }}
-                  {% else %}
-                    -
-                  {% endif %}
-                </td>
-                <td class="sub">{{ compra.observaciones|default:'-' }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <p class="sub">Total de compras: {{ compras|length }}</p>
-    {% else %}
-    <p>No hay registros de compras.</p>
+  {% include "admin/partials/_pdf_header.html" %}
+
+  <div class="section-header">Resumen Financiero</div>
+  <table class="resumen-grid">
+    <tr>
+      <td><span class="lbl">Total de registros</span><span class="val">{{ total_registros }}</span></td>
+      <td><span class="lbl">Monto total comprado</span><span class="val">${{ total_monto|floatformat:2 }}</span></td>
+      <td><span class="lbl">Punto ECA</span><span class="val">{{ eca_nombre }}</span></td>
+    </tr>
+  </table>
+
+  <div class="section-header">Listado de Compras</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Fecha</th>
+        <th>Material</th>
+        <th>Categoría</th>
+        <th>Clasificación</th>
+        <th>Cantidad</th>
+        <th>Precio Unit.</th>
+        <th>Total</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for compra in compras %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ compra.fecha_compra|date:'d/m/Y H:i' }}</td>
+        <td><strong>{{ compra.inventario.material.nombre }}</strong></td>
+        <td>{{ compra.inventario.material.categoria|default:'-' }}</td>
+        <td>{{ compra.inventario.material.clasificacion|default:'-' }}</td>
+        <td>{{ compra.cantidad|floatformat:2 }}</td>
+        <td>${{ compra.precio_compra|floatformat:2 }}</td>
+        <td><strong>${{ compra.total_compra|floatformat:2 }}</strong></td>
+        <td>{{ compra.observaciones|default:'-' }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="text-align:center;color:#999;padding:10px;">Sin registros de compras.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if compras %}
+    <tfoot>
+      <tr class="tfoot-total">
+        <td colspan="7" style="text-align:right;">TOTAL COMPRAS</td>
+        <td>${{ total_monto|floatformat:2 }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
     {% endif %}
+  </table>
 </body>
 </html>
-

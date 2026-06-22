@@ -1,0 +1,30 @@
+<table class="pdf-header">
+  <tr>
+    <td class="header-logo">
+      {% if logo_b64 %}<img src="data:image/png;base64,{{ logo_b64 }}" alt="InfoRecicla">{% endif %}
+      <div class="brand">InfoRecicla</div>
+    </td>
+    <td class="header-center">
+      <div class="report-title">{{ titulo_reporte }}</div>
+      <div class="report-subtitle">{{ subtitulo_reporte }}</div>
+    </td>
+    <td class="header-right">
+      <strong>Fecha generación:</strong><br>
+      {% now "d/m/Y H:i" %}<br>
+      <strong>Generado por:</strong><br>
+      {{ usuario_generador }}
+    </td>
+  </tr>
+</table>
+<hr class="header-divider">
+
+<div class="section-header">Ficha Técnica de la Exportación</div>
+<table class="ficha-grid">
+  <tr>
+    <td><strong>Tipo de reporte:</strong> {{ tipo_reporte }}</td>
+    <td><strong>Total de registros:</strong> {{ total_registros }}</td>
+  </tr>
+  <tr>
+    <td colspan="2"><strong>Filtros aplicados:</strong> {{ filtros_activos }}</td>
+  </tr>
+</table>

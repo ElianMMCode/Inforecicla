@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Tipos de Publicación - InfoRecicla</title>
+  <title>{{ titulo_reporte }} - InfoRecicla</title>
   {% include "admin/partials/_pdf_styles.html" %}
 </head>
 <body>
-  <h1>Tipos de Publicación — InfoRecicla</h1>
-  <p class="sub">Total: {{ tipos|length }} tipo(s) &nbsp;|&nbsp; Generado: {% now "d/m/Y H:i" %}</p>
+  {% include "admin/partials/_pdf_header.html" %}
 
-  <table>
+  <div class="section-header">Listado de Tipos de Publicación</div>
+  <table class="data-table">
     <thead>
       <tr>
         <th>#</th>
@@ -23,7 +23,7 @@
       <tr>
         <td>{{ forloop.counter }}</td>
         <td><strong>{{ t.nombre }}</strong></td>
-        <td>{{ t.descripcion|default:"-" }}</td>
+        <td>{{ t.descripcion|default:"-"|truncatechars:80 }}</td>
         <td>
           {% if t.estado == "ACTIVO" %}
             <span class="badge badge-activo">Activo</span>
@@ -35,7 +35,5 @@
       {% endfor %}
     </tbody>
   </table>
-
-  <div class="footer">InfoRecicla — Panel de Administración</div>
 </body>
 </html>
