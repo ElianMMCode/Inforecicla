@@ -596,9 +596,12 @@ def _normalizar_historial_movimiento(
 ):
     cantidad = getattr(registro, "cantidad", None)
     precio_unitario = getattr(registro, precio_attr, None)
+    cat = getattr(registro.inventario.material, "categoria", None)
     return {
         "tipo_movimiento": tipo_movimiento,
         "material": registro.inventario.material.nombre,
+        "categoria": getattr(cat, "nombre", "-") if cat else "-",
+        "clasificacion": getattr(registro.inventario.material, "clasificacion", "-") or "-",
         "fecha": getattr(registro, fecha_attr),
         "cantidad": cantidad,
         "precio_unitario": precio_unitario,
@@ -689,13 +692,51 @@ def _crear_dataset_historial(registros):
     return dataset
 
 
+def _build_pdf_context_ops(request):
+    import base64
+    from django.conf import settings
+    from apps.ecas.models import PuntoECA
+
+    logo_path = settings.BASE_DIR / "static" / "img" / "logo.png"
+    try:
+        logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
+    except Exception:
+        logo_b64 = ""
+
+    user = request.user
+    if hasattr(user, "nombres") and user.nombres:
+        nombre = f"{user.nombres} {user.apellidos}".strip()
+    else:
+        nombre = user.get_full_name() or user.email or str(user)
+
+    punto_eca = PuntoECA.objects.filter(gestor_eca=user).first()
+    eca_nombre = punto_eca.nombre if punto_eca else "InfoRecicla"
+
+    return {"logo_b64": logo_b64, "usuario_generador": nombre, "eca_nombre": eca_nombre}
+
+
+def _build_filtros_resumen(filtros):
+    partes = []
+    if filtros.get("material"): partes.append(f"Material: {filtros['material']}")
+    if filtros.get("categoria"): partes.append(f"Categoría: {filtros['categoria']}")
+    if filtros.get("clasificacion"): partes.append(f"Clasificación: {filtros['clasificacion']}")
+    if filtros.get("centro_acopio"): partes.append(f"Centro acopio: {filtros['centro_acopio']}")
+    if filtros.get("tipo_movimiento"): partes.append(f"Tipo: {filtros['tipo_movimiento'].capitalize()}")
+    if filtros.get("fecha_desde"): partes.append(f"Desde: {filtros['fecha_desde']}")
+    if filtros.get("fecha_hasta"): partes.append(f"Hasta: {filtros['fecha_hasta']}")
+    if filtros.get("cantidad_min") is not None: partes.append(f"Cant. mín: {filtros['cantidad_min']}")
+    if filtros.get("cantidad_max") is not None: partes.append(f"Cant. máx: {filtros['cantidad_max']}")
+    if filtros.get("monto_min") is not None: partes.append(f"Monto mín: ${filtros['monto_min']}")
+    if filtros.get("monto_max") is not None: partes.append(f"Monto máx: ${filtros['monto_max']}")
+    return " | ".join(partes) if partes else "Ninguno"
+
+
 def _generar_pdf_desde_template(
-    request, template_name, contexto, content_disposition, logger_message
+    template_name, contexto, content_disposition, logger_message
 ):
     try:
         html_string = render_to_string(template_name, contexto)
-        pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri("/"))
-        pdf_bytes = pdf_file.write_pdf(stylesheets=[])
+        pdf_bytes = HTML(string=html_string).write_pdf()
         response = HttpResponse(pdf_bytes, content_type=MIME_PDF)
         response["Content-Disposition"] = content_disposition
         return response
@@ -862,15 +903,26 @@ def exportar_compras_excel(request):
 @gestor_eca_or_admin_required
 def exportar_compras_pdf(request):
     queryset = models.CompraInventario.objects.all().select_related(
-        "inventario__material", "inventario__punto_eca"
+        "inventario__material", "inventario__material__categoria", "inventario__punto_eca"
     )
     queryset = _filtrar_compras_export(request, queryset)
     compras = list(queryset)
+    total_monto = sum((c.cantidad or 0) * (c.precio_compra or 0) for c in compras)
+    filtros = _extraer_filtros_export(request)
+    ctx = _build_pdf_context_ops(request)
+    ctx.update({
+        "compras": compras,
+        "total_monto": total_monto,
+        "titulo_reporte": "Reporte de Compras",
+        "subtitulo_reporte": f"Gestión de Inventario — {ctx['eca_nombre']}",
+        "tipo_reporte": "Historial de Compras",
+        "total_registros": len(compras),
+        "filtros_activos": _build_filtros_resumen(filtros),
+    })
     return _generar_pdf_desde_template(
-        request,
         "operations/compras_pdf.html",
-        {"compras": compras},
-        f'inline; filename="{_generar_filename_export("compras", request, "pdf")}"',
+        ctx,
+        f'attachment; filename="{_generar_filename_export("compras", request, "pdf")}"',
         "Error generando PDF de compras",
     )
 
@@ -878,16 +930,26 @@ def exportar_compras_pdf(request):
 @gestor_eca_or_admin_required
 def exportar_ventas_pdf(request):
     queryset = models.VentaInventario.objects.all().select_related(
-        "inventario__material", "inventario__punto_eca", "centro_acopio"
+        "inventario__material", "inventario__material__categoria", "inventario__punto_eca", "centro_acopio"
     )
     queryset = _filtrar_ventas_export(request, queryset)
     ventas = list(queryset)
-    total_ventas = sum((v.cantidad or 0) * (v.precio_venta or 0) for v in ventas)
+    total_monto = sum((v.cantidad or 0) * (v.precio_venta or 0) for v in ventas)
+    filtros = _extraer_filtros_export(request)
+    ctx = _build_pdf_context_ops(request)
+    ctx.update({
+        "ventas": ventas,
+        "total_monto": total_monto,
+        "titulo_reporte": "Reporte de Ventas",
+        "subtitulo_reporte": f"Gestión de Inventario — {ctx['eca_nombre']}",
+        "tipo_reporte": "Historial de Ventas",
+        "total_registros": len(ventas),
+        "filtros_activos": _build_filtros_resumen(filtros),
+    })
     return _generar_pdf_desde_template(
-        request,
         "operations/ventas_pdf.html",
-        {"ventas": ventas, "total_ventas": total_ventas},
-        f'inline; filename="{_generar_filename_export("ventas", request, "pdf")}"',
+        ctx,
+        f'attachment; filename="{_generar_filename_export("ventas", request, "pdf")}"',
         "Error generando PDF de ventas",
     )
 
@@ -976,6 +1038,9 @@ def exportar_historial_excel(request):
     return _generar_respuesta_xlsx(dataset, _generar_filename_export("historial", request, "xlsx"))
 
 
+MAX_HISTORIAL_PDF = 300
+
+
 @gestor_eca_or_admin_required
 def exportar_historial_pdf(request):
     historial = _obtener_historial_export(request)
@@ -984,10 +1049,29 @@ def exportar_historial_pdf(request):
             "No hay movimientos para exportar con los filtros actuales.",
             status=404,
         )
+    registros_totales = len(historial)
+    truncado = registros_totales > MAX_HISTORIAL_PDF
+    historial = historial[:MAX_HISTORIAL_PDF]
+    total_compras = sum(m["total"] for m in historial if m["tipo_movimiento"] == "Compra")
+    total_ventas = sum(m["total"] for m in historial if m["tipo_movimiento"] == "Venta")
+    filtros = _extraer_filtros_export(request)
+    ctx = _build_pdf_context_ops(request)
+    ctx.update({
+        "historial": historial,
+        "total_compras": total_compras,
+        "total_ventas": total_ventas,
+        "balance": total_ventas - total_compras,
+        "titulo_reporte": "Historial de Movimientos",
+        "subtitulo_reporte": f"Gestión de Inventario — {ctx['eca_nombre']}",
+        "tipo_reporte": "Historial de Movimientos",
+        "total_registros": len(historial),
+        "registros_totales_bd": registros_totales,
+        "truncado": truncado,
+        "filtros_activos": _build_filtros_resumen(filtros),
+    })
     return _generar_pdf_desde_template(
-        request,
         "operations/historial_pdf.html",
-        {"historial": historial},
-        f'inline; filename="{_generar_filename_export("historial", request, "pdf")}"',
+        ctx,
+        f'attachment; filename="{_generar_filename_export("historial", request, "pdf")}"',
         "Error generando PDF de historial",
     )

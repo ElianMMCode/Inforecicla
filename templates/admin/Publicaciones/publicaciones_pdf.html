@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Publicaciones - InfoRecicla</title>
+  <title>{{ titulo_reporte }} - InfoRecicla</title>
   {% include "admin/partials/_pdf_styles.html" %}
 </head>
 <body>
-  <h1>Publicaciones — InfoRecicla</h1>
-  <p class="sub">Total: {{ publicaciones|length }} publicacion(es) &nbsp;|&nbsp; Generado: {% now "d/m/Y H:i" %}</p>
+  {% include "admin/partials/_pdf_header.html" %}
 
-  <table>
+  <div class="section-header">Listado de Publicaciones</div>
+  <table class="data-table">
     <thead>
       <tr>
         <th>#</th>
@@ -25,7 +25,7 @@
       {% for p in publicaciones %}
       <tr>
         <td>{{ forloop.counter }}</td>
-        <td><strong>{{ p.titulo }}</strong></td>
+        <td><strong>{{ p.titulo|truncatechars:40 }}</strong></td>
         <td>{{ p.usuario.nombres|default:"" }} {{ p.usuario.apellidos|default:"" }}</td>
         <td>{{ p.categoria.nombre|default:"-" }}</td>
         <td>
@@ -37,13 +37,11 @@
             <span class="badge badge-otro">{{ p.estado }}</span>
           {% endif %}
         </td>
-        <td>{% if p.destacado %}Sí{% else %}No{% endif %}</td>
+        <td>{% if p.es_destacado %}Sí{% else %}No{% endif %}</td>
         <td>{{ p.fecha_creacion|date:"d/m/Y" }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-
-  <div class="footer">InfoRecicla — Panel de Administración</div>
 </body>
 </html>
