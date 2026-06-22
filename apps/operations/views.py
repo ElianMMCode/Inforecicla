@@ -732,7 +732,7 @@ def _build_filtros_resumen(filtros):
 
 
 def _generar_pdf_desde_template(
-    request, template_name, contexto, content_disposition, logger_message
+    template_name, contexto, content_disposition, logger_message
 ):
     try:
         html_string = render_to_string(template_name, contexto)
@@ -920,7 +920,6 @@ def exportar_compras_pdf(request):
         "filtros_activos": _build_filtros_resumen(filtros),
     })
     return _generar_pdf_desde_template(
-        request,
         "operations/compras_pdf.html",
         ctx,
         f'attachment; filename="{_generar_filename_export("compras", request, "pdf")}"',
@@ -948,7 +947,6 @@ def exportar_ventas_pdf(request):
         "filtros_activos": _build_filtros_resumen(filtros),
     })
     return _generar_pdf_desde_template(
-        request,
         "operations/ventas_pdf.html",
         ctx,
         f'attachment; filename="{_generar_filename_export("ventas", request, "pdf")}"',
@@ -1072,7 +1070,6 @@ def exportar_historial_pdf(request):
         "filtros_activos": _build_filtros_resumen(filtros),
     })
     return _generar_pdf_desde_template(
-        request,
         "operations/historial_pdf.html",
         ctx,
         f'attachment; filename="{_generar_filename_export("historial", request, "pdf")}"',

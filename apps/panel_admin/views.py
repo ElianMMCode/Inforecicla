@@ -22,6 +22,7 @@ from config import constants as cons
 
 PDF_MIME_TYPE = "application/pdf"
 XLSX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+PDF_SUBTITULO_ADMIN = "Panel de Administración — InfoRecicla"
 DEFAULT_CITY = "Bogotá"
 ADMIN_LISTAR_USUARIOS_URL = "panel_admin:listar_usuarios"
 ADMIN_LISTAR_PUBLICACIONES_URL = "panel_admin:listar_publicaciones_admin"
@@ -1006,7 +1007,7 @@ def exportar_usuarios_pdf(request):
     ctx.update({
         "usuarios": usuarios,
         "titulo_reporte": "Reporte de Usuarios",
-        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "subtitulo_reporte": PDF_SUBTITULO_ADMIN,
         "tipo_reporte": "Usuarios",
         "total_registros": len(usuarios),
         "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
@@ -1245,7 +1246,7 @@ def exportar_publicaciones_pdf(request):
     ctx.update({
         "publicaciones": publicaciones,
         "titulo_reporte": "Reporte de Publicaciones",
-        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "subtitulo_reporte": PDF_SUBTITULO_ADMIN,
         "tipo_reporte": "Publicaciones",
         "total_registros": len(publicaciones),
         "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
@@ -1359,7 +1360,7 @@ def exportar_puntos_eca_pdf(request):
     ctx.update({
         "puntos": puntos,
         "titulo_reporte": "Reporte de Puntos ECA",
-        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "subtitulo_reporte": PDF_SUBTITULO_ADMIN,
         "tipo_reporte": "Puntos ECA",
         "total_registros": len(puntos),
         "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
@@ -1508,7 +1509,7 @@ def exportar_materiales_pdf(request):
     ctx.update({
         "materiales": materiales,
         "titulo_reporte": "Reporte de Materiales Reciclables",
-        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "subtitulo_reporte": PDF_SUBTITULO_ADMIN,
         "tipo_reporte": "Materiales",
         "total_registros": len(materiales),
         "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
@@ -1590,7 +1591,7 @@ def exportar_categorias_material_pdf(request):
     ctx.update({
         "categorias": categorias,
         "titulo_reporte": "Reporte de Categorías de Materiales",
-        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "subtitulo_reporte": PDF_SUBTITULO_ADMIN,
         "tipo_reporte": "Categorías de Materiales",
         "total_registros": len(categorias),
         "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
@@ -1671,7 +1672,7 @@ def exportar_categorias_publicacion_pdf(request):
     ctx.update({
         "categorias": categorias,
         "titulo_reporte": "Reporte de Categorías de Publicaciones",
-        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "subtitulo_reporte": PDF_SUBTITULO_ADMIN,
         "tipo_reporte": "Categorías de Publicaciones",
         "total_registros": len(categorias),
         "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",
@@ -2274,7 +2275,7 @@ def exportar_tipos_publicacion_pdf(request):
     ctx.update({
         "tipos": tipos,
         "titulo_reporte": "Reporte de Tipos de Publicación",
-        "subtitulo_reporte": "Panel de Administración — InfoRecicla",
+        "subtitulo_reporte": PDF_SUBTITULO_ADMIN,
         "tipo_reporte": "Tipos de Publicación",
         "total_registros": len(tipos),
         "filtros_activos": " | ".join(filtros) if filtros else "Ninguno",

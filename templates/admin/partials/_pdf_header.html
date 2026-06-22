@@ -1,4 +1,4 @@
-<table class="pdf-header">
+<table class="pdf-header" role="presentation">
   <tr>
     <td class="header-logo">
       {% if logo_b64 %}<img src="data:image/png;base64,{{ logo_b64 }}" alt="InfoRecicla">{% endif %}
@@ -20,11 +20,16 @@
 
 <div class="section-header">Ficha Técnica de la Exportación</div>
 <table class="ficha-grid">
-  <tr>
-    <td><strong>Tipo de reporte:</strong> {{ tipo_reporte }}</td>
-    <td><strong>Total de registros:</strong> {{ total_registros }}</td>
-  </tr>
-  <tr>
-    <td colspan="2"><strong>Filtros aplicados:</strong> {{ filtros_activos }}</td>
-  </tr>
+  <tbody>
+    <tr>
+      <th scope="row">Tipo de reporte</th>
+      <td>{{ tipo_reporte }}</td>
+      <th scope="row">Total de registros</th>
+      <td>{{ total_registros }}</td>
+    </tr>
+    <tr>
+      <th scope="row">Filtros aplicados</th>
+      <td colspan="3">{{ filtros_activos }}</td>
+    </tr>
+  </tbody>
 </table>
