@@ -1,21 +1,19 @@
-<table class="pdf-header" role="presentation">
-  <tr>
-    <td class="header-logo">
-      {% if logo_b64 %}<img src="data:image/png;base64,{{ logo_b64 }}" alt="InfoRecicla">{% endif %}
-      <div class="brand">InfoRecicla</div>
-    </td>
-    <td class="header-center">
-      <div class="report-title">{{ titulo_reporte }}</div>
-      <div class="report-subtitle">{{ subtitulo_reporte }}</div>
-    </td>
-    <td class="header-right">
-      <strong>Fecha generación:</strong><br>
-      {% now "d/m/Y H:i" %}<br>
-      <strong>Generado por:</strong><br>
-      {{ usuario_generador }}
-    </td>
-  </tr>
-</table>
+<div class="pdf-header">
+  <div class="header-logo">
+    {% if logo_b64 %}<img src="data:image/png;base64,{{ logo_b64 }}" alt="InfoRecicla">{% endif %}
+    <div class="brand">InfoRecicla</div>
+  </div>
+  <div class="header-center">
+    <div class="report-title">{{ titulo_reporte }}</div>
+    <div class="report-subtitle">{{ subtitulo_reporte }}</div>
+  </div>
+  <div class="header-right">
+    <strong>Fecha generación:</strong><br>
+    {% now "d/m/Y H:i" %}<br>
+    <strong>Generado por:</strong><br>
+    {{ usuario_generador }}
+  </div>
+</div>
 <hr class="header-divider">
 
 <div class="section-header">Ficha Técnica de la Exportación</div>

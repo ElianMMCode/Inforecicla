@@ -23,15 +23,14 @@
 body { font-family: Arial, sans-serif; font-size: 9.5px; color: #1a1a1a; margin: 0; padding: 0; }
 
 /* Header */
-.pdf-header { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-.pdf-header td { vertical-align: middle; padding: 2px 6px; }
-.header-logo { width: 22%; text-align: left; }
+.pdf-header { display: flex; flex-direction: row; align-items: center; width: 100%; margin-bottom: 4px; }
+.header-logo { flex: 0 0 22%; text-align: left; padding: 2px 6px; }
 .header-logo img { display: block; height: 44px; margin-bottom: 2px; }
 .header-logo .brand { font-size: 12px; font-weight: bold; color: #1a5c2a; }
-.header-center { width: 46%; text-align: center; }
+.header-center { flex: 0 0 46%; text-align: center; padding: 2px 6px; }
 .report-title { font-size: 15px; font-weight: bold; color: #1a5c2a; margin-bottom: 2px; }
 .report-subtitle { font-size: 8.5px; color: #555; }
-.header-right { width: 32%; text-align: right; font-size: 8px; color: #444; line-height: 1.7; }
+.header-right { flex: 0 0 32%; text-align: right; font-size: 8px; color: #444; line-height: 1.7; padding: 2px 6px; }
 .header-divider { border: none; border-top: 2px solid #1a5c2a; margin: 5px 0 8px 0; }
 
 /* Section header bars */
