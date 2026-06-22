@@ -131,7 +131,7 @@ partition "== GESTOR: CENTROS DE ACOPIO ==" {
   endif
 }
 
-note right of Base de Datos
+note right
   **Proteccion de integridad:**
   - Soft-delete para Puntos ECA con
     inventario o historial activo

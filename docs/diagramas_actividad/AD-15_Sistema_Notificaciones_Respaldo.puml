@@ -159,7 +159,7 @@ partition "== RESPALDO DE BASE DE DATOS ==" {
   endif
 }
 
-note right of Base de Datos
+note right
   **4 triggers de notificaciones:**
   1. Publicacion nueva -> ciudadanos
   2. Mensaje chat -> destinatario

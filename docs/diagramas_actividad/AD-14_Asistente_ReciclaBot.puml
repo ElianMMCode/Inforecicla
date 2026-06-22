@@ -103,7 +103,7 @@ partition "== RESPUESTA AL GESTOR ==" {
   - Informacion de eventos proximos;
 }
 
-note right of Groq API (Llama 3.1)
+note right
   **Datos al LLM:**
   - KPIs del inventario (total, capacidad, %)
   - Detalle por material (stock, precios, estado)
