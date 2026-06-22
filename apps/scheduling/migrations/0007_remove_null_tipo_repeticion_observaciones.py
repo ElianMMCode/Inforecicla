@@ -2,10 +2,10 @@ from django.db import migrations, models
 
 
 def convert_null_to_empty(apps, schema_editor):
-    Evento = apps.get_model("scheduling", "Evento")
-    Evento.objects.filter(tipo_repeticion__isnull=True).update(tipo_repeticion="")
-    EventoInstancia = apps.get_model("scheduling", "EventoInstancia")
-    EventoInstancia.objects.filter(observaciones__isnull=True).update(observaciones="")
+    evento = apps.get_model("scheduling", "Evento")
+    evento.objects.filter(tipo_repeticion__isnull=True).update(tipo_repeticion="")
+    evento_instancia = apps.get_model("scheduling", "EventoInstancia")
+    evento_instancia.objects.filter(observaciones__isnull=True).update(observaciones="")
 
 
 class Migration(migrations.Migration):
