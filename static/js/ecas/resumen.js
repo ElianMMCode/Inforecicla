@@ -490,7 +490,7 @@
             const fecha = t.fecha ? new Date(t.fecha + "T00:00:00") : null;
             const fmtFecha = fecha ? fecha.toLocaleDateString("es-CO", {
                 weekday: "short", day: "numeric", month: "short"
-            ) : "Sin fecha";
+            }) : "Sin fecha";
             const borderClass = idx === 0 ? "" : "border-top";
             const esPendiente = !t.es_completado;
             const badgeClass = esPendiente ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success';
