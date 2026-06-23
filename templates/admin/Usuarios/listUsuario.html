@@ -449,6 +449,24 @@ AdminCharts.initAll([
     });
   }
   initSelect2Modals();
+
+  var hash = window.location.hash;
+  if (hash === '#importar-csv') {
+    var modalEl = document.getElementById('modalImportCSV');
+    if (modalEl) {
+      var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash === '#importar-csv') {
+      var modalEl = document.getElementById('modalImportCSV');
+      if (modalEl) {
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+    }
+  });
 })();
 </script>
 {% include "admin/_messages_swal.html" %}

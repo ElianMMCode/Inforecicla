@@ -48,7 +48,7 @@
         </li>
 
         <li class="nav-item dropdown sidebar-dropdown">
-            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/materiales' in request.path or '/panel_admin/clasificaciones-materiales' in request.path or '/panel_admin/categorias-materiales' in request.path %}active{% endif %} sidebar-dropdown-toggle"
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/materiales' in request.path or '/panel_admin/categorias-materiales' in request.path %}active{% endif %} sidebar-dropdown-toggle"
                href="{% url 'panel_admin:gestion_materiales' %}?tab=catalogo">
                 <i class="bi bi-box-seam me-2"></i>Materiales
                 <i class="bi bi-chevron-down ms-auto small"></i>
@@ -60,7 +60,7 @@
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.GET.tab == 'historial' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=historial"><i class="bi bi-clock-history me-1"></i>Historial Global</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-materiales' in request.path or request.GET.tab == 'categorias' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias"><i class="bi bi-tags-fill me-1"></i>Categorías</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/clasificaciones-materiales' in request.path or request.GET.tab == 'clasificaciones' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones"><i class="bi bi-shield-check me-1"></i>Clasificaciones</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.GET.tab == 'clasificaciones' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones"><i class="bi bi-shield-check me-1"></i>Clasificaciones</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar Materiales PDF</a></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_excel' %}"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Materiales Excel</a></li>
