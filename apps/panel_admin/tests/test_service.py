@@ -63,7 +63,7 @@ class AdminPuntoECAServiceTest(TestCase):
         """Verificar claves de conversaciones."""
         convs = AdminPuntoECAService.obtener_conversaciones()
         for c in convs:
-            for key in ("punto", "ciudadano", "fecha", "msgs", "ultimo", "puntoId"):
+            for key in ("punto", "ciudadano", "fecha", "msgs", "no_leidos", "ultimo", "puntoId"):
                 self.assertIn(key, c)
 
     def test_obtener_usuarios_admin_returns_list(self):
