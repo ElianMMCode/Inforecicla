@@ -1151,9 +1151,21 @@
     } catch(e) {}
   });
   updateGlobalKPIs();
-  renderCatalogo();
-  renderGestionCategorias();
-  renderGestionClasificaciones();
+
+  // Activar el tab indicado en el parametro de URL
+  (function(){
+    var initialTab = "{{ tab|escapejs }}" || "catalogo";
+    var validTabs = ["catalogo","inventario","flujo","historial","categorias","clasificaciones"];
+    if (validTabs.indexOf(initialTab) === -1) initialTab = "catalogo";
+    var btn = document.querySelector('#materiales-tabs .nav-link[onclick*="switchMatTab(\'' + initialTab + '\'"]');
+    if (btn) {
+      switchMatTab(initialTab, btn);
+    } else {
+      renderCatalogo();
+      renderGestionCategorias();
+      renderGestionClasificaciones();
+    }
+  })();
 
   // Export functions needed by inline onclick handlers
   window.switchMatTab = switchMatTab;
