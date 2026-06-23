@@ -1,10 +1,10 @@
 function getCookie(name) {
     if (!document.cookie) return '';
     const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith(name + '=')) {
-            return decodeURIComponent(cookie.substring(name.length + 1));
+    for (const cookie of cookies) {
+        const c = cookie.trim();
+        if (c.startsWith(name + '=')) {
+            return decodeURIComponent(c.substring(name.length + 1));
         }
     }
     return '';
@@ -71,4 +71,30 @@ function initNotificacionesWS(dropdownId, iconMap, defaultIcon = 'bi-bell-fill')
             menu.prepend(item);
         }
     };
+}
+
+function initNotificacionEliminar(dropdownId) {
+    const menu = document.querySelector(`[aria-labelledby="${dropdownId}"]`);
+    if (!menu) return;
+    menu.addEventListener('click', function(e) {
+        const btn = e.target.closest('.notificacion-eliminar-btn');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const form = btn.closest('.notificacion-eliminar-form');
+        Swal.fire({
+            title: '¿Eliminar esta notificación?',
+            text: 'Esta acción no se puede deshacer.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
 }
