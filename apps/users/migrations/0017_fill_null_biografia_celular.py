@@ -2,12 +2,13 @@ from django.db import migrations
 
 
 def fill_nulls(apps, schema_editor):
-    Usuario = apps.get_model("users", "Usuario")
-    Usuario.objects.filter(biografia__isnull=True).update(biografia="")
-    Usuario.objects.filter(celular__isnull=True).update(celular="")
+    usuario_model = apps.get_model("users", "Usuario")
+    usuario_model.objects.filter(biografia__isnull=True).update(biografia="")
+    usuario_model.objects.filter(celular__isnull=True).update(celular="")
 
 
-def reverse(apps, schema_editor):
+def _noop(apps, schema_editor):
+    # Data-only migration: nothing to reverse
     pass
 
 
@@ -18,5 +19,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(fill_nulls, reverse),
+        migrations.RunPython(fill_nulls, _noop),
     ]
