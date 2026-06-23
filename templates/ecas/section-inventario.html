@@ -1734,7 +1734,8 @@ globalThis.getCSRFToken = function () {
                             <li><code>nombreMaterial</code> (obligatorio)</li>
                             <li><code>cantidad</code> (obligatorio)</li>
                             <li><code>precioCompra</code> o <code>precioVenta</code> (obligatorio)</li>
-                            <li><code>fechaCompra</code> o <code>fechaVenta</code> (YYYY-MM-DD)</li>
+                            <li><code>fechaCompra</code> o <code>fechaVenta</code> (YYYY-MM-DD HH:MM:SS)</li>
+                            <li><code>observaciones</code> (opcional)</li>
                         </ul>
                         <a href="{% url 'punto-eca:movimientos:descargar_plantilla_bulk' %}?tipo=compra"
                            id="inv-link-plantilla-ejemplo"

@@ -998,7 +998,8 @@ def bulk_import_ventas(request):
     """
     Endpoint para carga masiva de ventas via archivo CSV.
 
-    Campos esperados en CSV: nombreMaterial, cantidad, precioVenta, fechaVenta, centroAcopioId, observaciones
+    Campos requeridos en CSV: nombreMaterial, cantidad, precioVenta, fechaVenta, observaciones
+    Campos opcionales: ninguno (centroAcopioId NO se soporta en carga masiva)
     Método: POST
     Autenticación: Requerida (gestor_eca_or_admin_required)
     Payload: archivo CSV como 'file' en multipart/form-data
