@@ -207,7 +207,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         verbose_name="Biografía",
         max_length=500,
         blank=True,
-        null=True,
         help_text="Breve descripción o biografía del usuario",
     )
 
@@ -215,7 +214,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         verbose_name="Número de celular",
         max_length=15,
         blank=True,
-        null=True,
         help_text="Número de teléfono celular (opcional)",
         validators=[
             MinLengthValidator(

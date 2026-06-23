@@ -1,4 +1,3 @@
-import uuid
 from datetime import timedelta
 
 from django.test import TestCase
@@ -15,12 +14,14 @@ _URL_ELIMINAR = "publicacion:eliminar_notificacion"
 
 
 class EliminarNotificacionTests(TestCase):
+    _TEST_PASSWORD = "TestPass!"  # NOSONAR - credencial dummy de tests, no es real
+
     @classmethod
     def setUpTestData(cls):
         cls.ciudadano = Usuario.objects.create_user(
             email="ciudadano@test.com",
             numero_documento="111111",
-            password="TestPass1!",
+            password=cls._TEST_PASSWORD,
             nombres="Ciudadano",
             apellidos="Test",
             tipo_usuario=cons.TipoUsuario.CIUDADANO,
@@ -28,7 +29,7 @@ class EliminarNotificacionTests(TestCase):
         cls.gestor = Usuario.objects.create_user(
             email="gestor@test.com",
             numero_documento="222222",
-            password="TestPass2!",
+            password=cls._TEST_PASSWORD,
             nombres="Gestor",
             apellidos="Test",
             tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
@@ -36,7 +37,7 @@ class EliminarNotificacionTests(TestCase):
         cls.otro_ciudadano = Usuario.objects.create_user(
             email="otro@test.com",
             numero_documento="333333",
-            password="TestPass3!",
+            password=cls._TEST_PASSWORD,
             nombres="Otro",
             apellidos="Test",
             tipo_usuario=cons.TipoUsuario.CIUDADANO,
@@ -101,7 +102,6 @@ class EliminarNotificacionTests(TestCase):
     # ── Sesión guarda evento_instancia_id al eliminar ────────────────────────
 
     def test_sesion_guarda_evento_id_al_eliminar(self):
-        evento_id = uuid.uuid4()
         from apps.ecas.models import PuntoECA
         from apps.scheduling.models import Evento, EventoInstancia
         from apps.inventory.models import Material, CategoriaMaterial
