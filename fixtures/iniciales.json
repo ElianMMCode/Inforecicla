@@ -39,8 +39,8 @@
       "estado": "ACTIVO",
       "fecha_creacion": "2026-05-17T16:14:22.518Z",
       "fecha_modificacion": "2026-05-17T16:14:22.518Z",
-      "nombre": "<script>alert(1)</script>",
-      "descripcion": "prueba js"
+      "nombre": "Prueba (eliminar)",
+      "descripcion": "categoria de prueba"
     }
   },
   {

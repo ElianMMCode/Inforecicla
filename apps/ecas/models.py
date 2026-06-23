@@ -2,7 +2,7 @@ from django.core.validators import RegexValidator
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.conf import settings
-from config.base_models import LocalizacionWebHorarioModel
+from config.base_models import CreacionModificacionModel, LocalizacionWebHorarioModel
 from config.constants import TipoCentroAcopio, Visibilidad
 from config import constants as cons
 from apps.core.upload_validators import MaxFileSizeValidator
@@ -236,3 +236,30 @@ class Localidad(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class PuntoECAFavorito(CreacionModificacionModel):
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="puntos_eca_favoritos",
+    )
+    punto_eca = models.ForeignKey(
+        "PuntoECA",
+        on_delete=models.CASCADE,
+        related_name="favoritos",
+    )
+
+    class Meta(CreacionModificacionModel.Meta):
+        verbose_name = "Punto ECA favorito"
+        verbose_name_plural = "Puntos ECA favoritos"
+        db_table = "ecas_punto_eca_favorito"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["usuario", "punto_eca"],
+                name="unique_usuario_punto_eca_favorito",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.usuario} -> {self.punto_eca}"

@@ -54,8 +54,8 @@
         "estado": "ACTIVO",
         "fecha_creacion": "2026-05-17T16:32:44.953Z",
         "fecha_modificacion": "2026-05-17T16:32:44.953Z",
-        "nombre": "<script>alert(\"XSS\")</script>",
-        "descripcion": "test js",
+        "nombre": "Prueba (eliminar)",
+        "descripcion": "categoria de prueba",
         "tipo": "Punto Eca"
     }
 },
@@ -271,7 +271,7 @@
         ],
         "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
         "tipo": "Noticia",
-        "texto": "<script>alert(1)</script>",
+        "texto": "Comentario de prueba (eliminar)",
         "fecha_creacion": "2026-05-09T20:33:17.708Z"
     }
 },
@@ -301,7 +301,7 @@
         ],
         "publicacion": "6930d147-a5c5-4ce9-9795-61995848b006",
         "tipo": "Noticia",
-        "texto": "<script>alert(1)</script>",
+        "texto": "Comentario de prueba (eliminar 2)",
         "fecha_creacion": "2026-05-09T20:33:26.681Z"
     }
 },
