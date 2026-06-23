@@ -25,6 +25,21 @@
         </button>
     </div>
 
+    <!-- Tareas Pendientes - summary condicional -->
+    <div class="row g-3 mb-4" id="seccionTareasPendientes" style="display: none;">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm border-start border-warning border-3 hover-lift">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3 flex-wrap" id="tareasPendientesBadges">
+                        </div>
+                        <div id="tareasPendientesTotal" class="fw-bold text-warning"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Tarjetas de Estadísticas Principales (6 KPIs) -->
     <div class="row g-3 mb-4 resumen-stagger">
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
@@ -174,28 +189,6 @@
                             <div class="spinner-border spinner-border-sm text-primary"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tareas Pendientes - admin-style -->
-    <div class="row g-3 mb-4" id="seccionTareasPendientes" style="display: none;">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm hover-lift">
-                <div class="card-header bg-white border-bottom">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2 kpi-clickable" data-url="{% url 'punto-eca:calendario' %}" title="Ver calendario">
-                            <i class="bi bi-list-check text-warning"></i>
-                            <h6 class="mb-0 fw-bold">Tareas Pendientes</h6>
-                        </div>
-                        <a href="{% url 'punto-eca:calendario' %}" class="btn btn-sm btn-outline-warning">
-                            <i class="bi bi-arrow-right me-1"></i>Ver calendario
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div id="tareasPendientes"></div>
                 </div>
             </div>
         </div>

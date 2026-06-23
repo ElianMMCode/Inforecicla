@@ -573,6 +573,17 @@ class AsistenteECAService:
             'horario': getattr(punto_eca, 'horario_atencion', '') or ''
         }
 
+    def _mensajes_pendientes(self, punto_eca):
+        from apps.chat.models import Chat, Mensaje
+        chats_ids = Chat.objects.filter(punto=punto_eca).values_list("id", flat=True)
+        if not chats_ids:
+            return 0
+        gestor = getattr(punto_eca, 'gestor_eca', None)
+        qs = Mensaje.objects.filter(chat_id__in=chats_ids, es_leido=False)
+        if gestor:
+            qs = qs.exclude(remitente=gestor)
+        return qs.count()
+
     def _tareas_pendientes(self, punto_eca):
         from apps.scheduling.models import EventoInstancia
         instancias = EventoInstancia.objects.filter(
@@ -624,6 +635,11 @@ class AsistenteECAService:
         dias_ultimo_movimiento = self._dias_desde_ultimo_movimiento(punto_eca, ahora)
         punto_eca_info = self._punto_eca_info(punto_eca)
         tareas_pendientes = self._tareas_pendientes(punto_eca)
+        pendientes_mensajes = self._mensajes_pendientes(punto_eca)
+        pendientes_total = (
+            len(tareas_pendientes) + pendientes_mensajes
+            + materiales_critico + materiales_alerta
+        )
 
         ultima_actualizacion = datetime.datetime.now().isoformat()
 
@@ -660,6 +676,8 @@ class AsistenteECAService:
             'ultimaActualizacion': ultima_actualizacion,
             'puntoEca': punto_eca_info,
             'tareasPendientes': tareas_pendientes,
+            'pendientesMensajes': pendientes_mensajes,
+            'pendientesTotal': pendientes_total,
         }
 
     def consultar(self, punto_eca, pregunta_usuario):
