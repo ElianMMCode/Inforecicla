@@ -2029,7 +2029,7 @@ def editar_material_admin(request, material_id):
             return JsonResponse(resultado)
         if resultado["ok"]:
             messages.success(request, resultado["message"])
-            return redirect("/panel_admin/materiales/gestion/?tab=materiales")
+            return redirect("/panel_admin/materiales/gestion/?tab=catalogo")
         messages.error(request, resultado["message"])
         material.refresh_from_db()
 
@@ -2165,7 +2165,7 @@ def crear_material_admin(request):
             messages.success(request, resultado["message"])
         else:
             messages.error(request, resultado["message"])
-        return redirect("/panel_admin/materiales/gestion/?tab=materiales")
+        return redirect("/panel_admin/materiales/gestion/?tab=catalogo")
 
     return render(
         request,
@@ -2436,7 +2436,7 @@ def _build_historial_json():
 @user_passes_test(es_administrador, login_url="/inicio/")
 @require_http_methods(["GET", "HEAD"])
 def gestion_materiales(request):
-    tab = request.GET.get('tab', 'materiales')
+    tab = request.GET.get('tab', 'catalogo')
 
     all_materiales = list(Material.objects.select_related("categoria").all().order_by("nombre"))
     categorias_qs = CategoriaMaterial.objects.all().order_by("nombre")
