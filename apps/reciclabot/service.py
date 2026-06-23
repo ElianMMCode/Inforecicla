@@ -3,6 +3,7 @@ from django.conf import settings
 from apps.inventory.models import Inventario
 from django.db.models import Sum
 from apps.scheduling.models import EventoInstancia
+from config.constants import Alerta
 import pytz
 
 
@@ -214,8 +215,8 @@ class AsistenteECAService:
             total_capacidad = sum(item.capacidad_maxima for item in items)
             ocupacion_pct = round((total_inventario / total_capacidad) * 100, 1) if total_capacidad else 0.0
             materiales_count = items.count()
-            materiales_alerta = items.filter(alerta="alerta").count() if hasattr(items, 'filter') else 0
-            materiales_critico = items.filter(alerta="critico").count() if hasattr(items, 'filter') else 0
+            materiales_alerta = items.filter(alerta=Alerta.ALERTA).count() if hasattr(items, 'filter') else 0
+            materiales_critico = items.filter(alerta=Alerta.CRITICO).count() if hasattr(items, 'filter') else 0
         return items, total_inventario, total_capacidad, ocupacion_pct, materiales_count, materiales_alerta, materiales_critico
 
     def _operaciones_del_mes(self, punto_eca, primero_mes):
@@ -287,29 +288,45 @@ class AsistenteECAService:
         return movimientos_formateados
 
     def _eventos_proximos(self, punto_eca):
-        import datetime
-        now = datetime.datetime.now(pytz.UTC)
-        instancias_proximas = EventoInstancia.objects.filter(
-            punto_eca=punto_eca, fecha_inicio__gte=now
-        ).order_by("fecha_inicio")[:3]
+        from apps.scheduling.models import EventoInstancia
+        instancias = EventoInstancia.objects.filter(
+            punto_eca=punto_eca,
+            es_completado=False
+        ).select_related("evento_base").order_by("fecha_inicio")[:20]
         eventos_proximos = []
-        for instancia in instancias_proximas:
+        for instancia in instancias:
             base = instancia.evento_base
+            titulo = base.titulo if base else 'Evento'
+            tipo = self._inferir_tipo_evento(titulo)
             eventos_proximos.append({
-                'titulo': base.titulo or 'Evento',
+                'titulo': titulo,
                 'fecha_inicio': instancia.fecha_inicio.isoformat(),
                 'fecha_fin': instancia.fecha_fin.isoformat() if instancia.fecha_fin else None,
-                'tipo': base.tipo_repeticion if hasattr(base, 'tipo_repeticion') and base.tipo_repeticion else 'Unico',
-                'observaciones': instancia.observaciones or ''
+                'tipo': tipo,
+                'observaciones': instancia.observaciones or '',
+                'es_completado': instancia.es_completado,
             })
         return eventos_proximos
+
+    @staticmethod
+    def _inferir_tipo_evento(titulo):
+        titulo_lower = titulo.lower() if titulo else ''
+        if any(k in titulo_lower for k in ['recoleccion', 'recolección', 'reciclaje']):
+            return 'Recoleccion'
+        elif any(k in titulo_lower for k in ['mantenimiento', 'mantención']):
+            return 'Mantenimiento'
+        elif any(k in titulo_lower for k in ['capacitacion', 'capacitación', 'formacion']):
+            return 'Capacitacion'
+        elif any(k in titulo_lower for k in ['inspeccion', 'inspección', 'auditoria']):
+            return 'Inspeccion'
+        return 'General'
 
     def _materiales_criticos_y_alertas(self, items):
         materiales_criticos = []
         materiales_alertas = []
         for item in items:
             material_info = {
-                'id': item.id,
+                'id': str(item.id),
                 'nombre': item.material.nombre,
                 'stock_actual': item.stock_actual,
                 'capacidad_maxima': item.capacidad_maxima,
@@ -317,9 +334,9 @@ class AsistenteECAService:
                 'unidad': item.unidad_medida
             }
             if hasattr(item, 'alerta'):
-                if item.alerta == 'critico':
+                if item.alerta == Alerta.CRITICO:
                     materiales_criticos.append(material_info)
-                elif item.alerta == 'alerta':
+                elif item.alerta == Alerta.ALERTA:
                     materiales_alertas.append(material_info)
         return materiales_criticos, materiales_alertas
 
@@ -556,6 +573,26 @@ class AsistenteECAService:
             'horario': getattr(punto_eca, 'horario_atencion', '') or ''
         }
 
+    def _tareas_pendientes(self, punto_eca):
+        from apps.scheduling.models import EventoInstancia
+        instancias = EventoInstancia.objects.filter(
+            punto_eca=punto_eca,
+            es_completado=False
+        ).select_related("evento_base").order_by("fecha_inicio")[:20]
+        tareas = []
+        for instancia in instancias:
+            base = instancia.evento_base
+            titulo = base.titulo if base else 'Evento'
+            tipo = self._inferir_tipo_evento(titulo)
+            tareas.append({
+                'titulo': titulo,
+                'fecha': instancia.fecha_inicio.strftime("%Y-%m-%d") if instancia.fecha_inicio else "",
+                'tipo': tipo,
+                'es_completado': instancia.es_completado,
+                'puntoId': str(instancia.punto_eca_id),
+            })
+        return tareas
+
     def generar_datos_resumen(self, punto_eca):
         """
         Genera datos estructurados especificos para el dashboard de resumen.
@@ -586,6 +623,7 @@ class AsistenteECAService:
         categoria_breakdown = self._distribucion_categorias(items)
         dias_ultimo_movimiento = self._dias_desde_ultimo_movimiento(punto_eca, ahora)
         punto_eca_info = self._punto_eca_info(punto_eca)
+        tareas_pendientes = self._tareas_pendientes(punto_eca)
 
         ultima_actualizacion = datetime.datetime.now().isoformat()
 
@@ -621,6 +659,7 @@ class AsistenteECAService:
             'diasUltimoMovimiento': dias_ultimo_movimiento,
             'ultimaActualizacion': ultima_actualizacion,
             'puntoEca': punto_eca_info,
+            'tareasPendientes': tareas_pendientes,
         }
 
     def consultar(self, punto_eca, pregunta_usuario):

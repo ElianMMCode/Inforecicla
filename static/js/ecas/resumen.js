@@ -446,22 +446,69 @@
         }
         cont.innerHTML = '<div class="list-group list-group-flush">' + eventos.map((e, idx) => {
             const inicio = e.fecha_inicio ? new Date(e.fecha_inicio) : null;
-            const fin = e.fecha_fin ? new Date(e.fecha_fin) : null;
             const fmtIni = inicio ? inicio.toLocaleDateString("es-CO", {
                 weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
             }) : "Sin fecha";
             const borderClass = idx === 0 ? "" : "border-top";
+            const esPendiente = !e.es_completado;
+            const badgeClass = esPendiente ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success';
+            const badgeLabel = esPendiente ? 'Pendiente' : 'Completado';
+            const itemClass = esPendiente ? 'event-pendiente' : 'event-completado';
             return `
-                <div class="list-group-item ${borderClass} px-3 py-3">
+                <div class="list-group-item ${borderClass} px-3 py-3 ${itemClass}">
                     <div class="d-flex align-items-start gap-3">
                         <div class="text-primary"><i class="bi bi-calendar-event" style="font-size: 1.2rem;"></i></div>
                         <div class="flex-grow-1 min-w-0">
-                            <h6 class="mb-1 fw-bold text-dark text-truncate">${escapeHTML(e.titulo || "Evento")}</h6>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="mb-1 fw-bold text-dark text-truncate">${escapeHTML(e.titulo || "Evento")}</h6>
+                                <span class="badge ${badgeClass} flex-shrink-0 ms-2" style="font-size:.65rem">${badgeLabel}</span>
+                            </div>
                             <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                 <small class="text-muted"><i class="bi bi-clock me-1"></i>${fmtIni}</small>
                                 <span class="badge bg-primary bg-opacity-25 text-primary small">${escapeHTML(e.tipo || "Único")}</span>
                             </div>
                             ${e.observaciones ? `<small class="text-muted d-block text-truncate">${escapeHTML(e.observaciones)}</small>` : ""}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("") + "</div>";
+    }
+
+    /* ------------------------------ Pintar: tareas pendientes ------------------------------ */
+    function pintarTareasPendientes(d) {
+        const cont = document.getElementById("tareasPendientes");
+        const seccion = document.getElementById("seccionTareasPendientes");
+        if (!cont || !seccion) return;
+        const tareas = Array.isArray(d.tareasPendientes) ? d.tareasPendientes : [];
+        if (tareas.length === 0) {
+            seccion.style.display = "none";
+            return;
+        }
+        seccion.style.display = "block";
+        cont.innerHTML = '<div class="list-group list-group-flush">' + tareas.slice(0, 10).map((t, idx) => {
+            const fecha = t.fecha ? new Date(t.fecha + "T00:00:00") : null;
+            const fmtFecha = fecha ? fecha.toLocaleDateString("es-CO", {
+                weekday: "short", day: "numeric", month: "short"
+            }) : "Sin fecha";
+            const borderClass = idx === 0 ? "" : "border-top";
+            const esPendiente = !t.es_completado;
+            const badgeClass = esPendiente ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success';
+            const badgeLabel = esPendiente ? 'Pendiente' : 'Completado';
+            const itemClass = esPendiente ? 'event-pendiente' : 'event-completado';
+            return `
+                <div class="list-group-item ${borderClass} px-3 py-3 ${itemClass} kpi-clickable" data-url="/punto-eca/calendario/" title="Ver en calendario">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-warning"><i class="bi bi-calendar-check" style="font-size: 1.1rem;"></i></div>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span class="fw-semibold text-dark text-truncate" style="font-size:.85rem">${escapeHTML(t.titulo || "Tarea")}</span>
+                                <span class="badge ${badgeClass} flex-shrink-0 ms-2" style="font-size:.65rem">${badgeLabel}</span>
+                            </div>
+                            <div class="inv-summary mt-1">
+                                <i class="bi bi-calendar me-1"></i>${fmtFecha}
+                                <span class="badge bg-info-subtle text-info ms-2" style="font-size:.6rem">${escapeHTML(t.tipo || "General")}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -637,6 +684,7 @@
         pintarCategorias(d);
         pintarAlertas(d);
         pintarEventos(d);
+        pintarTareasPendientes(d);
         pintarCentros(d);
         pintarInfoPunto(d);
         pintarMovimientos(d);
