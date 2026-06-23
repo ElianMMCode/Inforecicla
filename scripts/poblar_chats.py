@@ -168,7 +168,7 @@ def run():
         else:
             print(f"  {eca.nombre:35s} ↔ {ciudadano.email:35s} → ya existía")
 
-    print(f"\n=== RESUMEN ===")
+    print("\n=== RESUMEN ===")
     print(f"Chats creados: {total_chats}")
     print(f"Mensajes creados: {total_msgs}")
     print(f"Total chats en DB: {Chat.objects.count()}")

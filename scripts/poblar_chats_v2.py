@@ -159,7 +159,7 @@ def run():
         total_msgs += n
         print(f"  {eca.nombre:35s} ↔ {c.email:35s} → {n} msgs")
 
-    print(f"\n=== TOTAL ===")
+    print("\n=== TOTAL ===")
     print(f"Chats nuevos: {total_chats}")
     print(f"Mensajes nuevos: {total_msgs}")
     print(f"Chats en DB: {Chat.objects.count()}")

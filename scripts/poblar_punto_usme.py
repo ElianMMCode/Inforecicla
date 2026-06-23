@@ -266,6 +266,29 @@ def _generar_compras(business_days, day_index, mat_map, running_stock):
     return creadas, bulk
 
 
+def _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock):
+    avail = running_stock[chosen]
+    if avail < 20:
+        return 0
+
+    sell_pct = random.uniform(0.1, 0.4)
+    qty = round(avail * sell_pct, 2)
+    if qty < 5:
+        qty = round(min(avail * 0.3, random.uniform(5, 30)), 2)
+
+    is_bulk = (idx <= 3) or (32 <= idx <= 34)
+    fecha = random_time(day, 8, 15)
+    VentaInventario.objects.create(
+        inventario=inv, fecha_venta=fecha,
+        cantidad=Decimal(str(qty)),
+        precio_venta=Decimal(str(VENTA_PRECIOS.get(chosen, 500))),
+        observaciones=random.choice(OBSERVACIONES_VENTA),
+        centro_acopio=random.choice(centros), carga_masiva=is_bulk,
+    )
+    running_stock[chosen] -= qty
+    return 1 if not is_bulk else 2
+
+
 def _generar_ventas(business_days, day_index, mat_map, centros, running_stock):
     venta_days = [d for i, d in enumerate(business_days) if i % 5 == 4 or i == len(business_days) - 1]
     creadas = 0
@@ -279,29 +302,12 @@ def _generar_ventas(business_days, day_index, mat_map, centros, running_stock):
 
         for _ in range(min(random.randint(1, 3), len(candidates))):
             chosen = random.choice(candidates)
-            mc = next(m for m in MATERIAL_CONFIG if m['name'] == chosen)
             inv = mat_map[chosen]
-            avail = running_stock[chosen]
-            if avail < 20:
+            result = _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock)
+            if result == 0:
                 continue
-
-            sell_pct = random.uniform(0.1, 0.4)
-            qty = round(avail * sell_pct, 2)
-            if qty < 5:
-                qty = round(min(avail * 0.3, random.uniform(5, 30)), 2)
-
-            is_bulk = (idx <= 3) or (32 <= idx <= 34)
-            fecha = random_time(day, 8, 15)
-            VentaInventario.objects.create(
-                inventario=inv, fecha_venta=fecha,
-                cantidad=Decimal(str(qty)),
-                precio_venta=Decimal(str(VENTA_PRECIOS.get(chosen, 500))),
-                observaciones=random.choice(OBSERVACIONES_VENTA),
-                centro_acopio=random.choice(centros), carga_masiva=is_bulk,
-            )
-            running_stock[chosen] -= qty
             creadas += 1
-            if is_bulk:
+            if result == 2:
                 bulk += 1
 
     print(f"  Ventas creadas: {creadas} ({bulk} carga masiva)")

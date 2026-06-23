@@ -19,7 +19,7 @@ if elian:
     elian.is_active = True
     elian.set_password(PASS)
     elian.save()
-    print(f"✓ Elian: email → admin_elian@inforecicla.com, password actualizado")
+    print("✓ Elian: email → admin_elian@inforecicla.com, password actualizado")
 
 # Eliminar el otro admin duplicado
 User.objects.filter(email="admin@gmail.com").delete()
@@ -87,4 +87,4 @@ for p in pubs[7:10]:
     p.save()
     print(f"  Jorge  ← {p.titulo[:55]}")
 
-print(f"\n✅ Configuración completada")
+print("\n✅ Configuración completada")

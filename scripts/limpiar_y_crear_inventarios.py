@@ -148,17 +148,17 @@ def create_inventories():
         asignados = set(comunes)
 
         asig_frec = 3 if idx % 3 == 0 else 2
-        extras_frec = sorted(frecuentes, key=lambda x: hash(x + str(idx)))[:asig_frec]
+        extras_frec = sorted(frecuentes, key=lambda x, i=idx: hash(x + str(i)))[:asig_frec]
         asignados.update(extras_frec)
 
         if idx % 2 == 0:
             asig_esp = 2 if idx % 4 == 0 else 1
-            extras_esp = sorted(especiales, key=lambda x: hash(str(idx) + x))[:asig_esp]
+            extras_esp = sorted(especiales, key=lambda x, i=idx: hash(str(i) + x))[:asig_esp]
             asignados.update(extras_esp)
 
         if idx % 3 == 2:
             asig_menos = 2
-            extras_menos = sorted(menos_frecuentes, key=lambda x: hash(x + str(idx)))[:asig_menos]
+            extras_menos = sorted(menos_frecuentes, key=lambda x, i=idx: hash(x + str(i)))[:asig_menos]
             asignados.update(extras_menos)
 
         for mat_name in asignados:
@@ -210,7 +210,7 @@ def random_stock(mat_name):
     return round(random.uniform(10, 200), 2)
 
 
-def random_capacity(mat_name, stock):
+def random_capacity(_mat_name, stock):
     factor = 1.5 if stock < 100 else 2.0 if stock < 500 else 3.0
     return round(stock * factor + random.uniform(50, 500), 2)
 
