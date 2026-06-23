@@ -2,9 +2,9 @@ function getCookie(name) {
     if (!document.cookie) return '';
     const cookies = document.cookie.split(';');
     for (const cookie of cookies) {
-        const trimmed = cookie.trim();
-        if (trimmed.startsWith(name + '=')) {
-            return decodeURIComponent(trimmed.substring(name.length + 1));
+        const c = cookie.trim();
+        if (c.startsWith(name + '=')) {
+            return decodeURIComponent(c.substring(name.length + 1));
         }
     }
     return '';
@@ -73,10 +73,10 @@ function initNotificacionesWS(dropdownId, iconMap, defaultIcon = 'bi-bell-fill')
     };
 }
 
-function initEliminarNotificaciones(dropdownSelector) {
-    const menu = document.querySelector(`[aria-labelledby="${dropdownSelector}"]`);
+function initNotificacionEliminar(dropdownId) {
+    const menu = document.querySelector(`[aria-labelledby="${dropdownId}"]`);
     if (!menu) return;
-    menu.addEventListener('click', function (e) {
+    menu.addEventListener('click', function(e) {
         const btn = e.target.closest('.notificacion-eliminar-btn');
         if (!btn) return;
         e.preventDefault();
@@ -91,7 +91,7 @@ function initEliminarNotificaciones(dropdownSelector) {
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar'
-        }).then(function (result) {
+        }).then(function(result) {
             if (result.isConfirmed) {
                 form.submit();
             }

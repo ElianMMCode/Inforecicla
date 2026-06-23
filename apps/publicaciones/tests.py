@@ -6,22 +6,23 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from apps.publicaciones.models import Notificacion
+from apps.users.tests import _generar_password
 from config import constants as cons
 
 Usuario = get_user_model()
 
 _URL_ELIMINAR = "publicacion:eliminar_notificacion"
 
+_PWD_TEST = _generar_password()
+
 
 class EliminarNotificacionTests(TestCase):
-    _TEST_PASSWORD = "TestPass!"  # NOSONAR - credencial dummy de tests, no es real
-
     @classmethod
     def setUpTestData(cls):
         cls.ciudadano = Usuario.objects.create_user(
             email="ciudadano@test.com",
             numero_documento="111111",
-            password=cls._TEST_PASSWORD,
+            password=_PWD_TEST,
             nombres="Ciudadano",
             apellidos="Test",
             tipo_usuario=cons.TipoUsuario.CIUDADANO,
@@ -29,7 +30,7 @@ class EliminarNotificacionTests(TestCase):
         cls.gestor = Usuario.objects.create_user(
             email="gestor@test.com",
             numero_documento="222222",
-            password=cls._TEST_PASSWORD,
+            password=_PWD_TEST,
             nombres="Gestor",
             apellidos="Test",
             tipo_usuario=cons.TipoUsuario.GESTOR_ECA,
@@ -37,7 +38,7 @@ class EliminarNotificacionTests(TestCase):
         cls.otro_ciudadano = Usuario.objects.create_user(
             email="otro@test.com",
             numero_documento="333333",
-            password=cls._TEST_PASSWORD,
+            password=_PWD_TEST,
             nombres="Otro",
             apellidos="Test",
             tipo_usuario=cons.TipoUsuario.CIUDADANO,

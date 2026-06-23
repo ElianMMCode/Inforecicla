@@ -297,14 +297,14 @@ class TestExportFilename(TestCase):
         self.assertRegex(fn, r"^compras_general_\d{4}-\d{2}-\d{2}_\d{4}\.xlsx$")
 
     def test_filename_pdf_historial(self):
-        # PDF inline filename
+        # PDF attachment filename
         response = self.client.get(
             "/punto-eca/movimientos/exportar-historial-pdf/?material=Lata%20Test",
             HTTP_ACCEPT="application/json",
         )
         self.assertEqual(response.status_code, 200)
         cd = response["Content-Disposition"]
-        self.assertIn("inline", cd)
+        self.assertIn("attachment", cd)
         self.assertRegex(cd, r"historial_Lata_Test_\d{4}-\d{2}-\d{2}_\d{4}\.pdf")
 
     def test_filename_sanitiza_acentos(self):
