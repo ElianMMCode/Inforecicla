@@ -1,3 +1,4 @@
+import os
 from django.contrib.auth import get_user_model
 from apps.ecas.models import PuntoECA
 from config import constants
@@ -5,7 +6,7 @@ from config import constants
 User = get_user_model()
 
 # Gestores nuevos para asignar a ECAs sin gestor
-PASS = "Admin123*"
+PASS = os.environ.get('ADMIN_PASSWORD', 'Admin123*')
 
 nuevos_gestores = [
     ("andrea.lopez@inforecicla.com", "Andrea", "López", "3002220001"),

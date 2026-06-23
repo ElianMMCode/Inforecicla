@@ -22,6 +22,8 @@ from config.constants import TipoUsuario
 random.seed(42)
 Usuario = get_user_model()
 
+PUNTO_ECA_EMAIL = os.environ.get('PUNTO_ECA_EMAIL', 'emelo.legacy@pm.me')
+
 TEXTS_CIU = [
     "Buenos días, ¿cuál es el horario de atención?",
     "Hola, ¿reciben botellas plásticas?",
@@ -125,8 +127,8 @@ def run():
     ecas = list(PuntoECA.objects.filter(estado='ACTIVO').order_by('nombre'))
     biz_days = biz_days_between(datetime.date(2026, 5, 1), datetime.date(2026, 6, 22))
 
-    punto_base = PuntoECA.objects.get(gestor_eca__email='emelo.legacy@pm.me')
-    gestor_base = Usuario.objects.get(email='emelo.legacy@pm.me')
+    punto_base = PuntoECA.objects.get(gestor_eca__email=PUNTO_ECA_EMAIL)
+    gestor_base = Usuario.objects.get(email=PUNTO_ECA_EMAIL)
 
     total_chats = 0
     total_msgs = 0

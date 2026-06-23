@@ -1,10 +1,11 @@
+import os
 from django.contrib.auth import get_user_model
 from apps.publicaciones.models import Publicacion
 from config import constants
 
 User = get_user_model()
 
-PASS = "Admin123*"
+PASS = os.environ.get('ADMIN_PASSWORD', 'Admin123*')
 
 # ============================================================
 # 1. ELIAN MELO: renombrar y eliminar duplicado
@@ -87,6 +88,3 @@ for p in pubs[7:10]:
     print(f"  Jorge  ← {p.titulo[:55]}")
 
 print(f"\n✅ Configuración completada")
-print(f"  Elian:   admin_elian@inforecicla.com / {PASS}")
-print(f"  Jorge:   admin_jorge@inforecicla.com / {PASS}")
-print(f"  Andrés:  admin_andres@inforecicla.com / {PASS}")

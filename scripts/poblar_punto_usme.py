@@ -33,7 +33,7 @@ TODAY = datetime.date(2026, 6, 22)
 
 Usuario = get_user_model()
 
-PUNTO_ECA_EMAIL = 'emelo.legacy@pm.me'
+PUNTO_ECA_EMAIL = os.environ.get('PUNTO_ECA_EMAIL', 'emelo.legacy@pm.me')
 
 MATERIAL_CONFIG = [
     {'name': 'Cartón', 'slug': 'carton', 'prob': 0.25, 'qty_range': (5, 80), 'precio_compra': 600, 'precio_venta': 1100},

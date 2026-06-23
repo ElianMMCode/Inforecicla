@@ -10,6 +10,8 @@ import random
 import datetime
 from decimal import Decimal
 
+PUNTO_ECA_EMAIL = os.environ.get('PUNTO_ECA_EMAIL', 'emelo.legacy@pm.me')
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
@@ -131,8 +133,8 @@ def run():
     print(f"Ciudadanos: {len(ciudadanos)}")
     print(f"ECAs: {len(ecas)}")
 
-    punto_base = PuntoECA.objects.get(gestor_eca__email='emelo.legacy@pm.me')
-    gestor_base = Usuario.objects.get(email='emelo.legacy@pm.me')
+    punto_base = PuntoECA.objects.get(gestor_eca__email=PUNTO_ECA_EMAIL)
+    gestor_base = Usuario.objects.get(email=PUNTO_ECA_EMAIL)
 
     total_chats = 0
     total_msgs = 0
