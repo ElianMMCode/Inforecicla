@@ -345,7 +345,10 @@ AdminCharts.initAll([
     defaultSort: function(a, b) { return (a.nombres + ' ' + a.apellidos).localeCompare(b.nombres + ' ' + b.apellidos); },
     onAfterRender: reinitEditModal,
     columns: [
-      { render: function(r) { return '<strong>' + escapeHTML(r.nombres + ' ' + r.apellidos) + '</strong>'; } },
+      { render: function(r) {
+        var badge = r.carga_masiva ? ' <span class="badge bg-warning-subtle text-warning" title="Importado via CSV"><i class="bi bi-upload"></i> CSV</span>' : '';
+        return '<strong>' + escapeHTML(r.nombres + ' ' + r.apellidos) + '</strong>' + badge;
+      } },
       { render: function(r) { return escapeHTML(r.email); } },
       { render: function(r) { return escapeHTML(r.celular || '-'); } },
       { render: rolBadge },

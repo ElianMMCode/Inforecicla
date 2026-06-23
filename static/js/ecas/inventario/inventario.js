@@ -396,13 +396,16 @@
         const tipoBadge = tipo === "compra"
             ? '<span class="badge bg-danger-subtle text-danger">Compra</span>'
             : '<span class="badge bg-success-subtle text-success">Venta</span>';
+        const cargaBadge = mov.carga_masiva
+            ? ' <span class="badge bg-warning-subtle text-warning" title="Registro cargado masivamente"><i class="bi bi-upload"></i> Masivo</span>'
+            : '';
         const centro = mov.nombreCentroAcopio || "—";
         const materialCell = showMaterial
             ? `<td class="small">${escapeHtml(material)}</td>`
             : "";
         return `<tr>
             <td class="small">${escapeHtml(fecha)}</td>
-            <td>${tipoBadge}</td>
+            <td>${tipoBadge}${cargaBadge}</td>
             ${materialCell}
             <td class="small text-end">${formatQty(cantidad, "")}</td>
             <td class="small text-end">${formatCOP(precio)}</td>
@@ -437,8 +440,11 @@
         const rows = [];
         comprasDB.filter((c) => String(c.inventarioId) === String(invId)).forEach((c) => {
             const total = Number(c.cantidad || 0) * Number(c.precioCompra || 0);
+            const cargaBadge = c.carga_masiva
+                ? ' <span class="badge bg-warning-subtle text-warning" title="Cargado masivamente"><i class="bi bi-upload"></i></span>'
+                : '';
             rows.push(`<tr>
-                <td class="small">${formatDateCO(c.fechaCompra)}</td>
+                <td class="small">${formatDateCO(c.fechaCompra)}${cargaBadge}</td>
                 <td class="small text-end">${formatQty(c.cantidad, "")}</td>
                 <td class="small text-end">${formatCOP(c.precioCompra)}</td>
                 <td class="small">${formatCOP(total)}</td>
@@ -459,8 +465,11 @@
         const rows = [];
         ventasDB.filter((v) => String(v.inventarioId) === String(invId)).forEach((v) => {
             const total = Number(v.cantidad || 0) * Number(v.precioVenta || 0);
+            const cargaBadge = v.carga_masiva
+                ? ' <span class="badge bg-warning-subtle text-warning" title="Cargado masivamente"><i class="bi bi-upload"></i></span>'
+                : '';
             rows.push(`<tr>
-                <td class="small">${formatDateCO(v.fechaVenta)}</td>
+                <td class="small">${formatDateCO(v.fechaVenta)}${cargaBadge}</td>
                 <td class="small text-end">${formatQty(v.cantidad, "")}</td>
                 <td class="small text-end">${formatCOP(v.precioVenta)}</td>
                 <td class="small">${formatCOP(total)}</td>
@@ -967,6 +976,14 @@
         set("id", m.compraId || m.ventaId);
         set("observaciones", m.observaciones || "—");
         if (tipo === "venta") set("centro", m.nombreCentroAcopio || "—");
+        const tipoEl = document.getElementById(`${prefix}-tipo`);
+        if (tipoEl) {
+            const tipoLabel = tipo === "compra" ? "Compra" : "Venta";
+            const cargaBadge = m.carga_masiva
+                ? ' <span class="badge bg-warning-subtle text-warning"><i class="bi bi-upload"></i> Carga masiva</span>'
+                : '';
+            tipoEl.innerHTML = `${tipoLabel}${cargaBadge}`;
+        }
         bootstrap.Modal.getOrCreateInstance(document.getElementById(`inv-modal-detalle-${tipo}`)).show();
     }
 

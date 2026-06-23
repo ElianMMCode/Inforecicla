@@ -235,6 +235,7 @@ def _procesar_fila_bulk_import(
         campo_precio: precio,
         campo_fecha: fecha,
         "observaciones": observaciones,
+        "carga_masiva": True,
     }
     mock_request = _crear_mock_request_bulk_import(request, data)
     response = service_callable(mock_request, data)

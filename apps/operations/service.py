@@ -147,6 +147,7 @@ class CompraInventarioService:
                 cantidad=cantidad,
                 precio_compra=precio_compra,
                 observaciones=data.get("observaciones", ""),
+                carga_masiva=data.get("carga_masiva", False),
             )
 
             result = CompraInventarioService.actualizar_stock_por_compra(
@@ -379,6 +380,7 @@ class VentaInventarioService:
             precio_venta=precio_venta,
             observaciones=data.get("observaciones", ""),
             centro_acopio=centro_acopio_inst,
+            carga_masiva=data.get("carga_masiva", False),
         )
 
         result = VentaInventarioService.actualizar_stock_por_venta(inventario, cantidad)

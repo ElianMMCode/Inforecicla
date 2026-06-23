@@ -283,6 +283,7 @@ def _crear_usuario_desde_csv(datos):
             tipo_documento=datos["tipo_documento"],
             numero_documento=datos["numero_documento"],
             ciudad=datos["ciudad"],
+            carga_masiva=True,
         )
         usuario.set_password(datos["password"])
         usuario.save()
@@ -865,6 +866,7 @@ def usuario_to_dict(usuario):
         "fecha_nacimiento": usuario.fecha_nacimiento.strftime("%Y-%m-%d")
         if usuario.fecha_nacimiento
         else "",
+        "carga_masiva": usuario.carga_masiva,
         "action_url": reverse("panel_admin:editar_usuario_admin", kwargs={"usuario_id": usuario.id}),
     }
 
