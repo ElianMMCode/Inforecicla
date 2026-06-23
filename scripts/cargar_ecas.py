@@ -24,13 +24,18 @@ gestor_idx = 0
 # DATOS REALISTAS DE PUNTOS ECA EN BOGOTÁ
 # ============================================================
 # (nombre, localidad, dirección, email_suffix, celular, telefono, horario, gestor_opcional)
+_USAQUEN = "Usaquén"
+_ENGATIVA = "Engativá"
+_HORARIO_LUN_SAB_7_17 = "Lun-Sáb 7:00-17:00"
+_HORARIO_LUN_SAB_8_17 = "Lun-Sáb 8:00-17:00"
+
 ecas_data = [
     # --- USAQUÉN ---
-    ("ECA Usaquén - Cedritos", "Usaquén",
+    ("ECA Usaquén - Cedritos", _USAQUEN,
      "Cra 19 # 134-52",
      "usaquen1", "3001110001", "6012345671",
-     "Lun-Sáb 7:00-17:00", True),
-    ("ECA Usaquén - Santa Bárbara", "Usaquén",
+     _HORARIO_LUN_SAB_7_17, True),
+    ("ECA Usaquén - Santa Bárbara", _USAQUEN,
      "Cra 9 # 120-30",
      "usaquen2", "3001110002", "6012345672",
      "Lun-Vie 8:00-18:00, Sáb 8:00-14:00", True),
@@ -43,7 +48,7 @@ ecas_data = [
     ("ECA Chapinero - Chicó", "Chapinero",
      "Cra 13 # 93-10",
      "chapinero2", "3001110004", "6012345674",
-     "Lun-Sáb 8:00-17:00", True),
+     _HORARIO_LUN_SAB_8_17, True),
 
     # --- SANTA FE ---
     ("ECA Santa Fe - Centro", "Santa Fe",
@@ -67,7 +72,7 @@ ecas_data = [
     ("ECA Bosa - La Estación", "Bosa",
      "Cra 80j # 60-30 Sur",
      "bosa2", "3001110008", "6012345678",
-     "Lun-Sáb 8:00-17:00", True),
+     _HORARIO_LUN_SAB_8_17, True),
 
     # --- KENNEDY ---
     ("ECA Kennedy - Central", "Kennedy",
@@ -77,7 +82,7 @@ ecas_data = [
     ("ECA Kennedy - Patio Bonito", "Kennedy",
      "Cra 86 # 39-10 Sur",
      "kennedy2", "3001110010", "6012345680",
-     "Lun-Sáb 8:00-17:00", True),
+     _HORARIO_LUN_SAB_8_17, True),
 
     # --- FONTIBÓN ---
     ("ECA Fontibón - Aeropuerto", "Fontibón",
@@ -86,11 +91,11 @@ ecas_data = [
      "Lun-Vie 8:00-18:00, Sáb 8:00-12:00", False),
 
     # --- ENGATIVÁ ---
-    ("ECA Engativá - Pueblo", "Engativá",
+    ("ECA Engativá - Pueblo", _ENGATIVA,
      "Cra 93 # 68-25",
      "engativa1", "3001110012", "6012345682",
-     "Lun-Sáb 7:00-17:00", True),
-    ("ECA Engativá - Jardín Botánico", "Engativá",
+     _HORARIO_LUN_SAB_7_17, True),
+    ("ECA Engativá - Jardín Botánico", _ENGATIVA,
      "Cra 74 # 56-12",
      "engativa2", "3001110013", "6012345683",
      "Lun-Vie 8:00-18:00", False),
@@ -99,7 +104,7 @@ ecas_data = [
     ("ECA Suba - Rincón", "Suba",
      "Cra 91 # 130-45",
      "suba2", "3001110014", "6012345684",
-     "Lun-Sáb 7:00-17:00", True),
+     _HORARIO_LUN_SAB_7_17, True),
 
     # --- BARRIOS UNIDOS ---
     ("ECA Barrios Unidos", "Barrios Unidos",
@@ -111,7 +116,7 @@ ecas_data = [
     ("ECA Teusaquillo - Galerías", "Teusaquillo",
      "Cra 27 # 56-20",
      "teusaquillo1", "3001110016", "6012345686",
-     "Lun-Sáb 8:00-17:00", True),
+     _HORARIO_LUN_SAB_8_17, True),
 
     # --- PUENTE ARANDA ---
     ("ECA Puente Aranda", "Puente Aranda",
@@ -140,7 +145,7 @@ ecas_data = [
 
 # Coordenadas aproximadas por localidad (centroides de Bogotá)
 coordenadas = {
-    "Usaquén":           (4.712, -74.030),
+    _USAQUEN:           (4.712, -74.030),
     "Chapinero":         (4.645, -74.060),
     "Santa Fe":          (4.610, -74.070),
     "San Cristóbal":     (4.560, -74.090),
@@ -149,7 +154,7 @@ coordenadas = {
     "Bosa":              (4.610, -74.190),
     "Kennedy":           (4.630, -74.150),
     "Fontibón":          (4.675, -74.120),
-    "Engativá":          (4.690, -74.100),
+    _ENGATIVA:          (4.690, -74.100),
     "Suba":              (4.740, -74.080),
     "Barrios Unidos":    (4.665, -74.070),
     "Teusaquillo":       (4.635, -74.085),

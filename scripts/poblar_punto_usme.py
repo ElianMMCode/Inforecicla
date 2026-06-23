@@ -28,25 +28,32 @@ from apps.operations.models import CompraInventario, VentaInventario
 from apps.scheduling.models import Evento
 from config.constants import TipoCentroAcopio, Visibilidad
 
-random.seed(12345)  # NOSONAR:S2245
+random.seed(12345)  # NOSONAR
 TODAY = datetime.date(2026, 6, 22)
 
 Usuario = get_user_model()
 
 PUNTO_ECA_EMAIL = os.environ.get('PUNTO_ECA_EMAIL', 'emelo.legacy@pm.me')
 
+_CARTON = 'Cartón'
+_PAPEL_BOND_BLANCO = 'Papel bond blanco'
+_BOTELLA_PET_TRANSP = 'Botella PET transparente'
+_ENVASE_TETRA_PAK = 'Envase Tetra Pak'
+_PILAS_AA_AAA = 'Pilas AA/AAA'
+_BOGOTA = 'Bogotá'
+
 MATERIAL_CONFIG = [
-    {'name': 'Cartón', 'slug': 'carton', 'prob': 0.25, 'qty_range': (5, 80), 'precio_compra': 600, 'precio_venta': 1100},
-    {'name': 'Papel bond blanco', 'slug': 'papel_bond', 'prob': 0.20, 'qty_range': (3, 50), 'precio_compra': 700, 'precio_venta': 1300},
-    {'name': 'Botella PET transparente', 'slug': 'pet_transp', 'prob': 0.15, 'qty_range': (2, 25), 'precio_compra': 1200, 'precio_venta': 2100},
-    {'name': 'Envase Tetra Pak', 'slug': 'tetra', 'prob': 0.10, 'qty_range': (3, 20), 'precio_compra': 400, 'precio_venta': 800},
+    {'name': _CARTON, 'slug': 'carton', 'prob': 0.25, 'qty_range': (5, 80), 'precio_compra': 600, 'precio_venta': 1100},
+    {'name': _PAPEL_BOND_BLANCO, 'slug': 'papel_bond', 'prob': 0.20, 'qty_range': (3, 50), 'precio_compra': 700, 'precio_venta': 1300},
+    {'name': _BOTELLA_PET_TRANSP, 'slug': 'pet_transp', 'prob': 0.15, 'qty_range': (2, 25), 'precio_compra': 1200, 'precio_venta': 2100},
+    {'name': _ENVASE_TETRA_PAK, 'slug': 'tetra', 'prob': 0.10, 'qty_range': (3, 20), 'precio_compra': 400, 'precio_venta': 800},
     {'name': 'Lata de aluminio', 'slug': 'aluminio', 'prob': 0.10, 'qty_range': (1, 12), 'precio_compra': 3500, 'precio_venta': 5800},
     {'name': 'Lata de acero/hojalata', 'slug': 'acero', 'prob': 0.05, 'qty_range': (2, 15), 'precio_compra': 800, 'precio_venta': 1500},
     {'name': 'Revistas y mixtos', 'slug': 'revistas', 'prob': 0.05, 'qty_range': (3, 25), 'precio_compra': 500, 'precio_venta': 900},
     {'name': 'Frasco vidrio transparente', 'slug': 'vidrio', 'prob': 0.04, 'qty_range': (2, 15), 'precio_compra': 200, 'precio_venta': 350},
     {'name': 'Botella PET verde', 'slug': 'pet_verde', 'prob': 0.03, 'qty_range': (1, 10), 'precio_compra': 1000, 'precio_venta': 1800},
     {'name': 'Ropa de algodón', 'slug': 'algodon', 'prob': 0.02, 'qty_range': (1, 6), 'precio_compra': 300, 'precio_venta': 600},
-    {'name': 'Pilas AA/AAA', 'slug': 'pilas', 'prob': 0.005, 'qty_range': (0.5, 3), 'precio_compra': 100, 'precio_venta': 200},
+    {'name': _PILAS_AA_AAA, 'slug': 'pilas', 'prob': 0.005, 'qty_range': (0.5, 3), 'precio_compra': 100, 'precio_venta': 200},
     {'name': 'Ropa de poliéster', 'slug': 'poliester', 'prob': 0.005, 'qty_range': (1, 5), 'precio_compra': 250, 'precio_venta': 500},
 ]
 
@@ -88,7 +95,7 @@ CENTROS_DATA = [
         'nombre_contacto': 'Carlos Méndez',
         'email': 'carlos.mendez@procesamientousme.com',
         'celular': '3101112233',
-        'ciudad': 'Bogotá',
+        'ciudad': _BOGOTA,
         'localidad_nombre': 'Usme',
         'latitud': 4.5234,
         'longitud': -74.1325,
@@ -105,7 +112,7 @@ CENTROS_DATA = [
         'nombre_contacto': 'Ana Rodríguez',
         'email': 'ana.rodriguez@transferenciaeldorado.com',
         'celular': '3102223344',
-        'ciudad': 'Bogotá',
+        'ciudad': _BOGOTA,
         'localidad_nombre': 'San Cristóbal',
         'latitud': 4.5621,
         'longitud': -74.0987,
@@ -122,7 +129,7 @@ CENTROS_DATA = [
         'nombre_contacto': 'Pedro Martínez',
         'email': 'pedro.martinez@recicladorasur.com',
         'celular': '3103334455',
-        'ciudad': 'Bogotá',
+        'ciudad': _BOGOTA,
         'localidad_nombre': 'Ciudad Bolívar',
         'latitud': 4.4889,
         'longitud': -74.1543,
@@ -139,7 +146,7 @@ CENTROS_DATA = [
         'nombre_contacto': 'María García',
         'email': 'maria.garcia@inforecicla.com',
         'celular': '3104445566',
-        'ciudad': 'Bogotá',
+        'ciudad': _BOGOTA,
         'localidad_nombre': 'Kennedy',
         'latitud': 4.6213,
         'longitud': -74.1654,
@@ -165,17 +172,17 @@ EVENTOS_DATA = [
 ]
 
 VENTA_PRECIOS = {
-    'Cartón': 1050,
-    'Papel bond blanco': 1250,
-    'Botella PET transparente': 2000,
-    'Envase Tetra Pak': 750,
+    _CARTON: 1050,
+    _PAPEL_BOND_BLANCO: 1250,
+    _BOTELLA_PET_TRANSP: 2000,
+    _ENVASE_TETRA_PAK: 750,
     'Lata de aluminio': 5500,
     'Lata de acero/hojalata': 1400,
     'Revistas y mixtos': 850,
     'Frasco vidrio transparente': 300,
     'Botella PET verde': 1700,
     'Ropa de algodón': 500,
-    'Pilas AA/AAA': 150,
+    _PILAS_AA_AAA: 150,
     'Ropa de poliéster': 400,
 }
 
@@ -191,8 +198,8 @@ def get_business_days(start, end):
 
 
 def random_time(day, min_hour=7, max_hour=17):
-    hour = random.randint(min_hour, max_hour)  # NOSONAR:S2245
-    minute = random.randint(0, 59)  # NOSONAR:S2245
+    hour = random.randint(min_hour, max_hour)  # NOSONAR
+    minute = random.randint(0, 59)  # NOSONAR
     return timezone.make_aware(datetime.datetime(day.year, day.month, day.day, hour, minute))
 
 
@@ -243,13 +250,13 @@ def _generar_compras(business_days, day_index, mat_map, running_stock):
 
     for day in business_days:
         idx = day_index[day]
-        for _ in range(random.randint(3, 7)):  # NOSONAR:S2245
-            chosen = random.choices(material_names, weights=material_probs, k=1)[0]  # NOSONAR:S2245
+        for _ in range(random.randint(3, 7)):  # NOSONAR
+            chosen = random.choices(material_names, weights=material_probs, k=1)[0]  # NOSONAR
             mc = next(m for m in MATERIAL_CONFIG if m['name'] == chosen)
             inv = mat_map[chosen]
-            qty = round(random.uniform(*mc['qty_range']), 2)  # NOSONAR:S2245
+            qty = round(random.uniform(*mc['qty_range']), 2)  # NOSONAR
             is_bulk = (idx <= 3) or (32 <= idx <= 34)
-            obs = random.choice(OBSERVACIONES_COMPRA_BULK if is_bulk else OBSERVACIONES_COMPRA)  # NOSONAR:S2245
+            obs = random.choice(OBSERVACIONES_COMPRA_BULK if is_bulk else OBSERVACIONES_COMPRA)  # NOSONAR
             fecha = random_time(day)
             CompraInventario.objects.create(
                 inventario=inv, fecha_compra=fecha,
@@ -271,10 +278,10 @@ def _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock):
     if avail < 20:
         return 0
 
-    sell_pct = random.uniform(0.1, 0.4)  # NOSONAR:S2245
+    sell_pct = random.uniform(0.1, 0.4)  # NOSONAR
     qty = round(avail * sell_pct, 2)
     if qty < 5:
-        qty = round(min(avail * 0.3, random.uniform(5, 30)), 2)  # NOSONAR:S2245
+        qty = round(min(avail * 0.3, random.uniform(5, 30)), 2)  # NOSONAR
 
     is_bulk = (idx <= 3) or (32 <= idx <= 34)
     fecha = random_time(day, 8, 15)
@@ -282,8 +289,8 @@ def _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock):
         inventario=inv, fecha_venta=fecha,
         cantidad=Decimal(str(qty)),
         precio_venta=Decimal(str(VENTA_PRECIOS.get(chosen, 500))),
-        observaciones=random.choice(OBSERVACIONES_VENTA),  # NOSONAR:S2245
-        centro_acopio=random.choice(centros), carga_masiva=is_bulk,  # NOSONAR:S2245
+        observaciones=random.choice(OBSERVACIONES_VENTA),  # NOSONAR
+        centro_acopio=random.choice(centros), carga_masiva=is_bulk,  # NOSONAR
     )
     running_stock[chosen] -= qty
     return 1 if not is_bulk else 2
@@ -300,8 +307,8 @@ def _generar_ventas(business_days, day_index, mat_map, centros, running_stock):
         if not candidates:
             continue
 
-        for _ in range(min(random.randint(1, 3), len(candidates))):  # NOSONAR:S2245
-            chosen = random.choice(candidates)  # NOSONAR:S2245
+        for _ in range(min(random.randint(1, 3), len(candidates))):  # NOSONAR
+            chosen = random.choice(candidates)  # NOSONAR
             inv = mat_map[chosen]
             result = _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock)
             if result == 0:
@@ -323,11 +330,11 @@ def _actualizar_stock(inventarios, running_stock):
 
 def _ajustar_umbrales(mat_map):
     alert_config = [
-        ('Cartón', 18, 28),
-        ('Papel bond blanco', 22, 32),
-        ('Envase Tetra Pak', 20, 30),
-        ('Botella PET transparente', 12, 22),
-        ('Pilas AA/AAA', 8, 15),
+        (_CARTON, 18, 28),
+        (_PAPEL_BOND_BLANCO, 22, 32),
+        (_ENVASE_TETRA_PAK, 20, 30),
+        (_BOTELLA_PET_TRANSP, 12, 22),
+        (_PILAS_AA_AAA, 8, 15),
     ]
     for name, al, cr in alert_config:
         inv = mat_map.get(name)
@@ -348,9 +355,9 @@ def _crear_eventos(business_days, punto, gestor, mat_map, centros):
         day = business_days[idx - 1]
         mat_name = slug_to_name[ev_data['mat_slug']]
         inv_ref = mat_map[mat_name]
-        centro = random.choice(centros) if 'Venta' in ev_data['titulo'] else None  # NOSONAR:S2245
+        centro = random.choice(centros) if 'Venta' in ev_data['titulo'] else None  # NOSONAR
         inicio = random_time(day, 8, 10)
-        fin = inicio + datetime.timedelta(hours=random.randint(1, 3))  # NOSONAR:S2245
+        fin = inicio + datetime.timedelta(hours=random.randint(1, 3))  # NOSONAR
         Evento.objects.create(
             material=inv_ref.material, centro_acopio=centro,
             punto_eca=punto, usuario=gestor,
@@ -379,7 +386,7 @@ def _verificar(punto, inventarios):
 @transaction.atomic
 def run():
     print("=== POBLAR PUNTO USME EL DORADO ===")
-    random.seed(12345)  # NOSONAR:S2245
+    random.seed(12345)  # NOSONAR
 
     punto = PuntoECA.objects.get(gestor_eca__email=PUNTO_ECA_EMAIL)
     gestor = Usuario.objects.get(email=PUNTO_ECA_EMAIL)

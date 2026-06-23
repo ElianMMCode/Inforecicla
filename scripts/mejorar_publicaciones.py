@@ -124,7 +124,7 @@ def crear(titulo, contenido, resumen, categoria, destacado=False, video_url=None
     if not cat:
         print(f"  ! Categoría '{categoria}' no encontrada")
         return
-    pub, created = Publicacion.objects.get_or_create(
+    _, created = Publicacion.objects.get_or_create(
         titulo=titulo,
         defaults={
             "contenido": contenido,

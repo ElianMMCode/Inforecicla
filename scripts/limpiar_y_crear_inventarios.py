@@ -11,6 +11,10 @@ from apps.inventory.models import Inventario, Material, CategoriaMaterial
 from apps.ecas.models import PuntoECA
 from apps.scheduling.models import Evento, EventoInstancia
 
+_CARTON = 'Cartón'
+_PAPEL_PERIODICO = 'Papel periódico'
+_CHATARRA_FERRICA = 'Chatarra férrica'
+
 JUNK_CATEGORY_IDS = [
     '08e6624f-1970-4b45-9617-19077a24c5d8',  # Libro
     '0bf0c497-64bd-4e9d-8e61-d97477bbaf01',  # Envases Plásticos
@@ -44,9 +48,9 @@ MATERIAL_NAMES = {
     'PP': ['Tapa PP', 'Envase PP alimentos'],
     'PS': ['Icopor (PS expandido)'],
     'PVC': ['Tubos PVC'],
-    'Cartón corrugado': ['Cartón'],
+    'Cartón corrugado': [_CARTON],
     'Cartón plegadizo': ['Cartulina plegadizo'],
-    'Papel periódico': ['Papel periódico'],
+    _PAPEL_PERIODICO: [_PAPEL_PERIODICO],
     'Papel blanco (bond)': ['Papel bond blanco'],
     'Revistas/mixtos': ['Revistas y mixtos'],
     'Transparente': ['Frasco vidrio transparente', 'Botella retornable vidrio'],
@@ -54,7 +58,7 @@ MATERIAL_NAMES = {
     'Verde': ['Frasco vidrio verde'],
     'Aluminio': ['Lata de aluminio'],
     'Acero/Hojalata': ['Lata de acero/hojalata'],
-    'Chatarra férrica': ['Chatarra férrica'],
+    _CHATARRA_FERRICA: [_CHATARRA_FERRICA],
     'Envase multicapa': ['Envase Tetra Pak'],
     'Algodón': ['Ropa de algodón'],
     'Poliéster': ['Ropa de poliéster'],
@@ -117,6 +121,12 @@ def get_material_refs():
     return refs
 
 
+def _make_stable_key(iter_idx):
+    def key_fn(x):
+        return hash(x + str(iter_idx))
+    return key_fn
+
+
 def create_inventories():
     print("=== CREANDO INVENTARIOS ===")
     refs = get_material_refs()
@@ -124,7 +134,7 @@ def create_inventories():
     print(f"ECAs activos: {len(ecas)}")
 
     comunes = [
-        'Botella PET transparente', 'Cartón', 'Papel bond blanco',
+        'Botella PET transparente', _CARTON, 'Papel bond blanco',
         'Frasco vidrio transparente', 'Lata de aluminio',
         'Lata de acero/hojalata', 'Envase Tetra Pak',
     ]
@@ -138,9 +148,9 @@ def create_inventories():
         'Pallet de madera', 'Botella PET verde',
     ]
     menos_frecuentes = [
-        'Icopor (PS expandido)', 'Tubos PVC', 'Papel periódico',
+        'Icopor (PS expandido)', 'Tubos PVC', _PAPEL_PERIODICO,
         'Frasco vidrio ámbar', 'Frasco vidrio verde',
-        'Chatarra férrica', 'Mezclas textiles', 'MDF/Aglomerado',
+        _CHATARRA_FERRICA, 'Mezclas textiles', 'MDF/Aglomerado',
     ]
 
     total = 0
@@ -148,23 +158,23 @@ def create_inventories():
         asignados = set(comunes)
 
         asig_frec = 3 if idx % 3 == 0 else 2
-        extras_frec = sorted(frecuentes, key=lambda x, i=idx: hash(x + str(i)))[:asig_frec]
+        extras_frec = sorted(frecuentes, key=_make_stable_key(idx))[:asig_frec]
         asignados.update(extras_frec)
 
         if idx % 2 == 0:
             asig_esp = 2 if idx % 4 == 0 else 1
-            extras_esp = sorted(especiales, key=lambda x, i=idx: hash(str(i) + x))[:asig_esp]
+            extras_esp = sorted(especiales, key=_make_stable_key(idx))[:asig_esp]
             asignados.update(extras_esp)
 
         if idx % 3 == 2:
             asig_menos = 2
-            extras_menos = sorted(menos_frecuentes, key=lambda x, i=idx: hash(x + str(i)))[:asig_menos]
+            extras_menos = sorted(menos_frecuentes, key=_make_stable_key(idx))[:asig_menos]
             asignados.update(extras_menos)
 
         for mat_name in asignados:
             mat = refs[mat_name]
             stock = random_stock(mat_name)
-            cap = random_capacity(mat_name, stock)
+            cap = random_capacity(stock)
             umbral_alerta, umbral_critico = random_umbrales()
             inv = Inventario(
                 capacidad_maxima=cap,
@@ -182,47 +192,47 @@ def create_inventories():
     print()
 
 
+_STOCK_KEYWORDS = [
+    (['PET', 'Botella'], (5, 500)),
+    ([_CARTON, 'Papel', 'Revistas'], (10, 2000)),
+    (['Vidrio', 'Frasco'], (10, 300)),
+    (['Aluminio', 'Acero', 'Chatarra'], (20, 1000)),
+    (['Tetra'], (50, 1500)),
+    (['Textil', 'Ropa', 'Mezcla'], (5, 200)),
+    (['Pallet', 'MDF'], (1, 50)),
+    (['Celular', 'Teclado', 'Cargadores', 'Laptop'], (1, 30)),
+    (['Pilas'], (10, 200)),
+    (['Aceite'], (10, 500)),
+    (['Llantas'], (1, 30)),
+    (['Orgánicos', 'Compost'], (5, 100)),
+]
+
+
 def random_stock(mat_name):
-    if 'PET' in mat_name or 'Botella' in mat_name:
-        return round(random.uniform(5, 500), 2)  # NOSONAR:S2245
-    if 'Cartón' in mat_name or 'Papel' in mat_name or 'Revistas' in mat_name:
-        return round(random.uniform(10, 2000), 2)  # NOSONAR:S2245
-    if 'Vidrio' in mat_name or 'Frasco' in mat_name:
-        return round(random.uniform(10, 300), 2)  # NOSONAR:S2245
-    if 'Aluminio' in mat_name or 'Acero' in mat_name or 'Chatarra' in mat_name:
-        return round(random.uniform(20, 1000), 2)  # NOSONAR:S2245
-    if 'Tetra' in mat_name:
-        return round(random.uniform(50, 1500), 2)  # NOSONAR:S2245
-    if 'Textil' in mat_name or 'Ropa' in mat_name or 'Mezcla' in mat_name:
-        return round(random.uniform(5, 200), 2)  # NOSONAR:S2245
-    if 'Pallet' in mat_name or 'MDF' in mat_name:
-        return round(random.uniform(1, 50), 2)  # NOSONAR:S2245
-    if 'Celular' in mat_name or 'Teclado' in mat_name or 'Cargadores' in mat_name or 'Laptop' in mat_name:
-        return round(random.uniform(1, 30), 2)  # NOSONAR:S2245
-    if 'Pilas' in mat_name:
-        return round(random.uniform(10, 200), 2)  # NOSONAR:S2245
-    if 'Aceite' in mat_name:
-        return round(random.uniform(10, 500), 2)  # NOSONAR:S2245
-    if 'Llantas' in mat_name:
-        return round(random.uniform(1, 30), 2)  # NOSONAR:S2245
-    if 'Orgánicos' in mat_name or 'Compost' in mat_name:
-        return round(random.uniform(5, 100), 2)  # NOSONAR:S2245
-    return round(random.uniform(10, 200), 2)  # NOSONAR:S2245
+    for keywords, (lo, hi) in _STOCK_KEYWORDS:
+        if any(kw in mat_name for kw in keywords):
+            return round(random.uniform(lo, hi), 2)  # NOSONAR
+    return round(random.uniform(10, 200), 2)  # NOSONAR
 
 
-def random_capacity(_mat_name, stock):
-    factor = 1.5 if stock < 100 else 2.0 if stock < 500 else 3.0
-    return round(stock * factor + random.uniform(50, 500), 2)  # NOSONAR:S2245
+def random_capacity(stock):
+    if stock < 100:
+        factor = 1.5
+    elif stock < 500:
+        factor = 2.0
+    else:
+        factor = 3.0
+    return round(stock * factor + random.uniform(50, 500), 2)  # NOSONAR
 
 
 def random_umbrales():
-    alerta = random.randint(60, 80)  # NOSONAR:S2245
-    critico = random.randint(alerta + 5, 95)  # NOSONAR:S2245
+    alerta = random.randint(60, 80)  # NOSONAR
+    critico = random.randint(alerta + 5, 95)  # NOSONAR
     return alerta, critico
 
 
 if __name__ == '__main__':
-    random.seed(42)  # NOSONAR:S2245
+    random.seed(42)  # NOSONAR
     limpiar()
     create_inventories()
     print("=== COMPLETADO ===")
