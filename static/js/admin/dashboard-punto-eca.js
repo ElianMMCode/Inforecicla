@@ -978,7 +978,7 @@ function renderMensajes(){
   if(ftFin)convs=convs.filter(c=>c.fecha.split(' ')[0]<=ftFin);
   document.getElementById('msg-total').textContent=convs.length;
   document.getElementById('msg-total-msgs').textContent=convs.reduce((s,c)=>s+(c.msgs||0),0);
-  document.getElementById('msg-no-leidos').textContent=convs.length;
+  document.getElementById('msg-no-leidos').textContent=convs.reduce((s,c)=>s+(c.no_leidos||0),0);
 
   document.getElementById('msg-list').innerHTML='<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>#</th><th>Ciudadano</th><th>Fecha</th><th>Msgs</th><th>Ultimo Mensaje</th></tr></thead><tbody>'+
     convs.map((c,i)=>'<tr><td class="fw-bold text-muted">'+(i+1)+'</td><td class="fw-semibold" style="font-size:.82rem">'+c.ciudadano+'</td><td style="font-size:.78rem;color:#6c757d">'+c.fecha+'</td><td class="text-center">'+c.msgs+'</td><td style="font-size:.78rem;max-width:220px" class="text-truncate">'+c.ultimo+'</td></tr>').join('')+

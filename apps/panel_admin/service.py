@@ -1180,16 +1180,19 @@ class AdminPuntoECAService:
 
     @staticmethod
     def obtener_conversaciones():
-        """Retorna chats con ultimo mensaje y conteo."""
+        """Retorna chats con ultimo mensaje, conteo y no leidos."""
         from apps.chat.models import Chat, Mensaje
-        from django.db.models import Count
+        from django.db.models import Count, Q
 
         convs = []
         try:
             chats = list(
                 Chat.objects.select_related("punto", "ciudadano")
-                .annotate(msgs=Count("mensajes"))
-                .order_by("-fecha_creacion")[:12]
+                .annotate(
+                    msgs=Count("mensajes"),
+                    no_leidos=Count("mensajes", filter=Q(mensajes__es_leido=False)),
+                )
+                .order_by("-fecha_creacion")
             )
         except Exception:
             return convs
@@ -1206,6 +1209,7 @@ class AdminPuntoECAService:
                 "ciudadano": f"{ch.ciudadano.nombres} {ch.ciudadano.apellidos}" if ch.ciudadano else "-",
                 "fecha": ch.fecha_creacion.strftime("%Y-%m-%d %H:%M") if ch.fecha_creacion else "",
                 "msgs": ch.msgs,
+                "no_leidos": ch.no_leidos,
                 "ultimo": (ultimo or "")[:50],
                 "puntoId": str(ch.punto_id) if ch.punto_id else "",
             })
