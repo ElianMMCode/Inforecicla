@@ -745,7 +745,7 @@ def _aplicar_datos_usuario_admin(usuario, data):
     usuario.tipo_usuario = _normalizar_texto(data.get("tipo_usuario"), usuario.tipo_usuario).strip() or usuario.tipo_usuario
     usuario.tipo_documento = _normalizar_texto(data.get("tipoDocumento"), usuario.tipo_documento).strip() or usuario.tipo_documento
     usuario.numero_documento = _normalizar_texto(data.get("numeroDocumento"))
-    usuario.biografia = _normalizar_texto(data.get("biografia")) or None
+    usuario.biografia = _normalizar_texto(data.get("biografia"))
 
     estado_usuario = _normalizar_texto(data.get("estado_usuario")).lower()
     if estado_usuario in {"activo", "inactivo"}:
