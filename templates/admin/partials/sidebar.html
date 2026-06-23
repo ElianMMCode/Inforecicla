@@ -41,11 +41,14 @@
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-publicaciones' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_categorias_publicacion_admin' %}">Categorías de Publicaciones</a></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/tipos-publicaciones' in request.path %}active{% endif %}" href="{% url 'panel_admin:listar_tipos_publicacion_admin' %}">Tipos de Publicación</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_publicaciones_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_publicaciones_excel' %}"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel</a></li>
             </ul>
         </li>
 
         <li class="nav-item dropdown sidebar-dropdown">
-            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/materiales' in request.path or '/panel_admin/clasificaciones-materiales' in request.path or '/panel_admin/categorias-materiales' in request.path %}active{% endif %} sidebar-dropdown-toggle"
+            <a class="nav-link d-flex align-items-center text-white {% if '/panel_admin/materiales' in request.path or '/panel_admin/categorias-materiales' in request.path %}active{% endif %} sidebar-dropdown-toggle"
                href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales">
                 <i class="bi bi-box-seam me-2"></i>Materiales
                 <i class="bi bi-chevron-down ms-auto small"></i>
@@ -53,7 +56,7 @@
             <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.GET.tab == 'materiales' or not request.GET.tab %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=materiales"><i class="bi bi-box-seam me-1"></i>Materiales</a></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/categorias-materiales' in request.path or request.GET.tab == 'categorias' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=categorias"><i class="bi bi-tags-fill me-1"></i>Categorías de Materiales</a></li>
-                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if '/panel_admin/clasificaciones-materiales' in request.path or request.GET.tab == 'clasificaciones' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones"><i class="bi bi-recycle me-1"></i>Clasificaciones</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.GET.tab == 'clasificaciones' %}active{% endif %}" href="{% url 'panel_admin:gestion_materiales' %}?tab=clasificaciones"><i class="bi bi-recycle me-1"></i>Clasificaciones</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar Materiales PDF</a></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_materiales_excel' %}"><i class="bi bi-file-earmark-excel me-1"></i>Exportar Materiales Excel</a></li>
@@ -68,6 +71,7 @@
             </a>
             <ul class="dropdown-menu bg-success shadow-sm border-0 position-static sidebar-dropdown-menu px-2 py-1 mb-2">
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'dashboard_puntos_eca' %}active{% endif %}" href="{% url 'panel_admin:dashboard_puntos_eca' %}">Dashboard</a></li>
+                <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'listar_puntos_eca_admin' %}active{% endif %}" href="{% url 'panel_admin:listar_puntos_eca_admin' %}">Listar Puntos ECA</a></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link {% if request.resolver_match.url_name == 'crear_punto_eca_admin' %}active{% endif %}" href="{% url 'panel_admin:crear_punto_eca_admin' %}">Crear Punto ECA</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item text-dark fw-semibold sidebar-subsection-link" href="{% url 'panel_admin:exportar_puntos_eca_pdf' %}"><i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF</a></li>
