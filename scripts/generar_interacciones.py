@@ -16,7 +16,7 @@ usuarios = list(User.objects.filter(
 ).order_by("email"))
 
 print(f"Usuarios: {len(usuarios)} | Publicaciones: {len(publicaciones)}")
-random.seed(42)
+random.seed(42)  # NOSONAR:S2245
 
 # ============================================================
 # BANCO DE TEXTOS REALISTAS PARA COMENTARIOS
@@ -81,10 +81,10 @@ comentarios_pool = [
 print("\n--- COMENTARIOS ---")
 contador = 0
 for user in usuarios:
-    num_comentarios = random.choices([1, 2, 3], weights=[3, 4, 3])[0]
+    num_comentarios = random.choices([1, 2, 3], weights=[3, 4, 3])[0]  # NOSONAR:S2245
     pubs_elegidas = random.sample(pub_ids, min(num_comentarios, len(pub_ids)))
     for pub_id in pubs_elegidas:
-        texto = random.choice(comentarios_pool)
+        texto = random.choice(comentarios_pool)  # NOSONAR:S2245
         obj, created = Comentario.objects.get_or_create(
             usuario=user,
             publicacion_id=pub_id,
@@ -102,7 +102,7 @@ print(f"  Comentarios creados: {contador}")
 print("\n--- GUARDADOS ---")
 contador = 0
 for user in usuarios:
-    num_guardados = random.choices([2, 3, 4], weights=[3, 4, 3])[0]
+    num_guardados = random.choices([2, 3, 4], weights=[3, 4, 3])[0]  # NOSONAR:S2245
     pubs_elegidas = random.sample(pub_ids, min(num_guardados, len(pub_ids)))
     for pub_id in pubs_elegidas:
         obj, created = Guardados.objects.get_or_create(
@@ -120,10 +120,10 @@ print(f"  Guardados creados: {contador}")
 print("\n--- REACCIONES ---")
 contador = 0
 for user in usuarios:
-    num_reacciones = random.choices([3, 4, 5], weights=[3, 4, 3])[0]
+    num_reacciones = random.choices([3, 4, 5], weights=[3, 4, 3])[0]  # NOSONAR:S2245
     pubs_elegidas = random.sample(pub_ids, min(num_reacciones, len(pub_ids)))
     for pub_id in pubs_elegidas:
-        if random.random() < 0.8:  # 80% likes, 20% dislikes
+        if random.random() < 0.8:  # 80% likes, 20% dislikes  # NOSONAR:S2245
             valor = "Like"
         else:
             valor = "Dislike"

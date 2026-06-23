@@ -184,45 +184,45 @@ def create_inventories():
 
 def random_stock(mat_name):
     if 'PET' in mat_name or 'Botella' in mat_name:
-        return round(random.uniform(5, 500), 2)
+        return round(random.uniform(5, 500), 2)  # NOSONAR:S2245
     if 'Cartón' in mat_name or 'Papel' in mat_name or 'Revistas' in mat_name:
-        return round(random.uniform(10, 2000), 2)
+        return round(random.uniform(10, 2000), 2)  # NOSONAR:S2245
     if 'Vidrio' in mat_name or 'Frasco' in mat_name:
-        return round(random.uniform(10, 300), 2)
+        return round(random.uniform(10, 300), 2)  # NOSONAR:S2245
     if 'Aluminio' in mat_name or 'Acero' in mat_name or 'Chatarra' in mat_name:
-        return round(random.uniform(20, 1000), 2)
+        return round(random.uniform(20, 1000), 2)  # NOSONAR:S2245
     if 'Tetra' in mat_name:
-        return round(random.uniform(50, 1500), 2)
+        return round(random.uniform(50, 1500), 2)  # NOSONAR:S2245
     if 'Textil' in mat_name or 'Ropa' in mat_name or 'Mezcla' in mat_name:
-        return round(random.uniform(5, 200), 2)
+        return round(random.uniform(5, 200), 2)  # NOSONAR:S2245
     if 'Pallet' in mat_name or 'MDF' in mat_name:
-        return round(random.uniform(1, 50), 2)
+        return round(random.uniform(1, 50), 2)  # NOSONAR:S2245
     if 'Celular' in mat_name or 'Teclado' in mat_name or 'Cargadores' in mat_name or 'Laptop' in mat_name:
-        return round(random.uniform(1, 30), 2)
+        return round(random.uniform(1, 30), 2)  # NOSONAR:S2245
     if 'Pilas' in mat_name:
-        return round(random.uniform(10, 200), 2)
+        return round(random.uniform(10, 200), 2)  # NOSONAR:S2245
     if 'Aceite' in mat_name:
-        return round(random.uniform(10, 500), 2)
+        return round(random.uniform(10, 500), 2)  # NOSONAR:S2245
     if 'Llantas' in mat_name:
-        return round(random.uniform(1, 30), 2)
+        return round(random.uniform(1, 30), 2)  # NOSONAR:S2245
     if 'Orgánicos' in mat_name or 'Compost' in mat_name:
-        return round(random.uniform(5, 100), 2)
-    return round(random.uniform(10, 200), 2)
+        return round(random.uniform(5, 100), 2)  # NOSONAR:S2245
+    return round(random.uniform(10, 200), 2)  # NOSONAR:S2245
 
 
 def random_capacity(_mat_name, stock):
     factor = 1.5 if stock < 100 else 2.0 if stock < 500 else 3.0
-    return round(stock * factor + random.uniform(50, 500), 2)
+    return round(stock * factor + random.uniform(50, 500), 2)  # NOSONAR:S2245
 
 
 def random_umbrales():
-    alerta = random.randint(60, 80)
-    critico = random.randint(alerta + 5, 95)
+    alerta = random.randint(60, 80)  # NOSONAR:S2245
+    critico = random.randint(alerta + 5, 95)  # NOSONAR:S2245
     return alerta, critico
 
 
 if __name__ == '__main__':
-    random.seed(42)
+    random.seed(42)  # NOSONAR:S2245
     limpiar()
     create_inventories()
     print("=== COMPLETADO ===")

@@ -23,7 +23,7 @@ from apps.ecas.models import PuntoECA
 from apps.chat.models import Chat, Mensaje
 from config.constants import TipoUsuario
 
-random.seed(42)
+random.seed(42)  # NOSONAR:S2245
 
 Usuario = get_user_model()
 
@@ -89,26 +89,26 @@ def create_chat_and_messages(punto, ciudadano, gestor_eca):
     if not created:
         return chat, False
 
-    n_mensajes = random.randint(3, 10)
-    fecha_base = datetime.datetime(2026, 5, random.randint(1, 31), random.randint(8, 17), random.randint(0, 59))
+    n_mensajes = random.randint(3, 10)  # NOSONAR:S2245
+    fecha_base = datetime.datetime(2026, 5, random.randint(1, 31), random.randint(8, 17), random.randint(0, 59))  # NOSONAR:S2245
 
     for i in range(n_mensajes):
         if i % 2 == 0:
             remitente = ciudadano
-            texto = random.choice(MENSAJES_CIUDADANO)
+            texto = random.choice(MENSAJES_CIUDADANO)  # NOSONAR:S2245
         else:
             remitente = gestor_eca
-            precio = random.randint(200, 5000)
+            precio = random.randint(200, 5000)  # NOSONAR:S2245
             direccion = punto.direccion or "nuestra sede"
             telefono = punto.celular or "nuestro teléfono"
-            texto = random.choice(RESPUESTAS_ECA).replace('{precio}', str(precio)).replace('{direccion}', direccion).replace('{telefono}', telefono)
+            texto = random.choice(RESPUESTAS_ECA).replace('{precio}', str(precio)).replace('{direccion}', direccion).replace('{telefono}', telefono)  # NOSONAR:S2245
 
-        fecha = fecha_base + datetime.timedelta(minutes=random.randint(1, 120) * i)
+        fecha = fecha_base + datetime.timedelta(minutes=random.randint(1, 120) * i)  # NOSONAR:S2245
         if fecha.date() > datetime.date(2026, 6, 22):
-            fecha = make_aware(datetime.datetime(2026, 6, 22, random.randint(8, 17), random.randint(0, 59)))
+            fecha = make_aware(datetime.datetime(2026, 6, 22, random.randint(8, 17), random.randint(0, 59)))  # NOSONAR:S2245
 
         es_leido = True
-        if i == n_mensajes - 1 and random.random() < 0.3:
+        if i == n_mensajes - 1 and random.random() < 0.3:  # NOSONAR:S2245
             es_leido = False
 
         Mensaje.objects.create(
@@ -117,7 +117,7 @@ def create_chat_and_messages(punto, ciudadano, gestor_eca):
             texto=texto,
             fecha_envio=make_aware(fecha) if fecha.tzinfo is None else fecha,
             es_leido=es_leido,
-            es_editado=random.random() < 0.05,
+            es_editado=random.random() < 0.05,  # NOSONAR:S2245
         )
 
     return chat, True
@@ -125,7 +125,7 @@ def create_chat_and_messages(punto, ciudadano, gestor_eca):
 
 def run():
     print("=== POBLAR CHATS ===")
-    random.seed(42)
+    random.seed(42)  # NOSONAR:S2245
 
     ciudadanos = list(Usuario.objects.filter(tipo_usuario=TipoUsuario.CIUDADANO, estado='ACTIVO'))
     ecas = list(PuntoECA.objects.filter(estado='ACTIVO').order_by('nombre'))

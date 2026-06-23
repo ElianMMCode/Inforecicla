@@ -28,7 +28,7 @@ from apps.operations.models import CompraInventario, VentaInventario
 from apps.scheduling.models import Evento
 from config.constants import TipoCentroAcopio, Visibilidad
 
-random.seed(12345)
+random.seed(12345)  # NOSONAR:S2245
 TODAY = datetime.date(2026, 6, 22)
 
 Usuario = get_user_model()
@@ -191,8 +191,8 @@ def get_business_days(start, end):
 
 
 def random_time(day, min_hour=7, max_hour=17):
-    hour = random.randint(min_hour, max_hour)
-    minute = random.randint(0, 59)
+    hour = random.randint(min_hour, max_hour)  # NOSONAR:S2245
+    minute = random.randint(0, 59)  # NOSONAR:S2245
     return timezone.make_aware(datetime.datetime(day.year, day.month, day.day, hour, minute))
 
 
@@ -243,13 +243,13 @@ def _generar_compras(business_days, day_index, mat_map, running_stock):
 
     for day in business_days:
         idx = day_index[day]
-        for _ in range(random.randint(3, 7)):
-            chosen = random.choices(material_names, weights=material_probs, k=1)[0]
+        for _ in range(random.randint(3, 7)):  # NOSONAR:S2245
+            chosen = random.choices(material_names, weights=material_probs, k=1)[0]  # NOSONAR:S2245
             mc = next(m for m in MATERIAL_CONFIG if m['name'] == chosen)
             inv = mat_map[chosen]
-            qty = round(random.uniform(*mc['qty_range']), 2)
+            qty = round(random.uniform(*mc['qty_range']), 2)  # NOSONAR:S2245
             is_bulk = (idx <= 3) or (32 <= idx <= 34)
-            obs = random.choice(OBSERVACIONES_COMPRA_BULK if is_bulk else OBSERVACIONES_COMPRA)
+            obs = random.choice(OBSERVACIONES_COMPRA_BULK if is_bulk else OBSERVACIONES_COMPRA)  # NOSONAR:S2245
             fecha = random_time(day)
             CompraInventario.objects.create(
                 inventario=inv, fecha_compra=fecha,
@@ -271,10 +271,10 @@ def _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock):
     if avail < 20:
         return 0
 
-    sell_pct = random.uniform(0.1, 0.4)
+    sell_pct = random.uniform(0.1, 0.4)  # NOSONAR:S2245
     qty = round(avail * sell_pct, 2)
     if qty < 5:
-        qty = round(min(avail * 0.3, random.uniform(5, 30)), 2)
+        qty = round(min(avail * 0.3, random.uniform(5, 30)), 2)  # NOSONAR:S2245
 
     is_bulk = (idx <= 3) or (32 <= idx <= 34)
     fecha = random_time(day, 8, 15)
@@ -282,8 +282,8 @@ def _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock):
         inventario=inv, fecha_venta=fecha,
         cantidad=Decimal(str(qty)),
         precio_venta=Decimal(str(VENTA_PRECIOS.get(chosen, 500))),
-        observaciones=random.choice(OBSERVACIONES_VENTA),
-        centro_acopio=random.choice(centros), carga_masiva=is_bulk,
+        observaciones=random.choice(OBSERVACIONES_VENTA),  # NOSONAR:S2245
+        centro_acopio=random.choice(centros), carga_masiva=is_bulk,  # NOSONAR:S2245
     )
     running_stock[chosen] -= qty
     return 1 if not is_bulk else 2
@@ -300,8 +300,8 @@ def _generar_ventas(business_days, day_index, mat_map, centros, running_stock):
         if not candidates:
             continue
 
-        for _ in range(min(random.randint(1, 3), len(candidates))):
-            chosen = random.choice(candidates)
+        for _ in range(min(random.randint(1, 3), len(candidates))):  # NOSONAR:S2245
+            chosen = random.choice(candidates)  # NOSONAR:S2245
             inv = mat_map[chosen]
             result = _crear_venta_unitaria(day, idx, chosen, inv, centros, running_stock)
             if result == 0:
@@ -348,9 +348,9 @@ def _crear_eventos(business_days, punto, gestor, mat_map, centros):
         day = business_days[idx - 1]
         mat_name = slug_to_name[ev_data['mat_slug']]
         inv_ref = mat_map[mat_name]
-        centro = random.choice(centros) if 'Venta' in ev_data['titulo'] else None
+        centro = random.choice(centros) if 'Venta' in ev_data['titulo'] else None  # NOSONAR:S2245
         inicio = random_time(day, 8, 10)
-        fin = inicio + datetime.timedelta(hours=random.randint(1, 3))
+        fin = inicio + datetime.timedelta(hours=random.randint(1, 3))  # NOSONAR:S2245
         Evento.objects.create(
             material=inv_ref.material, centro_acopio=centro,
             punto_eca=punto, usuario=gestor,
@@ -379,7 +379,7 @@ def _verificar(punto, inventarios):
 @transaction.atomic
 def run():
     print("=== POBLAR PUNTO USME EL DORADO ===")
-    random.seed(12345)
+    random.seed(12345)  # NOSONAR:S2245
 
     punto = PuntoECA.objects.get(gestor_eca__email=PUNTO_ECA_EMAIL)
     gestor = Usuario.objects.get(email=PUNTO_ECA_EMAIL)
