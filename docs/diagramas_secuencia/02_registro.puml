@@ -1,0 +1,81 @@
+@startuml registro
+title CU-01/06: Registrar Cuenta en Plataforma
+
+actor "Ciudadano" as Ciudadano
+actor "Gestor ECA" as Gestor
+participant "Navegador" as Browser
+participant "render_registro_ciudadano\n(users/views.py)" as RegCiud
+participant "render_registro_eca\n(users/views.py)" as RegECA
+participant "Usuario Model\n(users/models.py)" as UserModel
+participant "PuntoECA Model\n(ecas/models.py)" as PuntoModel
+participant "Email Service\n(users/utils.py)" as EmailService
+database "PostgreSQL" as DB
+
+== CU-01: Registro Ciudadano ==
+
+Ciudadano -> Browser: Navegar a /registro/ciudadano/
+Browser -> RegCiud: GET /registro/ciudadano/
+RegCiud --> Browser: Formulario registro ciudadano
+
+Ciudadano -> Browser: Completar formulario + Aceptar términos
+Browser -> RegCiud: POST /registro/ciudadano/
+
+RegCiud -> RegCiud: Validar datos del formulario
+note right
+  - Nombres, apellidos
+  - Email (formato válido)
+  - Tipo documento (CC, TI, CE, PA, NIT)
+  - Número documento
+  - Ciudad
+  - Contraseña (>8 chars)
+  - Aceptación de términos
+end note
+
+RegCiud -> UserModel: Exists(email)
+alt Email ya registrado
+    UserModel --> RegCiud: True
+    RegCiud --> Browser: Error "email duplicado"
+else Email disponible
+    UserModel --> RegCiud: False
+    RegCiud -> UserModel: create_user(ciudadano)
+    note right: create_user en\nUsuarioManager.create_user()
+    UserModel -> DB: INSERT INTO users_usuario
+    DB --> UserModel: OK
+    RegCiud -> EmailService: enviar_correo_verificacion(email, token)
+    EmailService --> RegCiud: Email enviado
+    RegCiud --> Browser: Redirect /login/ + "Verifica tu email"
+end
+
+== CU-06: Registro Gestor ECA ==
+
+Gestor -> Browser: Navegar a /registro/eca/
+Browser -> RegECA: GET /registro/eca/
+RegECA --> Browser: Formulario registro ECA
+
+Gestor -> Browser: Completar formulario (datos personales + datos del punto ECA)
+Browser -> RegECA: POST /registro/eca/
+
+RegECA -> RegECA: Validar datos del formulario
+note right
+  - Datos personales (mismo que ciudadano)
+  - Nombre del punto ECA
+  - Dirección del punto
+  - Descripción
+end note
+
+RegECA -> UserModel: Exists(email)
+alt Email ya registrado
+    UserModel --> RegECA: True
+    RegECA --> Browser: Error "email duplicado"
+else Email disponible
+    UserModel --> RegECA: False
+    RegECA -> UserModel: create_user(gestor_eca)
+    UserModel -> DB: INSERT INTO users_usuario
+    RegECA -> PuntoModel: PuntoECA.objects.create(gestor_eca=user)
+    PuntoModel -> DB: INSERT INTO ecas_puntoeca
+    RegECA -> EmailService: enviar_correo_verificacion(email, token)
+    EmailService --> RegECA: Email enviado
+    RegECA --> Browser: Redirect /login/ + "Verifica tu email"
+end
+
+@enduml

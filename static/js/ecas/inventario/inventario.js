@@ -396,13 +396,16 @@
         const tipoBadge = tipo === "compra"
             ? '<span class="badge bg-danger-subtle text-danger">Compra</span>'
             : '<span class="badge bg-success-subtle text-success">Venta</span>';
+        const cargaBadge = mov.carga_masiva
+            ? ' <span class="badge bg-warning-subtle text-warning" title="Registro cargado masivamente"><i class="bi bi-upload"></i> Masivo</span>'
+            : '';
         const centro = mov.nombreCentroAcopio || "—";
         const materialCell = showMaterial
             ? `<td class="small">${escapeHtml(material)}</td>`
             : "";
         return `<tr>
             <td class="small">${escapeHtml(fecha)}</td>
-            <td>${tipoBadge}</td>
+            <td>${tipoBadge}${cargaBadge}</td>
             ${materialCell}
             <td class="small text-end">${formatQty(cantidad, "")}</td>
             <td class="small text-end">${formatCOP(precio)}</td>
@@ -437,8 +440,11 @@
         const rows = [];
         comprasDB.filter((c) => String(c.inventarioId) === String(invId)).forEach((c) => {
             const total = Number(c.cantidad || 0) * Number(c.precioCompra || 0);
+            const cargaBadge = c.carga_masiva
+                ? ' <span class="badge bg-warning-subtle text-warning" title="Cargado masivamente"><i class="bi bi-upload"></i></span>'
+                : '';
             rows.push(`<tr>
-                <td class="small">${formatDateCO(c.fechaCompra)}</td>
+                <td class="small">${formatDateCO(c.fechaCompra)}${cargaBadge}</td>
                 <td class="small text-end">${formatQty(c.cantidad, "")}</td>
                 <td class="small text-end">${formatCOP(c.precioCompra)}</td>
                 <td class="small">${formatCOP(total)}</td>
@@ -459,8 +465,11 @@
         const rows = [];
         ventasDB.filter((v) => String(v.inventarioId) === String(invId)).forEach((v) => {
             const total = Number(v.cantidad || 0) * Number(v.precioVenta || 0);
+            const cargaBadge = v.carga_masiva
+                ? ' <span class="badge bg-warning-subtle text-warning" title="Cargado masivamente"><i class="bi bi-upload"></i></span>'
+                : '';
             rows.push(`<tr>
-                <td class="small">${formatDateCO(v.fechaVenta)}</td>
+                <td class="small">${formatDateCO(v.fechaVenta)}${cargaBadge}</td>
                 <td class="small text-end">${formatQty(v.cantidad, "")}</td>
                 <td class="small text-end">${formatCOP(v.precioVenta)}</td>
                 <td class="small">${formatCOP(total)}</td>
@@ -967,6 +976,14 @@
         set("id", m.compraId || m.ventaId);
         set("observaciones", m.observaciones || "—");
         if (tipo === "venta") set("centro", m.nombreCentroAcopio || "—");
+        const tipoEl = document.getElementById(`${prefix}-tipo`);
+        if (tipoEl) {
+            const tipoLabel = tipo === "compra" ? "Compra" : "Venta";
+            const cargaBadge = m.carga_masiva
+                ? ' <span class="badge bg-warning-subtle text-warning"><i class="bi bi-upload"></i> Carga masiva</span>'
+                : '';
+            tipoEl.innerHTML = `${tipoLabel}${cargaBadge}`;
+        }
         bootstrap.Modal.getOrCreateInstance(document.getElementById(`inv-modal-detalle-${tipo}`)).show();
     }
 
@@ -1088,14 +1105,39 @@
     // ============================================================
     // SUBMIT: REGISTRAR COMPRA / VENTA (workspace forms)
     // ============================================================
+    function _registrarMovimiento({fetchUrl, payload, tipo, comprobanteData, redirectTab, btnColor}) {
+        return fetch(fetchUrl, {
+            method: "POST",
+            headers: _jsonHeaders(),
+            body: JSON.stringify(payload),
+        })
+            .then(_parseJsonResponse)
+            .then(({ok, d}) => {
+                if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
+                Swal.fire({
+                    icon: null,
+                    title: null,
+                    html: renderComprobante(tipo, comprobanteData),
+                    showConfirmButton: true,
+                    confirmButtonText: "Cerrar",
+                    confirmButtonColor: btnColor,
+                    width: "480px",
+                }).then(() => {
+                    if (!currentMaterial) return;
+                    const url = new URL(globalThis.location.href);
+                    url.searchParams.set("inv", currentMaterial.inventarioId);
+                    url.searchParams.set("tab", redirectTab);
+                    globalThis.location.href = url.toString();
+                });
+            })
+            .catch(_showFetchError);
+    }
     function submitEntrada(e) {
         if (e) e.preventDefault();
         const form = document.getElementById("formEntrada");
         if (!_validateForm("formEntrada")) return;
         const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-entrada");
         const raw = _readFormAsObject(form);
-        // Mapear nombres del form al contrato del servicio
-        // (servicio espera fechaCompra + puntoEcaId, no "fecha" + "puntoId").
         const payload = {
             inventarioId: raw.inventarioId,
             materialId: currentMaterial?.materialId,
@@ -1107,48 +1149,25 @@
         };
         const stockBase = Number(document.getElementById("formEntradaStockActual")?.value || 0);
         const cant = Number(raw.cantidad);
-        const promise = fetch("/punto-eca/movimientos/registrar-compra/", {
-            method: "POST",
-            headers: _jsonHeaders(),
-            body: JSON.stringify(payload),
-        })
-            .then(_parseJsonResponse)
-            .then(({ ok, d }) => {
-                if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
-                // Mostrar comprobante con todos los campos de la compra.
-                // Al cerrarlo, redirigimos a la misma página con un deep-link
-                // (?inv=<id>&tab=tab-compra) para que el workspace se
-                // re-renderice con la nueva compra visible en el historial
-                // y el stock actualizado. La recarga es necesaria para que
-                // la lista de compras del backend se vuelva a pedir.
-                Swal.fire({
-                    icon: null,
-                    title: null,
-                    html: renderComprobante("compra", {
-                        materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formEntradaMaterialClasificacion")?.value || "—",
-                        materialCategoria: document.getElementById("formEntradaMaterialCategoria")?.value || "—",
-                        unidad: document.getElementById("formEntradaMaterialUnidad")?.value || "",
-                        cantidad: cant,
-                        precioUnitario: Number(raw.precioCompra) || 0,
-                        total: cant * (Number(raw.precioCompra) || 0),
-                        stockResultante: stockBase + cant,
-                        observaciones: raw.observaciones || "",
-                        fechaLegible: formatDateCO(raw.fecha) || raw.fecha,
-                    }),
-                    showConfirmButton: true,
-                    confirmButtonText: "Cerrar",
-                    confirmButtonColor: "#dc3545",
-                    width: "480px",
-                }).then(() => {
-                    if (!currentMaterial) return;
-                    const url = new URL(globalThis.location.href);
-                    url.searchParams.set("inv", currentMaterial.inventarioId);
-                    url.searchParams.set("tab", "tab-compra");
-                    globalThis.location.href = url.toString();
-                });
-            })
-            .catch(_showFetchError);
+        const promise = _registrarMovimiento({
+            fetchUrl: "/punto-eca/movimientos/registrar-compra/",
+            payload,
+            tipo: "compra",
+            comprobanteData: {
+                materialNombre: currentMaterial?.nombre || "—",
+                materialTipo: document.getElementById("formEntradaMaterialClasificacion")?.value || "—",
+                materialCategoria: document.getElementById("formEntradaMaterialCategoria")?.value || "—",
+                unidad: document.getElementById("formEntradaMaterialUnidad")?.value || "",
+                cantidad: cant,
+                precioUnitario: Number(raw.precioCompra) || 0,
+                total: cant * (Number(raw.precioCompra) || 0),
+                stockResultante: stockBase + cant,
+                observaciones: raw.observaciones || "",
+                fechaLegible: formatDateCO(raw.fecha) || raw.fecha,
+            },
+            redirectTab: "tab-compra",
+            btnColor: "#dc3545",
+        });
         withLoading(btn, () => promise);
     }
     function submitSalida(e) {
@@ -1157,8 +1176,6 @@
         const form = document.getElementById("formSalida");
         const btn = e?.currentTarget || document.getElementById("inv-btn-guardar-salida");
         const raw = _readFormAsObject(form);
-        // Mapear nombres del form al contrato del servicio
-        // (servicio espera fechaVenta + puntoEcaId, no "fecha" + "puntoId").
         const payload = {
             inventarioId: raw.inventarioId,
             materialId: currentMaterial?.materialId,
@@ -1171,51 +1188,28 @@
         };
         const stockBase = Number(document.getElementById("formSalidaStockActual")?.value || 0);
         const cant = Number(raw.cantidad);
-        // Buscar el nombre del centro seleccionado para mostrarlo en el comprobante
         const centroSel = document.getElementById("formSalidaCentro");
         const centroNombre = centroSel?.options[centroSel.selectedIndex]?.text || "";
-        const promise = fetch("/punto-eca/movimientos/registrar-venta/", {
-            method: "POST",
-            headers: _jsonHeaders(),
-            body: JSON.stringify(payload),
-        })
-            .then(_parseJsonResponse)
-            .then(({ ok, d }) => {
-                if (!ok) throw new Error(d?.mensaje || d?.message || "Error al registrar");
-                // Mostrar comprobante con todos los campos de la venta.
-                // Al cerrarlo, redirigimos a la misma página con un deep-link
-                // (?inv=<id>&tab=tab-venta) para que el workspace se
-                // re-renderice con la nueva venta visible en el historial
-                // y el stock actualizado.
-                Swal.fire({
-                    icon: null,
-                    title: null,
-                    html: renderComprobante("venta", {
-                        materialNombre: currentMaterial?.nombre || "—",
-                        materialTipo: document.getElementById("formSalidaMaterialClasificacion")?.value || "—",
-                        materialCategoria: document.getElementById("formSalidaMaterialCategoria")?.value || "—",
-                        unidad: document.getElementById("formSalidaMaterialUnidad")?.value || "",
-                        cantidad: cant,
-                        precioUnitario: Number(raw.precioVenta) || 0,
-                        total: cant * (Number(raw.precioVenta) || 0),
-                        stockResultante: stockBase - cant,
-                        observaciones: raw.observaciones || "",
-                        fechaLegible: formatDateCO(raw.fecha) || raw.fecha,
-                        centroNombre: centroNombre,
-                    }),
-                    showConfirmButton: true,
-                    confirmButtonText: "Cerrar",
-                    confirmButtonColor: "#198754",
-                    width: "480px",
-                }).then(() => {
-                    if (!currentMaterial) return;
-                    const url = new URL(globalThis.location.href);
-                    url.searchParams.set("inv", currentMaterial.inventarioId);
-                    url.searchParams.set("tab", "tab-venta");
-                    globalThis.location.href = url.toString();
-                });
-            })
-            .catch(_showFetchError);
+        const promise = _registrarMovimiento({
+            fetchUrl: "/punto-eca/movimientos/registrar-venta/",
+            payload,
+            tipo: "venta",
+            comprobanteData: {
+                materialNombre: currentMaterial?.nombre || "—",
+                materialTipo: document.getElementById("formSalidaMaterialClasificacion")?.value || "—",
+                materialCategoria: document.getElementById("formSalidaMaterialCategoria")?.value || "—",
+                unidad: document.getElementById("formSalidaMaterialUnidad")?.value || "",
+                cantidad: cant,
+                precioUnitario: Number(raw.precioVenta) || 0,
+                total: cant * (Number(raw.precioVenta) || 0),
+                stockResultante: stockBase - cant,
+                observaciones: raw.observaciones || "",
+                fechaLegible: formatDateCO(raw.fecha) || raw.fecha,
+                centroNombre: centroNombre,
+            },
+            redirectTab: "tab-venta",
+            btnColor: "#198754",
+        });
         withLoading(btn, () => promise);
     }
 
@@ -1510,13 +1504,27 @@
     // ============================================================
     // SUBMIT: EDITAR COMPRA / VENTA (modales)
     // ============================================================
+    function _editarMovimiento({fetchUrl, payload, modalId, successTitle, btn}) {
+        const promise = fetch(fetchUrl, {
+            method: "PATCH",
+            headers: _jsonHeaders(),
+            body: JSON.stringify(payload),
+        })
+            .then(_parseJsonResponse)
+            .then(({ok, d}) => {
+                if (!ok) throw new Error(d?.mensaje || "Error al editar");
+                bootstrap.Modal.getInstance(document.getElementById(modalId))?.hide();
+                _showSuccessSwal(successTitle, undefined, 1500);
+                setTimeout(() => globalThis.location.reload(), 1500);
+            })
+            .catch(_showFetchError);
+        withLoading(btn, () => promise);
+    }
     function submitEditarCompra() {
         if (!_validateForm("inv-form-editar-compra")) return;
         const form = document.getElementById("inv-form-editar-compra");
         const btn = document.getElementById("inv-btn-guardar-editar-compra");
         const raw = _readFormAsObject(form);
-        // Validar stock resultante con la edición. El stock actual ya
-        // incluye esta compra, así que el nuevo stock = actual - original + nuevo.
         const stockActual = Number(document.getElementById("inv-edit-compra-stock-actual")?.value || 0);
         const capacidad = Number(document.getElementById("inv-edit-compra-capacidad-maxima")?.value || 0);
         const cantOriginal = Number(document.getElementById("inv-edit-compra-cantidad-original")?.value || 0);
@@ -1530,36 +1538,25 @@
             });
             return;
         }
-        // Mapear nombres del form al contrato del servicio.
-        const payload = {
-            compraId: _safeStr(raw.id),
-            fechaCompra: raw.fecha,
-            cantidad: nuevaCant,
-            precioCompra: Number(raw.precioCompra),
-            observaciones: raw.observaciones || "",
-        };
-        const promise = fetch(`/punto-eca/movimientos/editar-compra/${_safeStr(raw.id)}/`, {
-            method: "PATCH",
-            headers: _jsonHeaders(),
-            body: JSON.stringify(payload),
-        })
-            .then(_parseJsonResponse)
-            .then(({ ok, d }) => {
-                if (!ok) throw new Error(d?.mensaje || "Error al editar");
-                bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-compra"))?.hide();
-                _showSuccessSwal("Compra actualizada", undefined, 1500);
-                setTimeout(() => globalThis.location.reload(), 1500);
-            })
-            .catch(_showFetchError);
-        withLoading(btn, () => promise);
+        _editarMovimiento({
+            fetchUrl: `/punto-eca/movimientos/editar-compra/${_safeStr(raw.id)}/`,
+            payload: {
+                compraId: _safeStr(raw.id),
+                fechaCompra: raw.fecha,
+                cantidad: nuevaCant,
+                precioCompra: Number(raw.precioCompra),
+                observaciones: raw.observaciones || "",
+            },
+            modalId: "inv-modal-editar-compra",
+            successTitle: "Compra actualizada",
+            btn,
+        });
     }
     function submitEditarVenta() {
         if (!_validateForm("inv-form-editar-venta")) return;
         const form = document.getElementById("inv-form-editar-venta");
         const btn = document.getElementById("inv-btn-guardar-editar-venta");
         const raw = _readFormAsObject(form);
-        // Validar stock restante con la edición. El stock actual ya
-        // incluye esta venta, así que el stock nuevo = actual + original - nuevo.
         const stockActual = Number(document.getElementById("inv-edit-venta-stock-actual")?.value || 0);
         const cantOriginal = Number(document.getElementById("inv-edit-venta-cantidad-original")?.value || 0);
         const nuevaCant = Number(raw.cantidad);
@@ -1572,7 +1569,6 @@
             });
             return;
         }
-        // Mapear nombres del form al contrato del servicio.
         const payload = {
             ventaId: _safeStr(raw.id),
             fechaVenta: raw.fecha,
@@ -1582,20 +1578,13 @@
         };
         const centroSel = document.getElementById("inv-edit-venta-centro");
         if (centroSel?.value) payload.centroAcopioId = centroSel.value;
-        const promise = fetch(`/punto-eca/movimientos/editar-venta/${_safeStr(raw.id)}/`, {
-            method: "PATCH",
-            headers: _jsonHeaders(),
-            body: JSON.stringify(payload),
-        })
-            .then(_parseJsonResponse)
-            .then(({ ok, d }) => {
-                if (!ok) throw new Error(d?.mensaje || "Error al editar");
-                bootstrap.Modal.getInstance(document.getElementById("inv-modal-editar-venta"))?.hide();
-                _showSuccessSwal("Venta actualizada", undefined, 1500);
-                setTimeout(() => globalThis.location.reload(), 1500);
-            })
-            .catch(_showFetchError);
-        withLoading(btn, () => promise);
+        _editarMovimiento({
+            fetchUrl: `/punto-eca/movimientos/editar-venta/${_safeStr(raw.id)}/`,
+            payload,
+            modalId: "inv-modal-editar-venta",
+            successTitle: "Venta actualizada",
+            btn,
+        });
     }
 
     // ============================================================

@@ -1,0 +1,83 @@
+@startuml publicaciones_feed
+title CU-04/05: Explorar Feed y Retroalimentar
+
+actor "Ciudadano" as User
+participant "Navegador" as Browser
+participant "publicaciones/views.py" as PubView
+participant "PublicacionService\n(publicaciones/service.py)" as PubService
+participant "Publicacion Model" as PubModel
+participant "Comentario Model" as ComModel
+participant "Reaccion Model" as ReacModel
+participant "Guardados Model" as GuardModel
+database "PostgreSQL" as DB
+
+== CU-04.1: Listar Feed Paginado ==
+
+User -> Browser: Navegar a /publicaciones/
+Browser -> PubView: GET /publicaciones/
+PubView -> PubService: obtener_feed_paginado(page, per_page)
+PubService -> DB: SELECT FROM publicaciones_publicacion\nWHERE estado=ACTIVO\n+select_related(usuario, categoria)\n+prefetch_related(imagenes, comentarios, reacciones)\nORDER BY -fecha_creacion
+DB --> PubService: QuerySet de publicaciones
+PubService -> PubService: Paginar resultados\n+ calcular metadatos (total, page, has_next)
+PubService --> PubView: {publicaciones, metadatos}
+PubView --> Browser: Render template con feed
+Browser -> JS: Renderizar lista de publicaciones
+
+== CU-04.2: Ver Detalle con Multimedia ==
+
+User -> Browser: Hacer clic en publicación
+Browser -> PubView: GET /publicaciones/<id>/
+PubView -> DB: SELECT publicacion + imagenes + comentarios + reacciones
+DB --> PubView: Publicación completa
+PubView --> Browser: Render detalle con imágenes y video
+
+== CU-05.1: Toggle Like/Dislike ==
+
+User -> Browser: Presionar "Me gusta"
+Browser -> PubView: POST /publicaciones/<id>/like/
+PubView -> PubView: Verificar usuario autenticado
+PubView -> DB: SELECT FROM publicaciones_reaccion\nWHERE usuario=user AND publicacion=pub
+alt Ya existe reacción
+    alt Mismo tipo (like→like)
+        PubView -> DB: DELETE reacción (toggle off)
+    else Tipo diferente (like→dislike o viceversa)
+        PubView -> DB: UPDATE reacción (cambiar tipo)
+    end
+else No existe reacción
+    PubView -> DB: INSERT reacción (tipo=LIKE)
+end
+PubView -> DB: SELECT COUNT FROM publicaciones_reaccion\nWHERE publicacion=pub AND tipo=LIKE
+PubView --> Browser: JsonResponse({likes_count, user_reacted})
+
+== CU-05.2: Publicar Comentario ==
+
+User -> Browser: Escribir comentario
+Browser -> PubView: POST /publicaciones/<id>/comentar/ (texto)
+
+PubView -> PubView: Sanitizar texto
+note right: django.utils.html.escape()\n(previene XSS, auditado por SonarCloud)
+
+PubView -> PubView: Validar longitud (max 500 chars)
+alt Comentario excede 500 caracteres
+    PubView --> Browser: Error EXT-17: "Máximo 500 caracteres"
+else Comentario vacío
+    PubView --> Browser: Error EXT-18: "El comentario no puede estar vacío"
+else Comentario válido
+    PubView -> DB: INSERT INTO publicaciones_comentario\n(usuario, publicacion, texto)
+    DB --> PubView: OK
+    PubView --> Browser: JsonResponse({ok, comentario})
+end
+
+== CU-04.3: Toggle Guardados ==
+
+User -> Browser: Guardar publicación en favoritos
+Browser -> PubView: POST /publicaciones/<id>/guardar/
+PubView -> DB: SELECT FROM publicaciones_guardados\nWHERE usuario=user AND publicacion=pub
+alt Ya guardada
+    PubView -> DB: DELETE guardado (toggle off)
+else No guardada
+    PubView -> DB: INSERT guardado
+end
+PubView --> Browser: JsonResponse({is_saved})
+
+@enduml

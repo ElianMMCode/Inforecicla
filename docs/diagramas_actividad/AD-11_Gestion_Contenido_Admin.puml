@@ -1,0 +1,169 @@
+@startuml
+title **AD-11: Gestion de Contenido (Admin)**
+
+|#LightGreen|Administrador|
+|#LightYellow|Base de Datos|
+
+|Administrador|
+start
+
+partition "== CRUD PUBLICACIONES ==" {
+  :Accede a /panel_admin/publicaciones/;
+
+  if (Accion?) then (Crear Publicacion)
+    :POST /panel_admin/publicaciones/crear/;
+    :Formulario:
+    - Titulo (requerido, max 255)
+    - Categoria (FK CategoriaPublicacion)
+    - Contenido (texto rico)
+    - Resumen (max 500 chars)
+    - Destacado (boolean)
+    - Video (upload o URL externa)
+    - Video thumbnail
+    - Imagenes multiples;
+
+    :Valida campos obligatorios;
+    if (Contenido vacio?) then (si)
+      :Error: "El contenido es obligatorio";
+      stop
+    endif
+
+    :Valida imagenes:
+    - Extensiones: jpg, jpeg, png, webp
+    - Tamano maximo: 5MB por imagen;
+    :Valida video:
+    - Tamano maximo: 12MB
+    - Extensiones permitidas;
+
+    if (Datos validos?) then (si)
+      |Base de Datos|
+      :Crea Publicacion;
+      :Guarda ImagenPublicacion asociadas;
+      :Guarda video si proporcionado;
+
+      :Signal post_save Publicacion;
+
+      |Sistema (Django)|
+      :notificar_nueva_publicacion();
+      :Para cada ciudadano (excepto autor):
+      - Crea Notificacion
+      - envia notificacion_realtime via WebSocket;
+    endif
+
+  elseif (Editar) then (si)
+    :GET /panel_admin/publicaciones/<id>/editar/;
+    :Carga formulario con datos existentes;
+
+    |Base de Datos|
+    :SELECT Publicacion + ImagenPublicacion;
+
+    :POST /panel_admin/publicaciones/<id>/editar/;
+    :Actualiza campos de la publicacion;
+
+    |Base de Datos|
+    :UPDATE Publicacion;
+
+  elseif (Ver detalle) then (si)
+    :GET /panel_admin/publicaciones/<id>/;
+
+  elseif (Exportar) then (si)
+    if (PDF?) then (si)
+      :GET /panel_admin/publicaciones/exportar/pdf/;
+    else (Excel)
+      :GET /panel_admin/publicaciones/exportar/excel/;
+    endif
+  endif
+}
+
+partition "== CRUD CATEGORIAS PUBLICACION ==" {
+  :Accede a /panel_admin/categorias-publicaciones/;
+
+  if (Crear?) then (si)
+    :POST /panel_admin/categorias-publicaciones/crear/;
+    :Crea CategoriaPublicacion con nombre, descripcion, tipo;
+    |Base de Datos|
+    :INSERT CategoriaPublicacion;
+  elseif (Editar?) then (si)
+    :POST /panel_admin/categorias-publicaciones/<id>/editar/;
+    |Base de Datos|
+    :UPDATE CategoriaPublicacion;
+  elseif (Exportar?) then (si)
+    :PDF o Excel con django-import-export;
+  endif
+}
+
+partition "== CRUD TIPOS PUBLICACION ==" {
+  :Accede a /panel_admin/tipos-publicaciones/;
+
+  if (Crear?) then (si)
+    :POST /panel_admin/tipos-publicaciones/crear/;
+    :Crea TipoPublicacion con nombre, descripcion;
+    |Base de Datos|
+    :INSERT TipoPublicacion;
+  elseif (Editar?) then (si)
+    :POST /panel_admin/tipos-publicaciones/<id>/editar/;
+    |Base de Datos|
+    :UPDATE TipoPublicacion;
+  elseif (Exportar?) then (si)
+    :PDF o Excel;
+  endif
+}
+
+partition "== CRUD MATERIALES ==" {
+  :Accede a /panel_admin/materiales/;
+
+  if (Crear?) then (si)
+    :POST /panel_admin/materiales/crear/;
+    :Crea Material con:
+    - Nombre, descripcion
+    - imagen_url
+    - FK CategoriaMaterial
+    - FK TipoMaterial;
+    |Base de Datos|
+    :INSERT Material;
+  elseif (Editar?) then (si)
+    :POST /panel_admin/materiales/<id>/editar/;
+    |Base de Datos|
+    :UPDATE Material;
+  elseif (Gestion) then (si)
+    :GET /panel_admin/materiales/gestion/;
+    :Vista unificada de materiales,
+    categorias y tipos;
+  elseif (Exportar?) then (si)
+    :PDF o Excel;
+  endif
+}
+
+partition "== CRUD CATEGORIAS MATERIAL ==" {
+  :Accede a /panel_admin/categorias-materiales/;
+
+  if (Crear?) then (si)
+    :POST /panel_admin/categorias-materiales/crear/;
+    :Crea CategoriaMaterial con nombre, descripcion, FK TipoMaterial;
+    |Base de Datos|
+    :INSERT CategoriaMaterial;
+  elseif (Editar?) then (si)
+    :POST /panel_admin/categorias-materiales/<id>/editar/;
+    |Base de Datos|
+    :UPDATE CategoriaMaterial;
+  endif
+}
+
+partition "== CRUD TIPOS MATERIAL ==" {
+  :Accede a /panel_admin/tipos-materiales/;
+
+  if (Crear?) then (si)
+    :POST /panel_admin/tipos-materiales/crear/;
+    :Crea TipoMaterial con nombre, descripcion;
+    |Base de Datos|
+    :INSERT TipoMaterial;
+  elseif (Editar?) then (si)
+    :POST /panel_admin/tipos-materiales/<id>/editar/;
+    |Base de Datos|
+    :UPDATE TipoMaterial;
+  endif
+}
+
+stop
+
+@enduml

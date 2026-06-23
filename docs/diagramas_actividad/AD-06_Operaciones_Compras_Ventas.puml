@@ -1,0 +1,147 @@
+@startuml
+title **AD-06: Operaciones de Compras y Ventas**
+
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Gestor ECA|
+start
+:Accede a /punto-eca/movimientos/;
+
+|Sistema (Django)|
+:render_seccion("movimientos");
+:Lista historial de compras y ventas del punto;
+
+partition "== REGISTRAR COMPRA ==" {
+  :POST /punto-eca/movimientos/registrar-compra/;
+  :Selecciona material de inventario;
+  :Ingresa: fecha, cantidad (>0), precio, observaciones;
+
+  |Sistema (Django)|
+  :registros_compras();
+
+  :Valida campos obligatorios;
+  :Valida que fecha no sea futura;
+  :Valida que fecha no sea anterior al dia 1 del mes actual;
+
+  if (Fecha invalida?) then (si)
+    :Error: "La fecha no puede ser mayor al dia de hoy"
+    o "La fecha no puede ser menor al mes actual";
+    stop
+  endif
+
+  :Valida cantidad > 0;
+  :Valida precio >= 0 (si se proporciona);
+
+  if (Datos validos?) then (si)
+
+    |Base de Datos|
+    :Busca Inventario por ID;
+
+    |Sistema (Django)|
+    :Calcula delta de capacidad restante;
+    if (Capacidad suficiente?) then (si)
+      |Base de Datos|
+      :Crea CompraInventario;
+      :Actualiza Inventario.stock_actual;
+      :Inventario.save() recalcula ocupacion y alerta;
+
+      if (Alerta cambio?) then (si)
+        |Sistema (Django)|
+        :Signal: notificar_alerta_inventario();
+      endif
+
+    else (no)
+      :Error: "Capacidad del inventario superada";
+    endif
+  endif
+}
+
+partition "== REGISTRAR VENTA ==" {
+  :POST /punto-eca/movimientos/registrar-venta/;
+  :Selecciona material de inventario;
+  :Selecciona centro de acopio (opcional);
+  :Ingresa: fecha, cantidad (>0), precio, observaciones;
+
+  |Sistema (Django)|
+  :registros_ventas();
+
+  :Valida fecha (misma logica que compra);
+  :Valida cantidad > 0;
+  :Valida precio >= 0;
+
+  if (Datos validos?) then (si)
+
+    |Base de Datos|
+    :Busca Inventario por ID;
+
+    |Sistema (Django)|
+    if (Stock suficiente?) then (si)
+      |Base de Datos|
+      :Crea VentaInventario;
+      :Actualiza Inventario.stock_actual;
+      :Inventario.save() recalcula ocupacion y alerta;
+
+    else (no)
+      :Error: "Stock insuficiente para la venta";
+    endif
+  endif
+}
+
+partition "== EDITAR OPERACION ==" {
+  :POST editar-compra/editar-venta con ID;
+
+  |Sistema (Django)|
+  :Busca CompraInventario o VentaInventario;
+  :Calcula delta (nuevo valor - valor anterior);
+
+  if (Es compra editada?) then (si)
+    :Calcula: stock_nuevo = stock_actual + delta;
+  else (venta editada)
+    :Calcula: stock_nuevo = stock_actual - delta;
+  endif
+
+  if (Stock resultante invalido?) then (si)
+    :Error: "Stock resultante no valido";
+  else (si)
+    |Base de Datos|
+    :UPDATE CompraInventario o VentaInventario;
+    :UPDATE Inventario.stock_actual;
+    :Inventario.save() recalcula ocupacion y alerta;
+  endif
+}
+
+partition "== BORRAR OPERACION ==" {
+  :DELETE borrar-compra/borrar-venta con ID;
+
+  |Sistema (Django)|
+  :Solo acepta metodo DELETE (405 a otros);
+
+  if (Es compra?) then (si)
+    :Delta: resta cantidad del stock;
+  else (venta)
+    :Delta: suma cantidad al stock;
+  endif
+
+  if (Stock resultante invalido?) then (si)
+    :Error;
+  else (si)
+    |Base de Datos|
+    :DELETE CompraInventario o VentaInventario;
+    :UPDATE Inventario.stock_actual;
+  endif
+}
+
+note right
+  **Validacion de fechas:**
+  - No permite fechas futuras
+  - No permite fechas antes del
+    primer dia del mes actual
+  - Validador: validar_fecha_operacion()
+    en operations/models.py
+end note
+
+stop
+
+@enduml

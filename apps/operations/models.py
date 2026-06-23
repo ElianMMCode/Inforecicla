@@ -77,6 +77,12 @@ class CompraInventario(CreacionModificacionModel):
 
     observaciones = models.TextField(max_length=500, blank=True)
 
+    carga_masiva = models.BooleanField(
+        default=False,
+        verbose_name="Carga masiva",
+        help_text="Indica si este registro fue creado mediante importación CSV masiva",
+    )
+
     def __str__(self):
         return f"Compra {self.cantidad} - {self.inventario.material.nombre} ({self.fecha_compra.strftime('%d/%m/%Y')})"
 
@@ -140,6 +146,12 @@ class VentaInventario(CreacionModificacionModel):
     )
 
     observaciones = models.TextField(max_length=500, blank=True)
+
+    carga_masiva = models.BooleanField(
+        default=False,
+        verbose_name="Carga masiva",
+        help_text="Indica si este registro fue creado mediante importación CSV masiva",
+    )
 
     centro_acopio = models.ForeignKey(
         "ecas.CentroAcopio",

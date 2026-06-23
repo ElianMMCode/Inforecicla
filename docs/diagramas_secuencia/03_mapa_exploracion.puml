@@ -1,0 +1,80 @@
+@startuml mapa_exploracion
+title CU-02/03: Explorar Mapa de Puntos ECA
+
+actor "Ciudadano" as User
+participant "Navegador\n(JavaScript/Leaflet)" as JS
+participant "render_mapa\n(map/views.py)" as MapView
+participant "api_puntos_eca\n(map/views.py)" as ApiPuntos
+participant "api_materiales\n(map/views.py)" as ApiMat
+participant "api_puntos_eca_detalle\n(map/views.py)" as ApiDetalle
+participant "api_puntos_eca_por_material\n(map/views.py)" as ApiPorMat
+participant "api_arcgis_puntos\n(map/views.py)" as ApiArcGIS
+database "PostgreSQL\n(PuntoECA, Inventario)" as DB
+participant "ArcGIS API\n(externa)" as ArcGIS
+
+== CU-02.1: Renderizar Mapa ==
+
+User -> Browser: Navegar a /mapa/
+Browser -> MapView: GET /mapa/
+MapView --> Browser: Render template mapa/mapa.html
+Browser -> Browser: Inicializar Leaflet
+
+== CU-02.2: Cargar Puntos ECA ==
+
+JS -> ApiPuntos: GET /mapa/api/puntos-eca
+ApiPuntos -> DB: SELECT FROM ecas_puntoeca\nWHERE es_visible_en_mapa=True\n+select_related(localidad, gestor_eca)
+DB --> ApiPuntos: QuerySet de puntos
+ApiPuntos -> ApiPuntos: Serializar cada punto:\n{puntoEcaID, latitud, longitud,\nnombrePunto, localidadNombre,\ndireccion, celular, email, horarioAtencion}
+ApiPuntos --> JS: JsonResponse(puntos)
+JS -> JS: Renderizar marcadores en mapa
+
+== CU-02.3: Cargar Materiales (para filtros) ==
+
+JS -> ApiMat: GET /mapa/api/materiales
+ApiMat -> DB: SELECT ALL FROM inventory_material
+ApiMat -> DB: Por cada material:\nSELECT COUNT(*) FROM inventory_inventario\nWHERE material=m AND punto.visible=True
+DB --> ApiMat: Conteos
+ApiMat --> JS: JsonResponse([{materialId, nombre, puntosCantidad}])
+JS -> JS: Poblar filtro de materiales
+
+== EXT-03: Filtrar por Material ==
+
+User -> Browser: Seleccionar material en filtro
+Browser -> ApiPorMat: GET /mapa/api/puntos-eca/por-material/<material_id>
+ApiPorMat -> DB: SELECT FROM inventory_inventario\nWHERE material_id=<id>\n→ obtener punto_eca_ids
+ApiPorMat -> DB: SELECT FROM ecas_puntoeca\nWHERE pk IN (punto_eca_ids)\nAND es_visible_en_mapa=True\n+select_related(localidad, gestor_eca)
+DB --> ApiPorMat: Puntos con ese material
+ApiPorMat --> JS: JsonResponse(lista de puntos filtrados)
+JS -> JS: Actualizar marcadores en mapa
+
+== CU-03: Consultar Detalle de Punto ECA ==
+
+User -> Browser: Hacer clic en marcador
+Browser -> ApiDetalle: GET /mapa/api/puntos-eca/detalle/<punto_id>
+ApiDetalle -> DB: SELECT FROM ecas_puntoeca\nWHERE pk=<id> AND es_visible_en_mapa=True
+ApiDetalle -> DB: SELECT FROM inventory_inventario\nWHERE punto_eca=<punto>\n+select_related(material)
+DB --> ApiDetalle: Punto + inventarios
+ApiDetalle -> ApiDetalle: Calcular porcentaje capacidad\npor cada material:\n(stock_actual/capacidad_maxima)*100
+ApiDetalle -> ApiDetalle: Resolver URLs de imágenes\n(logo_imagen_punto, foto_imagen_punto)
+ApiDetalle --> JS: JsonResponse({puntoEcaID, nombrePunto, direccion,\ndescripcion, materiales[], logoUrl, fotoUrl...})
+JS -> JS: Mostrar popup/modal con detalle
+
+== EXT-04: Geolocalización denegada ==
+
+note right of JS
+  Si el usuario deniega permisos de ubicación,
+  JS usa coordenadas por defecto:
+  Lat: 4.7110, Lon: -74.0721 (Bogotá)
+end note
+
+== EXT-05: Integración ArcGIS ==
+
+JS -> ApiArcGIS: GET /mapa/api/arcgis/puntos/
+ApiArcGIS -> ArcGIS: GET (sharing/rest/content/items/.../data)
+ArcGIS --> ApiArcGIS: JSON con features (Web Mercator)
+ApiArcGIS -> ApiArcGIS: _arcgis_collect_features()\nNormalizar estructuras (featureSet,\noperationalLayers, layers)
+ApiArcGIS -> ApiArcGIS: Para cada feature:\n_arcgis_feature_to_punto()\n- Extraer attributes\n- mercator_to_latlon(x, y)\n- Adaptar a estructura unificada
+ApiArcGIS --> JS: JsonResponse([{id, nombre, sigla, estado,\nlocalidad, direccion, latitud, longitud...}])
+JS -> JS: Agregar capa de marcadores ArcGIS
+
+@enduml

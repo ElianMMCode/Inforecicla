@@ -1,0 +1,118 @@
+@startuml asistente_ia_reciclabot
+title CU-11: Asistente IA (ReciclaBot)
+
+actor "Gestor ECA" as Gestor
+participant "Navegador" as Browser
+participant "asistente_api_view\n(reciclabot/views.py)" as View
+participant "AsistenteECAService\n(reciclabot/service.py)" as AIService
+participant "Groq API\n(LLM: llama-3.1-8b-instant)" as GroqAPI
+database "PostgreSQL\n(Inventario, Operaciones,\nEventos, Centros)" as DB
+
+== CU-11.1: Cargar Contexto del Punto ECA ==
+
+Gestor -> Browser: Abrir asistente en panel ECA
+Browser -> View: POST /punto-eca/asistente/\n(pregunta="¿Cómo está mi inventario?")
+View -> View: Verificar usuario autenticado
+View -> View: Validar campo pregunta no vacío
+alt Pregunta vacía
+    View --> Browser: Error 400:\n"El campo 'pregunta' es obligatorio"
+end
+
+View -> DB: SELECT PuntoECA WHERE gestor_eca=user
+alt No tiene punto ECA
+    View --> Browser: Error 403:\n"No tienes un Punto ECA asociado"
+end
+
+View -> AIService: AsistenteECAService()
+
+== Compilar Contexto en Tiempo Real ==
+
+AIService -> AIService: generar_contexto_eca(punto_eca)
+
+note right
+  El contexto se compila CADA VEZ que se consulta,
+  garantizando datos 100% actuales.
+end note
+
+AIService -> AIService: _contexto_datos_punto()\nnombre, dirección, descripción, teléfono, horario
+
+AIService -> AIService: _contexto_responsable()\nnombre, email, celular del gestor
+
+AIService -> DB: SELECT Inventario\nWHERE punto_eca=punto\n+select_related(material)
+DB --> AIService: items de inventario
+AIService -> AIService: _contexto_kpis()\n- Total inventario (unidades)\n- Capacidad total y %\n- Cantidad de materiales\n- Alertas y críticos
+AIService -> AIService: _contexto_inventario_detallado()\nPor cada material:\n  nombre, stock/capacidad, unidad,\n  precio compra/venta, estado
+
+AIService -> DB: SELECT COUNT(SUM(cantidad))\nFROM CompraInventario\nWHERE fecha >= primero_del_mes
+AIService -> DB: SELECT COUNT(SUM(cantidad))\nFROM VentaInventario\nWHERE fecha >= primero_del_mes
+DB --> AIService: entradas_mes, salidas_mes
+AIService -> AIService: _contexto_operaciones_mes()\nEntradas y salidas del mes actual
+
+AIService -> DB: SELECT últimos 3 CompraInventario\n+ últimos 3 VentaInventario\nORDER BY fecha DESC
+DB --> AIService: últimos movimientos
+AIService -> AIService: _contexto_movimientos()\nÚltimos 5 movimientos ordenados
+
+AIService -> DB: SELECT EventoInstancia\nWHERE punto_eca=punto\nAND fecha_inicio >= ahora\nORDER BY fecha_inicio LIMIT 5
+DB --> AIService: próximos eventos
+AIService -> AIService: _contexto_eventos()\nPróximos eventos calendarizados
+
+AIService -> DB: SELECT CentroAcopio\nWHERE visibilidad=GLOBAL\nOR (puntos_eca=punto AND visibilidad=ECA)
+DB --> AIService: centros
+AIService -> AIService: _contexto_centros()\nCentros globales y propios
+
+== CU-11.3: Consultar LLM ==
+
+AIService -> AIService: Construir prompt del sistema:
+note right
+  "Eres el Asistente Virtual de Inforecicla.
+  Tu función es ayudar al gestor del Punto ECA.
+  Solo tienes acceso a los datos reales: [contexto].
+  REGLAS:
+  1. Si preguntan por datos no en contexto, responder que no tiene acceso.
+  2. Si preguntan temas no relacionados con reciclaje, limitar respuesta.
+  3. Sé breve y profesional.
+  4. No mencionar el término 'contexto'."
+end note
+
+AIService -> GroqAPI: chat.completions.create(\nmodel="llama-3.1-8b-instant",\ntemperature=0.1,\nmax_tokens=500,\nmessages=[{system, user: pregunta}])
+GroqAPI --> AIService: Respuesta generada
+
+== CU-11.4: Persistir y Mostrar ==
+
+AIService --> View: respuesta (string)
+
+View -> View: Renderizar HTML:
+note right
+  <div class="chat-msg-user">
+    <div class="chat-msg-avatar">👤</div>
+    <div class="chat-msg-bubble">
+      [escape(pregunta)]  ← django.utils.html.escape
+    </div>
+  </div>
+  <div class="chat-msg-ai">
+    <div class="chat-msg-avatar">🤖</div>
+    <div class="chat-msg-bubble">
+      [escape(respuesta)]  ← django.utils.html.escape
+    </div>
+  </div>
+end note
+
+View --> Browser: HttpResponse(user_msg + ai_msg)
+
+== EXT-12: Bloquear Consulta Vacía ==
+
+note right of View
+  EXT-12: Si el campo 'pregunta'
+  está vacío o no existe,
+  retornar error 400 inmediatamente.
+end note
+
+== EXT-13: Fallo del Servicio IA ==
+
+alt Groq API falla (timeout, rate limit, etc.)
+    AIService -> AIService: Capturar excepción
+    AIService --> View: "Lo siento, hubo un problema\nal consultar la IA.\nInténtalo otra vez o contacta al soporte."
+    View --> Browser: HttpResponse con mensaje amigable
+end
+
+@enduml

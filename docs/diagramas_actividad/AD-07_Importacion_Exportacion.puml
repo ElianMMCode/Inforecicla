@@ -1,0 +1,130 @@
+@startuml
+title **AD-07: Importacion y Exportacion de Datos**
+
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Gestor ECA|
+start
+
+partition "== IMPORTACION MASIVA CSV (COMPRAS) ==" {
+  :Descarga plantilla CSV;
+  :GET /punto-eca/movimientos/descargar-plantilla/;
+  :Obtiene formato: fecha, material, cantidad, precio, observaciones;
+
+  :Prepara archivo CSV con los datos;
+
+  :POST /punto-eca/movimientos/compras/bulk_import/;
+  :Sube archivo CSV;
+
+  |Sistema (Django)|
+  :bulk_import_compras();
+  :Lee y parsea el archivo CSV;
+
+  if (Formato valido?) then (si)
+    :Itera sobre cada fila del CSV;
+
+    :Para cada fila:
+    1. Busca material por nombre/keywords
+    2. Obtiene inventario del punto ECA
+    3. Valida fecha (no futura, mes actual)
+    4. Valida cantidad > 0;
+
+    if (Material encontrado en catalogo?) then (si)
+      :Crea CompraInventario;
+      :Actualiza stock del inventario;
+      :Registra fila procesada con exito;
+    else (no)
+      :Registra fila omitida: "Material no encontrado";
+    endif
+
+    :Verifica errores por fila:
+    - Stock insuficiente: omite fila
+    - Datos invalidos: omite fila
+    - Guarda motivo del error;
+
+    |Base de Datos|
+    :Commit de transacciones exitosas;
+
+    |Sistema (Django)|
+    :Genera reporte de importacion:
+    - Filas procesadas con exito
+    - Filas omitidas con motivo;
+
+    |Gestor ECA|
+    :Descarga reporte de importacion;
+
+  else (no)
+    :Error: "Archivo corrupto o formato invalido";
+    :Aborta operacion;
+  endif
+}
+
+partition "== IMPORTACION MASIVA CSV (VENTAS) ==" {
+  :POST /punto-eca/movimientos/ventas/bulk_import/;
+  :Misma logica que compras pero con VentaInventario;
+}
+
+partition "== EXPORTACION A EXCEL/PDF ==" {
+  |Gestor ECA|
+  :Selecciona filtros de exportacion:
+  - Material
+  - Categoria
+  - Clasificacion
+  - Centro de Acopio
+  - Rango de fechas
+  - Rango de cantidades
+  - Rango de montos;
+
+  if (Tipo de exportacion?) then (Excel)
+    if (Que exportar?) then (Compras)
+      :GET /punto-eca/movimientos/exportar-compras-excel/;
+    elseif (Ventas) then (si)
+      :GET /punto-eca/movimientos/exportar-ventas-excel/;
+    elseif (Historial completo) then (si)
+      :GET /punto-eca/movimientos/exportar-historial-excel/;
+    endif
+
+    |Sistema (Django)|
+    :Genera archivo Excel con django-import-export;
+
+  else (PDF)
+    if (Que exportar?) then (Compras)
+      :GET /punto-eca/movimientos/exportar-compras-pdf/;
+    elseif (Ventas) then (si)
+      :GET /punto-eca/movimientos/exportar-ventas-pdf/;
+    elseif (Historial completo) then (si)
+      :GET /punto-eca/movimientos/exportar-historial-pdf/;
+    endif
+
+    |Sistema (Django)|
+    :Genera PDF con WeasyPrint;
+  endif
+
+  |Base de Datos|
+  :ejecuta consulta con filtros aplicados;
+
+  |Sistema (Django)|
+  :Construye archivo con los datos filtrados;
+
+  |Gestor ECA|
+  :Descarga archivo generado;
+}
+
+note right
+  **Bulk Import:**
+  - NO crea materiales nuevos en catalogo
+  - Si material no existe: omite fila
+  - Errores por fila son registrados
+  - Reporte detalla exitos y fallos
+
+  **Exportaciones:**
+  - Filtrado avanzado por multiples campos
+  - Fechas en zona America/Bogota
+  - Streams para archivos grandes
+end note
+
+stop
+
+@enduml

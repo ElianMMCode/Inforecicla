@@ -1,0 +1,177 @@
+@startuml
+title **AD-15: Sistema de Notificaciones y Respaldo**
+
+|#LightBlue|Todos los roles|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Todos los roles|
+start
+
+partition "== TRIGGER 1: NUEVA PUBLICACION ==" {
+  |Sistema (Django)|
+  :Signal post_save en Publicacion;
+  :notificar_nueva_publicacion();
+  :Solo si created == True;
+
+  |Base de Datos|
+  :Busca todos los ciudadanos (tipo_usuario=CIU);
+  :Excluye al autor de la publicacion;
+
+  |Sistema (Django)|
+  :Para cada ciudadano destinatario:
+  - Crea Notificacion (publicacion=instance)
+  - envia_notificacion_realtime(usuario_id, data);
+
+  |Base de Datos|
+  :INSERT multiples Notificacion;
+
+  |Sistema (Django)|
+  :enviar_notificacion_realtime():
+  - Usa async_to_sync
+  - Canal: notificaciones_{user_id}
+  - Datos: id, tipo, titulo, fecha, url;
+
+  note right
+    Los ciudadanos reciben
+    notificacion en tiempo real
+    via WebSocket
+  end note
+}
+
+partition "== TRIGGER 2: NUEVO MENSAJE CHAT ==" {
+  |Sistema (Django)|
+  :Signal post_save en Mensaje;
+  :notificar_mensaje();
+  :Solo si created == True;
+
+  if (Remitente == ciudadano?) then (si)
+    :Destinatario = gestor del PuntoECA;
+    :Titulo = "Nuevo mensaje de {nombre_ciudadano}";
+  else (gestor es remitente)
+    :Destinatario = ciudadano del chat;
+    :Titulo = "Nuevo mensaje de {nombre_punto}";
+  endif
+
+  |Base de Datos|
+  :Crea Notificacion (mensaje=instance);
+
+  |Sistema (Django)|
+  :enviar_notificacion_realtime(destinatario_id, data);
+}
+
+partition "== TRIGGER 3: ALERTA INVENTARIO ==" {
+  |Sistema (Django)|
+  :Signal pre_save en Inventario;
+  :Guarda valor anterior de alerta (_old_alerta);
+
+  :Signal post_save en Inventario;
+  :Compara alerta nueva vs alerta anterior;
+
+  if (Cambio a ALERTA o CRITICO?) then (si)
+    if (old_alerta != new_alerta?) then (si)
+      :Obtiene gestor del PuntoECA;
+      :Crea Notificacion (inventario=instance);
+      :enviar_notificacion_realtime(gestor_id, data);
+
+      note right
+        Solo notifica cuando
+        el estado CAMBIA, no en
+        cada guardado
+      end note
+    endif
+  endif
+}
+
+partition "== TRIGGER 4: EVENTOS PROXIMOS (24h) ==" {
+  |Sistema (Django)|
+  :En ecas/views.py:
+  _check_upcoming_event_notifications();
+
+  :Busca EventoInstancia con:
+  - fecha_inicio >= ahora
+  - fecha_inicio <= ahora + 24 horas;
+
+  if (Hay eventos proximos?) then (si)
+    :Para cada evento proximo:
+    - Verifica si ya se notifico (sesion);
+    - Crea Notificacion (evento_instancia=instance);
+    - envia_notificacion_realtime(gestor_id, data);
+  endif
+}
+
+partition "== GESTION DE NOTIFICACIONES ==" {
+  |Todos los roles|
+  :Visualiza indicador de notificaciones;
+  :Click en notificacion;
+
+  |Sistema (Django)|
+  :abrir_notificacion(notificacion_id);
+  :Determina tipo de referencia:
+  - publicacion: redirige a /publicaciones/<id>/
+  - mensaje: redirige a chat
+  - inventario: redirige a inventario
+  - evento: redirige a calendario;
+
+  :Marca notificacion como leida;
+
+  |Base de Datos|
+  :UPDATE Notificacion SET es_leido=True;
+
+  |Sistema (Django)|
+  :Redirige a URL correspondiente;
+}
+
+partition "== ELIMINAR NOTIFICACIONES ==" {
+  |Todos los roles|
+  :DELETE /publicaciones/notificacion/<id>/eliminar/;
+
+  |Sistema (Django)|
+  :eliminar_notificacion();
+  :Verifica que no haya sido eliminada antes;
+
+  |Base de Datos|
+  :DELETE Notificacion;
+}
+
+partition "== RESPALDO DE BASE DE DATOS ==" {
+  |Administrador|
+  :Solicita generacion de backup;
+
+  |Sistema (Django)|
+  :Verifica is_superuser == True;
+  if (Es superusuario?) then (si)
+    :Genera dump estructural y de datos;
+    :Empaqueta en formato JSON o SQL;
+
+    note right
+      Ejecucion en background:
+      no bloquea transacciones
+      activas de compras/ventas
+    end note
+
+    :Entrega archivo para descarga;
+
+    |Administrador|
+    :Descarga respaldo generado;
+  else (no)
+    :Error 403: Privilegios insuficientes;
+  endif
+}
+
+note right
+  **4 triggers de notificaciones:**
+  1. Publicacion nueva -> ciudadanos
+  2. Mensaje chat -> destinatario
+  3. Alerta inventario -> gestor
+  4. Eventos proximos 24h -> gestor
+
+  **WebSocket:**
+  - Canal: notificaciones_{user_id}
+  - Backend: channels_redis (Redis)
+  - Async_to_sync para signals
+end note
+
+stop
+
+@enduml

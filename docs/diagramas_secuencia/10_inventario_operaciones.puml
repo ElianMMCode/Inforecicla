@@ -1,0 +1,95 @@
+@startuml inventario_operaciones
+title Panel ECA: Sección Inventario y Operaciones (CU-07/09)
+
+actor "Gestor ECA" as Gestor
+participant "Navegador\n(JavaScript)" as JS
+participant "render_seccion(inventario)\n(ecas/views.py)" as Render
+participant "InventoryService\n(inventory/service.py)" as InvSvc
+participant "CompraInventarioService\n(operations/service.py)" as CompSvc
+participant "VentaInventarioService\n(operations/service.py)" as VentSvc
+participant "Inventario Model" as InvModel
+participant "CompraInventario Model" as CompModel
+participant "VentaInventario Model" as VentModel
+database "PostgreSQL" as DB
+
+== Cargar Sección Inventario ==
+
+Gestor -> Browser: Navegar a /punto-eca/inventario/
+Browser -> Render: GET /punto-eca/inventario/
+Render -> DB: SELECT Inventario\nWHERE punto_eca=punto\n+select_related(material__categoria)
+Render -> Render: _calcular_kpis_inventario(materiales):
+note right
+  - total_stock, total_capacidad
+  - total_ok, total_alerta, total_critico
+  - ocupacion_porcentaje
+  - material_mayor_ocupacion
+  - material_mas_caro, material_mas_barato
+  - costo_total_inventario
+  - materiales_criticos (lista)
+end note
+Render -> DB: SELECT historial_compras\nWHERE inventario.punto_eca=punto\nORDER BY -fecha_compra
+Render -> DB: SELECT historial_ventas\nWHERE inventario.punto_eca=punto\nORDER BY -fecha_venta
+Render -> DB: SELECT centros (globales + locales)
+Render --> JS: Render section-inventario.html\ncon inv_data_json pre-serializado
+
+== Buscar Materiales Fuera de Inventario (Catálogo) ==
+
+JS -> InvSvc: GET /punto-eca/inventario/catalogo/buscar/?puntoId=X&texto=Y
+InvSvc -> InvSvc: Validar punto_id (formato UUID)
+InvSvc -> DB: SELECT material_id FROM inventario\nWHERE punto_eca=punto (excluidos)
+InvSvc -> DB: SELECT FROM material\nWHERE id NOT IN (excluidos)\n+aplicar filtros (query, categoría, clasificación)
+DB --> InvSvc: materiales disponibles
+InvSvc --> JS: JsonResponse([{materialId, nmbMaterial,\nnmbCategoria, unidad, imagenUrl...}])
+
+== CU-09: Agregar Material al Inventario ==
+
+Gestor -> Browser: Seleccionar material del catálogo
+JS -> InvSvc: POST /punto-eca/inventario/agregar/\n{materialId, puntoEcaId, stockActual,\ncapacidadMaxima, unidadMedida,\nprecioCompra, precioVenta, umbralAlerta,\numbralCritico}
+InvSvc -> DB: SELECT Material WHERE id=materialId
+InvSvc -> DB: SELECT PuntoECA WHERE id=puntoEcaId
+InvSvc -> DB: INSERT INTO inventory_inventario
+DB --> InvSvc: OK
+InvSvc --> JS: {mensaje: "Material agregado", error: false}
+
+== CU-07A: Registrar Compra ==
+
+Gestor -> Browser: Registrar compra
+JS -> CompSvc: POST /punto-eca/movimientos/registrar-compra/\n{inventarioId, cantidad, precioCompra,\nfechaCompra, observaciones}
+CompSvc -> DB: SELECT Inventario WHERE id=inventarioId
+CompSvc -> CompSvc: Validar:\n- cantidad > 0\n- precio >= 0\n- fecha no futura\n- fecha en mes actual\n- stock_actual + cantidad <= capacidad_maxima
+alt Validación exitosa
+    CompSvc -> DB: INSERT CompraInventario\n(inventario, cantidad, precio_compra,\nfecha_compra, observaciones)
+    CompSvc -> DB: UPDATE Inventario\nSET stock_actual = stock_actual + cantidad
+    CompSvc -> CompSvc: recalcular_ocupacion()\n+ recalcular_alerta()
+    CompSvc --> JS: {success: true, compraId: ...}
+else Stock excedería capacidad
+    CompSvc --> JS: Error EXT-08:\n"La capacidad máxima se excedería"
+end
+
+== CU-07B: Registrar Venta ==
+
+Gestor -> Browser: Registrar venta
+JS -> VentSvc: POST /punto-eca/movimientos/registrar-venta/\n{inventarioId, cantidad, precioVenta,\nfechaVenta, observaciones, centroAcopioId?}
+VentSvc -> DB: SELECT Inventario WHERE id=inventarioId
+VentSvc -> VentSvc: Validar:\n- cantidad > 0\n- precio >= 0\n- stock_actual >= cantidad
+alt Validación exitosa
+    VentSvc -> DB: INSERT VentaInventario\n(inventario, cantidad, precio_venta,\nfecha_venta, observaciones, centro_acopio)
+    VentSvc -> DB: UPDATE Inventario\nSET stock_actual = stock_actual - cantidad
+    VentSvc -> VentSvc: recalcular_ocupacion()\n+ recalcular_alerta()
+    VentSvc --> JS: {success: true, ventaId: ...}
+else Stock insuficiente
+    VentSvc --> JS: Error EXT-09:\n"Stock insuficiente para la venta"
+end
+
+== CU-07: Editar Transacción ==
+
+Gestor -> Browser: Editar compra existente
+JS -> CompSvc: PATCH /punto-eca/movimientos/compra/<id>/
+CompSvc -> DB: SELECT compra actual
+CompSvc -> CompSvc: Calcular delta:\nnueva_cantidad - cantidad_anterior
+CompSvc -> DB: UPDATE compra SET cantidad=nueva,\nprecio=nuevo, fecha=nueva
+CompSvc -> DB: UPDATE inventario SET\nstock_actual += delta
+CompSvc -> CompSvc: Validar stock no exceda capacidad
+CompSvc --> JS: {success: true}
+
+@enduml

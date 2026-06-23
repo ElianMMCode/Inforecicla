@@ -1,0 +1,74 @@
+@startuml panel_eca_perfil
+title Panel ECA: Sección Perfil (Gestor + Punto ECA)
+
+actor "Gestor ECA" as Gestor
+participant "Navegador" as Browser
+participant "render_seccion(perfil)\n(ecas/views.py)" as RenderView
+participant "_build_perfil_context\n(ecas/views.py)" as BuildCtx
+participant "_build_perfil_pendientes\n(ecas/views.py)" as Pendientes
+participant "UserService\n(core/service.py)" as US
+participant "PuntoService\n(ecas/service.py)" as PS
+participant "Usuario Model" as UserModel
+participant "PuntoECA Model" as PuntoModel
+participant "toggle_visible\n(ecas/views.py)" as Toggle
+database "PostgreSQL" as DB
+
+== Cargar Sección Perfil ==
+
+Gestor -> Browser: Navegar a /punto-eca/perfil/
+Browser -> RenderView: GET /punto-eca/perfil/?tab=punto
+RenderView -> DB: SELECT PuntoECA WHERE gestor_eca=user
+RenderView -> BuildCtx: _build_perfil_context(punto, tab)
+
+BuildCtx -> Pendientes: _build_perfil_pendientes(usuario, punto)
+Pendientes -> Pendientes: Verificar campos del usuario:\nnombres, apellidos, email, celular,\ntipo_documento, numero_documento,\nfecha_nacimiento, localidad, biografía
+Pendientes -> Pendientes: Verificar campos del punto:\nnombre, descripción, dirección,\nteléfono, email, celular, localidad,\nsitio_web, horario, latitud, longitud
+Pendientes -> Pendientes: Verificar logo y foto del punto
+Pendientes --> BuildCtx: {encargado: [...], punto: [...],\nhay_pendientes: bool, total: int}
+BuildCtx --> RenderView: {seccion, usuario, punto,\nlocalidades, tipos_documento,\nperfil_pendientes, perfil_tab}
+
+RenderView --> Browser: Render puntoECA-layout.html\ncon section-perfil.html
+
+== Editar Perfil del Gestor (Usuario) ==
+
+Gestor -> Browser: Modificar datos del encargado
+Browser -> RenderView: POST /punto-eca/perfil/actualizar/<id>/
+RenderView -> US: UserService.editar_perfil(request, id)
+US -> US: Extraer campos del POST
+US -> UserModel: UPDATE usuario SET nombres, apellidos, celular,\nciudad, localidad, biografía, foto_perfil...
+US --> RenderView: {usuario: updated, errores: null}
+alt Sin errores
+    RenderView --> Browser: Redirect /punto-eca/perfil/ + "Perfil actualizado"
+else Con errores
+    RenderView --> Browser: Redirect /punto-eca/perfil/ + mensajes error
+end
+
+== Editar Datos del Punto ECA ==
+
+Gestor -> Browser: Modificar datos del punto
+Browser -> RenderView: POST /punto-eca/perfil/actualizar-punto/<id>/
+RenderView -> PS: PuntoService.editar_punto(request, id)
+PS -> PS: Extraer campos del POST:\nnombre, descripción, dirección,\nteléfono, email, celular,\nsitio_web, horario, latitud, longitud
+PS -> DB: UPDATE ecas_puntoeca SET ...
+DB --> PS: OK
+PS --> RenderView: {ok: true}
+
+RenderView --> Browser: Redirect /punto-eca/perfil/ + "Punto actualizado"
+
+== AJAX: Actualizar Punto ECA ==
+
+Browser -> RenderView: POST /punto-eca/perfil/actualizar-punto/<id>/\n(X-Requested-With: XMLHttpRequest)
+RenderView -> PS: editar_punto(request, id)
+PS --> RenderView: {ok: true}
+RenderView --> Browser: JsonResponse({ok: true,\nredirect_url: /punto-eca/perfil/})
+
+== Toggle Visibilidad en Mapa ==
+
+Gestor -> Browser: Cambiar checkbox "Visible en mapa"
+Browser -> Toggle: POST /punto-eca/pref/toggle-visible/
+Toggle -> DB: SELECT PuntoECA WHERE gestor_eca=user
+Toggle -> Toggle: Normalizar valor checkbox\n(on/1/true/True → boolean)
+Toggle -> DB: UPDATE ecas_puntoeca\nSET es_visible_en_mapa=<valor>
+Toggle --> Browser: Redirect /punto-eca/perfil/?tab=configuracion\n+ "Preferencias actualizadas"
+
+@enduml

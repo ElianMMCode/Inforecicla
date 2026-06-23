@@ -1,0 +1,149 @@
+@startuml
+title **AD-08: Calendario Operativo y Eventos**
+
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Gestor ECA|
+start
+:Accede a /punto-eca/calendario/;
+
+|Sistema (Django)|
+:_build_calendario_context(punto);
+:Construye eventos desde 4 fuentes:
+1. VentaInventario del punto
+2. CompraInventario del punto
+3. Evento programados del punto
+4. EventoInstancia (repeticiones);
+
+:Serie cada evento con:
+- id (venta-X, compra-X, evento-X, evinst-X)
+- type, title, start/end, backgroundColor
+- materialId, centroAcopioId;
+
+|Gestor ECA|
+:Visualiza calendario con eventos de:
+- Ventas (verde #28a745)
+- Compras (rojo #dc3545)
+- Eventos programados (color del evento)
+- Instancias repetidas (color del evento base);
+
+partition "== CREAR NUEVO EVENTO ==" {
+  :POST /punto-eca/calendario/evento/nuevo/;
+  :Formulario:
+  - Titulo (obligatorio, max 100 chars)
+  - Material (requerido)
+  - Centro de acopio (opcional)
+  - Fecha inicio + hora inicio + hora fin
+  - Color
+  - Tipo repeticion (NINGUNA/DIARIA/SEMANAL/MENSUAL)
+  - Fecha fin repeticion (opcional)
+  - Observaciones;
+
+  |Sistema (Django)|
+  :crear_evento_venta();
+  :Obtiene PuntoECA del gestor;
+  :Valida titulo (obligatorio, max 100);
+  :Valida campos obligatorios (material, fecha, horas);
+  :Parsea fechas con timezone.make_aware();
+  :Valida rango: fecha_fin > fecha_inicio;
+
+  if (Validaciones OK?) then (si)
+    |Base de Datos|
+    :Crea Evento;
+
+    |Sistema (Django)|
+    if (Tiene repeticion?) then (si)
+      :Calcula delta segun tipo_repeticion:
+      - DIARIA: +1 dia
+      - SEMANAL: +7 dias
+      - MENSUAL: +30 dias (dateutil.relativedelta);
+      :Crea secuencia de EventoInstancia
+      desde fecha_inicio hasta fecha_fin_repeticion;
+
+      |Base de Datos|
+      :INSERT multiples EventoInstancia;
+    else (NINGUNA)
+      :Crea una unica EventoInstancia;
+
+      |Base de Datos|
+      :INSERT EventoInstancia;
+    endif
+
+  else (no)
+    :Error de validacion;
+  endif
+}
+
+partition "== EDITAR EVENTO ==" {
+  :POST /punto-eca/calendario/evento/editar/;
+  :Envia eventoId + campos modificados;
+
+  |Sistema (Django)|
+  :editar_evento_venta();
+  :Detecta prefijo del ID:
+  - evento-X: es evento base
+  - evinst-X: es instancia de repeticion;
+  :Obtiene evento desde ID;
+
+  :Aplica campos editables:
+  - titulo, descripcion, color
+  - material, centro_acopio
+  - tipo_repeticion, fecha_fin_repeticion;
+
+  :Valida rango de fechas;
+
+  if (Valido?) then (si)
+    |Base de Datos|
+    :UPDATE Evento;
+
+    |Sistema (Django)|
+    :Elimina instancias existentes;
+    :Recrea instancias segun nuevo tipo_repeticion;
+
+    |Base de Datos|
+    :DELETE EventoInstancias anteriores;
+    :INSERT nuevas EventoInstancia;
+  endif
+}
+
+partition "== ELIMINAR EVENTO ==" {
+  :POST /punto-eca/calendario/evento/eliminar/;
+  :Envia eventoId + deleteMode;
+
+  |Sistema (Django)|
+  :eliminar_evento_venta();
+
+  if (Modo de eliminacion?) then (instancia)
+    :Elimina solo esta ocurrencia;
+    :Verifica que sea evinst-X;
+
+    |Base de Datos|
+    :DELETE EventoInstancia WHERE id=X;
+
+  else (serie)
+    :Elimina evento base + todas las instancias;
+
+    |Base de Datos|
+    :DELETE EventoInstancias WHERE evento_base=X;
+    :DELETE Evento WHERE id=X;
+  endif
+}
+
+note right
+  **Fuentes del calendario:**
+  - VentaInventario -> eventos verdes
+  - CompraInventario -> eventos rojos
+  - Evento programado -> color configurable
+  - EventoInstancia -> repeticiones
+
+  **Repeticiones:**
+  - DIARIA: 1 dia
+  - SEMANAL: 7 dias
+  - MENSUAL: dateutil.relativedelta
+end note
+
+stop
+
+@enduml

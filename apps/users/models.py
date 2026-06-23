@@ -233,6 +233,12 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         help_text="Rol del usuario en el sistema",
     )
 
+    carga_masiva = models.BooleanField(
+        default=False,
+        verbose_name="Carga masiva",
+        help_text="Indica si este usuario fue creado mediante importación CSV masiva",
+    )
+
     # =========================================================================
     # CAMPOS DE CONTROL DE DJANGO (AUTH)
     # =========================================================================

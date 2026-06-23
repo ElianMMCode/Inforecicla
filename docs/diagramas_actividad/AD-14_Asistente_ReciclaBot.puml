@@ -1,0 +1,107 @@
+@startuml
+title **AD-14: Asistente IA (ReciclaBot)**
+
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+|#LightCoral|Groq API (Llama 3.1)|
+
+|Gestor ECA|
+start
+:En dashboard del punto ECA (/punto-eca/resumen/);
+:Accede al asistente IA;
+
+partition "== ENVIO DE PREGUNTA ==" {
+  :POST /punto-eca/asistente/asistente/;
+  :Envia campo pregunta (texto);
+
+  |Sistema (Django)|
+  :asistente_api_view();
+  :Verifica que usuario este autenticado;
+  :Valida que pregunta no este vacia;
+
+  if (Pregunta vacia?) then (si)
+    :Error 400 campo obligatorio;
+    stop
+  endif
+
+  :Obtiene PuntoECA del gestor logueado;
+  if (No tiene PuntoECA?) then (si)
+    :Error 403 sin Punto ECA asociado;
+    stop
+  endif
+}
+
+partition "== GENERAR CONTEXTO DEL PUNTO ECA ==" {
+  |Sistema (Django)|
+  :AsistenteECAService.consultar(punto, pregunta);
+
+  :generar_contexto_eca() construye contexto completo;
+
+  note right
+    Contexto incluye:
+    1. Datos del punto
+    2. Responsable
+    3. KPIs de inventario
+    4. Inventario detallado por material
+    5. Operaciones del mes
+    6. Ultimos movimientos
+    7. Proximos eventos
+    8. Centros de acopio
+  end note
+
+  |Base de Datos|
+  :Consultas Inventario, CompraInventario,
+  VentaInventario, EventoInstancia;
+
+  |Sistema (Django)|
+  :Ensambla prompt con system_prompt
+  + contexto_eca + pregunta del usuario;
+}
+
+partition "== CONSULTA A LLM ==" {
+  |Sistema (Django)|
+  :Envia consulta a Groq API;
+  :Modelo: llama-3.1-8b-instant;
+  :Incluye: system_prompt + contexto + pregunta;
+
+  |Groq API (Llama 3.1)|
+  :Procesa la consulta;
+  :Genera respuesta basada en el contexto;
+  :Retorna respuesta;
+
+  |Sistema (Django)|
+  :Recibe respuesta del LLM;
+}
+
+partition "== RESPUESTA AL GESTOR ==" {
+  |Sistema (Django)|
+  :Escapa respuesta con django.utils.html.escape();
+  :Previene inyeccion XSS en la respuesta;
+
+  :Formatea HTML con burbuja usuario y burbuja AI;
+
+  |Gestor ECA|
+  :Visualiza conversacion;
+  :Respuesta incluye KPIs, recomendaciones,
+  analisis de operaciones y eventos proximos;
+}
+
+note right
+  **Datos al LLM:**
+  - KPIs del inventario (total, capacidad, %)
+  - Detalle por material (stock, precios, estado)
+  - Operaciones del mes (entradas/salidas)
+  - Ultimos 5 movimientos
+  - Proximos 5 eventos
+  - Centros de acopio asociados
+
+  **Seguridad:**
+  - Pregunta y respuesta escapadas (XSS)
+  - Solo gestores autenticados
+  - Solo su propio punto ECA
+end note
+
+stop
+
+@enduml

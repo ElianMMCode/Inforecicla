@@ -1,0 +1,105 @@
+@startuml panel_eca_resumen
+title Panel ECA: Sección Resumen (Dashboard de Gestor)
+
+actor "Gestor ECA" as Gestor
+participant "Navegador" as Browser
+participant "render_seccion\n(ecas/views.py)" as RenderView
+participant "_build_resumen_context\n(ecas/views.py)" as BuildCtx
+participant "AsistenteECAService\n(reciclabot/service.py)" as AIService
+participant "Inventario Model\n(inventory/models.py)" as InvModel
+participant "CompraInventario\n(operations/models.py)" as CompraModel
+participant "VentaInventario\n(operations/models.py)" as VentaModel
+participant "EventoInstancia\n(scheduling/models.py)" as EventoModel
+participant "CentroAcopio\n(ecas/models.py)" as CentroModel
+database "PostgreSQL" as DB
+
+== Cargar Resumen del Punto ECA ==
+
+Gestor -> Browser: Navegar a /punto-eca/resumen/
+Browser -> RenderView: GET /punto-eca/resumen/
+RenderView -> RenderView: @gestor_eca_or_admin_required
+RenderView -> DB: SELECT PuntoECA WHERE gestor_eca=user
+RenderView -> BuildCtx: _build_resumen_context(punto)
+
+BuildCtx -> AIService: AsistenteECAService()
+BuildCtx -> AIService: generar_datos_resumen(punto_eca)
+
+== Recopilar KPIs de Inventario ==
+
+AIService -> DB: SELECT FROM inventory_inventario\nWHERE punto_eca=punto\n+select_related(material)
+DB --> AIService: items de inventario
+
+AIService -> AIService: Calcular KPIs:
+note right
+  - total_inventario = SUM(stock_actual)
+  - total_capacidad = SUM(capacidad_maxima)
+  - ocupacion_pct = (total/total_cap)*100
+  - materiales_count = COUNT
+  - materiales_alerta = COUNT(alerta=alerta)
+  - materiales_critico = COUNT(alerta=critico)
+  - salud_punto = "OK" | "ATENCION" | "CRITICO"
+end note
+
+== Recopilar Operaciones del Mes ==
+
+AIService -> DB: SELECT COUNT(SUM(cantidad))\nFROM CompraInventario\nWHERE inventario.punto_eca=punto\nAND fecha_compra >= primero_del_mes
+AIService -> DB: SELECT COUNT(SUM(cantidad))\nFROM VentaInventario\nWHERE inventario.punto_eca=punto\nAND fecha_venta >= primero_del_mes
+DB --> AIService: entradas_mes, salidas_mes
+
+AIService -> AIService: Calcular:
+note right
+  - transacciones_mes = COUNT(compras) + COUNT(ventas)
+  - balance_neto_mes = entradas - salidas
+  - comparativa_mes_anterior: variaciones %
+end note
+
+== Recopilar Movimientos Recientes ==
+
+AIService -> DB: SELECT ultimas 3 CompraInventario\nORDER BY -fecha_compra
+AIService -> DB: SELECT ultimas 3 VentaInventario\nORDER BY -fecha_venta
+DB --> AIService: movimientos
+AIService -> AIService: Formatear y ordenar los 5 más recientes
+
+== Recopilar Eventos Próximos ==
+
+AIService -> DB: SELECT FROM scheduling_eventoinstancia\nWHERE punto_eca=punto\nAND fecha_inicio >= ahora\nAND es_completado=False\nORDER BY fecha_inicio LIMIT 5
+DB --> AIService: instancias próximas
+
+== Recopilar Centros de Acopio ==
+
+AIService -> DB: SELECT FROM ecas_centroacopio\nWHERE visibilidad=GLOBAL\nOR (puntos_eca=punto AND visibilidad=ECA)
+DB --> AIService: centros globales + locales
+
+== Compilar Datos del Gestor ==
+
+AIService -> DB: SELECT FROM users_usuario\nWHERE id=punto.gestor_eca_id
+DB --> AIService: gestor_info (nombre, email, celular)
+
+== Calcular Métricas Adicionales ==
+
+AIService -> AIService: _valor_total_inventario()\n→ SUM(stock * precio_compra) por item
+AIService -> AIService: _distribucion_categorias()\n→ agrupar por categoría, calcular %
+AIService -> AIService: _tendencia_diaria_7d()\n→ datos diarios entradas/salidas últimos 7 días
+AIService -> AIService: _top_materiales_mes()\n→ top 3 materiales por kg en el mes
+AIService -> AIService: _dias_desde_ultimo_movimiento()\n→ días desde última compra o venta
+AIService -> AIService: _comparativa_mes_anterior()\n→ variaciones % vs mes anterior
+
+AIService --> BuildCtx: datos_resumen (dict completo)
+
+BuildCtx -> BuildCtx: _decimal_to_float_recursive()\n(convertir Decimal→float para JSON)
+BuildCtx -> BuildCtx: json.dumps(datos_resumen)
+BuildCtx --> RenderView: {punto, datos_resumen (JSON string)}
+
+RenderView -> RenderView: _add_notificacion_context()\ncargar notificaciones recientes (últimas 20)
+
+RenderView --> Browser: Render puntoECA-layout.html\ncon section-resumen.html
+
+== Actualización Asíncrona ==
+
+Browser -> RenderView: GET /punto-eca/resumen/data/ (AJAX)
+RenderView -> DB: SELECT PuntoECA WHERE gestor_eca=user
+RenderView -> AIService: generar_datos_resumen(punto)
+AIService --> RenderView: datos actualizados
+RenderView --> Browser: JsonResponse(datos)
+
+@enduml

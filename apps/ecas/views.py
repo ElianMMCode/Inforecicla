@@ -538,6 +538,7 @@ def _serializar_compra(c):
         "fechaCompra": c.fecha_compra.isoformat(),
         "precioCompra": float(c.precio_compra or 0),
         "observaciones": c.observaciones or "",
+        "carga_masiva": c.carga_masiva,
     }
 
 
@@ -560,6 +561,7 @@ def _serializar_venta(v):
         "observaciones": v.observaciones or "",
         "nombreCentroAcopio": getattr(v.centro_acopio, "nombre", "") if tiene_centro else "",
         "centroAcopioId": str(v.centro_acopio.id) if tiene_centro else "",
+        "carga_masiva": v.carga_masiva,
     }
 
 

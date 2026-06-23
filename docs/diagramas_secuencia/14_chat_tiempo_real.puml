@@ -1,0 +1,130 @@
+@startuml chat_tiempo_real
+title CU-18: Chat en Tiempo Real (WebSocket + REST)
+
+actor "Ciudadano" as Ciud
+actor "Gestor ECA" as Gestor
+participant "Navegador\n(JavaScript)" as JS
+participant "ChatListCreateView\n(chat/views.py)" as ChatAPI
+participant "MensajeListCreateView\n(chat/views.py)" as MsgAPI
+participant "MarcarLeidosView\n(chat/views.py)" as LeidosAPI
+participant "PuntoChatListView\n(chat/views.py)" as PuntoChat
+participant "ChatConsumer\n(chat/consumers.py)" as Consumer
+participant "Chat Model" as ChatModel
+participant "Mensaje Model" as MsgModel
+participant "Django Channels\n(Redis)" as Channels
+participant "NotificacionConsumer\n(core/consumers.py)" as NotifConsumer
+database "PostgreSQL" as DB
+
+== CU-18.1: Crear Chat (REST API) ==
+
+Ciud -> JS: Iniciar chat con Punto ECA
+JS -> ChatAPI: POST /mensajes/\n{punto: puntoEcaId}
+ChatAPI -> ChatAPI: Verificar usuario autenticado
+ChatAPI -> DB: SELECT Chat\nWHERE ciudadano=user\nAND punto=puntoEca
+alt Ya existe chat
+    ChatAPI --> JS: Devolver chat existente
+else No existe
+    ChatAPI -> DB: INSERT Chat\n(ciudadano=user, punto=puntoEca)
+    ChatAPI --> JS: {id: chat_id}
+end
+
+== CU-18.2: Cargar Historial (REST API) ==
+
+JS -> MsgAPI: GET /mensajes/<chat_id>/mensajes/
+MsgAPI -> DB: SELECT FROM chat_mensaje\nWHERE chat_id=<chat_id>\nORDER BY fecha_envio
+DB --> MsgAPI: QuerySet de mensajes
+MsgAPI --> JS: [{id, texto, fecha_envio,\nremitente, es_leido, es_editado}]
+
+== CU-18.3: Conexión WebSocket ==
+
+JS -> Consumer: ws://host/ws/chat/<chat_id>/
+Consumer -> Consumer: Verificar usuario autenticado
+alt No autenticado
+    Consumer -> JS: WebSocket close()
+else Autenticado
+    Consumer -> Channels: group_add("chat_{chat_id}", channel_name)
+    Consumer -> JS: WebSocket accept()
+end
+
+== CU-18.4: Enviar Mensaje en Tiempo Real ==
+
+Ciud -> JS: Escribir mensaje + enviar
+JS -> Consumer: WS receive({message: "Hola"})
+
+Consumer -> Consumer: Verificar payload + autenticación
+Consumer -> Consumer: save_message(chat_id, user, message)
+Consumer -> DB: SELECT Chat WHERE id=chat_id
+Consumer -> DB: INSERT INTO chat_mensaje\n(chat, remitente, texto)
+
+Consumer -> Channels: group_send("chat_{chat_id}",\n{type: "chat_message",\nmessage: "Hola",\nuser_id: "user-uuid"})
+
+Channels -> Consumer: chat_message event
+Consumer -> JS: WS send({message: "Hola",\nuser_id: "user-uuid"})
+JS -> JS: Renderizar mensaje en UI
+
+== Indicador de Escritura ==
+
+Ciud -> JS: Empezar a escribir
+JS -> Consumer: WS receive({type: "typing"})
+Consumer -> Channels: group_send("chat_{chat_id}",\n{type: "chat_typing",\nuser_id, user_name})
+Channels -> Gestor_JS: chat_typing event
+Gestor_JS -> Gestor_JS: Mostrar "escribiendo..."
+
+== Gestor Responde ==
+
+Gestor -> JS: Escribir mensaje + enviar
+JS -> Consumer: WS receive({message: "Hola ciudadano"})
+Consumer -> DB: INSERT mensaje
+Consumer -> Channels: group_send
+Channels -> Ciud_JS: chat_message event
+Ciud_JS -> Ciud_JS: Renderizar respuesta
+
+== CU-18.4b: Notificación de Nuevo Mensaje ==
+
+note over Consumer, NotifConsumer
+  Signal post_save on Mensaje
+  (apps/chat/signals.py)
+end note
+
+DB -> MsgModel: post_save signal triggered
+MsgModel -> MsgModel: notificar_mensaje()
+alt Ciudadano envió (remitente == chat.ciudadano)
+    MsgModel -> DB: SELECT gestor del punto
+    MsgModel -> DB: INSERT Notificacion(usuario=gestor,\nmensaje=instancia)
+    MsgModel -> NotifConsumer: enviar_notificacion_realtime(\nusuario_id, data)
+else Gestor envió
+    MsgModel -> DB: INSERT Notificacion(usuario=ciudadano,\nmensaje=instancia)
+    MsgModel -> NotifConsumer: enviar_notificacion_realtime(\nusuario_id, data)
+end
+
+== Marcar como Leídos ==
+
+Ciud -> JS: Abrir chat
+JS -> LeidosAPI: POST /mensajes/<chat_id>/leer/
+LeidosAPI -> DB: UPDATE chat_mensaje\nSET es_leido=True\nWHERE chat_id=<id>\nAND remitente != user\nAND es_leido=False
+LeidosAPI --> JS: {ok: true, count: N}
+JS -> JS: Actualizar indicadores de leído
+
+== Editar Mensaje ==
+
+Ciud -> JS: Editar mensaje propio
+JS -> MsgAPI: PATCH /mensajes/<chat_id>/mensajes/<msg_id>/editar/\n{texto: "texto editado"}
+MsgAPI -> DB: SELECT mensaje WHERE id=msg_id
+MsgAPI -> MsgAPI: Verificar remitente == usuario actual
+alt No es el remitente
+    MsgAPI --> JS: PermissionDenied
+else Texto vacío
+    MsgAPI --> JS: ValidationError
+else OK
+    MsgAPI -> DB: UPDATE chat_mensaje\nSET texto="editado", es_editado=True
+    MsgAPI --> JS: Mensaje actualizado
+end
+
+== Gestor ve Chats (Dashboard) ==
+
+Gestor -> JS: Ir a panel de chats
+JS -> PuntoChat: GET /mensajes/punto/
+PuntoChat -> DB: SELECT Chat WHERE punto=puntoEca\ndel gestor autenticado
+PuntoChat --> JS: [{id, ciudadano, punto, fecha_creacion}]
+
+@enduml

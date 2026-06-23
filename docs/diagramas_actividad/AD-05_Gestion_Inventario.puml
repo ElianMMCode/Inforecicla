@@ -1,0 +1,153 @@
+@startuml
+title **AD-05: Gestion de Inventario de Materiales**
+
+|#LightCyan|Gestor ECA|
+|#LightGreen|Sistema (Django)|
+|#LightYellow|Base de Datos|
+
+|Gestor ECA|
+start
+:Accede a /punto-eca/inventario/;
+
+|Sistema (Django)|
+:render_seccion("inventario");
+:InventoryService.buscar_materiales_dentro_inventario();
+:Obtiene KPIs: materiales en inventario,
+estados de alerta, porcentajes de ocupacion;
+
+|Gestor ECA|
+:Visualiza dashboard de inventario con:\n- Lista de materiales en inventario\n- Filtros: texto, categoria, tipo, unidad,\n  alerta, rango ocupacion;
+
+partition "== BUSQUEDA CATALOGO MATERIALES ==" {
+  if (Desea agregar nuevo material?) then (si)
+    :GET /punto-eca/inventario/catalogo/buscar/;
+    :Parametros: puntoId, texto, categoria, tipo;
+
+    |Sistema (Django)|
+    :buscar_materiales_catalogo_view();
+    :InventoryService.buscar_materiales_fuera_inventario();
+
+    |Base de Datos|
+    :Busca materiales del catalogo;
+    :Excluye materiales ya en inventario del punto;
+    :Aplica filtros de busqueda (query, categoria, tipo);
+
+    |Gestor ECA|
+    :Selecciona material del catalogo;
+  endif
+}
+
+partition "== AGREGAR MATERIAL AL INVENTARIO ==" {
+  if (Agrega material?) then (si)
+    :POST /punto-eca/inventario/agregar/;
+    :Body JSON:
+    - materialId (UUID)
+    - puntoEcaId (UUID)
+    - stockActual (float)
+    - capacidadMaxima (float, > 0)
+    - unidadMedida (KG/UN/TON/MC)
+    - precioCompra (float)
+    - precioVenta (float)
+    - umbralAlerta (int 0-100)
+    - umbralCritico (int 0-100);
+
+    |Sistema (Django)|
+    :InventoryService.crear_inventario();
+    :Obtiene Material por ID;
+    :Obtiene PuntoECA por ID;
+
+    if (Material y Punto existen?) then (si)
+      |Base de Datos|
+      :Crea registro Inventario;
+      :Recalcula ocupacion (save override);
+      :Recalcula alerta (save override);
+
+      |Sistema (Django)|
+      :Mensaje exito;
+    else (no)
+      :Error 404: "Recurso no encontrado";
+    endif
+  endif
+}
+
+partition "== ACTUALIZAR INVENTARIO ==" {
+  if (Edita material?) then (si)
+    :PATCH /punto-eca/inventario/actualizar/<inventario_id>/;
+    :Body JSON: campos a modificar;
+
+    |Sistema (Django)|
+    :InventoryService.actualizar_inventario();
+    :Valida que el registro exista;
+
+    |Base de Datos|
+    :Obtiene Inventario por ID;
+    :Actualiza campos proporcionados;
+
+    |Sistema (Django)|
+    :Inventario.save() ejecuta:
+    - recalcular_ocupacion()
+    - recalcular_alerta();
+
+    note right
+      **save() override:**
+      - Ocupacion = stock / capacidad * 100
+      - Si ocupacion >= umbral_critico: CRITICO
+      - Si ocupacion >= umbral_alerta: ALERTA
+      - Si no: OK
+    end note
+
+    |Base de Datos|
+    :Guarda con ocupacion y alerta recalculados;
+
+    :Verifica si hubo cambio de estado de alerta;
+    if (Estado de alerta cambio?) then (si)
+      |Sistema (Django)|
+      :Signal notificar_alerta_inventario();
+      :Crea Notificacion para gestor;
+
+      |Base de Datos|
+      :INSERT Notificacion;
+
+      |Sistema (Django)|
+      :enviar_notificacion_realtime(gestor_id, data);
+      :Notificacion en tiempo real via WebSocket;
+    endif
+  endif
+}
+
+partition "== ELIMINAR MATERIAL ==" {
+  if (Elimina material?) then (si)
+    :DELETE /punto-eca/inventario/eliminar/<inventario_id>/;
+
+    |Sistema (Django)|
+    :InventoryService.eliminar_material_inventario();
+
+    |Base de Datos|
+    :DELETE Inventario WHERE id = inventario_id;
+
+    |Sistema (Django)|
+    :Mensaje: "Material eliminado del inventario";
+  endif
+}
+
+partition "== FILTROS DE MONITOREO ==" {
+  |Gestor ECA|
+  :Aplica filtros en la interfaz;
+
+  |Sistema (Django)|
+  :buscar_materiales_dentro_inventario() aplica filtros:
+  - texto: busca en nombre del material
+  - categoria: filtra por CategoriaMaterial.nombre
+  - tipo: filtra por TipoMaterial.nombre
+  - unidad: filtra por UnidadMedida
+  - alerta: filtra por estado (OK/Alerta/Critico)
+  - ocupacion: rango "min-max" de porcentaje;
+
+  :Calcula porcentaje de ocupacion por material;
+  :Determina estado de alerta por cada material;
+  :Retorna lista filtrada;
+}
+
+stop
+
+@enduml
