@@ -82,7 +82,7 @@ print("\n--- COMENTARIOS ---")
 contador = 0
 for user in usuarios:
     num_comentarios = random.choices([1, 2, 3], weights=[3, 4, 3])[0]  # NOSONAR
-    pubs_elegidas = random.sample(pub_ids, min(num_comentarios, len(pub_ids)))
+    pubs_elegidas = random.sample(pub_ids, min(num_comentarios, len(pub_ids)))  # NOSONAR
     for pub_id in pubs_elegidas:
         texto = random.choice(comentarios_pool)  # NOSONAR
         obj, created = Comentario.objects.get_or_create(
@@ -103,7 +103,7 @@ print("\n--- GUARDADOS ---")
 contador = 0
 for user in usuarios:
     num_guardados = random.choices([2, 3, 4], weights=[3, 4, 3])[0]  # NOSONAR
-    pubs_elegidas = random.sample(pub_ids, min(num_guardados, len(pub_ids)))
+    pubs_elegidas = random.sample(pub_ids, min(num_guardados, len(pub_ids)))  # NOSONAR
     for pub_id in pubs_elegidas:
         obj, created = Guardados.objects.get_or_create(
             usuario=user,
@@ -121,7 +121,7 @@ print("\n--- REACCIONES ---")
 contador = 0
 for user in usuarios:
     num_reacciones = random.choices([3, 4, 5], weights=[3, 4, 3])[0]  # NOSONAR
-    pubs_elegidas = random.sample(pub_ids, min(num_reacciones, len(pub_ids)))
+    pubs_elegidas = random.sample(pub_ids, min(num_reacciones, len(pub_ids)))  # NOSONAR
     for pub_id in pubs_elegidas:
         if random.random() < 0.8:  # 80% likes, 20% dislikes  # NOSONAR
             valor = "Like"
