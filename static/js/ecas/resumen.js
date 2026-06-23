@@ -508,7 +508,7 @@
         }
         if (pendientesMensajes > 0) {
             badges.push(
-                '<span class="badge bg-info-subtle text-info p-2 kpi-clickable" data-url="/mensajes/" title="Ver mensajes">' +
+                '<span class="badge bg-info-subtle text-info p-2 kpi-clickable" data-url="/punto-eca/mensajes/" title="Ver mensajes">' +
                 '<i class="bi bi-chat-dots me-1"></i>' + pendientesMensajes + ' mensaje' + (pendientesMensajes !== 1 ? 's' : '') +
                 '</span>'
             );
