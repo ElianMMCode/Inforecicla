@@ -475,45 +475,59 @@
         }).join("") + "</div>";
     }
 
-    /* ------------------------------ Pintar: tareas pendientes ------------------------------ */
+    /* ------------------------------ Pintar: tareas pendientes (summary) ------------------------------ */
     function pintarTareasPendientes(d) {
-        const cont = document.getElementById("tareasPendientes");
         const seccion = document.getElementById("seccionTareasPendientes");
-        if (!cont || !seccion) return;
+        const cont = document.getElementById("tareasPendientesBadges");
+        const totalEl = document.getElementById("tareasPendientesTotal");
+        if (!seccion || !cont) return;
+
         const tareas = Array.isArray(d.tareasPendientes) ? d.tareasPendientes : [];
-        if (tareas.length === 0) {
+        const pendientesEventos = tareas.filter(t => !t.es_completado).length;
+        const pendientesMensajes = d.pendientesMensajes || 0;
+        const pendientesCriticos = d.materialesCritico || 0;
+        const pendientesAlertas = d.materialesAlerta || 0;
+        const total = pendientesEventos + pendientesMensajes + pendientesCriticos + pendientesAlertas;
+
+        if (total === 0) {
             seccion.style.display = "none";
             return;
         }
         seccion.style.display = "block";
-        cont.innerHTML = '<div class="list-group list-group-flush">' + tareas.slice(0, 10).map((t, idx) => {
-            const fecha = t.fecha ? new Date(t.fecha + "T00:00:00") : null;
-            const fmtFecha = fecha ? fecha.toLocaleDateString("es-CO", {
-                weekday: "short", day: "numeric", month: "short"
-            }) : "Sin fecha";
-            const borderClass = idx === 0 ? "" : "border-top";
-            const esPendiente = !t.es_completado;
-            const badgeClass = esPendiente ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success';
-            const badgeLabel = esPendiente ? 'Pendiente' : 'Completado';
-            const itemClass = esPendiente ? 'event-pendiente' : 'event-completado';
-            return `
-                <div class="list-group-item ${borderClass} px-3 py-3 ${itemClass} kpi-clickable" data-url="/punto-eca/calendario/" title="Ver en calendario">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="text-warning"><i class="bi bi-calendar-check" style="font-size: 1.1rem;"></i></div>
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <span class="fw-semibold text-dark text-truncate" style="font-size:.85rem">${escapeHTML(t.titulo || "Tarea")}</span>
-                                <span class="badge ${badgeClass} flex-shrink-0 ms-2" style="font-size:.65rem">${badgeLabel}</span>
-                            </div>
-                            <div class="inv-summary mt-1">
-                                <i class="bi bi-calendar me-1"></i>${fmtFecha}
-                                <span class="badge bg-info-subtle text-info ms-2" style="font-size:.6rem">${escapeHTML(t.tipo || "General")}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join("") + "</div>";
+        if (totalEl) {
+            totalEl.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + total + ' pendiente' + (total !== 1 ? 's' : '');
+        }
+
+        const badges = [];
+        if (pendientesEventos > 0) {
+            badges.push(
+                '<span class="badge bg-warning-subtle text-warning p-2 kpi-clickable" data-url="/punto-eca/calendario/" title="Ver calendario">' +
+                '<i class="bi bi-calendar-event me-1"></i>' + pendientesEventos + ' evento' + (pendientesEventos !== 1 ? 's' : '') +
+                '</span>'
+            );
+        }
+        if (pendientesMensajes > 0) {
+            badges.push(
+                '<span class="badge bg-info-subtle text-info p-2 kpi-clickable" data-url="/punto-eca/mensajes/" title="Ver mensajes">' +
+                '<i class="bi bi-chat-dots me-1"></i>' + pendientesMensajes + ' mensaje' + (pendientesMensajes !== 1 ? 's' : '') +
+                '</span>'
+            );
+        }
+        if (pendientesCriticos > 0) {
+            badges.push(
+                '<span class="badge bg-danger-subtle text-danger p-2 kpi-clickable" data-url="/punto-eca/inventario/?estado=critico" title="Ver críticos">' +
+                '<i class="bi bi-exclamation-circle me-1"></i>' + pendientesCriticos + ' crítico' + (pendientesCriticos !== 1 ? 's' : '') +
+                '</span>'
+            );
+        }
+        if (pendientesAlertas > 0) {
+            badges.push(
+                '<span class="badge bg-light text-warning p-2 kpi-clickable" data-url="/punto-eca/inventario/?estado=alerta" title="Ver alertas">' +
+                '<i class="bi bi-exclamation-triangle me-1"></i>' + pendientesAlertas + ' alerta' + (pendientesAlertas !== 1 ? 's' : '') +
+                '</span>'
+            );
+        }
+        cont.innerHTML = badges.join("");
     }
 
     /* ------------------------------ Pintar: centros (contact card) ------------------------------ */
