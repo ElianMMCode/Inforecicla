@@ -1,7 +1,6 @@
-import uuid
 from datetime import datetime, timezone
 from django.contrib.auth import get_user_model
-from apps.publicaciones.models import Publicacion, CategoriaPublicacion, ImagenPublicacion
+from apps.publicaciones.models import Publicacion, CategoriaPublicacion
 from config import constants
 
 User = get_user_model()

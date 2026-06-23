@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime, timezone
 from apps.publicaciones.models import TipoPublicacion, CategoriaPublicacion
 from config import constants

@@ -8,7 +8,6 @@ import os
 import sys
 import random
 import datetime
-from decimal import Decimal
 
 PUNTO_ECA_EMAIL = os.environ.get('PUNTO_ECA_EMAIL', 'emelo.legacy@pm.me')
 

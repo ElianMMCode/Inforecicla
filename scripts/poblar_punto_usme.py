@@ -23,7 +23,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from apps.ecas.models import PuntoECA, CentroAcopio, Localidad
-from apps.inventory.models import Inventario, Material
+from apps.inventory.models import Inventario
 from apps.operations.models import CompraInventario, VentaInventario
 from apps.scheduling.models import Evento
 from config.constants import TipoCentroAcopio, Visibilidad
@@ -196,31 +196,9 @@ def random_time(day, min_hour=7, max_hour=17):
     return timezone.make_aware(datetime.datetime(day.year, day.month, day.day, hour, minute))
 
 
-@transaction.atomic
-def run():
-    print("=== POBLAR PUNTO USME EL DORADO ===")
-    random.seed(12345)
-
-    punto = PuntoECA.objects.get(gestor_eca__email=PUNTO_ECA_EMAIL)
-    gestor = Usuario.objects.get(email=PUNTO_ECA_EMAIL)
-    print(f"Punto ECA: {punto.nombre} ({punto.id})")
-    print(f"Gestor: {gestor.email} ({gestor.id})")
-
-    inventarios = list(Inventario.objects.filter(punto_eca=punto).select_related('material__categoria'))
-    print(f"Inventarios: {len(inventarios)}")
-
-    mat_map = {}
-    for inv in inventarios:
-        mat_map[inv.material.nombre] = inv
-
-    business_days = get_business_days(datetime.date(2026, 5, 1), TODAY)
-    print(f"Días hábiles: {len(business_days)}")
-
-    day_index = {d: i + 1 for i, d in enumerate(business_days)}
-
-    # ─── 1. CREAR CENTROS DE ACOPIO ───
+def _crear_centros(punto):
     localidad_cache = {l.nombre: l for l in Localidad.objects.all()}
-    centros_creados = []
+    centros = []
     for cd in CENTROS_DATA:
         loc = localidad_cache.get(cd['localidad_nombre'])
         centro, created = CentroAcopio.objects.get_or_create(
@@ -242,10 +220,12 @@ def run():
             }
         )
         centro.puntos_eca.add(punto)
-        centros_creados.append(centro)
+        centros.append(centro)
         print(f"  Centro: {'Creado' if created else 'Ya existe'} - {cd['nombre']}")
+    return centros
 
-    # ─── 2. SETEAR PRECIOS EN INVENTARIOS ───
+
+def _setear_precios(mat_map):
     for mc in MATERIAL_CONFIG:
         inv = mat_map.get(mc['name'])
         if inv:
@@ -254,110 +234,88 @@ def run():
             inv.save()
     print("  Precios actualizados en inventarios")
 
-    # ─── 3. GENERAR COMPRAS DIARIAS ───
+
+def _generar_compras(business_days, day_index, mat_map, running_stock):
     material_names = [m['name'] for m in MATERIAL_CONFIG]
     material_probs = [m['prob'] for m in MATERIAL_CONFIG]
-
-    running_stock = {}
-    for inv in inventarios:
-        running_stock[inv.material.nombre] = float(inv.stock_actual)
-
-    compras_creadas = 0
-    compras_bulk = 0
+    creadas = 0
+    bulk = 0
 
     for day in business_days:
         idx = day_index[day]
-        n_compras = random.randint(3, 7)
-
-        for _ in range(n_compras):
+        for _ in range(random.randint(3, 7)):
             chosen = random.choices(material_names, weights=material_probs, k=1)[0]
             mc = next(m for m in MATERIAL_CONFIG if m['name'] == chosen)
             inv = mat_map[chosen]
             qty = round(random.uniform(*mc['qty_range']), 2)
-
-            # Bulk in first 3 days and days 32-34 (mid-month)
             is_bulk = (idx <= 3) or (32 <= idx <= 34)
             obs = random.choice(OBSERVACIONES_COMPRA_BULK if is_bulk else OBSERVACIONES_COMPRA)
-
             fecha = random_time(day)
             CompraInventario.objects.create(
-                inventario=inv,
-                fecha_compra=fecha,
+                inventario=inv, fecha_compra=fecha,
                 cantidad=Decimal(str(qty)),
                 precio_compra=Decimal(str(mc['precio_compra'])),
-                observaciones=obs,
-                carga_masiva=is_bulk,
+                observaciones=obs, carga_masiva=is_bulk,
             )
             running_stock[chosen] += qty
-            compras_creadas += 1
+            creadas += 1
             if is_bulk:
-                compras_bulk += 1
+                bulk += 1
 
-    print(f"  Compras creadas: {compras_creadas} ({compras_bulk} carga masiva)")
+    print(f"  Compras creadas: {creadas} ({bulk} carga masiva)")
+    return creadas, bulk
 
-    # ─── 4. GENERAR VENTAS (cada ~4-5 días) ───
-    venta_days = []
-    for i, day in enumerate(business_days):
-        if i % 5 == 4 or i == len(business_days) - 1:
-            venta_days.append(day)
 
-    ventas_creadas = 0
-    ventas_bulk = 0
+def _generar_ventas(business_days, day_index, mat_map, centros, running_stock):
+    venta_days = [d for i, d in enumerate(business_days) if i % 5 == 4 or i == len(business_days) - 1]
+    creadas = 0
+    bulk = 0
 
     for day in venta_days:
         idx = day_index[day]
-        n_ventas = random.randint(1, 3)
-
-        # Pick materials with enough stock
-        candidate_names = [m['name'] for m in MATERIAL_CONFIG if running_stock[m['name']] > 50]
-        if not candidate_names:
+        candidates = [m['name'] for m in MATERIAL_CONFIG if running_stock[m['name']] > 50]
+        if not candidates:
             continue
 
-        for _ in range(min(n_ventas, len(candidate_names))):
-            chosen = random.choice(candidate_names)
+        for _ in range(min(random.randint(1, 3), len(candidates))):
+            chosen = random.choice(candidates)
             mc = next(m for m in MATERIAL_CONFIG if m['name'] == chosen)
             inv = mat_map[chosen]
             avail = running_stock[chosen]
-
             if avail < 20:
                 continue
 
-            # Sell 10-40% of available stock
             sell_pct = random.uniform(0.1, 0.4)
             qty = round(avail * sell_pct, 2)
             if qty < 5:
                 qty = round(min(avail * 0.3, random.uniform(5, 30)), 2)
 
             is_bulk = (idx <= 3) or (32 <= idx <= 34)
-            centro = random.choice(centros_creados)
-            obs = random.choice(OBSERVACIONES_VENTA)
-            precio = Decimal(str(VENTA_PRECIOS.get(chosen, 500)))
-
             fecha = random_time(day, 8, 15)
             VentaInventario.objects.create(
-                inventario=inv,
-                fecha_venta=fecha,
+                inventario=inv, fecha_venta=fecha,
                 cantidad=Decimal(str(qty)),
-                precio_venta=precio,
-                observaciones=obs,
-                centro_acopio=centro,
-                carga_masiva=is_bulk,
+                precio_venta=Decimal(str(VENTA_PRECIOS.get(chosen, 500))),
+                observaciones=random.choice(OBSERVACIONES_VENTA),
+                centro_acopio=random.choice(centros), carga_masiva=is_bulk,
             )
             running_stock[chosen] -= qty
-            ventas_creadas += 1
+            creadas += 1
             if is_bulk:
-                ventas_bulk += 1
+                bulk += 1
 
-    print(f"  Ventas creadas: {ventas_creadas} ({ventas_bulk} carga masiva)")
+    print(f"  Ventas creadas: {creadas} ({bulk} carga masiva)")
+    return creadas, bulk
 
-    # ─── 5. ACTUALIZAR STOCK EN INVENTARIOS ───
+
+def _actualizar_stock(inventarios, running_stock):
     for inv in inventarios:
         inv.stock_actual = Decimal(str(round(running_stock[inv.material.nombre], 2)))
         inv.save()
-
     print("  Stocks actualizados")
 
-    # ─── 6. AJUSTAR UMBRALES PARA ALERTAS ───
+
+def _ajustar_umbrales(mat_map):
     alert_config = [
         ('Cartón', 18, 28),
         ('Papel bond blanco', 22, 32),
@@ -373,9 +331,10 @@ def run():
             inv.save()
     print("  Umbrales de alerta ajustados")
 
-    # ─── 7. CREAR EVENTOS ───
-    eventos_creados = 0
+
+def _crear_eventos(business_days, punto, gestor, mat_map, centros):
     slug_to_name = {m['slug']: m['name'] for m in MATERIAL_CONFIG}
+    creados = 0
     for ev_data in EVENTOS_DATA:
         idx = ev_data['dia']
         if idx > len(business_days):
@@ -383,47 +342,60 @@ def run():
         day = business_days[idx - 1]
         mat_name = slug_to_name[ev_data['mat_slug']]
         inv_ref = mat_map[mat_name]
-        mat = inv_ref.material
-        centro = random.choice(centros_creados) if 'Venta' in ev_data['titulo'] else None
-
+        centro = random.choice(centros) if 'Venta' in ev_data['titulo'] else None
         inicio = random_time(day, 8, 10)
         fin = inicio + datetime.timedelta(hours=random.randint(1, 3))
-
         Evento.objects.create(
-            material=mat,
-            centro_acopio=centro,
-            punto_eca=punto,
-            usuario=gestor,
-            titulo=ev_data['titulo'],
-            descripcion=ev_data['desc'],
-            fecha_inicio=inicio,
-            fecha_fin=fin,
-            color=ev_data['color'],
-            tipo_repeticion=ev_data['tipo_rep'],
+            material=inv_ref.material, centro_acopio=centro,
+            punto_eca=punto, usuario=gestor,
+            titulo=ev_data['titulo'], descripcion=ev_data['desc'],
+            fecha_inicio=inicio, fecha_fin=fin,
+            color=ev_data['color'], tipo_repeticion=ev_data['tipo_rep'],
             es_evento_generado=False,
         )
-        eventos_creados += 1
+        creados += 1
+    print(f"  Eventos creados: {creados}")
+    return creados
 
-    print(f"  Eventos creados: {eventos_creados}")
 
-    # ─── 8. VERIFICACIÓN FINAL ───
-    print()
-    print("=== VERIFICACIÓN ===")
-    total_comp = CompraInventario.objects.filter(inventario__punto_eca=punto).count()
-    total_vent = VentaInventario.objects.filter(inventario__punto_eca=punto).count()
-    total_ev = Evento.objects.filter(punto_eca=punto).count()
-    total_centros = CentroAcopio.objects.count()
-    print(f"Compras: {total_comp}")
-    print(f"Ventas: {total_vent}")
-    print(f"Eventos: {total_ev}")
-    print(f"Centros de Acopio: {total_centros}")
-    print()
-
+def _verificar(punto, inventarios):
+    print("\n=== VERIFICACIÓN ===")
+    print(f"Compras: {CompraInventario.objects.filter(inventario__punto_eca=punto).count()}")
+    print(f"Ventas: {VentaInventario.objects.filter(inventario__punto_eca=punto).count()}")
+    print(f"Eventos: {Evento.objects.filter(punto_eca=punto).count()}")
+    print(f"Centros de Acopio: {CentroAcopio.objects.count()}\n")
     for inv in inventarios:
         inv.refresh_from_db()
         occ = float(inv.ocupacion_actual or 0)
-        pct = f"{occ:.1f}%"
-        print(f"{inv.material.nombre:35s} | stock={float(inv.stock_actual):>8.1f} | cap={float(inv.capacidad_maxima):>8.1f} | {pct:>7s} | umbral_a={inv.umbral_alerta}% | umbral_c={inv.umbral_critico}% | {inv.alerta}")
+        print(f"{inv.material.nombre:35s} | stock={float(inv.stock_actual):>8.1f} | cap={float(inv.capacidad_maxima):>8.1f} | {occ:.1f}% | umbral_a={inv.umbral_alerta}% | umbral_c={inv.umbral_critico}% | {inv.alerta}")
+
+
+@transaction.atomic
+def run():
+    print("=== POBLAR PUNTO USME EL DORADO ===")
+    random.seed(12345)
+
+    punto = PuntoECA.objects.get(gestor_eca__email=PUNTO_ECA_EMAIL)
+    gestor = Usuario.objects.get(email=PUNTO_ECA_EMAIL)
+    inventarios = list(Inventario.objects.filter(punto_eca=punto).select_related('material__categoria'))
+
+    mat_map = {inv.material.nombre: inv for inv in inventarios}
+    business_days = get_business_days(datetime.date(2026, 5, 1), TODAY)
+    day_index = {d: i + 1 for i, d in enumerate(business_days)}
+    running_stock = {inv.material.nombre: float(inv.stock_actual) for inv in inventarios}
+
+    print(f"Punto ECA: {punto.nombre} ({punto.id})")
+    print(f"Gestor: {gestor.email} ({gestor.id})")
+    print(f"Inventarios: {len(inventarios)}, Días hábiles: {len(business_days)}")
+
+    centros = _crear_centros(punto)
+    _setear_precios(mat_map)
+    _generar_compras(business_days, day_index, mat_map, running_stock)
+    _generar_ventas(business_days, day_index, mat_map, centros, running_stock)
+    _actualizar_stock(inventarios, running_stock)
+    _ajustar_umbrales(mat_map)
+    _crear_eventos(business_days, punto, gestor, mat_map, centros)
+    _verificar(punto, inventarios)
 
 
 if __name__ == '__main__':

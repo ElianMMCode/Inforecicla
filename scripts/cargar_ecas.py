@@ -1,4 +1,3 @@
-import uuid
 from django.contrib.auth import get_user_model
 from apps.ecas.models import PuntoECA, Localidad
 from config import constants

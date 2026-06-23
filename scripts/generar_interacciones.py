@@ -147,7 +147,7 @@ print(f"Reacciones totales:  {Reaccion.objects.count()}")
 print(f"{'='*50}")
 
 # Usuarios con y sin interacciones
-from django.db.models import Count
+
 for tipo, modelo in [("Comentarios", Comentario), ("Guardados", Guardados), ("Reacciones", Reaccion)]:
     con = modelo.objects.values("usuario").distinct().count()
     print(f"Usuarios con {tipo}: {con}/{len(usuarios)}")
