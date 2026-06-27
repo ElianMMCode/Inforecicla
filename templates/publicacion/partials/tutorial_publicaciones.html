@@ -1,8 +1,5 @@
 {% load static %}{% if request.user.is_authenticated and request.user.tipo_usuario == 'CIU' and not request.user.completo_tutorial %}
-{% include 'partials/_tutorial_assets.html' %}
-<script src="{% static 'js/tutorial_helpers.js' %}"></script>
-<script>
-(function() {
+{% include 'partials/_tutorial_head.html' %}
     var key = 'tutorial_ciu_pub';
     if (storageGet(key) === '1') return;
     if (!storageSet(key, '1')) return;
@@ -34,6 +31,5 @@
         steps.push({ element: '#' + eliminarBtn.id, popover: { title: 'Eliminar Comentario', description: 'Eliminá tu comentario de la publicación.', side: 'bottom' } });
 
     iniciarTutorial(steps);
-})();
-</script>
+{% include 'partials/_tutorial_tail.html' %}
 {% endif %}

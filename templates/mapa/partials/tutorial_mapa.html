@@ -1,8 +1,5 @@
 {% load static %}{% if request.user.is_authenticated and request.user.tipo_usuario == 'CIU' and not request.user.completo_tutorial %}
-{% include 'partials/_tutorial_assets.html' %}
-<script src="{% static 'js/tutorial_helpers.js' %}"></script>
-<script>
-(function() {
+{% include 'partials/_tutorial_head.html' %}
     var key = 'tutorial_ciu_mapa';
     if (storageGet(key) === '1') return;
     if (!storageSet(key, '1')) return;
@@ -31,6 +28,5 @@
         ['selectMaterial', 'Filtrar por Material', 'Seleccioná un material para ver solo los puntos que lo reciben.', 'right'],
         ['btnLimpiarFiltros', 'Limpiar Filtros', 'Eliminá todos los filtros y mostrá todos los puntos.', 'right']
     ]));
-})();
-</script>
+{% include 'partials/_tutorial_tail.html' %}
 {% endif %}
