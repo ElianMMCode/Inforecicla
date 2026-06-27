@@ -1,0 +1,18 @@
+    var STORAGE_KEYS = ['tutorial_ciu_datos', 'tutorial_ciu_comentarios', 'tutorial_ciu_chat', 'tutorial_ciu_guardados', 'tutorial_ciu_mapa', 'tutorial_ciu_pub'];
+
+    function notificarServidor() {
+        fetch("{% url 'marcar_tutorial_visto' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        }).catch(function(e) { console.error("Error al notificar tutorial:", e); });
+    }
+
+    function checkAllToursDone() {
+        var allDone = STORAGE_KEYS.every(function(k) { return localStorage.getItem(k) === '1'; });
+        if (allDone) {
+            notificarServidor();
+        }
+    }

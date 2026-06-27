@@ -1,95 +1,66 @@
 {% if request.user.is_authenticated and request.user.tipo_usuario == 'CIU' and not request.user.completo_tutorial %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
-<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+{% include 'partials/_tutorial_assets.html' %}
 <script>
 (function() {
-    var driver = window.driver.js.driver;
+    {% include 'partials/_tutorial_funcs.html' %}
+
     var STORAGE_KEY = 'tutorial_ciu_mapa';
-
-    function notificarServidor() {
-        fetch("{% url 'marcar_tutorial_visto' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            }
-        }).catch(function(e) { console.error("Error al notificar tutorial:", e); });
-    }
-
-    function checkAllToursDone() {
-        var keys = ['tutorial_ciu_datos', 'tutorial_ciu_comentarios', 'tutorial_ciu_chat', 'tutorial_ciu_guardados', 'tutorial_ciu_mapa', 'tutorial_ciu_pub'];
-        var allDone = keys.every(function(k) { return localStorage.getItem(k) === '1'; });
-        if (allDone) {
-            notificarServidor();
-        }
-    }
 
     try {
         if (localStorage.getItem(STORAGE_KEY) === '1') return;
         localStorage.setItem(STORAGE_KEY, '1');
+    } catch(e) {
+        console.error("Error al acceder a localStorage:", e);
+        return;
+    }
 
-        var steps = [];
+    var steps = [];
 
-        if (document.getElementById('mapa'))
-            steps.push({ element: '#mapa', popover: { title: 'Mapa Interactivo', description: 'Explorá los puntos de reciclaje ECA en un mapa interactivo de tu ciudad.', side: 'top' } });
+    var stepsConfig = [
+        ['mapa', 'Mapa Interactivo', 'Explorá los puntos de reciclaje ECA en un mapa interactivo de tu ciudad.', 'top'],
+        ['btnCentrar', 'Centrar Mapa', 'Volvé a la vista general del mapa con un solo clic.', 'left'],
+        ['btnRecargar', 'Recargar Puntos', 'Actualizá los puntos ECA mostrados en el mapa.', 'left'],
+        ['btnToggleLista', 'Lista Lateral', 'Mostrá u ocultá la lista de puntos ECA con filtros.', 'left'],
+        ['inputBusquedaNombre', 'Buscar por Nombre', 'Filtrá puntos ECA escribiendo su nombre.', 'right'],
+        ['selectMaterial', 'Filtrar por Material', 'Seleccioná un material para ver solo los puntos que lo reciben.', 'right'],
+        ['btnLimpiarFiltros', 'Limpiar Filtros', 'Eliminá todos los filtros y mostrá todos los puntos.', 'right']
+    ];
+    stepsConfig.forEach(function(item) {
+        if (document.getElementById(item[0]))
+            steps.push({ element: '#' + item[0], popover: { title: item[1], description: item[2], side: item[3] } });
+    });
 
-        if (document.getElementById('btnCentrar'))
-            steps.push({ element: '#btnCentrar', popover: { title: 'Centrar Mapa', description: 'Volvé a la vista general del mapa con un solo clic.', side: 'left' } });
-
-        if (document.getElementById('btnRecargar'))
-            steps.push({ element: '#btnRecargar', popover: { title: 'Recargar Puntos', description: 'Actualizá los puntos ECA mostrados en el mapa.', side: 'left' } });
-
-        if (document.getElementById('btnToggleLista'))
-            steps.push({ element: '#btnToggleLista', popover: { title: 'Lista Lateral', description: 'Mostrá u ocultá la lista de puntos ECA con filtros.', side: 'left' } });
-
-        if (document.getElementById('inputBusquedaNombre'))
-            steps.push({ element: '#inputBusquedaNombre', popover: { title: 'Buscar por Nombre', description: 'Filtrá puntos ECA escribiendo su nombre.', side: 'right' } });
-
-        if (document.getElementById('selectMaterial'))
-            steps.push({ element: '#selectMaterial', popover: { title: 'Filtrar por Material', description: 'Seleccioná un material para ver solo los puntos que lo reciben.', side: 'right' } });
-
-        if (document.getElementById('btnLimpiarFiltros'))
-            steps.push({ element: '#btnLimpiarFiltros', popover: { title: 'Limpiar Filtros', description: 'Eliminá todos los filtros y mostrá todos los puntos.', side: 'right' } });
-
-        var modal = document.getElementById('modalDetallesPunto');
-        if (modal) {
-            var observer = new MutationObserver(function() {
-                if (modal.classList.contains('show')) {
-                    observer.disconnect();
-                    var modalSteps = [];
-
-                    var enviarBtn = document.getElementById('btnEnviarMensaje');
-                    if (enviarBtn && enviarBtn.classList.contains('d-none') === false) {
-                        modalSteps.push({ element: '#btnEnviarMensaje', popover: { title: 'Enviar Mensaje', description: 'Iniciá un chat con este punto ECA desde tu perfil.', side: 'bottom' } });
-                    }
-
-                    if (modalSteps.length) {
-                        var modalTour = driver({
-                            showProgress: false,
-                            doneBtnText: 'Entendido',
-                            steps: modalSteps
-                        });
-                        modalTour.drive();
-                    }
+    var modal = document.getElementById('modalDetallesPunto');
+    if (modal) {
+        var observer = new MutationObserver(function() {
+            if (modal.classList.contains('show')) {
+                observer.disconnect();
+                var modalSteps = [];
+                var enviarBtn = document.getElementById('btnEnviarMensaje');
+                if (enviarBtn && !enviarBtn.classList.contains('d-none'))
+                    modalSteps.push({ element: '#btnEnviarMensaje', popover: { title: 'Enviar Mensaje', description: 'Iniciá un chat con este punto ECA desde tu perfil.', side: 'bottom' } });
+                if (modalSteps.length) {
+                    var modalTour = driverObj({ showProgress: false, doneBtnText: 'Entendido', steps: modalSteps });
+                    modalTour.drive();
                 }
-            });
-            observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
-        }
+            }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    }
 
-        if (steps.length) {
-            var tourDriver = driver({
-                showProgress: true,
-                nextBtnText: 'Siguiente',
-                prevBtnText: 'Anterior',
-                doneBtnText: 'Entendido',
-                onDestroyed: function() { checkAllToursDone(); },
-                steps: steps
-            });
-            tourDriver.drive();
-        } else {
-            checkAllToursDone();
-        }
-    } catch(e) {}
+    if (steps.length) {
+        var tourDriver = driverObj({
+            showProgress: true,
+            nextBtnText: 'Siguiente',
+            prevBtnText: 'Anterior',
+            doneBtnText: 'Entendido',
+            onDestroyed: function() { checkAllToursDone(); },
+            steps: steps
+        });
+        tourDriver.drive();
+    } else {
+        checkAllToursDone();
+    }
 })();
 </script>
 {% endif %}

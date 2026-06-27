@@ -1,41 +1,22 @@
 {% if request.user.is_authenticated and not request.user.completo_tutorial %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
-<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+{% include 'partials/_tutorial_assets.html' %}
 <script>
 (function() {
-    var q = new URLSearchParams(window.location.search);
+    {% include 'partials/_tutorial_funcs.html' %}
+
+    var q = new URLSearchParams(globalThis.location.search);
     if (q.get('reiniciar') === '1') {
-        var keys = ['tutorial_ciu_datos', 'tutorial_ciu_comentarios', 'tutorial_ciu_chat', 'tutorial_ciu_guardados', 'tutorial_ciu_mapa', 'tutorial_ciu_pub'];
-        keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
-        window.history.replaceState({}, '', '/perfil/');
+        STORAGE_KEYS.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) { console.error("Error al limpiar localStorage:", e); } });
+        globalThis.history.replaceState({}, '', '/perfil/');
     }
-    var driver = window.driver.js.driver;
     var tab = '{{ tab_activo|default:"datos" }}';
     var STORAGE_KEY = 'tutorial_ciu_' + tab;
 
-    function notificarServidor() {
-        fetch("{% url 'marcar_tutorial_visto' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            }
-        }).catch(function(e) { console.error("Error al notificar tutorial:", e); });
-    }
-
-    function checkAllToursDone() {
-        var keys = ['tutorial_ciu_datos', 'tutorial_ciu_comentarios', 'tutorial_ciu_chat', 'tutorial_ciu_guardados', 'tutorial_ciu_mapa', 'tutorial_ciu_pub'];
-        var allDone = keys.every(function(k) { return localStorage.getItem(k) === '1'; });
-        if (allDone) {
-            notificarServidor();
-        }
-    }
-
-    window.iniciarTourCiudadano = function() {
+    globalThis.iniciarTourCiudadano = function() {
         var steps = buildSteps(tab);
         if (!steps.length) return;
-        try { localStorage.setItem(STORAGE_KEY, '1'); } catch(e) {}
-        var tourDriver = driver({
+        try { localStorage.setItem(STORAGE_KEY, '1'); } catch(e) { console.error("Error al guardar en localStorage:", e); }
+        var tourDriver = driverObj({
             showProgress: true,
             nextBtnText: 'Siguiente',
             prevBtnText: 'Anterior',
@@ -56,102 +37,78 @@
 
     function buildDatosSteps() {
         var s = [];
-
-        if (document.getElementById('sidebar-mis-datos'))
-            s.push({ element: '#sidebar-mis-datos', popover: { title: 'Tu Perfil', description: 'Sección principal con tus datos personales y configuración de la cuenta.', side: 'right' } });
-
-        if (document.getElementById('notificacionesDropdown'))
-            s.push({ element: '#notificacionesDropdown', popover: { title: 'Notificaciones', description: 'Alertas de mensajes nuevos y publicaciones de los centros ECA.', side: 'bottom' } });
-
-        if (document.getElementById('datosPersonales-tab'))
-            s.push({ element: '#datosPersonales-tab', popover: { title: 'Datos Personales', description: 'Editá tus nombres, celular, localidad y fecha de nacimiento.', side: 'bottom' } });
-
-        if (document.getElementById('formDatos'))
-            s.push({ element: '#formDatos', popover: { title: 'Formulario de Edición', description: 'Completá tus datos y presioná Guardar Cambios.', side: 'bottom' } });
-
-        if (document.getElementById('btn-guardar-cambios'))
-            s.push({ element: '#btn-guardar-cambios', popover: { title: 'Guardar Cambios', description: 'Presioná para guardar la información actualizada de tu perfil.', side: 'bottom' } });
-
-        if (document.getElementById('btn-limpiar-form'))
-            s.push({ element: '#btn-limpiar-form', popover: { title: 'Limpiar', description: 'Restablecé los campos del formulario a sus valores originales.', side: 'bottom' } });
-
-        if (document.getElementById('configuracion-tab'))
-            s.push({ element: '#configuracion-tab', popover: { title: 'Configuración', description: 'Activá o desactivá notificaciones por email y cambiá tu contraseña.', side: 'bottom' } });
-
-        if (document.getElementById('btnGuardarPreferencias'))
-            s.push({ element: '#btnGuardarPreferencias', popover: { title: 'Guardar Preferencias', description: 'Guardá los cambios en tu configuración de notificaciones.', side: 'bottom' } });
-
-        if (document.getElementById('formPass'))
-            s.push({ element: '#formPass', popover: { title: 'Cambiar Contraseña', description: 'Actualizá tu clave de acceso de forma segura.', side: 'bottom' } });
-
-        if (document.getElementById('btn-actualizar-contrasena'))
-            s.push({ element: '#btn-actualizar-contrasena', popover: { title: 'Actualizar Contraseña', description: 'Presioná para aplicar el cambio de contraseña.', side: 'bottom' } });
-
+        var map = [
+            ['sidebar-mis-datos', 'Tu Perfil', 'Sección principal con tus datos personales y configuración de la cuenta.', 'right'],
+            ['notificacionesDropdown', 'Notificaciones', 'Alertas de mensajes nuevos y publicaciones de los centros ECA.', 'bottom'],
+            ['datosPersonales-tab', 'Datos Personales', 'Editá tus nombres, celular, localidad y fecha de nacimiento.', 'bottom'],
+            ['formDatos', 'Formulario de Edición', 'Completá tus datos y presioná Guardar Cambios.', 'bottom'],
+            ['btn-guardar-cambios', 'Guardar Cambios', 'Presioná para guardar la información actualizada de tu perfil.', 'bottom'],
+            ['btn-limpiar-form', 'Limpiar', 'Restablecé los campos del formulario a sus valores originales.', 'bottom'],
+            ['configuracion-tab', 'Configuración', 'Activá o desactivá notificaciones por email y cambiá tu contraseña.', 'bottom'],
+            ['btnGuardarPreferencias', 'Guardar Preferencias', 'Guardá los cambios en tu configuración de notificaciones.', 'bottom'],
+            ['formPass', 'Cambiar Contraseña', 'Actualizá tu clave de acceso de forma segura.', 'bottom'],
+            ['btn-actualizar-contrasena', 'Actualizar Contraseña', 'Presioná para aplicar el cambio de contraseña.', 'bottom']
+        ];
+        map.forEach(function(item) {
+            if (document.getElementById(item[0]))
+                s.push({ element: '#' + item[0], popover: { title: item[1], description: item[2], side: item[3] } });
+        });
         return s;
     }
 
     function buildComentariosSteps() {
         var s = [];
-
         var lista = document.getElementById('comentarios-lista');
         if (lista) {
             s.push({ element: '#comentarios-lista', popover: { title: 'Tus Comentarios', description: 'Acá se listan todos los comentarios que publicaste en las noticias de InfoRecicla.', side: 'bottom' } });
             var primerLink = lista.querySelector('a[href*="detalle_publicacion"]');
-            if (primerLink && primerLink.id) {
+            if (primerLink && primerLink.id)
                 s.push({ element: '#' + primerLink.id, popover: { title: 'Ver Publicación', description: 'Clickeá para ir directamente a la publicación que comentaste.', side: 'bottom' } });
-            }
         }
         var emptyLink = document.getElementById('btn-ver-publicaciones-comentarios');
-        if (emptyLink && !lista) {
+        if (emptyLink && !lista)
             s.push({ element: '#btn-ver-publicaciones-comentarios', popover: { title: 'Sin Comentarios', description: 'Todavía no comentaste ninguna publicación. ¡Empezá explorando las novedades!', side: 'bottom' } });
-        }
-
         return s;
     }
 
     function buildChatSteps() {
         var s = [];
-
-        if (document.getElementById('buscador-puntos-select2'))
-            s.push({ element: '#buscador-puntos-select2', popover: { title: 'Buscar Punto ECA', description: 'Escribí el nombre de un centro de reciclaje para iniciar un chat.', side: 'bottom' } });
-
-        if (document.getElementById('chat-sidebar-list'))
-            s.push({ element: '#chat-sidebar-list', popover: { title: 'Conversaciones', description: 'Tus chats activos con los puntos ECA. Clickeá una para ver sus mensajes.', side: 'right' } });
-
-        if (document.getElementById('chat-mensajes'))
-            s.push({ element: '#chat-mensajes', popover: { title: 'Área de Mensajes', description: 'Los mensajes de la conversación seleccionada se muestran acá.', side: 'top' } });
-
-        if (document.getElementById('chat-input'))
-            s.push({ element: '#chat-input', popover: { title: 'Escribir Mensaje', description: 'Escribí tu consulta y presioná Enter para enviar. Shift+Enter para salto de línea.', side: 'top' } });
-
+        var map = [
+            ['buscador-puntos-select2', 'Buscar Punto ECA', 'Escribí el nombre de un centro de reciclaje para iniciar un chat.', 'bottom'],
+            ['chat-sidebar-list', 'Conversaciones', 'Tus chats activos con los puntos ECA. Clickeá una para ver sus mensajes.', 'right'],
+            ['chat-mensajes', 'Área de Mensajes', 'Los mensajes de la conversación seleccionada se muestran acá.', 'top'],
+            ['chat-input', 'Escribir Mensaje', 'Escribí tu consulta y presioná Enter para enviar. Shift+Enter para salto de línea.', 'top']
+        ];
+        map.forEach(function(item) {
+            if (document.getElementById(item[0]))
+                s.push({ element: '#' + item[0], popover: { title: item[1], description: item[2], side: item[3] } });
+        });
         var sendBtn = document.querySelector('#chat-form button[type="submit"]');
         if (sendBtn)
             s.push({ element: '#chat-form', popover: { title: 'Enviar Mensaje', description: 'Presioná este botón o Enter para enviar tu mensaje al punto ECA.', side: 'left' } });
-
         return s;
     }
 
     function buildGuardadosSteps() {
         var s = [];
-
-        if (document.getElementById('btn-explorar-publicaciones'))
+        var exploreBtn = document.getElementById('btn-explorar-publicaciones');
+        if (exploreBtn)
             s.push({ element: '#btn-explorar-publicaciones', popover: { title: 'Explorar Publicaciones', description: 'Andá a la sección de publicaciones para buscar y guardar contenido.', side: 'bottom' } });
-
-        if (document.getElementById('guardados-grid')) {
+        var grid = document.getElementById('guardados-grid');
+        if (grid)
             s.push({ element: '#guardados-grid', popover: { title: 'Tus Guardados', description: 'Publicaciones que guardaste. Clickeá "Leer publicación" para verlas completas.', side: 'top' } });
-        } else if (document.getElementById('btn-explorar-publicaciones-vacio')) {
+        var emptyLink2 = document.getElementById('btn-explorar-publicaciones-vacio');
+        if (emptyLink2 && !grid)
             s.push({ element: '#btn-explorar-publicaciones-vacio', popover: { title: 'Sin Guardados', description: 'Todavía no guardaste publicaciones. Explorá y guardá las que te interesen.', side: 'bottom' } });
-        }
-
         return s;
     }
 
     try {
-        if (localStorage.getItem(STORAGE_KEY) !== '1') {
-            document.addEventListener('DOMContentLoaded', window.iniciarTourCiudadano);
-        }
+        if (localStorage.getItem(STORAGE_KEY) !== '1')
+            document.addEventListener('DOMContentLoaded', globalThis.iniciarTourCiudadano);
     } catch(e) {
-        document.addEventListener('DOMContentLoaded', window.iniciarTourCiudadano);
+        console.error("Error al leer localStorage:", e);
+        document.addEventListener('DOMContentLoaded', globalThis.iniciarTourCiudadano);
     }
 })();
 </script>
