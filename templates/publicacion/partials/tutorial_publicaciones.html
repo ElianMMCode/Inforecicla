@@ -7,7 +7,7 @@
     if (storageGet(key) === '1') return;
     if (!storageSet(key, '1')) return;
 
-    var steps = pasosDesdeConfig({{ tutorial_pub_steps|safe }});
+    var steps = pasosDesdeConfig({{ tutorial_pub_steps }});
 
     var editarBtn = document.querySelector('[id^="btn-editar-comentario-"]');
     if (editarBtn)

@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import date as date_type
 from django.shortcuts import render, redirect
@@ -9,6 +10,7 @@ from django.views.decorators.http import require_POST, require_safe
 from django.views import View
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.safestring import mark_safe
 from apps.users.models import Usuario, TokenValidacion
 from apps.ecas.models import PuntoECA, Localidad
 import apps.ecas.models as ecas_models
@@ -887,7 +889,7 @@ def perfil_ciudadano(request, tab="datos"):
             "tab_activo": tab,
             "perfil_incompleto": perfil_incompleto(request.user),
             "perfil_pendientes": perfil_pendientes,
-            "tutorial_datos_steps": [
+            "tutorial_datos_steps": mark_safe(json.dumps([
                 ["sidebar-mis-datos", "Tu Perfil", "Sección principal con tus datos personales y configuración de la cuenta.", "right"],
                 ["notificacionesDropdown", "Notificaciones", "Alertas de mensajes nuevos y publicaciones de los centros ECA."],
                 ["datosPersonales-tab", "Datos Personales", "Editá tus nombres, celular, localidad y fecha de nacimiento."],
@@ -898,16 +900,16 @@ def perfil_ciudadano(request, tab="datos"):
                 ["btnGuardarPreferencias", "Guardar Preferencias", "Guardá los cambios en tu configuración de notificaciones."],
                 ["formPass", "Cambiar Contraseña", "Actualizá tu clave de acceso de forma segura."],
                 ["btn-actualizar-contrasena", "Actualizar Contraseña", "Presioná para aplicar el cambio de contraseña."]
-            ],
-            "tutorial_chat_steps": [
+            ])),
+            "tutorial_chat_steps": mark_safe(json.dumps([
                 ["buscador-puntos-select2", "Buscar Punto ECA", "Escribí el nombre de un centro de reciclaje para iniciar un chat."],
                 ["chat-sidebar-list", "Conversaciones", "Tus chats activos con los puntos ECA. Clickeá una para ver sus mensajes.", "right"],
                 ["chat-mensajes", "Área de Mensajes", "Los mensajes de la conversación seleccionada se muestran acá.", "top"],
                 ["chat-input", "Escribir Mensaje", "Escribí tu consulta y presioná Enter para enviar. Shift+Enter para salto de línea.", "top"]
-            ],
-            "tutorial_guardados_steps": [
+            ])),
+            "tutorial_guardados_steps": mark_safe(json.dumps([
                 ["btn-explorar-publicaciones", "Explorar Publicaciones", "Andá a la sección de publicaciones para buscar y guardar contenido."]
-            ],
+            ])),
         },
     )
 

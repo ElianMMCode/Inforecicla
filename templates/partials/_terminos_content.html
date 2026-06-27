@@ -1,0 +1,37 @@
+<h2>1. Información General y Objeto de la Plataforma</h2>
+<p>InfoRecicla es una plataforma tecnológica orientada a la gestión logística, transaccional y operativa de residuos reciclables, que conecta a Ciudadanos, Gestores de Estaciones de Clasificación y Aprovechamiento (ECA) y Administradores.</p>
+<p>La aceptación de los presentes Términos y Condiciones es obligatoria para poder registrarse y usar cualquiera de las aplicaciones o módulos del sistema, incluyendo módulos de inventario, operaciones, chat con WebSockets y ReciclaBot.</p>
+
+<h2>2. Capacidad Legal y Límites de Edad</h2>
+<p>De acuerdo con la normatividad de comercio electrónico y protección de menores en Colombia:</p>
+<ul>
+    <li><strong>Ciudadanos:</strong> La edad mínima de uso es a partir de los 14 años, siempre que su participación se limite a actividades educativas o registro de separación de residuos sin manejo directo de dinero.</li>
+    <li><strong>Gestores ECA y Administradores:</strong> Deben declarar obligatoriamente tener 18 años o más y contar con la capacidad legal plena para obligarse contractualmente y registrar transacciones comerciales (compras/ventas de inventario).</li>
+</ul>
+
+<h2>3. Reglas de Uso Transaccional (Módulo de Operaciones)</h2>
+<ul>
+    <li><strong>Precisión de los Datos:</strong> El Gestor ECA es el único responsable de la veracidad de los datos de pesaje (kilogramos) y los precios unitarios de compra/venta cargados en el sistema.</li>
+    <li><strong>Comprobantes en PDF:</strong> Los comprobantes en formato PDF generados por el sistema sirven exclusivamente como soporte informativo y registro digital interno de la operación realizada en la ECA. No sustituyen las obligaciones de facturación formal que exija la Dirección de Impuestos y Aduanas Nacionales (DIAN) en caso de que aplique legalmente a la organización.</li>
+    <li><strong>Limitación de Responsabilidad por Fallos:</strong> Los desarrolladores de InfoRecicla no serán responsables ante pérdidas económicas derivadas de registros erróneos digitados por los usuarios o por problemas de conectividad del servidor o infraestructura de hosting.</li>
+</ul>
+
+<h2>4. Política de Tratamiento de Datos Personales (Habeas Data - Ley 1581 de 2012)</h2>
+<h3>Finalidades de la Recolección</h3>
+<p>Los datos (nombres, cédula, celular, correo electrónico y geolocalización de las ECAs) se recolectan estrictamente para:</p>
+<ul>
+    <li>Gestionar el control de accesos y la seguridad basada en roles (RBAC) implementada en Django.</li>
+    <li>Permitir la comunicación bidireccional en tiempo real mediante el módulo de Chat Interno y alertas del sistema.</li>
+    <li>Generar métricas consolidadas, analíticas y reportes de impacto ambiental de forma anonimizada para el dashboard general.</li>
+</ul>
+<h3>Seguridad Informática</h3>
+<p>La plataforma cuenta con protocolos técnicos avanzados para salvaguardar la información: cifrado de contraseñas mediante algoritmos de hash unidireccional PBKDF2/SHA-256 en Django y mecanismos de mitigación contra inyecciones XSS y ataques CSRF validados bajo estándares OWASP. Las contraseñas nunca son almacenadas ni legibles en texto plano.</p>
+<h3>Derechos ARCO</h3>
+<p>El usuario tiene derecho a Conocer, Actualizar, Rectificar y Solicitar la eliminación de sus datos a través de los canales de soporte oficiales de InfoRecicla, los cuales serán procesados en los tiempos estipulados por la ley colombiana.</p>
+
+<h2>5. Propiedad Intelectual y Uso Correcto del Sistema</h2>
+<p>El código fuente del proyecto, el diseño de la interfaz (Bootstrap 5), los logos y las marcas son propiedad del equipo de desarrollo de InfoRecicla.</p>
+<p>Queda terminantemente prohibido el intento de inyección de scripts maliciosos (Cross-Site Scripting), alteración de peticiones HTTP/POST evadiendo tokens CSRF, ataques automatizados al endpoint del chat o suplantación de identidades de Administradores o Gestores. Cualquier conducta sospechosa facultará al Administrador a bloquear permanentemente la cuenta del usuario sin previo aviso.</p>
+
+<h2>6. Ley Aplicable y Jurisdicción</h2>
+<p>Los presentes Términos y Condiciones se rigen enteramente por las leyes de la República de Colombia. Cualquier controversia será dirimida ante las autoridades competentes colombianas.</p>

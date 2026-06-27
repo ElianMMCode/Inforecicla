@@ -22,7 +22,7 @@
         observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
     }
 
-    iniciarTutorial(pasosDesdeConfig({{ tutorial_mapa_steps|safe }}));
+    iniciarTutorial(pasosDesdeConfig({{ tutorial_mapa_steps }}));
 })();
 </script>
 {% endif %}

@@ -1,12 +1,15 @@
-from django.shortcuts import render, redirect, get_object_or_404
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_GET, require_POST
 
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
 _DETALLE_PUBLICACION = "publicacion:detalle_publicacion"
-_TUTORIAL_PUB_STEPS = [
+_TUTORIAL_PUB_STEPS = mark_safe(json.dumps([
     ["btn-volver-publicaciones", "Volver", "Regresá al listado completo de publicaciones."],
     ["btn-ver-youtube", "Ver en YouTube", "Abrí el video en YouTube para verlo en pantalla completa."],
     ["carruselPublicacion", "Galería de Imágenes", "Deslizá para ver todas las imágenes de la publicación.", "top"],
@@ -22,7 +25,7 @@ _TUTORIAL_PUB_STEPS = [
     ["btn-cargar-mas", "Cargar Más", "Mostrá más publicaciones a medida que las necesitás.", "top"],
     ["comentario-texto", "Escribir Comentario", "Dejá tu opinión sobre la publicación.", "top"],
     ["btn-comentar", "Publicar Comentario", "Presioná para enviar tu comentario.", "right"],
-]
+]))
 
 from .service import PublicacionService
 

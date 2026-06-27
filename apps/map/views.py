@@ -1,10 +1,13 @@
-from django.shortcuts import render
+import json
+import math
+
+import requests
 from django.http import JsonResponse, Http404
+from django.shortcuts import render
+from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_GET
 from apps.ecas.models import PuntoECA, Localidad
 from apps.inventory.models import Inventario, Material
-import requests
-import math
 
 """
 Módulo de vistas del mapa de Inforecicla
@@ -25,7 +28,7 @@ def render_mapa(request):
     Renderiza la página principal del mapa interactivo.
     """
     return render(request, "mapa/mapa.html", {
-        "tutorial_mapa_steps": [
+        "tutorial_mapa_steps": mark_safe(json.dumps([
             ["mapa", "Mapa Interactivo", "Explorá los puntos de reciclaje ECA en un mapa interactivo de tu ciudad.", "top"],
             ["btnCentrar", "Centrar Mapa", "Volvé a la vista general del mapa con un solo clic.", "left"],
             ["btnRecargar", "Recargar Puntos", "Actualizá los puntos ECA mostrados en el mapa.", "left"],
@@ -33,7 +36,7 @@ def render_mapa(request):
             ["inputBusquedaNombre", "Buscar por Nombre", "Filtrá puntos ECA escribiendo su nombre.", "right"],
             ["selectMaterial", "Filtrar por Material", "Seleccioná un material para ver solo los puntos que lo reciben.", "right"],
             ["btnLimpiarFiltros", "Limpiar Filtros", "Eliminá todos los filtros y mostrá todos los puntos.", "right"]
-        ]
+        ]))
     })
 
 

@@ -27,18 +27,18 @@
     }
 
     function buildChatSteps() {
-        var s = pasosDesdeConfig({{ tutorial_chat_steps|safe }});
+        var s = pasosDesdeConfig({{ tutorial_chat_steps }});
         var sendBtn = document.querySelector('#chat-form button[type="submit"]');
         if (sendBtn) s.push({ element: '#chat-form', popover: { title: 'Enviar Mensaje', description: 'Presioná este botón o Enter para enviar tu mensaje al punto ECA.', side: 'left' } });
         return s;
     }
 
     function buildSteps(currentTab) {
-        if (currentTab === 'datos') return pasosDesdeConfig({{ tutorial_datos_steps|safe }});
+        if (currentTab === 'datos') return pasosDesdeConfig({{ tutorial_datos_steps }});
         if (currentTab === 'comentarios') return buildComentariosSteps();
         if (currentTab === 'chat') return buildChatSteps();
         if (currentTab === 'guardados') {
-            var st = pasosDesdeConfig({{ tutorial_guardados_steps|safe }});
+            var st = pasosDesdeConfig({{ tutorial_guardados_steps }});
             var grid = document.getElementById('guardados-grid');
             if (grid) {
                 st.push({ element: '#guardados-grid', popover: { title: 'Tus Guardados', description: 'Publicaciones que guardaste. Clickeá "Leer publicación" para verlas completas.', side: 'top' } });
