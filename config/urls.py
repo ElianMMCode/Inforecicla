@@ -62,6 +62,9 @@ urlpatterns = [
     path("puntos-eca-json/", ecas_views.puntos_eca_json, name="puntos_eca_json"),
     # API chat
     path("mensajes/", include("apps.chat.urls")),
+    # Tutorial interactivo
+    path("api/tutorial-visto/", views.marcar_tutorial_visto, name="marcar_tutorial_visto"),
+    path("api/tutorial-reiniciar/", views.reiniciar_tutorial, name="reiniciar_tutorial"),
     # Previsualización de errores
     path("", include("apps.core.urls", namespace="core")),
 ]

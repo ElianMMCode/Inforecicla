@@ -849,6 +849,9 @@ def _create_registro_ciudadano(fields):
 def perfil_ciudadano(request, tab="datos"):
     if request.user.is_staff or request.user.is_superuser:
         return redirect("/panel_admin/perfil/")
+    if request.GET.get("reiniciar") == "1" and request.user.completo_tutorial:
+        request.user.completo_tutorial = False
+        request.user.save(update_fields=["completo_tutorial"])
     from apps.publicaciones.models import Comentario, Guardados, Notificacion
 
     localidades = Localidad.objects.all()
@@ -1212,4 +1215,21 @@ def cambiar_contrasena_ciudadano(request):
         update_session_auth_hash(request, user)
         return _finish(True, "Contraseña actualizada correctamente.")
 
+
+@login_required
+@require_POST
+def marcar_tutorial_visto(request):
+    if request.user.completo_tutorial:
+        return JsonResponse({"status": "info", "message": "Ya estaba marcado"})
+    request.user.completo_tutorial = True
+    request.user.save(update_fields=["completo_tutorial"])
+    return JsonResponse({"status": "success"})
+
+
+@login_required
+@require_POST
+def reiniciar_tutorial(request):
+    request.user.completo_tutorial = False
+    request.user.save(update_fields=["completo_tutorial"])
+    return JsonResponse({"status": "success", "message": "Tutorial reiniciado. Recargá la página para verlo."})
 
