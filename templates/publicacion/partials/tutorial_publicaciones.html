@@ -7,23 +7,7 @@
     if (storageGet(key) === '1') return;
     if (!storageSet(key, '1')) return;
 
-    var steps = pasosDesdeConfig([
-        ['btn-volver-publicaciones', 'Volver', 'Regresá al listado completo de publicaciones.'],
-        ['btn-ver-youtube', 'Ver en YouTube', 'Abrí el video en YouTube para verlo en pantalla completa.'],
-        ['carruselPublicacion', 'Galería de Imágenes', 'Deslizá para ver todas las imágenes de la publicación.', 'top'],
-        ['carruselDestacadas', 'Publicaciones Destacadas', 'Las noticias más importantes seleccionadas por InfoRecicla.'],
-        ['btn-like', 'Me Gusta', 'Indicá que te gustó la publicación. Podés cambiar tu voto en cualquier momento.'],
-        ['btn-dislike', 'No Me Gusta', 'Expresá tu opinión negativa sobre la publicación.'],
-        ['btn-guardar-publicacion', 'Guardar', 'Guardá esta publicación para leerla después desde tu perfil.'],
-        ['filtro-buscar', 'Buscar', 'Encontrá publicaciones por palabra clave.'],
-        ['filtro-categoria', 'Categoría', 'Filtrá publicaciones por categoría temática.'],
-        ['filtro-destacados', 'Solo Destacados', 'Mostrá únicamente las publicaciones destacadas por el equipo.'],
-        ['btn-filtrar', 'Filtrar', 'Aplicá los filtros seleccionados para refinar la búsqueda.'],
-        ['grid-publicaciones', 'Publicaciones', 'Cada tarjeta te lleva al detalle de la publicación.', 'top'],
-        ['btn-cargar-mas', 'Cargar Más', 'Mostrá más publicaciones a medida que las necesitás.', 'top'],
-        ['comentario-texto', 'Escribir Comentario', 'Dejá tu opinión sobre la publicación.', 'top'],
-        ['btn-comentar', 'Publicar Comentario', 'Presioná para enviar tu comentario.', 'right']
-    ]);
+    var steps = pasosDesdeConfig({{ tutorial_pub_steps|safe }});
 
     var editarBtn = document.querySelector('[id^="btn-editar-comentario-"]');
     if (editarBtn)

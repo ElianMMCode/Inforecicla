@@ -6,16 +6,35 @@ from django.views.decorators.http import require_GET, require_POST
 _COMENTARIO_MIN = 1
 _COMENTARIO_MAX = 1000
 _DETALLE_PUBLICACION = "publicacion:detalle_publicacion"
+_TUTORIAL_PUB_STEPS = [
+    ["btn-volver-publicaciones", "Volver", "Regresá al listado completo de publicaciones."],
+    ["btn-ver-youtube", "Ver en YouTube", "Abrí el video en YouTube para verlo en pantalla completa."],
+    ["carruselPublicacion", "Galería de Imágenes", "Deslizá para ver todas las imágenes de la publicación.", "top"],
+    ["carruselDestacadas", "Publicaciones Destacadas", "Las noticias más importantes seleccionadas por InfoRecicla."],
+    ["btn-like", "Me Gusta", "Indicá que te gustó la publicación. Podés cambiar tu voto en cualquier momento."],
+    ["btn-dislike", "No Me Gusta", "Expresá tu opinión negativa sobre la publicación."],
+    ["btn-guardar-publicacion", "Guardar", "Guardá esta publicación para leerla después desde tu perfil."],
+    ["filtro-buscar", "Buscar", "Encontrá publicaciones por palabra clave."],
+    ["filtro-categoria", "Categoría", "Filtrá publicaciones por categoría temática."],
+    ["filtro-destacados", "Solo Destacados", "Mostrá únicamente las publicaciones destacadas por el equipo."],
+    ["btn-filtrar", "Filtrar", "Aplicá los filtros seleccionados para refinar la búsqueda."],
+    ["grid-publicaciones", "Publicaciones", "Cada tarjeta te lleva al detalle de la publicación.", "top"],
+    ["btn-cargar-mas", "Cargar Más", "Mostrá más publicaciones a medida que las necesitás.", "top"],
+    ["comentario-texto", "Escribir Comentario", "Dejá tu opinión sobre la publicación.", "top"],
+    ["btn-comentar", "Publicar Comentario", "Presioná para enviar tu comentario.", "right"],
+]
 
 from .service import PublicacionService
 
 
 @require_GET
 def panel_publicaciones(request):
+    context = PublicacionService.list_for_panel(request)
+    context["tutorial_pub_steps"] = _TUTORIAL_PUB_STEPS
     return render(
         request,
         "publicacion/panel_publicaciones.html",
-        PublicacionService.list_for_panel(request),
+        context,
     )
 
 
@@ -23,6 +42,7 @@ def panel_publicaciones(request):
 def publicacion(request, publicacion_id):
     from .models import Reaccion, Guardados
     context = PublicacionService.get_detail_context(publicacion_id)
+    context["tutorial_pub_steps"] = _TUTORIAL_PUB_STEPS
     if request.user.is_authenticated:
         context["mi_reaccion"] = Reaccion.objects.filter(
             publicacion_id=publicacion_id, usuario=request.user

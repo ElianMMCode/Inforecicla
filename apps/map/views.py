@@ -24,7 +24,17 @@ def render_mapa(request):
     """
     Renderiza la página principal del mapa interactivo.
     """
-    return render(request, "mapa/mapa.html")
+    return render(request, "mapa/mapa.html", {
+        "tutorial_mapa_steps": [
+            ["mapa", "Mapa Interactivo", "Explorá los puntos de reciclaje ECA en un mapa interactivo de tu ciudad.", "top"],
+            ["btnCentrar", "Centrar Mapa", "Volvé a la vista general del mapa con un solo clic.", "left"],
+            ["btnRecargar", "Recargar Puntos", "Actualizá los puntos ECA mostrados en el mapa.", "left"],
+            ["btnToggleLista", "Lista Lateral", "Mostrá u ocultá la lista de puntos ECA con filtros.", "left"],
+            ["inputBusquedaNombre", "Buscar por Nombre", "Filtrá puntos ECA escribiendo su nombre.", "right"],
+            ["selectMaterial", "Filtrar por Material", "Seleccioná un material para ver solo los puntos que lo reciben.", "right"],
+            ["btnLimpiarFiltros", "Limpiar Filtros", "Eliminá todos los filtros y mostrá todos los puntos.", "right"]
+        ]
+    })
 
 
 def mercator_to_latlon(x, y):
