@@ -1,5 +1,8 @@
 {% load static %}{% if request.user.is_authenticated and not request.user.completo_tutorial %}
-{% include 'partials/_tutorial_head.html' %}
+{% include 'partials/_tutorial_assets.html' %}
+<script src="{% static 'js/tutorial_helpers.js' %}"></script>
+<script>
+(function() {
     var q = new URLSearchParams(globalThis.location.search);
     if (q.get('reiniciar') === '1') {
         STORAGE_KEYS.forEach(function(k) { storageRemove(k); });
@@ -71,5 +74,6 @@
             iniciarTutorial(steps);
         });
     }
-{% include 'partials/_tutorial_tail.html' %}
+})();
+</script>
 {% endif %}
