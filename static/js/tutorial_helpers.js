@@ -1,4 +1,4 @@
-const driverObj = (globalThis !== undefined && globalThis.driver) ? globalThis.driver.js.driver : null;
+const driverObj = globalThis?.driver?.js?.driver ?? null;
 const STORAGE_KEYS = ['tutorial_ciu_datos', 'tutorial_ciu_comentarios', 'tutorial_ciu_chat', 'tutorial_ciu_guardados', 'tutorial_ciu_mapa', 'tutorial_ciu_pub'];
 
 function getCSRFToken() {
@@ -22,7 +22,7 @@ function checkAllToursDone() {
 }
 
 function iniciarTutorial(steps) {
-    if (!steps || !steps.length) { checkAllToursDone(); return; }
+    if (!steps?.length) { checkAllToursDone(); return; }
     const tour = driverObj({
         showProgress: true,
         nextBtnText: 'Siguiente',
@@ -44,7 +44,7 @@ function pasosDesdeConfig(lista) {
 }
 
 function storageGet(key) {
-    try { return localStorage.getItem(key); } catch(e) { return null; }
+    try { return localStorage.getItem(key); } catch(e) { console.error('Error en localStorage:', e); return null; }
 }
 
 function storageSet(key, val) {
