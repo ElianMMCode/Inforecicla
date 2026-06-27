@@ -1,0 +1,13 @@
+<div class="d-flex min-vh-100">
+    <nav class="sidebar sidebar-nav bg-success text-white p-3 d-none d-md-flex flex-column">
+        {% include 'users/_sidebar.html' %}
+    </nav>
+    {% include 'partials/sidebar_offcanvas_ciudadano.html' %}
+    <div class="flex-grow-1 d-flex flex-column" style="min-width:0;">
+        <div class="d-md-none d-flex align-items-center bg-success px-3 py-2 shadow position-sticky top-0" style="z-index:1045;">
+            <button id="btn-menu-toggle" class="btn btn-link text-white px-0 me-3" style="font-size:1.8rem;" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+                <i class="bi bi-list"></i>
+                <span class="visually-hidden">Abrir menú</span>
+            </button>
+            <span class="fw-semibold">InfoRecicla</span>
+        </div>

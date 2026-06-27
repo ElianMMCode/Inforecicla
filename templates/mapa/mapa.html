@@ -330,24 +330,7 @@
         </style>
     </head>
     <body>
-        <div class="d-flex min-vh-100">
-            <!-- Sidebar desktop -->
-            <nav class="sidebar sidebar-nav bg-success text-white p-3 d-none d-md-flex flex-column">
-                {% include 'users/_sidebar.html' %}
-            </nav>
-            <!-- Offcanvas Sidebar Mobile -->
-            {% include 'partials/sidebar_offcanvas_ciudadano.html' %}
-
-            <!-- Main Content -->
-            <div class="flex-grow-1 d-flex flex-column" style="min-width:0;">
-        <!-- Topbar Mobile -->
-        <div class="d-md-none d-flex align-items-center bg-success px-3 py-2 shadow position-sticky top-0" style="z-index:1045;">
-            <button id="btn-menu-toggle" class="btn btn-link text-white px-0 me-3" style="font-size:1.8rem;" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
-                <i class="bi bi-list"></i>
-                <span class="visually-hidden">Abrir menú</span>
-            </button>
-            <span class="fw-semibold">InfoRecicla</span>
-        </div>
+{% include 'partials/_sidebar_open.html' %}
         <!-- Header -->
         <header class="bg-white border-bottom shadow-sm sticky-top d-none d-md-block">
             <div class="container-fluid py-3 px-4">
@@ -603,8 +586,7 @@
                 </div>
             </div>
         </div>
-        </div>{# /.flex-grow-1 (Main Content) #}
-    </div>{# /.d-flex #}
+{% include 'partials/_sidebar_close.html' %}
 
     <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO" crossorigin="anonymous"></script>
