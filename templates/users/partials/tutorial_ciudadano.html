@@ -1,9 +1,8 @@
-{% if request.user.is_authenticated and not request.user.completo_tutorial %}
+{% load static %}{% if request.user.is_authenticated and not request.user.completo_tutorial %}
 {% include 'partials/_tutorial_assets.html' %}
+<script src="{% static 'js/tutorial_helpers.js' %}"></script>
 <script>
 (function() {
-    {% include 'partials/_tutorial_funcs.html' %}
-
     var q = new URLSearchParams(globalThis.location.search);
     if (q.get('reiniciar') === '1') {
         STORAGE_KEYS.forEach(function(k) { storageRemove(k); });
@@ -54,15 +53,17 @@
         ]);
         if (currentTab === 'comentarios') return buildComentariosSteps();
         if (currentTab === 'chat') return buildChatSteps();
-        if (currentTab === 'guardados') return pasosDesdeConfig([
-            ['btn-explorar-publicaciones', 'Explorar Publicaciones', 'Andá a la sección de publicaciones para buscar y guardar contenido.'],
-        ]).concat(
-            document.getElementById('guardados-grid')
-                ? [{ element: '#guardados-grid', popover: { title: 'Tus Guardados', description: 'Publicaciones que guardaste. Clickeá "Leer publicación" para verlas completas.', side: 'top' } }]
-                : document.getElementById('btn-explorar-publicaciones-vacio')
-                    ? [{ element: '#btn-explorar-publicaciones-vacio', popover: { title: 'Sin Guardados', description: 'Todavía no guardaste publicaciones. Explorá y guardá las que te interesen.', side: 'bottom' } }]
-                    : []
-        );
+        if (currentTab === 'guardados') {
+            var st = pasosDesdeConfig([['btn-explorar-publicaciones', 'Explorar Publicaciones', 'Andá a la sección de publicaciones para buscar y guardar contenido.']]);
+            var grid = document.getElementById('guardados-grid');
+            if (grid) {
+                st.push({ element: '#guardados-grid', popover: { title: 'Tus Guardados', description: 'Publicaciones que guardaste. Clickeá "Leer publicación" para verlas completas.', side: 'top' } });
+            } else {
+                var emptyLink2 = document.getElementById('btn-explorar-publicaciones-vacio');
+                if (emptyLink2) st.push({ element: '#btn-explorar-publicaciones-vacio', popover: { title: 'Sin Guardados', description: 'Todavía no guardaste publicaciones. Explorá y guardá las que te interesen.', side: 'bottom' } });
+            }
+            return st;
+        }
         return [];
     }
 
