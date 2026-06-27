@@ -239,6 +239,12 @@ class Usuario(AbstractBaseUser, PermissionsMixin, LocalizacionModel):
         help_text="Indica si este usuario fue creado mediante importación CSV masiva",
     )
 
+    completo_tutorial = models.BooleanField(
+        default=False,
+        verbose_name="Tutorial completado",
+        help_text="Indica si el usuario ya completó el recorrido interactivo",
+    )
+
     # =========================================================================
     # CAMPOS DE CONTROL DE DJANGO (AUTH)
     # =========================================================================

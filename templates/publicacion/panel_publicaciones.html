@@ -6,15 +6,6 @@
 {% block extra_head %}
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" crossorigin="anonymous" integrity="sha384-/rJKQnzOkEo+daG0jMjU1IwwY9unxt1NBw3Ef2fmOJ3PW/TfAg2KXVoWwMZQZtw9">
 {% endblock %}
-{% block hero %}
-<section class="page-hero py-5">
-    <div class="container">
-        <h1 class="fw-bold display-5 mb-2 lh-1">Publicaciones</h1>
-        <p class="mb-0 opacity-75 fs-5 fw-light" style="max-width:640px;">Aprende, comparte y mejora tus hábitos de reciclaje con el conocimiento de toda la comunidad.</p>
-    </div>
-</section>
-{% endblock %}
-
 {% block content %}
 
 {% if publicaciones_destacadas %}
@@ -126,7 +117,7 @@
                     </div>
                 </div>
                 <div class="col-6 col-lg-2 d-grid align-self-end">
-                    <button class="btn btn-success fw-semibold" type="submit">
+                    <button id="btn-filtrar" class="btn btn-success fw-semibold" type="submit">
                         <i class="fas fa-sliders me-1" aria-hidden="true"></i>Filtrar
                     </button>
                 </div>

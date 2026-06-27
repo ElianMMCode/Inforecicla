@@ -1,0 +1,23 @@
+{% load static %}{% if request.user.is_authenticated and request.user.tipo_usuario == 'CIU' and not request.user.completo_tutorial %}
+{% include 'partials/_tutorial_assets.html' %}
+<script src="{% static 'js/tutorial_helpers.js' %}"></script>
+<script>
+(function() {
+    var key = 'tutorial_ciu_pub';
+    if (storageGet(key) === '1') return;
+    if (!storageSet(key, '1')) return;
+
+    var steps = pasosDesdeConfig({{ tutorial_pub_steps }});
+
+    var editarBtn = document.querySelector('[id^="btn-editar-comentario-"]');
+    if (editarBtn)
+        steps.push({ element: '#' + editarBtn.id, popover: { title: 'Editar Comentario', description: 'Modificá el texto de tu comentario.', side: 'bottom' } });
+
+    var eliminarBtn = document.querySelector('[id^="btn-eliminar-comentario-"]');
+    if (eliminarBtn)
+        steps.push({ element: '#' + eliminarBtn.id, popover: { title: 'Eliminar Comentario', description: 'Eliminá tu comentario de la publicación.', side: 'bottom' } });
+
+    iniciarTutorial(steps);
+})();
+</script>
+{% endif %}

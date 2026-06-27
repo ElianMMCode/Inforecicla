@@ -1,0 +1,28 @@
+{% load static %}{% if request.user.is_authenticated and request.user.tipo_usuario == 'CIU' and not request.user.completo_tutorial %}
+{% include 'partials/_tutorial_assets.html' %}
+<script src="{% static 'js/tutorial_helpers.js' %}"></script>
+<script>
+(function() {
+    var key = 'tutorial_ciu_mapa';
+    if (storageGet(key) === '1') return;
+    if (!storageSet(key, '1')) return;
+
+    var modal = document.getElementById('modalDetallesPunto');
+    if (modal) {
+        var observer = new MutationObserver(function() {
+            if (modal.classList.contains('show')) {
+                observer.disconnect();
+                var btn = document.getElementById('btnEnviarMensaje');
+                if (btn && !btn.classList.contains('d-none')) {
+                    var modalTour = driverObj({ showProgress: false, doneBtnText: 'Entendido', steps: [{ element: '#btnEnviarMensaje', popover: { title: 'Enviar Mensaje', description: 'Iniciá un chat con este punto ECA desde tu perfil.', side: 'bottom' } }] });
+                    modalTour.drive();
+                }
+            }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    iniciarTutorial(pasosDesdeConfig({{ tutorial_mapa_steps }}));
+})();
+</script>
+{% endif %}

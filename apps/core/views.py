@@ -21,8 +21,10 @@ def inicio(request):
 
 
 @require_GET
-def terminos(_request):
-    return render(_request, "core/terminos.html")
+def terminos(request):
+    if request.user.is_authenticated and getattr(request.user, "tipo_usuario", None) == "CIU":
+        return render(request, "core/terminos_ciudadano.html")
+    return render(request, "core/terminos.html")
 
 
 # ── Handlers de error ──────────────────────────────────────────────────────────

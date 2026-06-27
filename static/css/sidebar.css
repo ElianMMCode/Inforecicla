@@ -1,15 +1,10 @@
-/* Sidebar compartido por Punto ECA y Ciudadano
-   Estructura esperada:
-   <nav class="sidebar sidebar-nav ...">{% include '.../sidebar.html' %}</nav>
-   <div class="offcanvas sidebar-offcanvas ...">{% include '.../sidebar.html' %}</div>
-   <div class="sidebar-menu sidebar-fixed"> ... </div>
-*/
+/* Sidebar compartido por todos los roles */
 
-/* Nav desktop: 240px sticky, full-height */
+/* Nav desktop: sticky, full-height */
 .sidebar-nav {
-    width: 240px;
-    min-width: 240px;
-    max-width: 240px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
     position: sticky;
     top: 0;
     min-height: 100vh;
@@ -17,13 +12,12 @@
     z-index: 1050;
 }
 
-/* Offcanvas mobile: mismo ancho visual que el nav desktop */
+/* Offcanvas mobile: mismo ancho */
 .sidebar-offcanvas {
-    width: 240px;
+    width: 280px;
 }
 
-/* El nav tiene p-3 (16px c/lado), por eso el sidebar-menu
-   usa width:100% para no desbordar el área de contenido (208px). */
+/* Contenedor interno del menú */
 .sidebar-menu.sidebar-fixed {
     width: 100%;
     min-width: 0;
@@ -33,14 +27,50 @@
     top: 0;
 }
 
-/* Estado activo: fondo blanco + texto verde oscuro */
-.sidebar-menu .nav-link.active {
-    background: #fff !important;
-    color: #0f5132 !important;
+/* Catch-all: sin azul ni subrayado en ningún link del sidebar */
+.sidebar-menu a,
+.sidebar-menu button,
+.sidebar-menu .nav-link,
+.sidebar-menu .nav-link:link,
+.sidebar-menu .nav-link:visited,
+.sidebar-menu .nav-link:hover,
+.sidebar-menu .nav-link:focus,
+.sidebar-menu .nav-link:focus-visible,
+.sidebar-menu .nav-link:active,
+.sidebar-menu .dropdown-item,
+.sidebar-menu .dropdown-item:link,
+.sidebar-menu .dropdown-item:visited,
+.sidebar-menu .dropdown-item:hover,
+.sidebar-menu .dropdown-item:focus,
+.sidebar-menu .dropdown-item:focus-visible,
+.sidebar-menu .dropdown-item:active {
+    color: #e0e0e0 !important;
+    text-decoration: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.sidebar-menu .nav-link:hover,
+.sidebar-menu .nav-link:focus,
+.sidebar-menu .dropdown-item:hover,
+.sidebar-menu .dropdown-item:focus {
+    color: #fff !important;
+    background: rgba(20, 92, 58, 0.35) !important;
+}
+
+/* Estado activo */
+.sidebar-menu .nav-link.active,
+.sidebar-menu .nav-link.active:link,
+.sidebar-menu .nav-link.active:visited,
+.sidebar-menu .nav-link.active:hover,
+.sidebar-menu .nav-link.active:focus,
+.sidebar-menu .nav-link.active:focus-visible {
+    background: #145c3a !important;
+    color: #fff !important;
 }
 
 .sidebar-menu .nav-link.active i {
-    color: #0f5132 !important;
+    color: #fff !important;
 }
 
 /* Dropdown on hover solo en desktop */
@@ -81,32 +111,28 @@
 
     .sidebar-dropdown:hover > .nav-link.sidebar-dropdown-toggle,
     .sidebar-dropdown:focus-within > .nav-link.sidebar-dropdown-toggle {
-        background: #fff !important;
-        color: #0f5132 !important;
+        background: #145c3a !important;
+        color: #fff !important;
         border-radius: .375rem .375rem 0 0;
     }
 
     .sidebar-dropdown > .dropdown-menu .dropdown-item {
-        color: #fff !important;
-        background: transparent;
-        padding-left: 36px;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         white-space: normal;
-        line-height: 1.25;
-        padding-top: .4rem;
-        padding-bottom: .4rem;
+        line-height: 1.3;
+        padding: .45rem 0 .45rem 36px;
         transition: color 0.18s, background 0.18s;
     }
 
     .sidebar-dropdown > .dropdown-menu .dropdown-item:hover,
     .sidebar-dropdown > .dropdown-menu .dropdown-item:focus,
     .sidebar-dropdown > .dropdown-menu .dropdown-item.active {
-        color: #0f5132 !important;
-        background: #fff !important;
+        color: #fff !important;
+        background: rgba(20, 92, 58, 0.5) !important;
     }
 
     .sidebar-dropdown > .dropdown-menu .dropdown-divider {
-        border-color: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.15);
         margin-left: 12px;
         margin-right: 12px;
     }
@@ -134,7 +160,7 @@
     }
 }
 
-/* En offcanvas mobile, mostrar siempre los dropdowns expandidos */
+/* Offcanvas mobile: dropdowns siempre expandidos */
 .sidebar-offcanvas .sidebar-dropdown > .dropdown-menu {
     display: block !important;
     position: static !important;
@@ -148,25 +174,23 @@
     width: 100% !important;
 }
 .sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-item {
-    color: #fff !important;
-    background: transparent;
-    padding-left: 36px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     white-space: normal;
-    line-height: 1.25;
+    line-height: 1.3;
+    padding: .45rem 0 .45rem 36px;
 }
 .sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-item:hover,
 .sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-item:focus {
-    color: #0f5132 !important;
-    background: #fff !important;
+    color: #fff !important;
+    background: rgba(20, 92, 58, 0.5) !important;
 }
 .sidebar-offcanvas .sidebar-dropdown > .dropdown-menu .dropdown-divider {
-    border-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.15);
     margin-left: 12px;
     margin-right: 12px;
 }
 
-/* Scroll offset para anchors de subseccion */
+/* Scroll offset para anchors */
 .scroll-anchor-offset {
     scroll-margin-top: 40px;
 }

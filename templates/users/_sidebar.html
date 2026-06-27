@@ -1,25 +1,25 @@
 {% load static %}
-{# Sidebar del Ciudadano. Estilos compartidos en static/css/sidebar.css #}
+{# Sidebar del Ciudadano. Estilos en static/css/sidebar.css #}
 <div class="sidebar-menu sidebar-fixed">
     <div class="mb-3" style="margin-bottom: 1.5rem !important; padding-left:12px; padding-right:12px;">
         <a href="/" class="d-flex flex-column align-items-center justify-content-center text-decoration-none" style="width:100%;">
             <img src="{% static 'img/logo.png' %}"
                  alt="Logo InfoRecicla"
                  class="rounded mb-2"
-                 width="56"
-                 height="56">
+                 width="64"
+                 height="64">
             <span class="fw-bold fs-4 text-white" style="letter-spacing:.5px;">InfoRecicla</span>
         </a>
     </div>
-    <ul class="nav nav-pills flex-column" style="gap: 2px !important; margin-top: 0 !important;">
+    <ul class="nav nav-pills flex-column" style="gap: 3px !important; margin-top: 0 !important;">
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center text-white {% if tab_activo == 'datos' or not tab_activo %}active{% endif %}"
+            <a id="sidebar-mis-datos" class="nav-link d-flex align-items-center {% if tab_activo == 'datos' %}active{% endif %}"
                href="{% url 'perfil_ciudadano' %}">
                 <i class="bi bi-person-fill me-2"></i>Mis Datos
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center text-white {% if tab_activo == 'comentarios' %}active{% endif %}"
+            <a id="sidebar-comentarios" class="nav-link d-flex align-items-center {% if tab_activo == 'comentarios' %}active{% endif %}"
                href="{% url 'perfil_comentarios' %}">
                 <i class="bi bi-chat-left-text-fill me-2"></i>Mis Comentarios
                 {% if mis_comentarios %}
@@ -28,13 +28,13 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center text-white {% if tab_activo == 'chat' %}active{% endif %}"
+            <a id="sidebar-mensajes" class="nav-link d-flex align-items-center {% if tab_activo == 'chat' %}active{% endif %}"
                href="{% url 'perfil_mensajes' %}">
                 <i class="bi bi-chat-dots-fill me-2"></i>Mensajes
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center text-white {% if tab_activo == 'guardados' %}active{% endif %}"
+            <a id="sidebar-guardados" class="nav-link d-flex align-items-center {% if tab_activo == 'guardados' %}active{% endif %}"
                href="{% url 'perfil_guardados' %}">
                 <i class="bi bi-bookmark-fill me-2"></i>Guardados
                 {% if mis_guardados %}
@@ -43,19 +43,42 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center text-white" href="/mapa/">
+            <a id="sidebar-mapa" class="nav-link d-flex align-items-center" href="/mapa/">
                 <i class="bi bi-map-fill me-2"></i>Mapa ECA
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center text-white" href="/publicaciones/">
+            <a id="sidebar-publicaciones" class="nav-link d-flex align-items-center" href="/publicaciones/">
                 <i class="bi bi-newspaper me-2"></i>Publicaciones
             </a>
+        </li>
+        <li class="nav-item dropdown">
+            <button id="btn-ayuda-tutorial" type="button" class="nav-link d-flex align-items-center bg-transparent border-0 w-100 dropdown-toggle" style="text-align:left;" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-question-circle me-2"></i>Ayuda
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark shadow-sm ms-3">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="/perfil/?reiniciar=1">
+                        <i class="bi bi-arrow-repeat"></i> Repetir tutorial completo
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="/inicio/#faqAccordion">
+                        <i class="bi bi-question-lg"></i> Preguntas frecuentes
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'core:terminos' %}">
+                        <i class="bi bi-file-text"></i> Términos y condiciones
+                    </a>
+                </li>
+            </ul>
         </li>
         <li class="nav-item">
             <form method="POST" action="/logout/" style="margin:0;padding:0;">
                 {% csrf_token %}
-                <button type="submit" class="nav-link d-flex align-items-center text-white bg-transparent border-0 w-100" style="text-align:left;">
+                <button type="submit" class="nav-link d-flex align-items-center bg-transparent border-0 w-100" style="text-align:left;">
                     <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
                 </button>
             </form>

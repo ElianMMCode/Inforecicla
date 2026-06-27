@@ -3,19 +3,12 @@
 
 {% block page_title %}{{ publicacion.titulo }} - InfoRecicla{% endblock %}
 {% block main_class %}py-5{% endblock %}
-{% block hero %}
-<section class="page-hero py-4">
-    <div class="container">
-        <a href="{% url 'publicacion:publicaciones' %}" class="text-white text-decoration-none small d-inline-flex align-items-center gap-2">
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>Volver a publicaciones
-        </a>
-    </div>
-</section>
-{% endblock %}
-
 {% block content %}
 <section class="py-5">
     <div class="container">
+        <a href="{% url 'publicacion:publicaciones' %}" id="btn-volver-publicaciones" class="text-success text-decoration-none small d-inline-flex align-items-center gap-2 mb-4">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>Volver a publicaciones
+        </a>
         <div class="row g-4">
 
             <div class="col-lg-8">
@@ -56,7 +49,7 @@
                                 <iframe src="{{ publicacion.video_url|video_embed_url }}" title="Video de la publicación" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                             </div>
                             <div class="p-2 text-center bg-light border-top">
-                                <a href="{{ publicacion.video_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
+                                <a id="btn-ver-youtube" href="{{ publicacion.video_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
                                     <i class="fab fa-youtube me-1" aria-hidden="true"></i>Ver en YouTube
                                 </a>
                             </div>
@@ -136,7 +129,7 @@
                             <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="valor" value="Like">
-                                <button type="submit" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_reaccion == 'Like' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                <button type="submit" id="btn-like" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_reaccion == 'Like' %}btn-success{% else %}btn-outline-success{% endif %}">
                                     <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                                     <span>Me gusta</span>
                                     <span class="badge rounded-pill {% if mi_reaccion == 'Like' %}bg-white text-success{% else %}bg-success{% endif %}">{{ publicacion.likes_count }}</span>
@@ -145,7 +138,7 @@
                             <form method="POST" action="{% url 'publicacion:votar_publicacion' publicacion.id %}" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="valor" value="Dislike">
-                                <button type="submit" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_reaccion == 'Dislike' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                <button type="submit" id="btn-dislike" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_reaccion == 'Dislike' %}btn-danger{% else %}btn-outline-danger{% endif %}">
                                     <i class="fas fa-thumbs-down" aria-hidden="true"></i>
                                     <span>No me gusta</span>
                                     <span class="badge rounded-pill {% if mi_reaccion == 'Dislike' %}bg-white text-danger{% else %}bg-danger{% endif %}">{{ publicacion.dislikes_count }}</span>
@@ -154,7 +147,7 @@
                             {% if user.tipo_usuario == "CIU" %}
                             <form method="POST" action="{% url 'publicacion:toggle_guardado' publicacion.id %}" class="d-inline ms-auto">
                                 {% csrf_token %}
-                                <button type="submit" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_guardado %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                <button type="submit" id="btn-guardar-publicacion" class="btn rounded-pill px-3 d-flex align-items-center gap-2 {% if mi_guardado %}btn-warning{% else %}btn-outline-warning{% endif %}">
                                     <i class="{% if mi_guardado %}fas{% else %}far{% endif %} fa-bookmark" aria-hidden="true"></i>
                                     <span>{% if mi_guardado %}Guardado{% else %}Guardar{% endif %}</span>
                                 </button>
@@ -205,7 +198,7 @@
                                         <textarea name="texto" id="comentario-texto" class="form-control" rows="3" placeholder="Comparte tu opinion..." required></textarea>
                                     </div>
                                     <div class="d-flex justify-content-end">
-                                        <button type="submit" class="btn btn-success d-flex align-items-center gap-2 px-3"><i class="fas fa-paper-plane" aria-hidden="true"></i>Comentar</button>
+                                        <button type="submit" id="btn-comentar" class="btn btn-success d-flex align-items-center gap-2 px-3"><i class="fas fa-paper-plane" aria-hidden="true"></i>Comentar</button>
                                     </div>
                                 </form>
                             </div>
@@ -232,7 +225,7 @@
                                                 </div>
                                                 {% if user.is_authenticated and comentario.usuario == user %}
                                                 <div class="d-flex gap-1">
-                                                    <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                                    <button id="btn-editar-comentario-{{ comentario.id }}" class="btn btn-sm btn-outline-secondary py-0 px-2"
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#modalEditar{{ comentario.id|slugify }}"
                                                             aria-label="Editar comentario">
@@ -241,7 +234,7 @@
                                                     <form method="POST" action="{% url 'publicacion:eliminar_comentario' comentario.id %}"
                                                           onsubmit="return confirm('¿Eliminar este comentario?');">
                                                         {% csrf_token %}
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" aria-label="Eliminar comentario">
+                                                        <button type="submit" id="btn-eliminar-comentario-{{ comentario.id }}" class="btn btn-sm btn-outline-danger py-0 px-2" aria-label="Eliminar comentario">
                                                             <i class="fas fa-trash" aria-hidden="true"></i>
                                                         </button>
                                                     </form>
@@ -276,8 +269,8 @@
                                                 <div class="invalid-feedback">El comentario no puede estar vacío ni superar 1000 caracteres.</div>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit" class="btn btn-success btn-sm">Guardar</button>
+                                                <button type="button" id="btn-cancelar-editar-comentario" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" id="btn-guardar-edicion-comentario" class="btn btn-success btn-sm">Guardar</button>
                                             </div>
                                         </form>
                                     </div>
