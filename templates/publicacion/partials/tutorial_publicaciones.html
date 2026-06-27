@@ -4,38 +4,27 @@
 (function() {
     {% include 'partials/_tutorial_funcs.html' %}
 
-    var STORAGE_KEY = 'tutorial_ciu_pub';
+    var key = 'tutorial_ciu_pub';
+    if (storageGet(key) === '1') return;
+    if (!storageSet(key, '1')) return;
 
-    try {
-        if (localStorage.getItem(STORAGE_KEY) === '1') return;
-        localStorage.setItem(STORAGE_KEY, '1');
-    } catch(e) {
-        console.error("Error al acceder a localStorage:", e);
-        return;
-    }
-
-    var stepsConfig = [
-        ['btn-volver-publicaciones', 'Volver', 'Regresá al listado completo de publicaciones.', 'bottom'],
-        ['btn-ver-youtube', 'Ver en YouTube', 'Abrí el video en YouTube para verlo en pantalla completa.', 'bottom'],
+    var steps = pasosDesdeConfig([
+        ['btn-volver-publicaciones', 'Volver', 'Regresá al listado completo de publicaciones.'],
+        ['btn-ver-youtube', 'Ver en YouTube', 'Abrí el video en YouTube para verlo en pantalla completa.'],
         ['carruselPublicacion', 'Galería de Imágenes', 'Deslizá para ver todas las imágenes de la publicación.', 'top'],
-        ['carruselDestacadas', 'Publicaciones Destacadas', 'Las noticias más importantes seleccionadas por InfoRecicla.', 'bottom'],
-        ['btn-like', 'Me Gusta', 'Indicá que te gustó la publicación. Podés cambiar tu voto en cualquier momento.', 'bottom'],
-        ['btn-dislike', 'No Me Gusta', 'Expresá tu opinión negativa sobre la publicación.', 'bottom'],
-        ['btn-guardar-publicacion', 'Guardar', 'Guardá esta publicación para leerla después desde tu perfil.', 'bottom'],
-        ['filtro-buscar', 'Buscar', 'Encontrá publicaciones por palabra clave.', 'bottom'],
-        ['filtro-categoria', 'Categoría', 'Filtrá publicaciones por categoría temática.', 'bottom'],
-        ['filtro-destacados', 'Solo Destacados', 'Mostrá únicamente las publicaciones destacadas por el equipo.', 'bottom'],
-        ['btn-filtrar', 'Filtrar', 'Aplicá los filtros seleccionados para refinar la búsqueda.', 'bottom'],
+        ['carruselDestacadas', 'Publicaciones Destacadas', 'Las noticias más importantes seleccionadas por InfoRecicla.'],
+        ['btn-like', 'Me Gusta', 'Indicá que te gustó la publicación. Podés cambiar tu voto en cualquier momento.'],
+        ['btn-dislike', 'No Me Gusta', 'Expresá tu opinión negativa sobre la publicación.'],
+        ['btn-guardar-publicacion', 'Guardar', 'Guardá esta publicación para leerla después desde tu perfil.'],
+        ['filtro-buscar', 'Buscar', 'Encontrá publicaciones por palabra clave.'],
+        ['filtro-categoria', 'Categoría', 'Filtrá publicaciones por categoría temática.'],
+        ['filtro-destacados', 'Solo Destacados', 'Mostrá únicamente las publicaciones destacadas por el equipo.'],
+        ['btn-filtrar', 'Filtrar', 'Aplicá los filtros seleccionados para refinar la búsqueda.'],
         ['grid-publicaciones', 'Publicaciones', 'Cada tarjeta te lleva al detalle de la publicación.', 'top'],
         ['btn-cargar-mas', 'Cargar Más', 'Mostrá más publicaciones a medida que las necesitás.', 'top'],
         ['comentario-texto', 'Escribir Comentario', 'Dejá tu opinión sobre la publicación.', 'top'],
         ['btn-comentar', 'Publicar Comentario', 'Presioná para enviar tu comentario.', 'right']
-    ];
-    var steps = [];
-    stepsConfig.forEach(function(item) {
-        var el = document.getElementById(item[0]);
-        if (el) steps.push({ element: '#' + item[0], popover: { title: item[1], description: item[2], side: item[3] } });
-    });
+    ]);
 
     var editarBtn = document.querySelector('[id^="btn-editar-comentario-"]');
     if (editarBtn)
@@ -45,19 +34,7 @@
     if (eliminarBtn)
         steps.push({ element: '#' + eliminarBtn.id, popover: { title: 'Eliminar Comentario', description: 'Eliminá tu comentario de la publicación.', side: 'bottom' } });
 
-    if (steps.length) {
-        var tourDriver = driverObj({
-            showProgress: true,
-            nextBtnText: 'Siguiente',
-            prevBtnText: 'Anterior',
-            doneBtnText: 'Entendido',
-            onDestroyed: function() { checkAllToursDone(); },
-            steps: steps
-        });
-        tourDriver.drive();
-    } else {
-        checkAllToursDone();
-    }
+    iniciarTutorial(steps);
 })();
 </script>
 {% endif %}

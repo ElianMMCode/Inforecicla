@@ -4,43 +4,18 @@
 (function() {
     {% include 'partials/_tutorial_funcs.html' %}
 
-    var STORAGE_KEY = 'tutorial_ciu_mapa';
-
-    try {
-        if (localStorage.getItem(STORAGE_KEY) === '1') return;
-        localStorage.setItem(STORAGE_KEY, '1');
-    } catch(e) {
-        console.error("Error al acceder a localStorage:", e);
-        return;
-    }
-
-    var steps = [];
-
-    var stepsConfig = [
-        ['mapa', 'Mapa Interactivo', 'Explorá los puntos de reciclaje ECA en un mapa interactivo de tu ciudad.', 'top'],
-        ['btnCentrar', 'Centrar Mapa', 'Volvé a la vista general del mapa con un solo clic.', 'left'],
-        ['btnRecargar', 'Recargar Puntos', 'Actualizá los puntos ECA mostrados en el mapa.', 'left'],
-        ['btnToggleLista', 'Lista Lateral', 'Mostrá u ocultá la lista de puntos ECA con filtros.', 'left'],
-        ['inputBusquedaNombre', 'Buscar por Nombre', 'Filtrá puntos ECA escribiendo su nombre.', 'right'],
-        ['selectMaterial', 'Filtrar por Material', 'Seleccioná un material para ver solo los puntos que lo reciben.', 'right'],
-        ['btnLimpiarFiltros', 'Limpiar Filtros', 'Eliminá todos los filtros y mostrá todos los puntos.', 'right']
-    ];
-    stepsConfig.forEach(function(item) {
-        if (document.getElementById(item[0]))
-            steps.push({ element: '#' + item[0], popover: { title: item[1], description: item[2], side: item[3] } });
-    });
+    var key = 'tutorial_ciu_mapa';
+    if (storageGet(key) === '1') return;
+    if (!storageSet(key, '1')) return;
 
     var modal = document.getElementById('modalDetallesPunto');
     if (modal) {
         var observer = new MutationObserver(function() {
             if (modal.classList.contains('show')) {
                 observer.disconnect();
-                var modalSteps = [];
-                var enviarBtn = document.getElementById('btnEnviarMensaje');
-                if (enviarBtn && !enviarBtn.classList.contains('d-none'))
-                    modalSteps.push({ element: '#btnEnviarMensaje', popover: { title: 'Enviar Mensaje', description: 'Iniciá un chat con este punto ECA desde tu perfil.', side: 'bottom' } });
-                if (modalSteps.length) {
-                    var modalTour = driverObj({ showProgress: false, doneBtnText: 'Entendido', steps: modalSteps });
+                var btn = document.getElementById('btnEnviarMensaje');
+                if (btn && !btn.classList.contains('d-none')) {
+                    var modalTour = driverObj({ showProgress: false, doneBtnText: 'Entendido', steps: [{ element: '#btnEnviarMensaje', popover: { title: 'Enviar Mensaje', description: 'Iniciá un chat con este punto ECA desde tu perfil.', side: 'bottom' } }] });
                     modalTour.drive();
                 }
             }
@@ -48,19 +23,15 @@
         observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
     }
 
-    if (steps.length) {
-        var tourDriver = driverObj({
-            showProgress: true,
-            nextBtnText: 'Siguiente',
-            prevBtnText: 'Anterior',
-            doneBtnText: 'Entendido',
-            onDestroyed: function() { checkAllToursDone(); },
-            steps: steps
-        });
-        tourDriver.drive();
-    } else {
-        checkAllToursDone();
-    }
+    iniciarTutorial(pasosDesdeConfig([
+        ['mapa', 'Mapa Interactivo', 'Explorá los puntos de reciclaje ECA en un mapa interactivo de tu ciudad.', 'top'],
+        ['btnCentrar', 'Centrar Mapa', 'Volvé a la vista general del mapa con un solo clic.', 'left'],
+        ['btnRecargar', 'Recargar Puntos', 'Actualizá los puntos ECA mostrados en el mapa.', 'left'],
+        ['btnToggleLista', 'Lista Lateral', 'Mostrá u ocultá la lista de puntos ECA con filtros.', 'left'],
+        ['inputBusquedaNombre', 'Buscar por Nombre', 'Filtrá puntos ECA escribiendo su nombre.', 'right'],
+        ['selectMaterial', 'Filtrar por Material', 'Seleccioná un material para ver solo los puntos que lo reciben.', 'right'],
+        ['btnLimpiarFiltros', 'Limpiar Filtros', 'Eliminá todos los filtros y mostrá todos los puntos.', 'right']
+    ]));
 })();
 </script>
 {% endif %}
