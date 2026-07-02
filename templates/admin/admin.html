@@ -3,36 +3,7 @@
 {% block page_title %}Panel de Administración - InfoRecicla{% endblock %}
 {% block body_class %}bg-light{% endblock %}
 
-{% block admin_header %}
-<header class="bg-white border-bottom shadow-sm sticky-top">
-    <div class="container-fluid py-3 px-4">
-        <div class="row align-items-center">
-            <div class="col">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <h2 class="h3 fw-bold text-dark mb-0">
-                        <i class="bi bi-speedometer2 text-success me-2"></i>Panel de Administración
-                    </h2>
-                    <span class="salud-badge salud-badge-ok">
-                        <i class="bi bi-check-circle-fill"></i> Activo
-                    </span>
-                </div>
-                <p class="text-muted small mb-0">
-                    Bienvenido, <strong>{{ request.user.get_short_name }}</strong>
-                    <span class="text-muted ms-2">— Gestiona todos los aspectos de InfoRecicla</span>
-                </p>
-            </div>
-            <div class="col-auto d-none d-md-flex align-items-center gap-3">
-                <span class="badge bg-danger px-3 py-2 rounded-pill">
-                    <i class="bi bi-shield-fill me-1"></i>Administrador
-                </span>
-                <span class="badge bg-light text-dark px-3 py-2 rounded-pill border">
-                    <i class="bi bi-envelope-fill me-1"></i>{{ request.user.email }}
-                </span>
-            </div>
-        </div>
-    </div>
-</header>
-{% endblock %}
+
 
 {% block content %}
 
