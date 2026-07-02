@@ -3,6 +3,36 @@
 from django.db import migrations, models
 
 
+def deduplicar_materiales(apps, schema_editor):
+    Material = apps.get_model("inventory", "Material")
+    duplicados = (
+        Material.objects.values("nombre")
+        .annotate(total=models.Count("id"))
+        .filter(total__gt=1)
+    )
+    for entrada in duplicados:
+        nombre = entrada["nombre"]
+        registros = list(Material.objects.filter(nombre=nombre).order_by("fecha_creacion"))
+        for idx, dup in enumerate(registros[1:], start=2):
+            dup.nombre = f"{nombre} (dup {idx})"
+            dup.save(update_fields=["nombre"])
+
+
+def deduplicar_categorias_material(apps, schema_editor):
+    CategoriaMaterial = apps.get_model("inventory", "CategoriaMaterial")
+    duplicados = (
+        CategoriaMaterial.objects.values("nombre")
+        .annotate(total=models.Count("id"))
+        .filter(total__gt=1)
+    )
+    for entrada in duplicados:
+        nombre = entrada["nombre"]
+        registros = list(CategoriaMaterial.objects.filter(nombre=nombre).order_by("fecha_creacion"))
+        for idx, dup in enumerate(registros[1:], start=2):
+            dup.nombre = f"{nombre} (dup {idx})"
+            dup.save(update_fields=["nombre"])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,6 +40,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(deduplicar_materiales, migrations.RunPython.noop),
+        migrations.RunPython(deduplicar_categorias_material, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name='categoriamaterial',
             constraint=models.UniqueConstraint(fields=('nombre',), name='uq_categoria_material_nombre'),
