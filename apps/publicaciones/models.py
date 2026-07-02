@@ -13,6 +13,9 @@ class TipoPublicacion(DescripcionModel):
         verbose_name = "Tipo de publicación"
         verbose_name_plural = "Tipos de publicación"
         db_table = "pub_tipo_publicacion"
+        constraints = [
+            models.UniqueConstraint(fields=["nombre"], name="uq_tipo_publicacion_nombre"),
+        ]
 
     def __str__(self):
         return self.nombre
@@ -32,6 +35,9 @@ class CategoriaPublicacion(DescripcionModel):
         verbose_name = "Categoría de publicación"
         verbose_name_plural = "Categorías de publicación"
         db_table = "pub_categoria_publicacion"
+        constraints = [
+            models.UniqueConstraint(fields=["nombre", "tipo"], name="uq_categoria_publicacion_nombre_tipo"),
+        ]
 
 
 ##########################################################
@@ -94,6 +100,9 @@ class Publicacion(CreacionModificacionModel):
         verbose_name = "Publicacion"
         verbose_name_plural = "Publicaciones"
         db_table = "pub_publicacion"
+        constraints = [
+            models.UniqueConstraint(fields=["titulo"], name="uq_publicacion_titulo"),
+        ]
 
 
 class ImagenPublicacion(models.Model):

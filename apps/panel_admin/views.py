@@ -607,6 +607,19 @@ def _procesar_creacion_publicacion_admin(admin_request, categorias, publicacione
         messages.error(admin_request, "El titulo es obligatorio.")
         return None
 
+    if Publicacion.objects.filter(titulo__iexact=titulo).exists():
+        messages.error(admin_request, "Ya existe una publicacion con ese titulo.")
+        return render(
+            admin_request,
+            ADMIN_CREATE_PUBLICACION_TEMPLATE,
+            {
+                "publicaciones_habilitadas": publicaciones_habilitadas,
+                "categorias": categorias,
+                "form_data": admin_request.POST,
+                "active_tab": "publicaciones",
+            },
+        )
+
     resumen = _normalizar_texto(admin_request.POST.get("resumen"))
     if not resumen:
         messages.error(admin_request, "El resumen es obligatorio.")
@@ -689,6 +702,8 @@ def _procesar_creacion_publicacion_admin_ajax(admin_request):
 
     if not titulo:
         errores["titulo"] = "El título es obligatorio."
+    elif Publicacion.objects.filter(titulo__iexact=titulo).exists():
+        errores["titulo"] = "Ya existe una publicación con ese título."
 
     resumen = _normalizar_texto(admin_request.POST.get("resumen"))
     if not resumen:

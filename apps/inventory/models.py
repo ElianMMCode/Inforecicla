@@ -251,6 +251,9 @@ class Material(DescripcionModel):
         verbose_name = "Material"
         verbose_name_plural = "Materiales"
         db_table = "inv_material"
+        constraints = [
+            models.UniqueConstraint(fields=["nombre"], name="uq_material_nombre"),
+        ]
 
     def __str__(self):
         return self.nombre
@@ -266,6 +269,9 @@ class CategoriaMaterial(DescripcionModel):
         verbose_name = "Categoría de material"
         verbose_name_plural = "Categorías de material"
         db_table = "inv_categoria_material"
+        constraints = [
+            models.UniqueConstraint(fields=["nombre"], name="uq_categoria_material_nombre"),
+        ]
 
     def __str__(self):
         return self.nombre
