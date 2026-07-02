@@ -4,6 +4,54 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def deduplicar_tipo_publicacion(apps, schema_editor):
+    TipoPublicacion = apps.get_model("publicaciones", "TipoPublicacion")
+    duplicados = (
+        TipoPublicacion.objects.values("nombre")
+        .annotate(total=models.Count("id"))
+        .filter(total__gt=1)
+    )
+    for entrada in duplicados:
+        nombre = entrada["nombre"]
+        registros = list(TipoPublicacion.objects.filter(nombre=nombre).order_by("fecha_creacion"))
+        for idx, dup in enumerate(registros[1:], start=2):
+            dup.nombre = f"{nombre} (dup {idx})"
+            dup.save(update_fields=["nombre"])
+
+
+def deduplicar_categoria_publicacion(apps, schema_editor):
+    CategoriaPublicacion = apps.get_model("publicaciones", "CategoriaPublicacion")
+    duplicados = (
+        CategoriaPublicacion.objects.values("nombre", "tipo")
+        .annotate(total=models.Count("id"))
+        .filter(total__gt=1)
+    )
+    for entrada in duplicados:
+        nombre = entrada["nombre"]
+        tipo = entrada["tipo"]
+        registros = list(
+            CategoriaPublicacion.objects.filter(nombre=nombre, tipo=tipo).order_by("fecha_creacion")
+        )
+        for idx, dup in enumerate(registros[1:], start=2):
+            dup.nombre = f"{nombre} (dup {idx})"
+            dup.save(update_fields=["nombre"])
+
+
+def deduplicar_publicacion(apps, schema_editor):
+    Publicacion = apps.get_model("publicaciones", "Publicacion")
+    duplicados = (
+        Publicacion.objects.values("titulo")
+        .annotate(total=models.Count("id"))
+        .filter(total__gt=1)
+    )
+    for entrada in duplicados:
+        titulo = entrada["titulo"]
+        registros = list(Publicacion.objects.filter(titulo=titulo).order_by("fecha_creacion"))
+        for idx, dup in enumerate(registros[1:], start=2):
+            dup.titulo = f"{titulo} (dup {idx})"
+            dup.save(update_fields=["titulo"])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,6 +60,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(deduplicar_tipo_publicacion, migrations.RunPython.noop),
+        migrations.RunPython(deduplicar_categoria_publicacion, migrations.RunPython.noop),
+        migrations.RunPython(deduplicar_publicacion, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name='categoriapublicacion',
             constraint=models.UniqueConstraint(fields=('nombre', 'tipo'), name='uq_categoria_publicacion_nombre_tipo'),
