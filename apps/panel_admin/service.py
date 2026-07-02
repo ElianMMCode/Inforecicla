@@ -539,43 +539,60 @@ class AdminCatalogService:
             return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
+    def _validar_nombre_material(nombre, exclude_id):
+        if not nombre:
+            return NOMBRE_OBLIGATORIO_MSG
+        if len(nombre) > 30:
+            return NOMBRE_MAX_30_MSG
+        qs = Material.objects.filter(nombre__iexact=nombre)
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+        if qs.exists():
+            return MATERIAL_DUPLICADO_MSG
+        return None
+
+    @staticmethod
+    def _validar_categoria_material(categoria_id):
+        categoria = CategoriaMaterial.objects.filter(id=categoria_id).first() if categoria_id else None
+        if categoria_id and not categoria:
+            return None, "Categoría de material inválida."
+        if not categoria:
+            return None, "Debe seleccionar una categoría."
+        return categoria, None
+
+    @staticmethod
+    def _validar_clasificacion_material(clasificacion):
+        if not clasificacion:
+            return "Debe seleccionar una clasificación."
+        if clasificacion not in {value for value, _ in cons.ClasificacionMaterial.choices}:
+            return "Clasificación inválida."
+        return None
+
+    @staticmethod
     def _validar_material_data(data, default_estado="ACTIVO", exclude_id=None):
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or default_estado).strip().upper()
-        estado_valido = estado in {value for value, _ in cons.Estado.choices}
 
         errores = {}
-        if not nombre:
-            errores["nombre"] = NOMBRE_OBLIGATORIO_MSG
-        elif len(nombre) > 30:
-            errores["nombre"] = NOMBRE_MAX_30_MSG
+        error_nombre = AdminCatalogService._validar_nombre_material(nombre, exclude_id)
+        if error_nombre:
+            errores["nombre"] = error_nombre
 
-        if not errores.get("nombre"):
-            qs = Material.objects.filter(nombre__iexact=nombre)
-            if exclude_id:
-                qs = qs.exclude(id=exclude_id)
-            if qs.exists():
-                errores["nombre"] = MATERIAL_DUPLICADO_MSG
-
-        if not estado_valido:
+        if estado not in {value for value, _ in cons.Estado.choices}:
             errores["estado"] = ESTADO_INVALIDO_MSG
 
         categoria_id = data.get("categoria_id")
-        categoria = CategoriaMaterial.objects.filter(id=categoria_id).first() if categoria_id else None
-        if categoria_id and not categoria:
-            errores["categoria_id"] = "Categoría de material inválida."
-        if not categoria:
-            errores["categoria_id"] = "Debe seleccionar una categoría."
+        categoria, error_cat = AdminCatalogService._validar_categoria_material(categoria_id)
+        if error_cat:
+            errores["categoria_id"] = error_cat
 
-        clasificacion = (data.get("clasificacion") or "").strip().upper()
-        clasificacion_valida = clasificacion in {value for value, _ in cons.ClasificacionMaterial.choices}
-        if not clasificacion:
-            errores["clasificacion"] = "Debe seleccionar una clasificación."
-        elif not clasificacion_valida:
-            errores["clasificacion"] = "Clasificación inválida."
+        clasificacion_raw = (data.get("clasificacion") or "").strip().upper()
+        error_clas = AdminCatalogService._validar_clasificacion_material(clasificacion_raw)
+        if error_clas:
+            errores["clasificacion"] = error_clas
 
-        return nombre, descripcion, estado, categoria, clasificacion, errores
+        return nombre, descripcion, estado, categoria, clasificacion_raw, errores
 
     @staticmethod
     def _resolver_categoria_material(categoria_id):
