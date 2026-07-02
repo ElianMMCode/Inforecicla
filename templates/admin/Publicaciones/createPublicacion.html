@@ -4,6 +4,7 @@
 {% block body_class %}bg-light m-0 pt-5 pt-md-0{% endblock %}
 
 {% block content %}
+{% block messages %}{% endblock %}
 
 {% include "admin/Publicaciones/tabs_publicaciones.html" with active_tab=active_tab|default:'publicaciones' %}
 

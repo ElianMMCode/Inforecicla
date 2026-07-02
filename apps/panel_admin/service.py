@@ -33,6 +33,9 @@ TIPO_MATERIAL_INVALIDO_MSG = "Tipo de material inválido."
 NOMBRE_SIN_LETRA_MSG = "El nombre debe contener al menos una letra."
 TIPO_DUPLICADO_MSG = "Ya existe un tipo con ese nombre."
 CATEGORIA_DUPLICADA_MSG = "Ya existe una categoría con ese nombre."
+MATERIAL_DUPLICADO_MSG = "Ya existe un material con ese nombre."
+CATEGORIA_PUBLICACION_DUPLICADA_MSG = "Ya existe una categoría de publicación con ese nombre y tipo."
+PUBLICACION_DUPLICADA_MSG = "Ya existe una publicación con ese título."
 TIPO_OBLIGATORIO_MSG = "Debe seleccionar un tipo o escribir uno nuevo."
 NOMBRE_REGEX = _regex.compile(r'[A-Za-zÁÉÍÓÚáéíóúñÑüÜ]')
 UTC_SUFFIX = "+00:00"
@@ -536,35 +539,60 @@ class AdminCatalogService:
             return {"ok": False, "message": f"No se pudo guardar: {_aplanar_error(e)}"}
 
     @staticmethod
-    def _validar_material_data(data, default_estado="ACTIVO"):
+    def _validar_nombre_material(nombre, exclude_id):
+        if not nombre:
+            return NOMBRE_OBLIGATORIO_MSG
+        if len(nombre) > 30:
+            return NOMBRE_MAX_30_MSG
+        qs = Material.objects.filter(nombre__iexact=nombre)
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+        if qs.exists():
+            return MATERIAL_DUPLICADO_MSG
+        return None
+
+    @staticmethod
+    def _validar_categoria_material(categoria_id):
+        categoria = CategoriaMaterial.objects.filter(id=categoria_id).first() if categoria_id else None
+        if categoria_id and not categoria:
+            return None, "Categoría de material inválida."
+        if not categoria:
+            return None, "Debe seleccionar una categoría."
+        return categoria, None
+
+    @staticmethod
+    def _validar_clasificacion_material(clasificacion):
+        if not clasificacion:
+            return "Debe seleccionar una clasificación."
+        if clasificacion not in {value for value, _ in cons.ClasificacionMaterial.choices}:
+            return "Clasificación inválida."
+        return None
+
+    @staticmethod
+    def _validar_material_data(data, default_estado="ACTIVO", exclude_id=None):
         nombre = (data.get("nombre") or "").strip()
         descripcion = (data.get("descripcion") or "").strip()
         estado = (data.get("estado") or default_estado).strip().upper()
-        estado_valido = estado in {value for value, _ in cons.Estado.choices}
 
         errores = {}
-        if not nombre:
-            errores["nombre"] = NOMBRE_OBLIGATORIO_MSG
-        elif len(nombre) > 30:
-            errores["nombre"] = NOMBRE_MAX_30_MSG
-        if not estado_valido:
+        error_nombre = AdminCatalogService._validar_nombre_material(nombre, exclude_id)
+        if error_nombre:
+            errores["nombre"] = error_nombre
+
+        if estado not in {value for value, _ in cons.Estado.choices}:
             errores["estado"] = ESTADO_INVALIDO_MSG
 
         categoria_id = data.get("categoria_id")
-        categoria = CategoriaMaterial.objects.filter(id=categoria_id).first() if categoria_id else None
-        if categoria_id and not categoria:
-            errores["categoria_id"] = "Categoría de material inválida."
-        if not categoria:
-            errores["categoria_id"] = "Debe seleccionar una categoría."
+        categoria, error_cat = AdminCatalogService._validar_categoria_material(categoria_id)
+        if error_cat:
+            errores["categoria_id"] = error_cat
 
-        clasificacion = (data.get("clasificacion") or "").strip().upper()
-        clasificacion_valida = clasificacion in {value for value, _ in cons.ClasificacionMaterial.choices}
-        if not clasificacion:
-            errores["clasificacion"] = "Debe seleccionar una clasificación."
-        elif not clasificacion_valida:
-            errores["clasificacion"] = "Clasificación inválida."
+        clasificacion_raw = (data.get("clasificacion") or "").strip().upper()
+        error_clas = AdminCatalogService._validar_clasificacion_material(clasificacion_raw)
+        if error_clas:
+            errores["clasificacion"] = error_clas
 
-        return nombre, descripcion, estado, categoria, clasificacion, errores
+        return nombre, descripcion, estado, categoria, clasificacion_raw, errores
 
     @staticmethod
     def _resolver_categoria_material(categoria_id):
@@ -660,6 +688,11 @@ class AdminCatalogService:
         payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
         if error:
             return error
+
+        if CategoriaPublicacion.objects.filter(
+            nombre__iexact=payload.get("nombre", ""), tipo=payload.get("tipo", "")
+        ).exists():
+            return {"ok": False, "errors": {"nombre": CATEGORIA_PUBLICACION_DUPLICADA_MSG}, "message": CATEGORIA_PUBLICACION_DUPLICADA_MSG}
 
         try:
             obj = CategoriaPublicacion(**payload)
@@ -764,7 +797,7 @@ class AdminCatalogService:
         if not material:
             return {"ok": False, "errors": {"_general": "Material no encontrado."}, "message": "Material no encontrado."}
 
-        _, _, _, categoria, clasificacion, errores = AdminCatalogService._validar_material_data(data, default_estado="")
+        _, _, _, categoria, clasificacion, errores = AdminCatalogService._validar_material_data(data, default_estado="", exclude_id=material_id)
         if errores:
             msg = next(iter(errores.values()))
             return {"ok": False, "message": msg, "errors": errores}
@@ -840,12 +873,18 @@ class AdminCatalogService:
         return publicacion, None
 
     @staticmethod
-    def _validar_campos_publicacion(data):
-        from apps.publicaciones.models import CategoriaPublicacion
+    def _validar_campos_publicacion(data, exclude_id=None):
+        from apps.publicaciones.models import CategoriaPublicacion, Publicacion
 
         titulo = (data.get("titulo") or "").strip()
         if not titulo:
             return {"ok": False, "errors": {"titulo": "El titulo es obligatorio."}, "message": "El titulo es obligatorio."}
+
+        qs = Publicacion.objects.filter(titulo__iexact=titulo)
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+        if qs.exists():
+            return {"ok": False, "errors": {"titulo": PUBLICACION_DUPLICADA_MSG}, "message": PUBLICACION_DUPLICADA_MSG}
 
         resumen = (data.get("resumen") or "").strip()
         if not resumen:
@@ -931,7 +970,7 @@ class AdminCatalogService:
         if not publicacion:
             return {"ok": False, "errors": {"_general": PUBLICACION_NO_ENCONTRADA_MSG}, "message": PUBLICACION_NO_ENCONTRADA_MSG}
 
-        campos = AdminCatalogService._validar_campos_publicacion(data)
+        campos = AdminCatalogService._validar_campos_publicacion(data, exclude_id=publicacion_id)
         if isinstance(campos, dict) and "errors" in campos:
             return campos
 
@@ -993,6 +1032,11 @@ class AdminCatalogService:
         payload, error = AdminCatalogService._validar_categoria_publicacion(data, campos_modelo)
         if error:
             return error
+
+        if CategoriaPublicacion.objects.filter(
+            nombre__iexact=payload.get("nombre", ""), tipo=payload.get("tipo", "")
+        ).exclude(id=categoria_id).exists():
+            return {"ok": False, "errors": {"nombre": CATEGORIA_PUBLICACION_DUPLICADA_MSG}, "message": CATEGORIA_PUBLICACION_DUPLICADA_MSG}
 
         try:
             if "nombre" in campos_modelo and "nombre" in payload:
