@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>InfoRecicla - Final Project Presentation</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/simple.min.css" id="theme">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        crossorigin="anonymous" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM"
+        crossorigin="anonymous" />
+
+    <style>
+        :root {
+            --eco-dark: #0f3d27;
+            --eco-green: #198754;
+            --eco-darker: #146c43;
+            --eco-light: #e5f4e1;
+            --eco-bg: #e8f3eb;
+            --card-bg: #ffffff;
+            --text-secondary: #6c757d;
+            --text-muted: #9ca3af;
+            --r-main-font: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --r-heading-font: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --r-heading-color: var(--eco-dark);
+            --r-link-color: var(--eco-green);
+            --r-link-color-hover: #146c43;
+            --r-selection-background-color: var(--eco-light);
+        }
+
+        /* Neutralise Bootstrap on reveal root */
+        .reveal .slide-background { background-color: var(--eco-bg); }
+        .reveal, .reveal .slides { height: 100% !important; }
+        .reveal .slides section {
+            padding: 4px 14px;
+            box-sizing: border-box;
+            display: flex !important;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 10px;
+        }
+        .reveal .slides section.stack { padding: 0; display: block !important; }
+
+        /* Slide with green gradient + landing image overlay (title / thank-you) */
+        .slide-hero {
+            background: linear-gradient(135deg, rgba(25,135,84,0.85), rgba(15,61,39,0.92));
+            color: #fff !important;
+        }
+        .slide-hero-alt {
+            background: linear-gradient(135deg, rgba(25,135,84,0.85), rgba(15,61,39,0.92));
+            color: #fff !important;
+        }
+        .slide-hero .title-xl, .slide-hero .title-lg, .slide-hero .title-md, .slide-hero .title-sm,
+        .slide-hero .subtitle, .slide-hero .body-lg, .slide-hero .body-sm,
+        .slide-hero-alt .title-xl, .slide-hero-alt .title-lg, .slide-hero-alt .title-md, .slide-hero-alt .title-sm,
+        .slide-hero-alt .subtitle, .slide-hero-alt .body-lg, .slide-hero-alt .body-sm { color: #fff !important; }
+        .slide-hero .glass-card, .slide-hero-alt .glass-card { color: var(--eco-dark); background: #fff !important; background-image: none !important; box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
+        .slide-hero .glass-card .body-sm, .slide-hero-alt .glass-card .body-sm { color: var(--text-muted) !important; background: transparent; background-image: none; }
+        .slide-hero .glass-card .body-lg, .slide-hero-alt .glass-card .body-lg { color: var(--text-secondary) !important; }
+        .slide-hero .divider, .slide-hero-alt .divider { background: #fff; }
+
+        .flex-center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; align-items: start; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.3rem; }
+        .h-full { height: 100%; }
+        .text-center { text-align: center; }
+
+        .title-xl { font-size: 1.5rem; font-weight: 800; color: var(--eco-dark); letter-spacing: -0.02em; }
+        .title-lg { font-size: 1.05rem; font-weight: 700; color: var(--eco-dark); margin-bottom: 0.1rem !important; }
+        .title-md { font-size: 0.78rem; font-weight: 700; color: var(--eco-dark); }
+        .title-sm { font-size: 0.68rem; font-weight: 600; color: var(--eco-dark); }
+        .subtitle { font-size: 0.7rem; color: var(--text-secondary); font-weight: 400; line-height: 1.2; }
+        .body-lg { font-size: 0.7rem; color: var(--text-secondary); line-height: 1.3; }
+        .body-sm { font-size: 0.66rem; color: var(--text-muted); line-height: 1.25; }
+        .tag { font-size: 0.56rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(25, 135, 84, 0.12);
+            border-left: 3px solid #218838;
+            border-radius: 0 0.4rem 0.4rem 0;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            padding: 0.4rem;
+        }
+
+        .icon-circle {
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem;
+        }
+        .icon-circle.green { background-color: var(--eco-green); color: #fff; }
+
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 999px;
+            font-size: 0.58rem; font-weight: 600;
+        }
+        .badge.green { background-color: #e5f4e1; color: #145c3a; }
+
+        .divider { width: 24px; height: 2px; background: var(--eco-green); border-radius: 2px; margin: 0 0 0.12rem; }
+        .divider.center { margin-left: auto; margin-right: auto; }
+
+        .mt-1 { margin-top: 0.05rem; } .mt-2 { margin-top: 0.1rem; } .mt-4 { margin-top: 0.15rem; }
+        .mt-6 { margin-top: 0.22rem; } .mt-8 { margin-top: 0.3rem; }
+        .mb-2 { margin-bottom: 0.08rem; } .mb-4 { margin-bottom: 0.15rem; }
+
+        .agenda-list { list-style: none; padding: 0; max-width: 500px; margin: 0 auto; }
+        .agenda-list li {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.35rem 0.7rem;
+            border-radius: 0.4rem; font-size: 0.72rem; color: var(--eco-dark);
+            background: var(--card-bg); border: 1px solid rgba(25, 135, 84, 0.12);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            margin-bottom: 0.22rem; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .agenda-list li:hover { box-shadow: 0 3px 12px rgba(25, 135, 84, 0.12); }
+        .agenda-num {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: linear-gradient(135deg, #198754, #146c43);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.6rem; flex-shrink: 0;
+        }
+
+        .roadmap { position: relative; display: flex; justify-content: space-between; padding: 0 1rem; }
+        .roadmap::before {
+            content: ''; position: absolute; top: 14px; left: 10%; right: 10%;
+            height: 2px; background: linear-gradient(90deg, var(--eco-green), var(--eco-darker));
+            border-radius: 2px;
+        }
+        .roadmap-step { flex: 1; text-align: center; position: relative; z-index: 1; padding: 0 0.25rem; }
+        .roadmap-dot {
+            width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 0.2rem;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.56rem;
+            border: 2px solid var(--eco-green); background: #fff; color: var(--eco-dark);
+        }
+        .roadmap-dot.active { background: var(--eco-green); color: #fff; box-shadow: 0 0 0 4px rgba(25,135,84,0.15); }
+
+        .ad-frame {
+            max-width: 460px; margin: 0 auto; background: linear-gradient(135deg, #198754, #146c43);
+            border-radius: 0.8rem; padding: 0.7rem 1.2rem; color: #fff; text-align: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        .ad-tagline { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
+        .ad-title { font-size: 1.1rem; font-weight: 800; margin: 0.15rem 0; white-space: nowrap; }
+        .ad-features { display: flex; justify-content: center; gap: 0.8rem; margin-top: 0.4rem; }
+        .ad-feature { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+        .ad-feature i { font-size: 0.9rem; opacity: 0.9; }
+        .ad-cta {
+            display: inline-block; margin-top: 0.4rem; padding: 0.35rem 1.2rem;
+            background: #fff; color: var(--eco-dark); border-radius: 999px;
+            font-weight: 700; font-size: 0.68rem;
+        }
+
+        .grammar-badge {
+            display: inline-flex; align-items: center; gap: 0.1rem;
+            font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em;
+            background-color: #e5f4e1; color: #145c3a;
+            padding: 2px 7px; border-radius: 999px; font-weight: 700;
+        }
+
+        .cost-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+        .cost-table td { padding: 0.2rem 0.4rem; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .cost-table .highlight { font-weight: 700; color: var(--eco-dark); }
+        .cost-table .total-row td { border-bottom: none; font-weight: 800; font-size: 0.78rem; color: var(--eco-dark); border-top: 2px solid var(--eco-green); }
+
+        /* Green accent strip at top of content slides */
+        .slide-strip { position: relative; }
+        .green-strip {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #198754, #146c43, #198754);
+            z-index: 2;
+        }
+
+        .section-wave {
+            display: block; width: 100%; height: 20px;
+            fill: var(--eco-light); opacity: 0.8;
+        }
+
+        .fade-up { opacity: 0; transform: translateY(16px); }
+        .reveal .slides section .fragment.visible { opacity: 1; transform: none; transition: all 0.4s ease; }
+
+        @media print {
+            .reveal .slides section {
+                height: auto !important;
+                min-height: 95vh;
+                page-break-after: always;
+                page-break-inside: avoid;
+                padding: 1.2rem 2rem !important;
+                justify-content: flex-start !important;
+                font-size: 95%;
+            }
+            .reveal .slides section:last-child { page-break-after: avoid; }
+            .slide-hero, .slide-hero-alt {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .green-strip { display: none; }
+            .section-wave { display: none; }
+            .fragment { opacity: 1 !important; transform: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="reveal">
+    <div class="slides">
+
+        <!-- SLIDE 1: TITLE -->
+        <section class="slide-hero" data-background-image="../static/img/landing/persona_cargando_reciclaje.jpg" data-background-size="cover" data-background-position="center" data-background-opacity="0.7">
+            <div class="flex-center h-full">
+                <img src="../static/img/logo.png" alt="InfoRecicla" style="width:72px;height:72px;margin-bottom:0.1rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                <h1 class="title-xl" style="margin:0;">InfoRecicla</h1>
+                <p class="subtitle" style="font-size:0.7rem;margin-bottom:0.5rem;">Technology giving life to your waste</p>
+
+                <div class="glass-card" style="max-width:500px;width:100%;text-align:center;">
+                    <span class="tag" style="color:var(--eco-green);display:block;margin-bottom:0.5rem;">Final Project &mdash; ADSO Program</span>
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--eco-dark);margin-bottom:0.5rem;">
+                        Elian Melo &bull; Jorge Barrera &bull; Andr&eacute;s Salas
+                    </div>
+                    <hr style="border:none;border-top:1px solid rgba(25,135,84,0.15);margin:0.6rem 0;">
+                    <div style="font-size:0.7rem;color:var(--text-muted);display:flex;justify-content:center;gap:1rem;">
+                        <span><i class="bi bi-building" style="vertical-align:middle;"></i> CSF &ndash; SENA</span>
+                        <span>Token <strong>3065834-1</strong></span>
+                        <span>Teacher: Diana Marcela Reyes</span>
+                    </div>
+                </div>
+            </div>
+
+            <svg class="section-wave" viewBox="0 0 1440 40" preserveAspectRatio="none" style="position:absolute;bottom:0;left:0;fill:rgba(255,255,255,0.15);"><path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z"/></svg>
+
+            <aside class="notes">
+                InfoRecicla has been a web platform that has been working to bridge the gap between
+                citizens and recycling stations. We have developed this project as part of our ADSO
+                training. When we were researching the management difficulties that ECA points had,
+                we realized that we should develop a solution. If we had not built this platform,
+                citizens would have continued to have difficulties communicating with the stations.
+                <br><br>
+                <em>Grammar: Present Perfect, Simple Past, Third Conditional, Should</em>
+            </aside>
+        </section>
+
+        <!-- SLIDE 2: AGENDA -->
+        <section class="slide-strip" style="align-items:center;">
+            <div class="green-strip"></div>
+            <h2 class="title-lg" style="margin-bottom:0.2rem;">Agenda</h2>
+            <div class="divider center"></div>
+
+            <ul class="agenda-list">
+                <li class="fragment fade-up" data-fragment-index="0"><span class="agenda-num">1</span> Project Characterization</li>
+                <li class="fragment fade-up" data-fragment-index="1"><span class="agenda-num">2</span> Target Market</li>
+                <li class="fragment fade-up" data-fragment-index="2"><span class="agenda-num">3</span> Product / Service Identification</li>
+                <li class="fragment fade-up" data-fragment-index="3"><span class="agenda-num">4</span> Project Costs</li>
+                <li class="fragment fade-up" data-fragment-index="4"><span class="agenda-num">5</span> Project Projection &mdash; Roadmap 2030</li>
+                <li class="fragment fade-up" data-fragment-index="5"><span class="agenda-num">6</span> Advertising Piece</li>
+            </ul>
+
+            <p style="margin-top:0.4rem;font-size:0.64rem;color:var(--text-muted);">
+                <i class="bi bi-book"></i>
+                Grammar: Present Perfect &bull; Present Perfect Continuous &bull; Simple Past
+                &bull; Used to / Be used to / Get used to &bull; Past Continuous &bull; Future &bull;
+                Conditionals &bull; Should / Would
+            </p>
+
+            <aside class="notes">
+                First of all, let me walk you through today's agenda. We will cover six key topics
+                that align with the project requirements. Throughout the presentation you will notice
+                specific grammar structures that we have been applying.
+            </aside>
+        </section>
+
+        <!-- SLIDE 3: PROJECT CHARACTERIZATION -->
+        <section class="slide-strip">
+            <div class="green-strip"></div>
+            <h2 class="title-lg" style="margin-bottom:0.2rem;">Project Characterization</h2>
+            <div class="divider center"></div>
+
+            <div class="grid-2 mt-4">
+                <div class="glass-card fragment fade-up" data-fragment-index="0" style="text-align:center;">
+                    <i class="bi bi-shop" style="font-size:1.6rem;color:#e74c3c;"></i>
+                    <h3 class="title-md mt-1 mb-2">ECA Points</h3>
+                    <p class="body-sm">Stations have been facing inventory management difficulties
+                        without a digital tool to track materials, and lacked a feasible
+                        way for citizens to reach them.</p>
+                    <span class="badge green mt-2">Problem #1</span>
+                </div>
+
+                <div class="glass-card fragment fade-up" data-fragment-index="1" style="text-align:center;">
+                    <i class="bi bi-people" style="font-size:1.6rem;color:#e74c3c;"></i>
+                    <h3 class="title-md mt-1 mb-2">Citizens</h3>
+                    <p class="body-sm">Citizens had no access to recycling education, lacked
+                        visibility into ECA point materials and inventory capacity,
+                        and had no direct channels to contact station managers.</p>
+                    <span class="badge green mt-2">Problem #2</span>
+                </div>
+            </div>
+
+            <aside class="notes">
+                Moving on to the project characterization. When we were researching the inventory
+                management difficulties that the ECA points had been facing, and the lack of a
+                feasible way for citizens to communicate with them, we realized that we should
+                develop a scalable solution. Therefore, we have built a platform that allows
+                citizens to visualize educational information about recycling, and to have the
+                option of being part of a community. On the other hand, we have integrated an
+                interactive map with all registered ECA points where the user not only can see
+                contact information, but also can visualize the material availability in real-time.
+                Finally, we provided a direct chat system. If we had not built this platform, the
+                communication between citizens and stations would have continued to be fragmented
+                and inefficient.
+                <br><br>
+                <em>Grammar: Past Continuous, Simple Past, Should, Present Perfect,
+                Third Conditional</em>
+            </aside>
+        </section>
+
+        <!-- SLIDE 4: TARGET MARKET -->
+        <section class="slide-strip">
+            <div class="green-strip"></div>
+            <h2 class="title-lg" style="margin-bottom:0.2rem;">Target Market</h2>
+            <div class="divider center"></div>
+
+            <div class="grid-2 mt-4">
+                <div class="glass-card fragment fade-up" data-fragment-index="0" style="text-align:center;">
+                    <div class="icon-circle green" style="margin:0 auto 0.6rem;">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <h3 class="title-md mb-2">Citizens of Bogot&aacute;</h3>
+                    <p class="body-sm">Common citizens interested in recycling who have been searching for
+                        accessible information on where and how to recycle. They will get used to having
+                        a platform with ECA point locations, materials, and real-time inventory.</p>
+                    <img src="../static/img/ParejaReciclando.png" alt="Citizens recycling"
+                        style="width:100%;max-width:85px;margin:0.15rem auto 0;border-radius:0.3rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:block;">
+                    <span class="grammar-badge mt-2">Present Perfect Continuous</span>
+                </div>
+
+                <div class="glass-card fragment fade-up" data-fragment-index="1" style="text-align:center;">
+                    <div class="icon-circle green" style="margin:0 auto 0.6rem;">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <h3 class="title-md mb-2">ECA Station Operators</h3>
+                    <p class="body-sm">Station administrators who should supervise purchase and sale
+                        transactions of recyclable materials. They are used to managing inventory
+                        manually, but through our platform they would digitalize their operations.</p>
+                    <img src="../static/img/eca-default.png" alt="ECA Station"
+                        style="width:100%;max-width:85px;margin:0.15rem auto 0;border-radius:0.3rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:block;">
+                    <span class="grammar-badge mt-2">Should / Would &amp; Be used to</span>
+                </div>
+            </div>
+
+            <p class="body-lg text-center mt-6 fragment fade-up" data-fragment-index="2">
+                <i class="bi bi-geo-alt-fill" style="font-size:1rem;vertical-align:middle;color:var(--eco-green);"></i>
+                Primary geographic focus: <strong>Bogot&aacute;, Colombia</strong> &mdash;
+                expanding toward other cities along the 2030 roadmap.
+            </p>
+
+            <aside class="notes">
+                Our target market is composed of actors who have been searching for accessible
+                recycling information. In the short term, we have been planning the implementation
+                to verify functionality. As the project grows, we have projected evolving towards
+                native applications. Therefore, we hope to have advanced analytics with AI to
+                connect ECA points to transforming industries. If we had not planned this growth,
+                the project would not have been able to reach its goal.
+                <br><br>
+                <em>Grammar: Present Perfect Continuous, Present Perfect, Future, Third Conditional</em>
+            </aside>
+        </section>
+
+        <!-- SLIDE 5: PRODUCT / SERVICE IDENTIFICATION -->
+        <section class="slide-strip">
+            <div class="green-strip"></div>
+            <h2 class="title-lg" style="margin-bottom:0.2rem;">Product / Service Identification</h2>
+            <div class="divider center"></div>
+            <p class="subtitle text-center mb-4">Three fundamental cores focused on managing recycling materials efficiently and creating an educational space.</p>
+
+            <div class="grid-3">
+                <div class="glass-card fragment fade-up" data-fragment-index="0" style="text-align:center;">
+                    <div class="icon-circle green" style="margin:0 auto 0.6rem;">
+                        <i class="bi bi-bar-chart-fill"></i>
+                    </div>
+                    <h3 class="title-sm mb-2">Admin Panel</h3>
+                    <p class="body-sm">ECA administrators have been supervising purchase and sale
+                        transactions of recyclable materials through this panel.</p>
+                    <img src="../static/img/inventario.png" alt="Inventory panel screenshot"
+                        style="width:100%;max-width:90px;margin:0.15rem auto 0;border-radius:0.3rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:block;">
+                </div>
+
+                <div class="glass-card fragment fade-up" data-fragment-index="1" style="text-align:center;">
+                    <div class="icon-circle green" style="margin:0 auto 0.6rem;">
+                        <i class="bi bi-newspaper"></i>
+                    </div>
+                    <h3 class="title-sm mb-2">Social Module</h3>
+                    <p class="body-sm">Citizens will be able to see content and acquire knowledge
+                        about collection, management, and recycling.</p>
+                    <img src="../static/img/publicaciones.png" alt="Publications module screenshot"
+                        style="width:100%;max-width:90px;margin:0.15rem auto 0;border-radius:0.3rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:block;">
+                </div>
+
+                <div class="glass-card fragment fade-up" data-fragment-index="2" style="text-align:center;">
+                    <div class="icon-circle green" style="margin:0 auto 0.6rem;">
+                        <i class="bi bi-chat-dots-fill"></i>
+                    </div>
+                    <h3 class="title-sm mb-2">Direct Chat</h3>
+                    <p class="body-sm">A direct chat between citizen and collection point that ensures
+                        fluid communication without intermediaries between these two actors.</p>
+                    <img src="../static/img/noticia1.png" alt="Chat interface screenshot"
+                        style="width:100%;max-width:90px;margin:0.15rem auto 0;border-radius:0.3rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:block;">
+                </div>
+            </div>
+
+            <aside class="notes">
+                Through our web platform, we have offered a digital service that has been seeking to
+                differentiate itself from a basic blog. First of all, we have disposed of an
+                administrative panel. In the second place, there will be a social module for citizens.
+                Finally, we have incorporated a direct communication system. If we had not built
+                these three cores, communication would have been less effective.
+                <br><br>
+                <em>Grammar: Present Perfect, Present Perfect Continuous, Future, Third Conditional,
+                Linking words</em>
+            </aside>
+        </section>
+
+        <!-- SLIDE 6: PROJECT COSTS -->
+        <section class="slide-strip">
+            <div class="green-strip"></div>
+            <h2 class="title-lg" style="margin-bottom:0.1rem;">Project Costs <span style="font-size:0.85rem;font-weight:400;color:var(--text-muted);">(12 Months)</span></h2>
+            <div class="divider center"></div>
+
+            <div class="fragment fade-up" data-fragment-index="0" style="display:flex;justify-content:center;gap:2.5rem;margin-top:0.5rem;">
+                <div class="glass-card" style="text-align:center;flex:0 0 140px;padding:0.4rem 0.5rem;">
+                    <div style="font-size:1.8rem;font-weight:800;color:var(--eco-dark);line-height:1;">3</div>
+                    <div style="font-size:0.66rem;color:#666;margin-top:0.15rem;">Full-Time Developers<br>ADSO-trained</div>
+                </div>
+                <div class="glass-card" style="text-align:center;flex:0 0 140px;padding:0.4rem 0.5rem;">
+                    <div style="font-size:1.8rem;font-weight:800;color:var(--eco-dark);line-height:1;">5,760</div>
+                    <div style="font-size:0.66rem;color:#666;margin-top:0.15rem;">Total Hours<br>3 &times; 8h &times; 240 days</div>
+                </div>
+                <div class="glass-card" style="text-align:center;flex:0 0 140px;padding:0.4rem 0.5rem;">
+                    <div style="font-size:1.8rem;font-weight:800;color:var(--eco-green);line-height:1;">&gt;50M</div>
+                    <div style="font-size:0.66rem;color:#666;margin-top:0.15rem;">Colombian Pesos<br>Total budget</div>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:center;gap:2.5rem;margin-top:0.5rem;flex-wrap:wrap;">
+
+                <!-- Donut Chart -->
+                <div class="fragment fade-up" data-fragment-index="1">
+                    <svg width="160" height="160" viewBox="0 0 200 200">
+                        <circle cx="100" cy="100" r="72" fill="none" stroke="#e9ecef" stroke-width="26"/>
+                        <circle cx="100" cy="100" r="72" fill="none" stroke="#198754" stroke-width="26"
+                            stroke-dasharray="339.3 452.4" stroke-dashoffset="0" stroke-linecap="round"
+                            transform="rotate(-90 100 100)">
+                            <animate attributeName="stroke-dasharray" from="0 452.4" to="339.3 452.4"
+                                dur="1s" fill="freeze"/>
+                        </circle>
+                        <circle cx="100" cy="100" r="72" fill="none" stroke="#146c43" stroke-width="26"
+                            stroke-dasharray="54.3 452.4" stroke-dashoffset="-339.3" stroke-linecap="round"
+                            transform="rotate(-90 100 100)">
+                            <animate attributeName="stroke-dasharray" from="0 452.4" to="54.3 452.4"
+                                dur="0.6s" begin="0.5s" fill="freeze"/>
+                        </circle>
+                        <circle cx="100" cy="100" r="72" fill="none" stroke="#e5a800" stroke-width="26"
+                            stroke-dasharray="58.8 452.4" stroke-dashoffset="-393.6" stroke-linecap="round"
+                            transform="rotate(-90 100 100)">
+                            <animate attributeName="stroke-dasharray" from="0 452.4" to="58.8 452.4"
+                                dur="0.6s" begin="0.8s" fill="freeze"/>
+                        </circle>
+                        <text x="100" y="94" text-anchor="middle" font-size="1.6rem" font-weight="800" fill="#0f3d27">57M</text>
+                        <text x="100" y="116" text-anchor="middle" font-size="0.56rem" font-weight="600" fill="#6c757d">TOTAL COP</text>
+                    </svg>
+                </div>
+
+                <!-- Legend + Breakdown -->
+                <div class="fragment fade-up" data-fragment-index="2" style="flex:0 0 auto;">
+                    <table class="cost-table" style="min-width:220px;">
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#198754;vertical-align:middle;margin-right:0.4rem;"></span> Development</td>
+                            <td class="highlight">~43M COP</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#146c43;vertical-align:middle;margin-right:0.4rem;"></span> Architecture &amp; QA</td>
+                            <td class="highlight">~7M COP</td>
+                        </tr>
+                        <tr>
+                            <td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#e5a800;vertical-align:middle;margin-right:0.4rem;"></span> Contingency (15%)</td>
+                            <td class="highlight">~7M COP</td>
+                        </tr>
+                        <tr class="total-row"><td colspan="2" style="text-align:right;">&gt; 57,000,000 COP</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-card fragment fade-up" data-fragment-index="3" style="text-align:center;max-width:550px;margin:0.4rem auto 0;padding:0.35rem 0.8rem;">
+                <p style="font-size:0.62rem;color:var(--eco-dark);font-weight:600;margin:0;">
+                    &ldquo;If we had not included this contingency fund, the project would have been at risk financially.&rdquo;
+                </p>
+                <span class="grammar-badge" style="margin-top:0.2rem;">Third Conditional &amp; Would</span>
+            </div>
+
+            <aside class="notes">
+                Since we started this project, we have proposed a budget for 12 months. For its
+                development, 5,760 hours will be required, which will exceed 50 million pesos. The
+                largest part of this budget has been dedicated to the backend. On the other hand,
+                7 million pesos will be dedicated to system quality. A contingency fund would be
+                between 6 and 7 million. If we had not included this fund, the project would have
+                been at risk financially.
+                <br><br>
+                <em>Grammar: Present Perfect, Future, Third Conditional, Would</em>
+            </aside>
+        </section>
+
+        <!-- SLIDE 7: STRATEGIC ROADMAP 2030 -->
+        <section class="slide-strip">
+            <div class="green-strip"></div>
+            <h2 class="title-lg" style="margin-bottom:0.2rem;">Strategic Roadmap 2030</h2>
+            <div class="divider center"></div>
+            <p class="subtitle text-center mb-4">A growth path seeking to position InfoRecicla as the main recycling software, becoming a standard in the industry.</p>
+
+            <div class="roadmap mt-4">
+                <div class="roadmap-step fragment fade-up" data-fragment-index="0">
+                    <div class="roadmap-dot">1</div>
+                    <h3 class="title-sm mb-2">Short Term</h3>
+                    <p class="body-sm">Implementation with small recycling points, verifying true
+                        functionality and real impact, adapting the platform to real user needs.</p>
+                    <span class="badge green">Validation Phase</span>
+                </div>
+
+                <div class="roadmap-step fragment fade-up" data-fragment-index="1">
+                    <div class="roadmap-dot">2</div>
+                    <h3 class="title-sm mb-2">Medium Term</h3>
+                    <p class="body-sm">Native apps (desktop &amp; mobile) improving accessibility.
+                        IoT device integration for real-time inventory traceability
+                        from purchase to sale. Recycling metrics for Bogot&aacute;.</p>
+                    <span class="badge green">Expansion Phase</span>
+                </div>
+
+                <div class="roadmap-step fragment fade-up" data-fragment-index="2">
+                    <div class="roadmap-dot active">3</div>
+                    <h3 class="title-sm mb-2">Year 2030</h3>
+                    <p class="body-sm">Advanced AI data analytics connecting ECA points to
+                        large-scale recycling transforming industries, building
+                        real environmental change.</p>
+                    <span class="badge green">Leadership Phase</span>
+                </div>
+            </div>
+
+            <div class="glass-card mt-6 fragment fade-up" data-fragment-index="3" style="text-align:center;max-width:600px;margin:0.5rem auto 0;padding:0.5rem 1rem;">
+                <p style="font-size:0.66rem;color:var(--eco-dark);font-weight:600;margin:0;">
+                    &ldquo;If we had not planned this growth path, the project would not have been
+                    able to reach its goal by 2030.&rdquo;
+                </p>
+                <span class="grammar-badge" style="margin-top:0.35rem;">Third Conditional &amp; Get used to</span>
+            </div>
+
+            <aside class="notes">
+                Our target market is composed of actors who have been searching for accessible
+                recycling information. In the short term, we have been planning the implementation
+                to verify functionality. As the project grows, we have projected evolving towards
+                native applications. Therefore, we hope to have advanced analytics with AI to
+                connect ECA points to transforming industries. If we had not planned this growth,
+                the project would not have been able to reach its goal.
+                <br><br>
+                <em>Grammar: Present Perfect Continuous, Present Perfect, Future, Third Conditional</em>
+            </aside>
+        </section>
+
+        <!-- SLIDE 8: ADVERTISING PIECE -->
+        <section class="slide-strip">
+            <div class="green-strip"></div>
+            <h2 class="title-lg" style="margin-bottom:0.2rem;">Advertising Piece</h2>
+            <div class="divider center"></div>
+
+            <div class="ad-frame fragment fade-up" data-fragment-index="0" style="margin-top:0.35rem;">
+                <img src="../static/img/logo.png" alt="InfoRecicla" style="width:55px;height:55px;opacity:0.95;filter:brightness(0) invert(1);">
+                <p class="ad-tagline" style="font-size:0.65rem;">Discover the platform that connects you with recycling</p>
+                <h2 class="ad-title" style="font-size:1.3rem;">InfoRecicla</h2>
+                <p style="font-size:0.68rem;opacity:0.9;max-width:440px;margin:0.15rem auto;line-height:1.3;">
+                    Technology giving life to your waste. Find ECA points, check inventory in real time,
+                    learn about recycling, and chat directly with station managers.
+                </p>
+                <div class="ad-features" style="margin-top:0.35rem;">
+                    <div class="ad-feature">
+                        <i class="bi bi-geo-alt-fill" style="font-size:1.1rem;"></i>
+                        <span style="font-size:0.68rem;">Find ECA Points</span>
+                    </div>
+                    <div class="ad-feature">
+                        <i class="bi bi-book" style="font-size:1.1rem;"></i>
+                        <span style="font-size:0.68rem;">Learn &amp; Educate</span>
+                    </div>
+                    <div class="ad-feature">
+                        <i class="bi bi-chat-dots" style="font-size:1.1rem;"></i>
+                        <span style="font-size:0.68rem;">Direct Chat</span>
+                    </div>
+                </div>
+                <span class="ad-cta" style="font-size:0.7rem;margin-top:0.35rem;">Join the recycling community today!</span>
+            </div>
+
+            <p class="body-sm text-center mt-4 fragment fade-up" data-fragment-index="1" style="max-width:530px;margin-left:auto;margin-right:auto;font-size:0.66rem;">
+                <i class="bi bi-info-circle-fill" style="vertical-align:middle;color:var(--eco-green);font-size:0.7rem;"></i>
+                This advertisement is oriented toward both citizens searching for accessible recycling
+                information and ECA station operators who should modernize their inventory management.
+                If you were a citizen looking to recycle, you would find everything you need here.
+            </p>
+            <span class="grammar-badge fragment fade-up" data-fragment-index="2" style="display:block;text-align:center;margin-top:0.18rem;">Second Conditional &amp; Should</span>
+
+            <aside class="notes">
+                Here we present our advertising piece, oriented toward our target market. The message
+                is designed for both citizens who have been searching for where to recycle, and ECA
+                station operators who should digitalize their processes.
+                <br><br>
+                If you were a citizen looking to recycle, you would find everything you need here.
+                If you were an ECA operator, you should consider using our admin panel.
+                <br><br>
+                <em>Grammar: Second Conditional (If you were... you would find);
+                Should (should digitalize, should consider);
+                Present Perfect Continuous (have been searching);
+                Future (you will be able)</em>
+            </aside>
+        </section>
+
+        <!-- SLIDE 9: THANK YOU -->
+        <section class="slide-hero-alt" data-background-image="../static/img/landing/recicladora_separando_materiales.jpg" data-background-size="cover" data-background-position="center" data-background-opacity="0.7">
+            <div class="flex-center h-full">
+                <i class="bi bi-tree-fill" style="font-size:2.2rem;margin-bottom:0.2rem;opacity:0.9;"></i>
+                <h2 class="title-xl" style="margin:0;">Thank You!</h2>
+                <p class="subtitle" style="font-size:0.7rem;margin-bottom:0.5rem;">Any questions?</p>
+
+                <div class="glass-card" style="max-width:440px;text-align:center;padding:0.8rem 1.2rem;">
+                    <p style="font-weight:600;color:var(--eco-dark);font-size:0.72rem;margin-bottom:0.3rem;">InfoRecicla &mdash; ADSO &mdash; SENA CSF</p>
+                    <p class="body-sm" style="margin:0;">Elian Melo &bull; Jorge Barrera &bull; Andr&eacute;s Salas</p>
+                    <p class="body-sm" style="margin:0;">Token 3065834-1 &bull; Teacher: Diana Marcela Reyes</p>
+                    <p class="body-sm" style="margin:0.25rem 0 0;">June 24, 2026</p>
+                </div>
+            </div>
+
+            <svg class="section-wave" viewBox="0 0 1440 40" preserveAspectRatio="none" style="position:absolute;bottom:0;left:0;fill:rgba(255,255,255,0.15);"><path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z"/></svg>
+
+            <aside class="notes">
+                To conclude, we have presented InfoRecicla, a platform that has been working to
+                support our community. We are getting used to managing these challenges to ensure
+                a real environmental change. If you were a user looking to recycle, you would find
+                everything you need in our platform. Thank you for your time. Any questions?
+                <br><br>
+                <em>Grammar: Present Perfect Continuous, Be used to, Second Conditional</em>
+            </aside>
+        </section>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/notes/notes.min.js"></script>
+
+<script>
+    Reveal.initialize({
+        hash: true,
+        controls: true,
+        progress: true,
+        center: true,
+        margin: 0.02,
+        transition: 'slide',
+        transitionSpeed: 'fast',
+        plugins: [ RevealNotes ],
+    });
+</script>
+</body>
+</html>
